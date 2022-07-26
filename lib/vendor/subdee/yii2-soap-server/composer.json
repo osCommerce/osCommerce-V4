@@ -1,0 +1,23 @@
+{
+	"name": "subdee/yii2soapserver",
+	"description": "SOAP server for the Yii 2 framework based on the Yii 1 implementation",
+	"keywords": ["yii2", "soap", "server"],
+	"homepage": "https://github.com/subdee/yii2-soap-server",
+	"type": "yii2-extension",
+	"license": "BSD-3-Clause",
+	"support": {
+		"issues": "https://github.com/subdee/yii2-soap-server/issues?state=open",
+		"wiki": "https://github.com/subdee/yii2-soap-server/wiki",
+		"source": "https://github.com/subdee/yii2-soap-server"
+	},
+	"minimum-stability": "dev",
+	"require": {
+		"roave/security-advisories": "dev-master",
+		"ext-soap": "*",
+		"yiisoft/yii2": "*",
+		"codeception/codeception": "*"
+	},
+	"autoload": {
+		"psr-4": {"subdee\\soapserver\\": ""}
+	}
+}

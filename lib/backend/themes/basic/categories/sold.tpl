@@ -1,0 +1,2 @@
+{use class="\common\helpers\Date"}
+<td>{$period}</td><td>{Date::date_short($data['from_date'])}  - {Date::date_short($data['to_date'])}</td><td  align="center">{if is_null($data['products_sold'])}0{else}{$data['products_sold']}{/if}</td>

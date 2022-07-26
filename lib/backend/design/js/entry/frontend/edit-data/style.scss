@@ -1,0 +1,59 @@
+.translation-key,
+.edit-data-element {
+    box-shadow: inset 0 0 0 1px #01d3ff, 0 0 0 1px #01d3ff;
+    display: inline-block !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+.translation-key > * {
+    display: inline-block !important;
+}
+*[data-translation] {
+    box-shadow: inset 0 0 0 1px #01d3ff, 0 0 0 1px #01d3ff;
+}
+.translation-edit-buttons {
+    position: absolute;
+    background: #fff;
+    padding: 0 10px;
+    box-shadow: 0 0 0 2px #01d3ff;
+    z-index: 999999;
+    opacity: 0.9;
+
+    &:before, &:after {
+        position: absolute;
+        height: 3px;
+        width: 100%;
+        content: '';
+    }
+    &:before {
+        top: -3px;
+    }
+    &:after {
+        bottom: -3px;
+    }
+}
+.translation-edit-button,
+.edit-data-button {
+    position: relative;
+    padding-left: 20px;
+    cursor: pointer;
+}
+.translation-edit-button:before,
+.edit-data-button:before {
+    position: absolute;
+    left: 0;
+    top: -1px;
+    content: '\f040';
+    font-family: FontAwesome;
+}
+.edit-data-popup {
+    padding: 0;
+    border: none;
+}
+.popup-draggable {
+    box-shadow: 0 0 20px #000;
+    z-index: 1000000 !important;
+}
+.pop-up-close {
+    background: none !important;
+}

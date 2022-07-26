@@ -1,0 +1,173 @@
+.gallery-filedrop-container {
+    display: flex;
+}
+.gallery-filedrop {
+    width: 150px;
+    margin: 0 15px 0 0;
+}
+.gallery-filedrop-queue {
+    border: 1px solid #ccc;
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.gallery-filedrop-queue img {
+    max-height: 110px !important;
+}
+.gallery-filedrop-message {
+    padding: 20px 0;
+}
+
+.wbmbp1{
+    margin-bottom: 10px;
+}
+.heading-row {
+    display: flex;
+    padding: 0;
+    background: #dfe0e4;
+    border-top: 1px solid #ccc;
+    border-bottom: 1px solid #ccc;
+    min-height: 38px;
+    font-size: 16px;
+    font-weight: bold;
+}
+.heading-row > div {
+    border-left: 1px solid #ccc;
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    font-weight: bold;
+}
+.properties-row {
+    display: flex;
+    padding: 0;
+    border-bottom: 1px solid #ccc;
+}
+.properties-row > div {
+    border-left: 1px solid #ccc;
+    padding: 0 10px;
+    align-items: center;
+    display: flex;
+}
+.check-field {
+    width: 45px;
+    text-align: center;
+}
+.handle-head,
+.handle {
+    position: static;
+    width: 45px;
+    height: auto;
+}
+.name-field {
+    width: calc(25% - 120px);
+}
+.alternative-name-field {
+    width: calc(25% - 120px);
+}
+.seo-field {
+    width: calc(25% - 120px);
+}
+.image-map-field {
+    width: calc(25% - 120px);
+}
+.prefix-field {
+    width: 85px;
+}
+.postfix-field {
+    width: 85px;
+}
+.color-field {
+    width: 135px;
+}
+.icon-field {
+    width: 200px;
+}
+.remove-field {
+    width: 55px;
+    border-right: 1px solid #ccc;
+    text-align: center;
+}
+
+.possible_values .ps_desc {
+    padding: 0 !important;
+}
+.handle {
+    border-top: none;
+    border-bottom: none;
+    text-align: center;
+}
+.icon-field > div {
+    width: 100%;
+}
+.icon-field .gallery-filedrop {
+    margin: 0;
+    border: none;
+    display: flex;
+    width: auto;
+    align-items: center;
+    min-height: 60px;
+}
+.icon-field .gallery-filedrop {
+    flex-grow: 1;
+    justify-content: center;
+}
+.icon-field .gallery-filedrop-message {
+    padding: 0;
+    text-align: left;
+    width: auto;
+}
+.icon-field {
+    font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+.icon-field .btn {
+    font-weight: 500;
+    padding: 7px 20px;
+}
+.icon-field img.option_image {
+    display: inline-block !important;
+}
+.possible_values {
+    padding: 0;
+    border: none;
+}
+.label-interval-to {
+    margin-left: 20px;
+}
+.name-field label {
+    margin-right: 5px;
+}
+
+.name-field .upload_doc {
+    width: 100%;
+}
+.name-field .upload-file-wrap {
+    width: 100%;
+    border: none;
+    height: auto;
+    background: none;
+}
+.name-field .upload-file-template {
+    padding: 0;
+    font-size: 0;
+}
+.name-field .btn {
+    margin: 0;
+    font-size: 14px;
+    padding: 7px 20px;
+}
+.name-field .upload-remove:before {
+    content: "\f014";
+}
+
+.remove-field a.ps_del {
+    border: none;
+    background: none;
+    margin: 0;
+}
+
+.ps_button_1 {
+    margin-top: 10px;
+}
+

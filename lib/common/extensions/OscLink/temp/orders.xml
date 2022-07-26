@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<data>
+<Header>
+  <type>site/orders</type>
+  <projectCode>OSC23_61C1B2DE000005220114</projectCode>
+</Header>
+<Orders>
+<Order>
+  <orders_id type="IOPK" internalId="1"/>
+  <customers_id type="IOMap" internalId="1"/>
+  <customers_name>Vladyslav Malyshev</customers_name>
+  <customers_company>Holbi Group LTD</customers_company>
+  <customers_street_address>Paradise Farm, High street, Kempsford</customers_street_address>
+  <customers_suburb>Fairford</customers_suburb>
+  <customers_city>Swindon</customers_city>
+  <customers_postcode>GL7 4EU</customers_postcode>
+  <customers_state>Харківська область</customers_state>
+  <customers_country>United Kingdom</customers_country>
+  <customers_telephone>07789465060</customers_telephone>
+  <customers_email_address>vlad@holbi.co.uk</customers_email_address>
+  <customers_address_format_id>1</customers_address_format_id>
+  <delivery_name>Vladyslav Malyshev</delivery_name>
+  <delivery_company>Holbi Group LTD</delivery_company>
+  <delivery_street_address>Paradise Farm, High street, Kempsford</delivery_street_address>
+  <delivery_suburb>Fairford</delivery_suburb>
+  <delivery_city>Swindon</delivery_city>
+  <delivery_postcode>GL7 4EU</delivery_postcode>
+  <delivery_state>Харківська область</delivery_state>
+  <delivery_country>United Kingdom</delivery_country>
+  <delivery_address_format_id>1</delivery_address_format_id>
+  <billing_name>Vladyslav Malyshev</billing_name>
+  <billing_company>Holbi Group LTD</billing_company>
+  <billing_street_address>Paradise Farm, High street, Kempsford</billing_street_address>
+  <billing_suburb>Fairford</billing_suburb>
+  <billing_city>Swindon</billing_city>
+  <billing_postcode>GL7 4EU</billing_postcode>
+  <billing_state>Харківська область</billing_state>
+  <billing_country>United Kingdom</billing_country>
+  <billing_address_format_id>1</billing_address_format_id>
+  <payment_method>Cash on Delivery</payment_method>
+  <cc_type></cc_type>
+  <cc_owner></cc_owner>
+  <cc_number></cc_number>
+  <cc_expires></cc_expires>
+  <last_modified type="nil"/>
+  <date_purchased>2022-01-19 16:19:32</date_purchased>
+  <orders_status type="IOOrderStatus" internalId="1" name="Pending"/>
+  <orders_date_finished type="nil"/>
+  <currency>USD</currency>
+  <currency_value>1.000000</currency_value>
+  <OrdersProducts>
+    <OrdersProduct>
+      <orders_products_id type="IOPK" internalId="1"/>
+      <products_id>28</products_id>
+      <products_model>GT-P1000</products_model>
+      <products_name>Samsung Galaxy Tab</products_name>
+      <products_price>749.9900</products_price>
+      <final_price>749.9900</final_price>
+      <products_tax>0.0000</products_tax>
+      <products_quantity>1</products_quantity>
+      <Attributes/>
+    </OrdersProduct>
+  </OrdersProducts>
+  <OrdersTotals>
+    <OrdersTotal>
+      <orders_total_id type="IOPK" internalId="1"/>
+      <orders_id>1</orders_id>
+      <title>Sub-Total:</title>
+      <text>$749.99</text>
+      <value>749.9900</value>
+      <class>ot_subtotal</class>
+      <sort_order>1</sort_order>
+      <text_inc_tax>$749.99</text_inc_tax>
+      <text_exc_tax>$749.99</text_exc_tax>
+      <value_inc_tax>749.9900</value_inc_tax>
+      <value_exc_vat>749.9900</value_exc_vat>
+      <currency>USD</currency>
+      <currency_value>1.000000</currency_value>
+    </OrdersTotal>
+    <OrdersTotal>
+      <orders_total_id type="IOPK" internalId="2"/>
+      <orders_id>1</orders_id>
+      <title>Flat Rate (Best Way):</title>
+      <text>$5.00</text>
+      <value>5.0000</value>
+      <class>ot_shipping</class>
+      <sort_order>2</sort_order>
+      <text_inc_tax>$5.00</text_inc_tax>
+      <text_exc_tax>$5.00</text_exc_tax>
+      <value_inc_tax>5.0000</value_inc_tax>
+      <value_exc_vat>5.0000</value_exc_vat>
+      <currency>USD</currency>
+      <currency_value>1.000000</currency_value>
+    </OrdersTotal>
+    <OrdersTotal>
+      <orders_total_id type="IOPK" internalId="3"/>
+      <orders_id>1</orders_id>
+      <title>Total:</title>
+      <text>&lt;strong&gt;$754.99&lt;/strong&gt;</text>
+      <value>754.9900</value>
+      <class>ot_total</class>
+      <sort_order>4</sort_order>
+      <text_inc_tax>&lt;strong&gt;$754.99&lt;/strong&gt;</text_inc_tax>
+      <text_exc_tax>&lt;strong&gt;$754.99&lt;/strong&gt;</text_exc_tax>
+      <value_inc_tax>754.9900</value_inc_tax>
+      <value_exc_vat>754.9900</value_exc_vat>
+      <currency>USD</currency>
+      <currency_value>1.000000</currency_value>
+    </OrdersTotal>
+  </OrdersTotals>
+  <OrdersStatusHistory>
+    <OrdersStatus>
+      <orders_status_history_id type="IOPK" internalId="1"/>
+      <orders_id>1</orders_id>
+      <orders_status_id type="IOOrderStatus" internalId="1" name="Pending"/>
+      <date_added>2022-01-19 16:19:32</date_added>
+      <customer_notified>1</customer_notified>
+      <comments></comments>
+    </OrdersStatus>
+  </OrdersStatusHistory>
+</Order>
+</Orders>
+</data>

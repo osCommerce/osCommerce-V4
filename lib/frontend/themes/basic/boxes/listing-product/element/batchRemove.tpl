@@ -1,0 +1,1 @@
+<div class="btn-batch-remove">{$smarty.const.TEXT_REMOVE}</div>

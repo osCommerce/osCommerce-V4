@@ -1,0 +1,1 @@
+<div class="order-count">{$mainData.total_orders}</div>

@@ -1,0 +1,1 @@
+{$product.products_internal_name}

@@ -1,0 +1,92 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`My Connected React-Redux Component should render with given state from Redux store 1`] = `
+<div
+  className="header"
+>
+  <a
+    className="logo"
+    href={null}
+  >
+    <img
+      alt="logoAlt"
+      src={null}
+    />
+  </a>
+  <div
+    className="toggle-sidebar active"
+    onClick={[Function]}
+  />
+  <div
+    className="nav"
+    onKeyDown={[Function]}
+  >
+    <div
+      className="nav-item"
+    >
+      <a
+        className="nav-link"
+        data-rb-event-key={null}
+        href="#"
+        onClick={[Function]}
+        onKeyDown={[Function]}
+        role="button"
+      />
+    </div>
+    <div
+      className="nav-item"
+    >
+      <a
+        className="nav-link"
+        data-rb-event-key={null}
+        href="#"
+        onClick={[Function]}
+        onKeyDown={[Function]}
+        role="button"
+      />
+    </div>
+    <div
+      className="nav-item"
+    >
+      <a
+        className="nav-link"
+        data-rb-event-key={null}
+        href="#"
+        onClick={[Function]}
+        onKeyDown={[Function]}
+        role="button"
+      />
+    </div>
+    <div
+      className="nav-item"
+    >
+      <a
+        className="nav-link"
+        data-rb-event-key={null}
+        href="#"
+        onClick={[Function]}
+        onKeyDown={[Function]}
+        role="button"
+      />
+    </div>
+    <div
+      className="dropdown nav-item"
+      onKeyDown={[Function]}
+    >
+      <a
+        aria-expanded={false}
+        aria-haspopup={true}
+        className="dropdown-toggle nav-link"
+        data-rb-event-key={null}
+        href="#"
+        id="nav-dropdown"
+        onClick={[Function]}
+        onKeyDown={[Function]}
+        role="button"
+      >
+        My Account
+      </a>
+    </div>
+  </div>
+</div>
+`;

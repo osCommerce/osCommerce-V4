@@ -1,0 +1,106 @@
+/*
+  $Id: print.css,v 1.3 2003 
+  
+  osCommerce, Open Source E-Commerce Solutions
+  http://www.oscommerce.com
+
+  Released under the GNU General Public License
+*/
+
+/* links */
+a:link { font-family: Arial, Helvetica, sans-serif; font-size: 10px; color: #FF9900; font-weight: normal; }
+a:hover { font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #0000ff; font-weight: bold; }
+
+/* page */
+body { background-color: #ffffff; color: #000000; margin: 0px; font-family: Arial, Helvetica, sans-serif;font-size:16px;}
+html, body { margin: 0;padding: 0;height: 100%;}
+#wrapper {min-height: 100%;position: relative;}
+#container{padding-bottom: 80px;}
+.pageHeading { font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #727272; font-weight: bold; }
+.pageInfo{
+	width: 325px;
+	text-align:left;
+	font-family:Arial, Helvetica, sans-serif;
+	font-size: 12px;
+	font-weight:bold;
+	color: #000000;
+	line-height: 16px;
+	padding: 20px 0px 30px 10px;
+}
+
+/* data table */
+.dataTableHeadingContentBorder {
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 14px;
+	color: #000000; 
+	font-weight: bold;
+	padding:10px 10px;
+}
+.dataTableHeadingContent{
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 14px;
+	color: #3c3b3b; 
+	font-weight: bold;
+	padding:10px 9px;
+    text-transform: uppercase;
+    border-bottom: 1px solid #e0e0e0;
+}
+.dataTableContent { font-family: Arial, Helvetica, sans-serif; font-size: 12px; line-height: 18px; font-weight: 700; color: #3c3b3b; padding:8px;}
+.dataTableContentBorder { font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #000000; padding:8px;}
+
+/* attributes */
+.attributes-odd { background-color: #f4f7fd; }
+.attributes-even { background-color: #ffffff; }
+
+/* miscellaneous */
+.specialPrice { color: #ff0000; }
+.oldPrice { text-decoration: line-through; }
+.fieldRequired { font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #ff0000; }
+.smallText { font-family: Arial, Helvetica, sans-serif; font-size: 12px; }
+.main { font-family: Arial, Helvetica, sans-serif; font-size: 12px; }
+.titleHeading {
+	font-family:Arial, Helvetica, sans-serif;
+	font-size: 24px;
+	color: #000000;
+	font-weight: bold;
+        text-transform: uppercase;
+}
+.payment { 
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 12px;
+	padding-left:15px;
+}
+.pr_pay{color: #3c3b3b; font-size: 13px; font-weight: bold; margin-bottom: 15px;}
+.pr_store_name{font-size: 12px; padding: 15px 8px;}
+.dataTableContent_border{border-bottom: 1px solid #e0e0e0;}
+.print-btn, .print-btn:hover{text-decoration: none; color: #010102;}
+.print-btn:before{content: '\f02f'; font-family: FontAwesome; font-weight: 400; color: #010102; font-size: 28px; cursor: pointer;}
+.close-btn, .close-btn:hover{text-decoration: none; color: #010102;}
+.close-btn:before{content: '\f057'; font-family: FontAwesome; font-weight: 400; color: #010102; font-size: 24px; cursor: pointer;}
+.logo{padding:35px;}
+.store_address{font-size:12px;}
+.store_address_table{font-size:12px;text-align:right;margin:10px 0 0;}
+.store_address_table td{width:50%;}
+.shipping_table_data{border-collapse: collapse;}
+.shipping_table_data td{border:1px solid #e0e0e0;padding:10px;}
+.ship_data_bg{background:#e0e0e0;}
+.smallTextDesc{font-size:12px;padding:0 0 8px;}
+.smallTextTitle, .shipTitle{font-size:14px;padding:0 0 5px;text-transform:uppercase;}
+.shipTitle{font-size:16px;}
+.shipServ{font-size:12px;}
+.barcode_td{text-align: center;}
+.title_order{text-transform: uppercase;font-weight: bold;padding: 0 0 10px;}
+.title_payment_date, .title_payment_method{font-size: 12px;}
+.title_payment_date{padding: 0 0 15px;}
+.title_payment_method{padding: 0 0 30px;}
+.shipping_table_data{margin: 0 0 20px;}
+.shipBottomTd{border-bottom: 1px solid #e0e0e0;}
+.shipBottomTd, .shipBottomBg{padding: 15px 8px;vertical-align: top;}
+.shipBottomBg{background: #e0e0e0;padding: 10px 8px;}
+.shipBottomBg td{padding: 5px 0;}
+.shipBottomTitle{font-size: 14px;text-transform: uppercase;padding: 0 0 10px;}
+.addresBottomShip{font-size: 12px;}
+.footer_info td{font-size: 12px;vertical-align: top;}
+.footer_info{width: 100%;height: 80px;position: absolute;bottom: 0;left: 0;}
+.thanks_block{color:#008fe9;font-size:16px;padding:5px 0 0;font-weight:bold;text-align: center;}
+.shipBottomBg td b{font-size: 18px;}

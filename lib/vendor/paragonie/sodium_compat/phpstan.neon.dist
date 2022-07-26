@@ -1,0 +1,36 @@
+parameters:
+    autoload_files:
+        - %rootDir%/../../../autoload-fast.php
+        - %rootDir%/../../../src/Core32/ChaCha20/Ctx.php
+        - %rootDir%/../../../src/Core32/ChaCha20/IetfCtx.php
+    level: max
+    paths:
+        - %currentWorkingDirectory%/src/
+        - %currentWorkingDirectory%/lib/
+        - %currentWorkingDirectory%/namespaced/
+    excludes_analyse:
+        - %rootDir%/../../../src/PHP52/*
+    reportUnmatchedIgnoredErrors: false
+    ignoreErrors:
+        # sodium_crypto_scalarmult_base()'s definition is broken in phpstan
+        - /^Function sodium_crypto_scalarmult_base invoked with 1 parameter. 2 required\.$/
+        # @return bool|array is apparently "unresolvable" now???
+        - /^PHPDoc tag @return contains unresolvable type\.$/
+        - /^Function sodium_.*pad.* should return int but returns string.$/
+        - /^Call to function is_callable.* with .* will always evaluate to .*$/
+        - /^Method ParagonIE_Sodium_Compat::.* should return string but returns string\|false\.$/
+        - /^Binary operation "\^" between float\|int\|string and float\|int\|string results in an error\.$/
+        # phpstan has problems recognizing callables
+        - /^Trying to invoke .* but it's not a callable\.$/
+        - /^Parameter .* of function call_user_func expects callable.* .*given\.$/
+        # Null checks
+        - '/^Result of \|\| is always false\.$/'
+        # sodium_crypto_pwhash is a built-in function
+        - '/^Default value of the parameter #6 \$algo \(null\) of function sodium_crypto_pwhash\(\) is incompatible with type int\.$/'
+        # On PHP >=7.2 there is HashContext
+        - '/^Parameter #1 \$context of function hash_update expects HashContext, object\|resource given\.$/'
+        - '/^Parameter #1 \$context of function hash_final expects HashContext, resource given\.$/'
+        # People call generichash() with all kinds of rubish
+        -
+            message: '#^Else branch is unreachable because previous condition is always true\.$#'
+            path: %currentWorkingDirectory%/src/File.php

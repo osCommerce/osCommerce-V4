@@ -1,0 +1,117 @@
+
+$primary-color: #333;
+$middle-color: #999;
+$font-color-1: #424242;
+$font-color-2: #fff;
+$font-color-3: #345576;
+$font-color-4: #8796a4;
+
+$font-icons: FontAwesome, Helvetica, Arial, sans-serif;
+
+$bg-light-1: #ffffff;
+$bg-dark-1: #305c88;
+$bg-dark-2: #376AB7;
+
+$bg-1: #ececec ;
+$bg-2: #dee2e6 ;
+
+$primary-bg: #fff;
+$bg-light-1: #fff;
+$bg-light-2: #f1f1f1;
+$red-color: #f52f1b;
+$highlight-color: #4d7496;
+
+$border-color: #ccc;
+$border-color-1: #ccc;
+$border-color-2: rgba(0,0,0,0.21);
+$border-color-3: #d4d9df;
+
+$box-shadow: 0 0 20px #000000;
+
+%clear {
+    display: block;
+    content: '';
+    clear: both;
+}
+
+$item-size: 40px;
+
+ul.tree {
+    font-size: 16px;
+
+    &,
+    ul,
+    li {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+    ul {
+        padding-left: $item-size - 10px;
+    }
+    .item-holder {
+        display: flex;
+        min-height: $item-size;
+        margin: 5px 0;
+        border: 1px solid $border-color;
+        background: $primary-bg;
+        position: relative;
+    }
+    .text {
+        padding: 8px 10px;
+        font-weight: bold;
+        line-height: 1.2;
+        color: $primary-color;
+        text-decoration: none;
+        flex-grow: 1;
+
+        small {
+            font-size: 0.8em;
+            font-weight: normal;
+        }
+    }
+
+    .item-button,
+    .close-sub-items {
+        cursor: pointer;
+        font-weight: normal;
+        color: $middle-color;
+        width: $item-size;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .item-button:hover,
+    .close-sub-items:hover {
+        color: $highlight-color;
+    }
+    .item-button:before,
+    .close-sub-items:before {
+        font-family: FontAwesome;
+    }
+
+    .close-sub-items:before {
+        content: '\f068';
+    }
+    .close-sub-items.closed:before {
+        content: '\f067';
+    }
+    .page-settings:before {
+        content: '\f013';
+    }
+    .page-copy:before {
+        content: '\f0c5';
+    }
+    .page-remove:before {
+        content: '\f014';
+        color: $red-color;
+    }
+    .page-remove:hover:before {
+        content: '\f1f8';
+    }
+
+    .close-holder {
+        cursor: pointer;
+    }
+
+}

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<data>
+<Header><type>site/taxes</type><projectCode>OSC23_61C1B2DE000005220114</projectCode></Header>
+<TaxClasses>
+<TaxClass><tax_class_id type="IOPK" internalId="1"/><tax_class_title>Taxable Goods</tax_class_title><tax_class_description>The following types of products are included non-food, services, etc</tax_class_description><last_modified>2022-01-14 21:40:09</last_modified><date_added>2022-01-14 21:40:09</date_added><TaxRates><TaxRate><tax_rates_id type="IOPK" internalId="1"/><tax_zone_id type="IOMap" internalId="1"/><tax_class_id>1</tax_class_id><tax_priority>1</tax_priority><tax_rate>7.0000</tax_rate><tax_description>FL TAX 7.0%</tax_description><last_modified>2022-01-14 21:40:09</last_modified><date_added>2022-01-14 21:40:09</date_added></TaxRate></TaxRates></TaxClass>
+</TaxClasses>
+</data>

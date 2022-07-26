@@ -1,0 +1,144 @@
+Copyright (c) 2005 Holbi Group LTD
+
+Basic Provisions:
+1. All extensions must be placed in separate folder.
+2. The class file name must be the same as the folder name.
+3. Places for:
+   Templates - folder 'views'.
+   Model - folder 'models'
+   Helpers - folder 'helpers'
+   Classes - folder 'classes'
+   Frontend controllers - folder 'frontend/controllers'
+   Frontend views - folder 'frontend/views'
+   Backend controllers - folder 'backend/controllers'
+   Backend views - folder 'backend/views'
+   Hooks - folder 'hooks'
+   
+   
+Extension Generator
+===================
+
+Use this link to generate a new extension by Extension Generator:
+
+https://generator.tllab.co.uk/
+
+You will get a Zip file with extension as result.
+
+
+SVN
+===
+
+All extension will be moved here:
+
+https://svn.holbi.co.uk/tlnew/extensions
+
+
+Controllers
+===========
+
+*** Bootstrap ***
+if you want to use personal controllers
+1) Create class in file named Bootstrap.php and place in root directory of your extension
+
+use yii\base\Application;
+use yii\base\BootstrapInterface;
+class Bootstrap implements BootstrapInterface {
+    public function bootstrap($app) {
+        \Yii::setAlias('@your-extension-alias', dirname(__FILE__));
+        if ($app instanceof \yii\web\Application) {
+            if ($app->id == 'app-frontend') {
+                $app->controllerMap = array_merge($app->controllerMap, [
+                    'frontend-controller' => ['class' => 'common\extensions\your-extension\frontend\controllers\your-controller'],
+                ]);
+            } elseif ($app->id == 'app-backend') {
+                $app->controllerMap = array_merge($app->controllerMap, [
+                    'backend-controller' => ['class' => 'common\extensions\your-extension\backend\controllers\your-controller'],
+                ]);
+            }
+        }
+    }
+}
+
+2) enable your extension and try run index action https://yoursite/frontend-controller
+
+
+Install/Uninstall
+=================
+
+To manage install/uninstall process create Setup.php file with class:
+
+	class Setup extends \common\classes\modules\SetupExtensions {
+	...
+	}
+
+It will be automatically used for:
+- get extension description and version
+- install/uninstall extention 
+- install/uninstall extention migrations
+- install/uninstall/init translation
+- install/uninstall/check extension acl
+- install/uninstall widgets
+- check if extention requred other extentions
+
+Its required and optional methods you can see in \common\classes\modules\SetupExtensions.php 
+Below is additional info by install/uninstall topics:
+
+*** Widgets ***
+if you want to use widgets in extensions
+1. Add method getWidgets with $type parameter and describe widgets in array
+example:
+return [
+            [
+                'name' => 'CustomerLoyalty\ShoppingCart', 'title' => 'Customer Loyalty Info Box', 'description' => '', 'type' => 'cart',
+            ],
+        ];
+in this case ShoppingCart (in subfolder \ShoppingCart) is widget ( ShoppingCart.php) can be used in customizing Themes
+We recoomend to place widgets in "widgets" subdirectory of your extension
+2. to show additional settings for widget use method showSettings
+example:
+    public static function showSettings($settings){
+        return self::begin()->render('settings.tpl', ['settings' => $settings]);
+    }
+
+
+*** Admin menu ***
+if you want to use menu in extensions
+1. Add method getAdminMenu
+
+*** Hooks ***
+if you want to use hooks in extensions
+getAdminHooks
+We recommend to place all hook files in separate extention folder with name "hooks"
+
+In addition a list of available values page_name and page_area:
+'customers/customeredit', ''
+'customers/customeredit', 'personal-block'
+'customers/customeredit', 'left-column'
+'customers/customeredit', 'right-column'
+'customers/customeractions', ''
+'customers/after-trunk', ''  // helpers/customer.php
+'customers/after-delete', '' // helpers/customer.php
+'categories/brandedit', ''
+'categories/brandedit', 'tab-navs'
+'categories/brandedit', 'tab-content'
+'categories/brandedit', 'main-tab'
+'categories/brandedit', 'desc-tab'
+'categories/brandedit', 'seo-tab'
+'categories/productedit', ''
+'categories/productedit', 'details-left-column'
+'categories/productedit', 'details-right-column'
+'categories/productedit', 'seo-tab'
+'categories/categoryedit', ''
+'categories/categoryedit', 'tab-navs'
+'categories/categoryedit', 'tab-content'
+'categories/categoryedit', 'main-tab'
+'categories/categoryedit', 'desc-tab'
+'categories/categoryedit', 'seo-tab'
+'categories/categoryedit', 'seo-tab-without-lang' // after languages tabs
+'orders/process-order', ''
+'orders/process-order', 'totals-block'
+'orders/process-order', 'btn-bar-top'
+'orders/process-order', 'btn-bar-bottom'
+'Order', 'save_order/before'
+'Order', 'save_order/after'
+'checkout/index', ''

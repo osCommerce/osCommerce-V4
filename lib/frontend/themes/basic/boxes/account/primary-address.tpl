@@ -1,0 +1,1 @@
+<div class="primary-address">{$address}</div>

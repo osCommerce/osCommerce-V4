@@ -1,0 +1,7 @@
+/.build/
+/vendor/
+/vendor-bin/php-cs-fixer/vendor/
+/vendor-bin/phpstan/vendor/
+/vendor-bin/psalm/vendor/
+/.php-cs-fixer.cache
+/composer.lock

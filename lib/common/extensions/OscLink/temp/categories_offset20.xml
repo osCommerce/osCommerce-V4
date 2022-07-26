@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<data>
+<Header><type>site/categories</type><projectCode>OSC23_61C1B2DE000005220114</projectCode></Header>
+<Categories>
+<Category><categories_id type="IOPK" internalId="21"/><categories_image type="IOAttachment"><value>category_gadgets.png</value><attach_file>/home/usr00398/public_html/images/category_gadgets.png</attach_file><url>https://oscommerce22.tllab.co.uk/images/category_gadgets.png</url><checksum_md5>a6ae3e3ce9da7c0164ab4586ec45b377</checksum_md5><checksum_sha1>284159d8930d9a0e8b02f6eb0bff92cc454da547</checksum_sha1><filesize>6012</filesize><last_modified>2017-08-18T07:44:20+01:00</last_modified><content_type>image/png</content_type><image_width>85</image_width><image_height>60</image_height></categories_image><parent_id type="IOMap" internalId="0"/><sort_order>4</sort_order><date_added>2022-01-14 21:40:09</date_added><last_modified type="nil"/><Descriptions><Description><categories_id type="IOPK" internalId="21"/><language_id type="IOLanguageMap" language="en" internalId="1"/><categories_name>Gadgets</categories_name></Description></Descriptions></Category>
+</Categories>
+</data>

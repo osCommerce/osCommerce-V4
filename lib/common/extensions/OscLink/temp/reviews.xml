@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<data>
+<Header><type>site/reviews</type><projectCode>OSC23_61C1B2DE000005220114</projectCode></Header>
+<Reviews>
+<Review><reviews_id type="IOPK" internalId="1"/><products_id type="IOMap" internalId="19"/><customers_id type="IOMap" internalId="0"/><customers_name>John Doe</customers_name><reviews_rating>5</reviews_rating><date_added>2022-01-14 21:40:09</date_added><last_modified type="nil"/><reviews_status>1</reviews_status><reviews_read>0</reviews_read><Descriptions><Description><reviews_id type="IOPK" internalId="1"/><languages_id type="IOPK" internalId="1"/><reviews_text>This has to be one of the funniest movies released for 1999!</reviews_text></Description></Descriptions></Review>
+</Reviews>
+</data>

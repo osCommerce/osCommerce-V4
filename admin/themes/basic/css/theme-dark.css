@@ -1,0 +1,29 @@
+#nav {
+    --menu-color: #bdbdbd;
+    --menu-background: transparent;
+    --menu-color-hover: #ffffff;
+    --menu-background-hover: #313131;
+    --menu-color-active: #bdbdbd;
+    --menu-background-active: #111111;
+
+    --menu-sub-color: #bdbdbd;
+    --menu-sub-background: #111111;
+    --menu-sub-color-hover: #ffffff;
+    --menu-sub-background-hover: #313131;
+    --menu-sub-color-active: #bdbdbd;
+    --menu-sub-background-active: #b0b5c2;
+
+    --menu-sub-2-color: #bdbdbd;
+    --menu-sub-2-background: #111111;
+    --menu-sub-2-color-hover: #ffffff;
+    --menu-sub-2-background-hover: #313131;
+    --menu-sub-2-color-active: #bdbdbd;
+    --menu-sub-2-background-active: #b0b5c2;
+
+    --menu-border-color: #363636;
+    --menu-border-color-side: #222222;
+}
+
+body {
+    --heading-color: #bdbdbd;
+}

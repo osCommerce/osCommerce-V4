@@ -1,0 +1,160 @@
+/**
+ * This file is part of osCommerce ecommerce platform.
+ * osCommerce the ecommerce
+ *
+ * @link https://www.oscommerce.com
+ * @copyright Copyright (c) 2000-2022 osCommerce LTD
+ *
+ * Released under the GNU General Public License
+ * For the full copyright and license information, please view the LICENSE.TXT file that was distributed with this source code.
+ */
+.around-pop-up {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background: #212121;
+  opacity: 0.5;
+  z-index: 100; }
+
+.popup-box-wrap {
+  text-align: center;
+  padding: 10px 10px 10px;
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  z-index: 101;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box; }
+
+.popup-box {
+  display: inline-block;
+  background: #fff;
+  position: relative;
+  z-index: 102;
+  width: 530px;
+  max-width: 100%;
+  border: 1px solid #d9d9d9; }
+
+.pop-up-content {
+  padding: 0;
+  background: #fff;
+  text-align: left;
+  border-radius: 8px; }
+
+.pop-up-content form {
+  padding: 0;
+  margin: 0; }
+
+.pop-up-close {
+  width: 31px;
+  height: 31px;
+  line-height: 25px;
+  text-align: center;
+  position: absolute;
+  right: 6px;
+  top: 7px;
+  cursor: pointer;
+  font-size: 25px;
+  z-index: 4;
+  padding: 1px 1px;
+  color: #999; }
+
+.pop-up-close:hover {
+  color: #777; }
+
+.pop-up-close:before {
+  content: '\F00D';
+  font-family: FontAwesome; }
+
+.popup-heading, .modal-header {
+  background: #f9f9f9;
+  font-size: 16px;
+  padding: 10px 15px 12px;
+  font-weight: bold;
+  border-bottom: 1px solid #d9d9d9;
+  text-align: left; }
+
+.popup-content {
+  padding: 15px; }
+
+.popup-content form {
+  padding: 0;
+  margin: 0; }
+
+.popup-buttons {
+  padding: 15px;
+  border-top: 1px solid #d9d9d9; }
+
+.popup-buttons:after {
+  display: block;
+  content: '';
+  clear: both; }
+
+.popup-buttons .btn {
+  margin-right: 20px; }
+
+.popup-buttons .btn:first-child {
+  float: right;
+  margin-right: 0; }
+
+.preloader {
+  height: 100px;
+  text-align: center;
+  padding-top: 30px; }
+
+.preloader:before {
+  content: '\F110';
+  -moz-animation: load8 1.5s infinite linear;
+  -webkit-animation: load8 1.5s infinite linear;
+  animation: load8 1.5s infinite linear;
+  font-size: 40px;
+  line-height: 40px;
+  display: inline-block;
+  overflow: hidden;
+  width: 40px;
+  height: 40px;
+  font-family: FontAwesome;
+  position: relative; }
+
+@-moz-keyframes load8 {
+  from {
+    margin-top: 0; }
+  to {
+    margin-top: 100px; } }
+
+@-webkit-keyframes load8 {
+  0% {
+    -webkit-transform: rotate(0deg);
+    transform: rotate(0deg); }
+  100% {
+    -webkit-transform: rotate(360deg);
+    transform: rotate(360deg); } }
+
+@keyframes load8 {
+  0% {
+    -webkit-transform: rotate(0deg);
+    transform: rotate(0deg); }
+  100% {
+    -webkit-transform: rotate(360deg);
+    transform: rotate(360deg); } }
+
+div.popup-preloader {
+  position: absolute;
+  top: 45px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: calc(100% - 45px);
+  background: rgba(255, 255, 255, 0.7);
+  z-index: 102; }
+
+.preloader:before {
+  top: 30%; }
+
+
+/*# sourceMappingURL=edit.css.map*/

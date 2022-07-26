@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+
+	<title>Class MailChimp\Campaigns\Campaigns</title>
+
+	<link rel="stylesheet" href="resources/bootstrap.min.css?973e37a8502921d56bc02bb55321f45b072b6f71">
+	<link rel="stylesheet" href="resources/style.css?49f43d3208c5d7e33fa16d36107a345bf11cc00d">
+
+</head>
+
+<body>
+	<nav id="navigation" class="navbar navbar-default navbar-fixed-top">
+		<div class="container-fluid">
+			<div class="navbar-header">
+				<a href="index.html" class="navbar-brand">Overview</a>
+			</div>
+			<div class="collapse navbar-collapse">
+
+                <form id="search" class="navbar-form navbar-left" role="search">
+                    <input type="hidden" name="cx" value="">
+                    <input type="hidden" name="ie" value="UTF-8">
+                    <div class="form-group">
+                        <input type="text" name="q" class="search-query form-control" placeholder="Search">
+					</div>
+				</form>
+
+				<ul class="nav navbar-nav">
+					<li>
+						<a href="namespace-MailChimp.Campaigns.html" title="Summary of MailChimp\Campaigns"><span>Namespace</span></a>
+					</li>
+					<li class="active">
+<span>Class</span>					</li>
+
+
+
+
+
+				</ul>
+			</div>
+		</div>
+	</nav>
+
+	<div id="left">
+	<div id="menu">
+
+		<div id="groups">
+				<h3>Namespaces</h3>
+			<ul>
+					<li class="active">
+						<a href="namespace-MailChimp.html">
+							MailChimp<span></span>
+						</a>
+							<ul>
+					<li>
+						<a href="namespace-MailChimp.AuthorizedApps.html">
+							AuthorizedApps						</a>
+							</li>
+					<li>
+						<a href="namespace-MailChimp.Automations.html">
+							Automations						</a>
+							</li>
+					<li>
+						<a href="namespace-MailChimp.Batches.html">
+							Batches						</a>
+							</li>
+					<li>
+						<a href="namespace-MailChimp.CampaignFolders.html">
+							CampaignFolders						</a>
+							</li>
+					<li class="active">
+						<a href="namespace-MailChimp.Campaigns.html">
+							Campaigns						</a>
+							</li>
+					<li>
+						<a href="namespace-MailChimp.Conversations.html">
+							Conversations						</a>
+							</li>
+					<li>
+						<a href="namespace-MailChimp.Ecommerce.html">
+							Ecommerce						</a>
+							</li>
+					<li>
+						<a href="namespace-MailChimp.FileManager.html">
+							FileManager						</a>
+							</li>
+					<li>
+						<a href="namespace-MailChimp.Lists.html">
+							Lists						</a>
+							</li>
+					<li>
+						<a href="namespace-MailChimp.Reports.html">
+							Reports						</a>
+							</li>
+					<li>
+						<a href="namespace-MailChimp.TemplateFolders.html">
+							TemplateFolders						</a>
+							</li>
+					<li>
+						<a href="namespace-MailChimp.Templates.html">
+							Templates						</a>
+							</li>
+								</ul></li>
+			</ul>
+		</div>
+
+
+		<div id="elements">
+			<h3>Classes</h3>
+			<ul>
+				<li class="active"><a href="class-MailChimp.Campaigns.Campaigns.html">Campaigns</a></li>
+				<li><a href="class-MailChimp.Campaigns.Content.html">Content</a></li>
+				<li><a href="class-MailChimp.Campaigns.Feedback.html">Feedback</a></li>
+			</ul>
+
+
+
+
+
+		</div>
+	</div>
+</div>
+
+<div id="splitter"></div>
+
+<div id="right">
+	<div id="rightInner">
+<div id="content" class="class">
+	<h1>Class Campaigns</h1>
+
+
+
+	<dl class="tree well">
+		<dd style="padding-left:0px">
+			<a href="class-MailChimp.MailChimp.html"><span>MailChimp\MailChimp</span></a>
+			
+			
+			
+		</dd>
+		<dd style="padding-left:30px">
+			<img src="resources/inherit.png" alt="Extended by">
+<b><span>MailChimp\Campaigns\Campaigns</span></b>			
+			
+			
+		</dd>
+	</dl>
+
+
+
+
+
+
+
+
+	<div class="alert alert-info">
+		
+		
+		<b>Namespace:</b> <a href="namespace-MailChimp.html">MailChimp</a>\<a href="namespace-MailChimp.Campaigns.html">Campaigns</a><br>
+		
+
+			<b>Located at</b> <a href="source-class-MailChimp.Campaigns.Campaigns.html#8-295" title="Go to source code">Campaigns/Campaigns.php</a>
+		<br>
+	</div>
+
+
+
+		<div class="panel panel-default">
+			<div class="panel-heading"><h2>Methods summary</h2></div>
+			<table class="summary table table-bordered table-striped methods" id="methods">
+		<tr data-order="getCampaigns" id="_getCampaigns">
+
+			<td class="attributes"><code>
+				 public 
+				object
+				
+				</code>
+			</td>
+
+			<td class="name"><div>
+			<a class="anchor" href="#_getCampaigns">#</a>
+			<code><a href="source-class-MailChimp.Campaigns.Campaigns.html#11-39" title="Go to source code">getCampaigns</a>( <span>array <var>$query</var> = []</span> )</code>
+
+			<div class="description short">
+				<p>Get a list of campaigns for the account</p>
+			</div>
+
+			<div class="description detailed hidden">
+				<p>Get a list of campaigns for the account</p>
+
+<p>Available query fields:
+array["fields"]              array       list of strings of response fields to return
+array["exclude_fields"]      array       list of strings of response fields to exclude (not to be used with "fields")
+array["count"]               int         number of records to return
+array["offset"]              int         number of records from a collection to skip.
+array["folder_id"]           string      Filter results by a specific campaign folder.
+array["type"]                string      The campaign type. Possible values: regular,plaintext,absplit,rss,variate
+array["status"]              string      The status of the campaign. Possible Values: save,paused,schedule,sending,sent
+array["before_send_time"]    string      Restrict the response to campaigns sent before the set time. ISO 8601 time format: 2015-10-21T15:41:36+00:00.
+array["since_send_time"]     string      Restrict the response to campaigns sent after the set time. ISO 8601 time format: 2015-10-21T15:41:36+00:00.
+array["before_create_time"]  string      Restrict the response to campaigns sent after the set time. ISO 8601 time format: 2015-10-21T15:41:36+00:00.
+array["since_create_time"]   string      Restrict the response to campaigns created after the set time. ISO 8601 time format: 2015-10-21T15:41:36+00:00.</p>
+
+
+					<h4>Parameters</h4>
+					<div class="list"><dl>
+						<dt><var>$query</var></dt>
+						<dd>(See Above) OPTIONAL associative array of query parameters.</dd>
+					</dl></div>
+
+					<h4>Returns</h4>
+					<div class="list">
+						object
+					</div>
+
+
+
+
+			</div>
+			</div></td>
+		</tr>
+		<tr data-order="getCampaign" id="_getCampaign">
+
+			<td class="attributes"><code>
+				 public 
+				object
+				
+				</code>
+			</td>
+
+			<td class="name"><div>
+			<a class="anchor" href="#_getCampaign">#</a>
+			<code><a href="source-class-MailChimp.Campaigns.Campaigns.html#41-54" title="Go to source code">getCampaign</a>( <span>string <var>$campaign_id</var></span>, <span>array <var>$query</var> = []</span> )</code>
+
+			<div class="description short">
+				<p>Get a single campaign</p>
+			</div>
+
+			<div class="description detailed hidden">
+				<p>Get a single campaign</p>
+
+<p>array["fields"]              array       list of strings of response fields to return
+array["exclude_fields"]      array       list of strings of response fields to exclude (not to be used with "fields")</p>
+
+
+					<h4>Parameters</h4>
+					<div class="list"><dl>
+						<dt><var>$campaign_id</var></dt>
+						<dd>for the campaign instance</dd>
+						<dt><var>$query</var></dt>
+						<dd>(See Above) OPTIONAL associative array of query parameters.</dd>
+					</dl></div>
+
+					<h4>Returns</h4>
+					<div class="list">
+						object
+					</div>
+
+
+
+
+			</div>
+			</div></td>
+		</tr>
+		<tr data-order="getCampaignChecklist" id="_getCampaignChecklist">
+
+			<td class="attributes"><code>
+				 public 
+				object
+				
+				</code>
+			</td>
+
+			<td class="name"><div>
+			<a class="anchor" href="#_getCampaignChecklist">#</a>
+			<code><a href="source-class-MailChimp.Campaigns.Campaigns.html#56-69" title="Go to source code">getCampaignChecklist</a>( <span>string <var>$campaign_id</var></span>, <span>array <var>$query</var> = []</span> )</code>
+
+			<div class="description short">
+				<p>Review the send checklist for a campaign, and resolve any issues before sending.</p>
+			</div>
+
+			<div class="description detailed hidden">
+				<p>Review the send checklist for a campaign, and resolve any issues before sending.</p>
+
+<p>array["fields"]              array       list of strings of response fields to return
+array["exclude_fields"]      array       list of strings of response fields to exclude (not to be used with "fields")</p>
+
+
+					<h4>Parameters</h4>
+					<div class="list"><dl>
+						<dt><var>$campaign_id</var></dt>
+						<dd>for the campaign instance</dd>
+						<dt><var>$query</var></dt>
+						<dd>(See Above) OPTIONAL associative array of query parameters.</dd>
+					</dl></div>
+
+					<h4>Returns</h4>
+					<div class="list">
+						object
+					</div>
+
+
+
+
+			</div>
+			</div></td>
+		</tr>
+		<tr data-order="createCampaign" id="_createCampaign">
+
+			<td class="attributes"><code>
+				 public 
+				object
+				
+				</code>
+			</td>
+
+			<td class="name"><div>
+			<a class="anchor" href="#_createCampaign">#</a>
+			<code><a href="source-class-MailChimp.Campaigns.Campaigns.html#71-169" title="Go to source code">createCampaign</a>( <span>array <var>$type</var></span>, <span>array <var>$recipients</var> = []</span>, <span>array <var>$settings</var> = []</span>, <span>array <var>$optional_settings</var> = <span class="php-keyword1">null</span> </span> )</code>
+
+			<div class="description short">
+				<p>Create a campaign</p>
+			</div>
+
+			<div class="description detailed hidden">
+				<p>Create a campaign</p>
+
+<p>Example Request Body: "type"                          string      REQUIRED The campaign type. Possible Values: regular, plaintext, variate, rss "recipients"                    array       List setting for the campaign ["list_id"]                 string      REQUIRED The unique list id from lists()->getLists() ["segment_opts"]            array       optional segmentation options ["saved_segment_id"]   int         The id for an existing saved segment from lists()->segments()->getListSegments($listId) ["match"]              string      Segement match type. Possible Values: any, all ["conditions"]         array       An array of segment conditions Structure depends on segment http://developer.mailchimp.com/documentation/mailchimp/reference/lists/segments/# "settings"                      array       REQUIRED ["subject_line"]            string      REQUIRED The subject line for the campaign. ["title"]                   string      The title of the campaign. ["from_name"]               string      REQUIRED The ‘from’ name on the campaign (not an email address). ["reply_to"]                string      REQUIRED The reply-to email address for the campaign. ["use_conversation"]        boolean     Use MailChimp Conversation feature to manage out-of-office replies. ["to_name"]                 string      The campaign’s custom ‘To’ name. Typically the first name merge field. ["folder_id"]               string      If the campaign is listed in a folder, the id for that folder. ["authenticate"]            boolean     Whether MailChimp authenticated the campaign. Defaults to true. ["auto_footer"]             boolean     Automatically append MailChimp’s default footer to the campaign. ["inline_css"]              boolean     Automatically inline the CSS included with the campaign content. ["auto_tweet"]              boolean     Automatically tweet a link to the campaign archive page when the campaign is sent. ["auto_fb_post"]            array       An array of Facebook page ids to auto-post to. ["fb_comments"]             boolean     Allows Facebook comments on the campaign (also force-enables the Campaign Archive toolbar). Defaults to true. "optional_settings"              array       associative array of optional/conditional campaign options. ["variate_settings"]        array       Required if type "variate" is set. The settings specific to variate campaigns. ["winner_criteria"]    string      Required is variate. Possible Values: opens,clicks,manual, total_revenue ["wait_time"]          int         The number of minutes to wait before choosing the winning campaign. The value of wait_time must be greater than 0 and in whole hours, specified in minutes. ["test_size"]          int         The percentage of recipients to send the test combinations to, must be a value between 10 and 100. ["subject_lines"]      array       The possible subject lines to test. If no subject lines are provided, settings.subject_line will be used. ["send_times"]         array       The possible send times to test. The times provided should be in the format YYYY-MM-DD HH:MM:SS. If send_times are provided to test, the test_size will be set to 100% and winner_criteria will be ignored. ["from_names"]         array       The possible from names. The number of from_names provided must match the number of reply_to_addresses. If no from_names are provided, settings.from_name will be used. ["reply_to_addresses"] array       The possible reply-to addresses. The number of reply_to_addresses provided must match the number of from_names. If no reply_to_addresses are provided, settings.reply_to will be used. ["rss_opts"]                array       Required if type "rss" is set. The settings specific to rss campaigns. ["feed_url"]           string      Required for rss. The URL for the RSS feed. ["frequency"]          string      Required for rss. The frequency of the RSS Campaign. Possible Values: daily,weekly,monthly ["schedule"]           array       The schedule for sending the RSS Campaign. ["hour"]            int         The hour to send the campaign in local time. Acceptable hours are 0-23. For example, ‘4’ would be 4am in your account’s default time zone. ["daily_send"]      array       The days of the week to send a daily RSS Campaign. ["sunday"]      boolean ["monday"]      boolean ["tuesday"]     boolean ["wednesday"]   boolean ["thursday"]    boolean ["friday"]      boolean ["saturday"]    boolean ["weekly_send_day"] string      The day of the week to send a weekly RSS Campaign. Possible Values:sunday,monday,tuesday,wednesday,thursday,friday,saturday ["monthly_send_date"]   number   The day of the month to send a monthly RSS Campaign. Acceptable days are 1-31, where ‘0’ is always the last day of a month ["constrain_rss_img"]  boolean     Whether to add CSS to images in the RSS feed to constrain their width in campaigns. ["tracking"]                array       Required if type variate is set. The settings specific to variate campaigns. ["opens"]              boolean ["html_clicks"]        boolean ["text_clicks"]        boolean ["goal_tracking"]      boolean ["ecomm360"]           boolean ["google_analytics"]   string      The custom slug for Google Analytics tracking (max of 50 bytes). ["clicktale"]          string      The custom slug for ClickTale tracking (max of 50 bytes). ["salesforce"]         array       Salesforce tracking options for a campaign. Must be using MailChimp’s built-in Salesforce integration. ["campaign"]      boolean     Create a campaign in a connected Salesforce account. ["notes"]         boolean     Update contact notes for a campaign based on subscriber email addresses. ["highrise"]           array ["campaign"]      boolean     Create a campaign in a connected Highrise account. ["notes"]         boolean     Update contact notes for a campaign based on subscriber email addresses. ["capsule"]            array ["notes"]         boolean     Update contact notes for a campaign based on subscriber email addresses. ["social_cards"]            array       Required if type variate is set. The settings specific to rss campaigns. ["image_url"]          string      The url for the header image for the card. ["description"]        string      A short summary of the campaign to display. ["title"]              string      The title for the card.</p>
+
+
+					<h4>Parameters</h4>
+					<div class="list"><dl>
+						<dt><var>$type</var></dt>
+						<dd>Required</dd>
+						<dt><var>$recipients</var></dt>
+						<dd>Required</dd>
+						<dt><var>$settings</var></dt>
+						<dd>Required</dd>
+						<dt><var>$optional_settings</var></dt>
+						<dd>(See possible values above)</dd>
+					</dl></div>
+
+					<h4>Returns</h4>
+					<div class="list">
+						object
+					</div>
+
+
+
+
+			</div>
+			</div></td>
+		</tr>
+		<tr data-order="updateCampaign" id="_updateCampaign">
+
+			<td class="attributes"><code>
+				 public 
+				object
+				
+				</code>
+			</td>
+
+			<td class="name"><div>
+			<a class="anchor" href="#_updateCampaign">#</a>
+			<code><a href="source-class-MailChimp.Campaigns.Campaigns.html#171-181" title="Go to source code">updateCampaign</a>( <span>string <var>$campaign_id</var></span>, <span>array <var>$data</var> = []</span> )</code>
+
+			<div class="description short">
+				<p>Update a Campaign</p>
+			</div>
+
+			<div class="description detailed hidden">
+				<p>Update a Campaign</p>
+
+
+					<h4>Parameters</h4>
+					<div class="list"><dl>
+						<dt><var>$campaign_id</var></dt>
+						<dd>for the campaign instance</dd>
+						<dt><var>$data</var></dt>
+						<dd></dd>
+					</dl></div>
+
+					<h4>Returns</h4>
+					<div class="list">
+						object
+					</div>
+
+
+
+
+			</div>
+			</div></td>
+		</tr>
+		<tr data-order="pauseRSSCampaign" id="_pauseRSSCampaign">
+
+			<td class="attributes"><code>
+				 public 
+				
+				
+				</code>
+			</td>
+
+			<td class="name"><div>
+			<a class="anchor" href="#_pauseRSSCampaign">#</a>
+			<code><a href="source-class-MailChimp.Campaigns.Campaigns.html#183-191" title="Go to source code">pauseRSSCampaign</a>( <span>string <var>$campaign_id</var></span> )</code>
+
+			<div class="description short">
+				<p>Pause an RSS-Driven campaign</p>
+			</div>
+
+			<div class="description detailed hidden">
+				<p>Pause an RSS-Driven campaign</p>
+
+
+					<h4>Parameters</h4>
+					<div class="list"><dl>
+						<dt><var>$campaign_id</var></dt>
+						<dd>for the campaign instance</dd>
+					</dl></div>
+
+
+
+
+
+			</div>
+			</div></td>
+		</tr>
+		<tr data-order="resumeRSSCampaign" id="_resumeRSSCampaign">
+
+			<td class="attributes"><code>
+				 public 
+				
+				
+				</code>
+			</td>
+
+			<td class="name"><div>
+			<a class="anchor" href="#_resumeRSSCampaign">#</a>
+			<code><a href="source-class-MailChimp.Campaigns.Campaigns.html#193-201" title="Go to source code">resumeRSSCampaign</a>( <span>string <var>$campaign_id</var></span> )</code>
+
+			<div class="description short">
+				<p>Resume an RSS-Driven campaign</p>
+			</div>
+
+			<div class="description detailed hidden">
+				<p>Resume an RSS-Driven campaign</p>
+
+
+					<h4>Parameters</h4>
+					<div class="list"><dl>
+						<dt><var>$campaign_id</var></dt>
+						<dd>for the campaign instance</dd>
+					</dl></div>
+
+
+
+
+
+			</div>
+			</div></td>
+		</tr>
+		<tr data-order="replicateCampaign" id="_replicateCampaign">
+
+			<td class="attributes"><code>
+				 public 
+				
+				
+				</code>
+			</td>
+
+			<td class="name"><div>
+			<a class="anchor" href="#_replicateCampaign">#</a>
+			<code><a href="source-class-MailChimp.Campaigns.Campaigns.html#203-211" title="Go to source code">replicateCampaign</a>( <span>string <var>$campaign_id</var></span> )</code>
+
+			<div class="description short">
+				<p>Replicate a campaign</p>
+			</div>
+
+			<div class="description detailed hidden">
+				<p>Replicate a campaign</p>
+
+
+					<h4>Parameters</h4>
+					<div class="list"><dl>
+						<dt><var>$campaign_id</var></dt>
+						<dd>for the campaign instance</dd>
+					</dl></div>
+
+
+
+
+
+			</div>
+			</div></td>
+		</tr>
+		<tr data-order="cancelCampaign" id="_cancelCampaign">
+
+			<td class="attributes"><code>
+				 public 
+				
+				
+				</code>
+			</td>
+
+			<td class="name"><div>
+			<a class="anchor" href="#_cancelCampaign">#</a>
+			<code><a href="source-class-MailChimp.Campaigns.Campaigns.html#214-222" title="Go to source code">cancelCampaign</a>( <span>string <var>$campaign_id</var></span> )</code>
+
+			<div class="description short">
+				<p>Cancel a campaign</p>
+			</div>
+
+			<div class="description detailed hidden">
+				<p>Cancel a campaign</p>
+
+
+					<h4>Parameters</h4>
+					<div class="list"><dl>
+						<dt><var>$campaign_id</var></dt>
+						<dd>for the campaign instance</dd>
+					</dl></div>
+
+
+
+
+
+			</div>
+			</div></td>
+		</tr>
+		<tr data-order="scheduleCampaign" id="_scheduleCampaign">
+
+			<td class="attributes"><code>
+				 public 
+				
+				
+				</code>
+			</td>
+
+			<td class="name"><div>
+			<a class="anchor" href="#_scheduleCampaign">#</a>
+			<code><a href="source-class-MailChimp.Campaigns.Campaigns.html#224-232" title="Go to source code">scheduleCampaign</a>( <span>string <var>$campaign_id</var></span> )</code>
+
+			<div class="description short">
+				<p>Schedule a campaign</p>
+			</div>
+
+			<div class="description detailed hidden">
+				<p>Schedule a campaign</p>
+
+
+					<h4>Parameters</h4>
+					<div class="list"><dl>
+						<dt><var>$campaign_id</var></dt>
+						<dd>for the campaign instance</dd>
+					</dl></div>
+
+
+
+
+
+			</div>
+			</div></td>
+		</tr>
+		<tr data-order="unscheduleCampaign" id="_unscheduleCampaign">
+
+			<td class="attributes"><code>
+				 public 
+				
+				
+				</code>
+			</td>
+
+			<td class="name"><div>
+			<a class="anchor" href="#_unscheduleCampaign">#</a>
+			<code><a href="source-class-MailChimp.Campaigns.Campaigns.html#234-242" title="Go to source code">unscheduleCampaign</a>( <span>string <var>$campaign_id</var></span> )</code>
+
+			<div class="description short">
+				<p>Unschedule a campaign</p>
+			</div>
+
+			<div class="description detailed hidden">
+				<p>Unschedule a campaign</p>
+
+
+					<h4>Parameters</h4>
+					<div class="list"><dl>
+						<dt><var>$campaign_id</var></dt>
+						<dd>for the campaign instance</dd>
+					</dl></div>
+
+
+
+
+
+			</div>
+			</div></td>
+		</tr>
+		<tr data-order="sendCampaignTest" id="_sendCampaignTest">
+
+			<td class="attributes"><code>
+				 public 
+				
+				
+				</code>
+			</td>
+
+			<td class="name"><div>
+			<a class="anchor" href="#_sendCampaignTest">#</a>
+			<code><a href="source-class-MailChimp.Campaigns.Campaigns.html#244-252" title="Go to source code">sendCampaignTest</a>( <span>string <var>$campaign_id</var></span> )</code>
+
+			<div class="description short">
+				<p>Send a test email</p>
+			</div>
+
+			<div class="description detailed hidden">
+				<p>Send a test email</p>
+
+
+					<h4>Parameters</h4>
+					<div class="list"><dl>
+						<dt><var>$campaign_id</var></dt>
+						<dd>for the campaign instance</dd>
+					</dl></div>
+
+
+
+
+
+			</div>
+			</div></td>
+		</tr>
+		<tr data-order="sendCampaign" id="_sendCampaign">
+
+			<td class="attributes"><code>
+				 public 
+				
+				
+				</code>
+			</td>
+
+			<td class="name"><div>
+			<a class="anchor" href="#_sendCampaign">#</a>
+			<code><a href="source-class-MailChimp.Campaigns.Campaigns.html#254-262" title="Go to source code">sendCampaign</a>( <span>string <var>$campaign_id</var></span> )</code>
+
+			<div class="description short">
+				<p>Send a campaign</p>
+			</div>
+
+			<div class="description detailed hidden">
+				<p>Send a campaign</p>
+
+
+					<h4>Parameters</h4>
+					<div class="list"><dl>
+						<dt><var>$campaign_id</var></dt>
+						<dd>for the campaign instance</dd>
+					</dl></div>
+
+
+
+
+
+			</div>
+			</div></td>
+		</tr>
+		<tr data-order="deleteCampaign" id="_deleteCampaign">
+
+			<td class="attributes"><code>
+				 public 
+				
+				
+				</code>
+			</td>
+
+			<td class="name"><div>
+			<a class="anchor" href="#_deleteCampaign">#</a>
+			<code><a href="source-class-MailChimp.Campaigns.Campaigns.html#264-272" title="Go to source code">deleteCampaign</a>( <span>string <var>$campaign_id</var></span> )</code>
+
+			<div class="description short">
+				<p>Delete a campaign</p>
+			</div>
+
+			<div class="description detailed hidden">
+				<p>Delete a campaign</p>
+
+
+					<h4>Parameters</h4>
+					<div class="list"><dl>
+						<dt><var>$campaign_id</var></dt>
+						<dd>for the campaign instance</dd>
+					</dl></div>
+
+
+
+
+
+			</div>
+			</div></td>
+		</tr>
+		<tr data-order="content" id="_content">
+
+			<td class="attributes"><code>
+				 public 
+				
+				
+				</code>
+			</td>
+
+			<td class="name"><div>
+			<a class="anchor" href="#_content">#</a>
+			<code><a href="source-class-MailChimp.Campaigns.Campaigns.html#274-281" title="Go to source code">content</a>( )</code>
+
+			<div class="description short">
+				<p>Instantiates the Content class.</p>
+			</div>
+
+			<div class="description detailed hidden">
+				<p>Instantiates the Content class.</p>
+
+
+
+
+
+
+
+			</div>
+			</div></td>
+		</tr>
+		<tr data-order="feedback" id="_feedback">
+
+			<td class="attributes"><code>
+				 public 
+				
+				
+				</code>
+			</td>
+
+			<td class="name"><div>
+			<a class="anchor" href="#_feedback">#</a>
+			<code><a href="source-class-MailChimp.Campaigns.Campaigns.html#283-290" title="Go to source code">feedback</a>( )</code>
+
+			<div class="description short">
+				<p>Instantiates the Feedback class.</p>
+			</div>
+
+			<div class="description detailed hidden">
+				<p>Instantiates the Feedback class.</p>
+
+
+
+
+
+
+
+			</div>
+			</div></td>
+		</tr>
+			</table>
+		</div>
+
+		<div class="panel panel-default">
+	        <div class="panel-heading"><h3>Methods inherited from <a href="class-MailChimp.MailChimp.html#methods">MailChimp\MailChimp</a></h3></div>
+			<p class="elementList">
+				<code><a href="class-MailChimp.MailChimp.html#___construct">__construct()</a></code>, 
+				<code><a href="class-MailChimp.MailChimp.html#_authorizedApps">authorizedApps()</a></code>, 
+				<code><a href="class-MailChimp.MailChimp.html#_automations">automations()</a></code>, 
+				<code><a href="class-MailChimp.MailChimp.html#_batchOps">batchOps()</a></code>, 
+				<code><a href="class-MailChimp.MailChimp.html#_campaignFolders">campaignFolders()</a></code>, 
+				<code><a href="class-MailChimp.MailChimp.html#_campaigns">campaigns()</a></code>, 
+				<code><a href="class-MailChimp.MailChimp.html#_conversations">conversations()</a></code>, 
+				<code><a href="class-MailChimp.MailChimp.html#_createLog">createLog()</a></code>, 
+				<code><a href="class-MailChimp.MailChimp.html#_ecommerce">ecommerce()</a></code>, 
+				<code><a href="class-MailChimp.MailChimp.html#_execute">execute()</a></code>, 
+				<code><a href="class-MailChimp.MailChimp.html#_fileManager">fileManager()</a></code>, 
+				<code><a href="class-MailChimp.MailChimp.html#_fileManagerFolders">fileManagerFolders()</a></code>, 
+				<code><a href="class-MailChimp.MailChimp.html#_getAccountInfo">getAccountInfo()</a></code>, 
+				<code><a href="class-MailChimp.MailChimp.html#_getMemberHash">getMemberHash()</a></code>, 
+				<code><a href="class-MailChimp.MailChimp.html#_lists">lists()</a></code>, 
+				<code><a href="class-MailChimp.MailChimp.html#_logData">logData()</a></code>, 
+				<code><a href="class-MailChimp.MailChimp.html#_optionalFields">optionalFields()</a></code>, 
+				<code><a href="class-MailChimp.MailChimp.html#_reports">reports()</a></code>, 
+				<code><a href="class-MailChimp.MailChimp.html#_searchMembers">searchMembers()</a></code>, 
+				<code><a href="class-MailChimp.MailChimp.html#_templateFolders">templateFolders()</a></code>, 
+				<code><a href="class-MailChimp.MailChimp.html#_templates">templates()</a></code>
+			</p>
+		</div>
+
+
+
+
+
+
+
+
+
+
+</div>
+	</div>
+
+	<div id="footer">
+		 API documentation generated by <a href="http://apigen.org">ApiGen</a>
+	</div>
+</div>
+<script src="resources/combined.js"></script>
+<script src="elementlist.js"></script>
+</body>
+</html>

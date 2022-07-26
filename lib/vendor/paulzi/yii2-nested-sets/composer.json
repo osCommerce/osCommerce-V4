@@ -1,0 +1,41 @@
+{
+  "name": "paulzi/yii2-nested-sets",
+  "description": "Nested Sets Behavior for Yii2",
+  "keywords": ["yii2", "nested sets"],
+  "type": "yii2-extension",
+  "license": "MIT",
+  "support": {
+    "issues": "https://github.com/paulzi/yii2-nested-sets/issues?state=open",
+    "source": "https://github.com/paulzi/yii2-nested-sets"
+  },
+  "authors": [
+    {
+      "name": "PaulZi",
+      "email": "pavel.zimakoff@gmail.com"
+    },
+    {
+      "name": "Alexander Kochetov",
+      "email": "creocoder@gmail.com"
+    }
+  ],
+  "minimum-stability": "stable",
+  "repositories": [
+    {
+      "type": "composer",
+      "url": "https://asset-packagist.org"
+    }
+  ],
+  "require": {
+    "php": ">=5.4.0",
+    "yiisoft/yii2": "~2.0.0"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "~4.0",
+    "phpunit/dbunit": "~1.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "paulzi\\nestedsets\\": ""
+    }
+  }
+}

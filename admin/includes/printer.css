@@ -1,0 +1,8 @@
+body { background-color: #ffffff; color: #000000; margin: 0px; }
+.pageHeading { font-family: Verdana, Arial, sans-serif; font-size: 18px; color: #000000; font-weight: bold; }
+.dataTableHeadingRow { background-color: #ffffff; }
+.dataTableHeadingContent { font-family: Verdana, Arial, sans-serif; font-size: 11px; color: #000000; font-weight: bold; }
+.dataTableRow { background-color: #ffffff; }
+.dataTableContent { font-family: Verdana, Arial, sans-serif; font-size: 11px; color: #000000; }
+.smallText { font-family: Verdana, Arial, sans-serif; font-size: 11px; }
+.main { font-family: Verdana, Arial, sans-serif; font-size: 11px; }

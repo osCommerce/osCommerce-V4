@@ -1,0 +1,1 @@
+<button type="submit" class="btn-2">{$smarty.const.CONFIRM_ORDER}</button>

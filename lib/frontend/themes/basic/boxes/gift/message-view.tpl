@@ -1,0 +1,1 @@
+<div class="message-view">##PERSONAL_MESSAGE##</div>

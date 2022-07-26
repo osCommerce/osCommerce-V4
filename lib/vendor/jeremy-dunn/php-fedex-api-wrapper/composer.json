@@ -1,0 +1,35 @@
+{
+    "name": "jeremy-dunn/php-fedex-api-wrapper",
+    "description": "API Wrapper for Fedex web services",
+    "keywords": ["shipping","fedex","soap"],
+    "homepage": "https://github.com/JeremyDunn/php-fedex-api-wrapper",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Jeremy Dunn",
+            "email": "jeremy@jsdunn.info",
+            "homepage": "http://www.jsdunn.info"
+        }
+    ],
+    "require": {
+        "ext-soap": "*"
+    },
+    "require-dev": {
+        "fzaninotto/faker": "^1.5",
+        "symfony/console": "^5.2",
+        "phpunit/phpunit": "^9.5",
+        "squizlabs/php_codesniffer": "^3.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "FedEx\\": "src/FedEx/",
+            "FedEx\\Utility\\": "util/",
+            "FedEx\\Tests\\": "tests/FedEx/Tests"
+        }
+    },
+    "scripts": {
+        "generate-src": "@php ./util/generate-classes-from-wsdls.php generate",
+        "run-tests": "XDEBUG_MODE=coverage phpunit"
+    }
+}

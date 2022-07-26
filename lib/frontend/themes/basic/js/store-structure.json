@@ -1,0 +1,72 @@
+{
+    "products": {
+        "[productId]": {
+            "products_id": "",
+            "is_virtual": "",
+            "stock_indicator": {},
+            "product_has_attributes": "",
+            "bonus_points_price": "",
+            "bonus_points_cost": "",
+            "product_in_cart": "",
+            "link": "",
+            "price": {
+                "current": "",
+                "special": "",
+                "old": ""
+            }
+        },
+        "[...productId]": {}
+    },
+    "widgets": {
+        "[widgetId]": {
+            "products": {
+                "[productId]": {
+                    "qty": "",
+                    "attributes": "",
+                    "mixAttributes": {
+                        "[attributeId]": {
+                            "[optionId]": "[qty]",
+                            "[...optionId]": ""
+                        }
+                    }
+                },
+                "[...productId]": {}
+            },
+            "settings": {},
+            "listingType": "",
+            "listingSorting": "",
+            "productsOnPage": "",
+            "pageCount": "",
+            "pageCountUpdatePage": "false",
+            "numberOfProducts": ""
+        },
+        "[...widgetId]": {}
+    },
+    "productListings": {
+        "main": {},
+        "featured": {},
+        "cart": {},
+        "quote": {},
+        "samples": {},
+        "compare": {},
+        "wishList": {
+            "products": {
+                "[uprid]": {
+                    "qty": 1,
+                    "attributes": {}
+                },
+                "[...uprid]": {}
+            }
+        },
+
+        "mainListing": "[widgetId]",
+        "href": "[window.location.href]"
+    },
+    "filters": {},
+    "account": {
+        "isGuest": true
+    },
+    "themeSetting": {
+        "productsCarousel": true
+    }
+}

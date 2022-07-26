@@ -1,0 +1,1 @@
+{$smarty.const.TEXT_PAGE_ACCESS_FORBIDDEN}

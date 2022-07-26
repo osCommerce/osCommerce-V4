@@ -1,0 +1,246 @@
+zones_to_tax_zones(39) was updated
+tax_zones(5) was updated
+tax_rates(15) was updated
+tax_class(4) was updated
+manufacturers_info() was updated
+manufacturers(26) was updated
+manufacturers_info() was updated
+manufacturers(27) was updated
+manufacturers_info() was updated
+manufacturers(28) was updated
+manufacturers_info() was updated
+manufacturers(29) was updated
+manufacturers_info() was updated
+manufacturers(30) was updated
+manufacturers_info() was updated
+manufacturers(31) was updated
+manufacturers_info() was updated
+manufacturers(32) was updated
+manufacturers_info() was updated
+manufacturers(33) was updated
+manufacturers_info() was updated
+manufacturers(34) was updated
+manufacturers_info() was updated
+manufacturers(35) was updated
+categories_description() was updated
+categories(25) was updated
+categories_description() was updated
+categories(26) was updated
+categories_description() was updated
+categories(27) was updated
+categories_description() was updated
+categories(28) was updated
+categories_description() was updated
+categories(29) was updated
+categories_description() was updated
+categories(30) was updated
+categories_description() was updated
+categories(31) was updated
+categories_description() was updated
+categories(32) was updated
+categories_description() was updated
+categories(33) was updated
+categories_description() was updated
+categories(34) was updated
+categories_description() was updated
+categories(35) was updated
+categories_description() was updated
+categories(36) was updated
+categories_description() was updated
+categories(37) was updated
+categories_description() was updated
+categories(38) was updated
+categories_description() was updated
+categories(39) was updated
+categories_description() was updated
+categories(40) was updated
+categories_description() was updated
+categories(41) was updated
+categories_description() was updated
+categories(42) was updated
+categories_description() was updated
+categories(43) was updated
+categories_description() was updated
+categories(44) was updated
+categories_description() was updated
+categories(45) was updated
+products_options() was updated
+products_options() was updated
+products_options_values() was updated
+products_options_values() was updated
+products_options_values() was updated
+products_options_values() was updated
+products_options_values() was updated
+products_options() was updated
+products_options_values() was updated
+products_options_values() was updated
+products_options_values() was updated
+products_options_values() was updated
+products_options() was updated
+products_options_values() was updated
+products_options_values() was updated
+products_options() was updated
+Row products_description(): platform_id  changed to 1
+products_description() was updated
+products_to_categories() was updated
+products_attributes(3) was updated
+products_attributes(4) was updated
+products_attributes(5) was updated
+products_attributes(6) was updated
+products_attributes(7) was updated
+Row products(95): supplier changed to default because inventory extension is not installed
+products(95) was updated
+Row products_description(): platform_id  changed to 1
+products_description() was updated
+products_to_categories() was updated
+products_attributes(8) was updated
+products_attributes(9) was updated
+products_attributes(10) was updated
+products_attributes(11) was updated
+Row products(96): supplier changed to default because inventory extension is not installed
+products(96) was updated
+Row products_description(): platform_id  changed to 1
+products_description() was updated
+products_to_categories() was updated
+Row products(97): supplier changed to default because inventory extension is not installed
+products(97) was updated
+Row products_description(): platform_id  changed to 1
+products_description() was updated
+products_to_categories() was updated
+Row products(98): supplier changed to default because inventory extension is not installed
+products(98) was updated
+Row products_description(): platform_id  changed to 1
+products_description() was updated
+products_to_categories() was updated
+Row products(99): supplier changed to default because inventory extension is not installed
+products(99) was updated
+Row products_description(): platform_id  changed to 1
+products_description() was updated
+products_to_categories() was updated
+Row products(100): supplier changed to default because inventory extension is not installed
+products(100) was updated
+Row products_description(): platform_id  changed to 1
+products_description() was updated
+products_to_categories() was updated
+Row products(101): supplier changed to default because inventory extension is not installed
+products(101) was updated
+Row products_description(): platform_id  changed to 1
+products_description() was updated
+products_to_categories() was updated
+Row products(102): supplier changed to default because inventory extension is not installed
+products(102) was updated
+Row products_description(): platform_id  changed to 1
+products_description() was updated
+products_to_categories() was updated
+Row products(103): supplier changed to default because inventory extension is not installed
+products(103) was updated
+Row products_description(): platform_id  changed to 1
+products_description() was updated
+products_to_categories() was updated
+Row products(104): supplier changed to default because inventory extension is not installed
+products(104) was updated
+Row products_description(): platform_id  changed to 1
+products_description() was updated
+products_to_categories() was updated
+Row products(105): supplier changed to default because inventory extension is not installed
+products(105) was updated
+Row products_description(): platform_id  changed to 1
+products_description() was updated
+products_to_categories() was updated
+Row products(106): supplier changed to default because inventory extension is not installed
+products(106) was updated
+Row products_description(): platform_id  changed to 1
+products_description() was updated
+products_to_categories() was updated
+Row products(107): supplier changed to default because inventory extension is not installed
+products(107) was updated
+Row products_description(): platform_id  changed to 1
+products_description() was updated
+products_to_categories() was updated
+Row products(108): supplier changed to default because inventory extension is not installed
+products(108) was updated
+Row products_description(): platform_id  changed to 1
+products_description() was updated
+products_to_categories() was updated
+Row products(109): supplier changed to default because inventory extension is not installed
+products(109) was updated
+Row products_description(): platform_id  changed to 1
+products_description() was updated
+products_to_categories() was updated
+Row products(110): supplier changed to default because inventory extension is not installed
+products(110) was updated
+Row products_description(): platform_id  changed to 1
+products_description() was updated
+products_to_categories() was updated
+Row products(111): supplier changed to default because inventory extension is not installed
+products(111) was updated
+Row products_description(): platform_id  changed to 1
+products_description() was updated
+products_to_categories() was updated
+Row products(112): supplier changed to default because inventory extension is not installed
+products(112) was updated
+Row products_description(): platform_id  changed to 1
+products_description() was updated
+products_to_categories() was updated
+Row products(113): supplier changed to default because inventory extension is not installed
+products(113) was updated
+Row products_description(): platform_id  changed to 1
+products_description() was updated
+products_to_categories() was updated
+Row products(114): supplier changed to default because inventory extension is not installed
+products(114) was updated
+Row products_description(): platform_id  changed to 1
+products_description() was updated
+products_to_categories() was updated
+Row products(115): supplier changed to default because inventory extension is not installed
+products(115) was updated
+Row products_description(): platform_id  changed to 1
+products_description() was updated
+products_to_categories() was updated
+products_attributes(12) was updated
+products_attributes(13) was updated
+Row products(116): supplier changed to default because inventory extension is not installed
+products(116) was updated
+Row products_description(): platform_id  changed to 1
+products_description() was updated
+products_to_categories() was updated
+Row products(117): supplier changed to default because inventory extension is not installed
+products(117) was updated
+Row products_description(): platform_id  changed to 1
+products_description() was updated
+products_to_categories() was updated
+Row products(118): supplier changed to default because inventory extension is not installed
+products(118) was updated
+Row products_description(): platform_id  changed to 1
+products_description() was updated
+products_to_categories() was updated
+Row products(119): supplier changed to default because inventory extension is not installed
+products(119) was updated
+Row products_description(): platform_id  changed to 1
+products_description() was updated
+products_to_categories() was updated
+products_attributes(14) was updated
+products_attributes(15) was updated
+Row products(120): supplier changed to default because inventory extension is not installed
+products(120) was updated
+Row products_description(): platform_id  changed to 1
+products_description() was updated
+products_to_categories() was updated
+Row products(121): supplier changed to default because inventory extension is not installed
+products(121) was updated
+Row products_description(): platform_id  changed to 1
+products_description() was updated
+products_to_categories() was updated
+Row products(122): supplier changed to default because inventory extension is not installed
+products(122) was updated
+address_book(40) was updated
+customers_info(36) was updated
+customers(36) was updated
+{{reviews_description}}() was updated
+{{reviews}}(1) was updated
+orders_products(195) was updated
+orders_total(1396) was updated
+orders_total(1397) was updated
+orders_total(1398) was updated
+orders_status_history(221) was updated
+orders(183) was updated

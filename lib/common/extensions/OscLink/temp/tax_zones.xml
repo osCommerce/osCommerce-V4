@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<data>
+<Header><type>site/tax_zones</type><projectCode>OSC23_61C1B2DE000005220114</projectCode></Header>
+<TaxZones>
+<TaxZone><geo_zone_id type="IOPK" internalId="1"/><geo_zone_name>Florida</geo_zone_name><geo_zone_description>Florida local sales tax zone</geo_zone_description><last_modified type="nil"/><date_added>2022-01-14 21:40:09</date_added><Zones><Zone><zone_country_id type="IOCountryMap" internalId="223" iso2="US"/><zone_id type="IOCountryZoneMap" internalId="18" code="FL" name="Florida"/><geo_zone_id>1</geo_zone_id><last_modified type="nil"/><date_added>2022-01-14 21:40:09</date_added></Zone></Zones></TaxZone>
+</TaxZones>
+</data>

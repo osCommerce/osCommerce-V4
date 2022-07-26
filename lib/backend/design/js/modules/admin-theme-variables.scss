@@ -1,0 +1,49 @@
+/**
+ * This file is part of osCommerce ecommerce platform.
+ * osCommerce the ecommerce
+ *
+ * @link https://www.oscommerce.com
+ * @copyright Copyright (c) 2000-2022 osCommerce LTD
+ *
+ * Released under the GNU General Public License
+ * For the full copyright and license information, please view the LICENSE.TXT file that was distributed with this source code.
+ */
+
+$primary-color: #333;
+$middle-color: #999;
+$font-color-1: #424242;
+$font-color-2: #fff;
+$font-color-3: #345576;
+$font-color-4: #8796a4;
+
+$font-icons: FontAwesome, Helvetica, Arial, sans-serif;
+
+$bg-light-1: #ffffff;
+$bg-dark-1: #305c88;
+$bg-dark-2: #376AB7;
+
+$bg-1: #ececec ;
+$bg-2: #dee2e6 ;
+
+$primary-bg: #fff;
+$bg-light-1: #fff;
+$bg-light-2: #f1f1f1;
+$red-color: #f52f1b;
+$highlight-color: #4d7496;
+
+$border-color: #ccc;
+$border-color-1: #ccc;
+$border-color-2: rgba(0,0,0,0.21);
+$border-color-3: #d4d9df;
+
+$box-shadow: 0 0 20px #000000;
+
+%clear {
+    display: block;
+    content: '';
+    clear: both;
+}
+
+
+
+

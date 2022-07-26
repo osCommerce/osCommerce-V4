@@ -1,0 +1,303 @@
+#nav {
+    list-style: none;
+    margin: 15px 0;
+    padding: 0;
+}
+#nav li {
+    display: block;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-bottom: 1px solid var(--menu-border-color);
+}
+#nav li:last-child {
+    border-bottom: none;
+}
+#nav a {
+    display: block;
+    position: relative;
+    margin: 0;
+    padding: 14px 20px 16px 15px;
+    text-decoration: none;
+    text-shadow: none;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--menu-color);
+    background: var(--menu-background);
+}
+#nav a:hover {
+    color: var(--menu-color-hover);
+    background: var(--menu-background-hover);
+}
+#nav .current > a, #nav .open > a {
+    color: var(--menu-color-active);
+    background: var(--menu-background-active);
+}
+#nav .sub-menu a {
+    color: var(--menu-sub-color);
+    background: var(--menu-sub-background);
+}
+#nav .sub-menu a:hover {
+    color: var(--menu-sub-color-hover);
+    background: var(--menu-sub-background-hover);
+}
+#nav .sub-menu .current > a, #nav .sub-menu .open > a {
+    color: var(--menu-sub-color-active);
+    background: var(--menu-sub-background-active);
+}
+#nav .sub-menu .sub-menu a {
+    color: var(--menu-sub-2-color);
+    background: var(--menu-sub-2-background);
+}
+#nav .sub-menu .sub-menu a:hover {
+    color: var(--menu-sub-2-color-hover);
+    background: var(--menu-sub-2-background-hover);
+}
+#nav .sub-menu .sub-menu .current > a, #nav .sub-menu .sub-menu .open > a {
+    color: var(--menu-sub-2-color-active);
+    background: var(--menu-sub-2-background-active);
+}
+
+#nav > li > a {
+    border-right: 10px solid var(--menu-border-color-side);
+}
+#nav > li > a > .arrow {
+    right: 0 !important;
+}
+#nav li.current > ul {
+    display: block;
+}
+#nav li.current .label.pull-right {
+    margin-right: 10px;
+}
+#nav li.open-default > ul,
+#nav li.open-fixed > ul {
+    display: block;
+}
+#nav li .label {
+    padding: 5px 8px;
+    text-shadow: none;
+}
+#nav li .label.pull-right {
+    position: absolute;
+    right: 15px;
+    margin-right: 20px;
+}
+#nav li .arrow {
+    line-height: 24px;
+    position: absolute;
+    right: 10px;
+}
+#nav li a i {
+    padding-right: 10px;
+    float: left;
+    line-height: 20px;
+    font-size: 16px;
+}
+#sidebar .icon-sms_messages:before {
+    content: '\f0a2';
+}
+#nav li a i[class^="icol-"],
+#nav li a i[class^="icos-"],
+#nav li a i[class*=" icol-"],
+#nav li a i[class*=" icos-"] {
+    margin-top: 2px;
+}
+#nav ul.sub-menu {
+    display: none;
+    list-style: none;
+    clear: both;
+    margin: 0 6px 0 0;
+    padding: 0;
+    font-size: 13px;
+}
+#nav ul.sub-menu a {
+    padding: 12px 15px 12px 29px;
+    text-transform: none;
+    font-size: 15px;
+    font-weight: 600;
+}
+#nav ul.sub-menu li:first-child > a {
+    box-shadow: 0 1px 1px rgba(119, 134, 153, 0.2) inset;
+}
+#nav ul.sub-menu ul.sub-menu {
+    margin: 0;
+    box-shadow: none;
+    border: none;
+}
+#nav ul.sub-menu ul.sub-menu > li {
+    border-bottom: none;
+}
+#nav ul.sub-menu ul.sub-menu > li a {
+    font-size: 13px;
+    padding: 7px 15px 7px 27px;
+}
+#nav li a i.icon-circle {
+    font-size: 6px
+}
+#nav ul.sub-menu ul.sub-menu i,
+#nav ul.sub-menu ul.sub-menu span {
+    display: inline-block;
+    vertical-align: middle;
+}
+#nav ul.sub-menu ul.sub-menu ul {
+    margin-left: 10px;
+}
+
+#nav li.dis_module,
+#nav li.dis_module:hover {
+    color: #bdbdbd;
+    background: url(../img/pattern.png);
+}
+#nav li.dis_module a {
+    color: #bdbdbd;
+}
+@media (max-width: 1400px) {
+    #nav li a {
+        font-size: 14px;
+        padding-left: 10px;
+    }
+    #nav ul.sub-menu a {
+        font-size: 13px;
+    }
+}
+
+.rss-feed-heading h4 {
+    display: flex !important;
+    justify-content: space-between;
+}
+.rss-feed-heading h4 a {
+    color: var(--heading-color);
+}
+.rss-feed-heading .social-links a {
+    display: inline-block;
+    margin-left: 10px;
+    font-weight: normal;
+    padding: 0 2px;
+}
+.rss-feed-heading a:hover {
+    text-decoration: none;
+}
+.rss-feed-heading .facebook:before {
+    content: '\f09a';
+    font-family: FontAwesome;
+}
+.rss-feed-heading .twitter:before {
+    content: '\f099';
+    font-family: FontAwesome;
+}
+.rss-feed-heading .linkedin:before {
+    content: '\f0e1';
+    font-family: FontAwesome;
+}
+
+.show-columns {
+    display: flex;
+    justify-content: space-between;
+}
+.show-columns ul {
+    margin: 0;
+    padding: 0;
+}
+.data-table-top-left {
+    width: calc(100% - 200px);
+    margin-bottom: -43px;
+    position: relative;
+    padding-bottom: 0;
+}
+.data-table-top-left .btn {
+    margin: 0 5px 5px 0;
+}
+
+.customers-filters {
+    display: flex;
+}
+@media (max-width: 1200px) {
+    .customers-filters {
+        flex-wrap: wrap;
+    }
+    .platforms-list > div {
+        display: inline-block;
+        margin-right: 20px;
+    }
+}
+
+
+.m-b-0 {margin-bottom: 0}
+.m-b-1 {margin-bottom: 5px}
+.m-b-2 {margin-bottom: 10px}
+.m-b-3 {margin-bottom: 15px}
+.m-b-4 {margin-bottom: 20px}
+.m-t-0 {margin-top: 0}
+.m-t-1 {margin-top: 5px}
+.m-t-2 {margin-top: 10px}
+.m-t-3 {margin-top: 15px}
+.m-t-4 {margin-top: 20px}
+.m-l-0 {margin-left: 0}
+.m-l-1 {margin-left: 5px}
+.m-l-2 {margin-left: 10px}
+.m-l-3 {margin-left: 15px}
+.m-l-4 {margin-left: 20px}
+.m-r-0 {margin-right: 0}
+.m-r-1 {margin-right: 5px}
+.m-r-2 {margin-right: 10px}
+.m-r-3 {margin-right: 15px}
+.m-r-4 {margin-right: 20px}
+
+.p-b-0 {padding-bottom: 0}
+.p-b-1 {padding-bottom: 5px}
+.p-b-2 {padding-bottom: 10px}
+.p-b-3 {padding-bottom: 15px}
+.p-b-4 {padding-bottom: 20px}
+.p-t-0 {padding-top: 0}
+.p-t-1 {padding-top: 5px}
+.p-t-2 {padding-top: 10px}
+.p-t-3 {padding-top: 15px}
+.p-t-4 {padding-top: 20px}
+.p-l-0 {padding-left: 0}
+.p-l-1 {padding-left: 5px}
+.p-l-2 {padding-left: 10px}
+.p-l-3 {padding-left: 15px}
+.p-l-4 {padding-left: 20px}
+.p-r-0 {padding-right: 0}
+.p-r-1 {padding-right: 5px}
+.p-r-2 {padding-right: 10px}
+.p-r-3 {padding-right: 15px}
+.p-r-4 {padding-right: 20px}
+
+.align-items-center {
+    display: flex;
+    align-items: center;
+}
+
+.banner-filter {
+    display: flex;
+    min-height: 100px;
+    width: 600px;
+    max-width: 100%;
+    margin: 0 auto;
+}
+.banner-filter > * {
+    flex-grow: 1;
+}
+.banner-filter-right {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+.banner-filter .platform-filter {
+    min-height: 150px;
+}
+@media (max-width: 1200px) {
+    .banner-filter .platform-filter {
+        min-height: 0;
+    }
+    .banner-filter {
+        flex-wrap: wrap;
+        width: 100%;
+    }
+    .platforms-list > div {
+        display: inline-block;
+        margin-right: 20px;
+    }
+}

@@ -1,0 +1,40 @@
+{
+    "name": "jms/metadata",
+    "description": "Class/method/property metadata management in PHP",
+    "keywords": ["annotations","metadata","yaml","xml"],
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Johannes M. Schmitt",
+            "email": "schmittjoh@gmail.com"
+        },
+        {
+            "name": "Asmir Mustafic",
+            "email": "goetas@gmail.com"
+        }
+    ],
+    "require": {
+        "php": "^7.2|^8.0"
+    },
+    "require-dev" : {
+        "doctrine/cache" : "^1.0",
+        "doctrine/coding-standard": "^8.0",
+        "phpunit/phpunit": "^8.5|^9.0",
+        "psr/container": "^1.0",
+        "symfony/cache" : "^3.1|^4.0|^5.0",
+        "symfony/dependency-injection" : "^3.1|^4.0|^5.0",
+        "mikey179/vfsstream": "^1.6.7"
+    },
+    "autoload": {
+        "psr-4": { "Metadata\\": "src/" }
+    },
+    "autoload-dev": {
+        "psr-4": { "Metadata\\Tests\\": "tests/" }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "2.x-dev"
+        }
+    }
+}

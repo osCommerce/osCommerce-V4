@@ -1,0 +1,2 @@
+
+<h1><span class="title">{$smarty.const.HEADING_ORDER_NUMBER_NEW}<span class="colon">:</span> </span><span class="title">{$orderId}</span> <span class="status">({$status})</span> <span class="date-nowrap">{$date}</span></h1>

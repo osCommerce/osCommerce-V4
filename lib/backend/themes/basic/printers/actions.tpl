@@ -1,0 +1,5 @@
+<span><a class="icos-pdf-documents printer-documents popup" title="{$smarty.const.TEXT_ASSIGNMENT_DOCUMENTS}" href={\yii\helpers\Url::to(['printers/documents', 'pid' => $printer->id, 'sid' => $printer->service_id])}></a></span>
+<span><a class="icon-question-sign view-printer popup" title="{$smarty.const.TEXT_VIEW_PRINTER_OPTIONS}" href="{\yii\helpers\Url::to(['printers/describe', 'pid' => $printer->id, 'sid' => $printer->service_id])}"></a></span>
+<span><a class="icos-documents printer-jobs popup" title="Jobs" href={\yii\helpers\Url::to(['printers/jobs', 'pid' => $printer->id, 'sid' => $printer->service_id])}></a></span>
+<span><i class="icol-printer test-printer" title="{$smarty.const.TEXT_TEST_PRINTER}" data-id="{$printer->id}" data-sid="{$printer->service_id}"></i></span>
+<span><i class="icon-trash unlink-printer" title="{$smarty.const.TEXT_UNLINK_PRINTER}" data-id="{$printer->id}"></i></span>

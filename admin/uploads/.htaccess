@@ -1,0 +1,9 @@
+Options -Indexes
+<Files *.*>
+Order Deny,Allow
+Deny from all
+</Files>
+<Files ~ "\.(gif|jpe?g|png|ico|GIF|JPE?G|PNG|ICO|mp4|MP4|mov|MOV|zip|ZIP)$">
+Order Allow,Deny
+Allow from all
+</Files>

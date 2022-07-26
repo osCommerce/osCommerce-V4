@@ -1,0 +1,1 @@
+<div class="credit-amount">{$mainData.credit_amount}</div>

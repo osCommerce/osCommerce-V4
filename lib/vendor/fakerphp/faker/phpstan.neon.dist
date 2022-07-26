@@ -1,0 +1,10 @@
+includes:
+    - ./phpstan-baseline.neon
+
+parameters:
+    level: 5
+    bootstrapFiles:
+        - src/Faker/ORM/Doctrine/backward-compatibility.php
+    paths:
+        - src
+    tmpDir: .build/phpstan/

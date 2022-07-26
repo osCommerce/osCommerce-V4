@@ -1,0 +1,1 @@
+<table class="wrapper"><tr><td>{$description}</td></tr></table>

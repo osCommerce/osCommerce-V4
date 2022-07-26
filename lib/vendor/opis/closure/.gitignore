@@ -1,0 +1,7 @@
+.idea/
+vendor/
+_site/
+shared/
+Gemfile.lock
+composer.lock
+.phpunit.result.cache

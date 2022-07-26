@@ -1,0 +1,1 @@
+{\frontend\design\boxes\product\Flexifi::runManual($product['products_id'])}

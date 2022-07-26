@@ -1,0 +1,12 @@
+.working-timetable .buttons_hours {
+    margin-top: 15px;
+}
+.working-timetable .hours_table {
+    margin-top: 0 !important;
+}
+.context-platforms #ptTimeSelectCntr {
+    margin-left: -200px;
+}
+.working-timetable {
+    max-width: 1000px;
+}

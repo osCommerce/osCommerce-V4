@@ -1,0 +1,1 @@
+<a href="{$link}" class="btn-2">{$text}</a>

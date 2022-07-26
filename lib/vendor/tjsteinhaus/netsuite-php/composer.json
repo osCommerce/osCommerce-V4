@@ -1,0 +1,39 @@
+{
+  "name": "ryanwinchester/netsuite-php",
+  "description": "NetSuite PHP API wrapper",
+  "keywords": [ "netsuite", "api", "php" ],
+  "type": "library",
+  "license": "Apache-2.0",
+  "authors": [
+    {
+      "name": "Ryan Winchester (fungku)",
+      "email": "fungku@gmail.com"
+    }
+  ],
+  "require": {
+    "php": ">=7.1",
+    "ext-soap": "*",
+    "ext-SimpleXML": "*",
+    "ext-openssl": "*",
+    "paragonie/random_compat": ">=1"
+  },
+  "require-dev": {
+    "phpspec/phpspec": ">=5"
+  },
+  "suggest": {
+    "vlucas/phpdotenv": "Provides loading a .env file for obtaining config variables",
+    "symfony/dotenv": "Provides loading a .env file for obtaining config variables"
+  },
+  "autoload": {
+    "psr-4": {
+      "NetSuite\\": "src/"
+    },
+    "files": [
+      "src/includes/functions.php"
+    ]
+  },
+  "minimum-stability": "stable",
+  "scripts": {
+    "generate": "php utilities/separate_classes.php"
+  }
+}

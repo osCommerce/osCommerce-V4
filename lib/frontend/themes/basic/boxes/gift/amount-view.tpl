@@ -1,0 +1,1 @@
+<div class="amount-view">##PRICE##</div>

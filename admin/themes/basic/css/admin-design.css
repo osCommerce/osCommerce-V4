@@ -1,0 +1,117 @@
+
+.box-block:after {
+    content: '';
+    clear: both;
+    display: block;
+}
+.box-block.type-2 > .block,
+.box-block.type-3 > .block,
+.box-block.type-4 > .block,
+.box-block.type-5 > .block,
+.box-block.type-6 > .block,
+.box-block.type-7 > .block,
+.box-block.type-8 > .block,
+.box-block.type-9 > .block,
+.box-block.type-10 > .block,
+.box-block.type-11 > .block,
+.box-block.type-12 > .block,
+.box-block.type-13 > .block,
+.box-block.type-14 > .block,
+.box-block.type-15 > .block {
+    float: left;
+}
+.box-block.type-2 > .block:nth-child(1) {
+    width: 50%;
+}
+.box-block.type-2 > .block:nth-child(2) {
+    width: 50%;
+}
+.box-block.type-3 > .block:nth-child(1) {
+    width: 33.33%;
+}
+.box-block.type-3 > .block:nth-child(2) {
+    width: 33.33%;
+}
+.box-block.type-3 > .block:nth-child(3) {
+    width: 33.33%;
+}
+.box-block.type-4 > .block:nth-child(1) {
+    width: 66.66%;
+}
+.box-block.type-4 > .block:nth-child(2) {
+    width: 33.33%;
+}
+.box-block.type-5 > .block:nth-child(1) {
+    width: 33.33%;
+}
+.box-block.type-5 > .block:nth-child(2) {
+    width: 66.66%;
+}
+.box-block.type-6 > .block:nth-child(1) {
+    width: 25%;
+}
+.box-block.type-6 > .block:nth-child(2) {
+    width: 75%;
+}
+.box-block.type-7 > .block:nth-child(1) {
+    width: 75%;
+}
+.box-block.type-7 > .block:nth-child(2) {
+    width: 25%;
+}
+.box-block.type-8 > .block:nth-child(1) {
+    width: 25%;
+}
+.box-block.type-8 > .block:nth-child(2) {
+    width: 50%;
+}
+.box-block.type-8 > .block:nth-child(3) {
+    width: 25%;
+}
+.box-block.type-9 > .block:nth-child(1) {
+    width: 20%;
+}
+.box-block.type-9 > .block:nth-child(2) {
+    width: 80%;
+}
+.box-block.type-10 > .block:nth-child(1) {
+    width: 80%;
+}
+.box-block.type-10 > .block:nth-child(2) {
+    width: 20%;
+}
+.box-block.type-11 > .block:nth-child(1) {
+    width: 40%;
+}
+.box-block.type-11 > .block:nth-child(2) {
+    width: 60%;
+}
+.box-block.type-12 > .block:nth-child(1) {
+    width: 60%;
+}
+.box-block.type-12 > .block:nth-child(2) {
+    width: 40%;
+}
+.box-block.type-13 > .block:nth-child(1) {
+    width: 20%;
+}
+.box-block.type-13 > .block:nth-child(2) {
+    width: 60%;
+}
+.box-block.type-13 > .block:nth-child(3) {
+    width: 20%;
+}
+.box-block.type-14 > .block {
+    width: 25%;
+}
+.box-block.type-15 > .block {
+    width: 20%;
+}
+.block {
+    text-align: center;
+    min-height: 1px;
+}
+.block > .box,
+.block > .box-block {
+    text-align: left;
+}

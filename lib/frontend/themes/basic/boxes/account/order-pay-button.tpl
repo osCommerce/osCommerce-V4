@@ -1,0 +1,1 @@
+<a href="{$url}" class="{if $settings[0].popup} popup-link {/if}{if $settings[0].like_button == 1} btn {/if}{if $settings[0].like_button == 2} btn-1 {/if}{if $settings[0].like_button == 3} btn-3 {/if}{if $settings[0].like_button == 4} btn-2 {/if}{if $active} active{/if}"><span>{$text}</span></a>

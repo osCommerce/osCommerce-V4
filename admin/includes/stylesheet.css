@@ -1,0 +1,385 @@
+@import url( menu.css );
+
+table.content {
+        BORDER-RIGHT: #D9D9D9 1px solid; BORDER-LEFT: #D9D9D9 1px solid;
+}
+table.top {
+        BORDER-RIGHT: #D9D9D9 1px solid; BORDER-LEFT: #D9D9D9 1px solid; BORDER-TOP: #D9D9D9 1px solid; BORDER-bottom: #D9D9D9 1px solid;
+  background-image: url("../images/top_bg.gif");
+}
+
+.moduleRow { }
+.moduleRowOver { background-color: #D7E9F7; cursor: pointer; cursor: hand; }
+.moduleRowSelected { background-color: #E9F4FC; }
+
+A:link {
+        FONT-WEIGHT: normal; FONT-SIZE: 10px; COLOR: #8182BE; FONT-FAMILY: Verdana, Arial, sans-serif; TEXT-DECORATION: none
+}
+A:visited {
+        FONT-WEIGHT: normal; FONT-SIZE: 10px; COLOR: #8182BE; FONT-FAMILY: Verdana, Arial, sans-serif; TEXT-DECORATION: none
+}
+A:active {
+        FONT-WEIGHT: normal; FONT-SIZE: 10px; COLOR: #8182BE; FONT-FAMILY: Verdana, Arial, sans-serif; TEXT-DECORATION: none
+}
+A:hover {
+        FONT-WEIGHT: normal; FONT-SIZE: 10px; COLOR: #8182BE; FONT-FAMILY: Verdana, Arial, sans-serif; TEXT-DECORATION: underline
+}
+A.headerLink:link {
+        FONT-WEIGHT: normal; FONT-SIZE: 9px; COLOR: #F08402; FONT-FAMILY: Verdana, Arial, sans-serif; TEXT-DECORATION: none
+}
+A.headerLink:visited {
+        FONT-WEIGHT: normal; FONT-SIZE: 9px; COLOR: #F08402; FONT-FAMILY: Verdana, Arial, sans-serif; TEXT-DECORATION: none
+}
+A.headerLink:active {
+        FONT-WEIGHT: normal; FONT-SIZE: 9px; COLOR: #F08402; FONT-FAMILY: Verdana, Arial, sans-serif; TEXT-DECORATION: none
+}
+A.headerLink:hover {
+        FONT-WEIGHT: normal; FONT-SIZE: 9px; COLOR: #F08402; FONT-FAMILY: Verdana, Arial, sans-serif; TEXT-DECORATION: underline
+}
+A.menuBoxHeadingLink:link {
+        FONT-WEIGHT: bold; FONT-SIZE: 10px; COLOR: #ffffff; TEXT-DECORATION: none
+}
+A.menuBoxHeadingLink:visited {
+        FONT-WEIGHT: bold; FONT-SIZE: 10px; COLOR: #ffffff; TEXT-DECORATION: none
+}
+A.menuBoxHeadingLink:active {
+        FONT-WEIGHT: bold; FONT-SIZE: 10px; COLOR: #ffffff; TEXT-DECORATION: none
+}
+A.menuBoxHeadingLink:hover {
+        FONT-WEIGHT: bold; FONT-SIZE: 10px; COLOR: #ffffff; TEXT-DECORATION: none
+}
+
+A.menuBoxContentLink:link {
+        FONT-WEIGHT: bold; FONT-SIZE: 10px; COLOR: #FF8A00; FONT-FAMILY: Verdana, Arial, sans-serif; TEXT-DECORATION: none;
+/*        line-height: 2;*/
+}
+A.menuBoxContentLink:visited {
+        FONT-WEIGHT: bold; FONT-SIZE: 10px; COLOR: #FF8A00; FONT-FAMILY: Verdana, Arial, sans-serif; TEXT-DECORATION: none;
+/*        line-height: 2;*/
+}
+A.menuBoxContentLink:active {
+        FONT-WEIGHT: bold; FONT-SIZE: 10px; COLOR: #FF8A00; FONT-FAMILY: Verdana, Arial, sans-serif; TEXT-DECORATION: none;
+/*        line-height: 2;*/
+}
+A.menuBoxContentLink:hover {
+        FONT-WEIGHT: bold; FONT-SIZE: 10px; COLOR: #FF8A00; FONT-FAMILY: Verdana, Arial, sans-serif; TEXT-DECORATION: underline;
+/*        line-height: 2;*/
+}
+
+
+A.splitPageLink:link {
+        FONT-WEIGHT: normal; FONT-SIZE: 10px; COLOR: #0000ff; FONT-FAMILY: Verdana, Arial, sans-serif; TEXT-DECORATION: none
+}
+A.splitPageLink:visited {
+        FONT-WEIGHT: normal; FONT-SIZE: 10px; COLOR: #0000ff; FONT-FAMILY: Verdana, Arial, sans-serif; TEXT-DECORATION: none
+}
+A.splitPageLink:active {
+        FONT-WEIGHT: normal; FONT-SIZE: 10px; COLOR: #0000ff; FONT-FAMILY: Verdana, Arial, sans-serif; TEXT-DECORATION: none
+}
+A.splitPageLink:hover {
+        FONT-WEIGHT: normal; FONT-SIZE: 10px; COLOR: #0000ff; FONT-FAMILY: Verdana, Arial, sans-serif; BACKGROUND-COLOR: #ffff33; TEXT-DECORATION: underline
+}
+.menuBoxHeading {
+        FONT-WEIGHT: bold; FONT-SIZE: 10px; COLOR: #767788; FONT-FAMILY: Verdana, Arial, sans-serif;
+}
+.menuBoxContent {
+        FONT-SIZE: 10px; COLOR: #f8f8f9; FONT-FAMILY: Verdana, Arial, sans-serif
+}
+BODY {
+        MARGIN: 0px; COLOR: #333333; BACKGROUND-COLOR: #ffffff
+}
+.headerBar {
+        BACKGROUND-COLOR: #b3bac5
+}
+.headerBarContent {
+        PADDING-RIGHT: 2px; PADDING-LEFT: 2px; FONT-WEIGHT: bold; FONT-SIZE: 8px; PADDING-BOTTOM: 2px; COLOR: #F08402; PADDING-TOP: 2px; FONT-FAMILY: Verdana, Arial, sans-serif
+}
+.headerBarContent1 {
+        PADDING-RIGHT: 2px; PADDING-LEFT: 2px; FONT-SIZE: 10px; PADDING-BOTTOM: 2px; COLOR: #F08402; PADDING-TOP: 2px; FONT-FAMILY: Verdana, Arial, sans-serif
+}
+.columnLeft {
+        BORDER-RIGHT: #a3abbb 1px solid; PADDING-RIGHT: 2px; BORDER-TOP: #a3abbb 1px solid; PADDING-LEFT: 2px; PADDING-BOTTOM: 2px; BORDER-LEFT: #a3abbb 1px solid; PADDING-TOP: 2px; BORDER-BOTTOM: #a3abbb 1px solid; BACKGROUND-COLOR: #f8f8f9
+}
+.pageHeading {
+        FONT-WEIGHT: bold; FONT-SIZE: 18px; COLOR: #727272; FONT-FAMILY: Verdana, Arial, sans-serif
+}
+.dataTableHeadingRow {
+/*        BACKGROUND-COLOR: #ff9900;*/
+        height:25;
+        background: url("../images/l_orange_bg.gif");
+}
+
+.dataTableHeadingContent {
+        FONT-WEIGHT: bold; FONT-SIZE: 10px; COLOR: #ffffff; FONT-FAMILY: Verdana, Arial, sans-serif
+}
+.dataTableRow {
+        BACKGROUND-COLOR: #EAEAEA
+}
+.dataTableRowSelected {
+        FONT-WEIGHT: bold; FONT-SIZE: 11px; BACKGROUND-COLOR: #D9D9E1
+}
+.dataTableRowOver {
+        CURSOR: hand; BACKGROUND-COLOR: #fbf6ee
+}
+.dataTableContent {
+        FONT-SIZE: 10px; COLOR: #000000; FONT-FAMILY: Verdana, Arial, sans-serif;
+}
+.infoBoxHeading {
+        FONT-SIZE: 10px; COLOR: #ffffff; FONT-FAMILY: Verdana, Arial, sans-serif; BACKGROUND-COLOR: #bbc3d3
+}
+
+.infoBoxHeadingRight {
+        FONT-SIZE: 10px; COLOR: #E83806; FONT-FAMILY: Verdana, Arial, sans-serif;
+}
+
+
+.infoBoxContent {
+        FONT-SIZE: 10px; COLOR: #000000; FONT-FAMILY: Verdana, Arial, sans-serif;
+}
+
+.infoboxcontentRed        {
+FONT-SIZE: 10px; COLOR: #E83806; FONT-FAMILY: Verdana, Arial, sans-serif;
+}
+
+
+
+.note {
+        FONT-SIZE: 10px; COLOR: #8182BE; FONT-FAMILY: Verdana, Arial, sans-serif;
+}
+
+.BoxContent {
+        FONT-SIZE: 10px; COLOR: #ffffff; FONT-FAMILY: Verdana, Arial, sans-serif; BACKGROUND-COLOR: #8182BE;
+}
+
+.BoxContent {
+        FONT-SIZE: 10px; COLOR: #ffffff; FONT-FAMILY: Verdana, Arial, sans-serif;
+        BACKGROUND-COLOR: #8182BE;
+}
+
+.BoxContent1 {
+        FONT-SIZE: 10px; COLOR: #ffffff; FONT-FAMILY: Verdana, Arial, sans-serif;
+                background: url("../images/l_blue_bg.gif");
+}
+
+.Boxlisting {
+        FONT-SIZE: 10px; COLOR: #FF8A00; FONT-FAMILY: Verdana, Arial, sans-serif;
+}
+
+a.Boxlisting:link {
+FONT-WEIGHT: bold; COLOR: #FF8A00; TEXT-DECORATION: none
+}
+a.Boxlisting:hover {
+FONT-WEIGHT: bold; COLOR: #FF8A00; TEXT-DECORATION: none
+}
+a.Boxlisting:active {
+FONT-WEIGHT: bold; COLOR: #FF8A00; TEXT-DECORATION: none
+}
+a.Boxlisting:visited {
+FONT-WEIGHT: bold; COLOR: #FF8A00; TEXT-DECORATION: none
+}
+
+
+
+
+
+
+a.BoxContent:link {
+FONT-WEIGHT: bold; COLOR: #ffffff; TEXT-DECORATION: none
+}
+a.BoxContent:hover {
+FONT-WEIGHT: bold; COLOR: #ffffff; TEXT-DECORATION: none
+}
+a.BoxContent:active {
+FONT-WEIGHT: bold; COLOR: #ffffff; TEXT-DECORATION: none
+}
+a.BoxContent:visited {
+FONT-WEIGHT: bold; COLOR: #ffffff; TEXT-DECORATION: none
+}
+
+
+
+.contentboxheading {
+        FONT-WEIGHT: bold; FONT-SIZE: 13px; COLOR: #ffffff; FONT-FAMILY: Verdana, Arial, sans-serif; BACKGROUND-COLOR: #F08402;
+}
+
+
+.title {
+        FONT-WEIGHT: bold; FONT-SIZE: 13px; COLOR: #F08402; FONT-FAMILY: Verdana, Arial, sans-serif;
+}
+a.title:link {
+FONT-SIZE: 13px; FONT-WEIGHT: bold; COLOR: #F08402; TEXT-DECORATION: none
+}
+a.title:hover {
+FONT-SIZE: 13px; FONT-WEIGHT: bold; COLOR: #F08402; TEXT-DECORATION: none
+}
+a.title:active {
+FONT-SIZE: 13px; FONT-WEIGHT: bold; COLOR: #F08402; TEXT-DECORATION: none
+}
+a.title:visited {
+FONT-SIZE: 13px; FONT-WEIGHT: bold; COLOR: #F08402; TEXT-DECORATION: none
+}
+
+.subtitle {
+        FONT-WEIGHT: bold; FONT-SIZE: 11px; COLOR: #8182BE; FONT-FAMILY: Verdana, Arial, sans-serif;
+}
+a.subtitle:link {
+FONT-SIZE: 11px; FONT-WEIGHT: bold; COLOR: #8182BE; TEXT-DECORATION: none
+}
+a.subtitle:hover {
+FONT-SIZE: 11px; FONT-WEIGHT: bold; COLOR: #8182BE; TEXT-DECORATION: none
+}
+a.subtitle:active {
+FONT-SIZE: 11px; FONT-WEIGHT: bold; COLOR: #8182BE; TEXT-DECORATION: none
+}
+a.subtitle:visited {
+FONT-SIZE: 11px; FONT-WEIGHT: bold; COLOR: #8182BE; TEXT-DECORATION: none
+}
+
+
+
+.footer {
+  background-image: url(images/footer_bg.gif);
+  FONT-SIZE: 10px; COLOR: #888888;FONT-FAMILY: Verdana, Arial, sans-serif
+}
+
+
+
+
+
+
+
+.messageBox {
+        FONT-SIZE: 10px; FONT-FAMILY: Verdana, Arial, sans-serif
+}
+.messageStackError {
+        FONT-SIZE: 10px; FONT-FAMILY: Verdana, Arial, sans-serif; BACKGROUND-COLOR: #ffb3b5
+}
+.messageStackWarning {
+        FONT-SIZE: 10px; FONT-FAMILY: Verdana, Arial, sans-serif; BACKGROUND-COLOR: #ffb3b5
+}
+.messageStackSuccess {
+        FONT-SIZE: 10px; FONT-FAMILY: Verdana, Arial, sans-serif; BACKGROUND-COLOR: #99ff00
+}
+CHECKBOX {
+        FONT-SIZE: 11px; FONT-FAMILY: Verdana, Arial, sans-serif
+}
+INPUT {
+        FONT-SIZE: 11px; FONT-FAMILY: Verdana, Arial, sans-serif
+}
+RADIO {
+        FONT-SIZE: 11px; FONT-FAMILY: Verdana, Arial, sans-serif
+}
+SELECT {
+        FONT-SIZE: 11px; FONT-FAMILY: Verdana, Arial, sans-serif
+}
+TEXTAREA {
+        FONT-SIZE: 11px; FONT-FAMILY: Verdana, Arial, sans-serif
+}
+
+textarea.ckeditor { overflow: auto; width: 100%; FONT-SIZE: 11px; FONT-FAMILY: Verdana, Arial, sans-serif; border: 2px solid #f1f1ec; padding: 2px; background-color: white;}
+
+FILE {
+        FONT-SIZE: 11px; FONT-FAMILY: Verdana, Arial, sans-serif
+}
+FORM {
+        DISPLAY: inline;
+}
+.formArea {
+        BORDER-RIGHT: #7b9ebd 1px solid; BORDER-TOP: #7b9ebd 1px solid; BORDER-LEFT: #7b9ebd 1px solid; BORDER-BOTTOM: #7b9ebd 1px solid; BACKGROUND-COLOR: #f1f9fe
+}
+.formAreaTitle {
+        FONT-WEIGHT: bold; FONT-SIZE: 12px; FONT-FAMILY: Tahoma, Verdana, Arial, sans-serif
+}
+.attributes-odd {
+        BACKGROUND-COLOR: #f8f8f9
+}
+.attributes-even {
+        BACKGROUND-COLOR: #ffffff
+}
+.specialPrice {
+        COLOR: #ff0000
+}
+.oldPrice {
+        TEXT-DECORATION: line-through
+}
+.fieldRequired {
+        FONT-SIZE: 10px; COLOR: #ff0000; FONT-FAMILY: Verdana, Arial, sans-serif
+}
+.smallText {
+        FONT-SIZE: 10px; FONT-FAMILY: Verdana, Arial, sans-serif
+}
+.main {
+        FONT-SIZE: 12px; FONT-FAMILY: Verdana, Arial, sans-serif
+}
+.errorText {
+        FONT-SIZE: 10px; COLOR: #ff0000; FONT-FAMILY: Verdana, Arial, sans-serif
+}
+.attributeBoxContent {
+        FONT-SIZE: 10px; COLOR: #000000; FONT-FAMILY: Verdana, Arial, sans-serif; BACKGROUND-COLOR: #808080
+}
+.attributeBoxContent {
+        FONT-SIZE: 10px; COLOR: #000000; FONT-FAMILY: Verdana, Arial, sans-serif; BACKGROUND-COLOR: #808080
+}
+.attributeBoxContent {
+        FONT-SIZE: 10px; COLOR: #000000; FONT-FAMILY: Verdana, Arial, sans-serif; BACKGROUND-COLOR: #c0c0c0
+}
+.infoboxAdmin {
+        FONT-SIZE: 12px; COLOR: #000000; FONT-FAMILY: Verdana, Arial, sans-serif
+}
+.infobox-listing-odd {
+        BACKGROUND: #f8f8f9
+}
+.infobox-listing-even {
+        BACKGROUND: none transparent scroll repeat 0% 0%
+}
+
+.errorText {
+  font-family: Verdana, Arial, sans-serif;
+  font-size: 12px;
+  font-weight: bold;
+  color: #ff0000;
+}
+.infoBoxButton { font-family: Verdana, Arial, sans-serif; font-size: 9px; color: white; font-weight: bold; padding: 2px; margin: 1px; border: 1px solid black; background-color: #FF8A00; }
+.attributeRemove {
+  background-color: #FFC6C6;
+}
+
+.attributeAdd {
+  background-color: #E8FFC6;
+}
+
+INPUT.date {
+ width: 80px;
+}
+
+
+#id_mysql_error{
+  position:absolute;
+  width:70%;
+  background:#fddbdb;
+  border:1px solid #525252;
+  left:14%;
+  top:50px;
+}
+#id_mysql_error td{
+  font-size:11px;
+  font-family:tahoma;
+}
+#id_mysql_error .heading{
+  background:url(../../templates/Original/images/heading.gif);
+  height:23px
+}
+#id_mysql_error .heading .heading{
+  background:none;
+  padding-left:15px;
+  text-transform:uppercase;
+  color:#fff;
+  font-weight:bold;
+}
+#id_mysql_error .close{
+  text-align:right;
+  padding-right:3px;
+}
+#id_mysql_error .error{
+  padding:15px 15px 30px 15px;
+}

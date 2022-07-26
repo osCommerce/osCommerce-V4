@@ -1,0 +1,27 @@
+# This file is part of osCommerce ecommerce platform.
+ * osCommerce the ecommerce
+#
+# http://www.holbi.co.uk
+# Copyright (c) 2005 Holbi Group LTD
+#
+# Released under the GNU General Public License
+ * For the full copyright and license information, please view the LICENSE.TXT file that was distributed with this source code.
+#
+# Original 7 TLDs
+com     # all are eligible to register
+edu     # degree-granting educational institutions of higher education
+gov     # United States Government
+int     # organizations established by international treaties
+mil     # United States Military
+net     # all are eligible to register
+org     # noncommercial community, all are eligible to register
+
+# Recent additions
+aero    # members of the air-transport industry
+biz     # businesses
+coop    # cooperative associations
+info    # all are eligible to register
+museum  # museums
+name    # individuals
+pro     # credentialed professionals
+local

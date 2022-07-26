@@ -1,0 +1,39 @@
+.translation-key {
+    box-shadow: inset 0 0 0 1px #01d3ff, 0 0 0 1px #01d3ff;
+    display: inline-block !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+.translation-key > * {
+    display: inline-block !important;
+}
+*[data-translation] {
+    box-shadow: inset 0 0 0 1px #01d3ff, 0 0 0 1px #01d3ff;
+}
+.translation-edit-buttons {
+    position: absolute;
+    background: #fff;
+    padding: 0 10px;
+    box-shadow: 0 0 0 2px #01d3ff;
+    z-index: 999999;
+    opacity: 0.9;
+}
+.translation-edit-button {
+    position: relative;
+    padding-left: 20px;
+    cursor: pointer;
+}
+.translation-edit-button:before {
+    position: absolute;
+    left: 0;
+    top: -1px;
+    content: '\f040';
+    font-family: FontAwesome;
+}
+.translation-popup {
+    width: 840px !important;
+    padding: 20px;
+}
+.translation-popup iframe {
+    border: none;
+}

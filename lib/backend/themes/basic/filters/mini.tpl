@@ -1,0 +1,1 @@
+<div style="padding:10px;" class="unstored_carts"><a href="{\yii\helpers\Url::to(['orders/reset-cart', 'id'=>$ids])}" id="{$ids}"><label for="{$ids}">{$customer['customers_firstname']|escape:'html'} {$customer['customers_lastname']|escape:'html'}' Cart {if $opened}(Opened){/if}</label></a><div class="del-pt" data-id="{$ids}"></div></div>

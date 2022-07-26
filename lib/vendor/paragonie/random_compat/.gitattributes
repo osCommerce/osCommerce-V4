@@ -1,0 +1,18 @@
+* text=auto
+
+/tests export-ignore
+/.gitattributes export-ignore
+/.gitignore export-ignore
+/.scrutinizer.yml export-ignore
+/.github export-ignore
+/build-phar.sh export-ignore
+/CHANGELOG.md export-ignore
+/RATIONALE.md export-ignore
+/README.md export-ignore
+/SECURITY.md export-ignore
+/phpunit.sh export-ignore
+/phpunit.xml.dist export-ignore
+/phpunit-autoload.php export-ignore
+/psalm.xml export-ignore
+/psalm-autoload.php export-ignore
+/other/ export-ignore

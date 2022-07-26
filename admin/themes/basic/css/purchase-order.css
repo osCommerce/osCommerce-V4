@@ -1,0 +1,9 @@
+.pop-up-content{border-radius: 0;}
+.pop-up-content{overflow: -webkit-paged-x;}
+.pop-up-content .widget{overflow: inherit;}
+.product_adding .bundl-box{ background-color:#fff; }
+.widget.box{margin:0!important;}
+.oreder-edit-tree-box{width:31%;}
+.oreder-edit-box-2{height: 510px;}
+.oreder-edit-box-2 .widget, .oreder-edit-box-2 .product_holder{height: 100%;overflow: overlay;}
+.oreder-edit-box-2 .product-details{margin-bottom: 2px;width: 98%;}

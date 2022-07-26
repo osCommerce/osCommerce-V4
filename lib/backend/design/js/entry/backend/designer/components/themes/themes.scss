@@ -1,0 +1,61 @@
+@import "src/admin-theme-variables";
+.theme-list {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+
+    .item {
+        width: 22%;
+        margin: 0 10px 30px;
+
+        border: 1px solid $border-color-3;
+        box-shadow: 0 0 4px rgba(0,0,0, 0.2);
+        background: $bg-1;
+        padding: 5px;
+    }
+
+    .img {
+        position: relative;
+        padding-top: 75%;
+    }
+    img {
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        left: 0;
+        top: 0;
+        object-fit: cover;
+        object-position: 50% 0;
+    }
+    .title {
+        padding: 5px;
+        font-size: 20px;
+        font-weight: 600;
+        text-align: center;
+        line-height: 30px;
+        white-space: nowrap;
+        overflow: hidden;
+        a {
+            &:hover {
+                text-decoration: none;
+            }
+            color: $font-color-1;
+        }
+    }
+
+    .add-theme-ico {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        font-size: 40px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: $bg-light-1;
+    }
+    .add-theme {
+        cursor: pointer;
+    }
+}

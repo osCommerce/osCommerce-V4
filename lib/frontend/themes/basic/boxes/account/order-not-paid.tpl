@@ -1,0 +1,1 @@
+<div class="not-paid">{$smarty.const.TEXT_NOT_FULLY_PAID}</div>

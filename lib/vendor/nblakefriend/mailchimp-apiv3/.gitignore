@@ -1,0 +1,5 @@
+vendor/
+src/config.ini
+composer.lock
+
+.DS_Store

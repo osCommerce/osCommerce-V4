@@ -1,0 +1,1 @@
+<a href="{\Yii::$app->urlManager->createUrl(['orders/send-request', 'orders_id' => $order_id])}" class="btn btn-mar-right btn-primary ajax-submit">{$smarty.const.TEXT_SEND_CUSTOMER_REQUEST}</a>

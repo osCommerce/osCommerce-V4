@@ -1,0 +1,3 @@
+{"version":3,"sources":["webpack://[name]/./backend/image-maps/edit/modules/admin-theme-variables.scss"],"names":[],"mappings":"AAAA;;;;;;;GAOG","file":"admin/themes/basic/css/image-map/edit.css","sourcesContent":["/**\r\n * This file is part of osCommerce ecommerce platform.
+ * osCommerce the ecommerce\r\n *\r\n * @link https://www.oscommerce.com\r\n * @copyright Copyright (c) 2000-2022 osCommerce LTD\r\n *\r\n * Released under the GNU General Public License
+ * For the full copyright and license information, please view the LICENSE.TXT file that was distributed with this source code.\r\n */\r\n\r\n$primary-color: #333;"],"sourceRoot":""}

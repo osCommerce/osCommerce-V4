@@ -1,0 +1,1 @@
+{if $manufacture.manufacturers_name}<a href="{$link}">{if $manufacture.manufacturers_image}<img src="images/{$manufacture.manufacturers_image}" alt="{$manufacture.manufacturers_name}">{else}{$manufacture.manufacturers_name}{/if}</a>{/if}

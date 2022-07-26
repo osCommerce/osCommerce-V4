@@ -1,0 +1,1 @@
+<div class="total-ordered">{$mainData.total_sum}</div>

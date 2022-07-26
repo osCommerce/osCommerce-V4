@@ -1,0 +1,69 @@
+{use class="Yii"}
+<form action="{Yii::getAlias('@web')}/design/box-save" method="post" id="box-save">
+  <input type="hidden" name="id" value="{$id}"/>
+  <div class="popup-heading">&nbsp;
+  </div>
+  <div class="popup-content">
+
+
+
+
+    <div class="tabbable tabbable-custom">
+      <ul class="nav nav-tabs">
+
+        <li class="active"><a href="#set" data-toggle="tab">{$smarty.const.HEADING_STYLE}</a></li>
+        <li><a href="#style" data-toggle="tab">{$smarty.const.HEADING_STYLE}</a></li>
+        <li><a href="#align" data-toggle="tab">{$smarty.const.HEADING_WIDGET_ALIGN}</a></li>
+        <li><a href="#visibility" data-toggle="tab">{$smarty.const.TEXT_VISIBILITY_ON_PAGES}</a></li>
+        <li><a href="#ajax" data-toggle="tab">{$smarty.const.TEXT_AJAX}</a></li>
+
+      </ul>
+      <div class="tab-content">
+        <div class="tab-pane active" id="set">
+
+          <div class="setting-row">
+            <label for="">{$smarty.const.SHOW_CUSTOMER_NAME}</label>
+            <select name="setting[0][show_customers_name]" id="" class="form-control">
+              <option value=""{if $settings[0].show_customers_name == ''} selected{/if}>{$smarty.const.TEXT_BTN_NO}</option>
+              <option value="1"{if $settings[0].show_customers_name == '1'} selected{/if}>{$smarty.const.TEXT_BTN_YES}</option>
+            </select>
+          </div>
+
+		  <div class="setting-row">
+            <label for="">{$smarty.const.LINK_OR_DROPDOWN}</label>
+            <select name="setting[0][link_or_dropdown]" id="" class="form-control">
+              <option value=""{if $settings[0].link_or_dropdown == ''} selected{/if}>{$smarty.const.TEXT_BTN_NO}</option>
+              <option value="1"{if $settings[0].link_or_dropdown == '1'} selected{/if}>{$smarty.const.TEXT_BTN_YES}</option>
+            </select>
+          </div>
+
+
+
+        </div>
+        <div class="tab-pane" id="style">
+
+          {$responsive_settings = ['only-icon.tpl']}
+          {include 'include/style.tpl'}
+        </div>
+        <div class="tab-pane" id="align">
+          {include 'include/align.tpl'}
+        </div>
+        <div class="tab-pane" id="visibility">
+          {include 'include/visibility.tpl'}
+        </div>
+        <div class="tab-pane" id="ajax">
+          {include 'include/ajax.tpl'}
+        </div>
+
+      </div>
+    </div>
+
+
+  </div>
+  <div class="popup-buttons">
+    <button type="submit" class="btn btn-primary btn-save">{$smarty.const.IMAGE_SAVE}</button>
+
+    <span class="btn btn-cancel">{$smarty.const.IMAGE_CANCEL}</span>
+
+  </div>
+</form>

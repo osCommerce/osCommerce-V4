@@ -1,0 +1,55 @@
+{
+  "_from": "timezone-picker",
+  "_id": "timezone-picker@1.0.1",
+  "_inBundle": false,
+  "_integrity": "sha512-QbP8hDgkaXTkpVqyYeiM9Ksr/BdJl0UNQDJ2PBf0ipZwKuPrJP4sqWtyrHzBC34bldpHbUMOJF7lTUfKp8icgg==",
+  "_location": "/timezone-picker",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "tag",
+    "registry": true,
+    "raw": "timezone-picker",
+    "name": "timezone-picker",
+    "escapedName": "timezone-picker",
+    "rawSpec": "",
+    "saveSpec": null,
+    "fetchSpec": "latest"
+  },
+  "_requiredBy": [
+    "#USER",
+    "/"
+  ],
+  "_resolved": "https://registry.npmjs.org/timezone-picker/-/timezone-picker-1.0.1.tgz",
+  "_shasum": "4a6e8edf23fc86f0fc27fff5ddb3de0e424d4741",
+  "_spec": "timezone-picker",
+  "_where": "/home/atkach/tmp/tz",
+  "author": {
+    "name": "Keval Bhatt"
+  },
+  "bugs": {
+    "url": "https://github.com/kevalbhatt/timezone-picker/issues"
+  },
+  "bundleDependencies": false,
+  "deprecated": false,
+  "description": "Select your timezone using world map",
+  "homepage": "https://github.com/kevalbhatt/timezone-picker#readme",
+  "keywords": [
+    "jquery-timezone",
+    "select",
+    "timezone",
+    "UI",
+    "timezone",
+    "picker"
+  ],
+  "license": "MIT",
+  "main": "timezone-picker.js",
+  "name": "timezone-picker",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kevalbhatt/timezone-picker.git"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "version": "1.0.1"
+}

@@ -1,0 +1,1 @@
+<a href="{$link}" class="btn-3">{$smarty.const.CONTINUE_SHOPPING}</a>

@@ -1,0 +1,27 @@
+.banner-groups-table {
+    max-width: 600px;
+    margin-top: 20px;
+}
+.upload-box {
+    border: 1px solid #ccc;
+    background: #fff;
+    padding: 10px;
+    max-width: 800px
+}
+.label-image-width {
+    font-size: 1.4em;
+}
+.banner-groups-table .btn-delete,
+.image-settings-table .btn-delete {
+    font-size: 19px;
+    margin-left: 20px;
+    margin-right: 5px;
+    color: #f52f1b;
+}
+.banners-table .label_name {
+    width: 180px;
+}
+.image-settings-table {
+    max-width: 800px;
+    margin-top: 20px;
+}

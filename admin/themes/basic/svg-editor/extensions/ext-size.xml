@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg">
+	<g id="tool_size">
+		<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 viewBox="0 0 21 16" enable-background="new 0 0 21 16" xml:space="preserve">
+<g>
+	<linearGradient id="SVGID_1_" gradientUnits="userSpaceOnUse" x1="4.8404" y1="3.7544" x2="18.5767" y2="6.693">
+		<stop  offset="0" style="stop-color:#FFFFFF"/>
+		<stop  offset="1" style="stop-color:#68A0C1"/>
+	</linearGradient>
+	<rect x="6" y="1" fill="url(#SVGID_1_)" width="14" height="9"/>
+	<path fill="#3F4041" d="M20,1v8H7V1H20 M21,0H6v10h15V0L21,0z"/>
+</g>
+<rect x="7" y="13" fill="#3F4041" width="13" height="1"/>
+<polygon fill="#3F4041" points="9.3,11.8 8.5,11 6,13.5 8.5,16 9.3,15.3 7.5,13.5 "/>
+<polygon fill="#3F4041" points="17.8,11.8 18.5,11 21,13.5 18.5,16 17.8,15.3 19.5,13.5 "/>
+<rect x="2" y="1" fill="#3F4041" width="1" height="8"/>
+<polygon fill="#3F4041" points="0.8,7 0,7.8 2.5,10.3 5,7.8 4.3,7 2.5,8.8 "/>
+<polygon fill="#3F4041" points="0.8,3.3 0,2.5 2.5,0 5,2.5 4.3,3.3 2.5,1.5 "/>
+</svg>
+	</g>
+</svg>

@@ -1,0 +1,32 @@
+{
+    "name": "indigophp/doctrine-annotation-autoload",
+    "type": "composer-plugin",
+    "description": "Hooks into Composer autoload generation and adds Doctrine annotation autoloading",
+    "license": "MIT",
+    "keywords": ["doctrine", "annotation", "autoload"],
+    "homepage": "https://indigophp.com",
+    "authors": [
+        {
+            "name": "Márk Sági-Kazár",
+            "email": "mark.sagikazar@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=5.4",
+        "composer-plugin-api": "^1.0",
+        "doctrine/annotations": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "Indigo\\Composer\\": "src/"
+        }
+    },
+    "extra": {
+        "class": "Indigo\\Composer\\DoctrineAnnotationAutoloadPlugin",
+        "branch-alias": {
+            "dev-master": "0.2-dev"
+        }
+    },
+    "prefer-stable": true,
+    "minimum-stability": "dev"
+}

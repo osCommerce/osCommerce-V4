@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<data>
+<Header><type>site/order_statuses</type><projectCode>OSC23_61C1B2DE000005220114</projectCode></Header>
+<OrdersStatuses>
+<OrdersStatus><orders_status_id type="IOPK" internalId="1"/><language_id type="IOLanguageMap" language="en" internalId="1"/><orders_status_name>Pending</orders_status_name><public_flag>1</public_flag><downloads_flag>0</downloads_flag></OrdersStatus>
+<OrdersStatus><orders_status_id type="IOPK" internalId="2"/><language_id type="IOLanguageMap" language="en" internalId="1"/><orders_status_name>Processing</orders_status_name><public_flag>1</public_flag><downloads_flag>1</downloads_flag></OrdersStatus>
+<OrdersStatus><orders_status_id type="IOPK" internalId="3"/><language_id type="IOLanguageMap" language="en" internalId="1"/><orders_status_name>Delivered</orders_status_name><public_flag>1</public_flag><downloads_flag>1</downloads_flag></OrdersStatus>
+<OrdersStatus><orders_status_id type="IOPK" internalId="4"/><language_id type="IOLanguageMap" language="en" internalId="1"/><orders_status_name>PayPal [Transactions]</orders_status_name><public_flag>0</public_flag><downloads_flag>0</downloads_flag></OrdersStatus>
+<OrdersStatus><orders_status_id type="IOPK" internalId="5"/><language_id type="IOLanguageMap" language="en" internalId="1"/><orders_status_name>Authorize.net [Transactions]</orders_status_name><public_flag>0</public_flag><downloads_flag>0</downloads_flag></OrdersStatus>
+</OrdersStatuses>
+</data>

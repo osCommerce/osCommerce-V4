@@ -1,0 +1,40 @@
+@import "../../../../modules/admin-theme-variables";
+.designer-areas {
+    display: grid;
+    height: calc(100vh - 167px);
+}
+.designer-area-left {
+    touch-action: none;
+    grid-column: 1;
+    grid-row: 1 / 4;
+    border-right: 1px solid $border-color;
+}
+.designer-area-top {
+    grid-column: 2;
+    grid-row: 1;
+    border-bottom: 1px solid $border-color;
+}
+.designer-area-center {
+    grid-column: 2;
+    grid-row: 2;
+}
+.designer-area-bottom {
+    grid-column: 2;
+    grid-row: 3;
+    border-top: 1px solid $border-color;
+}
+.designer-area-right {
+    grid-column: 3;
+    grid-row: 1 / 4;
+    border-left: 1px solid $border-color;
+}
+
+.designer-area-left,
+.designer-area-top,
+.designer-area-bottom,
+.designer-area-right {
+    touch-action: none;
+}
+div.main-content {
+    padding: 0;
+}
