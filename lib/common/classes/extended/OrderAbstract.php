@@ -707,7 +707,7 @@ abstract class OrderAbstract extends OrderShadowAbstract{
             'billing_country' => isset($this->billing['country']['title']) ? $this->billing['country']['title'] : '',
             'billing_address_format_id' => $this->billing['format_id'] ?? 6,
             'platform_id' => $this->info['platform_id'] ?? 0,
-            'payment_method' => $this->info['payment_method'] ?? '',
+            'payment_method' => strip_tags($this->info['payment_method'] ?? ''),
 // BOF: Lango Added for print order mod
             'payment_info' => $this->manager->getPaymentCollection()->getConfirmationTitle(),//['payment_info'],
 // EOF: Lango Added for print order mod
@@ -1351,7 +1351,7 @@ abstract class OrderAbstract extends OrderShadowAbstract{
 
             //$products_ordered .= $this->products[$i]['qty'] . ' x ' . $this->products[$i]['name'] . (($this->products[$i]['model'] != '') ? ' (' . $this->products[$i]['model'] . ')' : '') . ' = ' . $currencies->display_price($this->products[$i]['final_price'], $this->products[$i]['tax'], $this->products[$i]['qty']) . $products_ordered_attributes . "\n";
             $this->products[$i]['tpl_attributes'] = ($products_ordered_attributes ? implode("\n\t", $products_ordered_attributes) :'');
-            if (($this->table_prefix != 'quote_' || \common\helpers\Php8::getConst('SHOW_PRICE_FOR_QUOTE_PRODUCT') == 'True') && !(defined('GROUPS_IS_SHOW_PRICE') && GROUPS_IS_SHOW_PRICE==false)) {
+            if (($this->table_prefix != 'quote_' || strtolower(\common\helpers\PlatformConfig::getVal('SHOW_PRICE_FOR_QUOTE_PRODUCT', 'false')) == 'true') && !(defined('GROUPS_IS_SHOW_PRICE') && GROUPS_IS_SHOW_PRICE==false)) {
                 $this->products[$i]['tpl_price'] = $currencies->display_price($this->products[$i]['final_price'], $this->products[$i]['tax'], $this->products[$i]['qty']);
             }
 
@@ -1915,7 +1915,7 @@ abstract class OrderAbstract extends OrderShadowAbstract{
             foreach ($product['attributes'] as $attribute){
                 $products_ordered_attributes .= "\n\t" . htmlspecialchars($attribute['option']) . ': ' . htmlspecialchars($attribute['value']);
             }
-            $hidePrice = ($this->table_prefix == 'quote_' && \common\helpers\Php8::getConst('SHOW_PRICE_FOR_QUOTE_PRODUCT') != 'True') ||
+            $hidePrice = ($this->table_prefix == 'quote_' && strtolower(\common\helpers\PlatformConfig::getVal('SHOW_PRICE_FOR_QUOTE_PRODUCT', 'false')) != 'true') ||
                 (defined('GROUPS_IS_SHOW_PRICE') && GROUPS_IS_SHOW_PRICE ==false);
             if (!$hidePrice) {
                 $this->products[$i]['tpl_price'] = $currencies->display_price($product['final_price'], $product['tax'], $product['qty']);

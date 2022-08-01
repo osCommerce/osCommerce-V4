@@ -111,7 +111,9 @@ getAdminHooks
 We recommend to place all hook files in separate extention folder with name "hooks"
 
 In addition a list of available values page_name and page_area:
+---hooks_begin---
 'customers/customeredit', ''
+'customers/customeredit/before-render', ''
 'customers/customeredit', 'personal-block'
 'customers/customeredit', 'left-column'
 'customers/customeredit', 'right-column'
@@ -124,6 +126,7 @@ In addition a list of available values page_name and page_area:
 'categories/brandedit', 'main-tab'
 'categories/brandedit', 'desc-tab'
 'categories/brandedit', 'seo-tab'
+'categories/productedit/before-save', ''
 'categories/productedit', ''
 'categories/productedit', 'details-left-column'
 'categories/productedit', 'details-right-column'
@@ -142,3 +145,5 @@ In addition a list of available values page_name and page_area:
 'Order', 'save_order/before'
 'Order', 'save_order/after'
 'checkout/index', ''
+'cart-factory/work', ''
+---hooks_end---

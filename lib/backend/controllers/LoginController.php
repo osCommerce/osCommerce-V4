@@ -32,6 +32,7 @@ class LoginController extends Controller {
                 die();
             }
         }
+        \Yii::$app->view->title = TEXT_SIGN_IN . ' | '. \common\classes\platform::name(\common\classes\platform::defaultId()) . ' | ' . \Yii::$app->name;
         return parent::__construct($id, $module);
     }
     

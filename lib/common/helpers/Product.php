@@ -1511,7 +1511,7 @@ class Product {
     }
 
     public static function getBonuses($products_id, $groups_id, ?float $price = null){
-        if (\common\helpers\Acl::checkExtensionAllowed('BonusActions') && defined('BONUS_ACTION_PROGRAM_STATUS') && BONUS_ACTION_PROGRAM_STATUS == 'true') {
+        if (\common\helpers\Acl::checkExtensionAllowed('BonusActions')) {
             if (defined('CUSTOMERS_GROUPS_ENABLE') && CUSTOMERS_GROUPS_ENABLE == 'True') {
                 $bonusPoints = tep_db_fetch_array(
                     tep_db_query(
@@ -2393,7 +2393,7 @@ class Product {
     public static function getStockOrdered($uProductId = 0, $isStrict = false)
     {
         if (\common\helpers\Acl::checkExtensionAllowed('PurchaseOrders')) {
-            return \common\extensions\PurchaseOrders\helpers\PurchaseOrders::getStockOrderedProduct($uProductId0, $isStrict);
+            return \common\extensions\PurchaseOrders\helpers\PurchaseOrder::getStockOrdered($uProductId0, $isStrict);
         } else {
             return 0;
         }

@@ -25,7 +25,7 @@ class Action extends Widget {
 
     public function run()
     {
-        if(\common\helpers\Acl::checkExtensionAllowed('BonusActions') && defined('BONUS_ACTION_PROGRAM_STATUS') && BONUS_ACTION_PROGRAM_STATUS == 'true' && $this->action){
+        if(\common\helpers\Acl::checkExtensionAllowed('BonusActions') && $this->action){
             echo "promoAction.trigger('" . $this->action. "');";
         }
     }

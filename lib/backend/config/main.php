@@ -12,7 +12,7 @@ return [
     'bootstrap' => [],
     'controllerNamespace' => 'backend\controllers',
     
-    'name' => 'Store Admin',
+    'name' => 'Backend',
     'defaultRoute' => 'index/index',
     
     'modules' => [],

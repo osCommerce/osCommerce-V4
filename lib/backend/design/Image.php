@@ -21,7 +21,7 @@ class Image extends Widget
   public $value;
   public $upload;
   public $delete = '';
-  public $type;
+  public $type = 'image';
   public $acceptedFiles;
   public $path;
   public $unlink = true;

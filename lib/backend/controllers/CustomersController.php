@@ -1114,10 +1114,6 @@ class CustomersController extends Sceleton {
                 $st_full_name_view = $str_full_head;
             }
 
-            if (\common\helpers\Acl::checkExtensionAllowed('Promotions')) {
-                $myPromos = \common\models\promotions\PromotionsAssignement::getOwnerPromo(\common\models\promotions\PromotionsAssignement::OWNER_CUSTOMER, $customers_id);
-            }
-
             $this->navigation[] = array('link' => Yii::$app->urlManager->createUrl('customers/customeredit'), 'title' => T_EDITING_CUS . '&nbsp;"' . $st_full_name_view . '"');
             $this->view->headingTitle = T_EDITING_CUS;
             if (\common\helpers\Acl::rule(['ACL_ORDER', 'IMAGE_NEW'])) {
@@ -1278,12 +1274,13 @@ class CustomersController extends Sceleton {
                     $cInfo->saveCreditHistory($cInfo->customers_id, $bonus_points, $bonus_prefix, '', 1, $comments, 1, $customer_notified);
                 }
 
+                // may be called customers/customer-after-save
                 foreach (\common\helpers\Hooks::getList('customers/customeredit') as $filename) {
                     include($filename);
                 }
 
             }
-
+            
             if (\common\helpers\Acl::checkExtensionAllowed('ReportChangesHistory') && isset($logger)) {
                 $afterObject = new \common\api\Classes\Customer();
                 $afterObject->load($cInfo->customers_id);
@@ -1353,6 +1350,11 @@ class CustomersController extends Sceleton {
                 break;
         }
 
+        foreach (\common\helpers\Hooks::getList('customers/customeredit/before-render') as $filename) {
+            include($filename);
+        }
+
+
         return $this->render('edit', [
             'cInfo' => $cInfo,
             'addresses' => $addresses,
@@ -1364,15 +1366,6 @@ class CustomersController extends Sceleton {
             'prefix' => $prefixClass,
             'languages' => $languages,
         ]);
-    }
-
-    public function actionDropPromo(){
-        $customers_id = Yii::$app->request->post('customers_id');
-        $promo_id = Yii::$app->request->post('promo_id');
-        if ($promo_id && $customers_id && \common\helpers\Acl::checkExtensionAllowed('Promotions')){
-            \common\models\promotions\PromotionsAssignement::deletePromoOwners($promo_id, \common\models\promotions\PromotionsAssignement::OWNER_CUSTOMER, [$customers_id]);
-        }
-        exit();
     }
 
     public function actionCustomerdelete() {
@@ -1722,13 +1715,13 @@ class CustomersController extends Sceleton {
         }
 
         if ($type) {
-            if (\common\helpers\Acl::checkExtensionAllowed('BonusActions') && defined('BONUS_ACTION_PROGRAM_STATUS') && BONUS_ACTION_PROGRAM_STATUS == 'true') {
-                $_history = \common\models\promotions\PromotionsBonusHistory::find()->where('customer_id = :id', [':id' => (int) $customers_id])->asArray()->orderBy(['promotions_bonus_history_id' => SORT_DESC])->all();
+            if (\common\helpers\Acl::checkExtensionAllowed('BonusActions')) {
+                $_history = \common\extensions\BonusActions\models\PromotionsBonusHistory::find()->where('customer_id = :id', [':id' => (int) $customers_id])->asArray()->orderBy(['promotions_bonus_history_id' => SORT_DESC])->all();
                 if ($_history) {
                     $titles = [];
                     foreach ($_history as $h) {
                         if (!isset($titles[$h['bonus_points_id']])) {
-                            $titles[$h['bonus_points_id']] = \common\models\promotions\PromotionsBonusPoints::find()->where('bonus_points_id = ' . (int) $h['bonus_points_id'])->with('description')->one();
+                            $titles[$h['bonus_points_id']] = \common\extensions\BonusActions\models\PromotionsBonusPoints::find()->where('bonus_points_id = ' . (int) $h['bonus_points_id'])->with('description')->one();
                         }
                         $history[] = [
                             'date' => \common\helpers\Date::datepicker_date($h['action_date']),

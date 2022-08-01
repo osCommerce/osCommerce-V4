@@ -104,6 +104,18 @@ class Navigation extends Widget {
                             $response['dis_module'] = true;
                         }
                     }
+                    // hide if no child
+                    if ($response['box_type'] == 1) {
+                        $response['dis_module'] = true;
+                        if (is_array($response['child'] ?? null)) {
+                            foreach( $response['child'] as $child) {
+                                if ($child['dis_module'] === false) {
+                                    $response['dis_module'] = false;
+                                    break;
+                                }
+                            }
+                        }
+                    }
                     if ($response['dis_module'] === false) {// hide disabled menu items
                         $tree[] = $response;
                     }

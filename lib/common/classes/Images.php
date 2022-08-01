@@ -2212,4 +2212,171 @@ class Images {
 
         return $destination . DIRECTORY_SEPARATOR . $fileName;
     }
+
+    /**
+     * @param array $settings[
+     *      'src', //image source - required
+     *      'top', // crop - required
+     *      'left', // crop - required
+     *      'width', // crop - required
+     *      'height', // crop - required
+     *      'destination', // image destination - required
+     *      'imgWidth', // required image width - not required
+     *      'imgHeight', // required image height - not required
+     *      'color', // side space color - not required
+     * ]
+     * @return mixed false if error, image destination (string)
+     */
+    public static function cropImage($settings) {
+        if (IMAGE_RESIZE != 'GD' || !function_exists("gd_info")) {
+            return false;
+        }
+
+        $image = $settings['src'];
+        $size = @GetImageSize($image);
+        $originWidth = $size[0];
+        $originHeight = $size[1];
+        $newWidth = $settings['imgWidth'];
+        $newHeight = $settings['imgHeight'];
+        if (!$newWidth && !$newHeight) {
+            $newWidth = $settings['width'];
+            $newHeight = $settings['height'];
+        } elseif ($newWidth && !$newHeight) {
+            $newHeight = $newWidth * $settings['height'] / $settings['width'];
+        } elseif (!$newWidth && $newHeight) {
+            $newWidth = $newHeight * $settings['width'] / $settings['height'];
+        }
+
+        switch ($size[2]) {
+            case 18:
+                $im = @imagecreatefromwebp($image);
+                break;
+            case 1 : // GIF
+                $im = @ImageCreateFromGif($image);
+                break;
+            case 3 : // PNG
+                $im = @ImageCreateFromPng($image);
+                if ($im) {
+                    if (function_exists('imageAntiAlias')) {
+                        @imageAntiAlias($im, true);
+                    }
+                    @imageAlphaBlending($im, true);
+                    @imageSaveAlpha($im, true);
+                }
+                break;
+            case 2 : // JPEG
+                $im = @ImageCreateFromJPEG($image);
+                break;
+            default :
+                return false;
+        }
+        if (!$im) {
+            return false;
+        }
+
+        $imPic = 0;
+        if (function_exists('ImageCreateTrueColor'))
+            $imPic = @ImageCreateTrueColor($newWidth, $newHeight);
+        if ($imPic == 0)
+            $imPic = @ImageCreate($newWidth, $newHeight);
+        if ($imPic == 0) {
+            return false;
+        }
+
+        if ($settings['color']) {
+            $settings['color'] = str_replace(' ', '', $settings['color']);
+            if (preg_match("/^rgb\(([0-9]{1,3})\,([0-9]{1,3})\,([0-9]{1,3})\)$/i", $settings['color'], $matches)) {
+                $bgColorR = $matches[1];
+                $bgColorG = $matches[2];
+                $bgColorB = $matches[3];
+            } elseif (preg_match("/^rgba\(([0-9]{1,3})\,([0-9]{1,3})\,([0-9]{1,3}),([0-9\.]{1,5})\)$/i", $settings['color'], $matches)) {
+                $bgColorR = $matches[1];
+                $bgColorG = $matches[2];
+                $bgColorB = $matches[3];
+            } elseif (preg_match("/^\#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i", $settings['color'], $matches)) {
+                $bgColorR = hexdec($matches[1]);
+                $bgColorG = hexdec($matches[2]);
+                $bgColorB = hexdec($matches[3]);
+            } elseif (preg_match("/^\#([0-9a-f])([0-9a-f])([0-9a-f])$/i", $settings['color'], $matches)) {
+                $bgColorR = hexdec($matches[1] . $matches[1]);
+                $bgColorG = hexdec($matches[2] . $matches[2]);
+                $bgColorB = hexdec($matches[3] . $matches[3]);
+            } else {
+                $bgColorR = 255;
+                $bgColorG = 255;
+                $bgColorB = 255;
+            }
+        } else {
+            $bgColorR = 255;
+            $bgColorG = 255;
+            $bgColorB = 255;
+        }
+        $bgColorA = 0;
+        @ImageInterlace($imPic, 1);
+        if (function_exists('imageAntiAlias')) {
+            @imageAntiAlias($imPic, true);
+        }
+        @imagealphablending($imPic, false);
+        @imagesavealpha($imPic, true);
+        $transparent = @imagecolorallocatealpha($imPic, $bgColorR, $bgColorG, $bgColorB, $bgColorA);
+        for ($i = 0; $i < $newWidth; $i++) {
+            for ($j = 0; $j < $newHeight; $j++) {
+                @imageSetPixel($imPic, $i, $j, $transparent);
+            }
+        }
+
+        $scale = $settings['imgWidth'] / $settings['width'];
+        $left = $settings['left'];
+        $top = $settings['top'];
+        $width = $settings['width'];
+        $height = $settings['height'];
+        $imgLeft = 0;
+        $imgTop = 0;
+        $imgWidth = $newWidth;
+        $imgHeight = $newHeight;
+        if ($settings['top'] < 0) {
+            $top = 0;
+            $height = $settings['height'] + $settings['top'];
+            $imgTop = -$settings['top'] * $scale;
+            $imgHeight = $height * $scale;
+        }
+        if ($settings['left'] < 0) {
+            $left = 0;
+            $width = $settings['width'] + $settings['left'];
+            $imgLeft = -$settings['left'] * $scale;
+            $imgWidth = $width * $scale;
+        }
+        if ($height + $top > $originHeight) {
+            $height = $height - ($height + $top - $originHeight);
+            $imgHeight = $height * $scale;
+        }
+        if ($width + $left > $originWidth) {
+            $width = $width - ($width + $left - $originWidth);
+            $imgWidth = $width * $scale;
+        }
+
+        if (function_exists('ImageCopyResampled')) {
+            $resized = @ImageCopyResampled($imPic, $im,
+                $imgLeft, $imgTop, $left, $top,
+                $imgWidth, $imgHeight, $width, $height);
+        }
+        if (!$resized) {
+            @ImageCopyResized($imPic, $im,
+                $imgLeft, $imgTop, $left, $top,
+                $imgWidth, $imgHeight, $width, $height);
+        }
+
+        if ($size[2] == 3) {
+            @imagePNG($imPic, $settings['destination'], 9);
+        } elseif ($size[2] == 18) {
+            @imagewebp($imPic, $settings['destination']);
+        } else {
+            @imageJPEG($imPic, $settings['destination'], 85);
+        }
+        if (is_file($settings['destination'])) {
+            chmod($settings['destination'],0666);
+            return $settings['destination'];
+        }
+        return false;
+    }
 }

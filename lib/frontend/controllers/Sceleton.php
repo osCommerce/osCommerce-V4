@@ -213,10 +213,8 @@ class Sceleton extends Controller {
         }
 
         \common\components\Socials::loadSocialAddons(PLATFORM_ID);
-        if (\common\helpers\Acl::checkExtensionAllowed('BonusAction')) {
-            $this->promoActionsObs = \common\models\promotions\PromotionsBonusObserver::getInstance();
-        }
-        if (\common\helpers\Acl::checkExtensionAllowed('Promotions')) {
+        if (\common\helpers\Acl::checkExtensionAllowed('BonusActions')) {
+            $this->promoActionsObs = \common\extensions\BonusActions\models\PromotionsBonusObserver::getInstance();
             $this->promoActionsObs->checkRequestPromoAction();
         }
         //$this->setMeta();

@@ -1718,7 +1718,7 @@ class OrderProduct
     public static function getStockOrdered($orderProductRecord = 0)
     {
         if (\common\helpers\Acl::checkExtensionAllowed('PurchaseOrders')) {
-            return \common\extensions\PurchaseOrders\helpers\PurchaseOrder::getStockOrderedOrderProduct($orderProductRecord);
+            return \common\extensions\PurchaseOrders\helpers\PurchaseOrder::getStockOrdered($orderProductRecord);
         } else {
             return 0;
         }

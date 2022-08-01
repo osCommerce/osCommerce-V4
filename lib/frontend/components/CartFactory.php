@@ -63,6 +63,10 @@ class CartFactory {
         \common\helpers\Product::cleanup_temporary_stock_quantity();
     }
 
+    foreach (\common\helpers\Hooks::getList('cart-factory/work') as $filename) {
+        include($filename);
+    }
+
     if ($ext = \common\helpers\Acl::checkExtensionAllowed('Quotations', 'allowed')) {
         $ext::initCart();
     }

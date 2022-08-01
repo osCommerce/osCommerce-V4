@@ -49,7 +49,7 @@
 </div>
 {else}
     {if !$disapear_quantity_input}
-<div class="qty-input"{if !$show_quantity_input && \common\helpers\Php8::getConst('SHOW_QUANTITY_INPUT_FOR_QUOTE_BUTTON') != 'True' || $product_in_cart} style="display: none"{/if}>
+<div class="qty-input"{if !$show_quantity_input && strtolower(\common\helpers\PlatformConfig::getVal('SHOW_QUANTITY_INPUT_FOR_QUOTE_BUTTON', 'false')) != 'true' || $product_in_cart} style="display: none"{/if}>
   <label class="product-quantity-label" for="qty">{output_label const="QTY"}</label>
   <div class="input">
     <input type="text" id="qty" name="qty" value="{if $qty != ''}{$qty}{else}1{/if}" class="qty-inp"{if $quantity_max>0} data-max="{$quantity_max}"{/if}
@@ -159,7 +159,7 @@
 </script>
 {else}
     {if !$disapear_quantity_input}
-<div class="qty-input"{if $product_in_cart} style="display: none"{/if}>
+<div class="qty-input"{if !$show_quantity_input && strtolower(\common\helpers\PlatformConfig::getVal('SHOW_QUANTITY_INPUT_FOR_QUOTE_BUTTON', 'false')) != 'true' || $product_in_cart} style="display: none"{/if}>
   <label for="qty">{output_label const="QTY"}</label>
   <div class="input">
     <input type="text" id="qty" name="qty" value="{if $qty != ''}{$qty}{else}1{/if}" class="qty-inp"{if $quantity_max>0} data-max="{$quantity_max}"{/if}

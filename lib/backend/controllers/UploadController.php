@@ -86,6 +86,37 @@ class UploadController extends Sceleton
         }
     }
 
+    public function actionCropImage()
+    {
+        $settings = Yii::$app->request->post();
+        $settings['src'] = str_replace(tep_catalog_href_link(), DIR_FS_CATALOG, $settings['src']);
+        $settings['src'] = preg_replace("/^" . str_replace('/', '\/', DIR_WS_CATALOG) . "/", DIR_FS_CATALOG, $settings['src']);
+        $srcArr = explode('/', $settings['src']);
+        $fileName = end($srcArr);
+        $destination = DIR_FS_ADMIN . 'uploads' . DIRECTORY_SEPARATOR . $fileName;
 
+        $pos = strripos($destination, '.');
+        $ext = strtolower(substr($destination, $pos+1));
+        $name = substr($destination, 0, $pos);
+        $from = 1;
+        $pos2 = strripos($destination, '-');
+        $end = strtolower(substr($destination, $pos2+1));
+        if (preg_match("/[0-9]+/", $end)) {
+            $name = substr($destination, 0, $pos2);
+            $from = (int)$end;
+        }
+        for ($i = $from; $i < 20 && file_exists($destination); $i++) {
+            $destination = $name . '-' . $i . '.' . $ext;
+        }
+
+        $settings['destination'] = $destination;
+        $response = \common\classes\Images::cropImage($settings);
+        if ($response) {
+            $response = str_replace(DIR_FS_CATALOG, tep_catalog_href_link(), $response);
+            return json_encode(['src' => $response]);
+        } else {
+            return json_encode(['error' => 'error']);
+        }
+    }
 
 }

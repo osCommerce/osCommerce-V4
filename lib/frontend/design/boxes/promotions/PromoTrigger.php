@@ -29,7 +29,7 @@ class PromoTrigger extends Widget {
 
     public function run()
     {
-        if(\common\helpers\Acl::checkExtensionAllowed('BonusActions') && defined('BONUS_ACTION_PROGRAM_STATUS') && BONUS_ACTION_PROGRAM_STATUS == 'true'){
+        if(\common\helpers\Acl::checkExtensionAllowed('BonusActions')){
             
             return IncludeTpl::widget(['file' => 'boxes/promotions/trigger.tpl', 'params' => [
             ]]);

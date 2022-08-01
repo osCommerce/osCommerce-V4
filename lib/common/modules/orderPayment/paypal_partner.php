@@ -474,7 +474,7 @@ window.toggleSubFields_{$this->code} = function () {
 
     }
     if (typeof tl == 'function'){
-        tl(function(){ 
+        tl(function(){
             window.toggleSubFields_{$this->code}();
         })
     }
@@ -497,12 +497,12 @@ EOD;
             } else {
                 $checkedJSString = <<<EOD
                     $(window).trigger('disable-checkout-button', { name: 'paypal_partner', value: true})
-                    $('#frmCheckout button[type="submit"]').prop('disabled', true);
+                    $('#frmCheckout button[type="submit"]').prop('disabled', true);//VL2 check
                     $('.paypal-button-container').css('opacity', '1');
 EOD;
                 $unCheckedJSString = <<<EOD
                     $(window).trigger('disable-checkout-button', { name: 'paypal_partner', value: false})
-                    $('#frmCheckout button[type="submit"]').prop('disabled', false);
+                    $('#frmCheckout button[type="submit"]').prop('disabled', false);//VL2 check
                     $('[data-name^="checkout"] .paypal-button-container').css('opacity', '0.5');
 EOD;
 
@@ -523,7 +523,7 @@ window.toggleSubFields_{$this->code} = function () {
 
 }
 if (typeof tl == 'function'){
-    tl(function(){ 
+    tl(function(){
         window.toggleSubFields_{$this->code}();
     })
 }
@@ -607,6 +607,22 @@ EOD;
             tep_redirect($this->getCheckoutUrl(['error_message' => PAYPAL_PARTNER_RESTART], self::PAYMENT_PAGE));
         }
         $_paid = false;
+        //ssie save order to get ID
+        if ($this->saveOrderBefore() == 'Order') {
+            $invoiceId = $orderId = $this->saveOrderBySettings();
+        } else {
+            $orderId = $this->estimateOrderId();
+            $invoiceId = $orderId . '-e-' . date('ymdHis');
+        }
+
+        if (!empty($orderId) && ($orderId != intval($response->result->purchase_units[0]->invoice_id) || $invoiceId == $orderId) ) {
+            try {
+                $this->updateOrderInvoiceId($this->manager->get('partner_order_id'), $invoiceId);
+            } catch (\Exception $e) {
+                //not critical - estimated invoice id on PP
+                \Yii::warning(" #### " .print_r($e->getMessage() . ' ' . $e->getTraceAsString(), true), 'exception_' . $this->code);
+            }
+        }
 
         if ($this->_getIntent() == 'authorize') {
             $response = $this->authorizeOrder($this->manager->get('partner_order_id'));
@@ -623,6 +639,36 @@ EOD;
                 $order->setPaymentStatus($this->code);
             }
 
+            if (!empty($orderId) && $this->saveOrderBefore() == 'Order') {
+                $order = $this->manager->getOrderInstanceWithId('\common\classes\Order', $orderId);
+                if ($order) {
+                    if ($this->order_status) {
+                        \common\helpers\Order::setStatus($orderId, $this->order_status);
+                        $order->info['order_status'] = $this->order_status;
+                    }
+                    $order->update_piad_information(true);
+
+                    $order->save_details();
+                    $order->info['comments'] = '';
+
+                    $order->notify_customer($order->getProductsHtmlForEmail(),[]);
+                    $this->trackCredits();
+                    $this->after_process();
+
+                    $this->manager->clearAfterProcess();
+
+                    if ($ext = \common\helpers\Acl::checkExtension('ReferFriend', 'rf_after_order_placed')) {
+                        $ext::rf_after_order_placed($order->order_id);
+                    }
+
+                    if ($ext = \common\helpers\Acl::checkExtension('Affiliate', 'CheckSales')) {
+                        $ext::CheckSales($order);
+                    }
+
+                    tep_redirect(tep_href_link(FILENAME_CHECKOUT_SUCCESS, 'order_id=' . $order->order_id, 'SSL'));
+
+                }
+            }
         } else {
             tep_redirect($this->getCheckoutUrl(['error_message' => (($this->_getIntent() == 'authorize')?PAYPAL_PARTNER_RESTART_AUTHORIZE:PAYPAL_PARTNER_RESTART_CAPTURE)], self::PAYMENT_PAGE));
             //tep_redirect(tep_href_link(FILENAME_SHOPPING_CART, 'error_message=' . stripslashes("Amount could not be captured"), 'SSL'));
@@ -716,6 +762,10 @@ EOD;
             'set_function' => 'tep_cfg_select_option(array(\'True\', \'False\'), '),
           'MODULE_PAYMENT_PAYPAL_PARTNER_PAY_LATER' => array('title' => 'Show PayPal Pay later info',
             'description' => 'Displays Pay Later messaging for available offers. Restrictions apply. See terms and learn more on PayPal <a target=\'blank\' href=\'https://developer.paypal.com/docs/commerce-platforms/admin-panel/\'>PayPal</a>',
+            'value' => 'False',
+            'set_function' => 'tep_cfg_select_option(array(\'True\', \'False\'), '),
+          'MODULE_PAYMENT_PAYPAL_PARTNER_ORDER_BEFORE_PAYMENT' => array('title' => 'Save order before payment',
+            'description' => 'Save order before payment (slower checkout, exact invoice ID on PayPal, could be required if you have several orders a minute)',
             'value' => 'False',
             'set_function' => 'tep_cfg_select_option(array(\'True\', \'False\'), '),
           'MODULE_PAYMENT_PAYPAL_PARTNER_TRANSACTION_METHOD' => array('title' => 'Transaction Method',
@@ -938,7 +988,8 @@ EOD;
 
             } elseif (!in_array($total['code'], array_merge($totalCollection->readonly, ['ot_shipping']))) {
                 if ($totalCollection->get($total['code'])->credit_class) {
-                    if ($total['code']=='ot_coupon' && $total['title'] == MODULE_ORDER_TOTAL_COUPON_TOTAL . ':') {
+                    $_tmpTitle = defined('MODULE_ORDER_TOTAL_COUPON_TOTAL')?constant('MODULE_ORDER_TOTAL_COUPON_TOTAL'):'';
+                    if ($total['code']=='ot_coupon' && $total['title'] == $_tmpTitle . ':') {
                         continue; //multicoupon with total discount line dirty hack;
                     }
                     $discountValue += ($this->sendExVat ? $total['value_exc_vat'] : $total['value_inc_tax']);
@@ -1120,6 +1171,29 @@ EOD;
         return false;
     }
 
+/**
+ * patch order at PayPal with invoice id (local order id)
+ * @param string $orderId PayPal order Id
+ * @return bool
+ */
+    public function updateOrderInvoiceId($orderId, $invoiceId) {
+        $request = new \PayPalCheckoutSdk\Orders\OrdersPatchRequest($orderId);
+        $data = [[
+                'op' => 'replace',
+                'path' => '/purchase_units/@reference_id==\'default\'/invoice_id',
+                'value' => $invoiceId
+                ]
+        ];
+
+        $request->body = $data;
+
+        try {
+            return $this->getHttpClient()->execute($request);
+        } catch (\Exception $ex) {
+            \Yii::error($ex->getMessage(), 'paypal_partner');
+        }
+        return false;
+    }
     private function ppBuildOrderDetails($order, $post_data = []) {
         $currency_code = \Yii::$app->settings->get('currency');
         if (!empty($order->info['currency'])) {
@@ -1195,7 +1269,8 @@ EOD;
             'description' => (strlen(defined('STORE_NAME')?constant('STORE_NAME'):'')>127  ?
                   substr((defined('STORE_NAME')?constant('STORE_NAME'):''), 0, 123) . ' ...' :
                   (defined('STORE_NAME')?constant('STORE_NAME'):'')),
-            'invoice_id' => 'e' . $this->estimateOrderId() . date('-ymdHis'),
+            'invoice_id' => $this->estimateOrderId() . '-e-' . date('ymdHis'),
+// custom_id to hide from customer
         ]];
 
         //if (true) { //checkout page/logged in customer: all details are available.
@@ -1823,7 +1898,17 @@ EOD;
                         }
 
                         $payerAddresses['sendto'] = $response->result->purchase_units[0]->shipping->address??[];
+                        if (!empty($response->result->purchase_units[0]->shipping->name->full_name)) {
+                            $_tmp = explode(' ', $response->result->purchase_units[0]->shipping->name->full_name, 2);
+                            $payerAddresses['sendto']->firstname = $_tmp[0]??'';
+                            $payerAddresses['sendto']->lastname = $_tmp[1]??'';
+                        } else {
+                            $payerAddresses['sendto']->firstname = $payer->name->given_name;
+                            $payerAddresses['sendto']->lastname = $payer->name->surname;
+                        }
                         $payerAddresses['billto'] = $response->result->payer->address??[];
+                        $payerAddresses['billto']->firstname = $payer->name->given_name;
+                        $payerAddresses['billto']->lastname = $payer->name->surname;
                         $sendto = $billto = false;
                         foreach ($payerAddresses as $type => $payerAddress) {
                             if (!empty($payerAddress) && count((array)$payerAddress)>2) {
@@ -1840,8 +1925,8 @@ EOD;
                                 $ab = \common\models\AddressBook::find()
                                         ->where(['and',
                                           ['customers_id' => $customer->customers_id],
-                                          ['entry_firstname' => $payer->name->given_name],
-                                          ['entry_lastname' => $payer->name->surname],
+                                          ['entry_firstname' => $payerAddress->firstname],
+                                          ['entry_lastname' => $payerAddress->lastname],
                                           ['entry_street_address' => $payerAddress->address_line_1??''],
                                           ['entry_postcode' => $payerAddress->postal_code??''],
                                           ['entry_city' => $payerAddress->admin_area_2??''],
@@ -1852,8 +1937,8 @@ EOD;
                                 } else {
                                     $sql_data_array = array(
                                       'customers_id' => $customer->customers_id,
-                                      'entry_firstname' => $payer->name->given_name,
-                                      'entry_lastname' => $payer->name->surname,
+                                      'entry_firstname' => $payerAddress->firstname,
+                                      'entry_lastname' => $payerAddress->lastname,
                                       'entry_street_address' => $payerAddress->address_line_1??'',
                                       'entry_suburb' => $payerAddress->address_line_2??'',
                                       'entry_postcode' => $payerAddress->postal_code??'',
@@ -2184,6 +2269,45 @@ EOD;
         }
         if (!$ret) {
             $ret = 4;
+        }
+        return $ret;
+    }
+
+/**
+ *
+ * @return string|false
+ */
+    public function saveOrderBefore() {
+        $orderClass = false;
+        if (defined('MODULE_PAYMENT_PAYPAL_PARTNER_ORDER_BEFORE_PAYMENT') && MODULE_PAYMENT_PAYPAL_PARTNER_ORDER_BEFORE_PAYMENT != 'False') {
+            if (MODULE_PAYMENT_PAYPAL_PARTNER_ORDER_BEFORE_PAYMENT == 'True') {
+                $orderClass = 'Order';
+            } else {
+                $orderClass = 'TmpOrder';
+            }
+        }
+        return $orderClass;
+    }
+
+    public function saveOrderBySettings() {
+        $ret = false;
+        $orderClass = $this->saveOrderBefore();
+        if ($orderClass) {
+            if ($orderClass != 'TmpOrder') {
+                $order = $this->manager->getOrderInstance();
+                $order->info['order_status'] = $this->getDefaultOrderStatusId();
+
+            }
+            $ret = $this->saveOrder($orderClass);
+            if (!empty($ret)) {
+                if ($orderClass == 'TmpOrder') {
+                    $ret = 'tmp' . $ret;
+                    $key = 'ppp_tmp_order';
+                } else {
+                    $key = 'ppp_order_before';
+                }
+                $this->manager->set($key, $ret);
+            }
         }
         return $ret;
     }

@@ -60,13 +60,13 @@ class PointsEarntHistory extends Widget
             ];
         }
 
-        if(\common\helpers\Acl::checkExtensionAllowed('BonusActions') && defined('BONUS_ACTION_PROGRAM_STATUS') && BONUS_ACTION_PROGRAM_STATUS == 'true'){
-            $_history = \common\models\promotions\PromotionsBonusHistory::find()->where('customer_id = :id', [':id' => (int)Yii::$app->user->getId()])->asArray()->all();
+        if(\common\helpers\Acl::checkExtensionAllowed('BonusActions')){
+            $_history = \common\extensions\BonusActions\models\PromotionsBonusHistory::find()->where('customer_id = :id', [':id' => (int)Yii::$app->user->getId()])->asArray()->all();
             if ($_history){
                 $titles = [];
                 foreach($_history as $h){
                     if (!isset($titles[$h['bonus_points_id']])){
-                        $titles[$h['bonus_points_id']] = \common\models\promotions\PromotionsBonusPoints::find()->where('bonus_points_id = ' . (int)$h['bonus_points_id'])->with('description')->one();
+                        $titles[$h['bonus_points_id']] = \common\extensions\BonusActions\models\PromotionsBonusPoints::find()->where('bonus_points_id = ' . (int)$h['bonus_points_id'])->with('description')->one();
                     }
                     $history[] = [
                         'date' => DateHelper::datepicker_date($h['action_date']),

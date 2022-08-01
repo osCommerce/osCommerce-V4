@@ -412,7 +412,7 @@ class Info
              * 2 - hide if zero
              */
 
-            if (($products_arr['stock_indicator']['flags']['request_for_quote'] && \common\helpers\Php8::getConst('SHOW_PRICE_FOR_QUOTE_PRODUCT') != 'True' /*&& $products_arr['stock_indicator']['flags']['display_price_options'] != 0*/) ||
+            if (($products_arr['stock_indicator']['flags']['request_for_quote'] && strtolower(\common\helpers\PlatformConfig::getVal('SHOW_PRICE_FOR_QUOTE_PRODUCT', 'false')) != 'true' /*&& $products_arr['stock_indicator']['flags']['display_price_options'] != 0*/) ||
                 ($products_arr['stock_indicator']['flags']['display_price_options'] == 1) ||
                 (isset($products_arr['calculated_price']) && abs($products_arr['calculated_price'])<0.01 && $products_arr['stock_indicator']['flags']['display_price_options'] == 2)
                 ) {

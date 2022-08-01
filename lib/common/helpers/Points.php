@@ -116,17 +116,10 @@ class Points {
         if ($coefficient !== null) {
             return $coefficient;
         }
-        if (\common\helpers\Acl::checkExtensionAllowed('BonusActions') && defined('BONUS_ACTION_PROGRAM_STATUS') &&
-            BONUS_ACTION_PROGRAM_STATUS === 'false') {
-            return false;
-        }
-        $coefficient = false;
-        if (\common\helpers\Acl::checkExtensionAllowed('BonusActions') && 
-            defined('BONUS_POINT_CURRENCY_COEFFICIENT') &&
-            is_numeric(BONUS_POINT_CURRENCY_COEFFICIENT) &&
-            BONUS_POINT_CURRENCY_COEFFICIENT > 0
-        ) {
-            $coefficient = (float)BONUS_POINT_CURRENCY_COEFFICIENT;
+        if ($ext = \common\helpers\Acl::checkExtensionAllowed('BonusActions')) {
+            $coefficient = $ext::getCurrencyCoeff();
+        } else {
+            $coefficient = false;
         }
         return $coefficient;
     }

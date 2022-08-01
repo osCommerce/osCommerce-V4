@@ -38,11 +38,13 @@ class Dbg
         if (\common\helpers\System::isDevelopment()) {
             echo "<pre>" . $msg . '</pre>';
         }
+        self::log($msg);
     }
 
     public static function echoVar($var, $msg = 'var')
     {
         self::echo($msg . '=' . \yii\helpers\VarDumper::export($var));
+        self::logVar($var, $msg);
     }
 
     public static function echoQuery($var, $msg = 'query')
@@ -53,25 +55,37 @@ class Dbg
         self::echoVar($var, $msg);
     }
 
-    public static function saveJson($var, $fn = 'var')
+    private static function getFileName($fn, $ext)
     {
-        if (!preg_match('/^[-\w]+$/', $fn)) {
-            \Yii::warning('File name is not valid', 'debug/json');
-            return;
-        }
-
+        \common\helpers\Assert::match('/^[-\w]+$/', $fn, 'Invalid file name');
         $fn = Yii::getAlias('@app/runtime/logs/') . $fn;
 
-        if (file_exists($fn . '.json')) {
-            $fn .= date(' Y-m-d H-i-s ').microtime() ;
+        if (file_exists($fn . $ext)) {
+            $fn .= date(' Y-m-d H-i-s ').microtime();
         }
-
-        $content = self::getStack() . "\n" . json_encode($var,  JSON_PRETTY_PRINT |  JSON_UNESCAPED_SLASHES );
-        if (false === file_put_contents($fn . '.json', $content)) {
-            \Yii::warning('Error in file_put_contents: '  . error_get_last(), 'debug/json');
-        }
+        return $fn . $ext;
     }
 
+    public static function saveVar($var, $fn = 'var')
+    {
+        $content = \yii\helpers\VarDumper::export($var);
+        self::saveText($content, $fn, '.vardump');
+    }
+
+    public static function saveJson($var, $fn = 'var')
+    {
+        $content = json_encode($var,  JSON_PRETTY_PRINT |  JSON_UNESCAPED_SLASHES );
+        self::saveText($content, $fn, '.json');
+    }
+
+    public static function saveText($txt, $fn = 'var', $ext = '.txt')
+    {
+        $fn = self::getFileName($fn, $ext);
+        if (false === file_put_contents($fn, $txt)) {
+            \Yii::warning('Error in file_put_contents: '  . error_get_last(), 'debug/save');
+        }
+    }
+    
     public static function getStack()
     {
         ob_start();

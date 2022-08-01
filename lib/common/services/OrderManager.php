@@ -93,7 +93,7 @@ class OrderManager {
     public function isShippingNeeded() {
         $needed = ($this->contentType != 'virtual') && ($this->contentType != 'virtual_weight');
 
-        if ($this->getInstanceType() == 'quote' && defined('QUOTE_SKIP_SHIPPING') && QUOTE_SKIP_SHIPPING == 'True') {
+        if ($this->getInstanceType() == 'quote' && strtolower(\common\helpers\PlatformConfig::getVal('SHOW_QUANTITY_INPUT_FOR_QUOTE_BUTTON', 'false')) == 'true') {
           $needed = false;
         } else {
           // in some cases we don't have order instance here,

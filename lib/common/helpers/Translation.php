@@ -134,17 +134,22 @@ class Translation
         return $ret;
     }
 
-    public static function getValue($translation_key, $translation_entity = 'configuration', $language_id = null)
+    public static function getValue($translation_key, $translation_entity = 'configuration', $default = '##key##')
     {
-        if (defined($translation_key)) {
-            return constant($translation_key);
-        } else {
-            $res = self::getTranslationValue($translation_key, $translation_entity, $language_id ?? \Yii::$app->settings->get('languages_id'));
-            if (!$res) {
-                $res = $translation_key;
-            }
-            return $res;
+        $languages_id = \Yii::$app->settings->get('languages_id');
+        if (defined($translation_key)) return constant($translation_key);
+
+        $res = self::getTranslationValue($translation_key, $translation_entity, $languages_id);
+        $defLanguageId = \common\helpers\Language::get_default_language_id();
+        if (!$res && $languages_id != $defLanguageId) {
+            $res = self::getTranslationValue($translation_key, $translation_entity, $defLanguageId);
         }
+
+        // return
+        if ($res) return $res;
+        if (is_null($default)) return false;
+        if ($default=='##key##') return $translation_key;
+        return $default;
     }
 
     public static function setTranslationValue($translation_key, $translation_entity, $language_id, $translation_value)
@@ -278,7 +283,11 @@ class Translation
 
         $jsKeys = [];
         foreach ($keys as $key){
-            $jsKeys[$key] = constant($key);
+            if (defined($key)) {
+                $jsKeys[$key] = constant($key);
+            } else {
+                $jsKeys[$key] = $key;
+            }
         }
 
         if ($json) {

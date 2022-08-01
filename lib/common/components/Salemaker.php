@@ -29,7 +29,7 @@ class Salemaker {
         if (!isset($salemakerPlatform[$platform_id])){
             $salemakerPlatform[$platform_id] = [];
             if (\common\helpers\Acl::checkExtensionAllowed('Promotions')) {
-                $promotions = \common\models\promotions\Promotions::getCurrentPromotions($platform_id)->all();
+                $promotions = \common\extensions\Promotions\models\Promotions::getCurrentPromotions($platform_id)->all();
 
                 if ($promotions && is_array($promotions)) {
                     foreach ($promotions as $promo) {
@@ -43,7 +43,7 @@ class Salemaker {
     
     public static function getConditionsById($promo_id){
         if ($promo_id && \common\helpers\Acl::checkExtensionAllowed('Promotions')){
-            $promo = \common\models\promotions\Promotions::findOne($promo_id)->one();
+            $promo = \common\extensions\Promotions\models\Promotions::findOne($promo_id)->one();
             if ($promo){
                 return self::getConditions($promo);
             }
@@ -66,7 +66,7 @@ class Salemaker {
             if ($promo->sets) {
                 foreach ($promo->sets as $set) {
                     switch ($set->getAttribute('promo_slave_type')) {
-                        case \common\models\promotions\PromotionService::SLAVE_CATEGORY :
+                        case \common\extensions\Promotions\models\PromotionService::SLAVE_CATEGORY :
                             $cid = $set->getAttribute('promo_slave_id');
                             $ids = Categories::ids_products_in_category($cid, false, \common\classes\platform::activeId(), false); //check admin?? $promo->platform_id
                             if (is_array($ids)) {
@@ -87,7 +87,7 @@ class Salemaker {
                                 }
                             }
                             break;
-                        case \common\models\promotions\PromotionService::SLAVE_MANUFACTURER :
+                        case \common\extensions\Promotions\models\PromotionService::SLAVE_MANUFACTURER :
                             $ids = \common\helpers\Manufacturers::products_ids_manufacturer($set->getAttribute('promo_slave_id'), false, \common\classes\platform::activeId());
                             $products = array_merge($products, $ids);
                             if ($ids){
@@ -97,7 +97,7 @@ class Salemaker {
                                 ];
                             }
                             break;
-                        case \common\models\promotions\PromotionService::MASTER_CATEGORY :
+                        case \common\extensions\Promotions\models\PromotionService::MASTER_CATEGORY :
                             $cid = $set->getAttribute('promo_slave_id');
                             $ids = Categories::ids_products_in_category($cid, false, \common\classes\platform::activeId(), true);
                             if (is_array($ids)) {
@@ -108,12 +108,12 @@ class Salemaker {
                                 ];
                             }
                             break;
-                        case \common\models\promotions\PromotionService::MASTER_PRODUCT :
+                        case \common\extensions\Promotions\models\PromotionService::MASTER_PRODUCT :
                             $pid = $set->getAttribute('promo_slave_id');
                             $master_products[] = $pid;
                             $details['master']['products'][$pid] = $set->getAttribute('promo_quantity');
                             break;
-                        case \common\models\promotions\PromotionService::SLAVE_PROPERTY :
+                        case \common\extensions\Promotions\models\PromotionService::SLAVE_PROPERTY :
                             $ids = \common\helpers\Properties::getProductsToProperty($set->getAttribute('promo_slave_id'));
                             if ($ids){
                                 $ids = \yii\helpers\ArrayHelper::getColumn($ids, 'products_id');
@@ -134,7 +134,7 @@ class Salemaker {
                                 }
                             }
                             break;
-                        case \common\models\promotions\PromotionService::SLAVE_PROPERTY_VALUE :
+                        case \common\extensions\Promotions\models\PromotionService::SLAVE_PROPERTY_VALUE :
                             $ids = \common\helpers\Properties::getProductsToPropertyValue($set->getAttribute('promo_slave_id'));
                             if ($ids){
                                 $ids = \yii\helpers\ArrayHelper::getColumn($ids, 'products_id');
@@ -156,7 +156,7 @@ class Salemaker {
 
                             }
                             break;
-                        case \common\models\promotions\PromotionService::MASTER_PROPERTY :
+                        case \common\extensions\Promotions\models\PromotionService::MASTER_PROPERTY :
                             $ids = \common\helpers\Properties::getProductsToProperty($set->getAttribute('promo_slave_id'));
                             if ($ids){
                                 $ids = \yii\helpers\ArrayHelper::getColumn($ids, 'products_id');                                    
@@ -167,7 +167,7 @@ class Salemaker {
                                 ];
                             }
                             break;
-                        case \common\models\promotions\PromotionService::MASTER_PROPERTY_VALUE :
+                        case \common\extensions\Promotions\models\PromotionService::MASTER_PROPERTY_VALUE :
                             $ids = \common\helpers\Properties::getProductsToPropertyValue($set->getAttribute('promo_slave_id'));
                             if ($ids){
                                 $ids = \yii\helpers\ArrayHelper::getColumn($ids, 'products_id');                                    
@@ -178,7 +178,7 @@ class Salemaker {
                                 ];
                             }
                             break;
-                        case \common\models\promotions\PromotionService::SLAVE_PRODUCT: // products
+                        case \common\extensions\Promotions\models\PromotionService::SLAVE_PRODUCT: // products
                         //default:
                             $promo_slave_id = $set->getAttribute('promo_slave_id');
                             $products[] = $promo_slave_id;
@@ -223,7 +223,7 @@ class Salemaker {
             }
             if ($promo->restrict_class){
                 $conditions['restrict_class'] = $promo->restrict_class;
-                $service = new \common\models\promotions\PromotionService();
+                $service = new \common\extensions\Promotions\models\PromotionService();
                 $promoClass = $service($promo->promo_class);
 
                 if (empty($products) && method_exists($promoClass, 'getRestriction')) { // restrict class on all products

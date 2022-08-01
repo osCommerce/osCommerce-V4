@@ -232,14 +232,12 @@ class Customer {
         tep_db_query("TRUNCATE TABLE coupon_refer_queue");
         tep_db_query("TRUNCATE TABLE " . TABLE_WHOS_ONLINE);
 
-        // todo: AdminHooks
         $var_tables = [
             'regular_offers',
             TABLE_CUSTOMERS_QUOTE, TABLE_CUSTOMERS_QUOTE_ATTRIBUTES,    // Quotations ext
             TABLE_CUSTOMERS_SAMPLE, TABLE_CUSTOMERS_SAMPLE_ATTRIBUTES,  // Samples ext
             TABLE_CUSTOMERS_BASKET, TABLE_CUSTOMERS_BASKET_ATTRIBUTES,  // CustomerBasket ext
             TABLE_CUSTOMERS_ADDITIONAL_FIELDS, // ext
-            'promotions_customer_codes', // Promotions ext
         ];
         foreach($var_tables as $table) {
           if ( \Yii::$app->db->schema->getTableSchema($table) ) {
@@ -393,7 +391,6 @@ class Customer {
             TABLE_CUSTOMERS_SAMPLE, TABLE_CUSTOMERS_SAMPLE_ATTRIBUTES,  // Samples ext
             TABLE_CUSTOMERS_BASKET, TABLE_CUSTOMERS_BASKET_ATTRIBUTES,  // CustomerBasket ext
             TABLE_CUSTOMERS_ADDITIONAL_FIELDS, // ext
-            'promotions_customer_codes', // Promotions ext
         ];
         foreach($var_tables as $table) {
           if ($schema = \Yii::$app->db->schema->getTableSchema($table) ) {

@@ -480,7 +480,7 @@ class ReviewsController extends Sceleton {
         if (\common\helpers\Acl::checkExtensionAllowed('BonusActions')) {
             $cus = tep_db_fetch_array(tep_db_query("select customers_id from " . TABLE_REVIEWS . " where reviews_id = '" . (int)$reviews_id . "'"));
             if ($cus){
-                $instance = \common\models\promotions\PromotionsBonusObserver::getInstance();
+                $instance = \common\extensions\BonusActions\models\PromotionsBonusObserver::getInstance();
                 if ($instance){
                     $result = $instance->triggerAction('post_review', $cus['customers_id']);
                 }

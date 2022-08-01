@@ -106,12 +106,18 @@ class Migration extends \yii\db\Migration {
             // create indexes
             if (!is_null($indexes)) {
 
-                if (!is_array($indexes))
+                if (!is_array($indexes)) {
                     $indexes = array($indexes);
+                }
                 foreach ($indexes as $index_name => $columns) {
-                    if (is_int($index_name))
+                    $unique = false;
+                    if (is_string($index_name) && strpos($index_name, 'unique:') !== false) {
+                        $unique = true;
+                        $index_name = str_replace('unique:', '', $index_name);
+                    }
+                    if (is_int($index_name) or empty($index_name))
                         $index_name = str_replace(',', '_', $columns);
-                    $this->createIndex($index_name, $table_name, $columns);
+                    $this->createIndex($index_name, $table_name, $columns, $unique);
                 }
             }
 
@@ -188,6 +194,32 @@ class Migration extends \yii\db\Migration {
         parent::createTable($table, $columns, $options);
     }
 
+    public function batchInsertSafe($table, $columns, $rows) {
+        try {
+            parent::batchInsert($table, $columns, $rows);
+            return true;
+        } catch (\Exception $e) {
+            \Yii::warning('Error in batchInsert (will be added row-by-row): ' . $e->getMessage());
+        }
+        $errorCnt = 0;
+        $errorMsg = '';
+        foreach($rows as $row) {
+            $insert = [];
+            foreach($columns as $index => $col) {
+                $insert[$col] = $row[$index];
+            }
+            try {
+                \Yii::$app->db->createCommand()->upsert($table, $insert, false)->execute();
+            } catch (\Exception $e) {
+                $errorCnt++;
+                $errorMsg .= sprintf("Error adding row %s: %s\n", var_export($row, true), $e->getMessage());
+            }
+        }
+        if ($errorCnt) {
+            \Yii::warning( "Error in row-by-row inserting ($errorCnt): " . $errorMsg);
+        }
+        return $errorCnt;
+    }
     /**
      *
      * @staticvar boolean $language_map

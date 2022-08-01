@@ -1,5 +1,5 @@
 <div class="cart-listing w-cart-listing{\frontend\design\Info::addBlockToWidgetsList('cart-listing')}">
-    <div{if $smarty.const.SHOW_PRICE_FOR_QUOTE_PRODUCT|default:null != 'True'} class="no-price"{/if}>
+    <div{if strtolower(\common\helpers\PlatformConfig::getVal('SHOW_PRICE_FOR_QUOTE_PRODUCT', 'false')) != 'true'} class="no-price"{/if}>
   <div class="headings">
     <div class="head remove">{$smarty.const.REMOVE}</div>
     <div class="head image">{$smarty.const.PRODUCTS}</div>
@@ -70,7 +70,7 @@
           {/if}
           {$product.hidden_fields}
         </div>
-        <div class="price">{if $smarty.const.SHOW_PRICE_FOR_QUOTE_PRODUCT|default:null == 'True'}{$product.final_price}{/if}</div>
+        <div class="price">{if strtolower(\common\helpers\PlatformConfig::getVal('SHOW_PRICE_FOR_QUOTE_PRODUCT', 'false')) == 'true'}{$product.final_price}{/if}</div>
         {if $product.gift_wrap_allowed}
         <div class="gift-wrap"><label>{$smarty.const.BUYING_GIFT} ({$product.gift_wrap_price_formated}) <input type="checkbox" name="gift_wrap[{$product.id}]" class="check-on-off" {if $product.gift_wrapped} checked="checked"{/if}/></label></div>
         {/if}

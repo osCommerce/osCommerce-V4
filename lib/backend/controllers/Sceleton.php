@@ -104,6 +104,12 @@ class Sceleton extends Controller {
 
     public function render($view, $params = [])
     {
+        if (isset($this->navigation)) {
+            $lastElement = end($this->navigation);
+            if (isset($lastElement['title'])) {
+                \Yii::$app->view->title  = $lastElement['title'] . ' | '. \common\classes\platform::name(\common\classes\platform::defaultId()) .' | ' . \Yii::$app->name;
+            }
+        }
         \backend\design\Data::mainData();
 
         return parent::render($view, $params);

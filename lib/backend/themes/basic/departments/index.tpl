@@ -14,14 +14,17 @@
     <div class="col-md-12">
       <form id="filterForm" name="filterForm" onsubmit="return applyFilter();">
         <input type="hidden" name="dID" id="row_id" value="{$app->controller->view->filters->row}" />
-        <div class="ord_status_filter_row modules-filter">
+        <div class="">
           <div>{Html::checkbox('inactive', $app->controller->view->inactive, ['value'=>'1', 'class' => 'js_check_status'])}{$smarty.const.TEXT_SHOW_INACTIVE_DEPARTMENTS}</div>
         </div>
       </form>
 
       <div class="widget-content" id="departments_list_data">
-        <table class="table table-striped table-bordered table-hover table-responsive table-selectable datatable table-switch-on-off js-table-sortable"
-               checkable_list="0" data_ajax="{$app->urlManager->createUrl('departments/list')}">
+        <div class="btn-wr after btn-wr-top disable-btn data-table-top-left">
+                <a href="javascript:void(0)" onclick="deleteSelectedOrders();" class="btn btn-del btn-no-margin">{$smarty.const.TEXT_DELETE_SELECTED}</a>
+        </div>
+        <table class="table table-striped table-bordered table-hover table-responsive table-checkable datatable table-switch-on-off js-table-sortable"
+               checkable_list="0,1,2,3,4" data_ajax="{$app->urlManager->createUrl('departments/list')}">
           <thead>
             <tr>
               {foreach $app->controller->view->departmentsTable as $tableItem}
@@ -37,7 +40,62 @@
 
   <script type="text/javascript">
   var global = '{$dID}';
-
+  
+function getTableSelectedIds() {
+    var selected_messages_ids = [];
+    var selected_messages_count = 0;
+    $('input:checkbox:checked.uniform').each(function(j, cb) {
+        var aaa = $(cb).closest('td').find('.cell_identify').val();
+        if (typeof(aaa) != 'undefined') {
+            selected_messages_ids[selected_messages_count] = aaa;
+            selected_messages_count++;
+        }
+    });
+    return selected_messages_ids;
+}
+function getTableSelectedCount() {
+    var selected_messages_count = 0;
+    $('input:checkbox:checked.uniform').each(function(j, cb) {
+        var aaa = $(cb).closest('td').find('.cell_identify').val();
+        if (typeof(aaa) != 'undefined') {
+            selected_messages_count++;
+        }
+    });
+    return selected_messages_count;
+}
+function deleteSelectedOrders() {
+    if (getTableSelectedCount() > 0) {
+        var selected_ids = getTableSelectedIds();
+        
+        bootbox.dialog({
+                message: "{$smarty.const.TEXT_DELETE_SELECTED} <span class=\"lowercase\">{$smarty.const.BOX_HEADING_DEPARTMENTS}?</span>",
+                title: "{$smarty.const.TEXT_DELETE_SELECTED} <span class=\"lowercase\">{$smarty.const.BOX_HEADING_DEPARTMENTS}</span>",
+                buttons: {
+                        success: {
+                                label: "Yes",
+                                className: "btn-delete",
+                                callback: function() {
+                                    $.post("departments/departmentsdelete", { 'selected_ids' : selected_ids, 'delete_reviews' : '1' }, function(data, status){
+                                        if (status == "success") {
+                                            resetStatement();
+                                        } else {
+                                            alert("Request error.");
+                                        }
+                                    },"html");
+                                }
+                        },
+                        main: {
+                                label: "Cancel",
+                                className: "btn-cancel",
+                                callback: function() {
+                                        //console.log("Primary button");
+                                }
+                        }
+                }
+        });
+    }
+    return false;
+}
   function viewDepartment(item_id) {
     $.post("{$app->urlManager->createUrl('departments/view')}", {
       'dID': item_id
@@ -182,40 +240,6 @@
   }
 
   $(document).ready(function(){
-      $( ".js-table-sortable.datatable tbody" ).sortable({
-          axis: 'y',
-          update: function( event, ui ) {
-              $(this).find('[role="row"]').each(function() {
-                  if ( this.id ) return;
-                  var cell_ident = $(this).find('.cell_identify');
-                  var cell_type = $(this).find('.cell_type');
-                  if ( cell_ident.length>0 && cell_type.length>0 ) {
-                      this.id = cell_type.val()+'_'+cell_ident.val();
-                  }
-              });
-              var post_data = [];
-              $(this).find('[role="row"]').each(function() {
-                  var spl = this.id.indexOf('_');
-                  if ( spl===-1 ) return;
-                  post_data.push({ name:this.id.substring(0, spl)+'[]', value:this.id.substring(spl+1) });
-              });
-              var $dropped = $(ui.item);
-              post_data.push({ name:'sort_'+$dropped.find('.cell_type').val(), value:$dropped.find('.cell_identify').val() });
-
-              $.post("{Yii::$app->urlManager->createUrl('departments/sort-order')}", post_data, function(data, status){
-                  if (status == "success") {
-                      resetStatement();
-                  } else {
-                      alert("Request error.");
-                  }
-              },"html");
-          },
-          handle: ".handle"
-      }).disableSelection();
-      /*$('.table').on('xhr.dt', function ( e, settings, json, xhr ) {
-       console.log(json);
-       } );*/
-
       $('.js_check_status').bootstrapSwitch({
           onText: "{$smarty.const.SW_ON}",
           offText: "{$smarty.const.SW_OFF}",
@@ -225,6 +249,15 @@
       $('.js_check_status').on('click switchChange.bootstrapSwitch',function(){
           applyFilter();
       });
+      
+      $('.uniform').click(function() { 
+        if($(this).is(':checked')){
+            $('.order-box-list .btn-wr').removeClass('disable-btn');
+        }else{
+            $('.order-box-list .btn-wr').addClass('disable-btn');
+        }
+    });
+      
   });
   </script>
 

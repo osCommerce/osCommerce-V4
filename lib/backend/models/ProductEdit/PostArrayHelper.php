@@ -105,7 +105,7 @@ class PostArrayHelper
             if (isset($field['flag'])) {
                 $tmp = Yii::$app->request->post($field['flag'], 0);
                 if (is_array($tmp)) {
-                    $check = $tmp[$group_id];
+                    $check = $tmp[$group_id] ?? null;
                 } else {
                     $check = 0;
                 }

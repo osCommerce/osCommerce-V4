@@ -21,9 +21,9 @@ class Observer extends \yii\base\Component {
     public function registerEvents(){
 
         if (\common\helpers\Acl::checkExtensionAllowed('Promotions')) {
-            \common\models\promotions\PromotionService::setEventPromoCode();
-        
-            \common\models\promotions\PromotionService::checkEventPromoCode();
+            \common\extensions\Promotions\models\PromotionService::setEventPromoCode();
+
+            \common\extensions\Promotions\models\PromotionService::checkEventPromoCode();
         }
         
         if ($ext = \common\helpers\Acl::checkExtension('SupplierPurchase', 'allowed')){

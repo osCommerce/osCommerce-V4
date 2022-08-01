@@ -263,7 +263,7 @@
                               <label>{$smarty.const.TEXT_ALLOW_BACKORDER}<span class="title-colon">:</span></label>
                               <div class="allow-bck-ord">
                                 <label><span class="label-title">{$smarty.const.TEXT_NO}</span>{Html::radio('allow_backorder',$pInfo->allow_backorder == -1, ['value' => -1])}</label>
-                                <label><span class="label-title">{$smarty.const.TEXT_DEFAULT} {if $smarty.const.STOCK_ALLOW_BACKORDER_BY_DEFAULT=='True'}({$smarty.const.TEXT_YES}){/if}{if $smarty.const.STOCK_ALLOW_BACKORDER_BY_DEFAULT=='False'}({$smarty.const.TEXT_NO}){/if}</span>{Html::radio('allow_backorder',$pInfo->allow_backorder == 0, ['value' => 0])}</label>
+                                <label><span class="label-title">{$smarty.const.TEXT_DEFAULT} {if strtolower(\common\helpers\PlatformConfig::getVal('STOCK_ALLOW_BACKORDER_BY_DEFAULT', 'false')) =='true'}({$smarty.const.TEXT_YES}){/if}{if strtolower(\common\helpers\PlatformConfig::getVal('STOCK_ALLOW_BACKORDER_BY_DEFAULT', 'false')) =='false'}({$smarty.const.TEXT_NO}){/if}</span>{Html::radio('allow_backorder',$pInfo->allow_backorder == 0, ['value' => 0])}</label>
                                 <label><span class="label-title">{$smarty.const.TEXT_YES}</span>{Html::radio('allow_backorder',$pInfo->allow_backorder == 1, ['value' => 1])}</label>
                               </div>
                             </div>

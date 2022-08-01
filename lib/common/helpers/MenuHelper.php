@@ -171,7 +171,7 @@ class MenuHelper {
         $object->path = (string)$item['path'];
         $object->title = (string)$item['title'];
         $object->filename = (string)($item['filename'] ?? null);
-        $object->save();
+        $object->save(false);
         //--- update acl
         $acl = \common\models\AccessControlList::findOne(['access_control_list_key' => $object->title]);
         if (!is_object($acl)) {
@@ -323,27 +323,25 @@ class MenuHelper {
         // if already exists
         if ($params['removeIfExists'] ?? true) {
             self::removeAdminMenuItem($array);
-        } else {
-            if (!empty(self::getAdminMenuItemByTitle($array))) {
-                return null;
+        } 
+        if (empty(self::getAdminMenuItemByTitle($array))) {
+
+            // resort
+            $addAfterTitle = $params['addAfterMenuTitle'] ?? null;
+            if ($addAfterTitle == '__last__') {
+                $menu = self::getAdminMenuItemLast($array['parent_id']);
+            } elseif (!empty($addAfterTitle)) {
+                $menu = self::getAdminMenuItemByTitle($addAfterTitle);
             }
-        }
+            if (!empty($menu)) {
+                $array['parent_id'] = $menu->parent_id;
+                $array['sort_order'] = $menu->sort_order + 1;
+            }
+            self::resortAdminMenu($array['parent_id'], $array['sort_order']);
 
-        // resort
-        $addAfterTitle = $params['addAfterMenuTitle'] ?? null;
-        if ($addAfterTitle == '__last__') {
-            $menu = self::getAdminMenuItemLast($array['parent_id']);
-        } elseif (!empty($addAfterTitle)) {
-            $menu = self::getAdminMenuItemByTitle($addAfterTitle);
+            // create
+            $res = self::createAdminMenuItemAndCheckAcl($array);
         }
-        if (!empty($menu)) {
-            $array['parent_id'] = $menu->parent_id;
-            $array['sort_order'] = $menu->sort_order + 1;
-        }
-        self::resortAdminMenu($array['parent_id'], $array['sort_order']);
-
-        // create
-        $res = self::createAdminMenuItemAndCheckAcl($array);
         if (is_array($array['child'] ?? null)) {
 
             foreach($array['child'] as $key => $child) {

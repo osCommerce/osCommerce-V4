@@ -80,6 +80,7 @@ class TextsController extends Sceleton {
         $this->view->key_entity = $a_info['key_entity'];
         
         $_c = 0;
+        $a_info['shown_language'] = $a_info['shown_language'] ?? [\common\helpers\Language::get_default_language_id()];
         foreach ($languages as $key => $value) {
           if (in_array($value['id'], $a_info['shown_language'])){
 			$translated = tep_db_fetch_array(tep_db_query("select sum(translated) as translated, count(translated) as total from " . TABLE_TRANSLATION . " where language_id = '{$value['id']}'"));
@@ -195,6 +196,8 @@ class TextsController extends Sceleton {
         
         $languages = \common\helpers\Language::get_languages(true);
         $_def_id = \common\helpers\Language::get_default_language_id();
+        $a_info['shown_language'] = $a_info['shown_language'] ?? [$_def_id];
+        $a_info['searchable_language'] = $a_info['searchable_language'] ?? [$_def_id];
         
         $search_in_language = '';
         $sensitive = '';

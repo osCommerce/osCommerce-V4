@@ -27,6 +27,7 @@
     <meta name="msapplication-TileColor" content="{Info::themeSetting('theme_color')}">
     <meta name="msapplication-TileImage" content="{Info::themeFile('/icons/ms-icon-144x144.png')}">
     <meta name="theme-color" content="{Info::themeSetting('theme_color')}">
+    <meta name="generator" content="osCommerce 4.0">
 {/if}
     <base href="{$smarty.const.BASE_URL}">
     {Html::csrfMetaTags()}
@@ -104,7 +105,7 @@
     {\frontend\design\boxes\promotions\PromoTrigger::widget()}
 {/if}
 {if (\common\helpers\Acl::checkExtensionAllowed('BonusActions'))}
-    {\common\models\promotions\PromotionsBonusObserver::checkAlertPromoAction()}
+    {\common\extensions\BonusActions\models\PromotionsBonusObserver::checkAlertPromoAction()}
 {/if}
 <script type="text/javascript" src="{Info::themeFile('/js/jquery.min.js')}" {$this->async}></script>
 {Info::createJs()}

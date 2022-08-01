@@ -1681,7 +1681,7 @@ class DesignController extends Sceleton {
       $files2 = scandir(DIR_FS_CATALOG . 'themes/' . $get['theme_name'] . '/img');
       foreach ($files2 as $item){
         $s = strtolower(substr($item, -3));
-        if (!$get['type'] && ($s == 'gif' || $s == 'png' || $s == 'jpg' || $s == 'peg' || $s == 'svg')){
+        if ((!$get['type'] || $get['type'] == 'image') && ($s == 'gif' || $s == 'png' || $s == 'jpg' || $s == 'peg' || $s == 'svg')){
           $htm .= '<div class="item item-themes"><div class="image"><img src="' . DIR_WS_CATALOG . 'themes/' . $get['theme_name'] . '/img/' . $item . '" title="' . $item . '" alt="' . $item . '"></div><div class="name" data-path="themes/' . $get['theme_name'] . '/img/">' . $item . '</div></div>';
         } elseif ($get['type'] == 'video' && ($s == 'mp4' || $s == 'mov')){
           $htm .= '<div class="item item-themes"><div class="image" style="height: 0; overflow: hidden"><img src="' . DIR_WS_CATALOG . 'themes/' . $get['theme_name'] . '/img/' . $item . '"></div><div class="name" style="white-space: normal" data-path="themes/' . $get['theme_name'] . '/img/">' . $item . '</div></div>';
@@ -1691,7 +1691,7 @@ class DesignController extends Sceleton {
     $files = scandir(DIR_FS_CATALOG . $path);
     foreach ($files as $item){
       $s = strtolower(substr($item, -3));
-      if (!$get['type'] && ($s == 'gif' || $s == 'png' || $s == 'jpg' || $s == 'peg' || $s == 'svg')){
+      if ((!$get['type'] || $get['type'] == 'image') && ($s == 'gif' || $s == 'png' || $s == 'jpg' || $s == 'peg' || $s == 'svg')){
         $htm .= '<div class="item item-general"><div class="image"><img src="' . DIR_WS_CATALOG . $path . '/' . $item . '" title="' . $item . '" alt="' . $item . '"></div><div class="name" data-path="' . $path . '/">' . $item . '</div></div>';
       } elseif ($get['type'] == 'video' && ($s == 'mp4' || $s == 'mov')){
         $htm .= '<div class="item item-general"><div class="image" style="height: 0; overflow: hidden"><img src="' . DIR_WS_CATALOG . $path . '/' . $item . '"></div><div class="name" style="white-space: normal" data-path="' . $path . '/">' . $item . '</div></div>';

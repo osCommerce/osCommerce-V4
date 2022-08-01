@@ -2759,9 +2759,8 @@ class CategoriesController extends Sceleton {
 
         }
 
-        if (\common\helpers\Acl::checkExtensionAllowed('Promotions') &&
-                !empty($pInfo->products_id) && \common\helpers\Acl::rule(['BOX_HEADING_MARKETING_TOOLS', 'BOX_PROMOTIONS', 'BOX_PROMOTIONS_PIRCES']) ) {
-            $promotionsObj = new \backend\models\ProductEdit\ViewPromotions($pInfo);
+        if (($ext = \common\helpers\Acl::checkExtensionAllowed('Promotions')) && !empty($pInfo->products_id) && \common\helpers\Acl::rule($ext::getAcl()) ) {
+            $promotionsObj = new \common\extensions\Promotions\models\ProductEdit\ViewPromotions($pInfo);
             $promotionsObj->populateView($this->view);
         }
 
@@ -3717,10 +3716,10 @@ class CategoriesController extends Sceleton {
         if ($TabAccess->tabDataSave('TEXT_MARKETING')) {
             $marketingData = new \backend\models\ProductEdit\SaveMarketingData($productModel);
             $marketingData->prepareSave();
-            if (\common\helpers\Acl::checkExtensionAllowed('Promotions')) {
-                $promotionsData = new \backend\models\ProductEdit\SavePromotions($productModel);
-                $promotionsData->save();
-            }
+//            if (\common\helpers\Acl::checkExtensionAllowed('Promotions')) {
+//                $promotionsData = new \common\extensions\Promotions\models\ProductEdit\SavePromotions($productModel);
+//                $promotionsData->save();
+//            }
         }
 
         //Gift wrap
@@ -4150,6 +4149,10 @@ class CategoriesController extends Sceleton {
         if ($TabAccess->tabView('TAB_IMPORT_EXPORT')){
             $importExportData = new \backend\models\ProductEdit\SaveImportExport($productModel);
             $importExportData->save();
+        }
+
+        foreach (\common\helpers\Hooks::getList('categories/productedit-beforesave') as $filename) {
+            include($filename);
         }
         
         $productModel->save(false);

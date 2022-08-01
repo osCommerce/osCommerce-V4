@@ -30,8 +30,8 @@ class BonusProgramme extends Widget
 
   public function run()
   { 
-    if (\common\helpers\Acl::checkExtensionAllowed('BonusActions') && defined('BONUS_ACTION_PROGRAM_STATUS') && BONUS_ACTION_PROGRAM_STATUS == 'true'){
-        $bonusesService = new \common\models\promotions\PromotionsBonusService(true);
+    if (\common\helpers\Acl::checkExtensionAllowed('BonusActions')){
+        $bonusesService = new \common\models\BonusActions\models\PromotionsBonusService(true);
         $groups = $bonusesService->getAllGroups();
 
         return IncludeTpl::widget(['file' => 'boxes/bonus-programme.tpl', 'params' => [

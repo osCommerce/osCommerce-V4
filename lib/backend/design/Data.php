@@ -87,6 +87,23 @@ class Data
         ]
     ];
 
+    private static $editImageTranslationsList = [
+        'UPLOAD_FROM_COMPUTER',
+        'TEXT_OR',
+        'UPLOAD_FROM_GALLERY',
+        'IMAGE_UPLOAD',
+        'TEXT_DROP_FILES',
+        'TEXT_EDIT_IMAGE',
+        'TEXT_AFTER_SAVING',
+        'TEXT_CHOOSE_SIDE_COLOR',
+        'IMAGE_CANCEL',
+        'IMAGE_SAVE',
+        'TEXT_ALIGN_BORDERS',
+        'TEXT_THEMES_FOLDER',
+        'TEXT_GENERAL_FOLDER',
+        'TEXT_ALL_FILES',
+    ];
+
     public static function getJsonData(){
         return addslashes(json_encode(self::$jsGlobalData));
     }
@@ -170,10 +187,12 @@ class Data
         }
 
         $layoutTranslationsArr = Translation::translationsForJs(self::$layoutTranslationsList, false);
+        $editImageTranslationsArr = Translation::translationsForJs(self::$editImageTranslationsList, false);
         $pageTranslationsArr = Translation::translationsForJs(Yii::$app->controller->view->translations, false);
 
         $tr = array_merge(
             $layoutTranslationsArr,
+            $editImageTranslationsArr,
             $pageTranslationsArr,
             self::$dayOfWeek,
             self::$monthNames

@@ -53,7 +53,7 @@
         <div class="qty">
           {$product.quantity}
         </div>
-        <div class="price">{if $smarty.const.SHOW_PRICE_FOR_QUOTE_PRODUCT|default:null == 'True'}{$product.final_price}{/if}</div>
+        <div class="price">{if strtolower(\common\helpers\PlatformConfig::getVal('SHOW_PRICE_FOR_QUOTE_PRODUCT', 'false')) == 'true'}{$product.final_price}{/if}</div>
     </div>
   {/foreach}
 

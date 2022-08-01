@@ -573,7 +573,9 @@ class StockIndication
         if (!empty($oProduct->order_quantity_minimal)) {
           $_checkMinBuyQty = max(0, intval($oProduct->order_quantity_minimal)-1);
         }
-        
+
+///allow_out_of_stock_add_to_cart - out_of_stock should mean nothing in flags :( - in backend they're "allow add to cart", "allow checkout"
+
         if (($stock_indication_id >0 && $stock_info_pre_lookup['allow_out_of_stock_add_to_cart'] != 0) || $data_array['products_quantity']>$_checkMinBuyQty) {
           ///indication allow add to cart with any stock level
           // or product is in stock

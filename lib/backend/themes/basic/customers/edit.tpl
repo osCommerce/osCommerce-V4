@@ -177,9 +177,6 @@
                         
                         </div>
                     </div>
-                        {foreach \common\helpers\Hooks::getList('customers/customeredit', 'left-column') as $filename}
-                            {include file=$filename}
-                        {/foreach}
                     <div class="widget box box-no-shadow">
                         <div class="widget-header widget-header-contact"><h4>{$smarty.const.CATEGORY_CONTACT}</h4></div>
                         <div class="widget-content">
@@ -253,82 +250,10 @@
                         </div>
                     </div>
                 {/if}
-                {if (\common\helpers\Acl::checkExtensionAllowed('BonusActions'))}
-                    <div class="widget box box-no-shadow">
-                        <div class="widget-header widget-header-credit">
-                            <h4>{$smarty.const.ENTRY_BONUS_AMOUNT}</h4><a href="{Yii::$app->urlManager->createUrl(['customers/credithistory', 'customers_id' => $cInfo->customers_id, 'type' => 'bonus'])}" class="bonus_amount_history">{$smarty.const.ENTRY_BONUS_HISTORY}</a>
-                        </div>
-                        <div class="widget-content">
-                            <div class="w-line-row w-line-row-1">
-                                <div class="wl-td">
-                                    <label>{$smarty.const.TEXT_CREDIT}</label>
-                                    <div class="credit_wr">
-                                        <div class="credit_left">{$cInfo->customers_bonus_points}</div>
-                                        <div class="credit_right">
-                                            <select name="bonus_prefix" class="form-control"><option value="+">+</option><option value="-">-</option></select>
-                                            <input name="bonus_points" type="text" class="form-control" placeholder="0"><button class="btn btn-apply" onclick="return check_form();">{$smarty.const.TEXT_APPLY}</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                           <div class="w-line-row w-line-row-1">
-                                <div class="wl-td">
-                                    <label>{$smarty.const.TEXT_COMMENT}</label><textarea name="bonus_comments" class="form-control textareaform"></textarea>
-                                </div>
-                            </div>
-                            <div class="w-line-row w-line-row-1">
-                                <div class="wl-td">
-                                    <div class="notify_check">
-                                        <input name="bonus_notify" type="checkbox" class="uniform" checked="checked">
-                                        <span>{$smarty.const.TEXT_NOTIFY}</span>
-                                    </div>
-                                </div>
-                            </div>
-                            {if $cInfo->customers_bonus_points > 0 && \common\helpers\Points::getCurrencyCoefficientNoCache($cInfo->groups_id, $cInfo->platform_id) !== false}
-                            <div class="w-line-row w-line-row-1">
-                                <div class="wl-td">
-                                    <div class="moveCreditAmount">
-                                        <div class="form-inline">
-                                            <div class="form-group">
-                                                <label class="sr-only" for="exampleInputAmount">{$smarty.const.TRANSFER_BONUS_POINTS_TO_CREDIT_AMOUNT_TEXT}</label>
-                                                <div class="input-group">
-                                                    <div class="input-group-addon" id="bonusInfoText">{$smarty.const.TRANSFER_BONUS_POINTS_TO_CREDIT_AMOUNT_TEXT}</div>
-                                                    {Html::input('text', 'customerBonusPoints', $cInfo->customers_bonus_points, ['id'=>'customerBonusPoints', 'placeholder'=>$smarty.const.TEXT_AMOUNT, 'class'=>'form-control'])}
-                                                </div>
-                                            </div>
-                                            {Html::button($smarty.const.IMAGE_MOVE, ['class' => 'btn btn-primary', 'id' => 'moveToCreditAmount'])}
-                                        </div>
-                                        <span class="text-info">{$smarty.const.TRANSFER_BONUS_POINTS_NOTIFY}</span>
-                                    </div>
-                                </div>
-                            </div>
-                            {/if}
-                        </div>
-                    </div>
                 {/if}
-{*2do move to promo*}
-                {if (\common\helpers\Acl::checkExtensionAllowed('Promotions'))}
-                    <div class="widget box box-no-shadow">
-                        <div class="widget-header widget-header-discount">
-                            <h4>{$smarty.const.TEXT_PERSONAL_PROMOTIONS}</h4>
-                        </div>
-                        <div class="widget-content">
-                            {if $myPromos}
-                                {foreach $myPromos as $myPromo}
-                                    {if $myPromo->hasProperty('promotion')}
-                                    <div class="w-line-row w-line-row-1">
-                                        <div class="">
-                                            <label data-id="{$myPromo->promo_id}">{Html::a($myPromo->promotion->promo_label, Yii::$app->urlManager->createUrl(['promotions/edit', 'promo_id' => $myPromo->promo_id]), ['target' => '_blank'])} &nbsp;<span class="prmo del-pt"></span></label>
-                                        </div>
-                                    </div>
-                                    {/if}
-                                {/foreach}
-                            {/if}
-                        </div>
-                    </div>
-                {/if}
-{*move to promo eof*}
-                {/if}
+                {foreach \common\helpers\Hooks::getList('customers/customeredit', 'left-column') as $filename}
+                    {include file=$filename}
+                {/foreach}
                 </div>
                 <div class="cbox-right">
                     <div class="widget-no-btn box-no-btn box-no-shadow box-no-close">
@@ -610,18 +535,6 @@ $(document).ready(function(){
         }
     );
     $(this).find(".cbox-left input[type='radio']").uniform();
-
-    $('.prmo.del-pt').click(function(){
-        var label = $(this).closest('label');
-        $.post('customers/drop-promo', {
-            'customers_id': '{$cInfo->customers_id}',
-            'promo_id': label.data('id'),
-        }, function(data, status){
-            if (status =='success'){
-                label.remove();
-            }
-        })
-    })
 
     $('.js-platform-locations').on('add_row',function(){
         var skelHtml = $(this).find('tfoot').html();

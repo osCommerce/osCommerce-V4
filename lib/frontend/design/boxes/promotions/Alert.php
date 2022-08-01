@@ -29,9 +29,9 @@ class Alert extends Widget {
 
     public function run()
     {
-        if(\common\helpers\Acl::checkExtensionAllowed('BonusActions') && defined('BONUS_ACTION_PROGRAM_STATUS') && BONUS_ACTION_PROGRAM_STATUS == 'true'){
+        if(\common\helpers\Acl::checkExtensionAllowed('BonusActions')){
             
-            $message = \common\models\promotions\PromotionsBonusNotify::getNotification();
+            $message = \common\extensions\BonusActions\models\PromotionsBonusNotify::getNotification();
 
             if ($message){
                 $content = IncludeTpl::widget(['file' => 'boxes/promotions/alert.tpl', 'params' => [

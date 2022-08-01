@@ -1,0 +1,152 @@
+$background-color-3: #e8e1ff;
+
+.file-manager-buttons {
+    text-align: center;
+    margin-bottom: 10px;
+}
+.text-drop-files {
+    font-size: 16px;
+    font-weight: 600;
+    padding-bottom: 5px;
+    text-align: center;
+}
+
+.file-manager .upload-progress {
+    clear: both;
+    align-items: center;
+    display: none;
+    margin-top: 5px;
+}
+.file-manager .upload-progress-bar {
+    flex-grow: 1;
+    background: #ccc;
+    border-radius: 2px;
+    overflow: hidden;
+}
+.file-manager .upload-progress-bar-content {
+    height: 5px;
+    background: linear-gradient(to bottom, #008be8 0%,#0080e6 48%,#0075e3 100%);
+    transition: width 0.1s
+}
+.file-manager .upload-progress-val {
+    width: 70px;
+    font-size: 14px;
+    text-align: right;
+}
+.file-manager .upload-progress-percent {
+    width: 70px;
+    font-size: 14px;
+}
+.file-manager .uploaded-wrap {
+    text-align: center;
+}
+.file-manager .uploaded-wrap .uploaded-image {
+    display: inline-block;
+    position: relative;
+}
+.file-manager .uploaded-wrap .uploaded-image img {
+    max-height: 150px;
+    max-width: 100%;
+    width: auto;
+    height: auto;
+    min-width: 100px;
+}
+.file-manager .file-button-holder {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    display: flex;
+}
+.file-manager .file-button-holder span {
+    opacity: 0.7;
+    background: #f5f5f5;
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    width: 36px;
+    text-align: center;
+    height: 36px;
+    line-height: 36px;
+    cursor: pointer;
+    font-family: FontAwesome;
+    font-size: 18px;
+    margin-left: 5px;
+}
+.file-manager .file-button-holder span:hover {
+    opacity: 1;
+}
+.file-manager .file-unlink:before {
+    content: '\f127';
+    color: #0077e4;
+}
+.file-manager .file-remove:before {
+    content: '\f014';
+}
+.file-manager .file-resize:before {
+    content: '\f125';
+    color: #0077e4;
+}
+.file-manager {
+    position: relative;
+    border: 2px solid transparent;
+    z-index: 2;
+}
+.file-manager .over-message {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: $background-color-3+cc;
+    z-index: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 16px;
+    font-weight: 600;
+    text-shadow: 0 0 3px #ffffff;
+    border: 2px dashed var(--border-color-strong);
+}
+.popup-buttons input[type="color"] {
+    width: 28px;
+    padding: 0 2px !important;
+}
+.sile-space-color {
+    display: flex;
+    align-items: center;
+    margin: 0 15px !important;
+
+    .title {
+        padding-right: 10px;
+    }
+    input {
+        cursor: pointer;
+    }
+}
+.edit-image-popup .popup-buttons {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.edit-image-popup .popup-buttons:after {
+    display: none;
+}
+.edit-image-popup .right-buttons {
+    margin: 0;
+}
+.edit-image-popup .center-buttons {
+    display: flex;
+}
+.edit-image-popup .center-buttons > .btn {
+    margin: 0 5px !important;
+}
+.edit-image-popup .poor-quality {
+    margin-left: 15px !important;
+    display: flex;
+    align-items: center;
+
+    input {
+        margin: 0 5px 0 0;
+        width: 20px;
+        height: 20px;
+    }
+}

@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-	<title>Login | Trueloaded Admin</title>
+	<title>{$this->title}</title>
 	<link rel="stylesheet" href="{$app->view->theme->baseUrl}/css/fontawesome/font-awesome.min.css">
 	<link href="{$app->view->theme->baseUrl}/css/login.css?3" rel="stylesheet" type="text/css" />
 	<script type="text/javascript" src="{$app->view->theme->baseUrl}/js/libs/jquery.min.js?3"></script>
@@ -19,7 +19,8 @@
 	<!-- Logo -->
 	<div class="logo">
 		{if ((defined('WL_ENABLED') && WL_ENABLED === true) && (defined('WL_COMPANY_LOGO') && WL_COMPANY_LOGO != ''))}
-			<img src="{$app->view->theme->baseUrl}/img/{$smarty.const.WL_COMPANY_LOGO}" alt="{$smarty.const.WL_COMPANY_NAME}" />
+			<img src="/admin/themes/basic/img/oscommerce_logo.png" alt="osc 4">
+			<div class="subLogo">the eCommerce</div>
 		{else}
 			{include './login-logo.tpl'}
 		{/if}

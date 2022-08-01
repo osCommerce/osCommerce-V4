@@ -88,6 +88,35 @@ class ModuleExtensions extends Module {
         return [];
     }
 
+    public static function getTranslationValueOwn($key, $entity = null, $default = '##key##')
+    {
+        static $arr = null;
+        if (is_null($arr)) {
+            $arr = self::getTranslationArray();
+            if (!is_array($arr)) $arr = [];
+        }
+        if (!empty($entity)) {
+            return isset($arr[$entity][$key]) ? $arr[$entity][$key] : $key;
+        }
+        foreach ($arr as $translations) {
+            if (isset($translations[$key])) {
+                return $translations[$key];
+            }
+        }
+        if ($default == '##key##') return $key;
+        return $default;
+    }
+
+    public static function getTranslationValue($key, $entity = '')
+    {
+        $res = \common\helpers\Translation::getValue($key, $entity, null);
+        if (!$res) {
+            $res = self::getTranslationValueOwn($key, $entity);
+        }
+        return $res;
+    }
+
+
     public static function getAdminMenu() {
         if ($setup = static::checkSetup('getAdminMenu')) {
             return $setup::getAdminMenu();
@@ -346,9 +375,11 @@ class ModuleExtensions extends Module {
      * get Acl chain for entity/action
      * @param string $action - name of action
      * @param string $entity - 'extension' or 'ControllerClassName'
-     * @param bool $default - return default if not found match key
+     * @param bool $matchSimilar = false - checks only full match $entity/$action
+     *                           = true - if $entity/$action not found, checks keys: $entity/$action, $entity, 'default'
+     * @return null|array
      */
-    public static function getAcl(string $action = '', string $entity = 'extension', bool $default = true)
+    public static function getAcl(string $action = '', string $entity = 'extension', bool $matchSimilar = true)
     {
         if ($setup = static::checkSetup('getAclArray')) {
             $aclArray = $setup::getAclArray();
@@ -358,7 +389,7 @@ class ModuleExtensions extends Module {
             foreach(["$entity$actionSuffix", $entity, $action, 'default'] as $key) {
                 if (!empty($key) && isset($aclArray[$key])) {
                     return $aclArray[$key];
-                } elseif (!$default) {
+                } elseif (!$matchSimilar) {
                     return null;
                 }
             }

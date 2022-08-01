@@ -23,6 +23,10 @@ class DepartmentsController extends Sceleton {
 
         $this->view->departmentsTable = array(
             array(
+                'title' => 'Date added',
+                'not_important' => 0
+            ),
+            array(
                 'title' => TABLE_HEADING_STORE_NAME,
                 'not_important' => 0
             ),
@@ -83,18 +87,21 @@ class DepartmentsController extends Sceleton {
         if (isset($_GET['order'][0]['column']) && $_GET['order'][0]['dir']) {
             switch ($_GET['order'][0]['column']) {
                 case 0:
-                    $orderBy = "departments_store_name " . tep_db_prepare_input($_GET['order'][0]['dir']);
+                    $orderBy = "departments_created " . tep_db_prepare_input($_GET['order'][0]['dir']);
                     break;
                 case 1:
-                    $orderBy = "departments_http_server " . tep_db_prepare_input($_GET['order'][0]['dir']);
+                    $orderBy = "departments_store_name " . tep_db_prepare_input($_GET['order'][0]['dir']);
                     break;
                 case 2:
-                    $orderBy = "departments_firstname " . tep_db_prepare_input($_GET['order'][0]['dir']) . ", departments_lastname " . tep_db_prepare_input($_GET['order'][0]['dir']);
+                    $orderBy = "departments_http_server " . tep_db_prepare_input($_GET['order'][0]['dir']);
                     break;
                 case 3:
-                    $orderBy = "departments_email_address " . tep_db_prepare_input($_GET['order'][0]['dir']);
+                    $orderBy = "departments_firstname " . tep_db_prepare_input($_GET['order'][0]['dir']) . ", departments_lastname " . tep_db_prepare_input($_GET['order'][0]['dir']);
                     break;
                 case 4:
+                    $orderBy = "departments_email_address " . tep_db_prepare_input($_GET['order'][0]['dir']);
+                    break;
+                case 5:
                     $orderBy = "departments_status " . tep_db_prepare_input($_GET['order'][0]['dir']);
                     break;
                 default:
@@ -130,8 +137,9 @@ class DepartmentsController extends Sceleton {
                 $begin . $status . $end,
             );*/
             $responseList[] = array(
-                'DT_RowClass' => ($departments['departments_status']>0 && $departments['locked'] == 0 ?'':' hided-page'),
-                '<div class="handle_cat_list"><span class="handle"><i class="icon-hand-paper-o"></i></span><div class="cat_name cat_name_attr cat_no_folder'.($departments['departments_status']>0 && $departments['locked'] == 0 ?'':' hide-page').'">'.$departments['departments_store_name'] . tep_draw_hidden_field('id', $departments['departments_id'], 'class="cell_identify"').tep_draw_hidden_field('type', 'item', 'class="cell_type"').'</div></div>',
+                //'DT_RowClass' => ($departments['departments_status']>0 && $departments['locked'] == 0 ?'':' hided-page'),
+                '<div class="'.($departments['departments_status']>0 && $departments['locked'] == 0 ?'':' hide-page').'"><div class="cat_name cat_name_attr cat_no_folder'.($departments['departments_status']>0 && $departments['locked'] == 0 ?'':' hide-page').'">'.'<input type="checkbox" class="uniform"> ' . $departments['departments_created'] . tep_draw_hidden_field('id', $departments['departments_id'], 'class="cell_identify"').tep_draw_hidden_field('type', 'item', 'class="cell_type"').'</div></div>',
+                '<div class="'.($departments['departments_status']>0 && $departments['locked'] == 0 ?'':' hide-page').'"><div class="cat_name cat_name_attr cat_no_folder'.($departments['departments_status']>0 && $departments['locked'] == 0 ?'':' hide-page').'">'.$departments['departments_store_name'] . '</div></div>',
                 '<div class="'.($departments['departments_status']>0 && $departments['locked'] == 0 ?'':' hide-page').'">'.$departments['departments_http_server'].'</div>',
                 '<div class="'.($departments['departments_status']>0 && $departments['locked'] == 0 ?'':' hide-page').'">'.$departments['departments_firstname'] . ' ' . $departments['departments_lastname'].'</div>',
                 '<div class="'.($departments['departments_status']>0 && $departments['locked'] == 0 ?'':' hide-page').'">'.$departments['departments_email_address'].'</div>',
@@ -839,8 +847,6 @@ class DepartmentsController extends Sceleton {
         }
         $conf .= "departments_api_key=" . $api_key . "\n";
         $conf .= "callback_url=".tep_catalog_href_link('', '', 'SSL') . "\n";
-        $conf .= "callback_url=". tep_catalog_href_link('', '', 'SSL') . "\n";
-        $conf .= "departments_api_key=". $api_key . "\n";
         fwrite(fopen(CPANEL_PARENT_PATH . $departments_http_server_short . '_create.settings', 'w'), $conf);
         
         $data = [
@@ -927,6 +933,25 @@ class DepartmentsController extends Sceleton {
     public function actionSwitchStatus() {
         $departments_id = Yii::$app->request->post('dID');
         $status = Yii::$app->request->post('status');
+        
+        $departments = tep_db_fetch_array(tep_db_query("select departments_id, departments_store_name, departments_http_server, departments_https_server, departments_enable_ssl, departments_http_catalog, departments_https_catalog, departments_design_template_name, departments_firstname, departments_lastname, departments_email_address, departments_db_server_host, departments_db_server_username, departments_db_server_password, departments_db_database, departments_ftp_username, departments_status, departments_created, departments_modified from " . TABLE_DEPARTMENTS . " where departments_id = '" . (int) $departments_id . "'"));
+        $dInfo = new \objectInfo($departments, false);
+        
+        if ($status == 'true') {
+            $conf = "";
+            $conf .= "action=unsuspend\n";
+            $conf .= "domain=" . $dInfo->departments_http_server . "\n";
+            $conf .= "username=". $dInfo->departments_ftp_username . "\n";
+            fwrite(fopen(CPANEL_PARENT_PATH . $dInfo->departments_ftp_username . '_unsuspend.settings', 'w'), $conf);
+            @unlink(CPANEL_PARENT_PATH . $dInfo->departments_ftp_username . '_suspend.settings');
+        } else {
+            $conf = "";
+            $conf .= "action=suspend\n";
+            $conf .= "domain=" . $dInfo->departments_http_server . "\n";
+            $conf .= "username=". $dInfo->departments_ftp_username . "\n";
+            fwrite(fopen(CPANEL_PARENT_PATH . $dInfo->departments_ftp_username . '_suspend.settings', 'w'), $conf);
+            @unlink(CPANEL_PARENT_PATH . $dInfo->departments_ftp_username . '_unsuspend.settings');
+        }
         tep_db_query("update " . TABLE_DEPARTMENTS . " set departments_status = '" . ($status == 'true' ? 1 : 0) . "', departments_modified = now() where departments_id = '" . (int) $departments_id . "'");
     }
 
@@ -1357,5 +1382,28 @@ class DepartmentsController extends Sceleton {
         }
         Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
         Yii::$app->response->data = $result;
+    }
+    
+    public function actionDepartmentsdelete() 
+    {
+        $this->layout = false;
+        $selected_ids = Yii::$app->request->post('selected_ids');
+        foreach ($selected_ids as $departments_id) {
+            $departments = tep_db_fetch_array(tep_db_query("select departments_id, departments_store_name, departments_http_server, departments_https_server, departments_enable_ssl, departments_http_catalog, departments_https_catalog, departments_design_template_name, departments_firstname, departments_lastname, departments_email_address, departments_db_server_host, departments_db_server_username, departments_db_server_password, departments_db_database, departments_ftp_username, departments_status, departments_created, departments_modified from " . TABLE_DEPARTMENTS . " where departments_id = '" . (int) $departments_id . "'"));
+            $dInfo = new \objectInfo($departments, false);
+
+            $conf = "";
+            $conf .= "action=delete\n";
+            $conf .= "username=". $dInfo->departments_ftp_username . "\n";
+            fwrite(fopen(CPANEL_PARENT_PATH . $dInfo->departments_ftp_username . '_delete.settings', 'w'), $conf);
+
+            tep_db_query("delete from " . TABLE_DEPARTMENTS . " where departments_id = '" . (int) $departments_id . "'");
+            //tep_db_query("delete from " . TABLE_DEPARTMENTS_TO_FEATURES . " where departments_id = '" . (int) $departments_id . "'");
+            tep_db_query("delete from " . TABLE_DEPARTMENTS_CATEGORIES . " where departments_id = '" . (int) $departments_id . "'");
+            tep_db_query("delete from departments_categories_price_formula where departments_id = '" . (int) $departments_id . "'");
+            tep_db_query("delete from " . TABLE_DEPARTMENTS_EXTERNAL_PLATFORMS . " where departments_id = '" . (int) $departments_id . "'");
+            tep_db_query("delete from " . TABLE_DEPARTMENTS_PRODUCTS . " where departments_id = '" . (int) $departments_id . "'");
+
+        }
     }
 }

@@ -127,6 +127,9 @@
     <script type="text/javascript" src="{$app->view->theme->baseUrl}/js/jquery.rating.pack.js?{$version}"></script>
     <script type="text/javascript" src="{$app->view->theme->baseUrl}/js/jquery.jcarousel.min.js?{$version}"></script>
 
+    <script type="text/javascript" src="{$app->view->theme->baseUrl}/js/file-manager.js?{$version}"></script>
+    <link href="{$app->view->theme->baseUrl}/css/file-manager.css?{$version}" rel="stylesheet" type="text/css" />
+
     <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
     <!--[if lt IE 9]>
 		<script src="{$app->view->theme->baseUrl}/js/libs/html5shiv.js?{$version}"></script>

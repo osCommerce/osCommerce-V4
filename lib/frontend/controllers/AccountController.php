@@ -40,7 +40,6 @@ use common\classes\Images;
 use common\components\Customer;
 use common\components\Socials;
 use common\helpers\Date as DateHelper;
-use common\models\promotions;
 use frontend\forms\registration\CustomerRegistration;
 use common\forms\AddressForm;
 use function GuzzleHttp\Psr7\str;
@@ -280,7 +279,7 @@ class AccountController extends Sceleton
       /*samples*/
 
         /*bonus points*/
-        $showBonusPart = (\common\helpers\Acl::checkExtensionAllowed('BonusActions') && defined('BONUS_ACTION_PROGRAM_STATUS') && BONUS_ACTION_PROGRAM_STATUS == 'true' ? true : false);
+        $showBonusPart = \common\helpers\Acl::checkExtensionAllowed('BonusActions');
         /*bonus points*/
 
         $priamry_address = \common\helpers\Address::address_label($customer_id, $customer_default_address_id, true, ' ', '<br>');
@@ -1891,13 +1890,13 @@ class AccountController extends Sceleton
         }
 
         if ($type){
-            if(\common\helpers\Acl::checkExtensionAllowed('BonusActions') && defined('BONUS_ACTION_PROGRAM_STATUS') && BONUS_ACTION_PROGRAM_STATUS == 'true'){
+            if(\common\helpers\Acl::checkExtensionAllowed('BonusActions')){
                 $_history = promotions\PromotionsBonusHistory::find()->where('customer_id = :id', [':id' => (int)$customer_id])->asArray()->all();
                 if ($_history){
                     $titles = [];
                     foreach($_history as $h){
                         if (!isset($titles[$h['bonus_points_id']])){
-                            $titles[$h['bonus_points_id']] = promotions\PromotionsBonusPoints::find()->where('bonus_points_id = ' . (int)$h['bonus_points_id'])->with('description')->one();
+                            $titles[$h['bonus_points_id']] = \common\extensions\BonusActions\models\PromotionsBonusPoints::find()->where('bonus_points_id = ' . (int)$h['bonus_points_id'])->with('description')->one();
                         }
                         $history[] = [
                             'date' => DateHelper::datepicker_date($h['action_date']),

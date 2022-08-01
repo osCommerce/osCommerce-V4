@@ -611,7 +611,7 @@ class BasePrice {
         }
 
         if (\common\helpers\Acl::checkExtensionAllowed('Promotions') && $this->dSettings->applyPromotion()){
-            $promo = \common\models\Product\PromotionPrice::getInstance($this->uprid);
+            $promo = \common\extensions\Promotions\Product\PromotionPrice::getInstance($this->uprid);
             $promoSettings = $promo->getSettings();
             if ($promoSettings['to_both'] || $promoSettings['to_preferred']['only_to_base']) {
                 if (debug_backtrace()[1]['function'] != 'getInventorySpecialPrice') {

@@ -1865,7 +1865,7 @@ class CallbackController extends Sceleton {
         $key = Yii::$app->request->get('key');
         $department_query = tep_db_query("select * from departments where api_key='" . tep_db_input($key) . "'");
         if (tep_db_num_rows($department_query)) {
-            tep_db_query("update departments set locked='0' where api_key='" . tep_db_input($key) . "'");
+            tep_db_query("update departments set locked='0', departments_status='1' where api_key='" . tep_db_input($key) . "'");
             $department = tep_db_fetch_array($department_query);
             
             $name = $department['departments_firstname'] . ' ' . $department['departments_lastname'];
