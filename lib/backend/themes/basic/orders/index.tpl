@@ -552,6 +552,7 @@ $(document).ready(function() {
 });
 
 function resetFilter() {
+    $('#filterForm').trigger('filters_reset');
     $('select[name="by"]').val('');
     $('input[name="search"]').val('');
     $("#presel").prop("checked", true);

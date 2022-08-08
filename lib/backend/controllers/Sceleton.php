@@ -71,6 +71,8 @@ class Sceleton extends Controller {
         $this->view->usePopupMode = null;
 
         \common\helpers\MenuHelper::categoriesToMenuMessage();
+        
+        \common\helpers\Admin::appShopConnectedMessage();
 
         return parent::__construct($id,$module);
     }

@@ -51,11 +51,13 @@
   }
 
 // define the project version
-  if (defined('WL_ENABLED') && WL_ENABLED === true) {
-    define('PROJECT_VERSION', 'Osc 2.2 MS2 ' . WL_PRODUCT_NAME);
-  } else {
-    define('PROJECT_VERSION', 'osc 2.2 ms2 Holbi Trueloaded');
-  }
+if (file_exists('includes/version.php')) include('includes/version.php'); 
+if (defined('WL_ENABLED') && WL_ENABLED === true) {
+    define('PROJECT_VERSION', PROJECT_VERSION_NAME . ' ' . PROJECT_VERSION_MAJOR . '.' . PROJECT_VERSION_MINOR . '.' . PROJECT_VERSION_PATCH . ' ' . WL_PRODUCT_NAME);
+} else {
+    define('PROJECT_VERSION', PROJECT_VERSION_NAME . ' ' . PROJECT_VERSION_MAJOR . '.' . PROJECT_VERSION_MINOR . '.' . PROJECT_VERSION_PATCH);
+}
+
   
   if ($request_type == 'NONSSL') {
     define('DIR_WS_CATALOG', DIR_WS_HTTP_CATALOG);

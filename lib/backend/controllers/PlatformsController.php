@@ -950,38 +950,14 @@ class PlatformsController extends Sceleton {
           //SELECT * FROM `COLUMNS` WHERE `TABLE_SCHEMA`='vlad_tlnew' and `COLUMN_NAME` like 'platform%_id'
           //114  'admin_platforms', 'affiliate_affiliate', 'banners_languages', 'banners_languages_backup', 'banners_new_backup', 'banners_to_platform', 'blog_post_to_platforms', 'catalog_pages', 'categories_images', 'categories_platform_settings',  'categories_product_to_template', 'categories_to_template', 'cloud_services', 'customer_modules', 'customer_testimonials', 'customers', 'customers_basket', 'customers_quote', 'customers_sample', 'departments_external_platforms', 'dropshipping_ships', 'ebay_profile', 'email_templates_texts', 'email_templates_to_design_template', 'ep_holbi_soap_server_kv_storage', 'freeze_orders_products_allocate', 'gapi_search', 'google_settings', 'googlezone', 'image_cache_keys', 'image_copy_reference', 'information', 'menu_items', 'meta_tags', 'modules_groups_settings', 'modules_labels', 'modules_zero_price', 'newsletter_passed', 'orders', 'orders_products_allocate', 'orders_status_to_design_template', 'page_styles', 'payment_fee', 'payment_offline', 'paypal_cron', 'paypal_seller_info', 'paypalipn_txn', 'plain_products_name_to_products', 'platform_currencies_margin',  'platform_inventory_control', 'platform_stock_control', 'platforms', 'platforms_address_book', 'platforms_address_book', 'platforms_api', 'platforms_categories', 'platforms_configuration', 'platforms_countries', 'platforms_cut_off_times', 'platforms_cut_off_times', 'platforms_formats', 'platforms_holidays', 'platforms_holidays', 'platforms_locations', 'platforms_locations', 'platforms_open_hours', 'platforms_open_hours', 'platforms_products', 'platforms_settings', 'platforms_to_themes', 'platforms_url', 'platforms_url', 'platforms_watermark', 'platforms_zone_countries', 'product_to_template', 'products_description', 'products_global_sort', 'products_notify', 'promotions_to_platform', 'push_configuration', 'push_subscribers', 'quotation',  'quote_orders', 'recover_cart_config', 'sample_orders', 'search_plus', 'search_plus_stats', 'seo_delivery_location', 'seo_delivery_location_text_template', 'seo_redirect', 'seo_redirects_named', 'ship_options', 'ship_zones', 'shipping_carrier_selection', 'shipping_fee', 'sms_defaults', 'sms_templates_texts',  'socials', 'subscribers', 'subscribers_lists', 'subscribers_lists_to_tags', 'subscription', 'support_system_info', 'tmp_orders', 'visibility_area', 'warehouse_inventory_control', 'warehouse_stock_control', 'warehouses_selection_priority', 'warehouses_to_platforms', 'whos_online', 'zone_table', 'zone_table_checkout_note', 'zones_to_ship_zones'
 
-          $delete_in_tables = [TABLE_PLATFORMS, TABLE_PLATFORMS_ADDRESS_BOOK, TABLE_PLATFORMS_OPEN_HOURS , TABLE_PLATFORMS_TO_THEMES, TABLE_PLATFORMS_CATEGORIES, TABLE_PLATFORMS_PRODUCTS, TABLE_INFORMATION, TABLE_BANNERS_TO_PLATFORM, TABLE_BANNERS_LANGUAGES, TABLE_PLATFORMS_CONFIGURATION, TABLE_PLATFORMS_CUT_OFF_TIMES, TABLE_PLATFORM_FORMATS, TABLE_PLATFORMS_HOLIDAYS,TABLE_PLATFORMS_WATERMARK, TABLE_META_TAGS, 'platforms_price_settings'];
+          $delete_in_tables = [TABLE_PLATFORMS, TABLE_PLATFORMS_ADDRESS_BOOK, TABLE_PLATFORMS_OPEN_HOURS , TABLE_PLATFORMS_TO_THEMES, TABLE_PLATFORMS_CATEGORIES, TABLE_PLATFORMS_PRODUCTS, TABLE_INFORMATION, TABLE_BANNERS_TO_PLATFORM, TABLE_BANNERS_LANGUAGES, TABLE_PLATFORMS_CONFIGURATION, TABLE_PLATFORMS_CUT_OFF_TIMES, TABLE_PLATFORM_FORMATS, TABLE_PLATFORMS_HOLIDAYS,TABLE_PLATFORMS_WATERMARK, TABLE_META_TAGS];
           if ($model = \common\helpers\Acl::checkExtensionTableExist('Promotions', 'PromotionsToPlatform')) {
                   $delete_in_tables[] = $model::tableName();
           }
           foreach ($delete_in_tables  as $tbl) {
             tep_db_query("delete from " . $tbl . " where platform_id = '" . (int)$item_id . "'");
           }
-    /*
-            tep_db_query("delete from " . TABLE_PLATFORMS . " where platform_id = '" . (int)$item_id . "'");
-            tep_db_query("delete from " . TABLE_PLATFORMS_ADDRESS_BOOK . " where platform_id = '" . (int)$item_id . "'");
-            tep_db_query("delete from " . TABLE_PLATFORMS_OPEN_HOURS . " where platform_id = '" . (int)$item_id . "'");
-            tep_db_query("delete from " . TABLE_PLATFORMS_TO_THEMES . " where platform_id = '" . (int)$item_id . "'");
-
-            tep_db_query("delete from " . TABLE_PLATFORMS_CATEGORIES . " where platform_id = '" . (int)$item_id . "'");
-            //TODO:
-            // select plp.products_id, count(plp.platform_id) as used_count from platforms_products plp left join platforms_products p on p.products_id=plp.products_id where plp.platform_id=1 group by plp.products_id having used_count=1;
-
-            tep_db_query("delete from " . TABLE_PLATFORMS_PRODUCTS . " where platform_id = '" . (int)$item_id . "'");
-
-            tep_db_query("delete from " . TABLE_INFORMATION . " where platform_id = '" . (int)$item_id . "'");
-
-            tep_db_query("delete from " . TABLE_BANNERS_TO_PLATFORM . " where platform_id = '" . (int)$item_id . "'");
-            tep_db_query("delete from " . TABLE_BANNERS_LANGUAGES . " where platform_id = '" . (int)$item_id . "'");
-
-            tep_db_query("delete from " . TABLE_PLATFORMS_CONFIGURATION . " where platform_id = '" . (int)$item_id . "'");
-            tep_db_query("delete from " . TABLE_PLATFORMS_CUT_OFF_TIMES . " where platform_id = '" . (int)$item_id . "'");
-            tep_db_query("delete from " . TABLE_PLATFORM_FORMATS . " where platform_id = '" . (int)$item_id . "'");
-            tep_db_query("delete from " . TABLE_PLATFORMS_HOLIDAYS . " where platform_id = '" . (int)$item_id . "'");
-            tep_db_query("delete from " . TABLE_PLATFORMS_WATERMARK . " where platform_id = '" . (int)$item_id . "'");
-            tep_db_query("delete from " . TABLE_META_TAGS . " where platform_id = '" . (int)$item_id . "'");
-            tep_db_query("delete from platforms_price_settings where platform_id = '" . (int)$item_id . "'");
-     */
+    
             PlatformsSettings::updateAll(['use_owner_prices' => \common\classes\platform::defaultId()], ['use_owner_prices' => $item_id]);
             PlatformsSettings::updateAll(['use_owner_descriptions' => \common\classes\platform::defaultId()], ['use_owner_descriptions' => $item_id]);
 

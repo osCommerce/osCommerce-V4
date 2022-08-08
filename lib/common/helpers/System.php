@@ -364,6 +364,11 @@ class System {
         }
     }
 
+    public static function isYiiLoaded()
+    {
+        return class_exists('\Yii') && isset(\Yii::$app) && is_object(\Yii::$app);
+    }
+
     public static function isBackend()
     {
         return \Yii::$app->id == 'app-backend';

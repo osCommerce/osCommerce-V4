@@ -366,14 +366,15 @@ class InstallController extends Sceleton {
                         case 'design':// Theme
                             $theme = new \common\models\Themes();
                             $theme->loadDefaultValues();
-                            $theme->theme_name = \common\classes\design::pageName($distribution->name);
+                            $theme_name = \common\classes\design::pageName($distribution->name);
+                            $theme->theme_name = $theme_name;
                             $theme->title = $distribution->name;
                             $theme->install = 1;
                             $theme->is_default = 0;
                             $theme->sort_order = 0;
                             $theme->parent_theme = '';
                             if ($theme->save()) {
-                                \backend\design\Theme::import($distribution->name, $path . 'uploads' . DIRECTORY_SEPARATOR . $filename);
+                                \backend\design\Theme::import($theme_name, $path . 'uploads' . DIRECTORY_SEPARATOR . $filename);
                                 $oldData = [
                                     'id' => $theme->id
                                 ];
@@ -391,7 +392,7 @@ class InstallController extends Sceleton {
                                 $this->doSystem = true;
                                 $this->doSmarty = true;
                                 //$this->doTheme = true;
-                                $this->doInstallRecord($filename, (string)$distribution->type, (string)$distribution->class, (string)$distribution->version, $oldData);
+                                $this->doInstallRecord($filename, (string)$distribution->type, (string)($distribution->class ?? ''), (string)$distribution->version, $oldData);
                                 $status = true;
                             } else {
                                 $status = false;
@@ -481,7 +482,7 @@ class InstallController extends Sceleton {
                                     }
                                 }
                             }
-                            $this->doInstallRecord($filename, (string)$distribution->type, (string)$distribution->class, (string)$distribution->version, $oldData);
+                            $this->doInstallRecord($filename, (string)$distribution->type, (string)($distribution->class ?? ''), (string)$distribution->version, $oldData);
                             $this->doSystem = true;
                             $zip->close();
                             break;
@@ -504,7 +505,7 @@ class InstallController extends Sceleton {
                                     $this->doInstallClass($class, $selected_platform_id);
                                 }
                                 $this->doRecalcModuleSort('add', $class, $distribution->type, $selected_platform_id);
-                                $this->doInstallRecord($filename, (string)$distribution->type, (string)$distribution->class, (string)$distribution->version, $distribution->src);
+                                $this->doInstallRecord($filename, (string)$distribution->type, (string)($distribution->class ?? ''), (string)$distribution->version, $distribution->src);
                                 $this->doSystem = true;
                             }
                             break;
@@ -578,7 +579,7 @@ class InstallController extends Sceleton {
                                     'catalog_categories' => $catalog_categories,
                                     'catalog_products' => $catalog_products
                                 ];
-                                $this->doInstallRecord($filename, (string)$distribution->type, (string)$distribution->class, (string)$distribution->version, $oldData);
+                                $this->doInstallRecord($filename, (string)$distribution->type, (string)($distribution->class ?? ''), (string)$distribution->version, $oldData);
                                 @unlink($path . 'ep_files' . DIRECTORY_SEPARATOR . 'manual_import' . DIRECTORY_SEPARATOR . $filename);
                                 
 
@@ -591,7 +592,7 @@ class InstallController extends Sceleton {
                             $status = $this->checkFileDst($distribution->src, $filename, $path, $echo);
                             if ($status) {
                                 $this->runFileDst($distribution->src, $filename, $path, $echo);
-                                $this->doInstallRecord($filename, (string)$distribution->type, (string)$distribution->class, (string)$distribution->version, $distribution->src);
+                                $this->doInstallRecord($filename, (string)$distribution->type, (string)($distribution->class ?? ''), (string)$distribution->version, $distribution->src);
                                 $this->doMigrations = true;
                                 $this->doSystem = true;
                                 $this->doSmarty = true;
@@ -1031,7 +1032,7 @@ class InstallController extends Sceleton {
         } elseif (empty($storageKey)) {
             $message = (defined('MESSAGE_KEY_DOMAIN_INFO')
                 ? constant('MESSAGE_KEY_DOMAIN_INFO')
-                : 'It is looks like your store is not connected to our <a target="_blank" href="%1$s">application store</a>.<br>If your already registered with us, please insert \'storage\' key value. If you do not remember your \'storage\' key - please login at <a target="_blank" href="%1$s">application store</a> with your credentials and copy it from there.<br>If you not registered with us, please visit <a target="_blank" href="%1$s">application store</a>, register your account and put there your \'security store key\'.<br>You \'secutiry store key\' for this shop is [%2$s].<br>After registration insert the received \'storage\' key (<a href="javascript:void(0);" onclick="$(\'.create_item_popup\').click();">use button on this page</a>) value.'
+                : 'It is looks like your store is not connected to our <a target="_blank" href="%1$s">application shop</a>.<br>If your already registered with us, please insert \'storage\' key value. If you do not remember your \'storage\' key - please login at <a target="_blank" href="%1$s">application shop</a> with your credentials and copy it from there.<br>If you not registered with us, please visit <a target="_blank" href="%1$s">application shop</a>, register your account and put there your \'security store key\'.<br>You \'secutiry store key\' for this shop is [%2$s].<br>After registration insert the received \'storage\' key (<a href="javascript:void(0);" onclick="$(\'.create_item_popup\').click();">use button on this page</a>) value.'
             );
             $messages[] = sprintf($message, $storageUrl . 'account', $secKeyGlobal);
         } else {
@@ -1058,7 +1059,7 @@ class InstallController extends Sceleton {
                 if ($response['http_code'] != 200 ) {
                     $message = (defined('MESSAGE_KEY_DOMAIN_ERROR')
                         ? constant('MESSAGE_KEY_DOMAIN_ERROR')
-                        : 'Error: Your \'storage\' key is wrong. Please login at <a target="_blank" href="%1$s">application store</a> with your credentials and copy it from there.'
+                        : 'Error: Your \'storage\' key is wrong. Please login at <a target="_blank" href="%1$s">application shop</a> with your credentials and copy it from there.'
                     );
                     $messages[] = sprintf($message, $storageUrl . 'account');
                 }
@@ -1071,7 +1072,7 @@ class InstallController extends Sceleton {
             
             $message = (defined('MESSAGE_KEY_DOMAIN_OK')
                 ? constant('MESSAGE_KEY_DOMAIN_OK')
-                : 'Your store successfully connected to our <a target="_blank" href="%1$s">application store</a>. You \'secutiry store key\' for this shop is [%2$s].'
+                : 'Your store successfully connected to our <a target="_blank" href="%1$s">application shop</a>. You \'secutiry store key\' for this shop is [%2$s].'
             );
             $success = sprintf($message, $storageUrl, $secKeyGlobal);
         }
@@ -1444,9 +1445,9 @@ class InstallController extends Sceleton {
                         $json = preg_replace('#/\*(?:[^*]*(?:\*(?!/))*)*\*/#','',$json);
                         if (!empty($json)) {
                             $distribution = json_decode($json);
-                            $dtype = (string)$distribution->type;
-                            $dclass = (string)$distribution->class;
-                            $appName = (string)$distribution->name;
+                            $dtype = (string)($distribution->type ?? '');
+                            $dclass = (string)($distribution->class ?? '');
+                            $appName = (string)($distribution->name ?? '');
                             $type = '<div class="ord-location">'
                                     . $distribution->type
                                     . '<div class="ord-total-info ord-location-info"><div class="ord-box-img"></div><b>' 
@@ -2058,7 +2059,7 @@ class InstallController extends Sceleton {
         
         
         return $this->render('update-list', [
-            'version' => $version,
+            'version' => PROJECT_VERSION_MAJOR. '.' . PROJECT_VERSION_MINOR . '.' . $version,
             'updates' => $updates,
         ]);
     }

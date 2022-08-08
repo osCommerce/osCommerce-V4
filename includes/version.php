@@ -12,5 +12,6 @@
 
 define('PROJECT_VERSION_NAME', (defined('WL_ENABLED') && WL_ENABLED === true) ? WL_PRODUCT_NAME : 'osCommerce');
 define('PROJECT_VERSION_MAJOR', '4');
-define('PROJECT_VERSION_MINOR', '01');
-define('PROJECT_VERSION_PATCH', '49806');
+define('PROJECT_VERSION_MINOR', '02');
+define('PROJECT_VERSION_PATCH', '49998');
+

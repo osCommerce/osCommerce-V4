@@ -8,11 +8,6 @@
 <div class="widget box box-wrapp-blue filter-wrapp apps-marketplace-filter">
     <div class="widget-header filter-title">
         <h4>{$smarty.const.TEXT_FILTER}</h4>
-		<div class="toolbar no-padding">
-          <div class="btn-group">
-            <span class="btn btn-xs widget-collapse"><i class="icon-angle-down"></i></span>
-          </div>
-        </div>
 		<div class="pull-right">
 			<div class="filters_btn">
 				<a href="javascript:void(0)" onclick="return resetFilter();" class="btn">{$smarty.const.TEXT_RESET}</a>

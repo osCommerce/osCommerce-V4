@@ -83,9 +83,9 @@ class GoogleTools
     
     public function checkOrderPosition(\common\classes\extended\OrderAbstract $order) {
         if ($order->order_id) return false;
-        $nostreetaddress = implode(" ", [$order->customer['postcode'], $order->customer['city'], $order->customer['country']['title'] ?? '']);
-        $address = implode(" ", [$order->customer['postcode'], $order->customer['street_address'], $order->customer['city'], $order->customer['country']['title'] ?? '']);
-        $addressnocode = implode(" ", [$order->customer['street_address'], $order->customer['city'], $order->customer['country']['title'] ?? '']);
+        $nostreetaddress = implode(" ", [$order->customer['postcode'] ?? '', $order->customer['city'] ?? '', $order->customer['country']['title'] ?? '']);
+        $address = implode(" ", [$order->customer['postcode'] ?? '', $order->customer['street_address'] ?? '', $order->customer['city'], $order->customer['country']['title'] ?? '']);
+        $addressnocode = implode(" ", [$order->customer['street_address'] ?? '', $order->customer['city'] ?? '', $order->customer['country']['title'] ?? '']);
         foreach([$address, $addressnocode, $nostreetaddress] as $addr){
             if ($resp = $this->getMapProvider()->getLocationByAddress($addr)){
                 $oModel = $order->getARModel()->where(['orders_id' => $order->order_id]);

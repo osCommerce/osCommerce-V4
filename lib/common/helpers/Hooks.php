@@ -32,11 +32,43 @@ class Hooks
         foreach ($queryRaw->each() as $row) {
             if (file_exists($row->extension_file)) {
                 $response[] = $row->extension_file;
+            } else {
+                \Yii::warning("File for hook $pageName area $pageArea is not found: $row->extension_file");
             }
         }
         return $response;
     }
-    
+
+    private static function getDefHookPath($extCode)
+    {
+        return \Yii::getAlias('@common') . DIRECTORY_SEPARATOR . 'extensions' . DIRECTORY_SEPARATOR . $extCode . DIRECTORY_SEPARATOR . 'hooks' . DIRECTORY_SEPARATOR;
+    }
+
+    public static function registerHooks($Items, $extCode)
+    {
+        $defPath = self::getDefHookPath($extCode);
+        if (is_array($Items)) {
+            foreach ($Items as $item) {
+                $record = new \common\models\Hooks();
+                $record->loadDefaultValues();
+                $record->page_name = $item['page_name'];
+                $record->page_area = $item['page_area'] ?? '';
+                $record->sort_order = ($item['sort_order'] ?? 100);
+                $record->extension_name = $extCode;
+                if (empty($item['extension_file'])) {
+                    $baseName = $item['page_name'] . '.' . (empty($item['page_area'])? 'php' : ($item['page_area'] . '.tpl'));
+                    $record->extension_file = $defPath . str_replace('/', '.', $baseName);
+                } else {
+                    $record->extension_file = $item['extension_file'];
+                }
+                if (!file_exists($record->extension_file)) {
+                    \Yii::warning("Registering hook for $extCode: file '$record->extension_file' not exists");
+                }
+                $record->save(false);
+            }
+        }
+    }
+
     public static function rebuildHooks()
     {
         self::resetHooks();
@@ -44,20 +76,7 @@ class Hooks
         if ($dir = @dir($path)) {
             while ($file = $dir->read()) {
                 if ($ext = \common\helpers\Acl::checkExtension($file, 'getAdminHooks')) {
-                    $Items = $ext::getAdminHooks();
-                    if (is_array($Items)) {
-                        foreach ($Items as $item) {
-                            $record = new \common\models\Hooks();
-                            $record->loadDefaultValues();
-                            $record->page_name = $item['page_name'];
-                            $record->page_area = $item['page_area'];
-                            $record->sort_order = ($item['sort_order'] ?? 100);
-                            $record->extension_name = $file;
-                            $record->extension_file = $item['extension_file'];
-                            $record->save(false);
-                        }
-                    }
-                    unset($Items);
+                    self::registerHooks($ext::getAdminHooks(), $file);
                 }
             }
             $dir->close();

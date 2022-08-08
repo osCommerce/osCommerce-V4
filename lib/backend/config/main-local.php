@@ -14,6 +14,7 @@ $config = [
 
 if (false && !YII_ENV_TEST) {
     // configuration adjustments for 'dev' environment
+    if (!defined('TEP_DB_TRACK_TIME')) define('TEP_DB_TRACK_TIME',true);
     $config['bootstrap'][] = 'debug';
     $config['modules']['debug'] = [
         'class' => 'yii\debug\Module',

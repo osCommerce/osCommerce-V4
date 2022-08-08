@@ -91,6 +91,9 @@
                             <label class="checkbox">
                                 <input name="prod_stock_cache"  type="checkbox" class="checkinput" value="1"><span></span> Product Stock Cache
                             </label>
+                            <label class="checkbox">
+                                <input name="app_shop_cache"  type="checkbox" class="checkinput" value="1"><span></span> {$smarty.const.TEXT_INSTALL_CACHE}
+                            </label>
                         </div>
                     </div>
 

@@ -242,6 +242,17 @@ class Cache_controlController extends Sceleton  {
 
             <?php
         }
+        
+        if (Yii::$app->request->post('app_shop_cache') == 1) {
+            \common\models\InstallListCache::deleteAll();
+            $message = TEXT_INSTALL_CACHE . ' flushed';
+            ?>
+            <div class="pop-mess-cont pop-mess-cont-<?= $messageType?>">
+                <?= $message?>
+            </div>
+
+            <?php
+        }
 
         if (Yii::$app->request->post('prod_stock_cache') == 1) {
             $productsQuery = \common\models\Products::find()->asArray();

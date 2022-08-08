@@ -382,7 +382,7 @@ class Mail {
         unset($toEmailArray);
         try {
             $message = \common\modules\email\Transport::getTransport();
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             echo $e->getMessage();
         }
 
@@ -498,8 +498,8 @@ class Mail {
       }
 
       try {
-        $message = new \common\classes\email(array('X-Mailer: True Loaded Mailer'));
-      } catch (Exception $e) {
+        $message = \common\modules\email\Transport::getTransport();
+      } catch (\Exception $e) {
         echo $e->getMessage();
       }
 
@@ -510,7 +510,7 @@ class Mail {
         $message->addBcc(trim(ALL_EMAIL_BCC_COPY));
       }
       // }} admin bcc
-      $message->send($to_name, $to_email_address, $from_email_name, $from_email_address, $email_subject, $headers);
+      return ((int)$message->send($to_name, $to_email_address, $from_email_name, $from_email_address, $email_subject, $headers) > 0);
     }
 
     public static function getTypeList($withAll = false) {

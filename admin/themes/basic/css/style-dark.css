@@ -3521,7 +3521,7 @@ ul.sortable li label {
   margin-bottom:0px;	
 }
 #store_box .item-price {
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 600;
   margin-bottom: 10px;
 }
@@ -3531,16 +3531,27 @@ ul.sortable li label {
   margin-right: 7px;
   font-weight: 400;
 }
+#store_box .item-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
 #store_box .item-bottom:after {
   content:'';
   display:block;
   clear:both;  
 }
 #store_box .item-bottom .item-price {
-  float:left;	
+  padding-right: 5px;
+  width: 100%;
+  text-align: left;
+  line-height: 1.2;
+  padding-top: 7px;	
 }
 #store_box .item-bottom .item-actions {
-  float:right;	
+  display: inline-block;
+  width: 100%;
+  text-align: right;	
 }
 .apps-marketplace-filter .filters_btn {
   clear: none;
@@ -3574,7 +3585,7 @@ ul.sortable li label {
   height: 30px;
 }
 .apps-marketplace-filter .widget-header.filter-title h4 {
-  padding-top:15px;	
+  padding-top:8px;	
 }
 .apps-marketplace-filter .ftd_block:after {
   content:'';
@@ -3629,16 +3640,10 @@ ul.sortable li label {
   display: block;
   width: 100%;
   float:left;
- 
 }
 .apps-marketplace-filter .ftd_block .imageCategoryBox  {
-  content:'';
-  display:inline-block;
-  background-repeat:no-repeat;
-  background-size:contain;
-  background-position:50%;
   vertical-align:middle;
-   width:50px;
+  width:50px;
   height:38px;
 }
 .apps-marketplace-filter .ftd_block.category-filter .imageCategoryBox{
@@ -3646,6 +3651,7 @@ ul.sortable li label {
   display: flex;
   align-items: center;
   justify-content: center;
+  padding-left:0px;
 }
 .apps-marketplace-filter .ftd_block.category-filter .imageCategoryBox img {
   max-width: 30px;
@@ -3806,7 +3812,7 @@ ul.sortable li label {
     text-align: center;
     display: flex;
     flex-direction: row;
-	width: 290px;
+	width: 100%;
     overflow-x: auto;
 }
 .apps-marketplace-filter .level-0 .itemLabel label > span.wrap{
@@ -3967,3 +3973,8 @@ ul.sortable li label {
   padding: 5px 0 5px 20px;
   flex-grow: 1;
 }
+.row.dashboard-top .widget-content {
+  min-height: auto!important;
+  padding: 17px 10px;
+}
+.top_bead .top-buttons .create_item{margin: 5px 0 5px 5px;}

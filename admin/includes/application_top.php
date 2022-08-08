@@ -49,11 +49,12 @@
   if (file_exists('../includes/configure.WL.php')) include('../includes/configure.WL.php');  
 
 // Define the project version
-  if (defined('WL_ENABLED') && WL_ENABLED === true) {
-    define('PROJECT_VERSION', WL_PRODUCT_NAME);
-  } else {
-    define('PROJECT_VERSION', 'Trueloaded 3.3');
-  }
+if (file_exists('../includes/version.php')) include('../includes/version.php'); 
+if (defined('WL_ENABLED') && WL_ENABLED === true) {
+    define('PROJECT_VERSION', PROJECT_VERSION_NAME . ' ' . PROJECT_VERSION_MAJOR . '.' . PROJECT_VERSION_MINOR . '.' . PROJECT_VERSION_PATCH . ' ' . WL_PRODUCT_NAME);
+} else {
+    define('PROJECT_VERSION', PROJECT_VERSION_NAME . ' ' . PROJECT_VERSION_MAJOR . '.' . PROJECT_VERSION_MINOR . '.' . PROJECT_VERSION_PATCH);
+}
 
 // Used in the "Backup Manager" to compress backups
   define('LOCAL_EXE_GZIP', '/bin/gzip');

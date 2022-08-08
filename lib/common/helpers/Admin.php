@@ -53,5 +53,38 @@ class Admin
       return $q->asArray()->all();
 
     }
+    
+    public static function appShopConnectedMessage() {
+        global $login_id;
+        $admin = \common\models\Admin::findOne($login_id);
+        $storageKey = $admin->storage_key ?? '';
+        if (empty($storageKey)) {
+            $message = (defined('MESSAGE_KEY_EMPTY')
+                ? constant('MESSAGE_KEY_EMPTY')
+                : 'Your shop is not connected with <a href="%1$s">App Shop</a>. Why and how do I need to connect to App Shop? Please see the article <a target="_blank" href="%2$s">Connecting to App shop</a> for more details.'
+            );
+            $appUrl = \Yii::$app->urlManager->createUrl('install');
+            $wikiUrl = 'https://wiki.oscommerce.com/index.php?title=Connecting_to_App_Shop';
+            \Yii::$container->get('message_stack')->add(sprintf($message, $appUrl, $wikiUrl), 'alert', 'info');
+        } else {
+            $storageUrl = \Yii::$app->params['appStorage.url'];
+            $contents = @file_get_contents($storageUrl . 'patch/last-known.json');
+            $current = (defined('MIGRATIONS_DB_REVISION') ? MIGRATIONS_DB_REVISION : '');
+            if (!empty($contents) && !empty($current)) {
+                $json = json_decode($contents);
+                if (isset($json->version)) {
+                    $version = (string)$json->version;
+                    if ($current != $version) {
+                        $message = (defined('MESSAGE_SYSTEM_UPDATES')
+                            ? constant('MESSAGE_SYSTEM_UPDATES')
+                            : 'The updates are available in <a href="%1$s">App Shop</a>. Please check it for more details.'
+                        );
+                        $appUrl = \Yii::$app->urlManager->createUrl(['install', 'set' => 'updates']);
+                        \Yii::$container->get('message_stack')->add(sprintf($message, $appUrl), 'alert', 'info');
+                    }
+                }
+            }
+        }
+    }
 
 }

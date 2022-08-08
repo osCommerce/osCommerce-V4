@@ -47,8 +47,10 @@
                   {/foreach}
               {/if}
           {elseif isset($settings['class']) && isset($settings['method'])}
-            {assign var="method" value = $settings['method']}
-            {$settings['class']::$method($settings)}
+            <div class="tab-pane active" id="{$settings['method']}">
+              {assign var="method" value = $settings['method']}
+              {$settings['class']::$method($settings)}
+            </div>
             <div class="tab-pane" id="style">
             {include 'include/style.tpl'}
             </div>

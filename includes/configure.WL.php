@@ -31,7 +31,7 @@
   define('WL_CONTACT_WWW', 'http://www.holbi.co.uk/contact-us');
   define('WL_CONTACT_TEXT', 'Contact Us');
   
-  define('WL_PRODUCT_NAME', 'Trueloaded Superadmin');
+  define('WL_PRODUCT_NAME', 'Superadmin');
 
   define('WL_COMPANY_EMAIL', 'info@holbi.co.uk');
   define('WL_COMPANY_WWW', 'http://www.holbi.co.uk/');

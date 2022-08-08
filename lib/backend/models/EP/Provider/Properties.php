@@ -404,10 +404,14 @@ class Properties extends ProviderAbstract implements ImportInterface, ExportInte
                         $walk_property_id = $categories['properties_id'];
                     }else{
                         $parent_id = $walk_property_id;
-                        $new_properties_type = ($idx==count($path_arr)-1)?'text':'category';
+                        $new_properties_type = 'text';
                         if ( isset($this->data['properties_type']) && in_array($this->data['properties_type'],array('text','number','interval','flag','file')) ){
                             $new_properties_type = $this->data['properties_type'];
                         }
+                        if (count($path_arr)>1 && ($idx!=count($path_arr)-1) ) {
+                            $new_properties_type = 'category';
+                        }
+
                         tep_db_perform(TABLE_PROPERTIES, array(
                             'parent_id' => $parent_id,
                             'properties_type' => $new_properties_type,

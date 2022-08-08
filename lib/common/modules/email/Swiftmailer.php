@@ -98,9 +98,21 @@ class Swiftmailer implements MailerInterface {
         $this->message
             ->setSubject($email_subject)
             ->setFrom([$from_email_address => $from_email_name])
-            ->setTo([$to_email_address => $to_name])
-            //->setBody('test')
+            //->setTo([$to_email_address => $to_name])
             ;
+
+        $mailTo = [];
+        if ( empty($to_name) ){
+            foreach (preg_split('/,(?=([^\"]*\"[^\"]*\")*[^\"]*$)/', $to_email_address, -1, PREG_SPLIT_NO_EMPTY) as $split_mail){
+                if (preg_match('/^((.*?)\s+)?([^\s]+)$/', trim($split_mail), $_split_mail)) {
+                    $_toName = trim($_split_mail[1], '" ');
+                    $mailTo[trim($_split_mail[3], '< >')] = $_toName?$_toName:null;
+                }
+            }
+        }else{
+            $mailTo[trim($to_email_address, '< >')] = $to_name;
+        }
+        $this->message->setTo($mailTo);
 
         if ( !empty($headers) && !is_array($headers) ){
             $headers_raw = array_map('trim',preg_split("/\n/",$headers,-1,PREG_SPLIT_NO_EMPTY));

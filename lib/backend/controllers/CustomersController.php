@@ -92,6 +92,9 @@ class CustomersController extends Sceleton {
                   'not_important' => 0
                   ), */
         );
+        if ( $cfExt = \common\helpers\Acl::checkExtensionAllowed('CustomerFlag') ){
+            array_splice($this->view->customersTable, 1, 0, [['title' => 'Flag','not_important' => 0]]);
+        }
 
         $GET = Yii::$app->request->get();
         $AdminFilters = \common\models\AdminFilters::findOne(['filter_type' => 'customers']);
@@ -150,6 +153,9 @@ class CustomersController extends Sceleton {
             $search = $GET['search'];
         }
         $this->view->filters->search = $search;
+
+        $this->view->filters->flag = (int)Yii::$app->request->get('flag');
+        $this->view->filters->marker = (int)Yii::$app->request->get('marker');
 
         $this->view->filters->showGroup = (CUSTOMERS_GROUPS_ENABLE == 'True');
         $group = '';
@@ -554,6 +560,10 @@ class CustomersController extends Sceleton {
             $customersQuery->andWhere($filterGroup);
         }
 
+        if ( $cfExt = \common\helpers\Acl::checkExtensionAllowed('CustomerFlag') ) {
+            $cfExt::filterCustomerQuery($customersQuery, $output);
+        }
+
         if (tep_not_null($output['country'])) {
             $_join_address_book = true;
 
@@ -837,6 +847,10 @@ class CustomersController extends Sceleton {
                 }
             }
 
+            if ( $cfExt = \common\helpers\Acl::checkExtensionAllowed('CustomerFlag') ){
+                $cfExt::fillCustomerListing($customersAll);
+            }
+
         }
         // }} attach page info
 
@@ -882,6 +896,24 @@ class CustomersController extends Sceleton {
             );
             if ( !$customers['customers_status'] ) {
                 $responseList[count($responseList) - 1]['DT_RowClass'] = 'dis_module';
+            }
+            if ( $cfExt = \common\helpers\Acl::checkExtensionAllowed('CustomerFlag') ){
+                $markers = \yii\helpers\ArrayHelper::index($cfExt::markersList(),'id');
+                $coloredRow = '';
+                if (isset($customers['markers']) && isset($markers[$customers['markers']])){
+                    $coloredRow = $markers[$customers['markers']]['color'];
+                }
+                $flags = \yii\helpers\ArrayHelper::index($cfExt::flagsList(),'id');
+                $paint = '<div class="fa-paint-brush" onclick="sendCustomerMarker(' . (int)$customers['customers_id'] . ', ' . (int)($customers['markers'] ?? 0) . ')"></div>';
+                if (isset($customers['flags']) && isset($flags[$customers['flags']])){
+                    $flagCell = '<div class="fa-flag" style="' . $flags[$customers['flags']]['style'] . ';" onclick="sendCustomerFlag(' . (int)$customers['customers_id'] . ', ' . (int)$customers['flags'] . ')"></div>' . $paint;
+                } else {
+                    $flagCell = '<div class="fa-flag-o" onclick="sendCustomerFlag(' . (int)$customers['customers_id'] . ')"></div>' . $paint;
+                }
+                if ($coloredRow) {
+                    $flagCell .= '<input class="row_colored" type="hidden" value="' . $coloredRow . '">';
+                }
+                array_splice($responseList[count($responseList) - 1], 1, 0, $flagCell);
             }
         }
         $response = array(

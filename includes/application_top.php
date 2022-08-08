@@ -103,11 +103,12 @@ function userErrorHandler($errno, $errmsg, $filename, $linenum, $vars) {
   }
 
 // define the project version
-  if (defined('WL_ENABLED') && WL_ENABLED === true) {
-    define('PROJECT_VERSION', WL_PRODUCT_NAME);
-  } else {
-    define('PROJECT_VERSION', 'Trueloaded 3.3');
-  }
+if (file_exists('includes/version.php')) include('includes/version.php'); 
+if (defined('WL_ENABLED') && WL_ENABLED === true) {
+    define('PROJECT_VERSION', PROJECT_VERSION_NAME . ' ' . PROJECT_VERSION_MAJOR . '.' . PROJECT_VERSION_MINOR . '.' . PROJECT_VERSION_PATCH . ' ' . WL_PRODUCT_NAME);
+} else {
+    define('PROJECT_VERSION', PROJECT_VERSION_NAME . ' ' . PROJECT_VERSION_MAJOR . '.' . PROJECT_VERSION_MINOR . '.' . PROJECT_VERSION_PATCH);
+}
 
 // set php_self in the local scope
   if (!isset($PHP_SELF)) $PHP_SELF = $_SERVER['PHP_SELF'];

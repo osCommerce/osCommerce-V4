@@ -26,7 +26,9 @@ html, body{min-width: 960px;}
 @media(min-width: 1250px){
     table.table.tabl-res{width: 100%!important;}
 }
-
+@media (max-width:1919px) {
+	.row.dashboard-top .widget-content {padding: 16px 10px;}
+}
 @media(max-width: 1880px){
     .summary-box.summary-box-info .sb-line{font-size: 0.75vw;}
     .sb-line{font-size: 0.7vw;}
@@ -36,7 +38,9 @@ html, body{min-width: 960px;}
     .edp-line #selectBrand.form-control.form-control-small{width: 50%;}
     .f_td_group-pr .btn-add-brand{width: 44%;}
 }
-
+@media (max-width:1850px) {
+	.row.dashboard-top .widget-content {padding: 15px 10px;}
+}
 @media(max-width: 1800px){
     .w-prod-page > .tabbable-custom > .nav-tabs > li > a > span{font-size: 14px;}
     .assig-attr-sub-table td.ast-price.ast-price-w{width: 420px;}
@@ -48,11 +52,13 @@ html, body{min-width: 960px;}
 	.themes-menu a.btn{margin-bottom:10px;}
 	.themes-menu{height:auto;}
 	.context-sales_statistics .btn-bar.edit-btn-bar {margin-bottom:10px;}
+	.row.dashboard-top .widget-content {padding: 14px 10px 15px;}
 }
 
 @media(max-width: 1730px){
     .bundl-box .bu-num, .bundl-box .bu-price, .bundl-box .bu-disc{width: 19%;}
     .bu-box-set{text-align: right; padding: 10px 10px 10px 47%;}
+	.row.dashboard-top .widget-content {padding: 13px 10px 14px;}
 }
 
 @media(max-width: 1660px){
@@ -69,6 +75,9 @@ html, body{min-width: 960px;}
     .row_or.row_or_lang img{top: 32px;}
     .create_item{ padding: 8px 6px 10px; margin: 5px 0 5px 5px;}
     .header_menu_right li{padding: 14px 7px;}
+	.row.dashboard-top .widget-content {padding: 11px 10px 12px;}
+	#store_box .item-price{font-size:18px;}
+	#store_box .item-bottom .item-actions .btn {font-size:13px; padding:3px 15px;}
   .go-to-order {
     margin-left:70px;	    
   }
@@ -133,6 +142,9 @@ html, body{min-width: 960px;}
     .product-main-detail-top-switchers .status-right > span {
         text-transform: none;
     }
+	.row.dashboard-top .widget-content {
+		padding: 6px 10px 7px;
+	}
 }
 
 @media(max-width: 1540px){
@@ -423,6 +435,7 @@ html, body{min-width: 960px;}
 	#buttons-txt_category_description_1 .btn {font-size:12px; padding:5px 10px;}
 	.btn-small, .btn-small:hover, .btn-small:focus, .btn-small:active {font-size:13px;}
 	.pull-right {width:33.3333%;}
+	.apps-marketplace-filter .pull-right{width:47%; text-align:right;}
 }
 
 @media(max-width: 1200px){

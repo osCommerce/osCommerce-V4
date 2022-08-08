@@ -38,8 +38,11 @@
 {if \common\helpers\Acl::rule(['ACL_CUSTORER', 'IMAGE_DELETE'])}
                         <a href="javascript:void(0)" onclick="deleteSelectedOrders();" class="btn btn-del btn-no-margin">{$smarty.const.TEXT_DELETE_SELECTED}</a>
 {/if}
+{if $cfExt = \common\helpers\Acl::checkExtensionAllowed('CustomerFlag')}
+    {$cfExt::customerBatchButtons()}
+{/if}
                 </div>
-                <table class="table table-striped table-selectable table-checkable table-ordering table-hover table-responsive table-bordered datatable tab-cust tabl-res double-grid"
+                <table class="table table-striped table-colored table-selectable table-checkable table-ordering table-hover table-responsive table-bordered datatable tab-cust tabl-res double-grid"
                        checkable_list="1,2,3,4,6,7,8" order_list="4" order_by="desc" data_ajax="customers/customerlist">
                     <thead>
                         <tr>
@@ -54,6 +57,9 @@
                     <div>
 {if \common\helpers\Acl::rule(['ACL_CUSTORER', 'IMAGE_DELETE'])}
                         <a href="javascript:void(0)" onclick="deleteSelectedOrders();" class="btn btn-del btn-no-margin">{$smarty.const.TEXT_DELETE_SELECTED}</a>
+{/if}
+{if $cfExt = \common\helpers\Acl::checkExtensionAllowed('CustomerFlag')}
+    {$cfExt::customerBatchButtons()}
 {/if}
                     </div>
                     <div>
@@ -163,6 +169,7 @@ function setFilterState() {
     window.history.replaceState({ }, '', url);
 }
 function resetFilter() {
+    $('#filterForm').trigger('filters_reset');
     $('select[name="by"]').val('');
     $('input[name="search"]').val('');
     $("#presel").prop("checked", true);
@@ -564,6 +571,98 @@ $(document).ready(function() {
     {/if}
 
 });
+
+{if $cfExt = \common\helpers\Acl::checkExtensionAllowed('CustomerFlag')}
+function sendCustomerFlag(id, flag_state) {
+    var selected_ids = [];
+    selected_ids[0] = id;
+    if (typeof flag_state == "undefined") flag_state = 0;
+    sendCustomersFlag(selected_ids, flag_state);
+}
+function flagSelectedCustomers() {
+    if (getTableSelectedCount() > 0) {
+        var selected_ids = getTableSelectedIds();
+        sendCustomersFlag(selected_ids, 0);
+    }
+    return false;
+}
+function sendCustomersFlag(selected_ids, flag_state) {
+    bootbox.dialog({
+        message: '{foreach $cfExt::flagsList(true) as $flag}<label class="{$flag['class']}" style="{$flag['style']}">{\yii\helpers\Html::radio('o_flag', false, ['value' => $flag['id']])|escape:'javascript'}<span>{$flag['text']}</span></label><br>{/foreach}',
+        title: "{$smarty.const.TEXT_SET_FLAG}",
+        buttons: {
+            success: {
+                label: "{$smarty.const.IMAGE_SAVE}",
+                className: "btn",
+                callback: function() {
+                    $.post("{\yii\helpers\Url::toRoute(['update-customer-flag'])}", { 'type':'flag', 'selected_ids' : selected_ids, 'o_flag' : $('input:checked[name="o_flag"]').val() }, function(data, status){
+                        if (status == "success") {
+                            resetStatement();
+                        } else {
+                            alert("Request error.");
+                        }
+                    },"html");
+                }
+            },
+            main: {
+                label: "Cancel",
+                className: "btn-cancel",
+                callback: function() {
+
+                }
+            }
+        }
+    });
+    setTimeout(function(){
+        $('input[name="o_flag"][value="'+flag_state+'"]').prop('checked', 'checked');
+    }, 200);
+}
+function sendCustomerMarker(id, marker_state) {
+    var selected_ids = [];
+    selected_ids[0] = id;
+    sendCustomersMarker(selected_ids, marker_state);
+}
+function markerSelectedCustomers() {
+    if (getTableSelectedCount() > 0) {
+        var selected_ids = getTableSelectedIds();
+        sendCustomersMarker(selected_ids, 0);
+    }
+    return false;
+}
+function sendCustomersMarker(selected_ids, marker_state) {
+
+    bootbox.dialog({
+        message: '{foreach $cfExt::markersList(true) as $marker}<label class="{$marker['class']}" style="{$marker['style']}">{\yii\helpers\Html::radio('o_marker', false, ['value' => $marker['id']])|escape:'javascript'}<span>{$marker['text']}</span></label><br>{/foreach}',
+        title: "{$smarty.const.EXT_CUSTOMERFLAG_TEXT_SET_MARKER}",
+        buttons: {
+            success: {
+                label: "{$smarty.const.IMAGE_SAVE}",
+                className: "btn",
+                callback: function() {
+                    $.post("{\yii\helpers\Url::toRoute(['update-customer-flag'])}", { 'type':'marker', 'selected_ids' : selected_ids, 'o_flag' : $('input:checked[name="o_marker"]').val() }, function(data, status){
+                        if (status == "success") {
+                            resetStatement();
+                        } else {
+                            alert("Request error.");
+                        }
+                    },"html");
+                }
+            },
+            main: {
+                label: "Cancel",
+                className: "btn-cancel",
+                callback: function() {
+
+                }
+            }
+        }
+    });
+    setTimeout(function(){
+        $('input[name="o_marker"][value="'+marker_state+'"]').prop('checked', 'checked');
+    }, 200);
+}
+{/if}
+
 </script>
 				<!--===Actions ===-->
 				<div class="row right_column" id="order_management" style="display: none;">

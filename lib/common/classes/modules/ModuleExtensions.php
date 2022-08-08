@@ -192,20 +192,7 @@ class ModuleExtensions extends Module {
                 }
                 $setup::install($platform_id, $migrate);
             }
-            $Items = $this->getAdminHooks();
-            if (is_array($Items)) {
-                foreach ($Items as $item) {
-                    $record = new \common\models\Hooks();
-                    $record->loadDefaultValues();
-                    $record->page_name = $item['page_name'];
-                    $record->page_area = $item['page_area'];
-                    $record->sort_order = 0;
-                    $record->extension_name = $this->code;
-                    $record->extension_file = $item['extension_file'];
-                    $record->save(false);
-                }
-            }
-            unset($Items);
+            \common\helpers\Hooks::registerHooks($this->getAdminHooks(), $this->code);
             return parent::install($platform_id);
         } catch (\Exception $ex) {
             \Yii::warning($ex->getMessage() . ' ' . $ex->getTraceAsString(), "Extensions/$this->code");
@@ -427,7 +414,7 @@ class ModuleExtensions extends Module {
     //use ::initTranslation() for custom initializing
     protected static function initTranslationArray($from = 'init_directcall')
     {
-        if (\Yii::$app->id == 'app-console') return;
+        if (!\common\helpers\System::isYiiLoaded()) return;
         if (is_bool($from)) {
             $from = 'init_directcall';
         }

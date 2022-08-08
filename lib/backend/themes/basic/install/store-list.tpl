@@ -43,6 +43,6 @@ $('.clickOpen').click(function(){
 </script> 
 <script type="text/javascript">
   setTimeout(function(){
-    $('#store_box').inRow(['.item-logo', '.descrWrap'], 3)
+    $('#store_box').inRow(['.item-logo', '.descrWrap', 'h3'], 3)
   }, 500);
 </script>

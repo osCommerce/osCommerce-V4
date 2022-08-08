@@ -218,33 +218,32 @@ class AdminmembersController extends Sceleton {
         echo '<a class="btn btn-primary btn-process-order" href="' . \Yii::$app->urlManager->createUrl(['adminmembers/admin-login-session-view', 'admin_id' => $mInfo->admin_id]) . '">' . TEXT_ADMIN_LOGIN_SESSION_VIEW . '</a>';
         echo '</div>';
 
-        $check_dev_admin = tep_db_fetch_array(tep_db_query("SELECT COUNT(*) AS c FROM ".TABLE_ADMIN." WHERE admin_id='".(int)$_SESSION['login_id']."' AND admin_email_address LIKE '%@holbi.co.uk'"));
-        if ($check_dev_admin['c'] > 0) {
-            \common\helpers\Translation::init('admin/customers');
-            $titleDataPattern = sprintf(ENTRY_PASSWORD_ERROR, ADMIN_PASSWORD_MIN_LENGTH);
-            $passDataPattern = '.{' . ADMIN_PASSWORD_MIN_LENGTH . '}';
-            if (defined('ADMIN_PASSWORD_STRONG')) {
-                if (ADMIN_PASSWORD_STRONG == 'ULNS') {
-                    $titleDataPattern = sprintf(ENTRY_PASSWORD_ULNS_ERROR, ADMIN_PASSWORD_MIN_LENGTH);
-                    $passDataPattern = addslashes('(?=.*\d)(?=.*\W+)(?=.*[a-z])(?=.*[A-Z]).{' . ADMIN_PASSWORD_MIN_LENGTH . '}');
-                } elseif (ADMIN_PASSWORD_STRONG == 'ULN') {
-                    $titleDataPattern = sprintf(ENTRY_PASSWORD_ULN_ERROR, ADMIN_PASSWORD_MIN_LENGTH);
-                    $passDataPattern = addslashes('(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{' . ADMIN_PASSWORD_MIN_LENGTH . '}');
-                }
+       
+        \common\helpers\Translation::init('admin/customers');
+        $titleDataPattern = sprintf(ENTRY_PASSWORD_ERROR, ADMIN_PASSWORD_MIN_LENGTH);
+        $passDataPattern = '.{' . ADMIN_PASSWORD_MIN_LENGTH . '}';
+        if (defined('ADMIN_PASSWORD_STRONG')) {
+            if (ADMIN_PASSWORD_STRONG == 'ULNS') {
+                $titleDataPattern = sprintf(ENTRY_PASSWORD_ULNS_ERROR, ADMIN_PASSWORD_MIN_LENGTH);
+                $passDataPattern = addslashes('(?=.*\d)(?=.*\W+)(?=.*[a-z])(?=.*[A-Z]).{' . ADMIN_PASSWORD_MIN_LENGTH . '}');
+            } elseif (ADMIN_PASSWORD_STRONG == 'ULN') {
+                $titleDataPattern = sprintf(ENTRY_PASSWORD_ULN_ERROR, ADMIN_PASSWORD_MIN_LENGTH);
+                $passDataPattern = addslashes('(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{' . ADMIN_PASSWORD_MIN_LENGTH . '}');
             }
-            \common\helpers\Translation::init('main');
-            echo '<div class="btn-toolbar btn-toolbar-order btn-toolbar-pass"><span class="btn btn-pass-cus">'.T_UPDATE_PASS.'</span>
-                                <script>
-                                $(document).ready(function() {
-                                $("a.popup").popUp();
-                                $(".btn-pass-cus").on("click", function(){
-                                    alertMessage("<div class=\"popup-heading popup-heading-pass\">' . TEXT_UPDATE_PASSWORD_FOR. ' '.$mInfo->admin_firstname.'&nbsp;'.$mInfo->admin_lastname.'</div><div class=\"popup-content\"><form name=\"passw_form\" id=\"passw_form\" action=\"' . tep_href_link('adminmembers', \common\helpers\Output::get_all_get_params(array('admin_id', 'action')) . 'admin_id=' . $mInfo->admin_id . '&action=password') . '\" method=\"post\"><table cellspacing=\"0\" cellpadding=\"0\" width=\"100%\"><tr><td class=\"dataTableContent\"><a href=\"#\" class=\"generate_password\">'.TEXT_GENERATE_PASSWORD.'</a></td></tr><tr><td class=\"dataTableContent\">'.T_NEW_PASS.':</td><td class=\"dataTableContent\"><input type=\"password\" data-required=\"'.$titleDataPattern.'\" data-pattern=\"'.$passDataPattern.'\" name=\"change_pass\" class=\"form-control\"></td></tr></table><div class=\"btn-bar\" style=\"padding-bottom: 0;\"><div class=\"btn-left\"><span class=\"btn btn-cancel\">' . IMAGE_CANCEL . '</span></div><div class=\"btn-right\"><input type=\"submit\" value=\"' . IMAGE_UPDATE. '\" class=\"btn btn-primary\"></div></div><input type=\"hidden\" name=\"admin_id\" value=\"'.$mInfo->admin_id.'\"></form></div>");
-                                    passFormAfretShow();
-                                });
-                                });
-                                </script>
-                                </div>';
         }
+        \common\helpers\Translation::init('main');
+        echo '<div class="btn-toolbar btn-toolbar-order btn-toolbar-pass"><span class="btn btn-pass-cus">'.T_UPDATE_PASS.'</span>
+                            <script>
+                            $(document).ready(function() {
+                            $("a.popup").popUp();
+                            $(".btn-pass-cus").on("click", function(){
+                                alertMessage("<div class=\"popup-heading popup-heading-pass\">' . TEXT_UPDATE_PASSWORD_FOR. ' '.$mInfo->admin_firstname.'&nbsp;'.$mInfo->admin_lastname.'</div><div class=\"popup-content\"><form name=\"passw_form\" id=\"passw_form\" action=\"' . tep_href_link('adminmembers', \common\helpers\Output::get_all_get_params(array('admin_id', 'action')) . 'admin_id=' . $mInfo->admin_id . '&action=password') . '\" method=\"post\"><table cellspacing=\"0\" cellpadding=\"0\" width=\"100%\"><tr><td class=\"dataTableContent\"><a href=\"#\" class=\"generate_password\">'.TEXT_GENERATE_PASSWORD.'</a></td></tr><tr><td class=\"dataTableContent\">'.T_NEW_PASS.':</td><td class=\"dataTableContent\"><input type=\"password\" data-required=\"'.$titleDataPattern.'\" data-pattern=\"'.$passDataPattern.'\" name=\"change_pass\" class=\"form-control\"></td></tr></table><div class=\"btn-bar\" style=\"padding-bottom: 0;\"><div class=\"btn-left\"><span class=\"btn btn-cancel\">' . IMAGE_CANCEL . '</span></div><div class=\"btn-right\"><input type=\"submit\" value=\"' . IMAGE_UPDATE. '\" class=\"btn btn-primary\"></div></div><input type=\"hidden\" name=\"admin_id\" value=\"'.$mInfo->admin_id.'\"></form></div>");
+                                passFormAfretShow();
+                            });
+                            });
+                            </script>
+                            </div>';
+        
     }
 
     function actionAssignPlatforms() {

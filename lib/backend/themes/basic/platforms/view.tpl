@@ -9,7 +9,7 @@
     {if $statement}
         <div class="btn-toolbar btn-toolbar-order">
             <a href="{Yii::$app->urlManager->createUrl(['platforms/edit', 'id' => $platform->platform_id])}" class="btn btn-edit btn-primary btn-process-order ">{$smarty.const.IMAGE_EDIT}</a>            
-                {if !($platform->is_default || in_array($platform->platform_id, [4, 5, 6]))}
+                {if !($platform->is_default)}
                     <button onclick="return deleteItemConfirm({$platform->platform_id})" class="btn btn-delete btn-no-margin btn-process-order ">{$smarty.const.IMAGE_DELETE}</button>                
                 {/if}
                 {if !$platform->is_virtual}

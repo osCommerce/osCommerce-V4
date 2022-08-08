@@ -464,6 +464,7 @@ class Theme
                     ->where(['translation_key' => $key])
                     ->asArray()->all();
                 foreach ($translation as $t) {
+                    if (substr($t['translation_entity'], 0, 5) == 'admin') continue;
                     if (!isset($translations[$t['translation_entity']])) {
                         $translations[$t['translation_entity']] = [];
                     }
@@ -809,7 +810,7 @@ where dbs.box_id = '" . (int)$id . "'
         }
 
         if (is_array($arr['blocks'] ?? null)) foreach ($arr['blocks'] as $item){
-            self::blocksTreeImport($item, $theme_name);
+            self::blocksTreeImport($item, $theme_name, '', '', false, false);
             \yii\caching\TagDependency::invalidate(\Yii::$app->getCache(), 'translation');
         }
 
@@ -873,9 +874,9 @@ where dbs.box_id = '" . (int)$id . "'
         self::elementsSave($theme_name);
     }
 
-    public static function blocksTreeImport($arr, $theme_name, $block_name = '', $sort_order = '', $save = false)
+    public static function blocksTreeImport($arr, $theme_name, $block_name = '', $sort_order = '', $save = false, $newMicrotime = true)
     {
-        $microtime = $arr['microtime'] . rand(0, 9999);
+        $microtime =  $newMicrotime ? microtime(true) . rand(0, 99) : $arr['microtime'];
 
         $sql_data_array = array(
             'microtime' => $microtime,
@@ -950,27 +951,27 @@ where dbs.box_id = '" . (int)$id . "'
 
             if (is_array($arr['sub_1'] ?? null) && count($arr['sub_1']) > 0){
                 foreach ($arr['sub_1'] as $item){
-                    self::blocksTreeImport($item, $theme_name, 'block-' . $box_id, '', $save);
+                    self::blocksTreeImport($item, $theme_name, 'block-' . $box_id, '', $save, $newMicrotime);
                 }
             }
             if (is_array($arr['sub_2'] ?? null) && count($arr['sub_2']) > 0){
                 foreach ($arr['sub_2'] as $item){
-                    self::blocksTreeImport($item, $theme_name, 'block-' . $box_id . '-2', '', $save);
+                    self::blocksTreeImport($item, $theme_name, 'block-' . $box_id . '-2', '', $save, $newMicrotime);
                 }
             }
             if (is_array($arr['sub_3'] ?? null) && count($arr['sub_3']) > 0){
                 foreach ($arr['sub_3'] as $item){
-                    self::blocksTreeImport($item, $theme_name, 'block-' . $box_id . '-3', '', $save);
+                    self::blocksTreeImport($item, $theme_name, 'block-' . $box_id . '-3', '', $save, $newMicrotime);
                 }
             }
             if (is_array($arr['sub_4'] ?? null) && count($arr['sub_4']) > 0){
                 foreach ($arr['sub_4'] as $item){
-                    self::blocksTreeImport($item, $theme_name, 'block-' . $box_id . '-4', '', $save);
+                    self::blocksTreeImport($item, $theme_name, 'block-' . $box_id . '-4', '', $save, $newMicrotime);
                 }
             }
             if (is_array($arr['sub_5'] ?? null) && count($arr['sub_5']) > 0){
                 foreach ($arr['sub_5'] as $item){
-                    self::blocksTreeImport($item, $theme_name, 'block-' . $box_id . '-5', '', $save);
+                    self::blocksTreeImport($item, $theme_name, 'block-' . $box_id . '-5', '', $save, $newMicrotime);
                 }
             }
         } elseif ($arr['widget_name'] == 'Tabs'){
@@ -978,7 +979,7 @@ where dbs.box_id = '" . (int)$id . "'
             for($i = 1; $i < 11; $i++) {
                 if (is_array($arr['sub_' . $i]) && count($arr['sub_1']) > 0){
                     foreach ($arr['sub_' . $i] as $item){
-                        self::blocksTreeImport($item, $theme_name, 'block-' . $box_id . '-' . $i, '', $save);
+                        self::blocksTreeImport($item, $theme_name, 'block-' . $box_id . '-' . $i, '', $save, $newMicrotime);
                     }
                 }
             }

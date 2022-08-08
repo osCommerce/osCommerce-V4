@@ -156,7 +156,9 @@ class BackupController extends Sceleton {
                     }
                 }
             }
-            sort($this->contents);
+            usort($this->contents, function($a, $b){
+                return filemtime(DIR_FS_BACKUP.$a)>filemtime(DIR_FS_BACKUP.$b)?-1:1;
+            });
             $this->dir->close();
         }
     }
@@ -209,7 +211,8 @@ class BackupController extends Sceleton {
             for ($i = $start, $n = count($this->contents); ($i < $n && $i < $start + $length); $i++) {
                 $entry = $this->contents[$i];
 
-                $responseList[] = array(Html::a(tep_image(DIR_WS_ICONS . 'file_download.gif', ICON_FILE_DOWNLOAD), tep_href_link(FILENAME_BACKUP . '/download', tep_session_name() . '=' . tep_session_id() . '&file=' . $entry)) . $this->getFileComments($entry) .
+                $responseList[] = array(
+                    Html::a('<i style="font-size: 1.2em" class="icon-download"></i>', tep_href_link(FILENAME_BACKUP . '/download', tep_session_name() . '=' . tep_session_id() . '&file=' . $entry)) .' '. $this->getFileComments($entry) .
                     '<input class="cell_identify" type="hidden" value="' . $entry . '">',
                     date(PHP_DATE_TIME_FORMAT, filemtime(DIR_FS_BACKUP . $entry)),
                     number_format(filesize(DIR_FS_BACKUP . $entry)) . 'bytes'

@@ -131,7 +131,7 @@ class Password {
         static $seeded;
 
         if (!isset($seeded)) {
-            mt_srand((double) microtime() * 1000000);
+            mt_srand( intval(microtime(true) * 1000000) );
             $seeded = true;
         }
 

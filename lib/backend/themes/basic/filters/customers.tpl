@@ -27,9 +27,17 @@
         <div><label class="radio_label"><input type="checkbox" name="platform[]" class="js_platform_checkboxes" value="{$platform['id']}" {if in_array($platform['id'], $app->controller->view->filters->platform)} checked="checked"{/if}> {$platform['text']}</label></div>
       {/foreach}
     </div>
+
+        {if $cfExt = \common\helpers\Acl::checkExtensionAllowed('CustomerFlag')}
+            {$cfExt::renderCustomerFilter($app->controller->view->filters)}
+        {/if}
+
     </div>
 </div>
 {/if}
+
+
+
 <div class="filter-box filter-box-cus {if $isMultiPlatform}filter-box-pl{/if}">
 
     <div class="row">

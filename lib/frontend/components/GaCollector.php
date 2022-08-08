@@ -92,7 +92,7 @@ class GaCollector {
         // utmcct - 
         // utmctr - keyword     
         $lookUp = array('utmccn', 'utmcmd', 'utmcsr', 'utmcct', 'utmctr');
-        $list = explode("|", $this->cookie->get("__utmz"));
+        $list = explode("|", (string)$this->cookie->get("__utmz"));
         if (sizeof($list) > 0) {
             foreach ($list as $val) {
                 for ($i = 0; $i < sizeof($lookUp); $i++) {
