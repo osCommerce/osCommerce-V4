@@ -40,8 +40,8 @@ class SaleEnds extends Widget
                 ->select('expires_date')
                 ->where(['products_id' => (int)$params['products_id'], 'status' => 1])->asArray()->one();
 
-        if (!$product) {
-            $product['expires_date'] = \common\components\Salemaker::getFirstExpiringPromoTo($params['products_id']);
+        if (!$product && \common\helpers\Acl::checkExtensionAllowed('Promotions')) {
+            $product['expires_date'] = \common\extensions\Promotions\helpers\Salemaker::getFirstExpiringPromoTo($params['products_id']);
             if (!$product['expires_date']){
                 return '';
             }

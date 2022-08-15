@@ -136,7 +136,9 @@
                     </div>
                 </div>
             </div>
-            {$promo_content}
+        {foreach \common\helpers\Hooks::getList('customergroups/groupedit', 'right-column') as $filename}
+            {include file=$filename}
+        {/foreach}
         </div>
 {/if}
 

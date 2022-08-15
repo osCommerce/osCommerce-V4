@@ -93,7 +93,7 @@ class OrderManager {
     public function isShippingNeeded() {
         $needed = ($this->contentType != 'virtual') && ($this->contentType != 'virtual_weight');
 
-        if ($this->getInstanceType() == 'quote' && strtolower(\common\helpers\PlatformConfig::getVal('SHOW_QUANTITY_INPUT_FOR_QUOTE_BUTTON', 'false')) == 'true') {
+        if ($this->getInstanceType() == 'quote' && strtolower(\common\helpers\PlatformConfig::getVal('QUOTE_SKIP_SHIPPING', 'false')) == 'true') {
           $needed = false;
         } else {
           // in some cases we don't have order instance here,
@@ -305,8 +305,8 @@ class OrderManager {
             $free_shipping = false;
         }
 
-        if (\common\helpers\Acl::checkExtensionAllowed('Promotions') && \common\models\promotions\PromotionService::confirmFreeShipping($this)){
-            $free_shipping = true;
+        foreach (\common\helpers\Hooks::getList('order-manager/check-free-shipping') as $filename) {
+            include($filename);
         }
 
         return $free_shipping;

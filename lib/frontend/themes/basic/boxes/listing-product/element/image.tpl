@@ -1,5 +1,7 @@
 {use class="frontend\design\Info"}{if !isset($settings[0].lazy_load)}{$settings[0].lazy_load = false}{/if}
-{\frontend\design\boxes\product\PromotionIcons::widget(['params' => ['product' => $product]])}
+{if \common\helpers\Acl::checkExtensionAllowed('Promotions')}
+{\common\extensions\Promotions\widgets\PromotionIcons\PromotionIcons::widget(['params' => ['product' => $product]])}
+{/if}
 
 <a href="{$product.link}">
     <picture>

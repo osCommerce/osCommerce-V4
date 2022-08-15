@@ -101,7 +101,7 @@
 {/if}
 
 {$smarty.capture.body}
-{if (\common\helpers\Acl::checkExtensionAllowed('Promotions'))}
+{if (\common\helpers\Acl::checkExtensionAllowed('BonusActions'))}
     {\frontend\design\boxes\promotions\PromoTrigger::widget()}
 {/if}
 {if (\common\helpers\Acl::checkExtensionAllowed('BonusActions'))}

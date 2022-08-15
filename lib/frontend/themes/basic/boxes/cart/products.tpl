@@ -31,8 +31,9 @@
                     </div>
                 {/if}
 
-                {\frontend\design\boxes\product\PromotionIcons::widget(['params' => ['product' => $product]])}
-
+                {if \common\helpers\Acl::checkExtensionAllowed('Promotions')}
+                {\common\extensions\Promotions\widgets\PromotionIcons\PromotionIcons::widget(['params' => ['product' => $product]])}
+                {/if}
                 <div class="image">
                     {if isset($product._status) && $product._status}
                         <a href="{$product.link}"><img src="{$product.image}" alt="{$product.name}"></a>

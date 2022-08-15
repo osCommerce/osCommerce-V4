@@ -79,7 +79,7 @@ class Products extends Widget
               'oos_product_incart' => $cartDecorator->oos_product_incart,
               'bound_quantity_ordered' => $bounded,
               'bonus_points' => (is_object($this->params['manager'])? $this->params['manager']->getBonusesDetails(): null),
-              'promoMessage' => \common\helpers\Acl::checkExtensionAllowed('Promotions') ? \common\models\promotions\PromotionService::getMessage() : null,
+              'promoMessage' => \common\helpers\Acl::checkExtensionAllowed('Promotions') ? \common\extensions\Promotions\models\PromotionService::getMessage() : null,
               'boundMessage' => $boundMessage ?? '',
               'popupMode' => ($popup == 1),
               'multiCart' => $multiCart,

@@ -12,7 +12,6 @@
 
   define('TABLE_ADMIN', 'admin');
 
-  define('TABLE_SALEMAKER_SALES', 'salemaker_sales');
   define('TABLE_FEATURED', 'featured');
 
 // define the database table names used in the project

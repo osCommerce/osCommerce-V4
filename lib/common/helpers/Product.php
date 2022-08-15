@@ -534,7 +534,7 @@ class Product {
             if ( count($_lookup_product)>50 ) $_lookup_product = array();
             $_lookup_product[$_key] = $product;
         }
-        return $product['products_seo_page_name'];
+        return $product['products_seo_page_name'] ?? null;
     }
 
     public static function get_products_stock($products_id) {

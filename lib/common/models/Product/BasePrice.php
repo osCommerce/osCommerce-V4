@@ -610,17 +610,8 @@ class BasePrice {
             }
         }
 
-        if (\common\helpers\Acl::checkExtensionAllowed('Promotions') && $this->dSettings->applyPromotion()){
-            $promo = \common\extensions\Promotions\Product\PromotionPrice::getInstance($this->uprid);
-            $promoSettings = $promo->getSettings();
-            if ($promoSettings['to_both'] || $promoSettings['to_preferred']['only_to_base']) {
-                if (debug_backtrace()[1]['function'] != 'getInventorySpecialPrice') {
-                  $promo_price = $promo->getPromotionPrice();
-                    if ($promo_price !== false) {
-                        $this->special_price['value'] = $promo_price;
-                    }
-                }
-            }
+        foreach (\common\helpers\Hooks::getList('base-price/get-product-special-price') as $filename) {
+            include($filename);
         }
 
         $this->saveCalculated('special_price');
@@ -1013,8 +1004,9 @@ class BasePrice {
                         // }} PERCENT DISCOUNT TO ATTRIBUTES PRICE
                         //
                         $_special = $this->special_price['value'];
+                        // TODO: extract to hook when above inventory hook will be extracted
                         if (\common\helpers\Acl::checkExtensionAllowed('Promotions') && $this->dSettings->applyPromotion()){
-                          $promo = \common\models\Product\PromotionPrice::getInstance($this->uprid);
+                          $promo = \common\extensions\Promotions\models\Product\PromotionPrice::getInstance($this->uprid);
                           $promoSettings = $promo->getSettings();
                           if ($promoSettings['to_both'] ) {
                             if ($this->special_price['value_no_promo']) {
@@ -1052,15 +1044,8 @@ class BasePrice {
         }
         $this->inventory_special_price['value_no_promo'] = $this->inventory_special_price['value'];
 
-        if (\common\helpers\Acl::checkExtensionAllowed('Promotions') && $this->dSettings->applyPromotion()){
-            $promo = \common\models\Product\PromotionPrice::getInstance($this->uprid);
-            //$promoSettings = $promo->getSettings();
-            //if ($promoSettings['to_both'] || $promoSettings['to_preferred']['only_to_inventory']||true) {
-                $promo_price = $promo->getPromotionPrice();
-                if ($promo_price !== false) {
-                  $this->inventory_special_price['value'] = $promo_price;
-                }
-            //}
+        foreach (\common\helpers\Hooks::getList('base-price/get-inventory-special-price') as $filename) {
+            include($filename);
         }
 
         $this->saveCalculated('inventory_special_price');

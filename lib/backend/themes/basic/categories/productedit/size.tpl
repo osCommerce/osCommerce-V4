@@ -31,6 +31,27 @@
   <div class="cartoon_wrapper">
     {if \common\helpers\Acl::checkExtensionAllowed('PackUnits', 'allowed')}
       {\common\extensions\PackUnits\PackUnits::productBlock($pInfo, $app->controller->view->pack_unit_price_tabs_data|default:null, $app->controller->view->packaging_unit_price_tabs_data|default:null)}
+    {else}
+        <div class="widget box box-no-shadow">
+            <div class="widget-header"><h4>{$smarty.const.TEXT_PRODUCT_SIZE}</h4></div>
+            <div class="widget-content after">
+                <div class="size-pack-col">
+                    <div class="dimmens_cm dimmens">
+                        <div class="edp-line">
+                            <label class="addcolonm">{$smarty.const.TEXT_WIGHT_KG}</label>
+                            <input type="text" name="weight_cm" value="{$pInfo->weight_cm}" class="form-control form-control-small js_convert" data-target="weight_in" data-unit="kg">
+                        </div>
+                    </div>
+                </div>
+                <div class="size-pack-col dimmens_in dimmens">
+                    <div class="edp-line">
+                        <label class="addcolonm">{$smarty.const.TEXT_WEIGHT_LBS}</label>
+                        <input type="text" name="weight_in" value="{$pInfo->weight_in}" class="form-control form-control-small js_convert" data-target="weight_cm" data-unit="lbs">
+                    </div>
+                </div>
+            </div>
+        </div>
+            
     {/if}
   </div>
 </div>

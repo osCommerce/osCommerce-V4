@@ -52,7 +52,7 @@ class DependedProducts extends Widget
         }
         
         if (count($productsIds) > 0 && \common\helpers\Acl::checkExtensionAllowed('Promotions')) {
-            $promotions = \common\models\promotions\Promotions::onlyPromotion('cart_discount', \common\classes\platform::currentId())->all();
+            $promotions = \common\extensions\Promotions\models\Promotions::onlyPromotion('cart_discount', \common\classes\platform::currentId())->all();
             if ($promotions){
                 $foundProduct = false;
                 $foundId = 0;
@@ -98,7 +98,7 @@ class DependedProducts extends Widget
 
             if (\common\helpers\Acl::checkExtensionAllowed('Promotions')) {
                 foreach ($products as $idx => $_product) {
-                    $promoPrice = \common\models\Product\PromotionPrice::getInstance($_product['products_id']);
+                    $promoPrice = \common\extensions\Promotions\models\PromotionPrice::getInstance($_product['products_id']);
                     $price = $promoPrice->getPosiblePromotionPrice();
                     if ($price !== false){
                         $price_with_tax = $currencies->calculate_price($price, \common\helpers\Tax::get_tax_rate($_product['products_tax_class_id']), 1);

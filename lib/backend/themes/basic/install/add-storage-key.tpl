@@ -5,8 +5,13 @@
     {Html::input('text', 'storekey', $storageKey, ['class'=>'form-control'])}
 </div>
 <div class="noti-btn">
-  <div><span class="btn btn-cancel">{$smarty.const.IMAGE_CANCEL}</span></div>
-  <div><button class="btn btn-primary btn-save">{$smarty.const.TEXT_BTN_OK}</button></div>
+  <div class="btn-left">
+      <span class="btn btn-cancel">{$smarty.const.IMAGE_CANCEL}</span>
+  </div>
+  <div class="btn-right">
+      {if \common\helpers\Acl::rule(['BOX_HEADING_INSTALL', 'TEXT_APPLY_FOR_ALL'])}<button name="button" class="btn" value="all">{$smarty.const.TEXT_APPLY_FOR_ALL}</button>&nbsp;{/if}<button name="button" class="btn btn-primary btn-save" value="me">{$smarty.const.TEXT_APPLY}</button>
+  </div>
+  
 </div>
 {Html::endForm()}
 

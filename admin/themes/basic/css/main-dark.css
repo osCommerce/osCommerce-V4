@@ -3496,7 +3496,7 @@ ul.stats li.light strong {
 .widget-header i.icon-angle-down, .widget-header i.icon-angle-up{font-size: 12px;}
 .sb-line-01:before, .sb-line-03:before,.sb-line-04:before{line-height: 53px;padding-bottom: 3px;}
 .create_order{display: block;}
-.top_bead h1{font-size: 25px;font-weight: normal;color:#bdbdbd;float: left;}
+.top_bead h1{font-size: 21px;font-weight: normal;color:#bdbdbd;float: left;}
 a.create_item, div.create_item{display: block;float: right;padding: 6px 15px;font-size: 16px;color:#fff;font-weight: 600;background: #e60000;border-radius: 3px;}
 a.create_item:hover, div.create_item:hover{color:#fff;text-decoration: none;}
 div.create_item a{color:#fff;}

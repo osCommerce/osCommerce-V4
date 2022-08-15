@@ -29,14 +29,9 @@ class CommentTemplate
             'order' => BOX_CUSTOMERS_ORDERS,
             'subscription' => BOX_CUSTOMERS_SUBSCRIPTION,
         ];
-        if (\common\helpers\Acl::checkExtensionAllowed('PurchaseOrders')) {
-            $res['purchase'] = BOX_PURCHASE_ORDERS;
-        }
-        if (\common\helpers\Acl::checkExtensionAllowed('Quotations')) {
-            $res['quotation'] = BOX_CUSTOMERS_QUOTATIONS;
-        }
-        if (\common\helpers\Acl::checkExtensionAllowed('Samples')) {
-            $res['samples'] = BOX_CUSTOMERS_SAMPLES;
+        foreach (\common\helpers\Hooks::getList('comment-template/visibility-variants') as $file)
+        {
+            include($file);
         }
         return $res;
     }

@@ -67,10 +67,14 @@ define('TABLE_WHOS_ONLINE', 'whos_online');
 define('TABLE_ZONES', 'zones');
 define('TABLE_PAYPALIPN_TXN', 'paypalipn_txn'); // PAYPALIPN
 
+// Added for Xsell Products Mod
 define('TABLE_PRODUCTS_XSELL', 'products_xsell');
 define('TABLE_PRODUCTS_XSELL_TYPE', 'products_xsell_type');
-define('TABLE_SALEMAKER_SALES', 'salemaker_sales');
+
+// Lango Added for Featured Products
 define('TABLE_FEATURED', 'featured');
+
+// Lango Added for Wishlist
 define('TABLE_WISHLIST', 'customers_wishlist');
 define('TABLE_WISHLIST_ATTRIBUTES', 'customers_wishlist_attributes');
 
@@ -249,11 +253,11 @@ define('TABLE_PROMOTIONS_CONDITIONS', 'promotions_conditions');
 define('TABLE_PROMOTIONS_SETS_CONDITIONS', 'promotions_sets_conditions');
 
 
-define('TABLE_PRODUCTS_GROUPS', 'products_groups');
-
 define('TABLE_COLLECTIONS', 'collections');
 define('TABLE_COLLECTIONS_TO_PRODUCTS', 'collections_to_products');
 define('TABLE_COLLECTIONS_DISCOUNT_PRICES', 'collections_discount_prices');
+
+define('TABLE_PRODUCTS_GROUPS', 'products_groups');
 
 define('TABLE_PERSONAL_CATALOG', 'personal_catalog');
 define('TABLE_WEDDING_REGISTRY_PRODUCTS', 'wedding_registry_products');

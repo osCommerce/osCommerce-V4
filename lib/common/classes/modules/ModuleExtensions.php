@@ -143,13 +143,7 @@ class ModuleExtensions extends Module {
             return '';
         }
         if ($setup = static::checkSetup('getWidgets')) {
-            $res = [];
-            $widgets = $setup::getWidgets();
-            foreach($widgets as $widget) {
-                if ($widget['type'] == $type ) {
-                    $res[] = $widget;
-                }
-            }
+            $res = $setup::getWidgets($type);
             if (empty($res)) {
                 return '';
             } else {
@@ -158,6 +152,17 @@ class ModuleExtensions extends Module {
             }
         }
     }
+
+    public static function getPages() {
+        if (!self::allowed()) {
+            return '';
+        }
+        if ($setup = static::checkSetup('getPages')) {
+            $res = $setup::getPages();
+            return $res;
+        }
+    }
+
 
     public static function showSettings($settings) {
         

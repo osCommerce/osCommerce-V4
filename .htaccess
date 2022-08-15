@@ -85,3 +85,32 @@ AddOutputFilterByType DEFLATE application/x-font-woff
     Options -MultiViews
 </IfModule>
 ##
+
+<IfModule mod_php7.c>
+php_value max_execution_time 600
+php_value max_input_time 600
+php_value max_input_vars 10000
+php_value memory_limit 256M
+php_value post_max_size 64M
+php_value upload_max_filesize 64M
+php_value max_file_uploads 50
+php_value session.gc_probability 1
+php_value session.gc_maxlifetime 14400
+</IfModule>
+
+<IfModule mod_php.c>
+php_value max_execution_time 600
+php_value max_input_time 600
+php_value max_input_vars 10000
+php_value memory_limit 256M
+php_value post_max_size 64M
+php_value upload_max_filesize 64M
+php_value max_file_uploads 50
+php_value session.gc_probability 1
+php_value session.gc_maxlifetime 14400
+</IfModule>
+
+<IfModule mod_security.c>
+SecFilterEngine Off
+SecFilterScanPOST Off
+</IfModule>

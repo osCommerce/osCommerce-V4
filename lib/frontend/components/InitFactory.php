@@ -251,7 +251,6 @@ class InitFactory {
 
   self::tep_update_whos_online();
   \common\helpers\Specials::tep_expire_specials();
-  self::tep_check_selemaker();
   \common\helpers\Featured::tep_expire_featured();
 
   /// 
@@ -287,12 +286,21 @@ class InitFactory {
           global $Blog;
           $Blog = new \common\classes\Blog;
       }
-    
+
+    foreach (\common\helpers\Hooks::getList('init-factory/init') as $filename) {
+        include($filename);
+    }
+
+    // TODO: move to hooks
     if ($ext = \common\helpers\Acl::checkExtensionAllowed('ReferFriend', 'allowed')){
         $ext::rf_track_reference();
     }
-    
-    (new \frontend\components\Observer)->registerEvents();
+   
+    if ($ext = \common\helpers\Acl::checkExtension('SupplierPurchase', 'allowed')){
+        if ($ext::allowed()){
+            $ext::recalculateTotal();
+        }
+    }
     
 // {{ Show out of stock switcher
     if (!tep_session_is_registered('SHOW_OUT_OF_STOCK')) {
@@ -346,11 +354,5 @@ class InitFactory {
       tep_db_query("insert into " . TABLE_WHOS_ONLINE . " (customer_id, full_name, session_id, ip_address, time_entry, time_last_click, last_page_url, platform_id) values ('" . (int)$wo_customer_id . "', '" . tep_db_input($wo_full_name) . "', '" . tep_db_input($wo_session_id) . "', '" . tep_db_input($wo_ip_address) . "', '" . tep_db_input($current_time) . "', '" . tep_db_input($current_time) . "', '" . tep_db_input($wo_last_page_url) . "', '" . (int)PLATFORM_ID . "')");
     }
   }
-  
-
-  public static function tep_check_selemaker(){
-      \common\components\Salemaker::init(PLATFORM_ID);
-  }
-
-  
+ 
 }

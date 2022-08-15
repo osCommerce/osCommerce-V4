@@ -13,12 +13,16 @@
 			<div class="item-bottom">
 				<div class="item-price">{$item.price}</div>
 				<div class="item-actions">
-				{if $item.deployed}
-					<a class="btn" href="{$module_list_url}">In collection</a>
-				{elseif !empty($item.filename)}
-					<a class="btn" href="javascript:void(0)" onclick="return file_upload('{$item.products_id}');">Install</a>
+                                {if $item.deployed == 3}
+                                    <a class="btn" href="javascript:void(0)" onclick="return file_upload('{$item.products_id}');">{$smarty.const.TEXT_UPDATE}</a>
+                                {elseif $item.deployed == 2}  
+                                    <a class="btn" href="{$module_list_url}">{$smarty.const.TEXT_INSTALLED}</a>
+                                {elseif $item.deployed == 1}
+                                    <a class="btn" href="{$module_list_url}">{$smarty.const.TEXT_DOWNLOADED}</a>
+                                {elseif !empty($item.filename)}
+					<a class="btn" href="javascript:void(0)" onclick="return file_upload('{$item.products_id}');">{$smarty.const.TEXT_INSTALL}</a>
 				{else}
-					<a class="btn" target="_blank" href="{$item.url}">Discover</a>
+					<a class="btn" target="_blank" href="{$item.url}">{$smarty.const.TEXT_DISCOVER}</a>
 				{/if}
 				</div>
 			</div>

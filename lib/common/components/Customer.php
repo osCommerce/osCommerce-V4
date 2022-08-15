@@ -193,8 +193,6 @@ class Customer  extends \common\models\Customers implements \yii\web\IdentityInt
 
             $this->updateAccess();
 
-            $this->applyTempPromoCode();
-
             // restore cart contents
             if (is_object($cart)) {
                 $cart->restore_contents();
@@ -231,15 +229,12 @@ class Customer  extends \common\models\Customers implements \yii\web\IdentityInt
                 }
             }
 
+            foreach (\common\helpers\Hooks::getList('customers/after-auth') as $filename) {
+                include($filename);
+            }
 
             if (is_object($wish_list) && method_exists($wish_list, 'restore_contents')) {
                 $wish_list->restore_contents();
-            }
-            if ($ext = \common\helpers\Acl::checkExtensionAllowed('Quotations', 'allowed')) {
-                $ext::restoreCart();
-            }
-            if ($ext = \common\helpers\Acl::checkExtensionAllowed('Samples', 'allowed')) {
-                $ext::restoreCart();
             }
         }
     }
@@ -282,14 +277,6 @@ class Customer  extends \common\models\Customers implements \yii\web\IdentityInt
             }
         }
         return null;
-    }
-
-    public function applyTempPromoCode(){
-        global $promo_code;
-        if (tep_session_is_registered('promo_code')){
-            $this->applyPromoCode($promo_code);
-            tep_session_unregister('promo_code');
-        }
     }
 
     private function checkValidToken($cid, $token) {
@@ -515,54 +502,9 @@ class Customer  extends \common\models\Customers implements \yii\web\IdentityInt
         return $this;
     }
 
-    public function registerPromoCode($code){
-        global $promo_code;
-        if (!tep_session_is_registered('promo_code')){
-            tep_session_register('promo_code');
-        }
-        $promo_code = $code;
-    }
-
-    public function getRegisteredPromoCode(){
-        if (tep_session_is_registered('promo_code')){
-            global $promo_code;
-            return $promo_code;
-        }
-        return null;
-    }
-
-    public function applyPromoCode($code){
-        if (\common\helpers\Acl::checkExtensionAllowed('Promotions')) {
-            if ($this->customers_id){
-                $promo = \common\models\promotions\Promotions::getPromotionByPromoCode($code)->one();
-                if ($promo){
-                    return \common\models\promotions\PromotionsCustomerCodes::saveCode($promo, $this->customers_id);
-                }
-            } else {
-                $this->registerPromoCode($code);
-                Yii::$app->session->setFlash('promo-message', TEXT_AUTH_TO_SAVE_PROMO);
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public function getPromoCodes(){
-        if (\common\helpers\Acl::checkExtensionAllowed('Promotions')) {
-            if ($this->customers_id){
-                return \common\models\promotions\PromotionsCustomerCodes::getCustomerRegisteredPromo($this->customers_id);
-            } else {
-                $code = $this->getRegisteredPromoCode();
-                if ($code){
-                    return \common\models\promotions\Promotions::getPromotionByPromoCode($code)->all();
-                }
-            }
-        }
-    }
-
     public function hasBonusHistory($customer_id){
-        return !\common\helpers\Acl::checkExtensionAllowed('Promotions') ? false : 
-            models\CustomersCreditHistory::find()->where('customers_id = :id', [':id' => $customer_id])->count() || \common\models\promotions\PromotionsBonusHistory::getFullHistoryAmount($customer_id);
+        return !\common\helpers\Acl::checkExtensionAllowed('BonusActions') ? false :
+            models\CustomersCreditHistory::find()->where('customers_id = :id', [':id' => $customer_id])->count() || \common\extensions\BonusActions\models\PromotionsBonusHistory::getFullHistoryAmount($customer_id);
     }
 
     /*return customers model*/

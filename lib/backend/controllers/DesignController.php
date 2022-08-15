@@ -107,7 +107,7 @@ class DesignController extends Sceleton {
                 'theme_name' => $theme['theme_name'],
                 'setting_group' => 'hide',
                 'setting_name' => 'theme_image',
-            ])->setting_value;
+            ])->setting_value ?? null;
             if ($themeImage) {
                 $themes[$key]['theme_image'] = $themeImage;
             }
@@ -129,7 +129,7 @@ class DesignController extends Sceleton {
         }
 
         usort($themes, function($a, $b){
-            return $a['sort_order'] > $b['sort_order'];
+            return $a['sort_order'] <=> $b['sort_order'];
         });
 
         return $this->render('themes.tpl', [

@@ -3938,6 +3938,9 @@ ul.sortable li label {
 }
 .top-buttons {
   padding-right: 3px;
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: center;
 }
 .top-buttons .btn {
   float: right;
@@ -3978,3 +3981,104 @@ ul.sortable li label {
   padding: 17px 10px;
 }
 .top_bead .top-buttons .create_item{margin: 5px 0 5px 5px;}
+
+.context-categories .top-buttons .btn {
+	display:flex;
+	align-items:center;
+}
+.context-categories .top-buttons .btn i:before {
+	content:'';
+	display:inline-block;
+	width:20px;
+	height:20px;
+	background-repeat: no-repeat;
+    background-size: 20px;
+    vertical-align: middle;
+    background-position-y: 45%;
+}
+.context-categories .top-buttons .remove_product i:before {
+	background-image: url('../img/remove_demo_products.svg');
+}
+.context-categories .top-buttons .create_bundle i:before {
+    background-image: url('../img/add_bundle.svg');
+}
+.context-categories .top-buttons .create_product i:before {
+	background-image:url('../img/add_product.svg');
+}
+.context-categories .top-buttons .create_category i:before {
+    background-image: url('../img/add_category.svg');
+}
+.context-categories .top-buttons .create_brand i:before {
+    background-image: url('../img/add_brtand.svg');
+}
+.context-install .leftBoxIns .itemLabel:first-of-type .imageCategoryBox .fa-folder:before {
+    background-image: url('../img/all.svg');
+    content: '';
+    width: 30px;
+    height: 30px;
+    background-repeat: no-repeat;
+    position: static;
+    display: inline-block;
+    background-size: 30px;
+    vertical-align: middle;
+}
+.context-install .job-actions .iconRemoveSign:before {
+	content: '';
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    background-repeat: no-repeat;
+    background-size: 16px;
+    vertical-align: middle;
+    background-image: url(../img/plus.svg);
+    transform: rotate(45deg);
+    filter: grayscale(1);
+}
+.context-install .job-actions .iconPlusSign:before {
+	content: '';
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    background-repeat: no-repeat;
+    background-size: 16px;
+    vertical-align: middle;
+    background-image: url(../img/plus.svg);
+}
+.context-install .job-actions .iconTrash:before {
+	content: '';
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    background-repeat: no-repeat;
+    background-size: 16px;
+    vertical-align: middle;
+    background-image: url(../img/trash.svg);
+}
+.context-install .job-actions {
+    display: flex;
+	justify-content: center;
+}
+.loader:before {
+    background-color: rgba(0, 0, 0, 0.7);
+    left: 0;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    content: '';
+    z-index: 9999;
+    height: 100%;
+}
+.loader:after {
+    animation: load8 1.5s infinite linear;
+    font-size: 30px;
+    left: calc(50% - 15px);
+    overflow: hidden;
+    position: fixed;
+    top: calc(50% - 15px);
+    height: 30px;
+    content: '\f110';
+    display: inline-block;
+    font-family: FontAwesome;
+    color: #fff;
+    z-index: 9999;
+}

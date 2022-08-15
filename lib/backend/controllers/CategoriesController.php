@@ -199,18 +199,18 @@ class CategoriesController extends Sceleton {
         $this->selectedMenu = array('catalog', 'categories');
         $this->navigation[] = array('link' => Yii::$app->urlManager->createUrl('categories/index'), 'title' => HEADING_TITLE);
         if (true === \common\helpers\Acl::rule(['TABLE_HEADING_PRODUCTS', 'IMAGE_EDIT'])) {
-            $this->topButtons[] = '<a href="' . Yii::$app->urlManager->createUrl(['categories/productedit', 'bundle' => '1']) . '" class="js_create_new_product btn btn-primary addprbtn"><i class="icon-cubes"></i>' . TEXT_CREATE_NEW_BUNDLE . '</a>';
-            $this->topButtons[] = '<a href="' . Yii::$app->urlManager->createUrl('categories/productedit') . '" class="js_create_new_product btn btn-primary addprbtn"><i class="icon-cubes"></i>' . TEXT_CREATE_NEW_PRODUCT . '</a>';
+            $this->topButtons[] = '<a href="' . Yii::$app->urlManager->createUrl(['categories/productedit', 'bundle' => '1']) . '" class="js_create_new_product btn btn-primary addprbtn create_bundle" title="Create bundle"><i class="icon-cubes"></i>' . TEXT_CREATE_NEW_BUNDLE . '</a>';
+            $this->topButtons[] = '<a href="' . Yii::$app->urlManager->createUrl('categories/productedit') . '" class="js_create_new_product btn btn-primary addprbtn create_product" title="Create product"><i class="icon-cubes"></i>' . TEXT_CREATE_NEW_PRODUCT . '</a>';
         }
         if (true === \common\helpers\Acl::rule(['TEXT_CATEGORIES', 'IMAGE_EDIT'])) {
-            $this->topButtons[] = '<a href="' . Yii::$app->urlManager->createUrl('categories/categoryedit') . '" class="js_create_new_category btn btn-primary addprbtn"><i class="icon-folder-close-alt"></i>' . TEXT_CREATE_NEW_CATEGORY . '</a>';
+            $this->topButtons[] = '<a href="' . Yii::$app->urlManager->createUrl('categories/categoryedit') . '" class="js_create_new_category btn btn-primary addprbtn create_category" title="Create category"><i class="icon-folder-close-alt"></i>' . TEXT_CREATE_NEW_CATEGORY . '</a>';
         }
         if (true === \common\helpers\Acl::rule(['TEXT_LABEL_BRAND', 'IMAGE_EDIT'])) {
-            $this->topButtons[] = '<a href="' . Yii::$app->urlManager->createUrl('categories/brandedit') . '" class="btn btn-primary addprbtn"><i class="icon-tag"></i>' . TEXT_CREATE_NEW_BRANDS . '</a>';
+            $this->topButtons[] = '<a href="' . Yii::$app->urlManager->createUrl('categories/brandedit') . '" class="btn btn-primary addprbtn create_brand" title="Create brand"><i class="icon-tag"></i>' . TEXT_CREATE_NEW_BRANDS . '</a>';
         }
         $demoProductsCounter = \common\models\Products::find()->where(['is_demo' => 1])->count();
         if ($demoProductsCounter > 0) {
-            $this->topButtons[] = '<a href="' . Yii::$app->urlManager->createUrl(['categories/demo-cleanup']) . '" onclick="return confirm(\'' . TEXT_DEMO_PRODUCT_CLEAN_NOTICE . '\');" class="btn btn-primary">' . TEXT_DEMO_PRODUCT_CLEAN . '</a>';
+            $this->topButtons[] = '<a href="' . Yii::$app->urlManager->createUrl(['categories/demo-cleanup']) . '" onclick="return confirm(\'' . TEXT_DEMO_PRODUCT_CLEAN_NOTICE . '\');" class="btn btn-primary remove_product" title="Remove demo products"><i></i>' . TEXT_DEMO_PRODUCT_CLEAN . '</a>';
         }
         $this->view->headingTitle = HEADING_TITLE;
         $this->view->catalogTable = array(
@@ -1909,7 +1909,7 @@ class CategoriesController extends Sceleton {
           $catList = \common\helpers\Categories::getCategoryParentsIds($categories_id);
 
           if (\common\helpers\Acl::checkExtensionAllowed('ReportChangesHistory')) {
-            $logger = new \common\extensions\ReportChangesHistory\Classes\Logger();
+            $logger = new \common\extensions\ReportChangesHistory\classes\Logger();
             $beforeObject = new \common\api\Classes\Category();
             $beforeObject->load($categories_id);
             $logger->setBeforeObject($beforeObject);
@@ -2759,11 +2759,6 @@ class CategoriesController extends Sceleton {
 
         }
 
-        if (($ext = \common\helpers\Acl::checkExtensionAllowed('Promotions')) && !empty($pInfo->products_id) && \common\helpers\Acl::rule($ext::getAcl()) ) {
-            $promotionsObj = new \common\extensions\Promotions\models\ProductEdit\ViewPromotions($pInfo);
-            $promotionsObj->populateView($this->view);
-        }
-
         //{{ insert and update
         if ( !empty($pInfo->products_id) || !empty($pInfo->parent_products_id) ) {
             $imageEditObj = new \backend\models\ProductEdit\ViewImages($pInfo);
@@ -2817,6 +2812,10 @@ class CategoriesController extends Sceleton {
               'all_hidden' => (count($this->view->groups_m)==1),
               'maxHeight' => '400px',
           ];
+        }
+
+        foreach (\common\helpers\Hooks::getList('categories/productedit/before-render') as $filename) {
+            include($filename);
         }
 
         //// image map
@@ -3716,10 +3715,6 @@ class CategoriesController extends Sceleton {
         if ($TabAccess->tabDataSave('TEXT_MARKETING')) {
             $marketingData = new \backend\models\ProductEdit\SaveMarketingData($productModel);
             $marketingData->prepareSave();
-//            if (\common\helpers\Acl::checkExtensionAllowed('Promotions')) {
-//                $promotionsData = new \common\extensions\Promotions\models\ProductEdit\SavePromotions($productModel);
-//                $promotionsData->save();
-//            }
         }
 
         //Gift wrap
@@ -5687,7 +5682,7 @@ class CategoriesController extends Sceleton {
                         $product_id = $id;
 
                         if (\common\helpers\Acl::checkExtensionAllowed('ReportChangesHistory')) {
-                            $logger = new \common\extensions\ReportChangesHistory\Classes\Logger();
+                            $logger = new \common\extensions\ReportChangesHistory\classes\Logger();
                             $beforeObject = new \common\api\Classes\Product();
                             $beforeObject->load($product_id);
                             $logger->setBeforeObject($beforeObject);

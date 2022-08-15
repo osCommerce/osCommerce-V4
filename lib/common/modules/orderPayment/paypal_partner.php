@@ -1897,6 +1897,13 @@ EOD;
                             $customer->save(false);
                         }
 
+                        $payerAddresses = [];
+                        $payerAddresses['billto'] = $response->result->payer->address??[];
+                        if (!empty($payerAddresses['billto']) && count((array)$payerAddresses['billto'])>2) {
+                            $payerAddresses['billto']->firstname = $payer->name->given_name;
+                            $payerAddresses['billto']->lastname = $payer->name->surname;
+                        }
+
                         $payerAddresses['sendto'] = $response->result->purchase_units[0]->shipping->address??[];
                         if (!empty($response->result->purchase_units[0]->shipping->name->full_name)) {
                             $_tmp = explode(' ', $response->result->purchase_units[0]->shipping->name->full_name, 2);
@@ -1906,9 +1913,6 @@ EOD;
                             $payerAddresses['sendto']->firstname = $payer->name->given_name;
                             $payerAddresses['sendto']->lastname = $payer->name->surname;
                         }
-                        $payerAddresses['billto'] = $response->result->payer->address??[];
-                        $payerAddresses['billto']->firstname = $payer->name->given_name;
-                        $payerAddresses['billto']->lastname = $payer->name->surname;
                         $sendto = $billto = false;
                         foreach ($payerAddresses as $type => $payerAddress) {
                             if (!empty($payerAddress) && count((array)$payerAddress)>2) {

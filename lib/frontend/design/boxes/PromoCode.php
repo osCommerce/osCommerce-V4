@@ -31,9 +31,6 @@ class PromoCode extends Widget
 
   public function run()
   { 
-    if (!\common\helpers\Acl::checkExtensionAllowed('Promotions')) {
-        return '';
-    }
     
     $form = new PromoCodeForm();
 

@@ -100,7 +100,7 @@
             </tr>
             <tr>
                 <td rowspan="3" class="product-table-price-qty"><b>{Product::getVirtualItemQuantity($product['id'], $product['qty'])}</b> <span>x <i>{ </i></span></td><td class="price-right"><b>{Formatter::priceEx((\common\helpers\Product::getVirtualItemQuantityValue($product['id']) * $product['final_price']), $product['tax'], 1, $currency, $currency_value)}</b>
-        {if $product['promo_id'] && \common\helpers\Acl::checkExtensionAllowed('Promotions')}<div class="info-hint"><div class="info-hint-box info-hint-box-left"><div class="info-hint-mustache"></div>{\common\models\promotions\PromotionService::getPromoLinkAdmin($product['promo_id'])}</div></div>{/if}
+        {if $product['promo_id'] && \common\helpers\Acl::checkExtensionAllowed('Promotions')}<div class="info-hint"><div class="info-hint-box info-hint-box-left"><div class="info-hint-mustache"></div>{\common\extensions\Promotions\models\PromotionService::getPromoLinkAdmin($product['promo_id'])}</div></div>{/if}
         {if $product['discount_description']}<div class="info-hint"><div class="info-hint-box info-hint-box-left"><div class="info-hint-mustache"></div>{\common\helpers\Specials::getLinkAdmin($product['specials_id'], $product['discount_description'])}</div></div>{/if}
                 </td><td class="price-left"><b>{Formatter::priceEx($product['final_price'], $product['tax'], $product['qty'], $currency, $currency_value)}</b></td>
             </tr>

@@ -111,15 +111,18 @@ getAdminHooks
 We recommend to place all hook files in separate extention folder with name "hooks"
 
 In addition a list of available values page_name and page_area:
----hooks_begin---
+<HOOKS>
 'customers/customeredit', ''
 'customers/customeredit/before-render', ''
 'customers/customeredit', 'personal-block'
 'customers/customeredit', 'left-column'
 'customers/customeredit', 'right-column'
 'customers/customeractions', ''
+'customers/after-auth', ''
 'customers/after-trunk', ''  // helpers/customer.php
 'customers/after-delete', '' // helpers/customer.php
+'customergroups/groupedit/before-render', ''
+'customergroups/groupedit', 'right-column'
 'categories/brandedit', ''
 'categories/brandedit', 'tab-navs'
 'categories/brandedit', 'tab-content'
@@ -128,9 +131,14 @@ In addition a list of available values page_name and page_area:
 'categories/brandedit', 'seo-tab'
 'categories/productedit/before-save', ''
 'categories/productedit', ''
+'categories/productedit/before-render', ''
 'categories/productedit', 'details-left-column'
 'categories/productedit', 'details-right-column'
+'categories/productedit', 'details-actions'
+'categories/productedit', 'details-actions-subproduct'
 'categories/productedit', 'seo-tab'
+'categories/productedit', 'marketing/tab-navs'
+'categories/productedit', 'marketing/tab-content'
 'categories/categoryedit', ''
 'categories/categoryedit', 'tab-navs'
 'categories/categoryedit', 'tab-content'
@@ -144,6 +152,16 @@ In addition a list of available values page_name and page_area:
 'orders/process-order', 'btn-bar-bottom'
 'Order', 'save_order/before'
 'Order', 'save_order/after'
+'order-manager/check-free-shipping', ''
+'shopping-cart/reset', ''
+'shopping-cart/add-cart', ''
+'shopping-cart/remove', ''
+'base-price/get-inventory-special-price', ''
+'base-price/get-product-special-price', ''
+'platforms/after-delete'
 'checkout/index', ''
+'init-factory/init', ''
 'cart-factory/work', ''
----hooks_end---
+'cart-factory/work/end', ''
+</HOOKS>
+

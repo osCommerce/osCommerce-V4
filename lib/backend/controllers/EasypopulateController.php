@@ -2040,52 +2040,51 @@ class EasypopulateController extends Sceleton
 
         }
 
-        if ($_POST['orders'] == 1){
-          \common\helpers\Order::trunk_orders();
+        if ($_POST['orders'] == 1) {
+            \common\helpers\Order::trunk_orders();
 
-          \common\models\OrdersProductsAllocate::deleteAll();
+            \common\models\OrdersProductsAllocate::deleteAll();
 
-          foreach ([
-                       'amazon_payment_orders',
-                       'klarna_order_reference',
-                       'orders_payment',
-                       'orders_transactions',
-                       'orders_transactions_children',
-                   ] as $truncate_table){
-              $schemaCheck = Yii::$app->getDb()->schema->getTableSchema($truncate_table);
-              if ( $schemaCheck ) {
-                  Yii::$app->getDb()->createCommand("TRUNCATE TABLE ".$truncate_table)->execute();
-              }
-          }
-
-          tep_db_query("TRUNCATE TABLE tracking_numbers");
-          tep_db_query("TRUNCATE TABLE tracking_numbers_to_orders_products");
-
-          tep_db_query("TRUNCATE TABLE ep_holbi_soap_link_orders");
-          tep_db_query("TRUNCATE TABLE ep_holbi_soap_kv_storage");
-
-          tep_db_query("TRUNCATE TABLE ga");
+            foreach ([
+                'amazon_payment_orders',
+                'klarna_order_reference',
+                'orders_payment',
+                'orders_transactions',
+                'orders_transactions_children',
+                'tracking_numbers',
+                'tracking_numbers_to_orders_products',
+                'ep_holbi_soap_link_orders',
+                'ep_holbi_soap_kv_storage',
+                'ga'
+            ] as $truncate_table) {
+                $schemaCheck = Yii::$app->getDb()->schema->getTableSchema($truncate_table);
+                if ($schemaCheck) {
+                    Yii::$app->getDb()->createCommand("TRUNCATE TABLE " . $truncate_table)->execute();
+                }
+            }
         }
 
 
         if ($_POST['customers'] == 1){
-          \common\helpers\Customer::trunk_customers();
-
-          tep_db_query("TRUNCATE TABLE " . TABLE_PRODUCTS_NOTIFY);
-          tep_db_query("TRUNCATE TABLE " . TABLE_VIRTUAL_GIFT_CARD_BASKET);
-
-          tep_db_query("TRUNCATE TABLE wedding_registry");
-          tep_db_query("TRUNCATE TABLE wedding_registry_inviting");
-          tep_db_query("TRUNCATE TABLE wedding_registry_products");
-
-          tep_db_query("TRUNCATE TABLE ep_holbi_soap_link_customers");
-          tep_db_query("TRUNCATE TABLE ep_holbi_soap_kv_storage");
-
-          tep_db_query("TRUNCATE TABLE gdpr_check");
-          tep_db_query("TRUNCATE TABLE guest_check");
-
-          tep_db_query("TRUNCATE TABLE personal_catalog");
-
+            \common\helpers\Customer::trunk_customers();
+            
+            foreach ([
+                'products_notify',
+                'virtual_gift_card_basket',
+                'wedding_registry',
+                'wedding_registry_inviting',
+                'wedding_registry_products',
+                'ep_holbi_soap_link_customers',
+                'ep_holbi_soap_kv_storage',
+                'gdpr_check',
+                'guest_check',
+                'personal_catalog'
+            ] as $truncate_table) {
+                $schemaCheck = Yii::$app->getDb()->schema->getTableSchema($truncate_table);
+                if ($schemaCheck) {
+                    Yii::$app->getDb()->createCommand("TRUNCATE TABLE " . $truncate_table)->execute();
+                }
+            }
         }
         $messageStack = \Yii::$container->get('message_stack');
         $messageStack->add_session(ICON_SUCCESS, 'header', 'success');

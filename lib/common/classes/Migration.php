@@ -402,7 +402,7 @@ class Migration extends \yii\db\Migration {
 
                 $this->insert('access_control_list', [
                     'parent_id' => $PARENT_ID,
-                    'access_control_list_key' => $aclChain[count($aclChain) - 1],
+                    'access_control_list_key' => $assignBox,
                     'sort_order' => $SORT_ORDER,
                 ]);
                 $ACL_INSERTED_ID = $this->db->getLastInsertID();

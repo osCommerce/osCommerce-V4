@@ -632,12 +632,8 @@ class shopping_cart {
         if (tep_session_is_registered('cartID'))
             tep_session_unregister('cartID');
 
-        if (\common\helpers\Acl::checkExtensionAllowed('Promotions')) {
-            try {
-              \common\models\promotions\PromotionService::deletedAllCart();
-            } catch (\Exception $e) {
-              \Yii::warning(" #### " . print_r($e->getMessage(), 1), 'TLDEBUG-PromotionService::deletedAllCart');
-            }
+        foreach (\common\helpers\Hooks::getList('shopping-cart/reset') as $filename) {
+            include($filename);
         }
     }
 
@@ -826,8 +822,9 @@ class shopping_cart {
         $this->update_customer_info();
 
         $this->check_giveaway();
-        if (\common\helpers\Acl::checkExtensionAllowed('Promotions') && !Yii::$app->user->isGuest) {
-            \common\models\promotions\PromotionService::getPesonalizedPromo(Yii::$app->user->getIdentity());
+
+        foreach (\common\helpers\Hooks::getList('shopping-cart/add-cart') as $filename) {
+            include($filename);
         }
 
         if ((int)$gaw_id > 0) {
@@ -1197,12 +1194,9 @@ class shopping_cart {
             }
         }
         Yii::$app->get('PropsHelper')::cartChanged($this);
-        if (\common\helpers\Acl::checkExtensionAllowed('Promotions')) {
-            try {
-              \common\models\promotions\PromotionService::deletedFromCart($products_id);
-            } catch (\Exception $e) {
-              \Yii::warning(" #### " .print_r($e->getMessage(), 1), 'TLDEBUG-PromotionService::deletedFromCart');
-            }
+
+        foreach (\common\helpers\Hooks::getList('shopping-cart/remove') as $filename) {
+            include($filename);
         }
     }
 
@@ -1872,7 +1866,7 @@ class shopping_cart {
             /* some Promo may change prices dependently priority */
             if (\common\helpers\Acl::checkExtensionAllowed('Promotions')) {
                 foreach($products_array as $products_id => $_product){
-                    $promoPrice = \common\models\Product\PromotionPrice::getInstance($_product['id']);
+                    $promoPrice = \common\extensions\Promotions\models\Product\PromotionPrice::getInstance($_product['id']);
                     $promoPrice->setCalculateAfter(true);
                     $price = $promoPrice->getPromotionPrice();
                     if ($price !== false){

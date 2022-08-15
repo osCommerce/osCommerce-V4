@@ -42,7 +42,15 @@ class TlUrl {
         }
         if (\frontend\design\Info::isTotallyAdmin()){
             $link = Yii::$app->get('platform')->config()->getCatalogBaseUrl( true );
-            return rtrim($link,'/').$url;
+            $params = '';
+            if (count($url) > 1) {
+                $params = '?';
+                foreach ($url as $name => $val) {
+                    if ($name === 0) continue;
+                    $params .= ($params != '?' ? '&' : '') . $name . '=' . $val;
+                }
+            }
+            return rtrim($link,'/') . '/' . $url[0] . $params;
         }
         return Yii::$app->urlManager->createUrl($url);
     }

@@ -19,8 +19,8 @@ class Progress
     private static $progress_last_update = 0;
     private static $last_not_important_params = null;
 
-    public static int $percent_prev_stage = 0;
-    public static int $percent_in_cur_stage = 100;
+    public static $percent_prev_stage = 0;
+    public static $percent_in_cur_stage = 100;
 
     private static function getTextDef($value)
     {
@@ -65,7 +65,7 @@ class Progress
         self::Update(['message' => $msg]);
     }
 
-    public static function Percent(int $value, string $txt = null)
+    public static function Percent(int $value, $txt = null)
     {
         $value = $value > 100 ? 100 : $value;
         if (self::$percent_in_cur_stage != 100) {

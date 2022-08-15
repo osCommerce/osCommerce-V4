@@ -68,7 +68,7 @@
                             <option value="credit_amount_history"{if $settings[0].hide_link == 'credit_amount_history'} selected{/if}>{$smarty.const.CREDIT_AMOUNT_HISTORY}</option>
                             <option value="points_earnt_history"{if $settings[0].hide_link == 'points_earnt_history'} selected{/if}>{$smarty.const.POINTS_EARNT_HISTORY}</option>
                             <option value="wishlist"{if $settings[0].hide_link == 'wishlist'} selected{/if}>{$smarty.const.TEXT_WISHLIST}</option>
-                            {if (\common\helpers\Acl::checkExtensionAllowed('Quotation'))}
+                            {if (\common\helpers\Acl::checkExtensionAllowed('Quotations'))}
                               <option value="quotations"{if $settings[0].hide_link == 'quotations'} selected{/if}>{$smarty.const.BOX_CUSTOMERS_QUOTATIONS}</option>
                             {/if}
                             {if (\common\helpers\Acl::checkExtensionAllowed('Samples'))}

@@ -107,9 +107,7 @@ class WidgetsList
         $widgets[] = array('name' => 'product\ImageMapProduct', 'title' => 'Image Map Product', 'description' => '', 'type' => 'product', 'class' => '');
         $widgets[] = array('name' => 'product\CustomersActivity', 'title' => TEXT_ACTIVE_CUSTOMERS, 'description' => '', 'type' => 'product', 'class' => '');
         $widgets[] = array('name' => 'product\AvailableInWarehouses', 'title' => TEXT_AVAILABLE_AT_WAREHOUSES, 'description' => '', 'type' => 'product', 'class' => '');
-        $widgets[] = array('name' => 'product\PromotionIcons', 'title' => TEXT_PROMOTION_ICONS, 'description' => '', 'type' => 'product', 'class' => '');
         $widgets[] = array('name' => 'product\Dimensions', 'title' => TEXT_DIMENSION, 'description' => '', 'type' => 'product', 'class' => '');
-        $widgets[] = array('name' => 'product\PromotionIconsDesc', 'title' => TEXT_PROMOTION_ICONS_DESCRIPTION, 'description' => '', 'type' => 'product', 'class' => '');
         $widgets[] = array('name' => 'DeliveryDay', 'title' => DELIVERY_DAY, 'description' => '', 'type' => 'product', 'class' => '');
         $widgets[] = array('name' => 'cart\FreeDelivery', 'title' => TEXT_FREE_DELIVERY, 'description' => '', 'type' => 'product', 'class' => '');
         $widgets[] = array('name' => 'product\Flexifi', 'title' => TEXT_FLEXIFI_CREDIT_PLAN_BUTTON, 'description' => '', 'type' => 'product', 'class' => '');
@@ -660,15 +658,6 @@ class WidgetsList
         $widgets[] = array('name' => 'login\Returning', 'title' => 'Returning customer', 'description' => '', 'type' => 'index', 'class' => 'categories');
         $widgets[] = array('name' => 'login\Register', 'title' => 'Register', 'description' => '', 'type' => 'index', 'class' => 'categories');
         $widgets[] = array('name' => 'login\Enquire', 'title' => 'Enquire', 'description' => '', 'type' => 'index', 'class' => 'categories');
-
-        return $widgets;
-    }
-
-    private static function promotions()
-    {
-        $widgets = [];
-
-        $widgets[] = array('name' => 'promotions\PromoList', 'title' => BOX_PROMOTIONS, 'description' => '', 'type' => 'promotions', 'class' => '');
 
         return $widgets;
     }

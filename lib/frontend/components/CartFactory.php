@@ -67,14 +67,7 @@ class CartFactory {
         include($filename);
     }
 
-    if ($ext = \common\helpers\Acl::checkExtensionAllowed('Quotations', 'allowed')) {
-        $ext::initCart();
-    }
-
-    if ($ext = \common\helpers\Acl::checkExtensionAllowed('Samples', 'allowed')) {
-        $ext::initCart();
-    }
-
+    // TODO: move to hook
     if( $ext = \common\helpers\Acl::checkExtension( 'MultiCart', 'initCarts' ) ) {
         if ($ext::allowed() && !$preventProcess){
             $ext::initCarts();
@@ -819,32 +812,10 @@ case 'wishlist_add_cart':   reset ($lvnr);
                               }
                               tep_redirect(tep_href_link($goto, \common\helpers\Output::get_all_get_params($parameters), ''));
                               break;
-      case 'add_quote' :
-            if ($ext = \common\helpers\Acl::checkExtensionAllowed('Quotations', 'allowed')) {
-                $ext::addCart();
-            }
-          break;
-      case 'update_quote' :
-            if ($ext = \common\helpers\Acl::checkExtensionAllowed('Quotations', 'allowed')) {
-                $ext::updateCart();
-            }
-          break;
-      case 'remove_quote' :
-            if ($ext = \common\helpers\Acl::checkExtensionAllowed('Quotations', 'allowed')) {
-                $ext::removeCart();
-            }
-          break;
-      case 'add_sample' :
-            if ($ext = \common\helpers\Acl::checkExtensionAllowed('Samples', 'allowed')) {
-                $ext::addCart();
-            }
-          break;
-      case 'remove_sample' :
-            if ($ext = \common\helpers\Acl::checkExtensionAllowed('Samples', 'allowed')) {
-                $ext::removeCart();
-            }
-          break;
     }
+  }
+  foreach (\common\helpers\Hooks::getList('cart-factory/work/end') as $filename) {
+        include($filename);
   }
   }
 }

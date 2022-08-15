@@ -20,7 +20,7 @@ $rootPath = './../';
 
 ini_set("display_errors", 0);
 
-defined('VERSION_EXT') or define('VERSION_EXT', 'v.4.01 build 49806');
+defined('VERSION_EXT') or define('VERSION_EXT', 'v.4.03 build 50306');
 defined('VERSION_PHP_RQ') or define('VERSION_PHP_RQ', '7.2.0');
 defined('VERSION_PHP_REC') or define('VERSION_PHP_REC', '7.4.0');
 defined('REQ_PHP_MEMORY') or define('REQ_PHP_MEMORY', '128M');

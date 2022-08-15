@@ -216,9 +216,10 @@ return [
                             if (!$attributes_has_price || !$inventory_allowed) {
                                 \common\models\SuppliersProducts::deleteAll(['products_id' => $products_id]);
                                 $supplier = new \common\models\SuppliersProducts();
-                                $supplier->suppliers_model = $model->products_model;
+                                $supplier->suppliers_model = $model->products_model ?? '';
                                 $supplier->suppliers_id = \common\helpers\Suppliers::getDefaultSupplierId();
                                 $supplier->products_id = $products_id;
+                                $supplier->uprid = $products_id;
                                 $supplier->save();
                                 \OscLink\Logger::get()->log_record($model, 'supplier changed to default because ' . ($inventory_allowed ? 'there is no any attributes with price' : 'inventory extension is not installed') );
                             }

@@ -347,6 +347,10 @@ class UserGroups extends \common\classes\modules\ModuleExtensions {
           }
         }
 
+        foreach (\common\helpers\Hooks::getList('customergroups/groupedit/before-render') as $filename) {
+            include($filename);
+        }
+
         return \common\extensions\UserGroups\Render::widget(['template' => 'edit.tpl', 'params' => [
             'popup' => $popup,
             'page' => \Yii::$app->request->get('page'),
@@ -356,50 +360,10 @@ class UserGroups extends \common\classes\modules\ModuleExtensions {
             'row_id' => $row_id,
             'item_id' => $item_id,
             'showOtherGroups' => $showOtherGroups ?? null,
-            'promo_content' => self::getGroupsPromo($mInfo->groups_id),
         ]]);
         //return Yii::$app->controller->renderPartial($html);
     }
     
-    public static function getGroupsPromo($groups_id){
-        if (!self::allowed()) {
-            return '';
-        }
-        if (!\common\helpers\Acl::checkExtensionAllowed('Promotions')) {
-            return '';
-        }
-        $myPromos = \common\models\promotions\PromotionsAssignement::getOwnerPromo(\common\models\promotions\PromotionsAssignement::OWNER_GROUP, $groups_id);
-        $allPromos = \common\models\promotions\Promotions::find()->all();
-        return \common\extensions\UserGroups\Render::widget(['template' => 'groups-promo', 'params' => [
-                'myPromos' => $myPromos,
-                'allPromos' => $allPromos,
-                'groups_id' => $groups_id
-            ]]);
-    }
-
-
-    public static function adminGroupsPromo($groups_id){
-        if (!self::allowed()) {
-            return '';
-        }
-        if (!\common\helpers\Acl::checkExtensionAllowed('Promotions')) {
-            return '';
-        }
-        $myPromos = \common\models\promotions\PromotionsAssignement::getOwnerPromo(\common\models\promotions\PromotionsAssignement::OWNER_GROUP, $groups_id);
-        $allPromos = \common\models\promotions\Promotions::find()->where(['not in', 'promo_id', $myPromos])->all();
-        $promos = [];
-        if ($allPromos){
-            foreach ($allPromos as $promo){
-                $promos[$promo->promo_id] = $promo->promo_label . ' (' .($promo->promo_status? IMAGE_ICON_STATUS_GREEN:IMAGE_ICON_STATUS_RED). ') ';
-                //. \common\classes\platform::name($promo->platform_id);
-            }
-        }
-        return \common\extensions\UserGroups\Render::widget(['template' => 'promo-select', 'params' => [
-            'promos' => $promos,
-            'groups_id' => $groups_id,
-        ]]);
-    }
-
     public static function adminConfirmDeleteGroups() {
         if (!self::allowed()) {
             return '';
@@ -554,7 +518,6 @@ class UserGroups extends \common\classes\modules\ModuleExtensions {
         tep_db_query("delete from " . TABLE_PRODUCTS_PRICES . " where groups_id = '" . (int) $groups_id . "'");
         tep_db_query("delete from " . TABLE_PRODUCTS_ATTRIBUTES_PRICES . " where groups_id = '" . (int) $groups_id . "'");
         tep_db_query("delete from " . TABLE_SPECIALS_PRICES . " where groups_id = '" . (int) $groups_id . "'");
-        tep_db_query("delete from " . TABLE_SALEMAKER_SALES . " where groups_id = '" . (int) $groups_id . "'");
         GroupsDiscounts::deleteAll('groups_id=:id', [':id' => $groups_id]);
         /** @var \common\extensions\ExtraGroups\ExtraGroups $ext */
         if ($ext = \common\helpers\Acl::checkExtension('ExtraGroups', 'allowed')) {

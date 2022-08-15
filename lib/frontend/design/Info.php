@@ -33,7 +33,7 @@ class Info
 
   public static function isAdmin()
   {
-    if ( Yii::$app->id=='app-console' ) {
+    if ( Yii::$app->id=='app-console' || Yii::$app->storage->get('is_admin')) {
         return true;
     }
     $params = Yii::$app->request->get();

@@ -621,7 +621,7 @@ function sendOrdersFlag(selected_ids, flag_state) {
         title: "{$smarty.const.TEXT_SET_FLAG}",
         buttons: {
                 success: {
-                        label: "{$smarty.const.IMAGE_SAVE}",
+                        label: "{$smarty.const.IMAGE_SAVE|escape:'javascript'}",
                         className: "btn",
                         callback: function() {
                             $.post("{$app->urlManager->createUrl(['extensions/', 'module' => 'OrderMarkers', 'action' => 'adminActionSetFlag'])}", { 'selected_ids' : selected_ids, 'o_flag' : $('input:checked[name="o_flag"]').val() }, function(data, status){
@@ -665,7 +665,7 @@ function sendOrdersMarker(selected_ids, marker_state) {
                 title: "{$smarty.const.TEXT_SET_MARKER}",
                 buttons: {
                         success: {
-                                label: "{$smarty.const.IMAGE_SAVE}",
+                                label: "{$smarty.const.IMAGE_SAVE|escape:'javascript'}",
                                 className: "btn",
                                 callback: function() {
                                     $.post("{$app->urlManager->createUrl(['extensions/', 'module' => 'OrderMarkers', 'action' => 'adminActionSetMarker'])}", { 'selected_ids' : selected_ids, 'o_marker' : $('input:checked[name="o_marker"]').val() }, function(data, status){
@@ -725,7 +725,7 @@ function invoiceSelectedOrders() {
           title: "{$smarty.const.TEXT_INVOICE}",
           buttons: {
             success: {
-              label: "{$smarty.const.TEXT_BTN_OK|escape}",
+              label: "{$smarty.const.TEXT_BTN_OK|escape:'javascript'}",
               className: "btn-confirm",
               callback: function() {
                 var fname = $('.bootbox-body input[name="invoice_name"]:checked').val()
@@ -736,7 +736,7 @@ function invoiceSelectedOrders() {
               }
             },
             main: {
-              label: "{$smarty.const.IMAGE_CANCEL|escape}",
+              label: "{$smarty.const.IMAGE_CANCEL|escape:'javascript'}",
               className: "btn-cancel",
               callback: function() {
                 //console.log("Primary button");
@@ -759,7 +759,7 @@ function packingslipSelectedOrders() {
           title: "{$smarty.const.IMAGE_ORDERS_PACKINGSLIP}",
           buttons: {
             success: {
-              label: "{$smarty.const.TEXT_BTN_OK|escape}",
+              label: "{$smarty.const.TEXT_BTN_OK|escape:'javascript'}",
               className: "btn-confirm",
               callback: function() {
                 var fname = $('.bootbox-body input[name="packingslip_name"]:checked').val()
@@ -770,7 +770,7 @@ function packingslipSelectedOrders() {
               }
             },
             main: {
-              label: "{$smarty.const.IMAGE_CANCEL|escape}",
+              label: "{$smarty.const.IMAGE_CANCEL|escape:'javascript'}",
               className: "btn-cancel",
               callback: function() {
                 //console.log("Primary button");
@@ -893,7 +893,7 @@ function changeStatus() {
           }
         },
         main: {
-          label: "{$smarty.const.IMAGE_CANCEL|escape}",
+          label: "{$smarty.const.IMAGE_CANCEL|escape:'javascript'}",
           className: "btn-cancel",
           callback: function() {
             //console.log("Primary button");

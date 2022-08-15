@@ -1,3 +1,4 @@
+{$uploadInfo}
 <p>{$message}</p>
 {foreach $packagesSynergyList as $package name=Selected}
     {if $smarty.foreach.Selected.first}

@@ -8,10 +8,10 @@
   <span class="btn-up-pr" id="btn-up-pr">{$smarty.const.FIELDSET_ASSIGNED_UPSELL_PRODUCTS}</span>
   <span class="btn-gaw-pr" id="btn-gaw-pr">{$smarty.const.FIELDSET_ASSIGNED_AS_GIVEAWAY}</span>
   <span class="btn-pop-pr" id="btn-pop-pr">{$smarty.const.TEXT_POPULARITY}</span>
-    {if \common\helpers\Acl::checkExtensionAllowed('Promotions')}
-    <span class="btn-pop-pr" id="btn-pro-pr">{$smarty.const.TEXT_PROMOTIONS}</span>
-    {/if}
   {/if}
+  {foreach \common\helpers\Hooks::getList('categories/productedit', 'marketing/tab-navs') as $filename}
+    {include file=$filename category=$category|default:null}
+  {/foreach}
 </div>
 {assign var="xsellTypeId" value="0"}
 {include file="productedit/xsell.tpl"}
@@ -31,10 +31,10 @@
 <div class="pop-pr-box" id="box-pop-pr">
   {include './popularity.tpl'}
 </div>
-<div class="pop-pr-box" id="box-pro-pr">
-  {include './promotions.tpl'}
-</div>
 {/if}
+{foreach \common\helpers\Hooks::getList('categories/productedit', 'marketing/tab-content') as $filename}
+    {include file=$filename category=$category|default:null}
+{/foreach}
 
 <script type="text/javascript">
   function addSelectedXSell(xsellType) {

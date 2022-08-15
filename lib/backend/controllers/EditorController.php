@@ -216,8 +216,6 @@ class EditorController extends Sceleton {
         }
         $platform_config->constant_up();
         defined('PLATFORM_ID') or define('PLATFORM_ID', $platform_id);
-
-        \common\components\Salemaker::init($platform_id);
     }
 
     public function actionCartWorker() {//ajax action

@@ -33,8 +33,6 @@
             {if !$settings[0].show_image}
                 <div class="image">
 
-                    {\frontend\design\boxes\product\PromotionIcons::widget(['params' => ['product' => $product]])}
-
                     <a href="{$product.link}">
                         <img
                                 {if $settings[0].lazy_load}data-{/if}src="{$product.image}"

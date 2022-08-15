@@ -1501,8 +1501,9 @@ class Coupon_adminController extends Sceleton {
     public function actionImport() {
         if (isset($_FILES['file']['tmp_name'])) {
 
-            $taxClasses = \yii\helpers\ArrayHelper::map(\common\models\TaxClass::find()->select(['tax_class_id', 'tax_class_title'])->asArray()->all(), 'tax_class_id', 'tax_class_title');
-            
+            $taxClassesByIds = \common\models\TaxClass::find()->select(['tax_class_title', 'tax_class_id'])->asArray()->indexBy('tax_class_id')->column();
+            $taxClasses = array_flip($taxClassesByIds);
+
             $languages = \common\helpers\Language::get_languages(true);
             
             $filename = $_FILES['file']['tmp_name'];
@@ -1537,12 +1538,14 @@ class Coupon_adminController extends Sceleton {
                         break;
                 }
                 $object->coupon_type = $type;
+                $object->date_created = date(\common\helpers\Date::DATABASE_DATETIME_FORMAT);
                 $object->coupon_amount = (float)$data[$uploadedKeys['Amount']];
                 $object->coupon_currency = (!empty($data[$uploadedKeys['Currency']]) ? $data[$uploadedKeys['Currency']] : DEFAULT_CURRENCY);
                 $object->flag_with_tax = ($data[$uploadedKeys['Amount with Tax']] == 'YES' ? 1 : 0);
                 $object->coupon_minimum_order = (float)$data[$uploadedKeys['Minimum Order']];
                 $object->uses_per_shipping = ($data[$uploadedKeys['Include Shipping']] == 'YES' ? 1 : 0);
-                $object->tax_class_id = (isset($taxClasses[(int)$data[$uploadedKeys['Tax Class']]]) ? $taxClasses[(int)$data[$uploadedKeys['Tax Class']]] : 0);
+                $object->tax_class_id = (isset($taxClasses[$data[$uploadedKeys['Tax Class']]]) ? $taxClasses[$data[$uploadedKeys['Tax Class']]] : 
+                    (isset($taxClassesByIds[(int)$data[$uploadedKeys['Tax Class']]]) ? (int)$data[$uploadedKeys['Tax Class']] : 0) );
                 $object->coupon_for_recovery_email = ($data[$uploadedKeys['Coupon for Recovery Cart']] == 'YES' ? 1 : 0);
                 $object->pos_only = ($data[$uploadedKeys['For POS only']] == 'YES' ? 1 : 0);
                 $object->disable_for_special = ($data[$uploadedKeys['Disable for special products']] == 'YES' ? 1 : 0);

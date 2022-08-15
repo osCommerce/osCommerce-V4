@@ -117,7 +117,7 @@ class Product extends Widget {
 
         $asset = null;
         if ($this->product['promo_id'] && \common\helpers\Acl::checkExtensionAllowed('Promotions')){
-            $asset = \common\models\promotions\PromotionService::getAsset($this->product['promo_id'], $this->product['id']);
+            $asset = \common\extensions\Promotions\models\PromotionService::getAsset($this->product['promo_id'], $this->product['id']);
         }
 
         $opsArray = array();

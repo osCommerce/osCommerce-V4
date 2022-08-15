@@ -160,40 +160,7 @@ class GroupsController extends Sceleton {
             return $this->render('edit', ['content' => $content]);
         }
     }
-    
-    public function actionDropPromo(){
-        $groups_id = Yii::$app->request->post('groups_id');
-        $promo_id = Yii::$app->request->post('promo_id');
-        if ($promo_id && $groups_id && \common\helpers\Acl::checkExtensionAllowed('Promotions')){
-            \common\models\promotions\PromotionsAssignement::deletePromoOwners($promo_id, \common\models\promotions\PromotionsAssignement::OWNER_GROUP, [$groups_id]);
-        }
-        exit();
-    }
-    
-    public function actionShowPromo(){
-        $groups_id = Yii::$app->request->get('groups_id');
-        if ($groups_id){
-            /** @var \common\extensions\UserGroups\UserGroups $ext */
-            if ($ext = \common\helpers\Acl::checkExtensionAllowed('UserGroups', 'allowed')) {
-                return $ext::adminGroupsPromo($groups_id);
-            }
-        }
-        exit();
-    }
-    
-    public function actionAddPromo(){
-        $groups_id = Yii::$app->request->post('groups_id');
-        $promo_id = Yii::$app->request->post('promo_id');
-        if ($promo_id && $groups_id && \common\helpers\Acl::checkExtensionAllowed('Promotions')){
-            \common\models\promotions\PromotionsAssignement::addPromoOwners($promo_id, \common\models\promotions\PromotionsAssignement::OWNER_GROUP, [$groups_id]);
-            /** @var \common\extensions\UserGroups\UserGroups $ext */
-            if ($ext = \common\helpers\Acl::checkExtensionAllowed('UserGroups', 'allowed')) {
-                return $ext::getGroupsPromo($groups_id);
-            }
-        }
-        exit();
-    }
-
+   
     public function actionConfirmitemdelete() {
         $this->layout = false;
 

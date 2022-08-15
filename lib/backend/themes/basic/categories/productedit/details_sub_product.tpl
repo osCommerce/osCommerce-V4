@@ -111,39 +111,11 @@
 
                         <div class="actions-content">
                             {* add block with product behavior *}
-                            {* quote request *}
-                            {if (\common\helpers\Acl::checkExtensionAllowed('Quotations'))}
-                            <div class="edp-line-heig">
-                                <label>{$smarty.const.TEXT_REQUEST_QUOTE}:</label>
-                                <input type="checkbox" name="request_quote" value="1" readonly="readonly" disabled="disabled" class="check_quote_switch_on_off"{if $pInfo->request_quote == 1} checked{/if} />
-                                <span id="request_quote_out_stock" class=""{if $pInfo->request_quote == 0} style="display: none;"{/if}>
-                                    <label>{$smarty.const.TEXT_REQUEST_QUOTE_OUT_STOCK}:</label>
-                                    <input type="checkbox" name="request_quote_out_stock" value="1" readonly="readonly" disabled="disabled" class="check_bot_switch_on_off"{if $pInfo->request_quote_out_stock == 1} checked{/if} />
-                                </span>
-                            </div>
-                            {/if}
-                            {* product sample.*}
-                            {if (\common\helpers\Acl::checkExtensionAllowed('Samples'))}
-                            <div class="edp-line-heig">
-                                <label>{$smarty.const.TEXT_ASK_SAMPLE}:</label>
-                                <input type="checkbox" name="ask_sample" value="1" readonly="readonly" disabled="disabled" class="check_bot_switch_on_off"{if $pInfo->ask_sample == 1} checked{/if} />
-                            </div>
-                            {/if}
                             {* add to cart *}
                             <div class="edp-line-heig">
                                 <label>{$smarty.const.TEXT_CART_BTN}:</label>
                                 <input type="checkbox" name="cart_button" value="1" readonly="readonly" disabled="disabled" class="check_bot_switch_on_off"{if $pInfo->cart_button == 1} checked{/if} />
                             </div>
-                            {if (\common\helpers\Acl::checkExtensionAllowed('PurchaseOrders'))}
-                            <div class="edp-line-heig">
-                              <label>{$smarty.const.TEXT_ALLOW_BAKORDER}<span class="title-colon">:</span></label>
-                              <div class="allow-bck-ord">
-                                <label><span class="label-title">{$smarty.const.TEXT_NO}</span>{Html::radio('allow_backorder',$pInfo->allow_backorder == -1, ['value' => -1])}</label>
-                                <label><span class="label-title">{$smarty.const.TEXT_DEFAULT} {if strtolower(\common\helpers\PlatformConfig::getVal('STOCK_ALLOW_BACKORDER_BY_DEFAULT', 'false')) =='true'}({$smarty.const.TEXT_YES}){/if}{if strtolower(\common\helpers\PlatformConfig::getVal('STOCK_ALLOW_BACKORDER_BY_DEFAULT', 'false')) =='false'}({$smarty.const.TEXT_NO}){/if}</span>{Html::radio('allow_backorder',$pInfo->allow_backorder == 0, ['value' => 0])}</label>
-                                <label><span class="label-title">{$smarty.const.TEXT_YES}</span>{Html::radio('allow_backorder',$pInfo->allow_backorder == 1, ['value' => 1])}</label>
-                              </div>
-                            </div>
-                            {/if}
                             {* /add block with product behavior/ *}
                         </div>
                     </div>
