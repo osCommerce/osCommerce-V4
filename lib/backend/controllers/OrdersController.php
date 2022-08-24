@@ -1716,11 +1716,6 @@ class OrdersController extends Sceleton {
                 }
             }
 
-            if ($ext = Acl::checkExtensionAllowed('ReferFriend', 'allowed')){
-                $ext::rf_release_reference((int)$oID);
-            }
-
-
             if (method_exists('\common\helpers\Coupon', 'credit_order_check_state')){
                 \common\helpers\Coupon::credit_order_check_state((int) $oID);
             }
@@ -3473,7 +3468,7 @@ class OrdersController extends Sceleton {
         $new_module_method = \Yii::$app->request->get('method', '');
         $all_methods = \Yii::$app->request->get('all_methods', 1);
 
-        [$new_module, $new_method] = explode('_', $new_module_method, 2);
+        [$new_module, $new_method] = array_pad(explode('_', $new_module_method, 2), 2, null);
 
         $delivery_date = \Yii::$app->request->get('delivery_date', '');
         if ($action == 'set_delivery') {

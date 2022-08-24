@@ -178,7 +178,7 @@ class Menu extends Widget
                             while ($item = tep_db_fetch_array($sql3)){
                                 $count = $categories_all[$item['categories_id']]['products'];
                                 if ($this->settings[0]['show_count_products']) {
-                                    $title = $item['categories_name'] . '<span class="count-products-wrap">(<span class="count-products">' . $row['count'] . '</span>)</span>';
+                                    $title = $item['categories_name'] . '<span class="count-products-wrap"> (<span class="count-products">' . (int) $count . '</span>)</span>';
                                 } else {
                                     $title = $item['categories_name'];
                                 }

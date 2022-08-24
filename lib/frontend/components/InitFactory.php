@@ -292,10 +292,6 @@ class InitFactory {
     }
 
     // TODO: move to hooks
-    if ($ext = \common\helpers\Acl::checkExtensionAllowed('ReferFriend', 'allowed')){
-        $ext::rf_track_reference();
-    }
-   
     if ($ext = \common\helpers\Acl::checkExtension('SupplierPurchase', 'allowed')){
         if ($ext::allowed()){
             $ext::recalculateTotal();

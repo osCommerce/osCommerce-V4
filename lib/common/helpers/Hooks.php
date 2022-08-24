@@ -44,12 +44,17 @@ class Hooks
         return \Yii::getAlias('@common') . DIRECTORY_SEPARATOR . 'extensions' . DIRECTORY_SEPARATOR . $extCode . DIRECTORY_SEPARATOR . 'hooks' . DIRECTORY_SEPARATOR;
     }
 
+    public static function unresisterHooks($extCode)
+    {
+        \common\models\Hooks::deleteAll(['extension_name' => $extCode]);
+    }
+
     public static function registerHooks($Items, $extCode)
     {
         $defPath = self::getDefHookPath($extCode);
         if (is_array($Items)) {
             foreach ($Items as $item) {
-                $record = new \common\models\Hooks();
+                $record = new \common\models\Hooks(); // there is no sense to do find before
                 $record->loadDefaultValues();
                 $record->page_name = $item['page_name'];
                 $record->page_area = $item['page_area'] ?? '';
@@ -64,7 +69,11 @@ class Hooks
                 if (!file_exists($record->extension_file)) {
                     \Yii::warning("Registering hook for $extCode: file '$record->extension_file' not exists");
                 }
-                $record->save(false);
+                try {
+                    $record->save(false);
+                } catch (\Exception $e) {
+                    \Yii::warning("Registering hook for $extCode db error: " . $e->getMessage());
+                }
             }
         }
     }

@@ -821,7 +821,7 @@ class ProductsQuery {
                   $knownTable = [
                     'products_final_price' => new \yii\db\Expression(
                       //'if(products_special_price>0, products_special_price, products_price) '
-                      'products_price '
+                      'products_price'
                       .  ($taxRates?' * (case products_tax_class_id ' . $taxRateM . ' else 1 end)':'')
                     )
                     ];

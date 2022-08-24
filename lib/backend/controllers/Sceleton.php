@@ -109,7 +109,7 @@ class Sceleton extends Controller {
         if (isset($this->navigation)) {
             $lastElement = end($this->navigation);
             if (isset($lastElement['title'])) {
-                \Yii::$app->view->title  = $lastElement['title'] . ' | '. \common\classes\platform::name(\common\classes\platform::defaultId()) .' | ' . \Yii::$app->name;
+                \Yii::$app->view->title  = strip_tags($lastElement['title']) . ' | '. \common\classes\platform::name(\common\classes\platform::defaultId()) .' | ' . \Yii::$app->name;
             }
         }
         \backend\design\Data::mainData();

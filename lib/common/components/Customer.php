@@ -630,8 +630,8 @@ class Customer  extends \common\models\Customers implements \yii\web\IdentityInt
                 $this->_afterAuth();
             }
 
-            if($ext = \common\helpers\Acl::checkExtensionAllowed('ReferFriend', 'allowed')){
-                $ext::rf_track_after_customer_create($this->customers_id);
+            foreach (\common\helpers\Hooks::getList('customers/register') as $filename) {
+                include($filename);
             }
 
             if (property_exists(Yii::$app->controller, 'promoActionsObs') && is_object(Yii::$app->controller->promoActionsObs)){
@@ -721,33 +721,6 @@ class Customer  extends \common\models\Customers implements \yii\web\IdentityInt
             }
 //        }
     }
-
-    /*old variant via array, todo over model*/
-    public function registerCustomerFromArray(array $array_data){
-
-        if (is_array($array_data)){
-            foreach ($array_data as $keyField => $value){
-                if ($this->hasAttribute($keyField)){
-                    $this->$keyField = $value;
-                }
-            }
-            $this->insert(false);
-            $this->addCustomersInfo();
-
-            $this->removeDuplicateGuestsAccounts();
-
-            $this->addDefaultAddress($array_data);
-
-            if($ext = \common\helpers\Acl::checkExtensionAllowed('ReferFriend', 'allowed')){
-                $ext::rf_track_after_customer_create($this->customers_id);
-            }
-
-            $this->_afterAuth();
-
-        }
-        return $this;
-    }
-
 
     public function saveRegularOffers(CustomerRegistration $model){
         if ($model->newsletter && $model->regular_offers){

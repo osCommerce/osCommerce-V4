@@ -400,8 +400,8 @@ abstract class ModulePayment extends Module {
           $order->notify_customer($order->getProductsHtmlForEmail(), []);
         }
 
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('ReferFriend', 'allowed')) {
-          $ext::rf_after_order_placed($order_id);
+        foreach (\common\helpers\Hooks::getList('module-payment/process-notification') as $filename) {
+            include($filename);
         }
 
         try {

@@ -105,12 +105,14 @@ function file_upload(id) {
     return false;
 }
 function fileUploadStart (form) {
+    $('body').append('<span class="loader"></span>');
     $(".bootbox-close-button.close").click();
     $.post('{$app->urlManager->createUrl('install/upload-file')}', $(form).serialize(), function(data) {
          bootbox.dialog({
             message: '<div class="installPopupArea">'+data+'</div>',
             title: "Application info",
         });
+		$('.loader').remove();
         applyFilter();
      }, 'html');
     return false;

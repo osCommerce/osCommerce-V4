@@ -95,4 +95,26 @@ class Dbg
         return $ret;
     }
 
+    static $timeFirst = null;
+    static $time = null;
+
+    private static function timeStart($msg)
+    {
+        self::$time = self::$timeFirst = microtime(true);
+        if (!empty($msg)) {
+            self::log('Timer started' . $msg);
+        }
+    }
+
+    public static function logTime($msg = '')
+    {
+        if (is_null(self::$time)) {
+            self::timeStart($msg);
+        } else {
+            $cur = microtime(true);
+            $msg = empty($msg)? '' : ($msg . '. ');
+            self::log( sprintf('%sElapsed: %.3f (since start %.3f)', $msg, $cur-self::$time, $cur-self::$timeFirst) );
+            self::$time = microtime(true);
+        }
+    }
 }

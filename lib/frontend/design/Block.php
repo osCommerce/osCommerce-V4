@@ -43,7 +43,11 @@ class Block extends Widget
     {
         global $block_styles, $allWidgetsOnPage;
         $adminDesign = null;
-        $this->theme_name = THEME_NAME;
+        if ($this->params['params']['theme_name']) {
+            $this->theme_name = $this->params['params']['theme_name'];
+        } else {
+            $this->theme_name = THEME_NAME;
+        }
 
         if (defined("DESIGN_BOXES_CACHE")) {
             $designBoxesCacheSetting = DESIGN_BOXES_CACHE;

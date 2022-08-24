@@ -7,17 +7,16 @@
     </div>
 </div>
 <script type="text/javascript">
+    function showUpdateLog() {
+        $.get("{Yii::$app->urlManager->createUrl('install/update-log')}" , function(data, status) {
+            if (status == "success") {
+                $('#updates_box').html(data);
+            }
+        },'html');
+        return false;
+    }
     function runQuery() {
         $('#updates_box').html('<iframe src="{Yii::$app->urlManager->createUrl('install/update-now')}" style="width:100%;min-height:400px;border:0px;"></iframe>');
-        
-        return false;
-        $.get("{Yii::$app->urlManager->createUrl('install/update-now')}", 
-            function (data, status) {
-                if (status == "success") {
-                    $('#updates_box').html(data);
-                }
-            }, "html"
-        );
         return false;
     }
     function checkActualStatus() {

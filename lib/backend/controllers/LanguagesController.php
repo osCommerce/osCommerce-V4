@@ -319,9 +319,10 @@ class LanguagesController extends Sceleton {
     }
 
     public function actionSave() {
-        global $language;
 
-        set_time_limit(0);
+        @set_time_limit(0);
+        @ignore_user_abort(true);
+        
         $default_language_id = \common\helpers\Language::get_default_language_id();
         if (Yii::$app->request->isPost && isset($_POST['action']) && $_POST['action'] == 'predefine') {
             $_languages_id = Yii::$app->request->post('languages_id', 0);

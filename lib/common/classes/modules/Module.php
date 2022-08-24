@@ -656,6 +656,7 @@ abstract class Module{
    */
   protected function getPlatformId() {
 
+    $platformId = null;
     if (\Yii::$app->id == 'app-backend') {
       $platformId = \Yii::$app->request->post('platform_id', false);
       $gets = \Yii::$app->request->get();

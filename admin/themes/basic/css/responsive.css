@@ -292,8 +292,11 @@ html, body{min-width: 960px;}
 	.item_filter{width: 50%!important;}
 	.item_filter.item_filter_2{padding-right: 0;}
     .item_filter.item_filter_3{
-        border-left: 0; padding-left: 0; margin-top: 10px;
-        width: 100%!important;
+        border-left: 0; padding-left: 0; margin-top: 20px;
+        width: 50%!important;
+    }
+    .item_filter.item_filter_4{
+        padding-top: 20px;
     }
 	.theme-view{padding-right:0%;}
 	.context-design .top_bead h1{max-width:200px;}

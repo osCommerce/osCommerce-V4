@@ -185,8 +185,7 @@ class ConfigurationController extends Sceleton {
                 if ($uf) {
                   $cfgValue = call_user_func($uf, $d['configuration_value']);
                 } else {
-                  $_t = Translation::getTranslationValue(strtoupper(str_replace(" ", "_", $d['configuration_value'])), 'configuration', $languages_id);
-                  $cfgValue = (tep_not_null($_t) ? $_t : $d['configuration_value']);
+                  $cfgValue =  \backend\models\Configuration::translateConfig($d);
                 }
                 echo '<span class="platform-name">' . $d['platform']['platform_name'] . '</span><span class="colon">:</span> <a target="_blank" href="' . \Yii::$app->urlManager->createUrl(['platforms/configuration', 'group_id' => $configuration['configuration_group_id'], 'platform_id' => $d['platform']['platform_id']]) . '"><span class="platform-value">' .  $cfgValue . '</span></a><br>';
               }
@@ -381,9 +380,7 @@ class ConfigurationController extends Sceleton {
                     }
                 }
             } else {
-                $_t = Translation::getTranslationValue(strtoupper(str_replace(" ", "_", $configuration['configuration_value'])), 'configuration', $languages_id);
-                $_t = (tep_not_null($_t) ? $_t : $configuration['configuration_value']);
-                $cfgValue = $_t;
+                $cfgValue =  \backend\models\Configuration::translateConfig($configuration);
             }
 
             $cfg_extra_query = tep_db_query( "select configuration_key, configuration_description, date_added, last_modified, use_function, set_function from " . TABLE_CONFIGURATION . " where configuration_id = '" . (int) $configuration['configuration_id'] . "'" );

@@ -313,6 +313,36 @@ class Configuration {
         return $string;
     }
 
+    public static function translateConfig($configuration)
+    {
+        $languages_id = \Yii::$app->settings->get('languages_id');
+
+        $_t = Translation::getTranslationValue(strtoupper(str_replace(" ", "_", $configuration['configuration_value'])), 'configuration', $languages_id);
+        if ( $_t===false ) {
+            $_t = Translation::getTranslationValue(strtoupper(preg_replace('/[^a-z\d_]+/i', '_', $configuration['configuration_key'] . ' VALUE ' . $configuration['configuration_value'])), 'configuration', $languages_id);
+        }
+        $_t = (tep_not_null($_t) ? $_t : $configuration['configuration_value']);
+
+        return $_t;
+    }
+
+  //create a select list to display list of themes available for selection
+  public static function tep_cfg_pull_down_template_list() {//$template_id, $key = ''
+
+    $keys = func_get_args();
+    eval('list($template_id, $key) = array(' . $keys[0] . ');');
+
+    $name = (($key) ? 'configuration[' . $key . ']' : 'configuration_value');
+
+    $template_query = tep_db_query("select template_id, template_name from " . TABLE_TEMPLATE . " order by template_name");
+    while ($template = tep_db_fetch_array($template_query)) {
+      $template_array[] = array('id' => $template['template_name'],
+      'text' => $template['template_name']);
+    }
+
+    return tep_draw_pull_down_menu($name, $template_array, $template_id);
+  }
+
   public static function tep_cfg_get_timezone_name()//$zone_id
   {
     $keys = func_get_args();

@@ -764,6 +764,7 @@ class Order extends ProviderAbstract implements ExportInterface, ImportInterface
             }
         }
 
+        $this->collectOrder['info']['external_orders_id'] = $this->collectOrder['info']['external_orders_id'] ?? null;
         $newOrderAdded = false;
         if ( !$orderModel ) {
             $newOrderAdded = true;

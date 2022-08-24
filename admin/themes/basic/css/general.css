@@ -269,6 +269,11 @@
     display: flex;
     align-items: center;
 }
+.btn-toolbar-col .btn {
+    display: block;
+    max-width: 250px;
+    margin: 0 auto 10px !important;
+}
 
 .banner-filter {
     display: flex;

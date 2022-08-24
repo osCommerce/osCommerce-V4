@@ -226,12 +226,12 @@ class BasePrice {
             Yii::$container->get('products')->loadProducts($product);
           }
         }
-        if ( array_key_exists('_p_products_price',$product) ){
+        if (is_array($product) && array_key_exists('_p_products_price',$product) ){
             $product['products_price'] = $product['_p_products_price'];
         }
 
-        $this->calculate_full_price = (bool) $product['products_price_full'];
-        $this->products_price['value'] = $product['products_price'];
+        $this->calculate_full_price = (bool) ($product['products_price_full'] ?? null);
+        $this->products_price['value'] = $product['products_price'] ?? null;
 
         $CustomerProductsPricePossible = false;
         /* @var $CustomerProducts \common\extensions\CustomerProducts\CustomerProducts */

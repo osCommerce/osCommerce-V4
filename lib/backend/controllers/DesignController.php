@@ -947,11 +947,12 @@ class DesignController extends Sceleton {
       return $widget_name::widget(['id' => $id, 'params' => $widget_params, 'settings' => $settings, 'visibility' => $visibility]);
 	} elseif($ext = \common\helpers\Acl::checkExtension($params['name'], 'showTabSettings', true)){
       $widget_name = 'backend\design\boxes\Def';
-      $settings = array_merge($settings, ['tabs'=> array('class'=> $ext, 'method' => 'showTabSettings')]);
+      $settings['tabs'] = ['class'=> $ext, 'method' => 'showTabSettings'];
       return $widget_name::widget(['id' => $id, 'params' => $widget_params, 'settings' => $settings, 'visibility' => $visibility, 'block_type' => $params['block_type']]);
     } elseif($ext = \common\helpers\Acl::checkExtension($params['name'], 'showSettings', true)){
         $widget_name = 'backend\design\boxes\Def';
-        $settings = array_merge($settings, ['class'=> $ext, 'method' => 'showSettings']);
+        $settings['class'] = $ext;
+        $settings['method'] = 'showSettings';
         return $widget_name::widget(['id' => $id, 'params' => $widget_params, 'settings' => $settings, 'visibility' => $visibility, 'block_type' => $params['block_type']]);
     }else {
       $widget_name = 'backend\design\boxes\Def';

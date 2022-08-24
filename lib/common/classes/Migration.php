@@ -224,7 +224,7 @@ class Migration extends \yii\db\Migration {
      *
      * @staticvar boolean $language_map
      * @param string  $entity
-     * @param array $keys [$key=>$value]
+     * @param array $keys [$key=>$value], $value = string | array per language ['en' => 'english', 'fr' => 'French']
      */
     public function addTranslation($entity, $keys) {
         static $language_map = false;
@@ -238,8 +238,10 @@ class Migration extends \yii\db\Migration {
             if (is_array($value)) {
                 // per language $value -- 'en' => 'english', 'fr' => 'French'
                 foreach ($language_map as $languageCode => $languageId) {
+                    $checked = $translated = false;
                     if (isset($value[$languageCode])) {
                         $languageValue = $value[$languageCode];
+                        $checked = $translated = true;
                     } elseif (isset($value[\common\helpers\Language::systemLanguageCode()])) {
                         $languageValue = $value[\common\helpers\Language::systemLanguageCode()];
                     } else {
@@ -247,17 +249,30 @@ class Migration extends \yii\db\Migration {
                     }
                     $this->db->createCommand(
                             "INSERT IGNORE INTO `translation` " .
-                            "  (language_id, translation_key, translation_entity, translation_value) " .
-                            "  VALUES (:languages_id, :text_key, :entity, :text_value)",
+                            "  (language_id, translation_key, translation_entity, translation_value, checked, translated) " .
+                            "  VALUES (:languages_id, :text_key, :entity, :text_value, :checked, :translated)",
                             [
                                 'languages_id' => (int) $languageId,
                                 'entity' => $entity,
                                 'text_key' => $key,
                                 'text_value' => $languageValue,
+                                'checked' => $checked,
+                                'translated' => $translated
                             ]
                     )->execute();
                 }
             } else {
+                $this->db->createCommand(
+                        "INSERT IGNORE INTO `translation` " .
+                        "  (language_id, translation_key, translation_entity, translation_value, checked, translated) " .
+                        "  VALUES (1, :text_key, :entity, :text_value, 1, 1)",
+                        [
+                            'entity' => $entity,
+                            'text_key' => $key,
+                            'text_value' => $value,
+                        ]
+                )->execute();
+
                 $this->db->createCommand(
                         "INSERT IGNORE INTO `translation` " .
                         "  (language_id, translation_key, translation_entity, translation_value) " .
@@ -694,7 +709,7 @@ class Migration extends \yii\db\Migration {
         $this->delete(TABLE_PLATFORMS_CONFIGURATION, $conditions);
     }
 
-    public function addWidget($placeholder, $widget)
+    public function addWidget($placeholder, $widget, $ifNoWidget = '', $themeName = false)
     {
         if (is_file(DIR_FS_CATALOG . $widget)) {
             $widgetName = '';
@@ -724,7 +739,11 @@ class Migration extends \yii\db\Migration {
         }
 
         $themeError = '';
-        $themes = \common\models\Themes::find()->asArray()->all();
+        if ($themeName && \common\models\Themes::findOne(['theme_name' => $themeName])) {
+            $themes = [['theme_name' => $themeName]];
+        } else {
+            $themes = \common\models\Themes::find()->asArray()->all();
+        }
         foreach ($themes as $theme) {
             $box = \common\models\DesignBoxesTmp::find()->where([
                 'widget_params' => $placeholder, 'theme_name' => $theme['theme_name']
@@ -735,6 +754,15 @@ class Migration extends \yii\db\Migration {
                 $params['block_name'] = $placeholder;
             }
             $params['theme_name'] = $theme['theme_name'];
+
+            if ($ifNoWidget) {
+                $widgets = \backend\design\Theme::getWidgetsInPlaceholder($params['block_name'], $theme['theme_name']);
+                foreach ($widgets as $_widget) {
+                    if ($_widget['widget_name'] == $ifNoWidget) {
+                        continue 2;
+                    }
+                }
+            }
 
             $max = \common\models\DesignBoxesTmp::find()->where([
                 'block_name' => $params['block_name'], 'theme_name' => $theme['theme_name']
@@ -747,7 +775,7 @@ class Migration extends \yii\db\Migration {
                 $importBlock = \backend\design\Theme::importBlock($widgetLocation, $params);
                 if (!is_array($importBlock)) {
                     echo "\n" . $importBlock . "\n";
-                    $themeError .= $theme . ': error in ' . $importBlock . "\n";
+                    $themeError .= $theme['theme_name'] . ': error in ' . $importBlock . "\n";
                 }
             } elseif ($widgetName) {
                 $designBoxes = new \common\models\DesignBoxesTmp();
@@ -758,7 +786,7 @@ class Migration extends \yii\db\Migration {
                 $designBoxes->sort_order = $params['sort_order'];
                 $designBoxes->save();
                 if ($designBoxes->errors) {
-                    $themeError .= $theme . ': sql error ' . "\n";
+                    $themeError .= $theme['theme_name'] . ': sql error ' . "\n";
                 }
             }
 

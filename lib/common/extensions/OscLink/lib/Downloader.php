@@ -76,9 +76,9 @@ class Downloader
             default:
                 throw new \Exception('Secure method is invalid: ' . $this->apiMethod);
         }
-        if (YII_ENV=='dev') { // disable checking self-signed cert
+//        if (YII_ENV=='dev') { // disable checking self-signed cert
             $stream_context_params['ssl'] = ['verify_peer' => false, 'verify_peer_name' => false, 'allow_self_signed' => true];
-        }
+//        }
         return stream_context_create($stream_context_params);
     }
 

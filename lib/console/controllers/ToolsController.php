@@ -45,8 +45,9 @@ class ToolsController extends Controller
 
     public function actionLogsCleanup()
     {
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('ReportEmailsHistory')) {
-            $ext::cleanLog();
+        foreach (\common\helpers\Hooks::getList('console-tools/logs-cleanup') as $filename)
+        {
+            include($filename);
         }
     }
 

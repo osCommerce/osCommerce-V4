@@ -491,7 +491,7 @@ $properties_id = \Yii::$app->request->post('properties_id', 0);
       if (trim($properties_units_title[$languages[$i]['id']] ?? null) == '' || $same_all_languages) $properties_units_title[$languages[$i]['id']] = $properties_units_title[$default_language_id] ?? null;
       if (tep_not_null($properties_units_title[$languages[$i]['id']])) {
         $check = tep_db_fetch_array(tep_db_query("select properties_units_id from " . TABLE_PROPERTIES_UNITS . " where properties_units_title = '" . tep_db_input($properties_units_title[$languages[$i]['id']]) . "'"));
-        if ($check['properties_units_id'] > 0) {
+        if (($check['properties_units_id']??null) > 0) {
           $properties_units_id = $check['properties_units_id'];
         } else {
           tep_db_perform(TABLE_PROPERTIES_UNITS, array('properties_units_title' => $properties_units_title[$languages[$i]['id']]));

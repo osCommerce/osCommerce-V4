@@ -57,15 +57,6 @@ class Importer implements \OscLink\XML\ImportTuningInterface
                 $updateObject->products_id_price = 0;
                 $updateObject->products_id_stock = 0;
             }
-            if ($updateObject instanceof \common\models\Categories) {
-                $pc = \common\models\PlatformsCategories::findOne(['categories_id' => $updateObject->categories_id, 'platform_id' => $this->platform_id]);
-                if (empty($pc)) {
-                    $pc = new \common\models\PlatformsCategories();
-                    $pc->categories_id = $updateObject->categories_id;
-                    $pc->platform_id = $this->platform_id;
-                    $pc->save(false);
-                }
-            }
         }
     }
 
@@ -75,6 +66,15 @@ class Importer implements \OscLink\XML\ImportTuningInterface
 
         if ($updateObject instanceof \common\models\Products) {
             \Yii::$app->getDb()->createCommand()->upsert(\common\models\PlatformsProducts::tablename(), ['platform_id' => $this->platform_id, 'products_id' => $updateObject->products_id], false)->execute();
+        }
+        if ($updateObject instanceof \common\models\Categories) {
+            $pc = \common\models\PlatformsCategories::findOne(['categories_id' => $updateObject->categories_id, 'platform_id' => $this->platform_id]);
+            if (empty($pc)) {
+                $pc = new \common\models\PlatformsCategories();
+                $pc->categories_id = $updateObject->categories_id;
+                $pc->platform_id = $this->platform_id;
+                $pc->save(false);
+            }
         }
     }
 

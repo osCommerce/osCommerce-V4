@@ -77,7 +77,15 @@
             }
             text{$language.id}.trigger('change')
           }
-        }
+        },
+        toolbar: [
+          { name: 'document', items: [ 'Source'] },
+          [ 'Cut', 'Copy', 'Paste', 'Undo', 'Redo' ],
+          { name: 'basicstyles', items: [ 'Bold', 'Italic', 'Underline', 'Strike', 'Subscript', 'Superscript' ] },
+          { name: 'paragraph', groups: [ 'list', 'indent', 'blocks', 'align', 'bidi' ], items: [ 'NumberedList', 'BulletedList', '-', 'Outdent', 'Indent', '-', 'Blockquote', 'CreateDiv', '-', 'JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock' ] },
+          { name: 'styles', items: [ 'Format', 'Font', 'FontSize' ] },
+          { name: 'colors', items: [ 'TextColor', 'BGColor' ] },
+        ],
       } );
     {/foreach}
 

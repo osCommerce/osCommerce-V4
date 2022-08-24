@@ -371,7 +371,7 @@ class Information {
     $list = \common\classes\platform::getList(false);
     foreach ($list as $key => $item) {
 
-      if ($themes[$item['id']]) {
+      if ($themes[$item['id']] ?? null) {
 
           $styles = \common\models\ThemesStyles::find()
               ->select(['name' => 'accessibility'])->distinct()

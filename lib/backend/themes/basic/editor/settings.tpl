@@ -33,9 +33,9 @@
         </div>
         <div class = "noti-btn">
             <div class="btn-left">
-                {if $currentCurrent}
-                    <button onclick="closePopup()" class="btn btn-default">{$smarty.const.IMAGE_CANCEL}</a>
-                    {/if}
+               {if $currentCurrent || $back }
+                    <button class="btn btn-default btn-cancel-settings">{$smarty.const.IMAGE_CANCEL}</a>
+                {/if}
             </div>
             <div class="btn-right"><a href="javascript:void(0)"  class="btn btn-primary btn-save-settings">Save changes</a></div>
         </div>
@@ -51,6 +51,12 @@
             }
             $(document).ready(function () {
                 $('.pop-up-close:last').hide();
+                $('.btn-cancel-settings').click(function () {
+                    closePopup();
+                    {if $back}
+                        window.location.href = "{\Yii::$app->urlManager->createUrl($back)}";
+                    {/if}
+                });
                 $('.btn-save-settings').click(function () {
                     $.post($urlCalculateRow, {
                         'action': 'save_settings',

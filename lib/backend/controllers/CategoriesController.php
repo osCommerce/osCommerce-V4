@@ -596,7 +596,9 @@ class CategoriesController extends Sceleton {
             foreach ($platforms as $platform) {
                 $filter_by_platform[] = $platform['platform_id'];
             }
-            $filter_by_platform[] = 0;
+            if ( count($filter_by_platform)==0 ) {
+                $filter_by_platform[] = 0;
+            }
         }
 
         if (count($filter_by_platform) > 0) {
@@ -1100,7 +1102,7 @@ class CategoriesController extends Sceleton {
                     ->wDescription('pd')
                     ->wDescription('pdd', \common\helpers\Language::get_default_language_id())
                     ->innerJoinWith(['categoriesList p2c' => function ($query) use ($current_category_id) {$query->andOnCondition(['p2c.categories_id' => (int) $current_category_id ]);}]);
-
+            $products_in_category->andWhere('1 '.$platform_filter_products);
             $productsQty = $products_query_numrows = $products_in_category->count();
 
             $categories_query_numrows += $products_query_numrows;
@@ -2100,6 +2102,10 @@ class CategoriesController extends Sceleton {
           $product = tep_db_fetch_array($product_query);
           if (empty($product)) {
               $products_id = 0;
+          }else{
+              if (empty($product['products_name'])) {
+                  $product['products_name'] = \common\helpers\Product::get_products_name($product['products_id']);
+              }
           }
           $pInfo = new \objectInfo($product);
         } //else {
@@ -2305,8 +2311,13 @@ class CategoriesController extends Sceleton {
         if (!(isset($this->view->sph) && $this->view->sph)){
             $_pQ->andWhere(['status' => 1]);
         }
+        $admin_available_platform_ids = \yii\helpers\ArrayHelper::getColumn(\common\classes\platform::getList(), 'id');
+        $_pQ->andWhere(['IN','platform_id',$admin_available_platform_ids]);
         $platforms = $_pQ->all();
         $def_platformId = \common\classes\platform::defaultId();
+        if ( !in_array($def_platformId, $admin_available_platform_ids) ){
+            $def_platformId = reset($admin_available_platform_ids);
+        }
         $platformConfigs = [];
         $this->view->platform_languages = [];
       ///Description
@@ -2948,11 +2959,13 @@ class CategoriesController extends Sceleton {
             $values[] = array('values_id' => '0', 'values' => TEXT_PROP_FLAG_NO);
         } else {
             $properties_values_query = tep_db_query("select values_id, values_text, values_number, values_number_upto, values_alt, values_prefix, values_postfix from " . TABLE_PROPERTIES_VALUES . " where properties_id = '" . (int) $properties_id . "' and language_id = '" . (int) $languages_id . "' order by sort_order, " . ($property['properties_type'] == 'number' || $property['properties_type'] == 'interval' ? 'values_number' : 'values_text'));
+            $thousandsSeparator = '';
+            $decimalSeparator = '.';
             while ($properties_values = tep_db_fetch_array($properties_values_query)) {
                 if ($property['properties_type'] == 'interval') {
-                    $properties_values['values'] = (float) number_format($properties_values['values_number'], $property['decimals']) . ' - ' . (float) number_format($properties_values['values_number_upto'], $property['decimals']);
+                    $properties_values['values'] = number_format($properties_values['values_number'], $property['decimals'], $decimalSeparator, $thousandsSeparator) . ' - ' . number_format($properties_values['values_number_upto'], $property['decimals'], $decimalSeparator, $thousandsSeparator);
                 } elseif ($property['properties_type'] == 'number') {
-                    $properties_values['values'] = (float) number_format($properties_values['values_number'], $property['decimals']);
+                    $properties_values['values'] = number_format($properties_values['values_number'], $property['decimals'], $decimalSeparator, $thousandsSeparator);
                 } else {
                     $properties_values['values'] = $properties_values['values_text'];
                 }
@@ -3876,26 +3889,43 @@ class CategoriesController extends Sceleton {
         if ( true /*\common\helpers\Acl::rule([])*/) {
 ////////////////////////////////////
             $_platform_list = \common\classes\platform::getProductsAssignList();
+            $admin_available_platform_ids = \yii\helpers\ArrayHelper::map($_platform_list,'id','id');
+            $all_platform_ids = \yii\helpers\ArrayHelper::map(\common\models\Platforms::getPlatformsByType("non-virtual")->select('platform_id')->asArray()->all(),'platform_id','platform_id');
+
             $assign_platform = array();
             if (count($_platform_list) == 1) {
                 $assign_platform[] = (int) $_platform_list[0]['id'];
             } else {
                 $assign_platform = array_map('intval', Yii::$app->request->post('platform', array()));
             }
-            if (count($assign_platform) > 0) {
-                tep_db_query("DELETE FROM " . TABLE_PLATFORMS_PRODUCTS . " WHERE products_id='" . (int) $products_id . "' AND platform_id NOT IN('" . implode("','", $assign_platform) . "') ");
-            } else {
-                tep_db_query("DELETE FROM " . TABLE_PLATFORMS_PRODUCTS . " WHERE products_id='" . (int) $products_id . "'");
-            }
-            foreach ($assign_platform as $assign_platform_id) {
-                $_check = tep_db_fetch_array(tep_db_query("SELECT COUNT(*) AS c FROM " . TABLE_PLATFORMS_PRODUCTS . " WHERE products_id='" . (int) $products_id . "' AND platform_id='" . $assign_platform_id . "' "));
-                if ($_check['c'] == 0) {
-                    tep_db_perform(TABLE_PLATFORMS_PRODUCTS, array(
-                        'products_id' => (int) $products_id,
-                        'platform_id' => $assign_platform_id,
-                    ));
+
+            $dbAssignedPlatforms = \common\models\PlatformsProducts::find()
+                ->where(['products_id' => (int) $products_id])
+                ->indexBy('platform_id')
+                ->all();
+
+            foreach (array_keys($dbAssignedPlatforms) as $_platform_id){
+                if ( isset($all_platform_ids[$_platform_id]) && !isset($admin_available_platform_ids[$_platform_id]) ){
+                    unset($dbAssignedPlatforms[$_platform_id]);
                 }
             }
+
+            foreach ($assign_platform as $_platform_id){
+                if ( isset($dbAssignedPlatforms[$_platform_id]) ){
+                    unset($dbAssignedPlatforms[$_platform_id]);
+                }else {
+                    $newAssignToPlatform = new \common\models\PlatformsProducts([
+                        'products_id' => (int) $products_id,
+                        'platform_id' => (int) $_platform_id,
+                    ]);
+                    $newAssignToPlatform->loadDefaultValues();
+                    $newAssignToPlatform->save(false);
+                }
+            }
+            foreach ($dbAssignedPlatforms as $notUpdatedLinkModel){
+                $notUpdatedLinkModel->delete();
+            }
+
             $activate_parent_categories = Yii::$app->request->post('activate_parent_categories', array());
             $__assigned_platform_check = array_flip($assign_platform);
             foreach (\common\classes\platform::getCategoriesAssignList() as $__category_platform) {
@@ -6745,16 +6775,8 @@ class CategoriesController extends Sceleton {
 
         }
 
-        if (count($calculatedPrices)>0) {
-            if ( $ext = \common\helpers\Acl::checkExtensionAllowed('SupplierPriority', 'getInstance') ) {
-                $calculatedPrices = $ext::getInstance()->arrangeVariants($calculatedPrices);
-                foreach ($calculatedPrices as $_supplierId => $calculatedPrice) {
-                    if ($calculatedPrice['priority']) {
-                        $this->view->suppliers[$_supplierId]['priorityWeight'] = $calculatedPrice['priority']['weightValue'];
-                        $this->view->suppliers[$_supplierId]['is_preferred'] = $calculatedPrice['priority']['is_preferred'];
-                    }
-                }
-            }
+        foreach (\common\helpers\Hooks::getList('categories/supplier-price') as $filename) {
+            include($filename);
         }
 
         return $this->render('supplierprice');
@@ -6822,12 +6844,8 @@ class CategoriesController extends Sceleton {
 
         $selectedSupplierId = 0;
 
-        if (count($calculatedPrices)>0) {
-            if ( $ext = \common\helpers\Acl::checkExtensionAllowed('SupplierPriority', 'getInstance') ) {
-                $preferredSuppliers = $ext::getInstance()->getPreferredSupplierId($calculatedPrices);
-                reset($preferredSuppliers);
-                $selectedSupplierId = current($preferredSuppliers);
-            }
+        foreach (\common\helpers\Hooks::getList('categories/auto-supplier-price') as $filename) {
+            include($filename);
         }
 
         $response = [

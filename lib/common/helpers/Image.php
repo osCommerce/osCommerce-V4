@@ -81,7 +81,7 @@ class Image {
             return $newsize;
         }
 
-        $scale = @min($reqW / $size[0], $reqH / $size[1]);
+        $scale = @min(intval($reqW) / intval($size[0]), intval($reqH) / intval($size[1]));
         $newsize[0] = $size[0] * $scale;
         $newsize[1] = $size[1] * $scale;
         return $newsize;

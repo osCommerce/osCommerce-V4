@@ -350,7 +350,7 @@ class Information_managerController extends Sceleton  {
       foreach (\common\classes\platform::getList(false) as $frontend) {
           if ($pages_data[$frontend['id']]['visible']) {
               $seo_url = tep_db_fetch_array(tep_db_query("select seo_page_name from " . TABLE_INFORMATION . " where information_id = '" . $information_id . "' and languages_id = '" . (int)\common\helpers\Language::get_default_language_id() . "' and platform_id = '" . (int)$frontend['id'] . "'"));
-              if ($seo_url['seo_page_name']) {
+              if ($seo_url['seo_page_name'] ?? null) {
                   $preview_link[] = [
                       'link' => 'http://' . $frontend['platform_url'] . '/' . $seo_url['seo_page_name'],
                       'name' => $frontend['text']

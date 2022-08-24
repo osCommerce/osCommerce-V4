@@ -47,7 +47,7 @@ class OrdersController extends Sceleton
         $order = $manager->getOrderInstanceWithId('\common\classes\Order', $oID);
 
         $key = Yii::$app->request->get('key');
-        if ($_SESSION['customer_id'] != $order->customer['id'] && !Info::isAdmin() && $key != 'UNJfMzvmwE6EVbL6') {
+        if (\Yii::$app->session->get('customer_id') != $order->customer['id'] && !Info::isAdmin() && $key != 'UNJfMzvmwE6EVbL6') {
             return false;
         }
         
@@ -61,7 +61,7 @@ class OrdersController extends Sceleton
                 $theme = 'theme-1';
             }
         }
-        define('THEME_NAME', $theme);
+        defined('THEME_NAME') or define('THEME_NAME', $theme);
 
         return $this->render('order.tpl', [
             'page_name' => ($page_name ? $page_name : 'invoice'),

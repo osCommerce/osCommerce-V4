@@ -1,4 +1,4 @@
-<p>Current version {$version}</p>
+<p>Current version {$version}{if $updatesCount > 0} - <a href="javascript:void(0)" onclick="return showUpdateLog();">{$smarty.const.TEXT_SHOW_UPDATES}</a>{/if}</p>
 {foreach $updates as $item name=products}
     <p>{$item.filename}</p>
     {if $smarty.foreach.products.last}

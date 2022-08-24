@@ -258,42 +258,45 @@ class ModulesController extends Sceleton
         return json_encode(['installPPP' => $installPPP]);
     }
 
+    private function setAcl($set, $type)
+    {
+        switch ($set) {
+            case 'payment':
+                $this->acl[] = 'BOX_MODULES_PAYMENT';
+                if ($type == 'online') {
+                    $this->acl[] = 'BOX_MODULES_PAYMENT_ONLINE';
+                } else {
+                    $this->acl[] = 'BOX_MODULES_PAYMENT_OFFLINE';
+                }
+                break;
+            case 'shipping':
+                $this->acl[] = 'BOX_MODULES_SHIPPING';
+                if ($type == 'online') {
+                    $this->acl[] = 'BOX_MODULES_SHIPPING_ONLINE';
+                } else {
+                    $this->acl[] = 'BOX_MODULES_SHIPPING_OFFLINE';
+                }
+                break;
+            case 'label':
+                $this->acl[] = 'BOX_MODULES_LABEL';
+                break;
+            case 'ordertotal':
+                $this->acl[] = 'BOX_MODULES_ORDER_TOTAL';
+                break;
+             case 'extensions':
+                $this->acl[] = 'BOX_MODULES_EXTENSIONS';
+                break;
+            case 'dropshipping':
+                $this->acl[] = 'BOX_MODULES_DROPSHIPPING';
+                break;
+        }
+    }
+
     public function actionIndex()
         {
             $set = Yii::$app->request->get('set', 'payment');
-
-            switch ($set) {
-                case 'payment':
-                    $this->acl[] = 'BOX_MODULES_PAYMENT';
-                    $type = Yii::$app->request->get('type', 'online');
-                    if ($type == 'online') {
-                        $this->acl[] = 'BOX_MODULES_PAYMENT_ONLINE';
-                    } else {
-                        $this->acl[] = 'BOX_MODULES_PAYMENT_OFFLINE';
-                    }
-                    break;
-                case 'shipping':
-                    $this->acl[] = 'BOX_MODULES_SHIPPING';
-                    $type = Yii::$app->request->get('type', 'online');
-                    if ($type == 'online') {
-                        $this->acl[] = 'BOX_MODULES_SHIPPING_ONLINE';
-                    } else {
-                        $this->acl[] = 'BOX_MODULES_SHIPPING_OFFLINE';
-                    }
-                    break;
-                case 'label':
-                    $this->acl[] = 'BOX_MODULES_LABEL';
-                    break;
-                case 'ordertotal':
-                    $this->acl[] = 'BOX_MODULES_ORDER_TOTAL';
-                    break;
-                 case 'extensions':
-                    $this->acl[] = 'BOX_MODULES_EXTENSIONS';
-                    break;
-                case 'dropshipping':
-                    $this->acl[] = 'BOX_MODULES_DROPSHIPPING';
-                    break;
-            }
+            $type = Yii::$app->request->get('type', 'online');
+            $this->setAcl($set, $type);
 
             $this->rules($set);
 
@@ -892,8 +895,9 @@ class ModulesController extends Sceleton
 
     public function actionEdit($set, $module)
     {
+          $type = (method_exists($module, 'isOnline') && $module->isOnline())? 'online' : 'offline';
+          $this->setAcl($set, $type);
           $languages_id = \Yii::$app->settings->get('languages_id');
-          $this->selectedMenu        = array( 'modules', 'modules?set='.$set );
           $heading = $contents = array();
           $file = $module . '.php';
 
@@ -1036,7 +1040,17 @@ class ModulesController extends Sceleton
         
         $tKeys = $this->quickTranslationKeys($module, $set);
 
-        $this->navigation[] = array('link' => Yii::$app->urlManager->createUrl('modules/index'), 'title' => $mInfo->title);
+        $_platform = Yii::$app->request->get('platform_id', 0);
+        if ($_platform <= 0) {
+            $_platform = $this->selected_platform_id;
+        }
+        $pRow = \common\models\Platforms::find()->select(['platform_name'])
+                    ->where(['is_virtual' => 0, 'is_marketplace' => 0, 'platform_id' => $_platform])
+                    ->asArray()
+                    ->one();
+        $platformName = $pRow['platform_name'] ?? '';
+        
+        $this->navigation[] = array('link' => Yii::$app->urlManager->createUrl('modules/index'), 'title' => $mInfo->title . ' - ' . $platformName);
         $this->view->extra_params = $this->view->extra_params ?? null;
         return $this->render('edit.tpl', [
             'mainKey' => $keys,

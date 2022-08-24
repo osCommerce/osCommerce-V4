@@ -77,6 +77,14 @@ class SaveDescription
                             }
                         }
                         $pDescription->save(false);
+                    }else{
+                        // not posted - add empty record if not exist
+                        $pDescription = \common\models\ProductsDescription::find()->where(['products_id' => $products_id, 'language_id' => $language_id, 'platform_id' => $platform->platform_id, 'department_id' => $selectedDepartmentId ])->one();
+                        if (!is_object($pDescription)) {
+                            $pDescription = \common\models\ProductsDescription::create($products_id, $language_id, $platform->platform_id, $selectedDepartmentId);
+                            $pDescription->loadDefaultValues();
+                            $pDescription->save(false);
+                        }
                     }
                 }
             }

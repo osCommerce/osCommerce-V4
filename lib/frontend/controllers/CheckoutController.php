@@ -801,15 +801,11 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
         foreach (\common\helpers\Hooks::getList('checkout/process', '') as $filename) {
             include($filename);
         }
-        
+        // TODO: move
         if ($ext = \common\helpers\Acl::checkExtensionAllowed('DeliveryOptions', 'allowed')) {
             $ext::toOrder($order, $this->manager);
         }
         
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('WeddingRegistry', 'allowed')) {
-            $ext::processWrProducts($order);
-        }
-
         if (!$withoutPayment) {
             $this->manager->getTotalCollection()->apply_credit(); //ICW ADDED FOR CREDIT CLASS SYSTEM
         }
@@ -831,12 +827,8 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
 
         $this->manager->clearAfterProcess();
 
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('ReferFriend', 'allowed')) {
-            $ext::rf_after_order_placed($order->order_id);
-        }
-        
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('Affiliate', 'allowed')) {
-            $ext::CheckSales($order);
+        foreach (\common\helpers\Hooks::getList('checkout/after-process', '') as $filename) {
+            include($filename);
         }
 
         tep_redirect(tep_href_link(FILENAME_CHECKOUT_SUCCESS, 'order_id=' . $order->order_id, 'SSL'));

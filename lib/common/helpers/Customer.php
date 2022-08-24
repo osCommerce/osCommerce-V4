@@ -2,10 +2,10 @@
 /**
  * This file is part of osCommerce ecommerce platform.
  * osCommerce the ecommerce
- * 
+ *
  * @link https://www.oscommerce.com
  * @copyright Copyright (c) 2000-2022 osCommerce LTD
- * 
+ *
  * Released under the GNU General Public License
  * For the full copyright and license information, please view the LICENSE.TXT file that was distributed with this source code.
  */
@@ -64,10 +64,10 @@ class Customer {
 
         return (isset($cached[(int) $groups_id][$field])?$cached[(int) $groups_id][$field]:false);
     }
-    
+
     public static function get_additional_discount($groups_id, $customers_id = 0){
         $additionals = \common\models\Groups::find()->where('groups_id =:id', [':id' => $groups_id])->with('additionalDiscountsNCS')->one();
-        
+
         if ($additionals->additionalDiscountsNCS ?? null){
             if (\Yii::$app->user->isGuest && $customers_id){
                 $customer = \common\models\Customers::findOne($customers_id);
@@ -89,22 +89,22 @@ class Customer {
         }
         return 0;
     }
-    
+
     public static function get_additional_superdiscount($customers_id = 0, $cartTotal = 0){
         if (\Yii::$app->user->isGuest && $customers_id){
             $customer = \common\models\Customers::findOne($customers_id);
         } else {
             $customer = \Yii::$app->user->getIdentity();
-        }        
+        }
         if ($customer){
             $additionals = \common\models\Groups::find()->where('groups_id =:id', [':id' => $customer->groups_id])->with('additionalDiscountsCS')->one();
             if ($additionals->additionalDiscountsCS){
                 $OrderedAmount = $customer->fetchOrderTotalAmount(true);
                 $discounts = \yii\helpers\ArrayHelper::index($additionals->additionalDiscountsCS, 'groups_discounts_amount');
-                $currentDiscount = self::check_customer_groups($customer->groups_id, 'groups_discount');                
+                $currentDiscount = self::check_customer_groups($customer->groups_id, 'groups_discount');
                 if (is_array($discounts)){
                     krsort($discounts);
-                    foreach($discounts as $amount => $data ){                        
+                    foreach($discounts as $amount => $data ){
                         if ($OrderedAmount > $amount && $data['check_supersum'] && $cartTotal >= $additionals->superdiscount_summ ){
                             return max(0, $data['groups_discounts_value'] - (float)$currentDiscount);
                         }
@@ -145,7 +145,7 @@ class Customer {
     }
 
     public static function count_customer_orders($id = '', $check_session = true) {
-        
+
         if (is_numeric($id) == false) {
             if (!\Yii::$app->user->isGuest) {
                 $id = \Yii::$app->user->getId();
@@ -165,7 +165,7 @@ class Customer {
 
         return $orders_check['total'];
     }
-    
+
     public static function get_customers_group($customer_id) {
         if (CUSTOMERS_GROUPS_ENABLE == 'True') {
             $check = tep_db_query("select * from " . TABLE_CUSTOMERS . " where customers_id = '" . tep_db_input($customer_id) . "'");
@@ -175,13 +175,13 @@ class Customer {
             return 0;
         }
     }
-    
+
     public  static function get_address_book_data($customer_id = 0){
         global $languages_id;
         $addresses = array();
 
         $query = tep_db_query("
-            select 
+            select
                 a.address_book_id as id,
                 a.entry_gender as gender,
                 a.entry_company as company,
@@ -200,26 +200,26 @@ class Customer {
                 a.entry_telephone as telephone
             from
                 " . TABLE_ADDRESS_BOOK . " a left join " . TABLE_ZONES . " z on a.entry_zone_id = z.zone_id,
-                " . TABLE_COUNTRIES . " c 
+                " . TABLE_COUNTRIES . " c
             where
                 a.entry_country_id = c.countries_id and
-                c.language_id = '" . $languages_id . "' and 
+                c.language_id = '" . $languages_id . "' and
                 a.customers_id = '" . $customer_id . "'
         ");
         while ($item = tep_db_fetch_array($query)){
             $addresses[] = $item;
         }
-        
+
         return $addresses;
     }
-    
+
     public static function getCustomerData($id){
         if ( (int)$id==0 ) return null;
         $_details = tep_db_fetch_array(tep_db_query("select * from " . TABLE_CUSTOMERS . " where customers_id = '" . (int)$id . "'"));
         return $_details;
     }
-    
-    public static function trunk_customers() {        
+
+    public static function trunk_customers() {
         tep_db_query("TRUNCATE TABLE " . TABLE_CUSTOMERS);
         tep_db_query("TRUNCATE TABLE " . TABLE_CUSTOMERS_INFO);
         tep_db_query("TRUNCATE TABLE " . TABLE_CUSTOMERS_CREDIT_HISTORY);
@@ -249,12 +249,12 @@ class Customer {
             include($filename);
         }
     }
-    
+
     public static function get_customer_points($customer_id = 0){
         if ($customer_id){
             $bonuses = tep_db_fetch_array(tep_db_query("select customers_bonus_points from " . TABLE_CUSTOMERS . " where customers_id = '" . (int)$customer_id . "'"));
             return $bonuses['customers_bonus_points'];
-        }        
+        }
         return 0;
     }
 
@@ -280,11 +280,11 @@ class Customer {
 
     public static function deleteCustomer($customer_id = 0, $notify = true) {
         $removedId = self::findCreateAnonymousCustomer();
-        
+
         if ($removedId == $customer_id) {
             return false;
         }
-        
+
         $check_customer_query = tep_db_query("select customers_gender, customers_firstname, customers_lastname, customers_email_address from " . TABLE_CUSTOMERS . " where customers_id = '" . (int) $customer_id . "'");
         if (tep_db_num_rows($check_customer_query) == 0) {
             return false;
@@ -314,10 +314,10 @@ class Customer {
 
             \common\helpers\Mail::send($check_customer['customers_firstname'] . ' ' . $check_customer['customers_lastname'], $check_customer['customers_email_address'], $email_subject, $email_text, STORE_OWNER, STORE_OWNER_EMAIL_ADDRESS);
         }
-        
+
         // make data anonymous
         tep_db_query("update " . TABLE_REVIEWS . " set customers_id = null, customers_name='removed' where customers_id = '" . (int) $customer_id . "'");
-        
+
         if (!defined('ANONIMIZE_ORDERS_ON_CUSTOMER_DELETE') || ANONIMIZE_ORDERS_ON_CUSTOMER_DELETE == 'True') {
           self::anonimizeOrders($customer_id, $removedId);
         }
@@ -328,33 +328,29 @@ class Customer {
         tep_db_query("DELETE FROM " . TABLE_CUSTOMERS . " WHERE customers_id=" . (int)$customer_id);
         tep_db_query("DELETE FROM " . TABLE_CUSTOMERS_INFO . " WHERE customers_info_id=" . (int)$customer_id);
         tep_db_query("DELETE FROM " . TABLE_ADDRESS_BOOK . " WHERE customers_id=" . (int)$customer_id);
-        
+
         if ($mCart = \common\helpers\Acl::checkExtensionAllowed('MultiCart', 'allowed')){
             $mCart::removeAllBaskets($customer_id);
         }
         //tep_db_query("DELETE FROM  WHERE customers_id=" . (int)$customer_id);
         tep_db_query("DELETE FROM " . TABLE_WISHLIST . " WHERE customers_id=" . (int)$customer_id);
         tep_db_query("DELETE FROM " . TABLE_WISHLIST_ATTRIBUTES . " WHERE customers_id=" . (int)$customer_id);
-        
+
         tep_db_query("DELETE FROM " . TABLE_WHOS_ONLINE . " WHERE customer_id = '" . (int) $customer_id . "'");
         tep_db_query("DELETE FROM " . TABLE_CUSTOMERS_CREDIT_HISTORY . " WHERE customers_id=" . (int)$customer_id);
         tep_db_query("DELETE FROM customers_emails WHERE customers_id=" . (int)$customer_id);
         tep_db_query("DELETE FROM " . TABLE_CUSTOMERS_ERRORS . " WHERE customers_id=" . (int)$customer_id);
         tep_db_query("DELETE FROM " . TABLE_VIRTUAL_GIFT_CARD_BASKET . " WHERE customers_id=" . (int)$customer_id);
-        
+
         tep_db_query("DELETE FROM customers_phones WHERE customers_id=" . (int)$customer_id);
         tep_db_query("DELETE FROM customers_stripe_tokens WHERE customers_id=" . (int)$customer_id);
         tep_db_query("DELETE FROM " . TABLE_COUPON_GV_CUSTOMER . " WHERE customer_id=" . (int)$customer_id);
         tep_db_query("DELETE FROM coupon_refer_queue WHERE customers_id=" . (int)$customer_id);
-        
-        if ($wExt = \common\helpers\Acl::checkExtensionAllowed('WeddingRegistry', 'allowed')){
-            $wExt::removeCustomerWedding($customer_id);
-        }        
-        
+
         if ($ext = \common\helpers\Acl::checkExtensionAllowed('CustomerProducts', 'allowed')) {
             $ext::deleteCustomer($customer_id);
         }
-        
+
         /** @var \common\extensions\ExtraGroups\ExtraGroups $ext */
         if ($ext = \common\helpers\Acl::checkExtensionAllowed('ExtraGroups', 'allowed')) {
             $ext::deleteCustomer($customer_id);
@@ -380,7 +376,7 @@ class Customer {
 
         tep_db_query("DELETE FROM " . TABLE_PRODUCTS_NOTIFY . " WHERE products_notify_customers_id=" . (int)$customer_id);
         tep_db_query("DELETE FROM ep_holbi_soap_link_customers WHERE local_customers_id=" . (int)$customer_id);
-        
+
         tep_db_query("DELETE FROM gdpr_check WHERE customers_id=" . (int)$customer_id);
         tep_db_query("DELETE FROM guest_check WHERE customers_id=" . (int)$customer_id);
         tep_db_query("DELETE FROM regular_offers WHERE customers_id=" . (int)$customer_id);
@@ -397,7 +393,7 @@ class Customer {
               if (isset($schema->columns['customer_id'])) {
                  tep_db_query("DELETE FROM $table WHERE customer_id = " . (int)$customer_id);
               } elseif (isset($schema->columns['customers_id'])) {
-                 tep_db_query("DELETE FROM $table WHERE customer_id = " . (int)$customer_id);
+                 tep_db_query("DELETE FROM $table WHERE customers_id = " . (int)$customer_id);
               } else {
                   throw new \Exception('Unknown customer field for ' . $table);
               }
@@ -409,7 +405,7 @@ class Customer {
         }
 
     }
-    
+
     public static function hasOpenOrders($customer_id){
       $ret = false;
       if (defined('GDPR_CUSTOMER_DELETE_OPEN_ORDER_STATUSES') && !empty(trim(GDPR_CUSTOMER_DELETE_OPEN_ORDER_STATUSES))) {
@@ -420,7 +416,7 @@ class Customer {
       }
       return $ret;
     }
-    
+
     public static function anonimizeOrders($customer_id, $removedId){
       $sqlData = [
           'customers_id' => (int)$removedId,
@@ -491,11 +487,11 @@ class Customer {
         }
         return false;
     }
-    
+
     public static function check_need_login($group_id){
         return $group_id != 0 && self::check_customer_groups($group_id, 'new_approve')? false : true;
     }
-    
+
     public static function updateBasketId($customers_id, $oldBasketId, $newBasketId){
         if ($customers_id && $oldBasketId && $newBasketId){
             \common\models\CustomersErrors::updateAll(['basket_id' => $newBasketId], ['customers_id' => $customers_id, 'basket_id' => $oldBasketId ]);

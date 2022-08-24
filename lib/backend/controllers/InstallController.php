@@ -284,13 +284,20 @@ class InstallController extends Sceleton {
                 
         $selected_platform_id = $settings['platform_id'] ?? 0;
         
+        $platformNames = [];
         $toAssign = [];
         if ($selected_platform_id > 0) {
             $toAssign[] = $selected_platform_id;
+            $pRow = \common\models\Platforms::find()->select(['platform_name'])
+                    ->where(['is_virtual' => 0, 'is_marketplace' => 0, 'platform_id' => $selected_platform_id])
+                    ->asArray()
+                    ->one();
+            $platformNames[$selected_platform_id] = $pRow['platform_name'] ?? '';
         }
         if ($selected_platform_id < 0) {
-            foreach (\common\models\Platforms::find()->select(['platform_id'])->where(['is_virtual' => 0, 'is_marketplace' => 0])->asArray()->all() as $pRow) {
+            foreach (\common\models\Platforms::find()->select(['platform_id', 'platform_name'])->where(['is_virtual' => 0, 'is_marketplace' => 0])->asArray()->all() as $pRow) {
                 $toAssign[] = $pRow['platform_id'];
+                $platformNames[$pRow['platform_id']] = $pRow['platform_name'];
             }
         }
         
@@ -523,7 +530,7 @@ class InstallController extends Sceleton {
                                         $this->doInstallClass($class, $toId);
                                         $this->doRecalcModuleSort('add', $class, $distribution->type, $toId);
                                         if (!empty($setParam)) {
-                                            $this->deployLog[] =  'This ' . $distribution->type . ' installed automatically.' . 'Dont forget <a target="_blank" href="' . Yii::$app->urlManager->createUrl(['modules/edit', 'set' => $setParam, 'module' => (string)$distribution->class, 'platform_id' => $toId]) . '">check settings</a>.';
+                                            $this->deployLog[] =  'This ' . $distribution->type . ' installed automatically.' . 'Dont forget <a target="_blank" href="' . Yii::$app->urlManager->createUrl(['modules/edit', 'set' => $setParam, 'module' => (string)$distribution->class, 'platform_id' => $toId]) . '">check settings for platform '.$platformNames[$toId].'</a>.';
                                         }
                                     }
                                 }
@@ -1081,7 +1088,7 @@ class InstallController extends Sceleton {
                 ? constant('MESSAGE_KEY_DOMAIN_INFO')
                 : 'It is looks like your store is not connected to our <a target="_blank" href="%1$s">application shop</a>.<br>If your already registered with us, please insert \'storage\' key value. If you do not remember your \'storage\' key - please login at <a target="_blank" href="%1$s">application shop</a> with your credentials and copy it from there.<br>If you not registered with us, please visit <a target="_blank" href="%1$s">application shop</a>, register your account and put there your \'security store key\'.<br>You \'secutiry store key\' for this shop is [%2$s].<br>After registration insert the received \'storage\' key (<a href="javascript:void(0);" onclick="$(\'.create_item_popup\').click();">use button on this page</a>) value.'
             );
-            $messages[] = sprintf($message, $storageUrl . 'account', $secKeyGlobal);
+            $messages[] = sprintf($message, $storageUrl . 'account?return', $secKeyGlobal);
         } else {
             if ($request = curl_init()) {
                 curl_setopt($request, CURLOPT_URL, $storageUrl . 'app-api-server/');
@@ -1096,7 +1103,7 @@ class InstallController extends Sceleton {
                 curl_setopt($request, CURLOPT_HTTPHEADER, array(
                     'Content-Type: application/json',
                     'Accept: application/json',
-                    'Authorization: Bearer ' . $storageKey
+                    'Authorization: Bearer ' . $storageKey . ':' . $secKeyGlobal
                 ));
 
                 curl_exec($request);
@@ -1108,7 +1115,7 @@ class InstallController extends Sceleton {
                         ? constant('MESSAGE_KEY_DOMAIN_ERROR')
                         : 'Error: Your \'storage\' key is wrong. Please login at <a target="_blank" href="%1$s">application shop</a> with your credentials and copy it from there.'
                     );
-                    $messages[] = sprintf($message, $storageUrl . 'account');
+                    $messages[] = sprintf($message, $storageUrl . 'account?return');
                 }
             }
         }
@@ -1125,7 +1132,11 @@ class InstallController extends Sceleton {
         }
 
         if (!empty($storageUrl)) {
-            $response = file_get_contents($storageUrl . 'app-api-types.json');
+            $context = null;
+            if (\common\helpers\System::isDevelopment()) {
+                $context = stream_context_create(['ssl' => ['verify_peer' => false, 'verify_peer_name' => false, 'allow_self_signed' => true]]);
+            }
+            $response = file_get_contents($storageUrl . 'app-api-types.json', false, $context);
             $result = json_decode($response, true);
         }
         if (isset($result['types'])) {
@@ -1604,7 +1615,7 @@ class InstallController extends Sceleton {
                     }
                     
                     if ($canDeploy) {
-                        list($major, $minor, $patch) = explode('.', (string)$distribution->version);
+                        list($major, $minor, $patch) = array_pad( explode('.', (string)$distribution->version), 3, 0);
                         $archive_version = intval($major) + intval($minor)/100 + intval($patch)/10000;
                         $check = \common\models\Installer::find()
                                 ->select(['max(archive_version) as version'])
@@ -2139,10 +2150,41 @@ class InstallController extends Sceleton {
             }
         }
         
+        $updatesCount = \common\models\Installer::find()
+                ->where(['archive_type' => 'update'])
+                ->count();
         
         return $this->render('update-list', [
             'version' => PROJECT_VERSION_MAJOR. '.' . PROJECT_VERSION_MINOR . '.' . $version,
             'updates' => $updates,
+            'updatesCount' => $updatesCount,
+        ]);
+    }
+    
+    public function actionUpdateLog()
+    {
+        \common\helpers\Translation::init('admin/install');
+        $this->layout = false;
+        $responseLog = [];
+        foreach( \common\models\Installer::find()
+                ->select(['filename', 'date_added', 'archive_version', 'data'])
+                ->where(['archive_type' => 'update'])
+                ->orderBy('archive_version ASC')
+                ->asArray()
+                ->all() as $update) {
+            $responseLog[] = $update['date_added'] . " <font color='green'>Applied system update " . $update['filename'] . "</font><br>\n";
+            $data = unserialize($update['data']);
+            if (is_array($data)) {
+                foreach ($data as $item) {
+                    $responseLog[] = $update['date_added'] . ' ' . $item->action . ' ' . $item->type . ' ' . str_replace('|', DIRECTORY_SEPARATOR, $item->path);
+                }
+            }
+            
+        }
+        
+        
+        return $this->render('update-log', [
+            'responseLog' => $responseLog,
         ]);
     }
     
@@ -2157,7 +2199,6 @@ class InstallController extends Sceleton {
         @set_time_limit(0);
         @ignore_user_abort(true);
         
-        \common\helpers\Translation::init('admin/install');
         $this->layout = false;
         
         header('Content-Type: text/html');
@@ -2224,7 +2265,7 @@ class InstallController extends Sceleton {
                         ob_flush();
                         flush();
                         if ($status) {
-                            $this->sendEcho("I<font color='green'>nstallation finished.</font><br>\n");
+                            $this->sendEcho("<font color='green'>Installation finished.</font><br>\n");
                             $zip = new \ZipArchive();
                             if ($zip->open($path . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . $filename) === true) {
                                 $json = $zip->getFromName('distribution.json');

@@ -12,15 +12,15 @@
         {if $dropshipping}{$dropshipping->renderOrderProcessButton()}{/if}
         <div class="btn-right">
         <a href="{$app->urlManager->createUrl(['orders/order-history', 'orders_id' => $order->order_id, 'cid' => $customer_id])}" class="btn-link-create popup">{$smarty.const.TEXT_ORDER_LEGEND}</a><span class="print_but" onclick="printDiv()">Print</span>
+        {foreach \common\helpers\Hooks::getList('orders/process-order', 'btn-bar-right') as $file}
+            {include file=$file}
+        {/foreach}
         {if \common\helpers\Acl::rule(['ACL_ORDER', 'IMAGE_TRANSACTIONS'])}
         {*if $order->hasTransactions()*}
             <a href="{$app->urlManager->createUrl(['orders/payment-list', 'oID' => $order->order_id])}" class="btn popup btn-transaction" data-class="transactions-popup-box">{$smarty.const.IMAGE_TRANSACTIONS}</a>
         {*/if*}
         {/if}
         {if $fraudView}{$fraudView->head()}{/if}
-        {if \common\helpers\Acl::rule(['ACL_ORDER', 'IMAGE_JOURNAL']) && \common\helpers\Acl::checkExtensionAllowed('ReportSummary')}
-        <a href="{$app->urlManager->createUrl(['report-volo-batch-summary/popup', 'orders_id' => $order->order_id])}" class="btn popup" data-class="popupEditCat" id="button-report-volo-batch-summary-journal">{$smarty.const.IMAGE_JOURNAL}</a>
-        {/if}
         {if \common\helpers\Acl::rule(['ACL_ORDER', 'IMAGE_HOLD_ON'])}
         <a href="{$app->urlManager->createUrl(['orders/hold-on', 'orders_id' => $order->order_id])}" class="btn popup btn-hold-on{if $order->isHoldOn()} holdOnOrder{/if}"><i class="icon-pushpin"></i>&nbsp;{$smarty.const.IMAGE_HOLD_ON}</a>
         {/if}
@@ -162,13 +162,13 @@ $(document).ready(function() {
     });
 
     {if \common\helpers\Acl::checkExtensionAllowed('ReportSummary')}
-    $.post('{$app->urlManager->createUrl(['report-volo-batch-summary/journal-status', 'orders_id' => $order->order_id])}', { }, function(data, status) {
+    $.post('{$app->urlManager->createUrl(['report-summary/journal-status', 'orders_id' => $order->order_id])}', { }, function(data, status) {
         if (status == "success") {
             if (typeof(data.status) != 'undefined') {
                 if (data.status == 'error') {
-                    $('#button-report-volo-batch-summary-journal').css('color', 'red');
+                    $('#button-report-summary-journal').css('color', 'red');
                 } else if (data.status == 'ok') {
-                    $('#button-report-volo-batch-summary-journal').css('color', 'lightgreen');
+                    $('#button-report-summary-journal').css('color', 'lightgreen');
                 }
             }
         }

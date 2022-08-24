@@ -58,7 +58,7 @@
     </div>
     {if $manager->showSettings|default:null}
         <div class="order-content-disabled product-frontend disable">
-            {Html::a('', 'editor/settings', ['class' => 'popup order-settings', 'data-class' => 'order-settings-box', 'style'=>'display:none;'])}            
+            {Html::a('', ['editor/settings', 'back' => $app->controller->view->backOptionTrue], ['class' => 'popup order-settings', 'data-class' => 'order-settings-box', 'style'=>'display:none;'])}
         </div>
     {/if}
     {if $manager->showAdminOwnerNotification}

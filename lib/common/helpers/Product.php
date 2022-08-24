@@ -2344,8 +2344,8 @@ class Product {
                 ->all();
         } else {
             if (defined('TEMPORARY_STOCK_ENABLE') AND TEMPORARY_STOCK_ENABLE == 'true') {
-                if ($ext = \common\helpers\Acl::checkExtensionAllowed('ReportFreezeStock') && $ext::isFreezed()) {
-                    $return = getAllocatedTemporaryArray($uProductId, $asArray);
+                if (($ext = \common\helpers\Acl::checkExtensionAllowed('ReportFreezeStock')) && $ext::isFreezed()) {
+                    $return = $ext::getAllocatedTemporaryArray($uProductId, $asArray);
                 } else {
                     $return = \common\models\OrdersProductsTemporaryStock::find()
                         ->where(['normalize_id' => $uProductId])
@@ -2623,7 +2623,7 @@ class Product {
     {
         $return = false;
         $productRecord = self::getRecord($productRecord, false);
-        if (($extFreeze = \common\helpers\Acl::checkExtensionAllowed('ReportFreezeStock')) && $ext::isFreezeRecord($productRecord)) {
+        if (($extFreeze = \common\helpers\Acl::checkExtensionAllowed('ReportFreezeStock')) && $extFreeze::isFreezeProductRecord($productRecord)) {
             $productId = trim($productRecord->products_id);
 
             //warehouse_stock_quantity(tmp) = warehouse_stock_quantity(real) - allocated_stock_quantity(real)
@@ -3153,7 +3153,7 @@ class Product {
      */
     public static function getRecord($uProductId = 0, $doCache = false, $ignoreFreeze = false)
     {
-        if (($ext = \common\helpers\Acl::checkExtensionAllowed('ReportFreezeStock')) && $ext::isFreezed && !$ignoreFreeze) {
+        if (($ext = \common\helpers\Acl::checkExtensionAllowed('ReportFreezeStock')) && $ext::isFreezed() && !$ignoreFreeze) {
             if (!$ext::isFreezeProductRecord($uProductId)) {
                 $uProductId = \common\extensions\ReportFreezeStock\models\FreezeProducts::find()->andWhere(['products_id' => (int)$uProductId])
                     ->cache((!$doCache && defined('ALLOW_ANY_QUERY_CACHE') && ALLOW_ANY_QUERY_CACHE=='True')?self::PRODUCT_RECORD_CACHE : -1)

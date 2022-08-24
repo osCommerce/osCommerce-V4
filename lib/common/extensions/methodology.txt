@@ -118,6 +118,7 @@ In addition a list of available values page_name and page_area:
 'customers/customeredit', 'left-column'
 'customers/customeredit', 'right-column'
 'customers/customeractions', ''
+'customers/register', ''
 'customers/after-auth', ''
 'customers/after-trunk', ''  // helpers/customer.php
 'customers/after-delete', '' // helpers/customer.php
@@ -146,6 +147,8 @@ In addition a list of available values page_name and page_area:
 'categories/categoryedit', 'desc-tab'
 'categories/categoryedit', 'seo-tab'
 'categories/categoryedit', 'seo-tab-without-lang' // after languages tabs
+'categories/supplier-price', ''
+'categories/auto-supplier-price', ''
 'orders/process-order', ''
 'orders/process-order', 'totals-block'
 'orders/process-order', 'btn-bar-top'
@@ -156,12 +159,16 @@ In addition a list of available values page_name and page_area:
 'shopping-cart/reset', ''
 'shopping-cart/add-cart', ''
 'shopping-cart/remove', ''
+'module-payment/process-notification', ''
 'base-price/get-inventory-special-price', ''
 'base-price/get-product-special-price', ''
 'platforms/after-delete'
 'checkout/index', ''
+'checkout/process', ''
+'checkout/after-process', ''
 'init-factory/init', ''
 'cart-factory/work', ''
 'cart-factory/work/end', ''
+'console-tools/logs-cleanup', ''
 </HOOKS>
 

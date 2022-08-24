@@ -894,7 +894,7 @@ where dbs.box_id = '" . (int)$id . "'
         }
 
         self::addTranslations($arr['translation']);
-        self::addCss($arr['css'], $theme_name, $arr['widget_name']);
+        self::addCss($arr['css'] ?? null, $theme_name, $arr['widget_name']);
 
         if (is_array($arr['settings'] ?? null) && count($arr['settings']))
             foreach ($arr['settings'] as $item){
@@ -977,7 +977,7 @@ where dbs.box_id = '" . (int)$id . "'
         } elseif ($arr['widget_name'] == 'Tabs'){
 
             for($i = 1; $i < 11; $i++) {
-                if (is_array($arr['sub_' . $i]) && count($arr['sub_1']) > 0){
+                if (is_array($arr['sub_' . $i] ?? null) && count($arr['sub_1']) > 0){
                     foreach ($arr['sub_' . $i] as $item){
                         self::blocksTreeImport($item, $theme_name, 'block-' . $box_id . '-' . $i, '', $save, $newMicrotime);
                     }
@@ -1573,7 +1573,7 @@ where dbs.box_id = '" . (int)$id . "'
             }
 
             $useMobileTheme = ThemesSettings::findOne(['theme_name' => $item['theme_name'],
-                'setting_name' => 'use_mobile_theme'])->setting_value;
+                'setting_name' => 'use_mobile_theme'])->setting_value ?? null;
             $action = 'design/elements';
             if ($useMobileTheme) {
                 $action = 'design/choose-view';
@@ -1706,7 +1706,8 @@ where dbs.box_id = '" . (int)$id . "'
     }
 
 
-    public static function deleteBlock($id, $desktop = false) {
+    public static function deleteBlock($id, $desktop = false)
+    {
         $designBoxes = DesignBoxesTmp::find()
             ->where(['block_name' => 'block-' . $id])
             ->orWhere(['block_name' => 'block-' . $id . '-2'])
@@ -1733,5 +1734,36 @@ where dbs.box_id = '" . (int)$id . "'
                 self::deleteBlock($designBox['id']);
             }
         }
+    }
+
+    public static function getWidgetsInPlaceholder($placeholder, $themeName)
+    {
+        $designBoxes = DesignBoxesTmp::find()
+            ->where(['block_name' => $placeholder, 'theme_name' => $themeName])
+            ->asArray()->all();
+
+        $blocksArr = [];
+        foreach ($designBoxes as $designBox) {
+            $blocksTree = self::blocksTree($designBox['id']);
+            $blocksArr[] = $blocksTree;
+        }
+        return self::getWidgetsFromTree($blocksArr);
+    }
+
+    public static function getWidgetsFromTree($blocksTree, $fields = [])
+    {
+        foreach ($blocksTree as $block) {
+            if ($block['widget_name'] != 'BlockBox') {
+                $fields[] = $block;
+            } else {
+                for ($i = 1; $i < 6; $i++) {
+                    if (isset($block['sub_' . $i]) && is_array($block['sub_' . $i])) {
+                        $fields = self::getWidgetsFromTree($block['sub_' . $i], $fields);
+                    }
+                }
+            }
+        }
+
+        return $fields;
     }
 }

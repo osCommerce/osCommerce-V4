@@ -127,6 +127,7 @@ class EditorController extends Sceleton {
         } else {
             $this->view->newOrder = false;
         }
+        $this->view->backOptionTrue = \Yii::$app->request->get('back');
         if (isset($_GET['back'])) {
             $this->view->backOption = $_GET['back'];
         } else {
@@ -1187,11 +1188,13 @@ class EditorController extends Sceleton {
 
         $entry = new \stdClass();
         $this->loadPlatformDetails($entry, $platform_id, $currency, $language_id);
-
+        
         return $this->renderAjax('settings', [
                     'entry' => $entry,
                     'cl' => !$showFull,
-                    'currentCurrent' => $currentCurrent
+                    'currentCurrent' => $currentCurrent,
+                    'back' => \Yii::$app->request->get('back'),
+
         ]);
     }
 
@@ -1318,7 +1321,10 @@ class EditorController extends Sceleton {
             return $this->redirect(array_merge(['order-edit'], $qParams));
         }
 
-        $this->navigation[] = array('title' => (tep_not_null($oID) ? TEXT_ORDER_ID : TEXT_CREATE_NEW_OREDER) . (tep_not_null($oID) ? ' #' . $oID . ' <div class="head-or-time">' . TEXT_DATE_AND_TIME . ' ' . $order->date_purchased . '</div>' : '') . ($this->manager->has('platform_id')? ' <div class="order-platform">' . TABLE_HEADING_PLATFORM . ':' . \common\classes\platform::name($this->manager->get('platform_id')) . '</div>':''));
+        $titleID = empty($oID)? TEXT_CREATE_NEW_OREDER : TEXT_ORDER_ID . ' #' . $oID;
+        $titleDT = empty($order->date_purchased) ? '' : ' <div class="head-or-time">' . TEXT_DATE_AND_TIME . ' ' . $order->date_purchased . '</div>';
+        $titlePlatform = $this->manager->has('platform_id') ? ' <div class="order-platform">' .TABLE_HEADING_PLATFORM . ':' . \common\classes\platform::name($this->manager->get('platform_id')) . '</div>' : '';
+        $this->navigation[] = array('title' => $titleID . $titleDT . $titlePlatform);
         //set currency before
         if ($this->manager->has('cart')) {
             $_cart = $this->manager->get('cart');

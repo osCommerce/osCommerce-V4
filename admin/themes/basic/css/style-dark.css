@@ -2185,6 +2185,7 @@ span.in-stock::before, span.transit::before, span.pre-order::before, span.out-st
   padding-top: 10px;
 }
 .add-product, .edit-product{width:80%;}
+.popup-box.add-product, .popup-box.edit-product {width:80%;}
 .add-product .ui-autocomplete li {line-height: 40px;}
 .add-product .ui-autocomplete li +li {border-top:1px solid #363636;}
 .add-product .ui-autocomplete li .price{float:right;}

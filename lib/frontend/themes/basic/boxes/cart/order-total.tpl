@@ -1,5 +1,6 @@
 <div class="price-box order-total">
   {\frontend\design\Info::addBoxToCss('price-box')}
+  <span class="icon" style="display:none;"></span>
   {foreach $order_total_output as $order_total}
     <div class="price-row{if $order_total.code=='ot_total'} total{/if} {if isset($order_total.class)}{$order_total.class}{/if}{if isset($order_total.show_line) && $order_total.show_line} totals-line{/if} {$order_total.code}">
       <div class="title">
@@ -37,6 +38,10 @@
         });
         $('.ot_bonus_points .remove-discount').on('click', function(){
             $(window).trigger('removeBonusPoints')
-        })
+        });
+		$('.icon').off().on('click', function(){
+            $(this).toggleClass('active');
+            $('.price-row').toggleClass('active');
+        });
     })
 </script>

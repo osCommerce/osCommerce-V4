@@ -223,7 +223,7 @@ class ModuleExtensions extends Module {
             }
             \common\helpers\MenuHelper::removeAdminMenuItems(static::getAdminMenu());
 
-            \common\models\Hooks::deleteAll(['extension_name' => $this->code]);
+            \common\helpers\Hooks::unresisterHooks($this->code);
             return parent::remove($platform_id);
             \common\helpers\Modules::changeModule($this->code, 'remove');
 
