@@ -1,4 +1,5 @@
-{use class="yii\helpers\Html"}
+{use class="common\helpers\Html"}
+{use class="\Yii"}
 <div class="popupCategory popupSup">
 
     <form id="add_supplier_form" name="add_supplier" onSubmit="return addSupplier();">
@@ -64,11 +65,14 @@ function changeSupplier(theSelect) {
   }
 }
 
+var supplierOrderedIds = {\common\helpers\Suppliers::orderedIds()|json_encode};
 
-  var supplierOrderedIds = {\common\helpers\Suppliers::orderedIds()|json_encode};
-
-  function arrangeSupplierOrder(root)
+  function arrangeSupplierOrder(root = null)
   {
+      if (!isSuppliersSortedDef()) return;
+      if (root == null) {
+          $root = $('#suppliers-placeholder{str_replace(['{', '}'], ['-', '-'], $uprid)}');
+      }
       var sortString = ','+supplierOrderedIds.join(',')+',';
       /*var currentOrder = [];
       root.find('.js-supplier-product').each(function () {
@@ -95,9 +99,48 @@ function selectSupplier() {
                 $root.prepend(data);
                 {/if}
                 arrangeSupplierOrder($root);
-                
                 initBTSattus('#suppliers{str_replace(['{', '}'], ['-', '-'], $uprid)}-'+suppliers_id+' .supplier-product-status');
                 $root.trigger('supplier_added',[{ 'suppliers_id' : suppliers_id, 'uprid' : '{str_replace(['{', '}'], ['-', '-'], $uprid)}' }]);
+                $(document).trigger('suppliers:added', [{ 'suppliers_id': suppliers_id, 'uprid': '{str_replace(['{', '}'], ['-', '-'], $uprid)}'}]);
+//stock
+                $('.supplier-qty.js-input-nullable-save').not(".inited").on('click', function(e) {
+                    var $holder = $(this).parents('.input-group'); //parent();
+                    var val = $('input.supplier-qty', $holder).val();
+                    var defVal = $('.js-input-nullable-default-val', $holder).text();
+                    try {
+                        if (!isNaN(parseInt(val)) && parseInt(val) == parseInt(defVal)) {
+                            return true;
+                        }
+                    } catch ( e ) { }
+
+                    e.preventDefault();
+
+                    if (isNaN(parseInt(val)) ) {
+                        $('input.supplier-qty', $holder).css('color', 'var(--color-danger)');
+                        $('input.supplier-qty', $holder).once('keydown', function(){
+                            $(this).css('color', 'inherit')
+                        });
+                        return false;
+                    }
+
+                    $.post('{Yii::$app->urlManager->createUrl('categories/set-suppliers-stock')}', $('input', $holder).serialize(), function(data, status) {
+                        if (status == "success") {
+                            if (typeof(data.value) != 'undefined') {
+                                $('.js-input-nullable-default-val', $holder).text(data.value);
+                                $('input.supplier-qty', $holder).attr('placeholder', data.value);
+                                $('input.supplier-qty', $holder).val(data.value);
+                                $('input.js-input-nullable-close', $holder).click();
+                                $('.stock-info-reload a').click(); //.popup-content  for inventory
+                            }
+                        } else {
+                            alert("Request error.");
+                        }
+                    }, "json");
+
+        });
+        $('.supplier-qty.js-input-nullable-save').addClass("inited");
+      //supliers_stock eof
+      
                 cancelStatement();
             } else {
                 alert("Request error.");
@@ -118,7 +161,9 @@ function addSupplier() {
                 $root.prepend(data);
                 {/if}
                 arrangeSupplierOrder($root);
+                initBTSattus('#suppliers{str_replace(['{', '}'], ['-', '-'], $uprid)}-'+suppliers_id+' .supplier-product-status');
                 $root.trigger('supplier_added',[{ 'suppliers_id' : suppliers_id, 'uprid' : '{str_replace(['{', '}'], ['-', '-'], $uprid)}' }]);
+                $(document).trigger('suppliers:added', [{ 'suppliers_id': suppliers_id, 'uprid': '{str_replace(['{', '}'], ['-', '-'], $uprid)}'}]);
                 cancelStatement();
         } else {
             alert("Request error.");

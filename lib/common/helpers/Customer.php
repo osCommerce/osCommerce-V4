@@ -234,10 +234,7 @@ class Customer {
 
         $var_tables = [
             'regular_offers',
-            TABLE_CUSTOMERS_QUOTE, TABLE_CUSTOMERS_QUOTE_ATTRIBUTES,    // Quotations ext
-            TABLE_CUSTOMERS_SAMPLE, TABLE_CUSTOMERS_SAMPLE_ATTRIBUTES,  // Samples ext
             TABLE_CUSTOMERS_BASKET, TABLE_CUSTOMERS_BASKET_ATTRIBUTES,  // CustomerBasket ext
-            TABLE_CUSTOMERS_ADDITIONAL_FIELDS, // ext
         ];
         foreach($var_tables as $table) {
           if ( \Yii::$app->db->schema->getTableSchema($table) ) {
@@ -383,10 +380,7 @@ class Customer {
 
         // todo: AdminHooks
         $var_tables = [
-            TABLE_CUSTOMERS_QUOTE, TABLE_CUSTOMERS_QUOTE_ATTRIBUTES,    // Quotations ext
-            TABLE_CUSTOMERS_SAMPLE, TABLE_CUSTOMERS_SAMPLE_ATTRIBUTES,  // Samples ext
             TABLE_CUSTOMERS_BASKET, TABLE_CUSTOMERS_BASKET_ATTRIBUTES,  // CustomerBasket ext
-            TABLE_CUSTOMERS_ADDITIONAL_FIELDS, // ext
         ];
         foreach($var_tables as $table) {
           if ($schema = \Yii::$app->db->schema->getTableSchema($table) ) {

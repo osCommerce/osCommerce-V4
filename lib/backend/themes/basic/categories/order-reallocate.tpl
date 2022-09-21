@@ -36,15 +36,19 @@
             <tbody>
                 {foreach $orderProductData['allocatedArray'] as $warehouseId => $supplierArray}
                     {foreach $supplierArray as $supplierId => $locationArray}
-                        {foreach $locationArray as $locationId => $allocatedData}
+                        {foreach $locationArray as $locationId => $layersArray}
+                            {foreach $layersArray as $layersId => $batchArray}
+                                {foreach $batchArray as $batchId => $allocatedData}
                             <tr>
                                 <td><label class="control-label">{$allocatedData['warehouseName']}</label></td>
                                 <td><label class="control-label">{$allocatedData['supplierName']}</label></td>
                                 <td><label class="control-label">{$allocatedData['locationName']}</label></td>
-                                <td width="10%"><label class="control-label"><span class="location_awaiting_{$warehouseId}_{$supplierId}_{$locationId}" opid="{$orderProductId}">0</span></label></td>
-                                <td width="10%"><div class="amount">{Html::input('text', 'allocated_update['|cat:$orderProductId|cat:']['|cat:$warehouseId|cat:']['|cat:$supplierId|cat:']['|cat:$locationId|cat:']', $allocatedData['allocated_update'], ['class'=>'form-control form-control-small-qty', 'onchange' => 'allocatedUpdate('|cat:$orderProductId|cat:', '|cat:$warehouseId|cat:', '|cat:$supplierId|cat:', '|cat:$locationId|cat:');'])}</div></td>
-                                <td width="40%"><div id="allocated_update_{$orderProductId}_{$warehouseId}_{$supplierId}_{$locationId}"></div></td>
+                                <td width="10%"><label class="control-label"><span class="location_awaiting_{$warehouseId}_{$supplierId}_{$locationId}_{$layersId}_{$batchId}" opid="{$orderProductId}">0</span></label></td>
+                                <td width="10%"><div class="amount">{Html::input('text', 'allocated_update['|cat:$orderProductId|cat:']['|cat:$warehouseId|cat:']['|cat:$supplierId|cat:']['|cat:$locationId|cat:']['|cat:$layersId|cat:']['|cat:$batchId|cat:']', $allocatedData['allocated_update'], ['class'=>'form-control form-control-small-qty', 'onchange' => 'allocatedUpdate('|cat:$orderProductId|cat:', '|cat:$warehouseId|cat:', '|cat:$supplierId|cat:', '|cat:$locationId|cat:', '|cat:$layersId|cat:', '|cat:$batchId|cat:');'])}</div></td>
+                                <td width="40%"><div id="allocated_update_{$orderProductId}_{$warehouseId}_{$supplierId}_{$locationId}_{$layersId}_{$batchId}"></div></td>
                             </tr>
+                                {/foreach}
+                            {/foreach}
                         {/foreach}
                     {/foreach}
                 {/foreach}
@@ -70,35 +74,37 @@
     {foreach $orderProductArray as $orderProductId => $orderProductData}
         {foreach $orderProductData['allocatedArray'] as $warehouseId => $supplierArray}
             {foreach $supplierArray as $supplierId => $locationArray}
-                {foreach $locationArray as $locationId => $allocatedData}
-                    $('#allocated_update_{$orderProductId}_{$warehouseId}_{$supplierId}_{$locationId}').slider({
+                {foreach $locationArray as $locationId => $layersArray}
+                    {foreach $layersArray as $layersId => $batchArray}
+                        {foreach $batchArray as $batchId => $allocatedData}
+                    $('#allocated_update_{$orderProductId}_{$warehouseId}_{$supplierId}_{$locationId}_{$layersId}_{$batchId}').slider({
                         range: 'min',
                         value: {$allocatedData['allocated_update']},
                         min: 0,
                         max: {if $orderProductData['quantity'] < $allocatedData['allocated_update']}{$allocatedData['allocated_update']}{else}{$orderProductData['quantity']}{/if},
                         slide: function(event, ui) {
-                            if (isSet(orderProductArray, [{$orderProductId}, 'allocatedArray', {$warehouseId}, {$supplierId}, {$locationId}])
-                                && isSet(warehouseProductArray, [{$warehouseId}, {$supplierId}, {$locationId}])
+                            if (isSet(orderProductArray, [{$orderProductId}, 'allocatedArray', {$warehouseId}, {$supplierId}, {$locationId}, {$layersId}, {$batchId}])
+                                && isSet(warehouseProductArray, [{$warehouseId}, {$supplierId}, {$locationId}, {$layersId}, {$batchId}])
                             ) {
                                 let value = ui.value;
                                 if (value < 0) {
                                     value = 0;
                                 }
                                 let orderProductData = orderProductArray[{$orderProductId}];
-                                let orderProductAllocatedData = orderProductData['allocatedArray'][{$warehouseId}][{$supplierId}][{$locationId}];
+                                let orderProductAllocatedData = orderProductData['allocatedArray'][{$warehouseId}][{$supplierId}][{$locationId}][{$layersId}][{$batchId}];
                                 let valueDelta = (parseInt(orderProductAllocatedData['allocated_update']) - value);
                                 let checkProductAwaiting = (getProductAwaiting({$orderProductId}) + valueDelta);
                                 if ((checkProductAwaiting < 0) && (valueDelta < 0)) {
                                     return false;
                                 }
-                                let warehouseProductAllocatedData = warehouseProductArray[{$warehouseId}][{$supplierId}][{$locationId}];
+                                let warehouseProductAllocatedData = warehouseProductArray[{$warehouseId}][{$supplierId}][{$locationId}][{$layersId}][{$batchId}];
                                 let checkWarehouseProductAwaiting = ((warehouseProductAllocatedData['quantity'] - warehouseProductAllocatedData['allocated_update']) + valueDelta);
                                 if ((checkWarehouseProductAwaiting < 0) && (value > orderProductAllocatedData['allocated_real']) && (valueDelta < 0)) {
                                     return false;
                                 }
                                 warehouseProductAllocatedData['allocated_update'] -= valueDelta;
                                 orderProductAllocatedData['allocated_update'] = value;
-                                $('input[name="allocated_update[{$orderProductId}][{$warehouseId}][{$supplierId}][{$locationId}]"]').val(value);
+                                $('input[name="allocated_update[{$orderProductId}][{$warehouseId}][{$supplierId}][{$locationId}][{$layersId}][{$batchId}]"]').val(value);
                                 $(this).slider('value', value);
                                 calculateAwaiting();
                                 return true;
@@ -106,6 +112,8 @@
                             return false;
                         }
                     });
+                        {/foreach}
+                    {/foreach}
                 {/foreach}
             {/foreach}
         {/foreach}
@@ -121,26 +129,34 @@
         });
         $.each(warehouseProductArray, function(warehouseId, warehouseArray) {
             $.each(warehouseArray, function(supplierId, locationArray) {
-                $.each(locationArray, function(locationId, allocatedData) {
+                $.each(locationArray, function(locationId, layersArray) {
+                    $.each(layersArray, function(layersId, batchArray) {
+                        $.each(batchArray, function(batchId, allocatedData) {
                     let awaiting = (parseInt(allocatedData['quantity']) - parseInt(allocatedData['allocated_update']));
-                    $('span.location_awaiting_' + warehouseId + '_' + supplierId + '_' + locationId).html(awaiting);
-                    $('span.location_awaiting_' + warehouseId + '_' + supplierId + '_' + locationId).css('color', '');
+                    $('span.location_awaiting_' + warehouseId + '_' + supplierId + '_' + locationId + '_' + layersId + '_' + batchId).html(awaiting);
+                    $('span.location_awaiting_' + warehouseId + '_' + supplierId + '_' + locationId + '_' + layersId + '_' + batchId).css('color', '');
                     if (awaiting < 0) {
-                        $('span.location_awaiting_' + warehouseId + '_' + supplierId + '_' + locationId).css('color', 'red');
+                        $('span.location_awaiting_' + warehouseId + '_' + supplierId + '_' + locationId + '_' + layersId + '_' + batchId).css('color', 'red');
                     }
+                        });
+                    });
                 });
             });
         });
         $.each(orderProductArray, function(orderProductId, orderProductData) {
             $.each(orderProductData['allocatedArray'], function(warehouseId, warehouseArray) {
                 $.each(warehouseArray, function(supplierId, locationArray) {
-                    $.each(locationArray, function(locationId, allocatedData) {
+                    $.each(locationArray, function(locationId, layersArray) {
+                        $.each(layersArray, function(layersId, batchArray) {
+                            $.each(batchArray, function(batchId, allocatedData) {
                         if (allocatedData['allocated_update'] == 0) {
-                            $('span.location_awaiting_' + warehouseId + '_' + supplierId + '_' + locationId + '[opid="' + orderProductId + '"]').css('color', '');
+                            $('span.location_awaiting_' + warehouseId + '_' + supplierId + '_' + locationId + '_' + layersId + '_' + batchId + '[opid="' + orderProductId + '"]').css('color', '');
                         }
-                        $('input[name="allocated_update[' + orderProductId + '][' + warehouseId + '][' + supplierId + '][' + locationId + ']"]').css(
-                            'color', $('span.location_awaiting_' + warehouseId + '_' + supplierId + '_' + locationId + '[opid="' + orderProductId + '"]').css('color')
+                        $('input[name="allocated_update[' + orderProductId + '][' + warehouseId + '][' + supplierId + '][' + locationId + '][' + layersId + '][' + batchId + ']"]').css(
+                            'color', $('span.location_awaiting_' + warehouseId + '_' + supplierId + '_' + locationId + '_' + layersId + '_' + batchId + '[opid="' + orderProductId + '"]').css('color')
                         );
+                            });
+                        });
                     });
                 });
             });
@@ -154,8 +170,12 @@
             let allocated = 0;
             $.each(orderProductArray[orderProductId]['allocatedArray'], function(warehouseId, supplierArray) {
                 $.each(supplierArray, function(supplierId, locationArray) {
-                    $.each(locationArray, function(locationId, allocatedData) {
+                    $.each(locationArray, function(locationId, layersArray) {
+                        $.each(layersArray, function(layersId, batchArray) {
+                            $.each(batchArray, function(batchId, allocatedData) {
                         allocated += parseInt(allocatedData['allocated_update']);
+                            });
+                        });
                     });
                 });
             });
@@ -164,18 +184,20 @@
         }
         return awaiting;
     }
-    function allocatedUpdate(orderProductId, warehouseId, supplierId, locationId) {
+    function allocatedUpdate(orderProductId, warehouseId, supplierId, locationId, layersId, batchId) {
         orderProductId = (orderProductId || 0);
         warehouseId = (warehouseId || 0);
         supplierId = (supplierId || 0);
         locationId = (locationId || 0);
-        $.each($('input[name="allocated_update[' + orderProductId + '][' + warehouseId + '][' + supplierId + '][' + locationId + ']"]'), function() {
+        layersId = (layersId || 0);
+        batchId = (batchId || 0);
+        $.each($('input[name="allocated_update[' + orderProductId + '][' + warehouseId + '][' + supplierId + '][' + locationId + '][' + layersId + '][' + batchId + ']"]'), function() {
             let value = $(this).val();
             $(this).val(0);
-            if (isSet(orderProductArray, [orderProductId, 'allocatedArray', warehouseId, supplierId, locationId])) {
-                $(this).val(orderProductArray[orderProductId]['allocatedArray'][warehouseId][supplierId][locationId]['allocated_update']);
+            if (isSet(orderProductArray, [orderProductId, 'allocatedArray', warehouseId, supplierId, locationId, layersId, batchId])) {
+                $(this).val(orderProductArray[orderProductId]['allocatedArray'][warehouseId][supplierId][locationId][layersId][batchId]['allocated_update']);
             }
-            let slider = $('#allocated_update_' + orderProductId + '_' + warehouseId + '_' + supplierId + '_' + locationId);
+            let slider = $('#allocated_update_' + orderProductId + '_' + warehouseId + '_' + supplierId + '_' + locationId + '_' + layersId + '_' + batchId);
             if (slider.length > 0) {
                 slider.slider('option', 'slide').call(slider, null, { value: value });
             }
@@ -192,17 +214,21 @@
         });
         $.each(warehouseProductArray, function(warehouseId, warehouseArray) {
             $.each(warehouseArray, function(supplierId, locationArray) {
-                $.each(locationArray, function(locationId, warehouseProductRecord) {
+                $.each(locationArray, function(locationId, layersArray) {
+                    $.each(layersArray, function(layersId, batchArray) {
+                        $.each(batchArray, function(batchId, warehouseProductRecord) {
                     if (warehouseProductRecord['allocated_update'] > 0 && warehouseProductRecord['quantity'] < warehouseProductRecord['allocated_update']) {
                         $.each(orderProductArray, function(orderProductId, orderProductData) {
-                            if (isSet(orderProductData, ['allocatedArray', warehouseId, supplierId, locationId])) {
-                                if (orderProductData['allocatedArray'][warehouseId][supplierId][locationId]['allocated_update'] > orderProductData['allocatedArray'][warehouseId][supplierId][locationId]['allocated_real']) {
+                            if (isSet(orderProductData, ['allocatedArray', warehouseId, supplierId, locationId, layersId, batchId])) {
+                                if (orderProductData['allocatedArray'][warehouseId][supplierId][locationId][layersId][batchId]['allocated_update'] > orderProductData['allocatedArray'][warehouseId][supplierId][locationId][layersId][batchId]['allocated_real']) {
                                     isError = true;
                                     return false;
                                 }
                             }
                         })
                     }
+                        });
+                    });
                 });
             });
         });
@@ -218,11 +244,25 @@
                 if (response.status == 'ok') {
                     $('#product_reallocate_popup span.btn-cancel').click();
                 }
+                if (typeof(response.deficit) != 'undefined') {
+                    $('#deficit_quantity_info').html(response.deficit);
+                }
                 if (typeof(response.allocated) != 'undefined') {
                     $('#allocated_quantity_info').html(response.allocated);
                 }
+                if (typeof(response.allocated_temporary) != 'undefined') {
+                    $('#allocated_temporary_quantity_info').html(response.allocated_temporary);
+                }
                 if (typeof(response.available) != 'undefined') {
-                    $('#products_quantity_info').html(response.available);
+                    if (response.available > 0) {
+                        $('#products_quantity_info').html(response.available);
+                        $('#overallocated_quantity_info_holder').hide();
+                        $('#overallocated_quantity_info').html(0);
+                    } else {
+                        $('#products_quantity_info').html(0);
+                        $('#overallocated_quantity_info').html(Math.abs(response.available));
+                        $('#overallocated_quantity_info_holder').show();
+                    }
                 }
 {$freezeExt = \common\helpers\Acl::checkExtensionAllowed('ReportFreezeStock')}
 {if $freezeExt && $freezeExt::isFreezed()}

@@ -11,6 +11,8 @@
 
 namespace Imagine\Gmagick;
 
+use Imagine\Driver\Info;
+use Imagine\Driver\InfoProvider;
 use Imagine\Exception\InvalidArgumentException;
 use Imagine\Exception\NotSupportedException;
 use Imagine\Exception\OutOfBoundsException;
@@ -30,7 +32,7 @@ use Imagine\Image\ProfileInterface;
 /**
  * Image implementation using the Gmagick PHP extension.
  */
-final class Image extends AbstractImage
+final class Image extends AbstractImage implements InfoProvider
 {
     /**
      * @var \Gmagick
@@ -90,6 +92,17 @@ final class Image extends AbstractImage
         if ($this->layers !== null) {
             $this->layers = $this->getClassFactory()->createLayers(ClassFactoryInterface::HANDLE_GMAGICK, $this, $this->layers->key());
         }
+    }
+
+    /**
+     * {@inheritdoc}
+     *
+     * @see \Imagine\Driver\InfoProvider::getDriverInfo()
+     * @since 1.3.0
+     */
+    public static function getDriverInfo($required = true)
+    {
+        return DriverInfo::get($required);
     }
 
     /**
@@ -222,6 +235,9 @@ final class Image extends AbstractImage
      */
     public function resize(BoxInterface $size, $filter = ImageInterface::FILTER_UNDEFINED)
     {
+        if (!in_array($filter, static::getAllFilterValues(), true)) {
+            throw new InvalidArgumentException('Unsupported filter type');
+        }
         static $supportedFilters = array(
             ImageInterface::FILTER_UNDEFINED => \Gmagick::FILTER_UNDEFINED,
             ImageInterface::FILTER_BESSEL => \Gmagick::FILTER_BESSEL,
@@ -242,7 +258,7 @@ final class Image extends AbstractImage
         );
 
         if (!array_key_exists($filter, $supportedFilters)) {
-            throw new InvalidArgumentException('Unsupported filter type');
+            $filter = ImageInterface::FILTER_UNDEFINED;
         }
 
         try {
@@ -376,15 +392,15 @@ final class Image extends AbstractImage
      */
     public function save($path = null, array $options = array())
     {
-        $path = null === $path ? $this->gmagick->getImageFilename() : $path;
+        $path = $path === null ? $this->gmagick->getImageFilename() : $path;
 
-        if ('' === trim($path)) {
+        if (trim($path) === '') {
             throw new RuntimeException('You can omit save path only if image has been open from a file');
         }
 
         try {
             $this->prepareOutput($options, $path);
-            $allFrames = !isset($options['animated']) || false === $options['animated'];
+            $allFrames = !isset($options['animated']) || $options['animated'] === false;
             $this->gmagick->writeimage($path, $allFrames);
         } catch (\GmagickException $e) {
             throw new RuntimeException('Save operation failed', $e->getCode(), $e);
@@ -429,7 +445,7 @@ final class Image extends AbstractImage
      */
     private function prepareOutput(array $options, $path = null)
     {
-        if (isset($options['animated']) && true === $options['animated']) {
+        if (isset($options['animated']) && $options['animated'] === true) {
             $format = isset($options['format']) ? $options['format'] : 'gif';
             $delay = isset($options['animated.delay']) ? $options['animated.delay'] : null;
             $loops = isset($options['animated.loops']) ? $options['animated.loops'] : 0;
@@ -726,13 +742,13 @@ final class Image extends AbstractImage
      */
     public function usePalette(PaletteInterface $palette)
     {
+        if ($this->palette->name() === $palette->name()) {
+            return $this;
+        }
+
         $colorspaceMapping = self::getColorspaceMapping();
         if (!isset($colorspaceMapping[$palette->name()])) {
             throw new InvalidArgumentException(sprintf('The palette %s is not supported by Gmagick driver', $palette->name()));
-        }
-
-        if ($this->palette->name() === $palette->name()) {
-            return $this;
         }
 
         try {
@@ -776,7 +792,7 @@ final class Image extends AbstractImage
         try {
             $this->gmagick->profileimage('ICM', $profile->data());
         } catch (\GmagickException $e) {
-            if (false !== strpos($e->getMessage(), 'LCMS encoding not enabled')) {
+            if (strpos($e->getMessage(), 'LCMS encoding not enabled') !== false) {
                 throw new RuntimeException(sprintf('Unable to add profile %s to image, be sue to compile graphicsmagick with `--with-lcms2` option', $profile->name()), $e->getCode(), $e);
             }
 
@@ -791,9 +807,7 @@ final class Image extends AbstractImage
      */
     private function flatten()
     {
-        /*
-         * @see http://pecl.php.net/bugs/bug.php?id=22435
-         */
+        // @see http://pecl.php.net/bugs/bug.php?id=22435
         if (method_exists($this->gmagick, 'flattenImages')) {
             try {
                 $this->gmagick = $this->gmagick->flattenImages();
@@ -815,7 +829,7 @@ final class Image extends AbstractImage
     private function getColor(ColorInterface $color)
     {
         if (!$color->isOpaque()) {
-            throw new InvalidArgumentException('Gmagick doesn\'t support transparency');
+            static::getDriverInfo()->requireFeature(Info::FEATURE_TRANSPARENCY);
         }
 
         return new \GmagickPixel((string) $color);

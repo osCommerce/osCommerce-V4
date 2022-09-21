@@ -192,13 +192,20 @@
 
     <script type="text/javascript">
         tl(function(){
-            $('.btn-to-checkout').each(function(){
+            {if $allow_checkout == false}
+                $('.cart-express-buttons').hide();
+            {else}
+                $('.cart-express-buttons').show();
+            {/if}
+            $('.btn-to-checkout, .cart-checkout-buttons').each(function(){
                 {if $allow_checkout == false}
                 $(this).css({
                     'opacity': '0.5',
                     'cursor': 'default'
                 });
-                $(this).attr('data-href', $(this).attr('href')).removeAttr('href')
+                if ($(this).attr('href')) {
+                    $(this).attr('data-href', $(this).attr('href')).removeAttr('href')
+                }
                 {else}
                 $(this).css({
                     'opacity': '',

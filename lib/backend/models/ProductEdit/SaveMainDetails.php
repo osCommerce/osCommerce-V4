@@ -124,54 +124,14 @@ class SaveMainDetails
         // product designer template
         $sql_data_array['product_designer_template_id'] = Yii::$app->request->post('product_designer_template_id');
 
-        $stock_control = (int)Yii::$app->request->post('stock_control');
-        if (($sql_data_array['manual_stock_unlimited'] > 0) OR ((int)Yii::$app->request->post('is_bundle', 0) > 0)) {
-            $stock_control = 0;
+        $this->product->setAttributes(['stock_control' => 0], false);
+        if ($ext = \common\helpers\Acl::checkExtensionAllowed('StockControl', 'allowed')) {
+            $ext::saveProduct($this->product);
         }
-        $sql_data_array['stock_control'] = $stock_control;
-        //--- Stock control Start
-        switch ($stock_control) {
-            case 0:
-                break;
-            case 1:
-                $platformStock = \common\models\Platforms::find()->where(['status' => 1])->orderBy("sort_order")->all();
-                foreach($platformStock as $platform){
-                    $current_quantity = (int) Yii::$app->request->post('platform_to_qty_' . (int)$platform->platform_id);
-                    $object = \common\models\PlatformStockControl::findOne(['products_id' => $products_id, 'platform_id' => $platform->platform_id]);
-                    if (is_object($object)) {
-                        if ($current_quantity != $object->current_quantity) {
-                            $object->current_quantity = $current_quantity;
-                            $object->manual_quantity = $current_quantity;
-                            $object->save();
-                        }
-                    } else {
-                        $object = new \common\models\PlatformStockControl();
-                        $object->products_id = (int) $products_id;
-                        $object->platform_id = (int) $platform->platform_id;
-                        $object->current_quantity = $current_quantity;
-                        $object->manual_quantity = $current_quantity;
-                        $object->save();
-                    }
-                }
-                break;
-            case 2:
-                \common\models\WarehouseStockControl::deleteAll(['products_id' => $products_id]);
-                $platformStock = \common\models\Platforms::find()->where(['status' => 1])->orderBy("sort_order")->all();
-                foreach($platformStock as $platform){
-                    $object = new \common\models\WarehouseStockControl();
-                    $object->products_id = (int) $products_id;
-                    $object->platform_id = (int) $platform->platform_id;
-                    $object->warehouse_id = (int) Yii::$app->request->post('platform_to_warehouse_' . (int)$platform->platform_id);
-                    $object->save();
-                }
-                break;
-            default:
-                break;
-        }
-        //--- Stock control End
+
         $sql_data_array['stock_reorder_level'] = (int)Yii::$app->request->post('stock_reorder_level', -1);
         $sql_data_array['stock_reorder_quantity'] = (int)Yii::$app->request->post('stock_reorder_quantity', -1);
-        
+
         $sql_data_array['stock_limit'] = (int)Yii::$app->request->post('stock_limit', -1);
 
         $sql_data_array['jsonld_product_type'] = (int)Yii::$app->request->post('jsonld_product_type', 0);

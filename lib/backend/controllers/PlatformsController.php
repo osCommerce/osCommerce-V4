@@ -349,8 +349,15 @@ class PlatformsController extends Sceleton {
             $pInfo->platform_settings = new PlatformsSettings();
             $pInfo->platform_settings->use_owner_descriptions = \common\classes\platform::defaultId();
         }
-        $nvPlatforms = \yii\helpers\ArrayHelper::map(Platforms::getPlatformsByType('non-virtual')->andWhere(['and', ['status' => 1], ['<>', 'platform_id', (int)$pInfo->platform_id]])
-                    ->orderBy("is_marketplace, platform_name")->asArray()->all(), 'platform_id', 'platform_name');
+//        $nvPlatforms = \yii\helpers\ArrayHelper::map(Platforms::getPlatformsByType('non-virtual')->andWhere(['and', ['status' => 1], ['<>', 'platform_id', (int)$pInfo->platform_id]])
+//                    ->orderBy("is_marketplace, platform_name")->asArray()->all(), 'platform_id', 'platform_name');
+        $nvPlatforms = Platforms::getPlatformsByType('non-virtual')
+            ->alias('pl')
+            ->andWhere(['and', ['status' => 1], ['<>', 'pl.platform_id', (int)$pInfo->platform_id]])
+            ->innerJoin(PlatformsSettings::tableName() . ' ps', 'pl.platform_id=ps.platform_id and ps.use_own_descriptions=1') //allow only platforms with own description
+            ->select('platform_name, pl.platform_id')
+            ->indexBy('platform_id')
+                    ->orderBy("is_marketplace, platform_name")->asArray()->column();
 
         $warehouses = [];
         $checkQuery = tep_db_query("select w.warehouse_id, w.warehouse_name, ifnull(w2p.status, w.status) as status from " . TABLE_WAREHOUSES . " w left join " . TABLE_WAREHOUSES_TO_PLATFORMS . " w2p on w.warehouse_id = w2p.warehouse_id and w2p.platform_id = '" . (int)$pInfo->platform_id . "' where 1 order by ifnull(w2p.sort_order, w.sort_order), w.warehouse_name");

@@ -90,7 +90,7 @@ class ViewPriceData
 
             $tmp = [
                 'groups_id' => 0,
-                'currencies_id' => $view->defaultCurrency,
+                'currencies_id' => $view->defaultCurrency ?? \common\helpers\Currencies::getDefaultCurrencyId(),
                 'products_group_price' => $pInfo->products_price,
                 'products_group_price_gross' => round($pInfo->products_price + round($pInfo->products_price*$_tax, 6), $_roundTo),
                 'products_group_special_price' => (isset($_def_sale['specials_new_products_price']) && $_def_sale['status'] ? $_def_sale['specials_new_products_price']:0),
@@ -125,7 +125,7 @@ class ViewPriceData
             }
             $tmp = [
                 'groups_id' => 0,
-                'currencies_id' => $view->defaultCurrency,
+                'currencies_id' => $view->defaultCurrency ?? \common\helpers\Currencies::getDefaultCurrencyId(),
                 'tax_rate' => (double)$_tax,
                 'round_to' => (int)$_roundTo,
                 'products_group_price_pack_unit' => $pInfo->products_price_pack_unit,
@@ -146,7 +146,7 @@ class ViewPriceData
             }
             $tmp = [
                 'groups_id' => 0,
-                'currencies_id' => $view->defaultCurrency,
+                'currencies_id' => $view->defaultCurrency ?? \common\helpers\Currencies::getDefaultCurrencyId(),
                 'tax_rate' => (double)$_tax,
                 'round_to' => (int)$_roundTo,
                 'products_group_price_packaging' => $pInfo->products_price_packaging,

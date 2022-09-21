@@ -10,11 +10,20 @@
 {if $editProductBundleSwitcher || $infoBreadCrumb || $infoSubProducts}
   <div class="row">
 {/if}
+{if \common\helpers\Acl::checkExtensionAllowed('ReportChangesHistory')}
 <div class="btn-right">
 <a href="{Yii::$app->urlManager->createUrl(['logger/popup', 'type' => 'Product', 'id' => $pInfo->products_id])}" class="btn-link-create popup">{$smarty.const.TEXT_HISTORY}</a>
 </div>
+{/if}
 {if $editProductBundleSwitcher }
-    <div class="btn-box-inv-price btn-is-bundle" style="float: right;"><span data-value="1">{$smarty.const.TEXT_BUNDLE_PRODUCT}</span><span data-value="0">{$smarty.const.TEXT_REGULAR_PRODUCT}</span></div>
+    <div class="btn-box-inv-price btn-is-bundle" style="float: right;">
+        <span data-value="1" class="btn">
+            {sprintf($smarty.const.TEXT_THIS_IS_SWITCH_TO, $smarty.const.TEXT_REGULAR_PRODUCT, $smarty.const.TEXT_BUNDLE_PRODUCT)}
+        </span>
+        <span data-value="0" class="btn">
+            {sprintf($smarty.const.TEXT_THIS_IS_SWITCH_TO, $smarty.const.TEXT_BUNDLE_PRODUCT, $smarty.const.TEXT_REGULAR_PRODUCT)}
+        </span>
+    </div>
 {/if}
 {if $productGroupVariants}
     <div class="btn-box-inv-price" style="float: right;margin:-19px 10px 12px"><label>{sprintf($smarty.const.TEXT_PRODUCT_IN_PRODUCTS_GROUP,$productGroupName)}:</label> {Html::dropDownList('',$productGroupVariants['selected'], $productGroupVariants['items'], ['class'=>'form-control js-switch-product-in-group'])}</div>
@@ -29,7 +38,7 @@
   </div>
 {/if}
 
-<link href="{$app->view->theme->baseUrl}/css/product-edit.css" rel="stylesheet" type="text/css" />
+<link href="{$app->view->theme->baseUrl}/css/product-edit.css?6" rel="stylesheet" type="text/css" />
 
 <form action="{Yii::$app->urlManager->createUrl('categories/product-submit')}" method="post" enctype="multipart/form-data" id="save_product_form" class="{if $pInfo->parent_products_id and $pInfo->products_id_price==$pInfo->parent_products_id} disable-product-price-data {/if}" name="product_edit" onSubmit="return saveProduct();">
 <button type="submit" style="display:none"></button>
@@ -53,45 +62,60 @@
       var isProductBundle = $('.is-product-bundle');
       btn_is_bundle.each(function(){
         $(this).on('click', function(){
-          btn_is_bundle.removeClass('active');
-          $(this).addClass('active');
-          is_bundle.val($(this).data('value'));
-          if ($(this).data('value')) {
-            $('.is-bundle').show();
-            $('.is-not-bundle').hide();
-            isProductBundle.addClass('product-is-bundle');
-            $('.nav-tabs li > a').each(function(){
-                if($(this).attr('href') == '#tab_1_3') {
-                    $('span', $(this)).html('{$smarty.const.TEXT_PRICE_BUNDLE}');
-                }
-            });
-            $('.tl-all-pages-block li > a').each(function(){
-                if($(this).attr('href') == '#tab_1_3') {
-                    $('span', $(this)).html('{$smarty.const.TEXT_PRICE_BUNDLE}');
-                }
-            });
-            $('.product-attribute-setting').hide();
-          } else {
-            $('.is-bundle').hide();
-            $('.is-not-bundle').show();
-            isProductBundle.removeClass('product-is-bundle');
-            $('.nav-tabs li > a').each(function(){
-                if($(this).attr('href') == '#tab_1_3') {
-                    $('span', $(this)).html('{$smarty.const.TEXT_PRICE_COST_W}');
-                }
-            });
-            $('.tl-all-pages-block li > a').each(function(){
-                if($(this).attr('href') == '#tab_1_3') {
-                    $('span', $(this)).html('{$smarty.const.TEXT_PRICE_COST_W}');
-                }
-            });
-            $('.product-attribute-setting').show();
-          }
+            const _this = this;
+            const contentMessage = $(`
+                <div class="alert-message">${ $(this).text()}</div>
+                <div class="btn-bar p-l-4 p-r-4">
+                    <div class="btn-left"><span class="btn btn-cancel">{$smarty.const.TEXT_NO}</span></div>
+                    <div class="btn-right"><span class="btn btn-primary btn-apply">{$smarty.const.TEXT_YES}</span></div>
+                </div>
+            `);
+            alertMessage(contentMessage);
+            $('.btn-apply', contentMessage).on('click', function(){
+                $('.popup-box-wrap:last').remove();
+                applyIsBundle.call(_this)
+            })
         })
         if ($(this).data('value') == is_bundle.val()){
-          $(this).trigger('click');
+            applyIsBundle.call(this)
         }
       })
+        function applyIsBundle(){
+            btn_is_bundle.removeClass('active');
+            $(this).addClass('active');
+            is_bundle.val($(this).data('value'));
+            if ($(this).data('value')) {
+                $('.is-bundle').show();
+                $('.is-not-bundle').hide();
+                isProductBundle.addClass('product-is-bundle');
+                $('.nav-tabs li > a').each(function(){
+                    if($(this).attr('href') == '#tab_1_3') {
+                        $('span', $(this)).html('{$smarty.const.TEXT_PRICE_BUNDLE}');
+                    }
+                });
+                $('.tl-all-pages-block li > a').each(function(){
+                    if($(this).attr('href') == '#tab_1_3') {
+                        $('span', $(this)).html('{$smarty.const.TEXT_PRICE_BUNDLE}');
+                    }
+                });
+                $('.product-attribute-setting').hide();
+            } else {
+                $('.is-bundle').hide();
+                $('.is-not-bundle').show();
+                isProductBundle.removeClass('product-is-bundle');
+                $('.nav-tabs li > a').each(function(){
+                    if($(this).attr('href') == '#tab_1_3') {
+                        $('span', $(this)).html('{$smarty.const.TEXT_PRICE_COST_W}');
+                    }
+                });
+                $('.tl-all-pages-block li > a').each(function(){
+                    if($(this).attr('href') == '#tab_1_3') {
+                        $('span', $(this)).html('{$smarty.const.TEXT_PRICE_COST_W}');
+                    }
+                });
+                $('.product-attribute-setting').show();
+            }
+        }
     })
   })(jQuery);
 </script>
@@ -214,11 +238,6 @@
     {if \common\helpers\Acl::checkExtensionAllowed('Handlers', 'allowed')}
             <li><a href="#tab_handlers" data-toggle="tab"><span>{$smarty.const.BOX_HANDLERS}</span></a></li>
     {/if}
-{if $app->controller->view->showStatistic == true}
-    {if $TabAccess->tabView('TEXT_STATIC')}
-            <li><a href="#tab_1_2" data-toggle="tab"><span>{$smarty.const.TEXT_STATIC}</span></a></li>
-    {/if}
-{/if}
     {if $es = \common\helpers\Acl::checkExtensionAllowed('EventSystem', 'allowed')}
         <li><a href="#tab_event_program" data-toggle="tab"><span>{$smarty.const.TEXT_EVENT_SYSTEM}</span></a></li>
     {/if}
@@ -278,6 +297,11 @@
     {if \common\helpers\Acl::checkExtensionAllowed('Competitors') && $TabAccess->tabView('TAB_COMPETITORS') }
             <li><a href="#tab_1_15" data-toggle="tab"><span>{$smarty.const.TAB_COMPETITORS}</span></a></li>
     {/if}
+                  {if $app->controller->view->showStatistic == true}
+                      {if $TabAccess->tabView('TEXT_STATIC')}
+                          <li><a href="#tab_1_2" data-toggle="tab"><span>{$smarty.const.TEXT_STATIC}</span></a></li>
+                      {/if}
+                  {/if}
         </ul>
         <div class="tab-content">
           {if count(platform::getProductsAssignList())>1 || \common\helpers\Acl::checkExtensionAllowed('UserGroupsRestrictions', 'allowed') }
@@ -449,7 +473,7 @@
     </div>
     <div class="btn-bar btn-bar-edp-page after" style="padding: 0;">
         <div class="btn-left">
-            <a href="javascript:void(0)" onclick="return backStatement()" class="btn btn-cancel-foot">{$smarty.const.IMAGE_CANCEL}</a>
+            <a href="{$backUrl}" class="btn btn-cancel-foot">{$smarty.const.IMAGE_BACK}</a>
         </div>
         <div class="btn-right">
             <button class="btn btn-confirm">{$smarty.const.IMAGE_SAVE}</button><a style="opacity: 0.3; cursor: default;" class="btn btn-primary" title="Will be available in the next version.">{$smarty.const.TEXT_PREVIEW_LIGHTBOX}</a>
@@ -496,11 +520,6 @@
 {/if}
 
 <script>
-
-function backStatement() {
-    window.history.back();
-    return false;
-}
 
 function resetStatement() {
     return false;
@@ -561,6 +580,18 @@ function saveProduct() {
     return false;
 }
 
+(function($) {
+    setTimeout(function() {
+        $('#save_product_form').on('change', function () {
+            $('.btn-cancel-foot', this).html('{$smarty.const.IMAGE_CANCEL}')
+        })
+        for ( instance in CKEDITOR.instances ) {
+            CKEDITOR.instances[instance].on('change', function() {
+                $('.btn-cancel-foot').html('{$smarty.const.IMAGE_CANCEL}')
+            });
+        }
+    }, 500)
+})($);
 
 //===== Images START =====//
 //===== Images END =====//

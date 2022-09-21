@@ -41,12 +41,14 @@ class ViewStockInfo
         $allocatedTemporary = \common\helpers\Product::getAllocatedTemporary($products_id, true);
 
         $pInfo->products_quantity = $pDataInfo->products_quantity;
-        $pInfo->allocated_quantity = $pDataInfo->allocated_stock_quantity;
-        $pInfo->temporary_quantity = $pDataInfo->temporary_stock_quantity . (($allocatedTemporary > 0) ? (' / ' . $allocatedTemporary) : '');
+        $pInfo->allocated_quantity = ($pDataInfo->allocated_stock_quantity - $allocatedTemporary);
+        $pInfo->allocated_temporary_quantity = $allocatedTemporary;
+        $pInfo->temporary_quantity = $pDataInfo->temporary_stock_quantity;
         $pInfo->warehouse_quantity = $pDataInfo->warehouse_stock_quantity;
         //$pInfo->ordered_quantity = $pDataInfo->ordered_stock_quantity;
         $pInfo->ordered_quantity = \common\helpers\Product::getStockOrdered($products_id);
         $pInfo->suppliers_quantity = $pDataInfo->suppliers_stock_quantity;
+        $pInfo->deficit_quantity = \common\helpers\Product::getStockDeficit($products_id);
 
         if ((int)$pDataInfo->stock_reorder_level < 0) {
             $pInfo->stock_reorder_level = (int)STOCK_REORDER_LEVEL;
@@ -58,45 +60,18 @@ class ViewStockInfo
         } else {
             $pInfo->stock_reorder_quantity_on = true;
         }
-        
+
         if ((int)$pDataInfo->stock_limit < 0) {
             $pInfo->stock_limit = (int)ADDITIONAL_STOCK_LIMIT;
         } else {
             $pInfo->stock_limit_on = true;
         }
 
-        // {{ init list
-        $warehouseStockControlList = [];
-        $warehouseStockControlQuery = \common\models\WarehouseStockControl::find(['products_id' => $products_id])->asArray();
-        foreach ($warehouseStockControlQuery->each() as $warehouseStockControl) {
-            $warehouseStockControlList[$warehouseStockControl['platform_id']] = $warehouseStockControl['warehouse_id'];
+        $pInfo->platformStockList = [];
+        $pInfo->platformWarehouseList = [];
+        if ($extScl = \common\helpers\Acl::checkExtensionAllowed('StockControl', 'allowed')) {
+            $extScl::updateProductViewStockInfo($pInfo);
         }
-
-        $platformStockControlList = [];
-        $platformStockControlQuery = \common\models\PlatformStockControl::find(['products_id' => $products_id])->asArray();
-        foreach ($platformStockControlQuery->each() as $platformStockControl) {
-            $platformStockControlList[$platformStockControl['platform_id']] = $platformStockControl['current_quantity'];
-        }
-
-        $platformWarehouseList = [];
-        $platformStockList = [];
-        foreach(\common\classes\platform::getList(true, true) as $platform){
-            $platformStockList[] = [
-                'id' => $platform['id'],
-                'name' => $platform['text'],
-                'qty' => (isset($platformStockControlList[$platform['id']]) ? $platformStockControlList[$platform['id']] : 0),
-            ];
-
-            $platformWarehouseList[] = [
-                'id' => $platform['id'],
-                'name' => $platform['text'],
-                'warehouse' => (isset($warehouseStockControlList[$platform['id']]) ? $warehouseStockControlList[$platform['id']] : \common\helpers\Warehouses::get_default_warehouse()),
-            ];
-        }
-        $pInfo->platformStockList = $platformStockList;
-        $pInfo->platformWarehouseList = $platformWarehouseList;
-        // }} init list
-
     }
 
 }

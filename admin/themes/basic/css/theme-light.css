@@ -25,6 +25,11 @@
 }
 
 body {
+    --color-success: #1fbb26;
+    --color-info: #008ae8;
+    --color-warning: #fd7a13;
+    --color-danger: #f00;
+
     --border-color-tiny: #d9d9d9;
     --border-color-midle: #caccd3;
     --border-color-strong: #caccd3;
@@ -34,4 +39,14 @@ body {
     --background-color-1: #f7f5ff;
     --background-color-2: #ece9f9;
     --background-color-3: #e8e1ff;
+    --background-color-4: #eeeeee;
+
+    --link-color: #0077e4;
+    --primary-color: #7b5bb9;
+}
+
+.btn-bar-top {
+    --btn-background: #006cdb;
+    --btn-primary-background: #7b5bb9;
+    --btn-danger-background: #5340bc;
 }

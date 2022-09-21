@@ -1,8 +1,8 @@
 <?php
 /**
- * @link http://www.yiiframework.com/
+ * @link https://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
- * @license http://www.yiiframework.com/license/
+ * @license https://www.yiiframework.com/license/
  */
 
 namespace yii\data;
@@ -613,7 +613,7 @@ class DataFilter extends Model
      * Validates operator condition.
      * @param string $operator raw operator control keyword.
      * @param mixed $condition attribute condition.
-     * @param string $attribute attribute name.
+     * @param string|null $attribute attribute name.
      */
     protected function validateOperatorCondition($operator, $condition, $attribute = null)
     {

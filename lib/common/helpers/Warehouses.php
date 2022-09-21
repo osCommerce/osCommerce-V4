@@ -49,7 +49,7 @@ class Warehouses {
         }
         return $freezePrefix . \common\models\OrdersProductsTemporaryStock::tableName();
     }
-            
+
     public static function get_warehouses_count($include_inactive = false) {
         $warehouses_query = tep_db_query("select count(*) as warehouses_count from " . TABLE_WAREHOUSES . " where 1 " . ($include_inactive ? '' : " and status = '1' ") . " limit 1");
         $warehouses = tep_db_fetch_array($warehouses_query);
@@ -144,6 +144,8 @@ class Warehouses {
         $suppliers_id = (int)$suppliers_id;
         $location_id = (int)$location_id;
         $parameters = (is_array($parameters) ? $parameters : array());
+        $layers_id = (int)(isset($parameters['layers_id']) ? $parameters['layers_id'] : 0);
+        $batch_id = (int)(isset($parameters['batch_id']) ? $parameters['batch_id'] : 0);
         if ($qty == 0) {
             $isError = true;
         }
@@ -156,6 +158,8 @@ class Warehouses {
                 ->where(['warehouse_id' => $warehouse_id])
                 ->andWhere(['suppliers_id' => $suppliers_id])
                 ->andWhere(['location_id' => $location_id])
+                ->andWhere(['layers_id' => $layers_id])
+                ->andWhere(['batch_id' => $batch_id])
                 ->andWhere(['products_id' => $products_id])
                 ->andWhere(['prid' => (int)$products_id])
                 ->one();
@@ -164,6 +168,8 @@ class Warehouses {
                 $warehouseProductInventoryRecord->warehouse_id = $warehouse_id;
                 $warehouseProductInventoryRecord->suppliers_id = $suppliers_id;
                 $warehouseProductInventoryRecord->location_id = $location_id;
+                $warehouseProductInventoryRecord->layers_id = $layers_id;
+                $warehouseProductInventoryRecord->batch_id = $batch_id;
                 $warehouseProductInventoryRecord->products_id = $products_id;
                 $warehouseProductInventoryRecord->prid = (int)$products_id;
             }
@@ -199,6 +205,8 @@ class Warehouses {
                 ->where(['warehouse_id' => $warehouse_id])
                 ->andWhere(['suppliers_id' => $suppliers_id])
                 ->andWhere(['location_id' => $location_id])
+                ->andWhere(['layers_id' => $layers_id])
+                ->andWhere(['batch_id' => $batch_id])
                 ->andWhere(['products_id' => trim((int)$products_id)])
                 ->andWhere(['prid' => (int)$products_id])
                 ->one();
@@ -207,6 +215,8 @@ class Warehouses {
                 $warehouseProductRecord->warehouse_id = $warehouse_id;
                 $warehouseProductRecord->suppliers_id = $suppliers_id;
                 $warehouseProductRecord->location_id = $location_id;
+                $warehouseProductRecord->layers_id = $layers_id;
+                $warehouseProductRecord->batch_id = $batch_id;
                 $warehouseProductRecord->products_id = (int)$products_id;
                 $warehouseProductRecord->prid = (int)$products_id;
             }
@@ -275,6 +285,8 @@ class Warehouses {
         }
         unset($warehouseProductRecord);
         if ($isError == false) {
+            $parameters['layers_id'] = $layers_id;
+            $parameters['batch_id'] = $batch_id;
             $parameters['is_temporary'] = 0;
             \common\helpers\Product::writeHistory($products_id, $warehouse_id, $suppliers_id, $location_id, $qty, $parameters);
             if ($ext = \common\helpers\Acl::checkExtensionAllowed('Ebay', 'allowed')) {
@@ -630,14 +642,14 @@ class Warehouses {
             // increase orders products quantity
             $update_qty = $qty - $orders_products_quantity;
 
-            $product_query = tep_db_query("select stock_control from " . TABLE_PRODUCTS . " where products_id = '" . (int) $products_id . "'");
-            $product = tep_db_fetch_array($product_query);
-            if ($product['stock_control'] == 2) {
-                $warehouseStockControl = \common\models\WarehouseStockControl::findOne(['products_id' => $products_id, 'platform_id' => $current_platform_id]);
-                if (is_object($warehouseStockControl)) {
-                    $warehouse_id = $warehouseStockControl->warehouse_id;
+            if ($extScl = \common\helpers\Acl::checkExtensionAllowed('StockControl', 'allowed')) {
+                $warehouseIdCheck = $extScl::updateUpdateStockOfOrder($products_id, $current_platform_id);
+                if ($warehouseIdCheck !== false) {
+                    $warehouse_id = $warehouseIdCheck;
                 }
+                unset($warehouseIdCheck);
             }
+
             $warehousesIds = [];
             if ($warehouse_id > 0) {
                 //$warehouses_query = tep_db_query("select warehouse_id from " . TABLE_WAREHOUSES . " where status = '1' and warehouse_id='" . $warehouse_id . "'");
@@ -910,5 +922,59 @@ class Warehouses {
         $item .= $blocksList[$location['block_id']] . ': ' . $location['location_name'];
 
         return $item;
+    }
+
+    public static function isRelocationPossible()
+    {
+        $wh = self::get_warehouses();
+        if (!is_array($wh) || count($wh) == 0) {
+            return false;
+        } elseif (count($wh) > 1) {
+            return true;
+        } else {
+            return \common\models\Locations::find()->where(['warehouse_id' => $wh[0]['id']??null, 'is_final' => 1])->count() > 1;
+        }
+    }
+
+    public static function getWarehousesProductsLayersIDbyExpiryDate($expiry_date) {
+        list($year, $month, $day) = explode('-', $expiry_date); 
+        if (checkdate((int)$month, (int)$day, (int)$year)) {
+            $warehousesProductsLayersRecord = \common\models\WarehousesProductsLayers::findOne(['expiry_date' => $expiry_date]);
+            if (!($warehousesProductsLayersRecord instanceof \common\models\WarehousesProductsLayers)) {
+                $warehousesProductsLayersRecord = new \common\models\WarehousesProductsLayers();
+                $warehousesProductsLayersRecord->layers_name = \common\helpers\Date::date_short($expiry_date);
+                $warehousesProductsLayersRecord->expiry_date = $expiry_date;
+                $warehousesProductsLayersRecord->save(false);
+            }
+            return $warehousesProductsLayersRecord->layers_id;
+        }
+        return 0;
+    }
+
+    public static function getExpiryDateByLayersID($layers_id) {
+        $warehousesProductsLayersRecord = \common\models\WarehousesProductsLayers::findOne(['layers_id' => $layers_id]);
+        if ($warehousesProductsLayersRecord instanceof \common\models\WarehousesProductsLayers) {
+            return $warehousesProductsLayersRecord->expiry_date;
+        }
+    }
+
+    public static function getWarehousesProductsBatchIDbyBatchName($batch_name) {
+        if ($batch_name != '') {
+            $WarehousesProductsBatchesRecord = \common\models\WarehousesProductsBatches::findOne(['batch_name' => $batch_name]);
+            if (!($WarehousesProductsBatchesRecord instanceof \common\models\WarehousesProductsBatches)) {
+                $WarehousesProductsBatchesRecord = new \common\models\WarehousesProductsBatches();
+                $WarehousesProductsBatchesRecord->batch_name = $batch_name;
+                $WarehousesProductsBatchesRecord->save(false);
+            }
+            return $WarehousesProductsBatchesRecord->batch_id;
+        }
+        return 0;
+    }
+
+    public static function getBatchNameByBatchID($batch_id) {
+        $WarehousesProductsBatchesRecord = \common\models\WarehousesProductsBatches::findOne(['batch_id' => $batch_id]);
+        if ($WarehousesProductsBatchesRecord instanceof \common\models\WarehousesProductsBatches) {
+            return $WarehousesProductsBatchesRecord->batch_name;
+        }
     }
 }

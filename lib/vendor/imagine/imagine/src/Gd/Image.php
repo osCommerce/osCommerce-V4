@@ -11,6 +11,7 @@
 
 namespace Imagine\Gd;
 
+use Imagine\Driver\InfoProvider;
 use Imagine\Exception\InvalidArgumentException;
 use Imagine\Exception\OutOfBoundsException;
 use Imagine\Exception\RuntimeException;
@@ -18,12 +19,12 @@ use Imagine\Factory\ClassFactoryInterface;
 use Imagine\Image\AbstractImage;
 use Imagine\Image\BoxInterface;
 use Imagine\Image\Fill\FillInterface;
+use Imagine\Image\Format;
 use Imagine\Image\ImageInterface;
 use Imagine\Image\Metadata\MetadataBag;
 use Imagine\Image\Palette\Color\ColorInterface;
 use Imagine\Image\Palette\Color\RGB as RGBColor;
 use Imagine\Image\Palette\PaletteInterface;
-use Imagine\Image\Palette\RGB;
 use Imagine\Image\Point;
 use Imagine\Image\PointInterface;
 use Imagine\Image\ProfileInterface;
@@ -32,7 +33,7 @@ use Imagine\Utils\ErrorHandling;
 /**
  * Image implementation using the GD library.
  */
-final class Image extends AbstractImage
+final class Image extends AbstractImage implements InfoProvider
 {
     /**
      * @var resource|\GdImage
@@ -68,8 +69,11 @@ final class Image extends AbstractImage
      */
     public function __destruct()
     {
-        if (is_resource($this->resource) && 'gd' === get_resource_type($this->resource)) {
-            imagedestroy($this->resource);
+        if ($this->resource) {
+            if (is_resource($this->resource) && get_resource_type($this->resource) === 'gd' || $this->resource instanceof \GdImage) {
+                imagedestroy($this->resource);
+            }
+            $this->resource = null;
         }
     }
 
@@ -83,7 +87,7 @@ final class Image extends AbstractImage
         parent::__clone();
         $size = $this->getSize();
         $copy = $this->createImage($size, 'copy');
-        if (false === imagecopy($copy, $this->resource, 0, 0, 0, 0, $size->getWidth(), $size->getHeight())) {
+        if (imagecopy($copy, $this->resource, 0, 0, 0, 0, $size->getWidth(), $size->getHeight()) === false) {
             imagedestroy($copy);
             throw new RuntimeException('Image copy operation failed');
         }
@@ -95,9 +99,20 @@ final class Image extends AbstractImage
     }
 
     /**
+     * {@inheritdoc}
+     *
+     * @see \Imagine\Driver\InfoProvider::getDriverInfo()
+     * @since 1.3.0
+     */
+    public static function getDriverInfo($required = true)
+    {
+        return DriverInfo::get($required);
+    }
+
+    /**
      * Returns Gd resource.
      *
-     * @return resource
+     * @return resource|\GdImage
      */
     public function getGdResource()
     {
@@ -130,7 +145,7 @@ final class Image extends AbstractImage
 
         $dest = $this->createImage($size, 'crop');
 
-        if (false === imagecopy($dest, $this->resource, 0, 0, $start->getX(), $start->getY(), $width, $height)) {
+        if (imagecopy($dest, $this->resource, 0, 0, $start->getX(), $start->getY(), $width, $height) === false) {
             imagedestroy($dest);
             throw new RuntimeException('Image crop operation failed');
         }
@@ -173,7 +188,7 @@ final class Image extends AbstractImage
                 throw new RuntimeException('Image paste operation failed');
             }
         } elseif ($alpha > 0) {
-            if (false === imagecopymerge(/*dst_im*/$this->resource, /*src_im*/$image->resource, /*dst_x*/$start->getX(), /*dst_y*/$start->getY(), /*src_x*/0, /*src_y*/0, /*src_w*/$size->getWidth(), /*src_h*/$size->getHeight(), /*pct*/$alpha)) {
+            if (imagecopymerge(/*dst_im*/$this->resource, /*src_im*/$image->resource, /*dst_x*/$start->getX(), /*dst_y*/$start->getY(), /*src_x*/0, /*src_y*/0, /*src_w*/$size->getWidth(), /*src_h*/$size->getHeight(), /*pct*/$alpha) === false) {
                 throw new RuntimeException('Image paste operation failed');
             }
         }
@@ -184,12 +199,14 @@ final class Image extends AbstractImage
     /**
      * {@inheritdoc}
      *
+     * Please remark that GD doesn't support different filters, so the $filter argument is ignored.
+     *
      * @see \Imagine\Image\ManipulatorInterface::resize()
      */
     final public function resize(BoxInterface $size, $filter = ImageInterface::FILTER_UNDEFINED)
     {
-        if (ImageInterface::FILTER_UNDEFINED !== $filter) {
-            throw new InvalidArgumentException('Unsupported filter type, GD only supports ImageInterface::FILTER_UNDEFINED filter');
+        if (!in_array($filter, static::getAllFilterValues(), true)) {
+            throw new InvalidArgumentException('Unsupported filter type');
         }
 
         $width = $size->getWidth();
@@ -230,7 +247,7 @@ final class Image extends AbstractImage
         $color = $this->getColor($background);
         $resource = imagerotate($this->resource, -1 * $angle, $color);
 
-        if (false === $resource) {
+        if ($resource === false) {
             throw new RuntimeException('Image rotate operation failed');
         }
 
@@ -247,9 +264,9 @@ final class Image extends AbstractImage
      */
     final public function save($path = null, array $options = array())
     {
-        $path = null === $path ? (isset($this->metadata['filepath']) ? $this->metadata['filepath'] : $path) : $path;
+        $path = $path === null ? (isset($this->metadata['filepath']) ? $this->metadata['filepath'] : $path) : $path;
 
-        if (null === $path) {
+        if ($path === null) {
             throw new RuntimeException('You can omit save path only if image has been open from a file');
         }
 
@@ -261,8 +278,15 @@ final class Image extends AbstractImage
             $originalPath = isset($this->metadata['filepath']) ? $this->metadata['filepath'] : null;
             $format = pathinfo($originalPath, \PATHINFO_EXTENSION);
         }
-
-        $this->saveOrOutput($format, $options, $path);
+        $formatInfo = static::getDriverInfo()->getSupportedFormats()->find($format);
+        if ($formatInfo === null) {
+            throw new InvalidArgumentException(sprintf(
+                'Saving image in "%s" format is not supported, please use one of the following extensions: "%s"',
+                $format,
+                implode('", "', static::getDriverInfo()->getSupportedFormats()->getAllIDs())
+            ));
+        }
+        $this->saveOrOutput($formatInfo, $options, $path);
 
         return $this;
     }
@@ -274,9 +298,16 @@ final class Image extends AbstractImage
      */
     public function show($format, array $options = array())
     {
-        header('Content-type: ' . $this->getMimeType($format));
-
-        $this->saveOrOutput($format, $options);
+        $formatInfo = static::getDriverInfo()->getSupportedFormats()->find($format);
+        if ($formatInfo === null) {
+            throw new InvalidArgumentException(sprintf(
+                'Displaying an image in "%s" format is not supported, please use one of the following formats: "%s"',
+                $format,
+                implode('", "', static::getDriverInfo()->getSupportedFormats()->getAllIDs())
+            ));
+        }
+        header('Content-type: ' . $formatInfo->getMimeType());
+        $this->saveOrOutput($formatInfo, $options);
 
         return $this;
     }
@@ -288,8 +319,16 @@ final class Image extends AbstractImage
      */
     public function get($format, array $options = array())
     {
+        $formatInfo = static::getDriverInfo()->getSupportedFormats()->find($format);
+        if ($formatInfo === null) {
+            throw new InvalidArgumentException(sprintf(
+                'Creating an image in "%s" format is not supported, please use one of the following formats: "%s"',
+                $format,
+                implode('", "', static::getDriverInfo()->getSupportedFormats()->getAllIDs())
+            ));
+        }
         ob_start();
-        $this->saveOrOutput($format, $options);
+        $this->saveOrOutput($formatInfo, $options);
 
         return ob_get_clean();
     }
@@ -301,7 +340,7 @@ final class Image extends AbstractImage
      */
     public function __toString()
     {
-        return $this->get('png');
+        return $this->get(Format::ID_PNG);
     }
 
     /**
@@ -320,7 +359,7 @@ final class Image extends AbstractImage
             $dest = $this->createImage($size, 'flip');
 
             for ($i = 0; $i < $width; $i++) {
-                if (false === imagecopy($dest, $this->resource, $i, 0, ($width - 1) - $i, 0, 1, $height)) {
+                if (imagecopy($dest, $this->resource, $i, 0, ($width - 1) - $i, 0, 1, $height) === false) {
                     imagedestroy($dest);
                     throw new RuntimeException('Horizontal flip operation failed');
                 }
@@ -350,7 +389,7 @@ final class Image extends AbstractImage
             $dest = $this->createImage($size, 'flip');
 
             for ($i = 0; $i < $height; $i++) {
-                if (false === imagecopy($dest, $this->resource, 0, $i, 0, ($height - 1) - $i, $width, 1)) {
+                if (imagecopy($dest, $this->resource, 0, $i, 0, ($height - 1) - $i, $width, 1) === false) {
                     imagedestroy($dest);
                     throw new RuntimeException('Vertical flip operation failed');
                 }
@@ -428,9 +467,9 @@ final class Image extends AbstractImage
                 $position = new Point($x, $y);
                 $color = $this->getColorAt($position);
                 $maskColor = $mask->getColorAt($position);
-                $round = (int) round(max($color->getAlpha(), (100 - $color->getAlpha()) * $maskColor->getRed() / 255));
+                $delta = (int) round($color->getAlpha() * $maskColor->getRed() / 255) * -1;
 
-                if (false === imagesetpixel($this->resource, $x, $y, $this->getColor($color->dissolve($round - $color->getAlpha())))) {
+                if (imagesetpixel($this->resource, $x, $y, $this->getColor($color->dissolve($delta))) === false) {
                     throw new RuntimeException('Apply mask operation failed');
                 }
             }
@@ -450,7 +489,7 @@ final class Image extends AbstractImage
 
         for ($x = 0, $width = $size->getWidth(); $x < $width; $x++) {
             for ($y = 0, $height = $size->getHeight(); $y < $height; $y++) {
-                if (false === imagesetpixel($this->resource, $x, $y, $this->getColor($fill->getColor(new Point($x, $y))))) {
+                if (imagesetpixel($this->resource, $x, $y, $this->getColor($fill->getColor(new Point($x, $y)))) === false) {
                     throw new RuntimeException('Fill operation failed');
                 }
             }
@@ -468,7 +507,7 @@ final class Image extends AbstractImage
     {
         $mask = $this->copy();
 
-        if (false === imagefilter($mask->resource, IMG_FILTER_GRAYSCALE)) {
+        if (imagefilter($mask->resource, IMG_FILTER_GRAYSCALE) === false) {
             throw new RuntimeException('Mask operation failed');
         }
 
@@ -491,7 +530,7 @@ final class Image extends AbstractImage
             }
         }
 
-        return array_unique($colors);
+        return array_values(array_unique($colors));
     }
 
     /**
@@ -518,7 +557,7 @@ final class Image extends AbstractImage
      */
     public function layers()
     {
-        if (null === $this->layers) {
+        if ($this->layers === null) {
             $this->layers = $this->getClassFactory()->createLayers(ClassFactoryInterface::HANDLE_GD, $this);
         }
 
@@ -565,7 +604,7 @@ final class Image extends AbstractImage
      */
     public function profile(ProfileInterface $profile)
     {
-        throw new RuntimeException('GD driver does not support color profiles');
+        static::getDriverInfo()->requireFeature(DriverInfo::FEATURE_COLORPROFILES);
     }
 
     /**
@@ -575,9 +614,11 @@ final class Image extends AbstractImage
      */
     public function usePalette(PaletteInterface $palette)
     {
-        if (!$palette instanceof RGB) {
-            throw new RuntimeException('GD driver only supports RGB palette');
+        if ($this->palette->name() === $palette->name()) {
+            return $this;
         }
+
+        static::getDriverInfo()->requirePaletteSupport($palette);
 
         $this->palette = $palette;
 
@@ -587,41 +628,77 @@ final class Image extends AbstractImage
     /**
      * Performs save or show operation using one of GD's image... functions.
      *
-     * @param string $format
+     * @param \Imagine\Image\Format $format
      * @param array $options
      * @param string $filename
      *
      * @throws \Imagine\Exception\InvalidArgumentException
      * @throws \Imagine\Exception\RuntimeException
      */
-    private function saveOrOutput($format, array $options, $filename = null)
+    private function saveOrOutput(Format $format, array $options, $filename = null)
     {
-        $format = $this->normalizeFormat($format);
-
-        if (!$this->supported($format)) {
-            throw new InvalidArgumentException(sprintf('Saving image in "%s" format is not supported, please use one of the following extensions: "%s"', $format, implode('", "', $this->supported())));
+        switch ($format->getID()) {
+            default:
+                $saveFunction = 'image' . $format->getID();
+                break;
         }
+        $args = array_merge(array(&$this->resource, $filename), $this->finalizeOptions($format, $options));
 
-        $save = 'image' . $format;
-        $args = array(&$this->resource, $filename);
+        ErrorHandling::throwingRuntimeException(E_WARNING | E_NOTICE, function () use ($saveFunction, $args) {
+            if (call_user_func_array($saveFunction, $args) === false) {
+                throw new RuntimeException('Save operation failed');
+            }
+        });
+    }
 
-        switch ($format) {
-            case 'bmp':
+    /**
+     * @param \Imagine\Image\Format $format
+     * @param array $options
+     *
+     * @throws \Imagine\Exception\InvalidArgumentException
+     *
+     * @return array
+     */
+    private function finalizeOptions(Format $format, array $options)
+    {
+        $result = array();
+        switch ($format->getID()) {
+            case Format::ID_AVIF:
+                // ranges from 0 (worst quality, smaller file) to 100 (best quality, larger file). If -1 is provided, the default value is used
+                $quality = -1;
+                // ranges from 0 (slow, smaller file) to 10 (fast, larger file). If -1 is provided, the default value is used
+                $speed = -1;
+                if (!empty($options['avif_lossless'])) {
+                    $quality = 100;
+                } else {
+                    if (!isset($options['avif_quality'])) {
+                        if (isset($options['quality'])) {
+                            $options['avif_quality'] = $options['quality'];
+                        }
+                    }
+                    if (isset($options['avif_quality'])) {
+                        $quality = max(0, min(100, $options['avif_quality']));
+                    }
+                }
+                $result[] = $quality;
+                $result[] = $speed;
+                break;
+            case Format::ID_BMP:
                 if (isset($options['compressed'])) {
-                    $args[] = (bool) $options['compressed'];
+                    $result[] = (bool) $options['compressed'];
                 }
                 break;
-            case 'jpeg':
+            case Format::ID_JPEG:
                 if (!isset($options['jpeg_quality'])) {
                     if (isset($options['quality'])) {
                         $options['jpeg_quality'] = $options['quality'];
                     }
                 }
                 if (isset($options['jpeg_quality'])) {
-                    $args[] = $options['jpeg_quality'];
+                    $result[] = $options['jpeg_quality'];
                 }
                 break;
-            case 'png':
+            case Format::ID_PNG:
                 if (!isset($options['png_compression_level'])) {
                     if (isset($options['quality'])) {
                         $options['png_compression_level'] = round((100 - $options['quality']) * 9 / 100);
@@ -631,9 +708,9 @@ final class Image extends AbstractImage
                     if ($options['png_compression_level'] < 0 || $options['png_compression_level'] > 9) {
                         throw new InvalidArgumentException('png_compression_level option should be an integer from 0 to 9');
                     }
-                    $args[] = $options['png_compression_level'];
+                    $result[] = $options['png_compression_level'];
                 } else {
-                    $args[] = -1; // use default level
+                    $result[] = -1; // use default level
                 }
                 if (!isset($options['png_compression_filter'])) {
                     if (isset($options['filters'])) {
@@ -644,16 +721,10 @@ final class Image extends AbstractImage
                     if (~PNG_ALL_FILTERS & $options['png_compression_filter']) {
                         throw new InvalidArgumentException('png_compression_filter option should be a combination of the PNG_FILTER_XXX constants');
                     }
-                    $args[] = $options['png_compression_filter'];
+                    $result[] = $options['png_compression_filter'];
                 }
                 break;
-            case 'wbmp':
-            case 'xbm':
-                if (isset($options['foreground'])) {
-                    $args[] = $options['foreground'];
-                }
-                break;
-            case 'webp':
+            case Format::ID_WEBP:
                 if (!isset($options['webp_quality'])) {
                     if (isset($options['quality'])) {
                         $options['webp_quality'] = $options['quality'];
@@ -663,16 +734,18 @@ final class Image extends AbstractImage
                     if ($options['webp_quality'] < 0 || $options['webp_quality'] > 100) {
                         throw new InvalidArgumentException('webp_quality option should be an integer from 0 to 100');
                     }
-                    $args[] = $options['webp_quality'];
+                    $result[] = $options['webp_quality'];
+                }
+                break;
+            case Format::ID_XBM:
+            case Format::ID_WBMP:
+                if (isset($options['foreground'])) {
+                    $result[] = $options['foreground'];
                 }
                 break;
         }
 
-        ErrorHandling::throwingRuntimeException(E_WARNING | E_NOTICE, function () use ($save, $args) {
-            if (false === call_user_func_array($save, $args)) {
-                throw new RuntimeException('Save operation failed');
-            }
-        });
+        return $result;
     }
 
     /**
@@ -683,17 +756,17 @@ final class Image extends AbstractImage
      *
      * @throws \Imagine\Exception\RuntimeException
      *
-     * @return resource
+     * @return resource|\GdImage
      */
     private function createImage(BoxInterface $size, $operation)
     {
         $resource = imagecreatetruecolor($size->getWidth(), $size->getHeight());
 
-        if (false === $resource) {
+        if ($resource === false) {
             throw new RuntimeException('Image ' . $operation . ' failed');
         }
 
-        if (false === imagealphablending($resource, false) || false === imagesavealpha($resource, true)) {
+        if (imagealphablending($resource, false) === false || imagesavealpha($resource, true) === false) {
             throw new RuntimeException('Image ' . $operation . ' failed');
         }
 
@@ -726,93 +799,10 @@ final class Image extends AbstractImage
 
         $index = imagecolorallocatealpha($this->resource, $color->getRed(), $color->getGreen(), $color->getBlue(), round(127 * (100 - $color->getAlpha()) / 100));
 
-        if (false === $index) {
+        if ($index === false) {
             throw new RuntimeException(sprintf('Unable to allocate color "RGB(%s, %s, %s)" with transparency of %d percent', $color->getRed(), $color->getGreen(), $color->getBlue(), $color->getAlpha()));
         }
 
         return $index;
-    }
-
-    /**
-     * Normalizes a given format name.
-     *
-     * @param string $format
-     *
-     * @return string
-     */
-    private function normalizeFormat($format)
-    {
-        $format = strtolower($format);
-
-        if ('jpg' === $format || 'pjpeg' === $format || 'jfif' === $format) {
-            $format = 'jpeg';
-        }
-
-        return $format;
-    }
-
-    /**
-     * Checks whether a given format is supported by GD library.
-     *
-     * @param string $format
-     *
-     * @return bool
-     */
-    private function supported($format = null)
-    {
-        $formats = self::getSupportedFormats();
-
-        if (null === $format) {
-            return array_keys($formats);
-        }
-
-        return is_string($format) && isset($formats[$format]);
-    }
-
-    /**
-     * Get the mime type based on format.
-     *
-     * @param string $format
-     *
-     * @throws \Imagine\Exception\RuntimeException
-     *
-     * @return string mime-type
-     */
-    private function getMimeType($format)
-    {
-        $format = $this->normalizeFormat($format);
-        $formats = self::getSupportedFormats();
-
-        if (!isset($formats[$format])) {
-            throw new RuntimeException('Invalid format');
-        }
-
-        return $formats[$format]['mimeType'];
-    }
-
-    /**
-     * @return array
-     */
-    private static function getSupportedFormats()
-    {
-        static $supportedFormats;
-        if (!isset($supportedFormats)) {
-            $supportedFormats = array(
-                'gif' => array('mimeType' => 'image/gif'),
-                'jpeg' => array('mimeType' => 'image/jpeg'),
-                'png' => array('mimeType' => 'image/png'),
-                'wbmp' => array('mimeType' => 'image/vnd.wap.wbmp'),
-                'xbm' => array('mimeType' => 'image/xbm'),
-            );
-            if (function_exists('imagebmp')) {
-                $supportedFormats['bmp'] = array('mimeType' => 'image/bmp');
-            }
-            if (function_exists('imagewebp')) {
-                $supportedFormats['webp'] = array('mimeType' => 'image/webp');
-            }
-            ksort($supportedFormats);
-        }
-
-        return $supportedFormats;
     }
 }

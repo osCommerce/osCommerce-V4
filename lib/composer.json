@@ -36,7 +36,8 @@
         "matthiasmullie/minify": "^1.3",
         "minishlink/web-push": "^5.2",
         "jeremy-dunn/php-fedex-api-wrapper": "^5.0",
-        "zircote/swagger-php": "^4.2"
+        "zircote/swagger-php": "^4.2",
+        "opis/closure": "^3.6"
     },
     "require-dev": {
         "yiisoft/yii2-codeception": "*",

@@ -373,7 +373,68 @@ $.fn.uploads = function(options){
   })
 };
 
+$.fn.openCloseWidget = function(options){
+  var option = jQuery.extend({
+    speed: 200,
+  },options);
 
+  return this.each(function() {
+    const widget         = $(this).closest(".widget");
+    const widgetContent = widget.children(".widget-content:first");
+    const widgetChart   = widget.children(".widget-chart:first");
+    const divider        = widget.children(".divider:first");
+    const widgetId       = widget.attr('id');
+    const $i       = $(this).children('i');
+
+    const widgetStatuses = JSON.parse(localStorage.getItem('widgetStatuses'));
+    if (widgetStatuses && widgetStatuses[widgetId] == 'closed'){
+      closeWidget()
+    } else if (widgetStatuses && widgetStatuses[widgetId] == 'opened') {
+      openWidget()
+    }
+
+    $(this).on('click', function () {
+      if (widget.hasClass('widget-closed')) {
+        openWidget()
+      } else {
+        closeWidget()
+      }
+    })
+
+    function openWidget() {
+      if (widgetId) {
+        let widgetStatuses = {};
+        widgetStatuses = JSON.parse(localStorage.getItem('widgetStatuses'))
+        if (!widgetStatuses) widgetStatuses = {};
+        widgetStatuses[widgetId] = 'opened';
+        localStorage.setItem('widgetStatuses', JSON.stringify(widgetStatuses));
+      }
+
+      $i.removeClass('icon-angle-up').addClass('icon-angle-down');
+      widgetContent.slideDown(option.speed, function() {
+        widget.removeClass('widget-closed');
+      });
+      widgetChart.slideDown(option.speed);
+      divider.slideDown(option.speed);
+    }
+    function closeWidget() {
+      if (widgetId) {
+        let widgetStatuses = {};
+        widgetStatuses = JSON.parse(localStorage.getItem('widgetStatuses'))
+        if (!widgetStatuses) widgetStatuses = {};
+        widgetStatuses[widgetId] = 'closed';
+        localStorage.setItem('widgetStatuses', JSON.stringify(widgetStatuses));
+      }
+
+      $i.removeClass('icon-angle-down').addClass('icon-angle-up');
+      widgetContent.slideUp(option.speed, function() {
+        widget.addClass('widget-closed');
+      });
+      widgetChart.slideUp(option.speed);
+      divider.slideUp(option.speed);
+    }
+  })
+}
 
 $.popUpConfirm = function(message, func){
   $('body').append('<div class="popup-box-wrap confirm-popup"><div class="around-pop-up"></div><div class="popup-box"><div class="pop-up-close"></div><div class="pop-up-content">' +
@@ -768,42 +829,78 @@ $(document).ready(function(){
     /* End choose options filters */
 
     /* {{ textInputNullable */
-    $(document).on('click', '.js-main-text-input-nullable .js-input-nullable-btn', function(event){
-        var $group = $(event.target).parents('.js-main-text-input-nullable');
-        var $input = $group.find('input');
-        if ($input.attr('disabled')){
-            $input.removeAttr('disabled');
-            $input.removeAttr('readonly');
-            $input.val($input.attr('placeholder') || '');
-            $input.trigger('change');
-            $input.trigger('focus');
-            $input.get(0).select();
-        }else{
-            $input.attr('disabled','disabled');
-            $input.attr('readonly','readonly');
-            $input.val('');
-            $input.trigger('change');
+    let inputNullableTmpVal = '';
+    $(document).on('click', '.js-main-text-input-nullable .js-input-nullable-edit', function(event){
+        const $group = $(event.target).parents('.js-main-text-input-nullable');
+        const $input = $group.find('input');
+        inputNullableTmpVal = $input.val();
+        $input.removeAttr('readonly');
+        $('.js-input-nullable-edit', $group).hide();
+        $('.js-input-nullable-close', $group).show();
+        $('.js-input-nullable-save', $group).show();
+        $('.js-input-nullable-undo', $group).show();
+        $('.js-input-nullable-default', $group).show();
+    });
+    $(document).on('click', '.js-main-text-input-nullable .js-input-nullable-close', function(event){
+        const $group = $(event.target).parents('.js-main-text-input-nullable');
+        const $input = $group.find('input');
+        $input.attr('readonly','readonly');
+        $input.val(inputNullableTmpVal);
+        $('.js-input-nullable-edit', $group).show();
+        $('.js-input-nullable-close', $group).hide();
+        $('.js-input-nullable-save', $group).hide();
+        $('.js-input-nullable-undo', $group).hide();
+    });
+    $(document).on('click', '.js-main-text-input-nullable .js-input-nullable-save', function(event){
+        const $group = $(event.target).parents('.js-main-text-input-nullable');
+        const $input = $group.find('input');
+        $input.attr('readonly','readonly');
+        $('.js-input-nullable-edit', $group).show();
+        $('.js-input-nullable-close', $group).hide();
+        $('.js-input-nullable-save', $group).hide();
+        $('.js-input-nullable-undo', $group).hide();
+        if ( $input.val()==='' || (''+$input.val())===(''+$input.attr('placeholder')) ) {
+          if ($input.val()!=='') $input.val('');
+          $('.js-input-nullable-default', $group).hide();
         }
     });
+    $(document).on('click', '.js-main-text-input-nullable .js-input-nullable-undo', function(event){
+        const $group = $(event.target).parents('.js-main-text-input-nullable');
+        const $input = $group.find('input');
+        $input.val($input.attr('placeholder'));
+    });
+    $(document).on('click', '.js-main-text-input-nullable .js-input-nullable-undo', function(event){
+        var $group = $(event.target).parents('.js-main-text-input-nullable');
+        var $input = $group.find('input');
+    });
     $(document).on('update-state', '.js-main-text-input-nullable input',function(event){
+        const $group = $(event.target).parents('.js-main-text-input-nullable');
         var $input = $(event.target);
+        $('.js-input-nullable-default-val', $group).html($input.attr('placeholder'))
         if ( $input.val()==='' || (''+$input.val())===(''+$input.attr('placeholder')) ) {
             if ($input.val()!=='') $input.val('');
-            if (!$input.attr('disabled')) {
-                $input.attr('disabled', 'disabled');
-                $input.attr('readonly', 'readonly');
-            }
+            $('.js-input-nullable-default', $group).hide();
         }else{
-            if ($input.attr('disabled')) {
-                $input.removeAttr('disabled');
-                $input.removeAttr('readonly');
-            }
+            $('.js-input-nullable-default', $group).show();
         }
+    });
+    $(document).on('keydown', '.js-main-text-input-nullable input',function(event){
+      const $group = $(event.target).parents('.js-main-text-input-nullable');
+      if (event.keyCode == 27) {
+        event.preventDefault();
+        $('.js-input-nullable-close', $group).trigger('click');
+        return false
+      }
+      if (event.keyCode == 13) {
+        event.preventDefault();
+        $('.js-input-nullable-save', $group).trigger('click');
+        return false
+      }
     });
     jQuery.fn.textInputNullableValue = function()
     {
         var $input = $(this);
-        if ($input.attr('disabled')){
+        if ($input.val() === ''){
             return $input.attr('placeholder');
         }
         return $input.val();

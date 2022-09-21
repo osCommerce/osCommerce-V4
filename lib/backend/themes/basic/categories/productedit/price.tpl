@@ -17,12 +17,16 @@
     <div class="widget-header"><h4>{$smarty.const.TEXT_OUR_PRICE}<span class="colon">:</span></h4></div>
     <div class="widget-content price-and-cost-content">
         
-      <div class="tax-cl">
-        <label>{$smarty.const.TEXT_PRODUCTS_TAX_CLASS}</label>
-          {Html::dropDownList('products_tax_class_id', $pInfo->products_tax_class_id, $app->controller->view->tax_classes, ['onchange'=>'updateGrossVisible(); $(\'.js-inventory-tax-class[disabled]\').val($(this).val());',  'class'=>'form-control', 'disabled' => !empty($hideSuppliersPart)  ])}
-          {if \Yii::$app->controller->action->id=='specialedit'}
-            {Html::hiddenInput('specials_id', $pInfo->specials_id|default:null)}
-          {/if}
+      <div class="tax-cl row align-items-center" style="max-width: 500px">
+          <div class="col-xs-3">
+              <label>{$smarty.const.TEXT_PRODUCTS_TAX_CLASS}</label>
+          </div>
+          <div class="col-xs-9">
+              {Html::dropDownList('products_tax_class_id', $pInfo->products_tax_class_id, $app->controller->view->tax_classes, ['onchange'=>'updateGrossVisible(); $(\'.js-inventory-tax-class[disabled]\').val($(this).val());',  'class'=>'form-control', 'disabled' => !empty($hideSuppliersPart)  ])}
+              {if \Yii::$app->controller->action->id=='specialedit'}
+                  {Html::hiddenInput('specials_id', $pInfo->specials_id|default:null)}
+              {/if}
+          </div>
       </div>
 
   {if empty($price_tab_callback)}
@@ -37,7 +41,7 @@
     {* popup edit special prices*}
   {/if}
 
-  {if $app->controller->view->price_tabs|@count > 0 }
+  {if isset($app->controller->view->price_tabs) && $app->controller->view->price_tabs|@count > 0 }
 {* 2improve if tabs order is changed you must update the following "main" group condition:
 if $smarty.const.CUSTOMERS_GROUPS_ENABLE != 'True' || substr($idSuffix, -2)=='_0'
 *}
@@ -88,7 +92,7 @@ if $smarty.const.CUSTOMERS_GROUPS_ENABLE != 'True' || substr($idSuffix, -2)=='_0
         <div class="our-pr-line after">
           <div>
             <label>{if PRICE_WITH_BACK_TAX == 'True'}{$smarty.const.TEXT_GROSS_PRICE}{else}{$smarty.const.TEXT_NET_PRICE}{/if}</label>
-            <input id="products_group_price{$idSuffix}" name="products_group_price{$fieldSuffix|escape}" value='{$data['products_group_price']|escape}' onKeyUp="updateGrossPrice(this);" data-roundTo="{$data['round_to']}" data-precision="{$smarty.const.MAX_CURRENCY_EDIT_PRECISION}" data-currency="{$data['currencies_id']}" class="form-control{if ($smarty.const.CUSTOMERS_GROUPS_ENABLE != 'True' || $data['groups_id']==0) && ($app->controller->view->useMarketPrices != true || $default_currency['id']==$data['currencies_id'])} default_price {/if} mask-money" {if {round($data['products_group_price'])}==-2}style="display:none;"{/if}/>
+            <input id="products_group_price{$idSuffix}" name="products_group_price{$fieldSuffix|escape}" value='{$data['products_group_price']|escape}' onKeyUp="updateGrossPrice(this);" data-roundTo="{$data['round_to']}" data-precision="{$smarty.const.MAX_CURRENCY_EDIT_PRECISION}" data-currency="{$data['currencies_id']}" class="js-products_group_price form-control{if ($smarty.const.CUSTOMERS_GROUPS_ENABLE != 'True' || $data['groups_id']==0) && ($app->controller->view->useMarketPrices != true || $default_currency['id']==$data['currencies_id'])} default_price {/if} mask-money" {if {round($data['products_group_price'])}==-2}style="display:none;"{/if}/>
 {if {$data['groups_id']}>0 }
             <span id="span_products_group_price{$idSuffix}" class="form-control-span"{if {round($data['products_group_price'])}>=0}style="display:none;"{/if}>{$currencies->formatById($data['base_price']*((100-$data['tabdata']['groups_discount'])/100), false, $data['currencies_id'])|escape}</span>
 {/if}
@@ -105,7 +109,11 @@ if $smarty.const.CUSTOMERS_GROUPS_ENABLE != 'True' || substr($idSuffix, -2)=='_0
               {* supplier price is caclulated for default currency only*}
         <div class="our-pr-line dfullcheck after">
             <div class="supplier-price-cost disable-btn is-not-bundle">
-              <a href="javascript:void(0)" class="btn" id="products_group_price{$idSuffix}_btn" onclick="return chooseSupplierPrice('products_group_price{$idSuffix}')" {if {round($data['products_group_price'])}==-2}style="display:none;"{/if}{if ((is_null($data['supplier_price_manual']) and SUPPLIER_UPDATE_PRICE_MODE=='Auto') or (!is_null($data['supplier_price_manual']) and $data['supplier_price_manual']==0))} disabled="disabled"{/if}>{$smarty.const.TEXT_PRICE_COST}</a>
+                <span id="autoprice_info" style="display: none;">{$smarty.const.TEXT_PRICE_COST}: <a href="{\Yii::$app->urlManager->createUrl(['configuration/index', 'groupid' => 'BOX_CATALOG_SUPPIERS', 'row' => 1])}">{$smarty.const.SUPPLIER_PRICE_SELECTION}</a></span>
+                <span id="manualprice" style="display: none;">
+                     <a href="javascript:void(0)" class="btn" id="products_group_price{$idSuffix}_btn" onclick="return chooseSupplierPrice('products_group_price{$idSuffix}')" {if {round($data['products_group_price'])}==-2}style="display:none;"{/if}{if ((is_null($data['supplier_price_manual']) and SUPPLIER_UPDATE_PRICE_MODE=='Auto') or (!is_null($data['supplier_price_manual']) and $data['supplier_price_manual']==0))} disabled="disabled"{/if}>{$smarty.const.TEXT_PRICE_COST}</a>
+                     <a href="javascript:void(0)" class="btn" id="products_group_price_undo_btn" onclick="return clickUndoPriceBtn(this)" style="display: none;">Undo</a>
+                </span>
               <div class="pull-right">
                 <label>
                   {$smarty.const.TEXT_PRICE_BASED_ON_SUPPLIER_AUTO}
@@ -126,9 +134,9 @@ if $smarty.const.CUSTOMERS_GROUPS_ENABLE != 'True' || substr($idSuffix, -2)=='_0
               <span class="sales-rules"><label>{$smarty.const.TEXT_SALES_RULES}<span class="colon">:</span></label>
                 {if (!empty($salesDetails['id']))}
                 <span class="sales-most-recent">{$smarty.const.TEXT_MOST_RECENT}<span class="colon">:</span></span>
-                
-                <a href="{Yii::$app->urlManager->createUrl(['specials/index-popup', 'prid' => $pInfo->products_id])}" class="right-link">{$smarty.const.TEXT_MORE}</a>
-                <a href="{Yii::$app->urlManager->createUrl(['specials/specialedit', 'products_id' => $pInfo->products_id, 'popup' => 1, 'id' => $salesDetails['id'], '_hash_' => $data['tabdata']['html_id']])}" class="right-link">{$smarty.const.IMAGE_EDIT}</a>
+               
+                <a href="{Yii::$app->urlManager->createUrl(['specials/index-popup', 'prid' => $pInfo->products_id, '_hash_' => $data['tabdata']['html_id'] ])}" class="right-link">{$smarty.const.TEXT_MORE}</a>
+                <a href="{Yii::$app->urlManager->createUrl(['specials/specialedit', 'products_id' => $pInfo->products_id, 'popup' => 1, 'popup_edit' => 1, 'id' => $salesDetails['id'], '_hash_' => $data['tabdata']['html_id']])}" class="right-link">{$smarty.const.IMAGE_EDIT}</a>
                 {else}
                   <a href="{Yii::$app->urlManager->createUrl(['specials/specialedit', 'products_id' => $pInfo->products_id, 'popup' => 1, '_hash_' => $data['tabdata']['html_id']])}" class="right-link">{$smarty.const.IMAGE_ADD}</a>
                 {/if}
@@ -137,6 +145,14 @@ if $smarty.const.CUSTOMERS_GROUPS_ENABLE != 'True' || substr($idSuffix, -2)=='_0
 
               {*if !empty($salesDetails)}{else}{$smarty.const.TEXT_ADD}{/if*}
             </div>
+                {if !empty($salesDetails['total_qty']) || !empty($salesDetails['max_per_order'])}
+            <div class="our-pr-line after">
+                <span class="sales-most-recent">{$smarty.const.TEXT_QTY_LIMITS}<span class="colon">:</span></span>
+            <span class="sold {if !empty($salesDetails['total_qty']) && $salesDetails['total_qty']<=$salesDetails['sold']}sold-out red{/if}">
+                  {$salesDetails['total_qty']} <span title="{$smarty.const.TABLE_HEADING_PRODUCTS_SOLD|escape}" style="cursor:pointer" class="sold {if $salesDetails['total_qty']<=$salesDetails['sold']}sold-out red{/if}">({$salesDetails['sold']})</span> / {$salesDetails['max_per_order']}
+              </span>
+            </div>
+                {/if}
             {if !empty($salesDetails['prices']['text'])}
             <div class="our-pr-line after">
               <div>
@@ -308,7 +324,7 @@ if $smarty.const.CUSTOMERS_GROUPS_ENABLE != 'True' || substr($idSuffix, -2)=='_0
             <input id="shipping_surcharge_price_gross{$idSuffix}" value='{$data['shipping_surcharge_price_gross']|escape}' onKeyUp="updateNetPrice(this);" class="form-control"/>
           </div>
         </div>
-<!-- bonus points -->
+        {if \common\helpers\Acl::checkExtensionAllowed('BonusActions')}
         <div class="our-pr-line after our-pr-line-check-box dfullcheck">
           <div>
             <label class="points_prod">{$smarty.const.TEXT_ENABLE_POINTSE}</label>
@@ -325,6 +341,7 @@ if $smarty.const.CUSTOMERS_GROUPS_ENABLE != 'True' || substr($idSuffix, -2)=='_0
             <input id="bonus_points_cost{$idSuffix}" name="bonus_points_cost{$fieldSuffix|escape}" value='{$data['bonus_points_cost']|escape}' class="form-control"/>
           </div>
         </div>
+        {/if}
 <!-- q-ty discount -->
         <div class="our-pr-line after our-pr-line-check-box dfullcheck">
           <div>
@@ -391,6 +408,7 @@ if $smarty.const.CUSTOMERS_GROUPS_ENABLE != 'True' || substr($idSuffix, -2)=='_0
         <div class="edp-line">
                 <span class="edp-qty-t" style="display:none;">{$smarty.const.TEXT_APPLICABLE}</b></span>
             </div>
+          <span id="supplier-default-sort-holder" style="display: block; float: right; text-align: right;"><label>Default sort: {Html::checkbox('suppliers-default-sort', {$pInfo->supplier_default_sort}, ['class' => 'check_on_off'])}</label></span>
       </div>
       <div class="widget-content edp-qty-update">
         {include file="supplierproduct-list.tpl"}
@@ -496,6 +514,7 @@ function bsPriceSwitch (element, argument) {
                             } else {
                                 $('#' + autoPrice +'_btn').removeAttr('disabled');
                             }
+                            $(document).trigger('supplier-autoprice:changed', [argument]);
                         }
                         return true;
                       };
@@ -538,8 +557,8 @@ var bsPriceParams = {
             //});
             $('.r_check_sale_prod').on('click', rPriceSwitch);
             $('.r_check_sale_prod').on('vswitch', bsPriceSwitch);
-            
-            /// late/lazy update gross price (only on visible tabs)
+
+              /// late/lazy update gross price (only on visible tabs)
             $('ul[id^={$id_prefix}] a[data-toggle="tab"]').on('shown.bs.tab', function () {
               // 2do update gross price inputs
               updateVisibleGrossInputs($($(this).attr('href')));
@@ -645,7 +664,17 @@ var bsPriceParams = {
             $('#base_sale_price').on('change',function(){
               //update group sale/special prices (discount based)
               $('.js_group_price [name^="spopt_"]').filter('[value="-2"]').trigger('click');
-            });     
+            });
+
+            $(document).on('supplier-autoprice:changed', function (event, argument) {
+                $('#autoprice_info').toggle(argument);
+                $('#manualprice').toggle(!argument);
+                // Net and Gross price edits:
+                $('#products_group_price_0').prop('disabled', Boolean(argument));
+                $('#products_group_price_gross_0').attr('disabled', Boolean(argument));
+            });
+            let arg = Boolean({((is_null($pInfo->supplier_price_manual) and SUPPLIER_UPDATE_PRICE_MODE=='Auto') or (!is_null($pInfo->supplier_price_manual) and $pInfo->supplier_price_manual==0))});
+            $(document).trigger('supplier-autoprice:changed', [arg]);
           });
         </script>
 <script>
@@ -694,3 +723,89 @@ var bsPriceParams = {
   </div>
 </div>
 {/if}
+<!-- edit dialog for supplier landed price -->
+<div class="modal fade" id="editLandedPrice" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="vertical-alignment-helper">
+        <div class="modal-dialog vertical-align-center modal-little">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Landed Price</h5>
+                </div>
+                <div class="modal-body">
+                    <label class="modal-block">{Html::radio('modal-selected-type', true, ['value' => 'calculate'])} Calculated: <span id="modal-calculated-landed-price">10</span></label>
+                    <label class="modal-block">{Html::radio('modal-selected-type', false, ['value' => 'manually'])} Manually: </label>
+                    {Html::textInput('modal-manually-landed-price', null, ['size' => 10, 'style' => 'width: 100px; margin-left: 17px'])}
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary save-changes" data-dismiss="modal">Save changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<style>
+    .vertical-alignment-helper {
+        display:table;
+        height: 100%;
+        width: 100%;
+        pointer-events:none;
+    }
+    .vertical-align-center {
+        display: table-cell;
+        vertical-align: middle;
+        pointer-events:none;
+    }
+    .modal-content {
+        width:inherit;
+        max-width:inherit;
+        height:inherit;
+        margin: 0 auto;
+        pointer-events:all;
+    }
+    .modal-little {
+        max-width: 300px;
+    }
+    .modal-block {
+        display: block;
+    }
+
+    /* supplier sort buttons */
+    .move-up-down-btns {
+        margin-top: -5px;
+        width: 30px;
+        float: left;
+        font-size: small;
+    }
+
+    .move-up-down-btns button{
+        border: 0px;
+        color: black;
+        padding: 0px 0px;
+        cursor: pointer;
+        display: block;
+        background: none;
+    }
+
+    .move-up-down-btns button:disabled{
+        color: gray;
+        cursor: auto;
+    }
+
+    .move-up-down-btns button.btn-up:before {
+        content: "\25b2";
+    }
+    .move-up-down-btns button.btn-down:before {
+        content: "\25bc";
+    }
+
+    /* other */
+    .overridden-price {
+        font-weight: bold;
+    }
+    .js-overridden-mark {
+        font-size: small;
+        font-weight: bold;
+    }
+</style>

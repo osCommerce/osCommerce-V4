@@ -1,0 +1,1 @@
+<a href="{Yii::$app->urlManager->createUrl(['categories/stock-history', 'prid' => $prid])}" class="btn right-link">{$smarty.const.TEXT_STOCK_HISTORY}</a>

@@ -55,6 +55,9 @@ class Admin
     }
     
     public static function appShopConnectedMessage() {
+        if (defined('PROJECT_RELEASE_TYPE') && PROJECT_RELEASE_TYPE == 'VERSIONING') {
+            return;
+        }
         global $login_id;
         $admin = \common\models\Admin::findOne($login_id);
         $storageKey = $admin->storage_key ?? '';

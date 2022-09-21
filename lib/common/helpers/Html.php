@@ -16,29 +16,49 @@ class Html extends \yii\helpers\Html
 {
     public static function textInputNullable($name, $value = null, $options = [])
     {
-        $button = [
-            'content' => '<i class="icon-pencil"></i>',
-            'options' => []
-        ];
+        $button = [];
         if (isset($options['button'])){
-            $button = array_merge($button, $options['button']);
+            $button = $options['button'];
         }
-        if ( !is_array($button['options']) ) $button['options'] = [];
-        if ( !isset($button['options']['class']) ) {
-            $button['options']['class'] = 'input-group-addon js-input-nullable-btn';
-        }elseif(strpos($button['options']['class'],'input-group-addon')===false){
-            $button['options']['class'] = 'input-group-addon js-input-nullable-btn '.$button['options']['class'];
-        }
-        $inputButton = static::tag('div', $button['content'], $button['options']);
+        if (!isset($button['options']) || !is_array($button['options']) ) $button['options'] = [];
 
-        //'<div class="input-group-addon js-price-formula" data-formula-rel="#txtSupplierPriceFormula" data-formula-allow-params=""></div>';
-        if ( is_null($value) ){
-            $options['readonly'] = 'readonly';
-            $options['disabled'] = 'disabled';
+        $class = ['input-group-addon', 'js-input-nullable-btn'];
+        if (isset($button['options']['class']) && strpos($button['options']['class'],'input-group-addon')===false){
+            $class = ['input-group-addon', 'js-input-nullable-btn', $button['options']['class']];
         }
+
+        $button['options']['title'] = IMAGE_EDIT;
+        $button['options']['class'] = array_merge($class, ['js-input-nullable-edit']);
+        $inputButton = static::tag('div', '<i class="icon-pencil"></i>', $button['options']);
+
+        $button['options']['style'] = ['display' => 'none'];
+
+        $button['options']['title'] = RETURN_DEFAULT_VALUE;
+        $button['options']['class'] = array_merge($class, ['js-input-nullable-undo']);
+        $inputButton .= static::tag('div', '<i class="icon-undo"></i>', $button['options']);
+
+        $button['options']['title'] = IMAGE_CANCEL;
+        $button['options']['class'] = array_merge($class, ['js-input-nullable-close']);
+        $inputButton .= static::tag('div', '<i class="icon-close"></i>', $button['options']);
+
+        $button['options']['title'] = TEXT_APPLY;
+        $button['options']['class'] = array_merge($class, ['js-input-nullable-save']);
+        $inputButton .= static::tag('div', '<i class="icon-ok"></i>', $button['options']);
+
+        $options['readonly'] = 'readonly';
+
+        $default = '';
+        if (isset($options['placeholder']) && $options['placeholder'] !== '') {
+            $default = '<div class="js-input-nullable-default"' . ($value ? '' : ' style="display: none"') . '>
+                            <span>' . TEXT_DEFAULT . '</span>
+                            <span class="js-input-nullable-default-val">'. $options['placeholder'] . '</span>
+                        </div>';
+        }
+
 
         return
             '<div class="input-group js-main-text-input-nullable">'.
+              $default.
               static::textInput($name,$value,$options).
               $inputButton.
             '</div>';

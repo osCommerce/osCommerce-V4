@@ -965,6 +965,7 @@ EOD;
           'totals' => [
             'item_total' => [
               'currency_code' => $currency,
+              'value' => 0
             //'value' => $this->formatRaw($order->info['subtotal_cost_inc_tax']),
             ],
           ]
@@ -1003,9 +1004,9 @@ EOD;
         $totalPayPal += $tax;
 
         foreach ($items as $item) {
-            $details['totals']['item_total']['value'] += $this->formatRaw($item['unit_amount']['value'] * $item['quantity']);
+            $details['totals']['item_total']['value'] += $this->formatRaw($item['unit_amount']['value'] * $item['quantity'], $currency, 1); //already multiplied currency value
         }
-        $details['totals']['item_total']['value'] = $this->formatRaw($details['totals']['item_total']['value']);
+        $details['totals']['item_total']['value'] = $this->formatRaw($details['totals']['item_total']['value'], $currency, 1);
 
         $totalPayPal += $details['totals']['item_total']['value'];
 
@@ -1016,7 +1017,7 @@ EOD;
             ];
         }
         $totalPayPal += $details['totals']['handling']['value'] ?? 0;
-        $totalPayPal = $this->formatRaw($totalPayPal);
+        $totalPayPal = $this->formatRaw($totalPayPal, $currency, 1);
 
 
         if ($discountValue) {
@@ -1036,7 +1037,7 @@ EOD;
         
 ///rounding issues
         $totalPayPal -= $details['totals']['discount']['value'] ?? 0;
-        $totalPayPal = $this->formatRaw($totalPayPal);
+        $totalPayPal = $this->formatRaw($totalPayPal, $currency, 1);
         if ($totalPayPal > $masterTotal) {
             $dscnt = $details['totals']['discount']['value']??0;
             $details['totals']['discount'] = [ //shipping_discount

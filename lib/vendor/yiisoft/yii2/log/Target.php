@@ -1,8 +1,8 @@
 <?php
 /**
- * @link http://www.yiiframework.com/
+ * @link https://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
- * @license http://www.yiiframework.com/license/
+ * @license https://www.yiiframework.com/license/
  */
 
 namespace yii\log;
@@ -99,7 +99,7 @@ abstract class Target extends Component
         '_SERVER.PHP_AUTH_PW',
     ];
     /**
-     * @var callable a PHP callable that returns a string to be prefixed to every exported message.
+     * @var callable|null a PHP callable that returns a string to be prefixed to every exported message.
      *
      * If not set, [[getMessagePrefix()]] will be used, which prefixes the message with context information
      * such as user IP, user ID and session ID.

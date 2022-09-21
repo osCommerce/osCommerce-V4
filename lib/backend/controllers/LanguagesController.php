@@ -421,7 +421,11 @@ class LanguagesController extends Sceleton {
                         $row['page_type'] = $row['page_type'];
                         $row['meta_description'] = $row['meta_description'];
                         $row['meta_key'] = $row['meta_key'];
-                        tep_db_perform(TABLE_INFORMATION, $row);
+                        try {
+                            tep_db_perform(TABLE_INFORMATION, $row);
+                        } catch (\Exception $e) {
+                            \Yii::warning($e->getMessage());
+                        }
                     }
                     tep_db_free_result($information_query);
 
@@ -448,7 +452,11 @@ class LanguagesController extends Sceleton {
                     $data_query = tep_db_query("select * from " . TABLE_PRODUCTS_STOCK_INDICATION_TEXT . " where language_id = '" . (int) $languages_id . "'");
                     while ($data = tep_db_fetch_array($data_query)) {
                         $data['language_id'] = (int) $insert_id;
-                        tep_db_perform(TABLE_PRODUCTS_STOCK_INDICATION_TEXT, $data);
+                        try {
+                            tep_db_perform(TABLE_PRODUCTS_STOCK_INDICATION_TEXT, $data);
+                        } catch (\Exception $e) {
+                            \Yii::warning($e->getMessage());
+                        }
                     }
                     tep_db_free_result($data_query);
 
@@ -523,7 +531,11 @@ class LanguagesController extends Sceleton {
                     //translations
                     $translation_query = tep_db_query("select translation_key, translation_entity, translation_value, hash from " . TABLE_TRANSLATION . " where language_id = '" . (int) $languages_id . "'");
                     while ($trans = tep_db_fetch_array($translation_query)) {
-                        tep_db_query("insert into " . TABLE_TRANSLATION . " (	language_id, translation_key, translation_entity, translation_value, hash ) values ( '" . (int) $insert_id . "', '" . tep_db_input($trans['translation_key']) . "', '" . tep_db_input($trans['translation_entity']) . "', '" . tep_db_input($trans['translation_value']) . "', '" . tep_db_input($trans['hash']) . "')");
+                        try {
+                            tep_db_query("insert into " . TABLE_TRANSLATION . " (	language_id, translation_key, translation_entity, translation_value, hash ) values ( '" . (int) $insert_id . "', '" . tep_db_input($trans['translation_key']) . "', '" . tep_db_input($trans['translation_entity']) . "', '" . tep_db_input($trans['translation_value']) . "', '" . tep_db_input($trans['hash']) . "')");
+                        } catch (\Exception $e) {
+                            \Yii::warning($e->getMessage());
+                        }
                     }
                     tep_db_free_result($translation_query);
 

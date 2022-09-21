@@ -136,7 +136,7 @@
       return false;
     }
 
-    function changeModule(item_id, action, enabled, data_removeable = false) {
+    function changeModule(item_id, action, enabled, data_removeable = []) {
       var process_changes = function (user_confirmed_drop_datatables = false, user_confirmed_drop_acl = false) {
         var attr_check = $('input[name="enabled"]').val();
         if (enabled === true) {
@@ -178,7 +178,20 @@
       }
       if (action == 'remove') {
 
-          if (data_removeable == true) { // extention allows drop its own datatables - prompt with checkbox 
+          if (Array.isArray(data_removeable) && data_removeable.length > 0) { // extention allows drop its own datatables - prompt with checkbox
+            var options = [];
+            if (data_removeable.includes('tables')) {
+              options.push({
+                text: "{$smarty.const.TEXT_MODULES_REMOVE_CONFIRM_DATATABLES}",
+                value: 'remove_ext_and_drop_datatables',
+              });
+            }
+            if (data_removeable.includes('acl')) {
+              options.push({
+                text: "{$smarty.const.TEXT_MODULES_REMOVE_CONFIRM_ACL}",
+                value: 'remove_ext_and_drop_acl',
+              });
+            }
             var locale = {
                 OK: "OK", // isn't used
                 CONFIRM: "{$smarty.const.JS_BUTTON_YES}",
@@ -190,15 +203,7 @@
               title: "{$smarty.const.TEXT_MODULES_REMOVE_CONFIRM_HEAD}",
               locale: 'custom',
               inputType: 'checkbox',
-              inputOptions: [{
-                    text: "{$smarty.const.TEXT_MODULES_REMOVE_CONFIRM_DATATABLES}",
-                    value: 'remove_ext_and_drop_datatables',
-                },
-                {
-                    text: "{$smarty.const.TEXT_MODULES_REMOVE_CONFIRM_ACL}",
-                    value: 'remove_ext_and_drop_acl',
-                }
-            ],
+              inputOptions: options,
                 callback: function (result) {
                   if (result != null) {
                     process_changes( result.includes('remove_ext_and_drop_datatables'), result.includes('remove_ext_and_drop_acl') );  

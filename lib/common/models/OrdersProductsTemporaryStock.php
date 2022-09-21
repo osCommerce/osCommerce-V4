@@ -11,6 +11,8 @@ use Yii;
  * @property integer $warehouse_id
  * @property integer $suppliers_id
  * @property integer $location_id
+ * @property integer $layers_id
+ * @property integer $batch_id
  * @property string $session_id
  * @property integer $customers_id
  * @property integer $prid
@@ -38,7 +40,7 @@ class OrdersProductsTemporaryStock extends \yii\db\ActiveRecord
     {
         return [
             [['warehouse_id', 'session_id', 'prid', 'products_id', 'normalize_id'], 'required'],
-            [['warehouse_id', 'suppliers_id', 'location_id', 'customers_id', 'prid', 'parent_id', 'temporary_stock_quantity', 'not_available_quantity', 'specials_id'], 'integer'],
+            [['warehouse_id', 'suppliers_id', 'location_id', 'layers_id', 'batch_id', 'customers_id', 'prid', 'parent_id', 'temporary_stock_quantity', 'not_available_quantity', 'specials_id'], 'integer'],
             [['specials_id'], 'default', 0],
             [['products_id', 'normalize_id'], 'string'],
             [['temporary_stock_datetime'], 'safe'],
@@ -56,6 +58,8 @@ class OrdersProductsTemporaryStock extends \yii\db\ActiveRecord
             'warehouse_id' => 'Warehouse ID',
             'suppliers_id' => 'Suppliers ID',
             'location_id' => 'Location ID',
+            'layers_id' => 'Layers ID',
+            'batch_id' => 'Batch ID',
             'session_id' => 'Session ID',
             'customers_id' => 'Customers ID',
             'prid' => 'Prid',

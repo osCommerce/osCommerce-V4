@@ -1,8 +1,8 @@
 <?php
 /**
- * @link http://www.yiiframework.com/
+ * @link https://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
- * @license http://www.yiiframework.com/license/
+ * @license https://www.yiiframework.com/license/
  */
 
 namespace yii\validators;
@@ -34,12 +34,12 @@ class NumberValidator extends Validator
      */
     public $integerOnly = false;
     /**
-     * @var int|float upper limit of the number. Defaults to null, meaning no upper limit.
+     * @var int|float|null upper limit of the number. Defaults to null, meaning no upper limit.
      * @see tooBig for the customized message used when the number is too big.
      */
     public $max;
     /**
-     * @var int|float lower limit of the number. Defaults to null, meaning no lower limit.
+     * @var int|float|null lower limit of the number. Defaults to null, meaning no lower limit.
      * @see tooSmall for the customized message used when the number is too small.
      */
     public $min;

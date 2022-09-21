@@ -14,6 +14,14 @@ Released under the GNU General Public License
 {use class="backend\components\Currencies"}
 {use class="Yii"}
 
+<style type="text/css">
+    .cbox-left {
+        width: 100%;
+    }
+    .specialTable {
+        max-width: 980px;
+    }
+</style>
 {Currencies::widget()}
 {function SalesParams}
   {*tabs=$app->controller->view->price_tabs tabparams=$tabparams  fieldsData=$app->controller->view->price_tabs_data  id_prefix = $id_prefix*}
@@ -53,112 +61,133 @@ Released under the GNU General Public License
                 </label>
               {/if}
 
-              <div class="specials-rules">
-                <label>
-                <input type="radio" value="2" id="r3_special_status" data-toswitch="{if ($default_currency['id']==$data['currencies_id'])}market_sales_switch,{/if}div_sale_prod{$dataToSwitch}" name="special_status{$fieldSuffix|escape}" class="r_check_sale_prod" {if $data['specials_disabled']<=0 && $data['specials_enabled']<=0 } checked="checked" {/if} data-defaults-set="special_price,special_price_gross" data-defaults-on="0" data-defaults-off="-1"/><span>{$smarty.const.TEXT_ENABLE_SCHEDULE}</span>
-                </label>
-                <label>
-                <input type="radio" value="-1" id="r2_special_status" data-toswitch="{if ($default_currency['id']==$data['currencies_id'])}market_sales_switch,{/if}div_sale_prod{$dataToSwitch}" name="special_status{$fieldSuffix|escape}" class="r_check_sale_prod" {if $data['specials_disabled'] > 0} checked="checked" {/if} data-defaults-set="special_price,special_price_gross" data-defaults-on="0" data-defaults-off="-1"/><span>{$smarty.const.TEXT_FORCE_DISABLE}</span>
-                </label>
+              <div class="specials-rules m-b-2">
+                  <div class="">
+                      <label>
+                      <input type="radio" value="2" id="r3_special_status" data-toswitch="{if ($default_currency['id']==$data['currencies_id'])}market_sales_switch,{/if}div_sale_prod{$dataToSwitch}" name="special_status{$fieldSuffix|escape}" class="r_check_sale_prod" {if $data['specials_disabled']<=0 && $data['specials_enabled']<=0 } checked="checked" {/if} data-defaults-set="special_price,special_price_gross" data-defaults-on="0" data-defaults-off="-1"/><span>
+                              {$smarty.const.TEXT_ENABLE_SCHEDULE}</span>
+                      </label>
+                  </div>
+                  <div class="">
+                      <label>
+                          <input type="radio" value="-1" id="r2_special_status" data-toswitch="{if ($default_currency['id']==$data['currencies_id'])}market_sales_switch,{/if}div_sale_prod{$dataToSwitch}" name="special_status{$fieldSuffix|escape}" class="r_check_sale_prod" {if $data['specials_disabled'] > 0} checked="checked" {/if} data-defaults-set="special_price,special_price_gross" data-defaults-on="0" data-defaults-off="-1"/><span>
+                              {$smarty.const.TEXT_FORCE_DISABLE}</span>
+                      </label>
+                  </div>
+                  <div class="">
+                      <label>
+                          <input type="radio" value="1" id="r4_special_status" data-toswitch="{if ($default_currency['id']==$data['currencies_id'])}market_sales_switch,{/if}div_sale_prod{$dataToSwitch}" name="special_status{$fieldSuffix|escape}" class="r_check_sale_prod" {if $data['specials_enabled'] > 0} checked="checked" {/if} data-defaults-set="special_price,special_price_gross" data-defaults-on="0" data-defaults-off="-1"/>
+                          <span>{$smarty.const.TEXT_FORCE_ENABLE}</span>
+                      </label>
+                  </div>
 
-                <label>
-                <input type="radio" value="1" id="r4_special_status" data-toswitch="{if ($default_currency['id']==$data['currencies_id'])}market_sales_switch,{/if}div_sale_prod{$dataToSwitch}" name="special_status{$fieldSuffix|escape}" class="r_check_sale_prod" {if $data['specials_enabled'] > 0} checked="checked" {/if} data-defaults-set="special_price,special_price_gross" data-defaults-on="0" data-defaults-off="-1"/>
-                <span>{$smarty.const.TEXT_FORCE_ENABLE}</span>
-                </label>
               </div>
 
-          <div class="dates">
-            <div class="sale-prod-line _our-pr-line">
-              <div class="_disable-btn">
+              <div class="row">
+          <div class="dates col-xs-7">
+            <div class="_our-pr-line row">
+              <div class="_disable-btn col-xs-6">
                 <label>{$smarty.const.TEXT_START_DATE}<span class="colon">:</span></label>
                 <input id="special_start_date" name="special_start_date{$fieldSuffix|escape}" value='{\common\helpers\Date::datepicker_date_time($data['start_date'])}' class="tl-dtp form-control"/>
               </div>
-              <div class="_disable-btn">
+              <div class="_disable-btn col-xs-6">
                 <label>{$smarty.const.TEXT_EXPIRY_DATE}<span class="colon">:</span></label>
                 <input id="special_expires_date" name="special_expires_date{$fieldSuffix|escape}" value='{\common\helpers\Date::datepicker_date_time($data['expires_date'])}' class="tl-dtp form-control form-control-small"/>
               </div>
             </div>
           </div>
 
-          <div class="limits">
-            <div class="sale-prod-line _our-pr-line">
-              <div class="_disable-btn">
+          <div class="limits col-xs-5">
+            <div class="_our-pr-line row">
+              <div class="_disable-btn col-xs-6">
                 <label class="inline">{$smarty.const.TEXT_MAX_QTY_TO_SELL}<span class="colon">:</span></label>
                 <div class="info-hint"><div class="info-hint-box"><div class="info-hint-mustache"></div>{$smarty.const.TEXT_LEAVE_EMPTY_FOR_NO_LIMITS}</div></div>
-                <input name="total_qty{$fieldSuffix|escape}" value='{if !empty($data['total_qty'])}{$data['total_qty']}{/if}' class="form-control"/>
+                <input name="total_qty{$fieldSuffix|escape}" value='{if !empty($data['total_qty'])}{$data['total_qty']}{/if}' class="form-control total_qty"/>
               </div>
-              <div class="_disable-btn">
+              <div class="_disable-btn col-xs-6">
                 <label>{$smarty.const.TEXT_MAX_QTY_TO_SELL_IN_ORDER}<span class="colon">:</span></label>
-                <input name="max_per_order{$fieldSuffix|escape}" value='{if !empty($data['max_per_order'])}{$data['max_per_order']}{/if}' class="form-control"/>
+                <input name="max_per_order{$fieldSuffix|escape}" value='{if !empty($data['max_per_order'])}{$data['max_per_order']}{/if}' class="form-control max_per_order"/>
               </div>
             </div>
           </div>
+              </div>
         </div>
 
 {/function}
 
 ﻿<div class="specialTable">
-  {Html::beginForm(['specials/submit'], 'post', ['name' => "product_edit", 'id' => "save_item_form", 'onsubmit' => "return saveItem();"])}
+    {Html::beginForm(['specials/submit'], 'post', ['name' => "product_edit", 'id' => "save_item_form", 'onsubmit' => "return saveItem();"])}
     {Html::hiddenInput('products_id', $pInfo->products_id)}
-    <table cellspacing="0" cellpadding="0" width="100%">
-      
-      <tr>
-        {if !$popup}
-        <td class="label_name">{$smarty.const.TEXT_SPECIALS_PRODUCT}</td>
-        {/if}
-        <td class="label_value_in">
-          <div class="col-md-12">
-            {if !$popup}
-            <a target="blank" href="{Yii::$app->urlManager->createUrl(['categories/productedit', 'pID' => $pInfo->products_id])}">{$backendProductDescription.products_name}</a>
-            <br />
-            {/if}
-            <label>{if $smarty.const.PRICE_WITH_BACK_TAX == 'True'}{$smarty.const.TEXT_GROSS_PRICE}{else}{$smarty.const.TEXT_NET_PRICE}{/if}</label> {$price}
-            <div {if $smarty.const.PRICE_WITH_BACK_TAX == 'True'}style="display: none;"{/if}>
-              <label>{$smarty.const.TEXT_GROSS_PRICE}</label> {$priceGross}
-            </div>
-          </div>
-          </td></tr>
-        <tr><td colspan="2" class="">
-            <div class="col-md-2">
-              <label for="specialsTypeId">{$smarty.const.BOX_HEADING_SPECIALS_TAGS}:</label>
-              {Html::dropDownList('specials_type_id', $sInfo->specials_type_id|default:null, $specials_types, ['class'=>"form-control form-control-med"])}
-            <br />
-            </div>
-            <div class="col-md-2 after">
-              <label for="promoteType">{$smarty.const.BOX_HEADING_SPECIALS_PROMOTE_TYPE}:</label>
-              {Html::dropDownList('promote_type', $sInfo->promote_type|default:null, $promote_types, ['class'=>"form-control form-control-med"])}
-            <br />
-            </div>
-        </td></tr>
-        <tr><td colspan="2" class="">
-            <div class="tabbable-custom">
-            <div class="tab-content special-edit-settings">
 
-
-        {$price_tab_callback = 'productSaleOnlyPriceBlock'}
-        {$hideSuppliersPart = 1}
-        {$specials_id = $sInfo->specials_id|default:null}
-        {include file='../categories/productedit/price_js.tpl'}
-        {include file='../categories/productedit/price.tpl'}
+    {if !$popup}
+        <div class="row p-l-2 m-b-2">
+            <div class="col-xs-3">
+                <b>{$smarty.const.TEXT_SPECIALS_PRODUCT}</b>
+            </div>
+            <div class="col-xs-9">
+                <a target="blank" href="{Yii::$app->urlManager->createUrl(['categories/productedit', 'pID' => $pInfo->products_id])}">{$backendProductDescription.products_name}</a>
+            </div>
         </div>
-        </div>
-        </td></tr>
-
-
-				{*<tr><td class="label_name"></td><td class="notest">{$smarty.const.TEXT_SPECIALS_PRICE_TIP}</td></tr>*}
-    </table>
-    {if $popup}
-    <div class=" col-md-12">
     {/if}
-      <div class="btn-bar{if $popup} col-md-12{/if}">
-        <div class="btn-left"><a class="btn btn-cancel" href="{$back_url}">{$smarty.const.IMAGE_CANCEL}</a></div>
-        <div class="btn-right"><input class="btn btn-primary" type="submit" value="{$smarty.const.IMAGE_SAVE}"></div>
-      </div>
-    {if $popup}
+
+    <div class="row m-b-2 p-l-2">
+        <div class="col-xs-5">
+            <label>
+                {if $smarty.const.PRICE_WITH_BACK_TAX == 'True'}
+                    {$smarty.const.TEXT_GROSS_PRICE}
+                {else}
+                    {$smarty.const.TEXT_NET_PRICE}
+                {/if}:
+            </label>
+            {$price}
+        </div>
+        <div class="col-xs-6" {if $smarty.const.PRICE_WITH_BACK_TAX == 'True'}style="display: none;"{/if}>
+            <label>{$smarty.const.TEXT_GROSS_PRICE}:</label> {$priceGross}
+        </div>
     </div>
-    {/if}
-{Html::endForm()}
+
+    <div class="row m-b-2 p-l-2">
+        {if (true === \common\helpers\Acl::rule(['TEXT_SETTINGS', 'BOX_HEADING_SPECIALS_TAGS'])) }
+            <div class="col-xs-2">
+                <label for="specialsTypeId"><a href="specials-types" target="blank">{$smarty.const.BOX_HEADING_SPECIALS_TAGS}</a>:</label>
+            </div>
+
+            <div class="col-xs-3">
+                {Html::dropDownList('specials_type_id', $sInfo->specials_type_id|default:null, $specials_types, ['class'=>"form-control form-control-med"])}
+            </div>
+        {/if}
+
+        <div class="col-xs-2">
+            <label for="promoteType">{$smarty.const.BOX_HEADING_SPECIALS_PROMOTE_TYPE}:</label>
+        </div>
+        <div class="col-xs-4">
+            {Html::dropDownList('promote_type', $sInfo->promote_type|default:null, $promote_types, ['class'=>"form-control form-control-med"])}
+        </div>
+    </div>
+
+    <div class="tabbable-custom">
+        <div class="tab-content special-edit-settings">
+
+            {$price_tab_callback = 'productSaleOnlyPriceBlock'}
+            {$hideSuppliersPart = 1}
+            {$specials_id = $sInfo->specials_id|default:null}
+            {include file='../categories/productedit/price_js.tpl'}
+            {include file='../categories/productedit/price.tpl'}
+        </div>
+    </div>
+
+    <div class="btn-bar">
+        <div class="btn-left">
+            <a class="btn btn-cancel" href="{$back_url}">{$smarty.const.IMAGE_CANCEL}</a>
+        </div>
+        <div class="btn-right">
+            <input class="btn btn-primary" type="submit" value="{$smarty.const.IMAGE_SAVE}">
+        </div>
+    </div>
+
+    {Html::endForm()}
 </div>
+
 <script>
  {$idSuffix="_0"} // 2do marketing prices
 $(document).ready(function(){
@@ -168,14 +197,33 @@ $(document).ready(function(){
     {/if}
     $('.btn-cancel').popUp({ 'box_class':'popupSales' });
   {/if}
-    $('#special_start_date').tlDatetimepicker();
+      $('input.tl-dtp').tlDatetimepicker();
+/*    $('#special_start_date').tlDatetimepicker();
     $('#special_expires_date').tlDatetimepicker();
-
+*/
     $('#special_start_date').on("dp.change", function (e) {
         $('#special_expires_date').data("DateTimePicker").minDate(e.date);
+        $('#special_expires_date').data("DateTimePicker").date(e.date.add(7, 'd'));
     });
     $('#special_expires_date').on("dp.change", function (e) {
         $('#special_start_date').data("DateTimePicker").maxDate(e.date);
+    });
+
+    $(".limits .max_per_order").on("change", function (e) {
+        try {
+            var check = $(this).parents('.limits').find('.total_qty')[0].value;
+            if (parseInt($(this).val()) > parseInt(check)) {
+                $(this).val(parseInt(check));
+            }
+        } catch ( e ) { }
+    });
+    $(".limits .total_qty").on("change", function (e) {
+        try {
+            var check = $(this).parents('.limits').find('.max_per_order')[0].value;
+            if (parseInt($(this).val()) < parseInt(check)) {
+                $($(this).parents('.limits').find('.max_per_order')[0]).val(parseInt($(this).val()));
+            }
+        } catch ( e ) { }
     });
 
 })
@@ -205,7 +253,15 @@ $(document).ready(function(){
               window.location = '{$app->urlManager->createUrl('specials/specialedit')}?id=' + data.id
             }, 2000);
             {else}
+                {if $popup_edit} 
+                    {* just close *}
+              $('.popup-box .pop-up-close').click();
+
+                {else} 
+                    {* reload pop-up list *}
               $('.pop-up-content .btn-cancel').click();
+              
+                {/if}
             {/if}
           }
         } else {
@@ -306,8 +362,7 @@ $(document).ready(function(){
   {$showSalesDiv=1}
 {/if}
 {$showSalesDiv=1}
-
-    <div id="group_price_container{$idSuffix}" class="js_group_price" data-base_price="{$data['base_price']|escape}" data-group_discount="{$data['tabdata']['groups_discount']}" data-currencies-id="{$data['currencies_id']}" data-base_special_price="{$data['base_specials_price']|escape}" >
+    <div id="group_price_container{$idSuffix}" class="js_group_price p-b-2" data-base_price="{$data['base_price']|escape}" data-group_discount="{$data['tabdata']['groups_discount']}" data-currencies-id="{$data['currencies_id']}" data-base_special_price="{$data['base_specials_price']|escape}" >
 
       <div id="div_wrap_hide{$idSuffix}" {if round($data['products_group_price'])==-1}style="display:none;"{/if}>
         <!-- specials/sales -->
@@ -322,9 +377,13 @@ $(document).ready(function(){
               <label for="popt{$idSuffix}_s0"><input type="radio" class="price-options" id="popt{$idSuffix}_s0" value="-1" {if $data['products_group_special_price']=='-1'}checked{/if} data-idsuffix="{$idSuffix}"/>{sprintf($smarty.const.TEXT_PRICE_SWITCH_DISABLE, $data['tabdata']['title'])}</label>
             </div>
             {else}
-            <div class="our-pr-line after div_sale_prod">
-              <label for="popt{$idSuffix}_s2"><input type="radio" class="price-options" id="popt{$idSuffix}_s2" value="1" {if $data['products_group_special_price']!='-1'}checked{/if} data-idsuffix="{$idSuffix}"/>{sprintf($smarty.const.TEXT_ENABLED_FOR, $data['tabdata']['title'])}</label>
-              <label for="popt{$idSuffix}_s0"><input type="radio" class="price-options" id="popt{$idSuffix}_s0" value="-1" {if $data['products_group_special_price']=='-1'}checked{/if} data-idsuffix="{$idSuffix}"/>{sprintf($smarty.const.TEXT_PRICE_SWITCH_DISABLE, $data['tabdata']['title'])}</label>
+            <div class="div_sale_prod row m-b-2">
+                <div class="col-xs-5 align-right">
+                    <label for="popt{$idSuffix}_s2"><input type="radio" class="price-options" id="popt{$idSuffix}_s2" value="1" {if $data['products_group_special_price']!='-1'}checked{/if} data-idsuffix="{$idSuffix}"/> {sprintf($smarty.const.TEXT_ENABLED_FOR, $data['tabdata']['title'])}</label>
+                </div>
+                <div class="col-xs-5">
+                    <label for="popt{$idSuffix}_s0"><input type="radio" class="price-options" id="popt{$idSuffix}_s0" value="-1" {if $data['products_group_special_price']=='-1'}checked{/if} data-idsuffix="{$idSuffix}"/> {sprintf($smarty.const.TEXT_PRICE_SWITCH_DISABLE, $data['tabdata']['title'])}</label>
+                </div>
             </div>
 
             {/if}
@@ -333,9 +392,11 @@ $(document).ready(function(){
         </div>
         <div class="{if ($default_currency['id']!=$data['currencies_id']) }market_sales_switch{/if} sale_to_dis {if $data['specials_disabled']>0 }dis_module{/if}">
         <div id="div_sale_prod{$idSuffix}" class="sale-prod-line-block after div_sale_prod div_sale_prod{$idSuffix}" {if ($showSalesDiv==0 || $data['products_group_special_price']==-1)}style="display:none;"{/if}>
-          <div class="_sale-prod-line our-pr-line">
-          <div>
-            <label class="sale-info1">{$smarty.const.TEXT_SALE}<span class="colon">:</span></label>
+          <div class="_sale-prod-line row">
+              <div class="col-xs-2 align-right">
+                  <label class="sale-info1">{$smarty.const.TEXT_SALE}<span class="colon">:</span></label>
+              </div>
+          <div class="col-xs-3">
             {if $data['products_group_special_price']>0.001}
               {$val = $data['products_group_special_price']}
             {else}
@@ -347,8 +408,10 @@ $(document).ready(function(){
             <span id="span_special_price{$idSuffix}" class="form-control-span"{if $data['products_group_specials_price']>-0.99}style="display:none;"{/if}>{$currencies->formatById($val, false, $data['currencies_id'])|escape}</span>
 {/if}
           </div>
-          <div>
-            <label class="sale-info1">{$smarty.const.TEXT_SALE_GROSS}<span class="colon">:</span></label>
+              <div class="col-xs-3 align-right">
+                  <label class="sale-info1">{$smarty.const.TEXT_SALE_GROSS}<span class="colon">:</span></label>
+              </div>
+          <div class="col-xs-3">
             {if $data['products_group_special_price_gross']>0.001}
               {$val = $data['products_group_special_price_gross']}
             {else}

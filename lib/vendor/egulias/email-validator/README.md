@@ -1,9 +1,8 @@
 # EmailValidator
 
-[![Build Status](https://travis-ci.org/egulias/EmailValidator.svg?branch=3.x)](https://travis-ci.org/egulias/EmailValidator)
+[![Build Status](https://app.travis-ci.com/egulias/EmailValidator.svg?branch=3.x)](https://app.travis-ci.com/github/egulias/EmailValidator)
 [![Code Quality](https://scrutinizer-ci.com/g/egulias/EmailValidator/badges/quality-score.png?b=3.x)](https://scrutinizer-ci.com/g/egulias/EmailValidator/?branch=3.x)
 [![Test Coverage](https://scrutinizer-ci.com/g/egulias/EmailValidator/badges/coverage.png?b=3.x)](https://scrutinizer-ci.com/g/egulias/EmailValidator/?branch=3.x)
-[![SymfonyInsight](https://insight.symfony.com/projects/22ba6692-9c02-42e5-a65d-1c5696bfffc6/mini.svg)](https://insight.symfony.com/projects/22ba6692-9c02-42e5-a65d-1c5696bfffc6)
 
 A library for validating emails against several RFC.
 
@@ -20,7 +19,7 @@ This library aims to support RFCs:
 
 ## Supported versions
 
-**Curent major version with full support is v3**
+**Current major version with full support is v3**
 
 | Version | Released | EOL  | Only critical bug fixes  | Full |
 | ---- | :----: | :----: | :----: | :----: |
@@ -33,7 +32,7 @@ This library aims to support RFCs:
 
  * PHP 7.2
  * [Composer](https://getcomposer.org) is required for installation
- * [Spoofchecking](/src/Validation/SpoofCheckValidation.php) and [DNSCheckValidation](/src/Validation/DNSCheckValidation.php) validation requires that your PHP system has the [PHP Internationalization Libraries](https://php.net/manual/en/book.intl.php) (also known as PHP Intl)
+ * [Spoofchecking](/src/Validation/Extra/SpoofCheckValidation.php) and [DNSCheckValidation](/src/Validation/DNSCheckValidation.php) validation requires that your PHP system has the [PHP Internationalization Libraries](https://php.net/manual/en/book.intl.php) (also known as PHP Intl)
 
 **Note**: `PHP version upgrades will happen to accomodate to the pace of major frameworks. Minor versions bumps will go via minor versions of this library (i.e: PHP7.3 -> v3.x+1). Major versions will go with major versions of the library`
 
@@ -47,7 +46,7 @@ composer require egulias/email-validator
 
 ## Getting Started ##
 
-`EmailValidator`requires you to decide which (or combination of them) validation/s strategy/ies you'd like to follow for each [validation](#available-validations).
+`EmailValidator` requires you to decide which (or combination of them) validation/s strategy/ies you'd like to follow for each [validation](#available-validations).
 
 A basic example with the RFC validation
 ```php
@@ -65,12 +64,12 @@ $validator->isValid("example@example.com", new RFCValidation()); //true
 
 1. [RFCValidation](/src/Validation/RFCValidation.php): Standard RFC-like email validation.
 2. [NoRFCWarningsValidation](/src/Validation/NoRFCWarningsValidation.php): RFC-like validation that will fail when warnings* are found.
-3. [DNSCheckValidation](/src/Validation/DNSCheckValidation.php): Will check if there are DNS records that signal that the server accepts emails. This does not entails that the email exists.
+3. [DNSCheckValidation](/src/Validation/DNSCheckValidation.php): Will check if there are DNS records that signal that the server accepts emails. This does not entail that the email exists.
 5. [MultipleValidationWithAnd](/src/Validation/MultipleValidationWithAnd.php): It is a validation that operates over other validations performing a logical and (&&) over the result of each validation.
 6. [MessageIDValidation](/src/Validation/MessageIDValidation.php): Follows [RFC2822 for message-id](https://tools.ietf.org/html/rfc2822#section-3.6.4) to validate that field, that has some differences in the domain part.
 7. [Your own validation](#how-to-extend): You can extend the library behaviour by implementing your own validations.
 
-*warnings: Warnings are deviations from the RFC that in a broader interpretation are acceptded.
+*warnings: Warnings are deviations from the RFC that in a broader interpretation are accepted.
 
 ```php
 <?php
@@ -85,7 +84,7 @@ $multipleValidations = new MultipleValidationWithAnd([
     new RFCValidation(),
     new DNSCheckValidation()
 ]);
-//ietf.org has MX records signaling a server with email capabilites
+//ietf.org has MX records signaling a server with email capabilities
 $validator->isValid("example@ietf.org", $multipleValidations); //true
 ```
 

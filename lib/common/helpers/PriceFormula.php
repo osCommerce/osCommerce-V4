@@ -23,7 +23,7 @@ class PriceFormula {
         }
         return $price_formula;
     }
-    
+
     public static function getSupplierFormula($supplierId) {
         static $cached = [];
         if (!isset($cached[intval($supplierId)])) {
@@ -46,7 +46,11 @@ class PriceFormula {
         $params = [];
         if (is_array($paramsIn)) {
             foreach ($paramsIn as $k => $v) {
-                $params[strtoupper($k)] = $v;
+                $k = strtoupper($k);
+                if (in_array($k, ['PRICE', 'MARGIN', 'SURCHARGE', 'DISCOUNT', 'TAX_RATE'])) {
+                    $v = (float) $v;
+                }
+                $params[$k] = $v;
             }
         }
 
@@ -98,7 +102,7 @@ class PriceFormula {
 
         eval("\$result=$evalCode;");
 
-        if (isset($result) && !is_numeric($result) || $result < 0) {
+        if (!isset($result) || !is_numeric($result) || $result < 0) {
             $result = false;
         }
 
@@ -136,8 +140,8 @@ class PriceFormula {
         foreach (\common\models\Suppliers::find()->all() as $supplier) {
             $price_formula = json_decode($supplier->price_formula,true);
             if ( !is_array($price_formula) ) {
-                    $price_formula = static::defaultFormula();
-                }
+                $price_formula = static::defaultFormula();
+            }
 
             $priceRules = $supplier->getSupplierPriceRules()->orderBy(['supplier_price_from'=>SORT_ASC])->all();
             if ( count($priceRules)>0 ) {
@@ -173,7 +177,7 @@ class PriceFormula {
                                 $price_formula = json_decode($priceRule->price_formula,true);
                             }
 
-                $supplierFormula = static::getJs($price_formula, $params);
+                            $supplierFormula = static::getJs($price_formula, $params);
                             if ( !empty($rulesJs) ) $rulesJs .= 'else ';
 
                             $lowLimit = '';
@@ -199,14 +203,14 @@ class PriceFormula {
                 $supplierFormula = static::getJs($price_formula, $params);
             }
 
-                if (empty($supplierFormula))
-                    continue;
-                if (!empty($js))
-                    $js .= "else ";
+            if (empty($supplierFormula))
+                continue;
+            if (!empty($js))
+                $js .= "else ";
             $js .= "if (id=={$supplier->suppliers_id}){\n";
             $js .= " calcNetPrice = (function(){ ". (strpos($supplierFormula,'if')===0?'':'return ') . $supplierFormula . "; })();\n";
-                $js .= "}";
-            }
+            $js .= "}";
+        }
 
         return $js;
     }
@@ -221,10 +225,10 @@ class PriceFormula {
         }
 
         if (isset($params['DISCOUNT']) && isset($params['PRICE'])) {
-            $params['DISCOUNT'] = ($params['DISCOUNT'] / 100) * $params['PRICE'];
+            $params['DISCOUNT'] = (((float)$params['DISCOUNT']) / 100) * ((float)$params['PRICE']);
         }
         if (isset($params['MARGIN'])) {
-            $params['MARGIN'] = $params['MARGIN'] / 100;
+            $params['MARGIN'] = ((float)$params['MARGIN']) / 100;
         }
 
         $result = static::calculatePhp($formulaArray, $params);
@@ -242,8 +246,6 @@ class PriceFormula {
           /
           ()
          */
-
-        return false;
     }
 
     public static function calculateSupplierProducts($productId)
@@ -251,15 +253,15 @@ class PriceFormula {
         $currencies = \Yii::$container->get('currencies');
         $perSupplier = [];
         if ( strpos($productId,'{')!==false ) {
-        $get_product_info_r = tep_db_query(
-            "SELECT sp.suppliers_id, ".
+            $get_product_info_r = tep_db_query(
+                "SELECT sp.suppliers_id, " .
                 "  sp.suppliers_quantity, sp.is_default, sp.status, " .
-            "  sp.suppliers_price, sp.currencies_id, ".
+                "  sp.suppliers_price, sp.currencies_id, " .
                 "  sp.supplier_discount, sp.suppliers_surcharge_amount, sp.suppliers_margin_percentage, " .
                 "  sp.tax_rate, sp.price_with_tax, ".
                 "  i.products_id, p.manufacturers_id, " .
                 "  GROUP_CONCAT(DISTINCT p2c.categories_id SEPARATOR ',') AS assigned_categories " .
-            "FROM ".TABLE_PRODUCTS." p ".
+                "FROM " . TABLE_PRODUCTS . " p " .
                 "  INNER JOIN " . TABLE_INVENTORY." i ON i.prid=p.products_id ".
                 "  INNER JOIN " . TABLE_SUPPLIERS_PRODUCTS . " sp ON sp.products_id=p.products_id AND sp.uprid=i.products_id AND sp.suppliers_price>0 " .
                 "  LEFT JOIN " . TABLE_PRODUCTS_TO_CATEGORIES . " p2c ON p.products_id=p2c.products_id " .
@@ -277,12 +279,14 @@ class PriceFormula {
                 "  p.products_id, p.manufacturers_id, " .
                 "  GROUP_CONCAT(DISTINCT p2c.categories_id SEPARATOR ',') AS assigned_categories " .
                 "FROM " . TABLE_PRODUCTS . " p " .
-            "  INNER JOIN ".TABLE_SUPPLIERS_PRODUCTS." sp ON sp.products_id=p.products_id AND sp.uprid=CONCAT('',p.products_id) AND sp.suppliers_price>0 ".
+                "  INNER JOIN " . TABLE_SUPPLIERS_PRODUCTS . " sp ON sp.products_id=p.products_id AND sp.uprid=CONCAT('',p.products_id) AND sp.suppliers_price>=0 AND status=1" .
                 "  LEFT JOIN " . TABLE_PRODUCTS_TO_CATEGORIES . " p2c ON p.products_id=p2c.products_id " .
-            "WHERE p.products_id='".(int)$productId."' ".
+                "  LEFT JOIN " . TABLE_SUPPLIERS . " s ON s.suppliers_id=sp.suppliers_id " .
+                "WHERE p.products_id='" . (int)$productId . "' " .
                 "GROUP BY p.products_id, sp.suppliers_id " .
-                "ORDER BY IF(sp.suppliers_quantity>0,0,1), IF(sp.is_default=1,0,1) "
-        );
+                "ORDER BY IF(sp.sort_order IS NULL,s.sort_order,sp.sort_order)"
+//                "ORDER BY IF(sp.suppliers_quantity>0,0,1), IF(sp.is_default=1,0,1) "
+            );
         }
         if ( tep_db_num_rows($get_product_info_r)>0 ) {
             while($product_data = tep_db_fetch_array($get_product_info_r)){
@@ -307,13 +311,13 @@ class PriceFormula {
 
                 $appliedRules = self::applyRules($params, $product_data['suppliers_id']);
                 $perSupplier[$product_data['suppliers_id']] = $appliedRules;
-                }
             }
-
-        return $perSupplier;
         }
 
-    public static function applyDb($productId)
+        return $perSupplier;
+    }
+
+    private static function autoSelectSupplier($productId)
     {
         if ( !defined('SUPPLIER_PRICE_SELECTION') || SUPPLIER_PRICE_SELECTION=='Disabled' ) return;
 
@@ -325,7 +329,7 @@ class PriceFormula {
             // filter in stock with price
             $in_stock_sort = [];
             foreach ($calculatedPrices as $_supplierId=>$calculatedPrice){
-                if (!is_array($calculatedPrice['product']) || $calculatedPrice['product']['qty']<1) continue;
+                if (!is_array($calculatedPrice['product']) /*|| $calculatedPrice['product']['qty']<1*/) continue;
                 if ( $calculatedPrice['resultPrice']>0 ) {
                     $in_stock_sort[$_supplierId] = (float)$calculatedPrice['resultPrice'];
                 }
@@ -333,7 +337,7 @@ class PriceFormula {
 
             if ( count($in_stock_sort)>0 ) {
                 if ( SUPPLIER_PRICE_SELECTION=='Supplier order' ) {
-                    foreach (\common\helpers\Suppliers::orderedIds() as $orderedSupplierId){
+                    foreach (\common\helpers\Suppliers::orderedIdsForProduct($productId) as $orderedSupplierId){
                         if ( isset($in_stock_sort[$orderedSupplierId]) ) {
                             $selected_supplier_id = (int)$orderedSupplierId;
                             $product_price = $calculatedPrices[$orderedSupplierId]['resultPrice'];
@@ -362,72 +366,94 @@ class PriceFormula {
             }
         }
 
-        $log_string = "Recalculate product #{$productId} price: result_price={$product_price}; SupplierId={$selected_supplier_id}; config [".SUPPLIER_PRICE_SELECTION."]; ";
+        return ['product_price' => $product_price, 'selected_supplier_id' => $selected_supplier_id ?? null, 'calculatedPrice' => $calculatedPrice ?? null];
+    }
+
+    /**
+     * Checks if product ready for auto update
+     * @param $productId
+     * @return \common\models\Products|\yii\db\ActiveRecord|null
+     */
+    public static function getProductModelForAutoUpdate($productId)
+    {
+        $productQuery = \common\models\Products::find()
+            ->select(['products_price', 'products_id', 'supplier_price_manual', 'products_price_full'])
+            ->where(['products_id' => (int)$productId, 'products_id_price' => (int)$productId]);
+        if (SUPPLIER_UPDATE_PRICE_MODE == 'Auto') {
+            $productQuery->andWhere(['OR', ['IS', 'supplier_price_manual', new \yii\db\Expression('NULL')], ['supplier_price_manual' => 0]]);
+        } else {
+            $productQuery->andWhere(['OR', ['IS NOT', 'supplier_price_manual', new \yii\db\Expression('NULL')], ['supplier_price_manual' => 0]]);
+        }
+
+        return $productQuery->one();
+    }
+
+    private static function logAutoUpdate($productId, $msg)
+    {
+        \Yii::info("Autoupdate price for product #{$productId}: #{$msg}",'suppliers/auto-update-price');
+    }
+
+    public static function applyDb($productId)
+    {
+        $productModel = self::getProductModelForAutoUpdate($productId);
+        if (empty($productModel)) {
+            self::logAutoUpdate($productId, 'Canceled - product does not meet auto the update conditions');
+            return;
+        }
+
+        extract( self::autoSelectSupplier($productId) );
+        if ( $product_price === false ) {
+            self::logAutoUpdate($productId, 'Canceled - supplier price is empty' );
+            return;
+        }
+
+        $log_string = "result_price={$product_price}; SupplierId={$selected_supplier_id}; config [".SUPPLIER_PRICE_SELECTION."]; ";
         if ( is_array($calculatedPrice) ){
             $log_string .= "Applied {$calculatedPrice['label']} ".\json_encode($calculatedPrice['applyParams']);
             $log_string .= " DATA=".\json_encode($calculatedPrice);
         }
+        self::logAutoUpdate($productId, $log_string );
+        $currencyId = (int) ((USE_MARKET_PRICES == 'True' ? \common\helpers\currencies::getCurrencyId(DEFAULT_CURRENCY) : 0));
 
-        \Yii::info($log_string,'events');
+        if (strpos($productId, '{') !== false) {
+            $_main_price = $productModel->getAttributes(['products_price', 'products_price_full']);
 
-        if ( $product_price!==false ) {
-            $productQuery = \common\models\Products::find()
-                ->where(['products_id'=>(int)$productId, 'products_id_price'=>(int)$productId])
-                ->select(['products_price', 'products_id', 'supplier_price_manual', 'products_price_full']);
-            if ( SUPPLIER_UPDATE_PRICE_MODE=='Auto' ) {
-                $productQuery->andWhere(['OR', ['IS', 'supplier_price_manual', new \yii\db\Expression('NULL')], ['supplier_price_manual'=>0]]);
-            }else{
-                $productQuery->andWhere(['OR', ['IS NOT', 'supplier_price_manual', new \yii\db\Expression('NULL')], ['supplier_price_manual'=>0]]);
+            //inventory_group_price
+            //inventory_full_price
+            $update_inventory = "price_prefix = '+', inventory_full_price='" . tep_db_input($product_price) . "'";
+            $update_inventory_prices = "price_prefix = '+', inventory_full_price='" . tep_db_input($product_price) . "'";
+            if (!$_main_price['products_price_full']) {
+                $_prefix = $product_price < $_main_price['products_price'] ? '-' : '+';
+                $_price_delta = abs($_main_price['products_price'] - $product_price);
+                $update_inventory = "price_prefix = '{$_prefix}', inventory_full_price='" . tep_db_input($_price_delta) . "'";
+                $update_inventory_prices = "price_prefix = '{$_prefix}', inventory_full_price='" . tep_db_input($_price_delta) . "'";
             }
 
-            $productModel = $productQuery->one();
-            if ( $productModel ) {
+            \Yii::$app->db->createCommand(
+                "UPDATE " . TABLE_INVENTORY_PRICES . " " .
+                "SET {$update_inventory_prices} " .
+                "WHERE prid='" . (int)$productId . "' AND products_id='" . tep_db_input($productId) . "' " .
+                " AND groups_id='0' AND currencies_id='" . $currencyId .
+                " AND products_group_price!=-1 "
+            )->execute();
+            //inventory_full_price
+            //inventory_price
+            \Yii::$app->db->createCommand(
+                "UPDATE " . TABLE_INVENTORY . " " .
+                "SET {$update_inventory} " .
+                "WHERE prid='" . (int)$productId . "' AND products_id='" . tep_db_input($productId) . "'"
+            )->execute();
+        } else {
+            \common\models\ProductsPrices::updateAll(['products_group_price' => $product_price],
+        "products_id='" . (int)$productId . "' AND groups_id=0 AND currencies_id='" . $currencyId . "' AND products_group_price!=-1"
+            );
+            $productModel->products_price = $product_price;
+            $productModel->save(false);
 
-                if (strpos($productId, '{') !== false) {
-                    $_main_price = $productModel->getAttributes(['products_price', 'products_price_full']);
-
-                    //inventory_group_price
-                    //inventory_full_price
-                    $update_inventory = "price_prefix = '+', inventory_full_price='" . tep_db_input($product_price) . "'";
-                    $update_inventory_prices = "price_prefix = '+', inventory_full_price='" . tep_db_input($product_price) . "'";
-                    if (!$_main_price['products_price_full']) {
-                        $_prefix = $product_price < $_main_price['products_price'] ? '-' : '+';
-                        $_price_delta = abs($_main_price['products_price'] - $product_price);
-                        $update_inventory = "price_prefix = '{$_prefix}', inventory_full_price='" . tep_db_input($_price_delta) . "'";
-                        $update_inventory_prices = "price_prefix = '{$_prefix}', inventory_full_price='" . tep_db_input($_price_delta) . "'";
-                    }
-
-                    tep_db_query(
-                        "UPDATE " . TABLE_INVENTORY_PRICES . " " .
-                        "SET {$update_inventory_prices} " .
-                        "WHERE prid='" . (int)$productId . "' AND products_id='" . tep_db_input($productId) . "' " .
-                        " AND groups_id='0' AND currencies_id='" . ((USE_MARKET_PRICES == 'True' ? \common\helpers\currencies::getCurrencyId(DEFAULT_CURRENCY) : '0')) . "' " .
-                        " AND products_group_price!=-1 "
-                    );
-                    //inventory_full_price
-                    //inventory_price
-                    tep_db_query(
-                        "UPDATE " . TABLE_INVENTORY . " " .
-                        "SET {$update_inventory} " .
-                        "WHERE prid='" . (int)$productId . "' AND products_id='" . tep_db_input($productId) . "'"
-                    );
-                } else {
-                    tep_db_query(
-                        "UPDATE " . TABLE_PRODUCTS_PRICES . " " .
-                        "SET products_group_price='" . tep_db_input($product_price) . "' " .
-                        "WHERE products_id='" . (int)$productId . "' AND groups_id='0' AND currencies_id='" . ((USE_MARKET_PRICES == 'True' ? \common\helpers\currencies::getCurrencyId(DEFAULT_CURRENCY) : '0')) . "' AND products_group_price!=-1 "
-                    );
-                    $productModel->setAttributes([
-                        'products_price' => $product_price,
-                    ], false);
-                    $productModel->save(false);
-
-                    /* @var $extP \common\extensions\ProductPriceIndex\ProductPriceIndex */
-                    $extP = \common\helpers\Acl::checkExtensionAllowed('ProductPriceIndex', 'allowed');
-                    if ($extP && $extP::isEnabled()) {
-                        $extP::reindex((int)$productId);
-                    }
-                }
+            /* @var $extP \common\extensions\ProductPriceIndex\ProductPriceIndex */
+            $extP = \common\helpers\Acl::checkExtensionAllowed('ProductPriceIndex', 'allowed');
+            if ($extP && $extP::isEnabled()) {
+                $extP::reindex((int)$productId);
             }
         }
     }
@@ -488,7 +514,7 @@ class PriceFormula {
         if ( count($rules['supplier'])==0 ) {
             $formula = static::defaultFormula();
             $rules['supplier'][] = [
-                'currencies_id' => $supplier->currencies_id,
+                'currencies_id' => 0, // any currency for default formula
                 'label' => 'Default supplier rule',
                 'DISCOUNT' => 0.00,
                 'SURCHARGE' => 0.00,
@@ -540,11 +566,11 @@ class PriceFormula {
 
         $params = [
             'PRICE' => static::correctSupplierPriceByCurrencyRisks($onlySupplierId, $data),
-            'MARGIN' => isset($data['MARGIN'])?$data['MARGIN']:$priceRule['MARGIN'],
-            'SURCHARGE' => isset($data['SURCHARGE'])?$data['SURCHARGE']:$priceRule['SURCHARGE'],
-            'DISCOUNT' => isset($data['DISCOUNT'])?$data['DISCOUNT']:$priceRule['DISCOUNT'],
-            'tax_rate' => isset($data['tax_rate'])?$data['tax_rate']:$priceRule['tax_rate'],
-            'price_with_tax' => isset($data['price_with_tax'])?$data['price_with_tax']:$priceRule['price_with_tax'],
+            'MARGIN' => !empty($data['MARGIN'])?$data['MARGIN']:$priceRule['MARGIN'],
+            'SURCHARGE' => !empty($data['SURCHARGE'])?$data['SURCHARGE']:$priceRule['SURCHARGE'],
+            'DISCOUNT' => !empty($data['DISCOUNT'])?$data['DISCOUNT']:$priceRule['DISCOUNT'],
+            'tax_rate' => !empty($data['tax_rate'])?$data['tax_rate']:$priceRule['tax_rate'],
+            'price_with_tax' => !empty($data['price_with_tax'])?$data['price_with_tax']:$priceRule['price_with_tax'],
         ];
         if ( isset($params['tax_rate']) && !$params['price_with_tax'] ) {
             $params['PRICE'] = static::addTaxRate($params['PRICE'], $params['tax_rate']);
@@ -590,7 +616,7 @@ class PriceFormula {
         $resultCost = \common\helpers\PriceFormula::apply($priceRule['formula'],$params);
         if ( $resultCost!==false && !empty($priceRule['rule_condition']) && strpos(",{$priceRule['rule_condition']},",',notBelow,')!==false ) {
             // result price must be greater then not_below
-            if ($resultCost<$priceRule['result_price_not_below']) {
+            if ($resultCost< ($priceRule['result_price_not_below']??0)) {
                 $resultCost = false;
             }
         }

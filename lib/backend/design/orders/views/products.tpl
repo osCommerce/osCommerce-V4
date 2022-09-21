@@ -1,5 +1,5 @@
 <div class="box-or-prod-wrap-hide">
-    <div class="widget box box-no-shadow">
+    <div class="widget box box-no-shadow" id="order-products">
         <div class="widget-header widget-header-prod">
             <h4>{$smarty.const.TEXT_PROD_DET}</h4>
             {$manager->render('Toolbar')}

@@ -14,20 +14,25 @@
   {if isset($app->controller->view->productFile)}{$app->controller->view->productFile}{/if}
 </div>
 <div class="is-virtual"{if $pInfo->is_virtual == 1} style="display: none;"{/if}>
-  <div class="row">
-  <div class="col-md-7">
-    <div class="col-md-2">{$smarty.const.CALCULATE_VOLUME}</div>
-    <div class="col-md-6">
-      <label class="label-in">{Html::radio("bundle_volume_calc", $pInfo->bundle_volume_calc==0, ['value' => 0])} <span class="title">{$smarty.const.VOLUME_BY_CHILDREN}</span></label>
-      <label class="label-in">{Html::radio("bundle_volume_calc", $pInfo->bundle_volume_calc==1, ['value' => 1])} <span class="title">{$smarty.const.OWN_VOLUME}</span></label>
-      <label class="label-in">{Html::radio("bundle_volume_calc", $pInfo->bundle_volume_calc==2, ['value' => 2])} <span class="title">{$smarty.const.OWN_VOLUME_AND_CHILDREN}</span></label>
+
+    <div class="row m-b-2">
+        <div class="col-md-9 ">
+            <div class="is-bundle bundle-volume-calc">
+                <span>{$smarty.const.CALCULATE_VOLUME}</span>
+                <label class="label-in">{Html::radio("bundle_volume_calc", $pInfo->bundle_volume_calc==0, ['value' => 0])} <span class="title">{$smarty.const.VOLUME_BY_CHILDREN}</span></label>
+                <label class="label-in">{Html::radio("bundle_volume_calc", $pInfo->bundle_volume_calc==1, ['value' => 1])} <span class="title">{$smarty.const.OWN_VOLUME}</span></label>
+                <label class="label-in">{Html::radio("bundle_volume_calc", $pInfo->bundle_volume_calc==2, ['value' => 2])} <span class="title">{$smarty.const.OWN_VOLUME_AND_CHILDREN}</span></label>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="metric_system">
+                <span class="selected" data-class="dimmens_cm">{$smarty.const.TEXT_METRIC_SYSTEM}</span>
+                <span data-class="dimmens_in">{$smarty.const.TEXT_ENGLISH_SYSTEM}</span>
+            </div>
+        </div>
     </div>
-    </div>
-</div>
-  <div class="metric_system">
-    <span class="selected" data-class="dimmens_cm">{$smarty.const.TEXT_METRIC_SYSTEM}</span>
-    <span data-class="dimmens_in">{$smarty.const.TEXT_ENGLISH_SYSTEM}</span>
-  </div>
+
+
   <div class="cartoon_wrapper">
     {if \common\helpers\Acl::checkExtensionAllowed('PackUnits', 'allowed')}
       {\common\extensions\PackUnits\PackUnits::productBlock($pInfo, $app->controller->view->pack_unit_price_tabs_data|default:null, $app->controller->view->packaging_unit_price_tabs_data|default:null)}

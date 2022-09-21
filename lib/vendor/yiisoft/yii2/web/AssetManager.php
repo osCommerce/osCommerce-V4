@@ -1,8 +1,8 @@
 <?php
 /**
- * @link http://www.yiiframework.com/
+ * @link https://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
- * @license http://www.yiiframework.com/license/
+ * @license https://www.yiiframework.com/license/
  */
 
 namespace yii\web;
@@ -42,7 +42,7 @@ use yii\helpers\Url;
 class AssetManager extends Component
 {
     /**
-     * @var array|bool list of asset bundle configurations. This property is provided to customize asset bundles.
+     * @var array|false list of asset bundle configurations. This property is provided to customize asset bundles.
      * When a bundle is being loaded by [[getBundle()]], if it has a corresponding configuration specified here,
      * the configuration will be applied to the bundle.
      *
@@ -74,7 +74,7 @@ class AssetManager extends Component
      */
     public $baseUrl = '@web/assets';
     /**
-     * @var array mapping from source asset files (keys) to target asset files (values).
+     * @var string[] mapping from source asset files (keys) to target asset files (values).
      *
      * This property is provided to support fixing incorrect asset file paths in some asset bundles.
      * When an asset bundle is registered with a view, each relative asset file in its [[AssetBundle::css|css]]
@@ -123,7 +123,7 @@ class AssetManager extends Component
      */
     public $linkAssets = false;
     /**
-     * @var int the permission to be set for newly published asset files.
+     * @var int|null the permission to be set for newly published asset files.
      * This value will be used by PHP chmod() function. No umask will be applied.
      * If not set, the permission will be determined by the current environment.
      */
@@ -136,7 +136,7 @@ class AssetManager extends Component
      */
     public $dirMode = 0775;
     /**
-     * @var callback a PHP callback that is called before copying each sub-directory or file.
+     * @var callable|null a PHP callback that is called before copying each sub-directory or file.
      * This option is used only when publishing a directory. If the callback returns false, the copy
      * operation for the sub-directory or file will be cancelled.
      *
@@ -147,7 +147,7 @@ class AssetManager extends Component
      */
     public $beforeCopy;
     /**
-     * @var callback a PHP callback that is called after a sub-directory or file is successfully copied.
+     * @var callable|null a PHP callback that is called after a sub-directory or file is successfully copied.
      * This option is used only when publishing a directory. The signature of the callback is the same as
      * for [[beforeCopy]].
      * This is passed as a parameter `afterCopy` to [[\yii\helpers\FileHelper::copyDirectory()]].
@@ -171,7 +171,7 @@ class AssetManager extends Component
      */
     public $appendTimestamp = false;
     /**
-     * @var callable a callback that will be called to produce hash for asset directory generation.
+     * @var callable|null a callback that will be called to produce hash for asset directory generation.
      * The signature of the callback should be as follows:
      *
      * ```
@@ -198,6 +198,9 @@ class AssetManager extends Component
      */
     public $hashCallback;
 
+    /**
+     * @var array
+     */
     private $_dummyBundles = [];
 
 
@@ -214,6 +217,9 @@ class AssetManager extends Component
         $this->baseUrl = rtrim(Yii::getAlias($this->baseUrl), '/');
     }
 
+    /**
+     * @var bool|null
+     */
     private $_isBasePathPermissionChecked;
 
     /**
@@ -354,7 +360,7 @@ class AssetManager extends Component
     /**
      * @param AssetBundle $bundle
      * @param string $asset
-     * @return string|bool
+     * @return string|false
      */
     protected function resolveAsset($bundle, $asset)
     {
@@ -376,6 +382,9 @@ class AssetManager extends Component
         return false;
     }
 
+    /**
+     * @var AssetConverterInterface
+     */
     private $_converter;
 
     /**
@@ -434,7 +443,7 @@ class AssetManager extends Component
      * that holds the published assets. This problem can be avoided altogether by 'requesting'
      * in advance all the resources that are supposed to trigger a 'publish()' call, and doing
      * that in the application deployment phase, before system goes live. See more in the following
-     * discussion: http://code.google.com/p/yii/issues/detail?id=2579
+     * discussion: https://code.google.com/archive/p/yii/issues/2579
      *
      * @param string $path the asset (file or directory) to be published
      * @param array $options the options to be applied when publishing a directory.

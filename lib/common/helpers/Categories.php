@@ -1337,6 +1337,7 @@ class Categories {
         }
 
         $errors = false;
+        /*
         foreach ($categories as $category) {
             $categoryDataArray = [];
             foreach ($platforms as $platform) {
@@ -1367,7 +1368,7 @@ class Categories {
                 }
             }
         }
-
+        */
         return !$errors;
     }
 }

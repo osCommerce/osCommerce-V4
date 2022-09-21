@@ -1,8 +1,8 @@
 <?php
 /**
- * @link http://www.yiiframework.com/
+ * @link https://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
- * @license http://www.yiiframework.com/license/
+ * @license https://www.yiiframework.com/license/
  */
 
 namespace yii\grid;
@@ -26,7 +26,7 @@ class Column extends BaseObject
      */
     public $grid;
     /**
-     * @var null|string the header cell content. Note that it will not be HTML-encoded.
+     * @var string|null the header cell content. Note that it will not be HTML-encoded.
      */
     public $header;
     /**

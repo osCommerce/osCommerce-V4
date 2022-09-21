@@ -66,25 +66,29 @@
         {foreach $orderProductArray as $opsId => $warehouseArray}
             {foreach $warehouseArray as $warehouseId => $supplierArray}
                 {foreach $supplierArray as $supplierId => $locationArray}
-                    {foreach $locationArray as $locationId => $opArray}
-                        <div class="f_row update_order_product_holder_{$opsId}">
-                            <div class="f_td">
-                                {if !isset($opArray['html'])}
-                                    <div class="amount">{Html::input('text', ('update_order_product_'|cat:$opsId|cat:'['|cat:$warehouseId|cat:']['|cat:$supplierId|cat:']['|cat:$locationId|cat:']'), $opArray['value'], ['class'=>'form-control form-control-small-qty', 'opsid' => {$opsId}])}</div>
-                                {/if}
-                            </div>
-                            <div class="f_td">
-                                {if !isset($opArray['html'])}
-                                    {if isset($opArray['warehouseName'])}
-                                        {$opArray['warehouseName']}, {$opArray['supplierName']}, {$opArray['locationName']}
+                    {foreach $locationArray as $locationId => $layersArray}
+                        {foreach $layersArray as $layersId => $batchArray}
+                            {foreach $batchArray as $batchId => $opArray}
+                            <div class="f_row update_order_product_holder_{$opsId}">
+                                <div class="f_td">
+                                    {if !isset($opArray['html'])}
+                                        <div class="amount">{Html::input('text', ('update_order_product_'|cat:$opsId|cat:'['|cat:$warehouseId|cat:']['|cat:$supplierId|cat:']['|cat:$locationId|cat:']['|cat:$layersId|cat:']['|cat:$batchId|cat:']'), $opArray['value'], ['class'=>'form-control form-control-small-qty', 'opsid' => {$opsId}])}</div>
                                     {/if}
-                                    <div id="update_order_product_{$opsId}[{$warehouseId}][{$supplierId}][{$locationId}]"></div>
-                                    <div class="warning" id="warning_update_order_product_{$opsId}[{$warehouseId}][{$supplierId}][{$locationId}]"></div>
-                                {else}
-                                    {$opArray['html']}
-                                {/if}
+                                </div>
+                                <div class="f_td">
+                                    {if !isset($opArray['html'])}
+                                        {if isset($opArray['warehouseName'])}
+                                            {$opArray['warehouseName']}, {$opArray['supplierName']}, {$opArray['locationName']}, {$opArray['layersName']}, {$opArray['batchName']}
+                                        {/if}
+                                        <div id="update_order_product_{$opsId}[{$warehouseId}][{$supplierId}][{$locationId}][{$layersId}][{$batchId}]"></div>
+                                        <div class="warning" id="warning_update_order_product_{$opsId}[{$warehouseId}][{$supplierId}][{$locationId}][{$layersId}][{$batchId}]"></div>
+                                    {else}
+                                        {$opArray['html']}
+                                    {/if}
+                                </div>
                             </div>
-                        </div>
+                            {/foreach}
+                        {/foreach}
                     {/foreach}
                 {/foreach}
             {/foreach}
@@ -124,6 +128,7 @@
                     $.each(response.op, function(opId) {
                         $('#products-status-' + opId).css('color', this.ops.colour).text(this.ops.status);
                         $('#products-status-manual-' + opId).css('color', this.opsm.colour).text(this.opsm.status);
+                        $('span#products-qty-dfct-' + opId).text(this.qty_dfct);
                         $('span#products-qty-cnld-' + opId).text(this.qty_cnld);
                         $('span#products-qty-rcvd-' + opId).text(this.qty_rcvd - this.qty_dspd);
                         $('span#products-qty-dspd-' + opId).text(this.qty_dspd - this.qty_dlvd);
@@ -153,56 +158,60 @@
     {foreach $orderProductArray as $opsId => $warehouseArray}
         {foreach $warehouseArray as $warehouseId => $supplierArray}
             {foreach $supplierArray as $supplierId => $locationArray}
-                {foreach $locationArray as $locationId => $opArray}
-                    {if !isset($opArray['html'])}
-                        $('form#products_status div[id="update_order_product_{$opsId}[{$warehouseId}][{$supplierId}][{$locationId}]"]').slider({
-                            range: 'min',
-                            value: {$opArray['value']},
-                            min: {$opArray['min']},
-                            max: {$opArray['max']},
-                            slide: function(event, ui) {
-                                let isError = false;
-                                let input = $('form#products_status input[name="' + $(this).attr('id') + '"]');
-                                if (input.length > 0) {
-                                    let value = ui.value;
-                                    if (value < {$opArray['min']}) {
-                                        value = {$opArray['min']};
-                                    }
-                                    if (value > {$opArray['max']}) {
-                                        value = {$opArray['max']};
-                                    }
-                                    value = parseInt(value);
-                                    {if isset($opArray['awaiting'])}
-                                        let quantity = 0;
-                                        let inputValue = parseInt(input.val());
-                                        $('form#products_status input[name^="update_order_product_' + input.attr('opsid') + '["]').each(function() {
-                                            quantity += parseInt($(this).val());
-                                        });
-                                        if ((quantity - inputValue + value) > {$opArray['awaiting']}) {
-                                            value = ({$opArray['awaiting']} - quantity + inputValue);
-                                            isError = true;
+                {foreach $locationArray as $locationId => $layersArray}
+                    {foreach $layersArray as $layersId => $batchArray}
+                        {foreach $batchArray as $batchId => $opArray}
+                            {if !isset($opArray['html'])}
+                            $('form#products_status div[id="update_order_product_{$opsId}[{$warehouseId}][{$supplierId}][{$locationId}][{$layersId}][{$batchId}]"]').slider({
+                                range: 'min',
+                                value: {$opArray['value']},
+                                min: {$opArray['min']},
+                                max: {$opArray['max']},
+                                slide: function(event, ui) {
+                                    let isError = false;
+                                    let input = $('form#products_status input[name="' + $(this).attr('id') + '"]');
+                                    if (input.length > 0) {
+                                        let value = ui.value;
+                                        if (value < {$opArray['min']}) {
+                                            value = {$opArray['min']};
                                         }
-                                    {/if}
-                                    input.removeClass('warning');
-                                    let warningMessage = '';
-                                    {foreach $opArray['warning'] as $operand => $warningData}
-                                        if (value {$operand} {$warningData['value']}) {
-                                            input.addClass('warning');
-                                            let calculate = {if $warningData['calculate']|count_characters > 0}({$warningData['calculate']}){else}''{/if};
-                                            warningMessage += '<div>' + calculate + '{$warningData['calculateAfter']}{$warningData['message']|replace:'\'':'\\\''}</div>';
+                                        if (value > {$opArray['max']}) {
+                                            value = {$opArray['max']};
                                         }
-                                    {/foreach}
-                                    $('form#products_status div.warning[id="warning_' + $(this).attr('id') + '"]').html(warningMessage);
-                                    $(this).slider('value', value);
-                                    input.val(value);
-                                    if (isError == false) {
-                                        return true;
+                                        value = parseInt(value);
+                                        {if isset($opArray['awaiting'])}
+                                            let quantity = 0;
+                                            let inputValue = parseInt(input.val());
+                                            $('form#products_status input[name^="update_order_product_' + input.attr('opsid') + '["]').each(function() {
+                                                quantity += parseInt($(this).val());
+                                            });
+                                            if ((quantity - inputValue + value) > {$opArray['awaiting']}) {
+                                                value = ({$opArray['awaiting']} - quantity + inputValue);
+                                                isError = true;
+                                            }
+                                        {/if}
+                                        input.removeClass('warning');
+                                        let warningMessage = '';
+                                        {foreach $opArray['warning'] as $operand => $warningData}
+                                            if (value {$operand} {$warningData['value']}) {
+                                                input.addClass('warning');
+                                                let calculate = {if $warningData['calculate']|count_characters > 0}({$warningData['calculate']}){else}''{/if};
+                                                warningMessage += '<div>' + calculate + '{$warningData['calculateAfter']}{$warningData['message']|replace:'\'':'\\\''}</div>';
+                                            }
+                                        {/foreach}
+                                        $('form#products_status div.warning[id="warning_' + $(this).attr('id') + '"]').html(warningMessage);
+                                        $(this).slider('value', value);
+                                        input.val(value);
+                                        if (isError == false) {
+                                            return true;
+                                        }
                                     }
+                                    return false;
                                 }
-                                return false;
-                            }
-                        });
-                    {/if}
+                            });
+                            {/if}
+                        {/foreach}
+                    {/foreach}
                 {/foreach}
             {/foreach}
         {/foreach}

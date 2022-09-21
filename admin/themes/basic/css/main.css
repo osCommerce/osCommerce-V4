@@ -2318,8 +2318,8 @@ input[readonly],
 select[readonly],
 textarea[readonly] {
   cursor: not-allowed;
-  background-color: #f9f9f9;
-  color: #adadad;
+/*  background-color: #f9f9f9;
+  color: #adadad;*/
 }
 .help-block,
 .help-inline {
@@ -3490,7 +3490,7 @@ ul.stats li.light strong {
 .date_right #date-2{display: inline-block;vertical-align: middle;}
 #clock, #clock-1, #clock-2{font-size: 24px;color:#424242;}
 .top_header .crumbs{float: left;border:none;}
-.top_header{border-bottom: 1px solid #d0d0d0;margin: 0 0 0 -20px;padding: 0 272px 0 20px;position: fixed;width: 100%;background: #e8e1ff;z-index: 10;box-sizing: border-box;top:48px;z-index: 10;}
+.top_header{border-bottom: 1px solid #d0d0d0;margin: 0 0 0 -20px;padding: 0 272px 0 20px;position: fixed;width: 100%;background: #e8e1ff;z-index: 110;box-sizing: border-box;top:48px;}
 .scrollHeader{box-shadow: 0px 0px 13px 0px rgba(0,0,0,0.39);}
 .date_right{display: block;}
 .date_right i{font-size: 24px;color:#424242;margin: 0 10px 0 0;}
@@ -3832,7 +3832,10 @@ div.create_item a{color:#fff;}
 .cat_brand_buttons .btn{display: block;}
 .credit-head:before {content: "\f1da";font-family: FontAwesome;font-weight: 400;margin: 0 7px 0 -7px;}
 .popupCredithistory .popup-heading{text-align: left;}
-.popup-box.popupCredithistory{width: 52%;}
+.popup-box.popupCredithistory{
+  width: 900px;
+  max-width: 95%;
+}
 .creditHistoryPopup{padding: 10px;}
 .creditHistoryPopup i.icon-close{color:#ff3f2b;}
 .creditHistoryPopup i.icon-checked{color:#1fbb26;}
@@ -4408,11 +4411,6 @@ table.wrapper > tr > td {
 .tracking-first {
   position: relative;
 }
-.tracking-first .tracking-qr-code {
-  position: absolute;
-  right: -52px;
-  top: -44px;
-}
 .btn.btn-tab:active{
   color: #424242 !important;
 }
@@ -4493,6 +4491,7 @@ ul.admin-notifications-list li{ padding: 5px; list-style: decimal-leading-zero; 
 .title-dlvd{background: url(../img/delivered.svg) 0 50% no-repeat;background-size: auto 16px;}
 .title-ordered{background: url(../img/ordered.svg) 0 50% no-repeat;background-size: auto 16px;}
 .title-cnld{background: url(../img/cancelled.svg) 0 50% no-repeat;background-size: auto 16px;color:red;}
+.title-dfct{background: url(../img/stock-deficit.svg) 0 50% no-repeat;background-size: auto 20px;}
 .row-status{padding: 0 0 8px;font-size:12px;}
 .strong-status-val{font-weight: 700;}
 
@@ -4765,6 +4764,14 @@ ul.admin-notifications-list li{ padding: 5px; list-style: decimal-leading-zero; 
 #restrict-platforms  .row_fields.module-child {padding-left: 20px; }
 .specials-rules label {
     display: block;
+}
+.specials-rules label input {
+  margin-right: 5px;
+  position: relative;
+  top: 1px;
+}
+.specials-rules div label {
+    display: inline-block;
 }
 .sales-dates  {
   padding: 10px 0;

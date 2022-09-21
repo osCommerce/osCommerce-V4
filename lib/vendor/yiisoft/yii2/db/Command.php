@@ -1,8 +1,8 @@
 <?php
 /**
- * @link http://www.yiiframework.com/
+ * @link https://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
- * @license http://www.yiiframework.com/license/
+ * @license https://www.yiiframework.com/license/
  */
 
 namespace yii\db;
@@ -103,7 +103,7 @@ class Command extends Component
      */
     private $_refreshTableName;
     /**
-     * @var string|false|null the isolation level to use for this transaction.
+     * @var string|null|false the isolation level to use for this transaction.
      * See [[Transaction::begin()]] for details.
      */
     private $_isolationLevel = false;
@@ -116,10 +116,10 @@ class Command extends Component
 
     /**
      * Enables query cache for this command.
-     * @param int $duration the number of seconds that query result of this command can remain valid in the cache.
+     * @param int|null $duration the number of seconds that query result of this command can remain valid in the cache.
      * If this is not set, the value of [[Connection::queryCacheDuration]] will be used instead.
      * Use 0 to indicate that the cached data will never expire.
-     * @param \yii\caching\Dependency $dependency the cache dependency associated with the cached query result.
+     * @param \yii\caching\Dependency|null $dependency the cache dependency associated with the cached query result.
      * @return $this the command object itself
      */
     public function cache($duration = null, $dependency = null)
@@ -237,7 +237,7 @@ class Command extends Component
      * this may improve performance.
      * For SQL statement with binding parameters, this method is invoked
      * automatically.
-     * @param bool $forRead whether this method is called for a read query. If null, it means
+     * @param bool|null $forRead whether this method is called for a read query. If null, it means
      * the SQL statement should be used to determine whether it is for read or write.
      * @throws Exception if there is any DB error
      */
@@ -269,10 +269,10 @@ class Command extends Component
         } catch (\Exception $e) {
             $message = $e->getMessage() . "\nFailed to prepare SQL: $sql";
             $errorInfo = $e instanceof \PDOException ? $e->errorInfo : null;
-            throw new Exception($message, $errorInfo, (int) $e->getCode(), $e);
+            throw new Exception($message, $errorInfo, $e->getCode(), $e);
         } catch (\Throwable $e) {
             $message = $e->getMessage() . "\nFailed to prepare SQL: $sql";
-            throw new Exception($message, null, (int) $e->getCode(), $e);
+            throw new Exception($message, null, $e->getCode(), $e);
         }
     }
 
@@ -292,8 +292,8 @@ class Command extends Component
      * the form `:name`. For a prepared statement using question mark
      * placeholders, this will be the 1-indexed position of the parameter.
      * @param mixed $value the PHP variable to bind to the SQL statement parameter (passed by reference)
-     * @param int $dataType SQL data type of the parameter. If null, the type is determined by the PHP type of the value.
-     * @param int $length length of the data type
+     * @param int|null $dataType SQL data type of the parameter. If null, the type is determined by the PHP type of the value.
+     * @param int|null $length length of the data type
      * @param mixed $driverOptions the driver-specific options
      * @return $this the current command being executed
      * @see https://www.php.net/manual/en/function.PDOStatement-bindParam.php
@@ -336,7 +336,7 @@ class Command extends Component
      * the form `:name`. For a prepared statement using question mark
      * placeholders, this will be the 1-indexed position of the parameter.
      * @param mixed $value The value to bind to the parameter
-     * @param int $dataType SQL data type of the parameter. If null, the type is determined by the PHP type of the value.
+     * @param int|null $dataType SQL data type of the parameter. If null, the type is determined by the PHP type of the value.
      * @return $this the current command being executed
      * @see https://www.php.net/manual/en/function.PDOStatement-bindValue.php
      */
@@ -399,7 +399,7 @@ class Command extends Component
 
     /**
      * Executes the SQL statement and returns ALL rows at once.
-     * @param int $fetchMode the result fetch mode. Please refer to [PHP manual](https://www.php.net/manual/en/function.PDOStatement-setFetchMode.php)
+     * @param int|null $fetchMode the result fetch mode. Please refer to [PHP manual](https://www.php.net/manual/en/function.PDOStatement-setFetchMode.php)
      * for valid fetch modes. If this parameter is null, the value set in [[fetchMode]] will be used.
      * @return array all rows of the query result. Each array element is an array representing a row of data.
      * An empty array is returned if the query results in nothing.
@@ -413,7 +413,7 @@ class Command extends Component
     /**
      * Executes the SQL statement and returns the first row of the result.
      * This method is best used when only the first row of result is needed for a query.
-     * @param int $fetchMode the result fetch mode. Please refer to [PHP manual](https://www.php.net/manual/en/pdostatement.setfetchmode.php)
+     * @param int|null $fetchMode the result fetch mode. Please refer to [PHP manual](https://www.php.net/manual/en/pdostatement.setfetchmode.php)
      * for valid fetch modes. If this parameter is null, the value set in [[fetchMode]] will be used.
      * @return array|false the first row (in terms of an array) of the query result. False is returned if the query
      * results in nothing.
@@ -533,7 +533,7 @@ class Command extends Component
      * ```php
      * $sql = $queryBuilder->upsert('pages', [
      *     'name' => 'Front page',
-     *     'url' => 'http://example.com/', // url is unique
+     *     'url' => 'https://example.com/', // url is unique
      *     'visits' => 0,
      * ], [
      *     'visits' => new \yii\db\Expression('visits + 1'),
@@ -641,7 +641,7 @@ class Command extends Component
      *
      * @param string $table the name of the table to be created. The name will be properly quoted by the method.
      * @param array $columns the columns (name => definition) in the new table.
-     * @param string $options additional SQL fragment that will be appended to the generated SQL.
+     * @param string|null $options additional SQL fragment that will be appended to the generated SQL.
      * @return $this the command object itself
      */
     public function createTable($table, $columns, $options = null)
@@ -783,8 +783,8 @@ class Command extends Component
      * @param string|array $columns the name of the column to that the constraint will be added on. If there are multiple columns, separate them with commas.
      * @param string $refTable the table that the foreign key references to.
      * @param string|array $refColumns the name of the column that the foreign key references to. If there are multiple columns, separate them with commas.
-     * @param string $delete the ON DELETE option. Most DBMS support these options: RESTRICT, CASCADE, NO ACTION, SET DEFAULT, SET NULL
-     * @param string $update the ON UPDATE option. Most DBMS support these options: RESTRICT, CASCADE, NO ACTION, SET DEFAULT, SET NULL
+     * @param string|null $delete the ON DELETE option. Most DBMS support these options: RESTRICT, CASCADE, NO ACTION, SET DEFAULT, SET NULL
+     * @param string|null $update the ON UPDATE option. Most DBMS support these options: RESTRICT, CASCADE, NO ACTION, SET DEFAULT, SET NULL
      * @return $this the command object itself
      */
     public function addForeignKey($name, $table, $columns, $refTable, $refColumns, $delete = null, $update = null)
@@ -1136,7 +1136,7 @@ class Command extends Component
     /**
      * Performs the actual DB query of a SQL statement.
      * @param string $method method of PDOStatement to be called
-     * @param int $fetchMode the result fetch mode. Please refer to [PHP manual](https://www.php.net/manual/en/function.PDOStatement-setFetchMode.php)
+     * @param int|null $fetchMode the result fetch mode. Please refer to [PHP manual](https://www.php.net/manual/en/function.PDOStatement-setFetchMode.php)
      * for valid fetch modes. If this parameter is null, the value set in [[fetchMode]] will be used.
      * @return mixed the method execution result
      * @throws Exception if the query causes any problem

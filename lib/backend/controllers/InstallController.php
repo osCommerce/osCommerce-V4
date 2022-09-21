@@ -117,7 +117,7 @@ class InstallController extends Sceleton {
         }
         
         if ($this->doMigrations) {
-            if ($echo) echo "Apply migrations...<br>\n";
+            if ($echo) echo TEXT_APPLY_MIGRATIONS . "<br>\n";
             $oldApp = \Yii::$app;
             new \yii\console\Application([
                 'id' => 'Command runner',
@@ -136,16 +136,16 @@ class InstallController extends Sceleton {
         
         
         if ($this->doSystem) {
-            if ($echo) echo "Clean cache...<br>\n";
+            if ($echo) echo TEXT_CLEAN_CACHE . "<br>\n";
             Yii::$app->getCache()->flush();
             if (function_exists('opcache_reset')) {
                 opcache_reset();
-                if ($echo) echo "Opcode cache flushed<br>\n";
+                if ($echo) echo TEXT_CACHE_FLUSHED . "<br>\n";
             }
         }
         
         if ($this->doSmarty) {
-            if ($echo) echo "Clean smarty...<br>\n";
+            if ($echo) echo TEXT_CLEAN_SMARTY . "<br>\n";
             foreach ($all_runtime_directories as $runtime_directory){
                 $smartyPath = $runtime_directory . DIRECTORY_SEPARATOR . 'Smarty' . DIRECTORY_SEPARATOR . 'compile' . DIRECTORY_SEPARATOR . '*.*';
                 array_map('unlink', glob($smartyPath));
@@ -280,9 +280,10 @@ class InstallController extends Sceleton {
     
     private function installFileWithDependencies($filename, $settings = [], $echo = false) 
     {
-        $this->deployLog[] = 'Start checking ' . $filename;
+        $this->deployLog[] = TEXT_CHECKING . ' ' . $filename;
                 
         $selected_platform_id = $settings['platform_id'] ?? 0;
+        $locale = $settings['locale'] ?? 0;
         
         $platformNames = [];
         $toAssign = [];
@@ -301,6 +302,7 @@ class InstallController extends Sceleton {
             }
         }
         
+        $force = $settings['force'] ?? 0;
         $selected_acl = $settings['acl'] ?? 0;
         $status = false;
         $path = Yii::getAlias('@site_root') . DIRECTORY_SEPARATOR;
@@ -370,7 +372,7 @@ class InstallController extends Sceleton {
                                     }
                                 }
                                 if ($status) {
-                                    $status = $this->checkFileDst($distribution->src, $filename, $pathP, $echo);
+                                    $status = $this->checkFileDst($distribution->src, $filename, $pathP, $echo, $force);
                                 }
                                 if ($status) {
                                     $this->runFileDst($distribution->src, $filename, $pathP, $echo);
@@ -426,6 +428,241 @@ class InstallController extends Sceleton {
                             $languages = \common\helpers\Language::get_languages(true);
                             $override = $addnew = true;
                             $zip->open($path . 'uploads' . DIRECTORY_SEPARATOR . $filename);
+                            $localejson = $zip->getFromName('locale.json');
+                            $localejson = preg_replace('#/\*(?:[^*]*(?:\*(?!/))*)*\*/#','',$localejson);
+                            if (!empty($json)) {
+                                $localejson = json_decode($localejson, JSON_OBJECT_AS_ARRAY);
+                                $lang = \common\models\Languages::find()->where(['code' => (string)$localejson['code']])->one();
+                                if ($lang instanceof \common\models\Languages) {
+                                    if ($locale == 1) {
+                                        // update language settings
+                                        $update_language_id = $lang->languages_id;
+                                        if ($update_language_id > 0 && isset($localejson['formats']) && is_array($localejson['formats'])) {
+                                            foreach ($localejson['formats'] as $configuration_key => $configuration_value) {
+                                                $lFormats = \common\models\LanguagesFormats::find()
+                                                        ->where(['configuration_key' => $configuration_key])
+                                                        ->andWhere(['language_id' => $update_language_id])
+                                                        ->one();
+                                                if ($lFormats instanceof \common\models\LanguagesFormats) {
+                                                    $lFormats->configuration_value = $configuration_value;
+                                                    $lFormats->save(false);
+                                                } else {
+                                                    $lFormats = new \common\models\LanguagesFormats();
+                                                    $lFormats->loadDefaultValues();
+                                                    $lFormats->configuration_key = $configuration_key;
+                                                    $lFormats->configuration_value = $configuration_value;
+                                                    $lFormats->language_id = $update_language_id;
+                                                    $lFormats->save(false);
+                                                }
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    // install new language and settings
+                                    $max = tep_db_fetch_array(tep_db_query("select max(sort_order)+1 as sort_order from languages where 1"));
+                                    $sql_array = array(
+                                        'name' => $localejson['name'],
+                                        'code' => strtolower((string)$localejson['code']),
+                                        'image_svg' => $localejson['icon'],
+                                        'locale' => (string)$localejson['locale'],
+                                        'sort_order' => $max['sort_order'],
+                                        'languages_status' => 0,
+                                    );
+                                    $lang = new \common\models\Languages();
+                                    $lang->loadDefaultValues();
+                                    $lang->setAttributes($sql_array, false);
+                                    if ($lang->save(false)) {
+                                        $insert_id = $lang->languages_id;
+                                        if ($insert_id > 0 && isset($localejson['formats']) && is_array($localejson['formats'])) {
+                                            foreach ($localejson['formats'] as $configuration_key => $configuration_value) {
+                                                $lFormats = new \common\models\LanguagesFormats();
+                                                $lFormats->loadDefaultValues();
+                                                $lFormats->configuration_key = $configuration_key;
+                                                $lFormats->configuration_value = $configuration_value;
+                                                $lFormats->language_id = $insert_id;
+                                                $lFormats->save(false);
+                                            }
+                                        }
+                                        $languages_id = \common\helpers\Language::get_default_language_id();
+//---------------------------- << COPIED FROM LanguagesController
+                    // create additional categories_description records
+                    $categories_query = tep_db_query("select c.categories_id, cd.categories_name, cd.affiliate_id, cd.categories_seo_page_name from " . TABLE_CATEGORIES . " c left join " . TABLE_CATEGORIES_DESCRIPTION . " cd on c.categories_id = cd.categories_id where cd.language_id = '" . (int) $languages_id . "'");
+                    while ($categories = tep_db_fetch_array($categories_query)) {
+                        tep_db_query("insert into " . TABLE_CATEGORIES_DESCRIPTION . " (categories_id, language_id, categories_name, affiliate_id, categories_seo_page_name) values ('" . (int) $categories['categories_id'] . "', '" . (int) $insert_id . "', '" . tep_db_input($categories['categories_name']) . "', '" . (int) $categories['affiliate_id'] . "', '" . tep_db_input($categories['categories_seo_page_name']) . "')");
+                    }
+                    tep_db_free_result($categories_query);
+
+                    // create additional products_description records
+                    $products_query = tep_db_query("select p.products_id, pd.products_name, pd.products_description, pd.products_url, pd.platform_id, pd.products_seo_page_name from " . TABLE_PRODUCTS . " p left join " . TABLE_PRODUCTS_DESCRIPTION . " pd on p.products_id = pd.products_id where pd.language_id = '" . (int) $languages_id . "'");
+                    while ($products = tep_db_fetch_array($products_query)) {
+                        tep_db_query("insert into " . TABLE_PRODUCTS_DESCRIPTION . " (products_id, language_id, products_name, products_description, products_url, platform_id, products_seo_page_name) values ('" . (int) $products['products_id'] . "', '" . (int) $insert_id . "', '" . tep_db_input($products['products_name']) . "', '" . tep_db_input($products['products_description']) . "', '" . tep_db_input($products['products_url']) . "', '" . (int) $products['platform_id'] . "', '" . tep_db_input($products['products_seo_page_name']) . "')");
+                    }
+                    tep_db_free_result($products_query);
+
+                    // create additional products_options records
+                    $products_options_query = tep_db_query("select products_options_id, products_options_name from " . TABLE_PRODUCTS_OPTIONS . " where language_id = '" . (int) $languages_id . "'");
+                    while ($products_options = tep_db_fetch_array($products_options_query)) {
+                        tep_db_query("insert into " . TABLE_PRODUCTS_OPTIONS . " (products_options_id, language_id, products_options_name) values ('" . (int) $products_options['products_options_id'] . "', '" . (int) $insert_id . "', '" . tep_db_input($products_options['products_options_name']) . "')");
+                    }
+                    tep_db_free_result($products_options_query);
+
+                    //coupons
+                    $coupons_query = tep_db_query("select coupon_id, coupon_name, coupon_description from " . TABLE_COUPONS_DESCRIPTION . " where language_id = '" . (int) $languages_id . "'");
+                    while ($coupons = tep_db_fetch_array($coupons_query)) {
+                        tep_db_query("insert into " . TABLE_COUPONS_DESCRIPTION . " (coupon_id, language_id, coupon_name, coupon_description) values ('" . (int) $coupons['coupon_id'] . "', '" . (int) $insert_id . "', '" . tep_db_input($coupons['coupon_name']) . "', '" . tep_db_input($coupons['coupon_description']) . "')");
+                    }
+                    tep_db_free_result($coupons_query);
+
+                    // create additional products_options_values records
+                    $products_options_values_query = tep_db_query("select products_options_values_id, products_options_values_name from " . TABLE_PRODUCTS_OPTIONS_VALUES . " where language_id = '" . (int) $languages_id . "'");
+                    while ($products_options_values = tep_db_fetch_array($products_options_values_query)) {
+                        tep_db_query("insert into " . TABLE_PRODUCTS_OPTIONS_VALUES . " (products_options_values_id, language_id, products_options_values_name) values ('" . (int) $products_options_values['products_options_values_id'] . "', '" . (int) $insert_id . "', '" . tep_db_input($products_options_values['products_options_values_name']) . "')");
+                    }
+                    tep_db_free_result($products_options_values_query);
+
+                    //property categories
+                    $properties_query = tep_db_query("select categories_id, categories_name, categories_description from " . TABLE_PROPERTIES_CATEGORIES_DESCRIPTION . " where language_id = '" . (int) $languages_id . "'");
+                    while ($row = tep_db_fetch_array($properties_query)) {
+                        tep_db_query("insert into " . TABLE_PROPERTIES_CATEGORIES_DESCRIPTION . " (	categories_id, language_id, categories_name, categories_description ) values ('" . (int) $row['categories_id'] . "', '" . (int) $insert_id . "', '" . tep_db_input($row['categories_name']) . "', '" . tep_db_input($row['categories_description']) . "')");
+                    }
+                    tep_db_free_result($properties_query);
+
+                    //properties
+                    $properties_query = tep_db_query("select properties_id, properties_name, properties_description, properties_image, properties_units_id from " . TABLE_PROPERTIES_DESCRIPTION . " where language_id = '" . (int) $languages_id . "'");
+                    while ($row = tep_db_fetch_array($properties_query)) {
+                        tep_db_query("insert into " . TABLE_PROPERTIES_DESCRIPTION . " (	properties_id, language_id, properties_name, properties_description, properties_image, properties_units_id ) values ('" . (int) $row['properties_id'] . "', '" . (int) $insert_id . "', '" . tep_db_input($row['properties_name']) . "', '" . tep_db_input($row['properties_description']) . "', '" . tep_db_input($row['properties_image']) . "', '" . (int) $row['properties_units_id'] . "')");
+                    }
+                    tep_db_free_result($properties_query);
+
+                    //properties
+                    $properties_query = tep_db_query("select values_id, properties_id, values_text, values_number, values_number_upto, values_alt from " . TABLE_PROPERTIES_VALUES . " where language_id = '" . (int) $languages_id . "'");
+                    while ($row = tep_db_fetch_array($properties_query)) {
+                        tep_db_query("insert into " . TABLE_PROPERTIES_VALUES . " (	values_id, properties_id, language_id, values_text, values_number, values_number_upto, values_alt ) values ('" . (int) $row['values_id'] . "', '" . (int) $row['properties_id'] . "', '" . (int) $insert_id . "', '" . tep_db_input($row['values_text']) . "', '" . $row['values_number'] . "', '" . $row['values_number_upto'] . "', '" . tep_db_input($row['values_alt']) . "')");
+                    }
+                    tep_db_free_result($properties_query);
+
+                    // create additional manufacturers_info records
+                    $information_query = tep_db_query("select * from " . TABLE_INFORMATION . " where languages_id = '" . (int) $languages_id . "'");
+                    while ($row = tep_db_fetch_array($information_query)) {
+                        $row['languages_id'] = (int) $insert_id;
+                        $row['info_title'] = $row['info_title'];
+                        $row['description'] = $row['description'];
+                        $row['page_title'] = $row['page_title'];
+                        $row['meta_title'] = $row['meta_title'];
+                        $row['page'] = $row['page'];
+                        $row['page_type'] = $row['page_type'];
+                        $row['meta_description'] = $row['meta_description'];
+                        $row['meta_key'] = $row['meta_key'];
+                        tep_db_perform(TABLE_INFORMATION, $row);
+                    }
+                    tep_db_free_result($information_query);
+
+                    // create additional manufacturers_info records
+                    $manufacturers_query = tep_db_query("select m.manufacturers_id, mi.manufacturers_url, mi.manufacturers_seo_name from " . TABLE_MANUFACTURERS . " m left join " . TABLE_MANUFACTURERS_INFO . " mi on m.manufacturers_id = mi.manufacturers_id where mi.languages_id = '" . (int) $languages_id . "'");
+                    while ($manufacturers = tep_db_fetch_array($manufacturers_query)) {
+                        tep_db_query("insert into " . TABLE_MANUFACTURERS_INFO . " (manufacturers_id, languages_id, manufacturers_url, manufacturers_seo_name) values ('" . $manufacturers['manufacturers_id'] . "', '" . (int) $insert_id . "', '" . tep_db_input($manufacturers['manufacturers_url']) . "', '" . tep_db_input($manufacturers['manufacturers_seo_name']) . "')");
+                    }
+                    tep_db_free_result($manufacturers_query);
+
+                    // create additional orders_status records
+                    $orders_status_query = tep_db_query("select orders_status_id, orders_status_groups_id, orders_status_name, orders_status_template, automated from " . TABLE_ORDERS_STATUS . " where language_id = '" . (int) $languages_id . "'");
+                    while ($orders_status = tep_db_fetch_array($orders_status_query)) {
+                        tep_db_query("insert into " . TABLE_ORDERS_STATUS . " (orders_status_id, language_id, orders_status_name, orders_status_groups_id, orders_status_template, automated) values ('" . (int) $orders_status['orders_status_id'] . "', '" . (int) $insert_id . "', '" . tep_db_input($orders_status['orders_status_name']) . "', '" . (int) $orders_status['orders_status_groups_id'] . "', '" . tep_db_input($orders_status['orders_status_template']) . "', '" . (int) $orders_status['automated'] . "')");
+                    }
+                    tep_db_free_result($orders_status_query);
+                    // create additional statuses
+                    $status_query = tep_db_query("select orders_status_groups_id, orders_status_groups_name, orders_status_groups_color from " . TABLE_ORDERS_STATUS_GROUPS . " where language_id = '" . (int) $languages_id . "'");
+                    while ($status = tep_db_fetch_array($status_query)) {
+                        tep_db_query("insert into " . TABLE_ORDERS_STATUS_GROUPS . " (orders_status_groups_id, language_id, orders_status_groups_name, orders_status_groups_color) values ('" . (int) $status['orders_status_groups_id'] . "', '" . (int) $insert_id . "', '" . tep_db_input($status['orders_status_groups_name']) . "', '" . tep_db_input($status['orders_status_groups_color']) . "')");
+                    }
+                    tep_db_free_result($status_query);
+
+                    $data_query = tep_db_query("select * from " . TABLE_PRODUCTS_STOCK_INDICATION_TEXT . " where language_id = '" . (int) $languages_id . "'");
+                    while ($data = tep_db_fetch_array($data_query)) {
+                        $data['language_id'] = (int) $insert_id;
+                        tep_db_perform(TABLE_PRODUCTS_STOCK_INDICATION_TEXT, $data);
+                    }
+                    tep_db_free_result($data_query);
+
+                    $data_query = tep_db_query("select * from " . TABLE_PRODUCTS_STOCK_DELIVERY_TERMS_TEXT . " where language_id = '" . (int) $languages_id . "'");
+                    while ($data = tep_db_fetch_array($data_query)) {
+                        $data['language_id'] = (int) $insert_id;
+                        tep_db_perform(TABLE_PRODUCTS_STOCK_DELIVERY_TERMS_TEXT, $data);
+                    }
+                    tep_db_free_result($data_query);
+
+                    $data_query = tep_db_query("select * from " . TABLE_PRODUCTS_XSELL_TYPE . " where language_id = '" . (int) $languages_id . "'");
+                    while ($data = tep_db_fetch_array($data_query)) {
+                        $data['language_id'] = (int) $insert_id;
+                        tep_db_perform(TABLE_PRODUCTS_XSELL_TYPE, $data);
+                    }
+                    tep_db_free_result($data_query);
+
+                    // create additional countries records
+                    $countries_query = tep_db_query("select * from " . TABLE_COUNTRIES . " where language_id = '" . (int) $languages_id . "'");
+                    while ($countries = tep_db_fetch_array($countries_query)) {
+                        //tep_db_query("insert into " . TABLE_COUNTRIES . "(countries_id, countries_name, countries_iso_code_2, countries_iso_code_3, address_format_id, language_id) values ('" .$countries['countries_id'] ."', '" .tep_db_input($countries['countries_name']) ."', '" .$countries['countries_iso_code_2'] ."', '" .$countries['countries_iso_code_3'] ."', '" .$countries['address_format_id'] ."', '" .(int)$insert_id  ."')");
+                        $countries['language_id'] = (int) $insert_id;
+                        $countries['countries_name'] = $countries['countries_name'];
+                        tep_db_perform(TABLE_COUNTRIES, $countries);
+                    }
+                    tep_db_free_result($countries_query);
+
+                    //date formats
+                    $formats_query = tep_db_query("select configuration_key, configuration_value from " . TABLE_LANGUAGES_FORMATS . " where language_id = '" . (int) $languages_id . "'");
+                    while ($formats = tep_db_fetch_array($formats_query)) {
+                        tep_db_query("insert into " . TABLE_LANGUAGES_FORMATS . " (	configuration_key, configuration_value, language_id) values ('" . tep_db_input($formats['configuration_key']) . "', '" . tep_db_input($formats['configuration_value']) . "', '" . (int) $insert_id . "')");
+                    }
+                    tep_db_free_result($formats_query);
+
+                    //banners
+                    $banners_query = tep_db_query("select banners_id, platform_id, banners_title, banners_url, banners_image, banners_html_text from " . TABLE_BANNERS_LANGUAGES . " where language_id = '" . (int) $languages_id . "'");
+                    while ($banners = tep_db_fetch_array($banners_query)) {
+                        tep_db_query("insert into " . TABLE_BANNERS_LANGUAGES . " (	banners_id, platform_id, banners_title, banners_url, banners_image, banners_html_text, language_id) values ('" . (int) $banners['banners_id'] . "', '" . (int) $banners['platform_id'] . "', '" . tep_db_input($banners['banners_title']) . "', '" . tep_db_input($banners['banners_url']) . "', '" . tep_db_input($banners['banners_image']) . "', '" . tep_db_input($banners['banners_html_text']) . "', '" . (int) $insert_id . "')");
+                    }
+                    tep_db_free_result($banners_query);
+
+                    //design settings
+                    $settings_query = tep_db_query("select box_id, setting_name, setting_value from " . TABLE_DESIGN_BOXES_SETTINGS . " where language_id = '" . (int) $languages_id . "'");
+                    while ($settings = tep_db_fetch_array($settings_query)) {
+                        tep_db_query("insert into " . TABLE_DESIGN_BOXES_SETTINGS . " (	box_id, setting_name, setting_value, language_id ) values ('" . (int) $settings['box_id'] . "', '" . tep_db_input($settings['setting_name']) . "', '" . tep_db_input($settings['setting_value']) . "', '" . (int) $insert_id . "')");
+                    }
+                    $settings_query = tep_db_query("select box_id, setting_name, setting_value from " . TABLE_DESIGN_BOXES_SETTINGS_TMP . " where language_id = '" . (int) $languages_id . "'");
+                    while ($settings = tep_db_fetch_array($settings_query)) {
+                        tep_db_query("insert into " . TABLE_DESIGN_BOXES_SETTINGS_TMP . " (	box_id, setting_name, setting_value, language_id ) values ('" . (int) $settings['box_id'] . "', '" . tep_db_input($settings['setting_name']) . "', '" . tep_db_input($settings['setting_value']) . "', '" . (int) $insert_id . "')");
+                    }
+
+                    //email templates
+                    $templates_query = tep_db_query("select email_templates_id, platform_id, affiliate_id, email_templates_subject, email_templates_body from " . TABLE_EMAIL_TEMPLATES_TEXTS . " where language_id = '" . (int) $languages_id . "' and affiliate_id = 0");
+                    while ($templates = tep_db_fetch_array($templates_query)) {
+                        tep_db_query("insert into " . TABLE_EMAIL_TEMPLATES_TEXTS . " (	email_templates_id, platform_id, language_id, affiliate_id, email_templates_subject, email_templates_body ) values ('" . (int) $templates['email_templates_id'] . "', '" . (int) $templates['platform_id'] . "','" . (int) $insert_id . "', 0, '" . tep_db_input($templates['email_templates_subject']) . "', '" . tep_db_input($templates['email_templates_body']) . "')");
+                    }
+                    tep_db_free_result($templates_query);
+
+                    //menu titles
+                    $titles_query = tep_db_query("select item_id, title, link from " . TABLE_MENU_TITLES . " where language_id = '" . (int) $languages_id . "'");
+                    while ($titles = tep_db_fetch_array($titles_query)) {
+                        tep_db_query("insert into " . TABLE_MENU_TITLES . " (	language_id, item_id, title, link ) values ('" . (int) $insert_id . "', '" . (int) $titles['item_id'] . "', '" . tep_db_input($titles['title']) . "', '" . tep_db_input($titles['link']) . "')");
+                    }
+                    tep_db_free_result($titles_query);
+
+                    //product images
+                    $pimages_query = tep_db_query("select products_images_id, image_title, image_alt, orig_file_name, hash_file_name, file_name, alt_file_name from " . TABLE_PRODUCTS_IMAGES_DESCRIPTION . " where language_id = '" . (int) $languages_id . "'");
+                    while ($pimages = tep_db_fetch_array($pimages_query)) {
+                        tep_db_query("insert into " . TABLE_PRODUCTS_IMAGES_DESCRIPTION . " (	products_images_id, language_id, image_title, image_alt, orig_file_name, hash_file_name, file_name, alt_file_name ) values ('" . (int) $pimages['products_images_id'] . "', '" . (int) $insert_id . "', '" . tep_db_input($pimages['image_title']) . "', '" . tep_db_input($pimages['image_alt']) . "', '" . tep_db_input($pimages['orig_file_name']) . "', '" . tep_db_input($pimages['hash_file_name']) . "', '" . tep_db_input($pimages['file_name']) . "', '" . tep_db_input($pimages['alt_file_name']) . "')");
+                    }
+                    tep_db_free_result($pimages_query);
+                    //translations
+                    $translation_query = tep_db_query("select translation_key, translation_entity, translation_value, hash from " . TABLE_TRANSLATION . " where language_id = '" . (int) $languages_id . "'");
+                    while ($trans = tep_db_fetch_array($translation_query)) {
+                        tep_db_query("insert into " . TABLE_TRANSLATION . " (	language_id, translation_key, translation_entity, translation_value, hash ) values ( '" . (int) $insert_id . "', '" . tep_db_input($trans['translation_key']) . "', '" . tep_db_input($trans['translation_entity']) . "', '" . tep_db_input($trans['translation_value']) . "', '" . tep_db_input($trans['hash']) . "')");
+                    }
+                    tep_db_free_result($translation_query);
+//----------------------------
+                                        
+                                    }
+                                }
+                            }
                             $oldData = [];
                             foreach ((array)$distribution->files as $file) {
                                 $CsvString = $zip->getFromName($file);
@@ -521,7 +758,7 @@ class InstallController extends Sceleton {
                         case 'label':// Shipping label
                             if (empty($moduleDir)) { $moduleDir = 'label';$setParam = 'label'; }
                             $pathP = $path . 'lib' . DIRECTORY_SEPARATOR . 'common' . DIRECTORY_SEPARATOR . 'modules' . DIRECTORY_SEPARATOR . $moduleDir;
-                            $status = $this->checkFileDst($distribution->src, $filename, $pathP, $echo);
+                            $status = $this->checkFileDst($distribution->src, $filename, $pathP, $echo, $force);
                             if ($status) {
                                 $this->runFileDst($distribution->src, $filename, $pathP, $echo);
                                 if (isset($distribution->class)) {
@@ -618,7 +855,7 @@ class InstallController extends Sceleton {
                             }
                             break;
                         case 'update':// System update
-                            $status = $this->checkFileDst($distribution->src, $filename, $path, $echo);
+                            $status = $this->checkFileDst($distribution->src, $filename, $path, $echo, $force);
                             if ($status) {
                                 $this->runFileDst($distribution->src, $filename, $path, $echo);
                                 $this->doInstallRecord($filename, (string)$distribution->type, (string)($distribution->class ?? ''), (string)$distribution->version, $distribution->src);
@@ -640,14 +877,14 @@ class InstallController extends Sceleton {
             
         }
         if ($status) {
-            $this->deployLog[] = "$filename successfully installed.";
+            $this->deployLog[] = $filename . ' ' . TEXT_PACK_INSTALLED . '.';
         } else {
-            $this->deployLog[] = "$filename installation aborted.";
+            $this->deployLog[] = $filename . ' ' . TEXT_PACK_ABORTED . '.';
         }
         return $status;
     }
     
-    private function checkFileDst($rules, $zipFile, $pathP, $echo = false)
+    private function checkFileDst($rules, $zipFile, $pathP, $echo = false, $force = 0)
     {
         $checked = true;
         foreach ((array) $rules as $src) {
@@ -658,8 +895,8 @@ class InstallController extends Sceleton {
                 case 'delete':
                     break;
                 default:
-                    if ($echo) echo "<font color='red'>Wrong action.</font><br>\n";
-                    $this->deployLog[] = "<font color='red'>Wrong action.</font><br>\n";
+                    if ($echo) echo "<font color='red'>".TEXT_ACTION_ERROR.".</font><br>\n";
+                    $this->deployLog[] = "<font color='red'>".TEXT_ACTION_ERROR.".</font><br>\n";
                     $checked = false;
                     break;
             }
@@ -668,8 +905,8 @@ class InstallController extends Sceleton {
                 case 'file':
                     break;
                 default:
-                    if ($echo) echo "<font color='red'>Wrong type.</font><br>\n";
-                    $this->deployLog[] = "<font color='red'>Wrong type.</font><br>\n";
+                    if ($echo) echo "<font color='red'>".TEXT_TYPE_ERROR.".</font><br>\n";
+                    $this->deployLog[] = "<font color='red'>".TEXT_TYPE_ERROR.".</font><br>\n";
                     $checked = false;
                     break;
             }
@@ -682,15 +919,18 @@ class InstallController extends Sceleton {
                  } else {
                     $oldItemCrc = crc32(file_get_contents($pathP . DIRECTORY_SEPARATOR . $dst));
                     if ($src->crc32 != $oldItemCrc) {
-                        if ($echo) echo "<font color='red'>File $dst checksum mismatch.</font><br>\n";
-                        $this->deployLog[] = "<font color='red'>File $dst checksum mismatch.</font><br>\n";
+                        if ($echo) echo "<font color='red'>" . TEXT_FILE . " " . $dst . " " . TEXT_CHECKSUM_ERROR . ".</font><br>\n";
+                        $this->deployLog[] = "<font color='red'>" . TEXT_FILE . " " . $dst . " " . TEXT_CHECKSUM_ERROR . ".</font><br>\n";
                         $checked = false;
                     } else {
-                        if ($echo) echo "<font color='green'>File $dst checksum passed.</font><br>\n";
-                        $this->deployLog[] = "<font color='green'>File $dst checksum passed.</font><br>\n";
+                        if ($echo) echo "<font color='green'>" . TEXT_FILE . " " . $dst . " " . TEXT_CHECKSUM_PASSED . ".</font><br>\n";
+                        $this->deployLog[] = "<font color='green'>" . TEXT_FILE . " " . $dst . " " . TEXT_CHECKSUM_PASSED . ".</font><br>\n";
                     }
                 }
             }
+        }
+        if ($force == 1) {
+            $checked = true;
         }
         if ($checked) {
             $path = Yii::getAlias('@site_root') . DIRECTORY_SEPARATOR;
@@ -746,41 +986,40 @@ class InstallController extends Sceleton {
                         if ($src->type == 'dir') {
                             if (!is_dir($pathP . DIRECTORY_SEPARATOR . $dst)) {
                                 mkdir($pathP . DIRECTORY_SEPARATOR . $dst);
-                                if ($echo) echo "<font color='blue'>Directory $dst added.</font><br>\n";
+                                if ($echo) echo "<font color='blue'>" . TEXT_DIRECTORY . " $dst " . TEXT_ADDED . ".</font><br>\n";
                             }
                         }
                         if ($src->type == 'file') {
                             $zip->extractTo($pathP, $dst);
-                            if ($echo) echo "<font color='blue'>File $dst added.</font><br>\n";
+                            if ($echo) echo "<font color='blue'>" . TEXT_FILE . " $dst " . TEXT_ADDED . ".</font><br>\n";
                         }
                         break;
                     case 'modify':
                         if ($src->type == 'file') {
                             @unlink($pathP . DIRECTORY_SEPARATOR . $dst);
                             $zip->extractTo($pathP, $dst);
-                            if ($echo) echo "<font color='blue'>File $dst modified.</font><br>\n";
+                            if ($echo) echo "<font color='blue'>" . TEXT_FILE . " $dst " . TEXT_MODIFIED . ".</font><br>\n";
                         }
                     break;
                     case 'copy':
                         if ($src->type == 'dir') {
-                            //$zip->extractTo($pathP, $dst . DIRECTORY_SEPARATOR);
                             for($i = 0; $i < $zip->numFiles; $i++) {
                                 $entry = $zip->getNameIndex($i);
                                 if (strpos($entry, $dst) === 0) {
                                     $zip->extractTo($pathP, $entry);
                                 }
                             }
-                            if ($echo) echo "<font color='blue'>Directory $dst copied.</font><br>\n";
+                            if ($echo) echo "<font color='blue'>" . TEXT_DIRECTORY . " $dst " . TEXT_COPIED . ".</font><br>\n";
                         }
                         break;
                     case 'delete':
                         if ($src->type == 'dir' && is_dir($pathP . DIRECTORY_SEPARATOR . $dst)) {
                             rmdir($pathP . DIRECTORY_SEPARATOR . $dst);
-                            if ($echo) echo "<font color='blue'>Directory $dst deleted.</font><br>\n";
+                            if ($echo) echo "<font color='blue'>" . TEXT_DIRECTORY . " $dst " . TEXT_DELETED . ".</font><br>\n";
                         }
                         if ($src->type == 'file' && is_file($pathP . DIRECTORY_SEPARATOR . $dst)) {
                             unlink($pathP . DIRECTORY_SEPARATOR . $dst);
-                            if ($echo) echo "<font color='blue'>File $dst deleted.</font><br>\n";
+                            if ($echo) echo "<font color='blue'>" . TEXT_FILE . " $dst " . TEXT_DELETED . ".</font><br>\n";
                         }
                         break;
                     default:
@@ -805,12 +1044,12 @@ class InstallController extends Sceleton {
                     if ($src->type == 'dir') {//delete
                         if (is_dir($pathP . DIRECTORY_SEPARATOR . $dst)) {
                             @rmdir($pathP . DIRECTORY_SEPARATOR . $dst . DIRECTORY_SEPARATOR);
-                            if ($echo) echo "Directory $dst deleted.<br>\n";
+                            if ($echo) echo TEXT_DIRECTORY . " $dst deleted.<br>\n";
                         }
                     }
                     if ($src->type == 'file') {//delete
                         @unlink($pathP . DIRECTORY_SEPARATOR . $dst);
-                        if ($echo) echo "File $dst deleted.<br>\n";
+                        if ($echo) echo TEXT_FILE . " $dst deleted.<br>\n";
                     }
                     break;
                 case 'modify':
@@ -818,14 +1057,14 @@ class InstallController extends Sceleton {
                         @unlink($pathP . DIRECTORY_SEPARATOR . $dst);
                         if ($canUseZipForRevert) {
                             $zip->extractTo($pathP, $dst);
-                            if ($echo) echo "File $dst restored.<br>\n";
+                            if ($echo) echo TEXT_FILE . " $dst restored.<br>\n";
                         }
                     }
                     break;
                 case 'copy':
                     if ($src->type == 'dir') {//delete
                         $this->delTree($pathP . DIRECTORY_SEPARATOR . $dst . DIRECTORY_SEPARATOR);
-                        if ($echo) echo "Directory $dst deleted.<br>\n";
+                        if ($echo) echo TEXT_DIRECTORY . " $dst deleted.<br>\n";
                         if ($canUseZipForRevert) {
                             for($i = 0; $i < $zip->numFiles; $i++) {
                                 $entry = $zip->getNameIndex($i);
@@ -833,19 +1072,19 @@ class InstallController extends Sceleton {
                                     $zip->extractTo($pathP, $entry);
                                 }
                             }
-                            if ($echo) echo "Directory $dst copied.<br>\n";
+                            if ($echo) echo TEXT_DIRECTORY . " $dst copied.<br>\n";
                         }
                     }
                     break;
                 case 'delete':
                     if ($src->type == 'dir' && !is_dir($pathP . DIRECTORY_SEPARATOR . $dst)) {//add
                         @mkdir($pathP . DIRECTORY_SEPARATOR . $dst);
-                        if ($echo) echo "Directory $dst added.<br>\n";
+                        if ($echo) echo TEXT_DIRECTORY . " $dst added.<br>\n";
                     }
                     if ($src->type == 'file' && !is_file($pathP . DIRECTORY_SEPARATOR . $dst)) {//restore from backup
                         if ($canUseZipForRevert) {
                             $zip->extractTo($pathP, $dst);
-                            if ($echo) echo "File $dst added.<br>\n";
+                            if ($echo) echo TEXT_FILE . " $dst added.<br>\n";
                         }
                     }
                     break;
@@ -908,7 +1147,7 @@ class InstallController extends Sceleton {
                     }
                 }
                 $module->install($selected_platform_id);
-                if (method_exists($module, 'save_config') && is_array($exportSettings['keys'])) {
+                if (method_exists($module, 'save_config') && is_array($exportSettings['keys'] ?? null)) {
                     $module->save_config($selected_platform_id, $exportSettings['keys']);
                     if (method_exists($module, 'set_extra_params') && isset($exportSettings['extra_params'])) {
                         $module->set_extra_params($selected_platform_id, $exportSettings['extra_params']);
@@ -1464,18 +1703,15 @@ class InstallController extends Sceleton {
                 }
             }
             return $this->render('upload-file-success', [
-                    'message' => 'Application successfully installed.',
+                    'message' => APP_INSTALL_OK,
                     'uploadInfo' => $uploadInfo,
                     'packagesSynergyList' => $packagesSynergyList,                        
                 ]);
             
         } else {
             echo $uploadInfo . '<br>';
-            echo 'Failed to install application.';
+            echo APP_INSTALL_FAIL;
         }
-        
-        
-        
         
         /*Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
         Yii::$app->response->data = [
@@ -1572,6 +1808,24 @@ class InstallController extends Sceleton {
                                 $choosePlatform = 1;
                             }
                         }
+                        
+                        
+                        if ($dtype == 'translate') {
+                            $choosePlatform = 0;
+                            $json = $zip->getFromName('locale.json');
+                            $json = preg_replace('#/\*(?:[^*]*(?:\*(?!/))*)*\*/#','',$json);
+                            if (!empty($json)) {
+                                $locale = json_decode($json);
+                                $lang = \common\models\Languages::find()->andWhere(['code' => (string)$locale->code])->one();
+                                if ($lang instanceof \common\models\Languages) {
+                                    $choosePlatform = 3;
+                                } else {
+                                    $choosePlatform = 2;
+                                }
+                            }
+                        }
+                        
+                        
                         //$zip->extractTo($path);
                         $zip->close();
                     }
@@ -1677,8 +1931,9 @@ class InstallController extends Sceleton {
         $status = 'error';
         $filename = Yii::$app->request->post('name','');
         $platform_id = (int)Yii::$app->request->post('platform',0);
+        $locale = (int)Yii::$app->request->post('locale',0);
         $this->resetReCacheFlags();
-        if ($this->installFileWithDependencies($filename, ['platform_id' => $platform_id])) {
+        if ($this->installFileWithDependencies($filename, ['platform_id' => $platform_id, 'locale' => $locale])) {
             $status = 'ok';
             $this->runSystemReCache();
         }
@@ -2172,7 +2427,7 @@ class InstallController extends Sceleton {
                 ->orderBy('archive_version ASC')
                 ->asArray()
                 ->all() as $update) {
-            $responseLog[] = $update['date_added'] . " <font color='green'>Applied system update " . $update['filename'] . "</font><br>\n";
+            $responseLog[] = $update['date_added'] . " <font color='green'>" . TEXT_UPDATE_APPLIED . " " . $update['filename'] . "</font><br>\n";
             $data = unserialize($update['data']);
             if (is_array($data)) {
                 foreach ($data as $item) {
@@ -2199,6 +2454,8 @@ class InstallController extends Sceleton {
         @set_time_limit(0);
         @ignore_user_abort(true);
         
+        $force = (int) Yii::$app->request->get('force');
+        
         $this->layout = false;
         
         header('Content-Type: text/html');
@@ -2218,7 +2475,7 @@ class InstallController extends Sceleton {
             $needReCache = false;
             while (!empty($version)) {
                 if ($request = curl_init()) {
-                    $this->sendEcho("Check updates for $version<br>\n");
+                    $this->sendEcho(TEXT_CHECK_UPDATES . " $version<br>\n");
                     
                     curl_setopt($request, CURLOPT_URL, $storageUrl . 'app-api-server/get-update');
 
@@ -2255,17 +2512,17 @@ class InstallController extends Sceleton {
                             $size = $result['size'] ?? 0;
                             if (strlen($content) == $size) {
                                 file_put_contents($path . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . $filename, $content);
-                                $this->sendEcho("Update found. File $filename downloaded.<br>\n");
+                                $this->sendEcho(TEXT_FOUND_UPDATE . ". " . TEXT_FILE . " $filename " . TEXT_DOWNLOADED . ".<br>\n");
                             }
                         } else {
-                            $this->sendEcho("Update found. File $filename already downloaded.<br>\n");
+                            $this->sendEcho(TEXT_FOUND_UPDATE . ". " . TEXT_FILE . " $filename " . TEXT_ALREADY_DOWNLOADED . ".<br>\n");
                         }
                         
-                        $status = $this->installFileWithDependencies($filename, [], true);
+                        $status = $this->installFileWithDependencies($filename, ['force' => $force], true);
                         ob_flush();
                         flush();
                         if ($status) {
-                            $this->sendEcho("<font color='green'>Installation finished.</font><br>\n");
+                            $this->sendEcho("<font color='green'>" . $filename . " " . TEXT_PACK_INSTALLED.".</font><br>\n");
                             $zip = new \ZipArchive();
                             if ($zip->open($path . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . $filename) === true) {
                                 $json = $zip->getFromName('distribution.json');
@@ -2277,12 +2534,13 @@ class InstallController extends Sceleton {
                             $needReCache = true;
                             //@unlink($path . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . $filename);
                         } else {
-                            $this->sendEcho("<font color='red'>Installation aborted.</font><br>\n");
+                            $this->sendEcho("<font color='red'>". $filename . " " . TEXT_PACK_ABORTED.".</font><br>\n");
                             $version = '';
+                            echo TEXT_USE . ' <a class="btn" href="javascript:void(0)" onclick="return parent.runQuery(1);">' . TEXT_FORCE_UPDATE . '</a>. ' . TEXT_FORCE_UPDATE_INTRO . '.<br>';
                         }
                         
                     } else {
-                        $this->sendEcho("Nothing to update<br>\n");
+                        $this->sendEcho(TEXT_NO_UPDATES . "<br>\n");
                     }
                 }
             }
@@ -2291,10 +2549,10 @@ class InstallController extends Sceleton {
                 $this->runSystemReCache(true);
                 ob_flush();
                 flush();
-                $this->sendEcho("System update finished.<br>\n");
+                $this->sendEcho(TEXT_UPDATE_FINISH . ".<br>\n");
             }
         }
-        echo '<br><a class="btn" href="javascript:void(0)" onclick="return parent.checkActualStatus();">'.IMAGE_BACK.'</a>';
+        echo '<br><a class="btn" href="javascript:void(0)" onclick="return parent.checkActualStatus();">' . IMAGE_BACK . '</a>';
     }
     
     public function actionCleanupLocalStorage()

@@ -442,6 +442,7 @@
     }
 
     function updateGrossVisible(uprid) {
+        if (typeof uprid === 'object') uprid = null;
         /// update all visible gross price (on change tax class)
         /// inputs (visible) + lists (all)
         if ( !uprid ) {
@@ -521,10 +522,10 @@
             } else {
                 //masked base_price = parseFloat($('#special_price' + base_suffix).val());
                 base_price = parseFloat(unformatMaskField('#special_price' + base_suffix));
-                if (base_price<=0) {
+                if ( isNaN(base_price) || base_price<=0) {
                     base_price = $('#group_price_container' + id_suffix).attr('data-base_special_price');
                 }
-                if (base_price<=0) {
+                if ( isNaN(base_price) || base_price<=0) {
                     base_price = $('#group_price_container' + id_suffix).attr('data-base_price');
                 }
             }
@@ -566,7 +567,8 @@
             for (i=0; i<toshow.length; i++) $('#' + toshow[i] + id_suffix).show();
             for (i=0; i<tohide.length; i++) $('#' + tohide[i] + id_suffix).hide();
 
-            if (parseFloat($('#' + toshow[0] + id_suffix).val())<0) {
+            if (parseFloat(unformatMaskField('#' + toshow[0] + id_suffix))<0) {
+            //if (parseFloat($('#' + toshow[0] + id_suffix).val())<0) {
                 $('#' + toshow[0] + id_suffix).val(0);
                 $('#' + toshow[1] + id_suffix).val(0);
             }
@@ -788,7 +790,7 @@
             $contentCont.css({ 'position': cZKeep, 'z-index': cPKeep});
         });
         $popupContent.find('.js-extra-update-button').off('click').on('click',function(){
-            $('input, select', $popupData).each(function(){
+            $('input, select, textarea', $popupData).each(function(){
                 var $input = $(this);
                 var $targetInput = $dataSource.find('[name="'+this.name+'"]');
                 if ( this.type.toLowerCase()=='checkbox' ) {
@@ -814,7 +816,6 @@
         $('div.stock-reorder-supplier input:checkbox')
             .off()
             .on('change', function() {
-                //console.log(this);
                 $(this).closest('div').find('input:text.form-control').attr('disabled', 'disabled');
                 if ($(this).prop('checked') == true) {
                     $(this).closest('div').find('input:text.form-control').removeAttr('disabled');
@@ -832,8 +833,166 @@
         if ( labelValue==='' && $input.hasClass('js-supplier-tax-rate') && typeof jQuery.fn.textInputNullableValue === 'function' ) {
             labelValue = $input.textInputNullableValue();
         }
-        $input.parents('.js-bind-text').find('.js-bind-value').html( labelValue );
+        const $bindText = $input.closest('.js-bind-text')
+        $bindText.find('.js-bind-value').html( labelValue );
+        if (labelValue) {
+            $bindText.removeClass('hide-suppliers-info')
+        } else {
+            $bindText.addClass('hide-suppliers-info')
+        }
     });
 
+    function updateSupplierUpDownBtns() {
+        cnt = getSuppliersCount();
+        $('.move-up-down-btns').toggle( cnt > 1);
+        if (cnt > 1) {
+            $('.move-up-down-btns button.btn-up').prop('disabled', false).first().prop('disabled',true);
+            $('.move-up-down-btns button.btn-down').prop('disabled', false).last().prop('disabled', true);
+        }
+        $('.move-up-down-btns button').off('click').on('click', function (event) {
+            var div = $(this).closest('.supplier-product-widget');
+            if ($(event.target).is('.btn-down')) {
+                div.next('.supplier-product-widget').after(div);
+            } else {
+                div.prev('.supplier-product-widget').before(div);
+            }
+            $('#suppliers-default-sort').bootstrapSwitch('state', false/*state*/,true/*skipevent*/);
+            $(document).trigger('suppliers:sort-changed');
+            //return false;
+        })
+    }
+
+    function updateSupplierSortSwitch()
+    {
+        $('#supplier-default-sort-holder').toggle(getSuppliersCount() > 1);
+    }
+    function isSuppliersSortedDef()
+    {
+        return $('#suppliers-default-sort').bootstrapSwitch('state');
+    }
+    function getSuppliersCount() {
+        return $('.supplier-product-widget').length;
+    }
+
+    function sortSuppliersDef()
+    {
+        if (!isSuppliersSortedDef()) return;
+        var root = $('#suppliers-placeholder{(int)$pInfo->products_id}');
+        var suppliersOrderedIds = {\common\helpers\Suppliers::orderedIds()|json_encode};
+        var sortString = ','+suppliersOrderedIds.join(',')+',';
+        $('.js-supplier-product',root).sort(function(a,b) {
+            return sortString.indexOf($(a).data('supplier-id')) > sortString.indexOf($(b).data('supplier-id'));
+        }).appendTo(root);
+        $(document).trigger('suppliers:sort-changed');
+    }
+
+    function updatePricesAndProfit(supplierBlock, supplierId) {
+        var landedPrice = $('.js-supplier-landed-price-field', supplierBlock).val();
+        var supplierCost = $('.js-supplier-cost', supplierBlock).val();
+        var supplierDiscount = $('.js-supplier-discount', supplierBlock).textInputNullableValue();
+        calcLandedPrice = doRound(supplierCost * (1 - supplierDiscount / 100), 6);
+        $('.js-overridden-mark', supplierBlock).toggle(!!landedPrice);
+        fieldLandedPrice = $('.js-supplier-landed-price-gross-displayed', supplierBlock);
+        if (landedPrice) {
+            fieldLandedPrice.addClass('overridden-price');
+        } else {
+            landedPrice = calcLandedPrice;
+            fieldLandedPrice.removeClass('overridden-price');
+        }
+        fieldLandedPrice.html(currencyFormat(landedPrice)).data('calc-value', calcLandedPrice);
+
+        // Net Landed
+        var supplierTaxRate = $('.js-supplier-tax-rate',supplierBlock).textInputNullableValue();
+        supplierNetCost = supplierTaxRate > 0 ?  landedPrice*(100-supplierTaxRate)/100 : landedPrice;
+        $('.js-supplier-landed-price-net-displayed', supplierBlock).html(currencyFormat(supplierNetCost));
+
+        // Calculated Price and Profit
+        var calcNetPrice = $('.js-supplier-calc-net-price', supplierBlock).data('value');
+        var taxRate = getTaxRate();
+        var calcGrossPrice = calcNetPrice * ((taxRate / 100) + 1);
+        var calcProfit = calcNetPrice - landedPrice;
+        $('.js-supplier-calc-gross-price', supplierBlock).html(currencyFormat(calcGrossPrice));
+        $('.js-supplier-calc-profit', supplierBlock).html(currencyFormat(calcProfit));
+
+        // Current Price and Profit
+        if (typeof unformatMaskField === 'function'){
+            var curNetPrice = unformatMaskField('input.js-products_group_price:first');
+        }else{
+            var curNetPrice = $('input.js-products_group_price:first').val();
+        }
+        var curGrossPrice =curNetPrice * ((taxRate / 100) + 1);
+        var curProfit = curNetPrice - landedPrice;
+        $('.js-supplier-cur-net-price', supplierBlock).html(currencyFormat(curNetPrice));
+        $('.js-supplier-cur-gross-price', supplierBlock).html(currencyFormat(curGrossPrice));
+        $('.js-supplier-cur-profit', supplierBlock).html(currencyFormat(curProfit));
+    }
+
+    function updatePricesAndProfitAll() {
+        $('.js-supplier-product').each( function (index, elem) {
+            updatePricesAndProfit( $(elem), $(elem).data('supplier-id'));
+        })
+    }
+
+    $(document).ready(function() {
+        updateSupplierUpDownBtns();
+        updateSupplierSortSwitch();
+
+        $('#suppliers-default-sort').bootstrapSwitch({ onSwitchChange: function (e, status) {
+            if (status) {
+                sortSuppliersDef();
+            }
+        }});
+
+        $(document).on('suppliers:added', function (event, data) {
+            updateSupplierAt($('#suppliers{$pInfo->products_id}-'+data.suppliers_id));
+            updateSupplierUpDownBtns();
+            updateSupplierSortSwitch();
+        }).on('suppliers:deleted', function (event, data) {
+            var index = $suppliersIdWithDefValues.indexOf(parseInt(data.supplierId));
+            if (index !== -1) $suppliersIdWithDefValues.splice(index, 1);
+            updateSupplierUpDownBtns();
+            updateSupplierSortSwitch();
+        }).on('suppliers:sort-changed', function () {
+            updateSupplierUpDownBtns();
+        }).on('suppliers:selected-manually', function () {
+            updateSupplierAll();
+        }).on('suppliers:calc-price-changed', function (event, data) {
+            updatePricesAndProfit(data.updateBlock, data.supplierId);
+        }).on('suppliers:landed-price-changed', function (event, data) {
+            updatePricesAndProfit(data.updateBlock, data.supplierId);
+        }).on('suppliers:group-price-changed', function (event, data) {
+            updatePricesAndProfitAll();
+        });
+
+        $('#editLandedPrice button.save-changes').on('click', function (event) {
+            var updateBlock = $(event.target).closest('.modal');
+            var supplierBlockId = updateBlock.data('supplier-block');
+            var supplierBlock = $('#' + supplierBlockId);
+            var type = $('input[name="modal-selected-type"]:checked', updateBlock).val();
+            if (type == 'manually') {
+                newPrice = doRound($('#modal-manually-landed-price').val(), 6);
+            } else {
+                newPrice = null;
+            }
+            $('.js-supplier-landed-price-field', supplierBlock).val(newPrice);
+            $(document).trigger('suppliers:landed-price-changed', { 'updateBlock': supplierBlock, 'supplierId': supplierId });
+        });
+
+        $('#editLandedPrice.modal').on('shown.bs.modal', function(event) {
+            $(this).before($('.modal-backdrop'));
+            $(this).css("z-index", parseInt($('.modal-backdrop').css('z-index')) + 1);
+
+            var supplierBlock = $(event.relatedTarget).closest('.js-supplier-product');
+            var calcLandedPrice = $('.js-supplier-landed-price-gross-displayed', supplierBlock).data('calc-value');
+            var fieldLandedPrice = $('.js-supplier-landed-price-field', supplierBlock).val();
+
+            var dialogBlock = event.target;
+            $(dialogBlock).data('supplier-block', supplierBlock.attr('id'));
+            $("input[name=modal-selected-type][value=" + (fieldLandedPrice? 'manually' : 'calculate') + "]").prop('checked', true);
+            $('#modal-calculated-landed-price', dialogBlock).html(calcLandedPrice);
+            $('#modal-manually-landed-price', dialogBlock).val(fieldLandedPrice);
+        });
+
+    });
     //===== Price and Cost END =====//
 </script>

@@ -469,7 +469,9 @@
         {/foreach}                
     </div>
     <div class="btn-bar edit-btn-bar">
-        <div class="btn-left"><a href="javascript:void(0)" class="btn btn-cancel-foot" onclick="return backStatement()">{$smarty.const.IMAGE_CANCEL}</a></div>
+        <div class="btn-left">
+            <a href="{$backUrl}" class="btn btn-cancel-foot" onclick="return backStatement()">{$smarty.const.IMAGE_BACK}</a>
+        </div>
         <div class="btn-right">
             {if isset($app->controller->view->preview_link) && $app->controller->view->preview_link|@count > 1}
                 <a href="#choose-frontend" class="btn btn-primary btn-choose-frontend">{$smarty.const.TEXT_PREVIEW_ON_SITE}</a>
@@ -523,6 +525,18 @@
 {/if}
 
 <script type="text/javascript">
+    (function($) {
+        setTimeout(function(){
+            $('#save_category_form').on('change', function() {
+                $('.btn-cancel-foot', this).html('{$smarty.const.IMAGE_CANCEL}')
+            })
+            for ( instance in CKEDITOR.instances ) {
+                CKEDITOR.instances[instance].on('change', function() {
+                    $('.btn-cancel-foot').html('{$smarty.const.IMAGE_CANCEL}')
+                });
+            }
+        }, 500)
+    })($);
     $(function(){
 {if $app->controller->view->usePopupMode == false}
         $('a.btn-link-create.popup').popUp({
@@ -542,7 +556,6 @@
         $('.map-name').keyup(function(e){
 
             searchProductBox = $('#search_map' + $(this).attr('data-idsuffix'));
-            console.log(searchProductBox);
 
             $.get('image-maps/search', {
                 key: $(this).val()
@@ -618,14 +631,11 @@ function backStatement() {
     {if $app->controller->view->usePopupMode}
         $('.popup-box:last').trigger('popup.close');
         $('.popup-box-wrap:last').remove();
-    {else}
-        window.history.back();
+        return false;
     {/if}
-    return false;
 }
 
 CKEDITOR.replaceAll( 'ckeditor');
-
 function saveCategory() {
   if (typeof(CKEDITOR) == 'object'){
     for ( instance in CKEDITOR.instances ) {
@@ -820,7 +830,6 @@ $('body').on('click', '.del-pt.del-tag', function(){
 <script type="text/javascript">
     $(function(){
         var imagepath = "{$upload_path}";
-        console.log(imagepath);
         $('.wrap-prod-gallery').each(function() {
 
             var $gallery = $(this);

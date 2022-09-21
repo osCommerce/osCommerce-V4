@@ -28,7 +28,8 @@
         </span>
     </td>
     <td class="dataTableContent" valign="top">
-        {assign var="status_received" value="`$product['qty_rcvd'] - $product['qty_dspd']`"}
+		{$status_deficit = \common\helpers\OrderProduct::getStockDeficit($product['orders_products_id'])}
+		{assign var="status_received" value="`$product['qty_rcvd'] - $product['qty_dspd']`"}
 		{assign var="status_dispatched" value="`$product['qty_dspd'] - $product['qty_dlvd']`"}
 		{assign var="status_delivered" value="`$product['qty_dlvd']`"}
 		{$status_ordered = \common\helpers\OrderProduct::getStockOrdered($product['orders_products_id'])}
@@ -38,6 +39,12 @@
 
 			</div>
 			<div class="row-status-box">
+                                {if $status_deficit != 0}
+                                    <span class="title-dfct title-order-stock">{$headers['deficit']}:</span>&nbsp;<span id="products-qty-dfct-{$product['orders_products_id']}" class="strong-status-val">{Product::getVirtualItemQuantity($product['id'], $status_deficit)}</span>
+                                {/if}
+				<div class="row-status hide">
+                                    <span class="title-dfct title-order-stock">{$headers['deficit']}:</span>&nbsp;<span id="products-qty-dfct-{$product['orders_products_id']}" class="strong-status-val">{Product::getVirtualItemQuantity($product['id'], $status_deficit)}</span>
+				</div>
                                 {if $status_received != 0}
                                     <span class="title-rcvd title-order-stock">{$headers['received']}:</span>&nbsp;<span id="products-qty-rcvd-{$product['orders_products_id']}" class="strong-status-val">{Product::getVirtualItemQuantity($product['id'], ($product['qty_rcvd'] - $product['qty_dspd']))}</span>
                                 {/if}

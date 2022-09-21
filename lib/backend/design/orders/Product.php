@@ -30,7 +30,7 @@ class Product extends Widget {
     public $currency_value;
     public $warehouseList;
     public $locationBlockList;
-    
+
     public $warehouses_allocated_array = [];
     public $suppliers_allocated_array = [];
 
@@ -64,7 +64,7 @@ class Product extends Widget {
                 return;
             }
         }
-        
+
         $rowClass = '';
         if (!(\common\helpers\Acl::rule(['BOX_HEADING_CUSTOMERS', 'BOX_CUSTOMERS_ORDERS', 'RULE_ALLOW_WAREHOUSES']))) {
             $foundInAllocations = false;
@@ -79,7 +79,7 @@ class Product extends Widget {
                 $rowClass = 'dis_module';
             }
         }
-        
+
         if (empty($rowClass) && !(\common\helpers\Acl::rule(['BOX_HEADING_CUSTOMERS', 'BOX_CUSTOMERS_ORDERS', 'RULE_ALLOW_SUPPLIERS']))) {
             $foundInAllocations = false;
             foreach (\common\helpers\OrderProduct::getAllocatedArray($this->product['orders_products_id']) as $orderProductAllocateRecord) {
@@ -97,10 +97,16 @@ class Product extends Widget {
         $location = '';
         foreach (\common\helpers\OrderProduct::getAllocatedArray($this->product['orders_products_id']) as $orderProductAllocateRecord) {
             $locationName = trim(\common\helpers\Warehouses::getLocationPath($orderProductAllocateRecord['location_id'], $orderProductAllocateRecord['warehouse_id'], $this->locationBlockList));
+            if ($orderProductAllocateRecord['layers_id']) {
+                $locationName .= ', ' . \common\helpers\Translation::getTranslationValue('TEXT_EXPIRY_DATE', 'admin/categories') . ' ' . \common\helpers\Date::date_short(\common\helpers\Warehouses::getExpiryDateByLayersID($orderProductAllocateRecord['layers_id'])); 
+            }
+            if ($orderProductAllocateRecord['batch_id']) {
+                $locationName .= ', ' . TEXT_WAREHOUSES_PRODUCTS_BATCH_NAME . ' ' . \common\helpers\Warehouses::getBatchNameByBatchID($orderProductAllocateRecord['batch_id']); 
+            }
             $location .= '<div>'
                 . (isset($this->warehouseList[$orderProductAllocateRecord['warehouse_id']]) ? $this->warehouseList[$orderProductAllocateRecord['warehouse_id']] : 'N/A')
                 . ', ' . ($locationName != '' ? $locationName : 'N/A') . ': '
-                . $orderProductAllocateRecord['allocate_received']
+                . '<b>' . $orderProductAllocateRecord['allocate_received'] . '</b>'
                 . '</div>';
             unset($locationName);
         }
@@ -129,7 +135,11 @@ class Product extends Widget {
         $suppliersPricesArray = array();
         foreach (\common\models\OrdersProductsAllocate::findAll(['orders_products_id' => (int)$this->product['orders_products_id']]) as $opaRecord) {
             if ($opaRecord->suppliers_price > 0) {
-                $suppliersPricesArray[$opaRecord->suppliers_id] = $opaRecord;
+                if (!isset($suppliersPricesArray[$opaRecord->suppliers_id])) {
+                    $suppliersPricesArray[$opaRecord->suppliers_id] = $opaRecord;
+                } else {
+                    $suppliersPricesArray[$opaRecord->suppliers_id]->allocate_received += $opaRecord->allocate_received;
+                }
             }
         }
 
@@ -152,6 +162,7 @@ class Product extends Widget {
             'headers' => [
                 'cancel'     => $opsArray[OrderProduct::OPS_CANCELLED]->orders_products_status_name_long ?? TEXT_STATUS_LONG_OPS_CANCELLED,
                 'ordered'    => $opsArray[OrderProduct::OPS_STOCK_ORDERED]->orders_products_status_name_long ?? TEXT_STATUS_LONG_OPS_STOCK_ORDERED,
+                'deficit'    => $opsArray[OrderProduct::OPS_STOCK_DEFICIT]->orders_products_status_name_long ?? TEXT_STATUS_LONG_OPS_STOCK_DEFICIT,
                 'received'   => $opsArray[OrderProduct::OPS_RECEIVED]->orders_products_status_name_long ?? TEXT_STATUS_LONG_OPS_RECEIVED,
                 'dispatched' => $opsArray[OrderProduct::OPS_DISPATCHED]->orders_products_status_name_long ?? TEXT_STATUS_LONG_OPS_DISPATCHED,
                 'delivered'  => $opsArray[OrderProduct::OPS_DELIVERED]->orders_products_status_name_long ?? TEXT_STATUS_LONG_OPS_DELIVERED

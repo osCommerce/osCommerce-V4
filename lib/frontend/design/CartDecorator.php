@@ -21,11 +21,12 @@ use common\models\ProductsAttributes;
 class CartDecorator
 {
     private $_cart;
+    /** @prop $allow_checkout updated on getProducts only! */
     public $allow_checkout;
     public $oos_product_incart;
     public $bound_quantity_ordered;
     private $products = [];
-    private $controllerDespatch;
+    private $controllerDispatch;
     
     public function __construct(shopping_cart $cart){
         $this->_cart = $cart;
@@ -228,6 +229,12 @@ class CartDecorator
     
     public function getProducts(){
         $this->decorateProducts();
+        $this->allow_checkout = 
+            !(
+               $this->oos_product_incart
+            || $this->_cart->hasBlockedProducts()
+            || $this->bound_quantity_ordered);
+        
         return $this->products;
     }
     

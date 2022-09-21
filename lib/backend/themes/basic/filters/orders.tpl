@@ -56,6 +56,10 @@
             <label>{$smarty.const.TEXT_STATUS}</label>
             {Html::dropDownList('status[]', $app->controller->view->filters->status_selected, $app->controller->view->filters->status, ['class' => 'form-control', 'multiple' => 'multiple', 'data-role' => 'multiselect', 'id' => 'orderStatuses'])}
         </div>
+        <div class="wl-td">
+            <label>{$smarty.const.TEXT_STOCK_DEFICIT_QUANTITY}</label>
+            {Html::checkbox('deficit_only', $app->controller->view->filters->deficit_only, ['class' => 'form-control-small'])}
+        </div>
         <div class="tl_filters_title tl_filters_title_border">{$smarty.const.TEXT_ORDER_PLACED}</div>
         <div class="wl-td w-tdc">
              <label class="radio_label"><input type="radio" name="date" value="presel" id="presel" {if $app->controller->view->filters->presel}checked{/if} /> {$smarty.const.TEXT_PRE_SELECTED}</label>

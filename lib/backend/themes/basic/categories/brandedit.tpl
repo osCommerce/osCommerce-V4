@@ -265,6 +265,11 @@ function backStatement() {
 
 function saveManufacturer() {
     cke_preload();
+    if (typeof(CKEDITOR) == 'object'){
+        for ( instance in CKEDITOR.instances ) {
+            CKEDITOR.instances[instance].updateElement();
+        }
+    }
     $.post("{Yii::$app->urlManager->createUrl('categories/brand-submit')}", $('#save_brand_form').serialize(), function(data, status){
         if (status == "success") {
             {if $app->controller->view->usePopupMode}

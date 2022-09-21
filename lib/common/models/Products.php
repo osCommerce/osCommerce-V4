@@ -394,17 +394,20 @@ class Products extends \yii\db\ActiveRecord
 
     public function getListingName() {
       $languages_id = \Yii::$app->settings->get('languages_id');
+      $platform_id = \common\classes\platform::currentId();
+      $platform_id = (new \common\classes\platform_settings($platform_id))->getPlatformToDescription();
+
       $ext = \common\helpers\Acl::checkExtensionAllowed('PlainProductsDescription', 'allowed');
       if ($ext && $ext::isEnabled() && class_exists('common\\models\\PlainProductsNameSearch')) {
       //if (class_exists('common\\models\\PlainProductsNameSearch')) {
         return $this->hasOne(PlainProductsNameSearch::class, ['id' => 'plain_id'])
             ->andWhere([PlainProductsNameSearch::tableName() . '.language_id' => (int)$languages_id])
             ->viaTable(PlainProductsNameToProducts::tableName(), ['products_id' => 'products_id'])
-            ->andWhere([PlainProductsNameToProducts::tableName() . '.platform_id' => \common\classes\platform::currentId()]);
+            ->andWhere([PlainProductsNameToProducts::tableName() . '.platform_id' => $platform_id]);
 
       } else {
         return $this->hasOne(ProductsDescription::class, ['products_id' => 'products_id'])
-                ->andWhere(['language_id' => (int)$languages_id, 'platform_id' => \common\classes\platform::currentId()]);
+                ->andWhere(['language_id' => (int)$languages_id, 'platform_id' => $platform_id]);
       }
     }
 

@@ -31,12 +31,12 @@ class SuppliersProducts extends ActiveRecord
     public function rules() {
         return [
 [['suppliers_product_name', 'suppliers_upc', 'suppliers_asin', 'suppliers_isbn','source'], 'default', 'value' => '', 'on' => ['insert', 'update']], // not null fields
-            [['landed_price'],'filter','filter'=>'floatval'],
+            [['sort_order'], 'integer'],
             [['products_id', 'uprid', 'suppliers_id', 'suppliers_model', 'suppliers_price', 'supplier_discount', 'suppliers_surcharge_amount', 'suppliers_margin_percentage',
               'source', 'suppliers_price_discount',
-              'suppliers_quantity', 'suppliers_product_name', 'suppliers_upc', 'currencies_id', 'status', 'suppliers_asin', 'suppliers_isbn', 'suppliers_ean', 'landed_price', 'notes'] , 'safe'],
+              'suppliers_quantity', 'suppliers_product_name', 'suppliers_upc', 'currencies_id', 'status', 'suppliers_asin', 'suppliers_isbn', 'suppliers_ean', 'notes'] , 'safe'],
             [['suppliers_price', 'suppliers_quantity'], 'default', 'value' => 0],
-            [['supplier_discount', 'suppliers_surcharge_amount', 'suppliers_margin_percentage'], 'default', 'value' => null],
+            [['supplier_discount', 'suppliers_surcharge_amount', 'suppliers_margin_percentage', 'landed_price'], 'default', 'value' => null],
             [['emergency_stock', 'stock_reorder_level_on', 'stock_reorder_level', 'stock_reorder_quantity_on', 'stock_reorder_quantity'], 'default', 'value' => 0],
             [['suppliers_product_name', 'source', 'suppliers_price_discount'], 'default', 'value' => '']
         ];

@@ -295,6 +295,12 @@ class BasePrice {
                         ->where('products_id =:products_id', [':products_id' => (int) $this->uprid])->one();
     }
 
+/**
+ * shit... updates $this->products_price and $this->inventory_price
+ * @param float $products_price_pack_unit
+ * @param float $products_price_packaging
+ * @param bool $toBase
+ */
     public function applyPacks($products_price_pack_unit, $products_price_packaging, $toBase = true) {
         $pack_info = $this->getPackInfo();
 
@@ -478,7 +484,8 @@ class BasePrice {
             ];
         }
 
-        if (!$this->isChanged('special_price', $params) || $this->checkCalculated('special_price', $params)) {
+        $isChanged = $this->isChangedQtyType($qty);
+        if ((!is_null($this->special_price['value']) && !$this->isChanged('special_price', $params) && !$isChanged) || $this->checkCalculated('special_price', $params) ) {
           return $this->special_price['value'];
           
         } else {
@@ -579,6 +586,16 @@ class BasePrice {
                     }
                 } else {
                     $this->special_price['value'] = false;
+                }
+
+                if ($this->type != 'unit') {
+                    $p1 = $p2 = null;
+                    $pack_info = $this->getPackInfo();
+                    if ($this->type == 'pack_unit') {
+                        $this->special_price['value'] *= $pack_info['pack_unit'];
+                    } else {
+                        $this->special_price['value'] *= $pack_info['pack_unit'] * $pack_info['packaging'];
+                    }
                 }
 
                 if ($this->special_price['value'] <= 0) {
@@ -963,8 +980,9 @@ class BasePrice {
         }
 
         $qty = $params['qty'];
+        $isChanged = $this->isChangedQtyType($qty);
 
-        if (!$this->isChanged('inventory_special_price', $params) || $this->checkCalculated('inventory_special_price', $params) ) {
+        if (!$isChanged && (!$this->isChanged('inventory_special_price', $params) || $this->checkCalculated('inventory_special_price', $params)) ) {
             if ($this->inventory_special_price['value']) {
                 $this->attachToProduct(['promo_class' => 'sale']);
             }
@@ -1016,7 +1034,8 @@ class BasePrice {
                             }
                           }
                         }
-
+                        /*
+                         //special product price ($_special) already multiplied on pack/packaging
                         if ($this->type != 'unit') {
                             $pack_info = $this->getPackInfo();
                             if ($this->type == 'packaging') {
@@ -1025,6 +1044,7 @@ class BasePrice {
                                 $_special *= $pack_info['pack_unit'];
                             }
                         }
+                         */
                         $this->inventory_special_price['value'] += $_special;
 
                         if ($this->inventory_special_price['value'] < 0) {

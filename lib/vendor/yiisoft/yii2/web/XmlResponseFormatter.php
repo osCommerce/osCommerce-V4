@@ -1,8 +1,8 @@
 <?php
 /**
- * @link http://www.yiiframework.com/
+ * @link https://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
- * @license http://www.yiiframework.com/license/
+ * @license https://www.yiiframework.com/license/
  */
 
 namespace yii\web;
@@ -33,11 +33,11 @@ class XmlResponseFormatter extends Component implements ResponseFormatterInterfa
      */
     public $version = '1.0';
     /**
-     * @var string the XML encoding. If not set, it will use the value of [[Response::charset]].
+     * @var string|null the XML encoding. If not set, it will use the value of [[Response::charset]].
      */
     public $encoding;
     /**
-     * @var string|string[]|false the name of the root element. If set to false, null or is empty then no root tag
+     * @var string|string[]|null|false the name of the root element. If set to false, null or is empty then no root tag
      * should be added.
      *
      * Since 2.0.44 URI namespace could be specified by passing `[namespace, tag name]` array.
@@ -194,7 +194,7 @@ class XmlResponseFormatter extends Component implements ResponseFormatterInterfa
      *
      * @param mixed $name the name to test
      * @return bool
-     * @see http://stackoverflow.com/questions/2519845/how-to-check-if-string-is-a-valid-xml-element-name/2519943#2519943
+     * @see https://stackoverflow.com/questions/2519845/how-to-check-if-string-is-a-valid-xml-element-name/2519943#2519943
      * @since 2.0.12
      */
     protected function isValidXmlName($name)

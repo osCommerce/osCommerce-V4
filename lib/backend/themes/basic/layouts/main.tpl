@@ -15,7 +15,7 @@
     <title>{$this->title}</title>
 
     <!--=== CSS ===-->
-{$version = 2}
+{$version = 7}
     <!-- Bootstrap -->
     <link href="{$app->request->baseUrl}/css/bootstrap.min.css?{$version}" rel="stylesheet" type="text/css" />
     <link href="{$app->request->baseUrl}/css/jquery.filedrop.css?{$version}" rel="stylesheet" type="text/css" />

@@ -30,6 +30,7 @@
       for( var supIndex in serverData.data ) {
           if ( !serverData.data.hasOwnProperty(supIndex) ) continue;
           var priceInfo = serverData.data[supIndex];
+          var supplierId = parseInt(supIndex);
 
           var $root = $('#'+priceInfo.htmlId),
               idPart = '' + $root.data('id-part');
@@ -47,73 +48,22 @@
               // all good
               $('.js-applied-rule', $root).html(priceInfo.result.label);
               $('.js-applied-formula', $root).html(priceInfo.result.formula.text);
-              $('.js-supplier-surcharge',$root).attr('placeholder',priceInfo.result.SURCHARGE);
-              $('.js-supplier-discount',$root).attr('placeholder',priceInfo.result.DISCOUNT);
-              $('.js-supplier-margin',$root).attr('placeholder',priceInfo.result.MARGIN);
+              $('.js-supplier-surcharge',$root).attr('placeholder',priceInfo.result.SURCHARGE).trigger('update-state');
+              $('.js-supplier-discount',$root).attr('placeholder',priceInfo.result.DISCOUNT).trigger('update-state');
+              $('.js-supplier-margin',$root).attr('placeholder',priceInfo.result.MARGIN).trigger('update-state');
+              if (!$suppliersIdWithDefValues.includes(supplierId)) $suppliersIdWithDefValues.push(supplierId);
 
               RESULT_PRICE = priceInfo.result.resultPrice;
               TAX_RATE = parseFloat(priceInfo.result.applyParams.tax_rate);
               price_with_tax = priceInfo.result.applyParams.price_with_tax;
               APPLIED_DISCOUNT = priceInfo.result.applyParams.DISCOUNT;
               SUPPLIER_COST = priceInfo.result.applyParams.PRICE;
+
+              $('#calc_net_price_' + idPart).html(currencyFormat(RESULT_PRICE));
+              $('#calc_net_price_' + idPart).data('value', RESULT_PRICE);
+
+              $(document).trigger('suppliers:calc-price-changed', { 'updateBlock': $root, 'supplierId': supIndex});
           }
-
-          if ( idPart && idPart.indexOf('_')!==-1 ){
-              var upridPart = idPart.substring(0,idPart.indexOf('_'));
-              countInventorySuppliers[upridPart] = upridPart;
-
-              if (typeof unformatMaskField === 'function'){
-                  ourNetPrice = unformatMaskField('input.default_currency[id^="products_group_price-' + upridPart + '"]:first');
-              }else{
-                  ourNetPrice = $('input.default_currency[id^="products_group_price-' + upridPart + '"]:first').val();
-              }
-
-              ourNetPrice = doRound(ourNetPrice, 6);
-              if ($('#full_add_price').val() !== '1') {
-                  if ($('select.default_currency[id^="invPricePrefix-' + upridPart + '"]:first').val() === '+') {
-                      ourNetPrice = mainNetPrice + ourNetPrice;
-                  } else {
-                      ourNetPrice = mainNetPrice - ourNetPrice;
-                  }
-              }
-          }
-
-          var supplierPrice = SUPPLIER_COST;
-          var supplierCostPrice = doRound(supplierPrice * (1 - APPLIED_DISCOUNT / 100), 6);
-          var supplierNetCostPrice = supplierCostPrice;
-          if ( TAX_RATE>0 ) {
-              supplierNetCostPrice = doRound(supplierCostPrice * 100 / (100 + TAX_RATE), 6);
-          }
-
-          var calcNetPrice = RESULT_PRICE;
-
-          var calcGrossPrice = calcNetPrice * ((taxRate / 100) + 1);
-          var calcProfit = calcNetPrice - supplierCostPrice;
-
-          var ourGrossPrice = ourNetPrice * ((taxRate / 100) + 1);
-          var ourProfit = ourNetPrice - supplierCostPrice;
-
-          $('#supplier_price_' + idPart).html(currencyFormat(supplierPrice));
-          $('#supplier_cost_price_net_' + idPart).html(currencyFormat(supplierNetCostPrice));
-          $('#supplier_cost_price_gross_' + idPart).html(currencyFormat(supplierCostPrice));
-
-          $('#calc_net_price_' + idPart).html(currencyFormat(calcNetPrice));
-          $('#calc_gross_price_' + idPart).html(currencyFormat(calcGrossPrice));
-          $('#calc_profit_' + idPart).html(currencyFormat(calcProfit));
-
-          $('#our_net_price_' + idPart).html(currencyFormat(ourNetPrice));
-          $('#our_gross_price_' + idPart).html(currencyFormat(ourGrossPrice));
-          $('#our_profit_' + idPart).html(currencyFormat(ourProfit));
-
-          /*
-          if (calcNetPrice==0 || doRound(ourNetPrice, 2) === doRound(calcNetPrice, 2)) {
-              $('#calc_div_' + idPart).hide();
-              $('.calc_div_width_' + idPart).addClass('tab-sup03-width-full');
-          } else {
-              $('#calc_div_' + idPart).show();
-              $('.calc_div_width_' + idPart).removeClass('tab-sup03-width-full');
-          }
-          */
       }
 
       var inventoryProcessed = false;
@@ -137,11 +87,12 @@
 
       this.onDataArrive = false;
 
-      this.push = function(data, ms){
+      this.push = function(data, ms = null){
           this.queue[data.supplier_id] = data;
 
           clearTimeout (this.timer);
-          this.timer = setTimeout(function(){ _self.onTimeout(_self) }, ms || 300);
+          if (ms == null) ms = 200;
+          this.timer = setTimeout(function(){ _self.onTimeout(_self) }, ms);
       };
 
       this.onTimeout = function () {
@@ -167,27 +118,39 @@
   };
 
   var supplierQueue = new supplierQueueClass();
+  let $suppliersIdWithDefValues = [];
+
+  function updateSupplierAt($updatedBlock, $target = null) {
+      if ($target != null && !$target.hasClass('js-supplier-product') && !$target.hasClass('js-supplier-recalc')) return;
+      supplierId = $updatedBlock.data('supplier-id');
+      if (supplierId == null) return;
+      defValueIsUndefined = !$suppliersIdWithDefValues.includes(parseInt(supplierId));
+      supplierQueue.push({
+          //$updatedBlock
+          htmlId: $updatedBlock.attr('id'),
+          supplier_id: supplierId,
+          products_id: 0,
+          categories_id: productCategories,
+          manufacturers_id: $('#save_product_form .js-product-manufacturer').val(),
+          currencies_id : $('.js-supplier-currency',$updatedBlock).val(),
+          PRICE: $('.js-supplier-cost',$updatedBlock).val(),
+          MARGIN: defValueIsUndefined ? null : $('.js-supplier-margin',$updatedBlock).textInputNullableValue(),
+          SURCHARGE: defValueIsUndefined ? null : $('.js-supplier-surcharge',$updatedBlock).textInputNullableValue(),
+          DISCOUNT: defValueIsUndefined ? null : $('.js-supplier-discount',$updatedBlock).textInputNullableValue(),
+          tax_rate: defValueIsUndefined ? null : $('.js-supplier-tax-rate',$updatedBlock).textInputNullableValue(),
+          price_with_tax: $('.js-supplier-tax-rate-flag',$updatedBlock).get(0).checked?1:0
+      });
+  }
+
+  function updateSupplierAll() {
+      $('#save_product_form .js-supplier-product').each(function () {
+          updateSupplierAt($(this));
+      });
+  }
 
   $(document).ready(function(){
       $('#save_product_form').on('keyup change','.js-supplier-product',function(event){
-          var $target = $(event.target);
-          if (!$target.hasClass('js-supplier-product') && !$target.hasClass('js-supplier-recalc')) return;
-          var $updatedBlock = $(event.currentTarget);
-          supplierQueue.push({
-              //$updatedBlock
-              htmlId: $updatedBlock.attr('id'),
-              supplier_id: $updatedBlock.data('supplier-id'),
-              products_id: 0,
-              categories_id: productCategories,
-              manufacturers_id: $('#save_product_form .js-product-manufacturer').val(),
-              currencies_id : $('.js-supplier-currency',$updatedBlock).val(),
-              PRICE: $('.js-supplier-cost',$updatedBlock).val(),
-              MARGIN: $('.js-supplier-margin',$updatedBlock).not('[disabled]').textInputNullableValue(),
-              SURCHARGE: $('.js-supplier-surcharge',$updatedBlock).not('[disabled]').textInputNullableValue(),
-              DISCOUNT: $('.js-supplier-discount',$updatedBlock).not('[disabled]').textInputNullableValue(),
-              tax_rate: $('.js-supplier-tax-rate',$updatedBlock).not('[disabled]').textInputNullableValue(),
-              price_with_tax: $('.js-supplier-tax-rate-flag',$updatedBlock).not('[disabled]').get(0).checked?1:0
-          });
+          updateSupplierAt($(event.currentTarget), $(event.target));
       });
 
       $('.js-supplier-product').trigger('change');
@@ -196,25 +159,82 @@
           $('.js-supplier-product').trigger('change');
       });
 
+      //supliers_stock change
+        $('.supplier-qty.js-input-nullable-save').not(".inited").on('click', function(e) {
+            var $holder = $(this).parents('.input-group'); //parent();
+            var val = $('input.supplier-qty', $holder).val();
+            var defVal = $('.js-input-nullable-default-val', $holder).text();
+            try {
+                if (!isNaN(parseInt(val)) && parseInt(val) == parseInt(defVal)) {
+                    return true;
+                }
+            } catch ( e ) { }
+            
+            e.preventDefault();
+
+            if (isNaN(parseInt(val)) ) {
+                $('input.supplier-qty', $holder).css('color', 'var(--color-danger)');
+                $('input.supplier-qty', $holder).once('keydown', function(){
+                    $(this).css('color', 'inherit')
+                });
+                return false;
+            }
+
+            $.post('{Yii::$app->urlManager->createUrl('categories/set-suppliers-stock')}', $('input', $holder).serialize(), function(data, status) {
+                if (status == "success") {
+                    if (typeof(data.value) != 'undefined') {
+                        $('.js-input-nullable-default-val', $holder).text(data.value);
+                        $('input.supplier-qty', $holder).attr('placeholder', data.value);
+                        $('input.supplier-qty', $holder).val(data.value);
+                        $('input.js-input-nullable-close', $holder).click();
+                        $('.stock-info-reload a').click(); //.popup-content  for inventory 
+                    }
+                } else {
+                    alert("Request error.");
+                }
+            }, "json");
+            $('.supplier-qty.js-input-nullable-save').addClass("inited");
+
+
+        });
+      //supliers_stock eof
+
 
   });
 
   // -- new supplier calc
     function deleteSupplier(id) {
-        $.post('{Yii::$app->urlManager->createUrl('categories/check-supplier-delete')}', { pId: '{$pInfo->products_id}', sId: id }, function(response, status) {
-            if (status == "success") {
-                if (response.status == 'ok') {
-                    $('#suppliers{$pInfo->products_id}-' + id).remove();
-                    getCountSuppliersPrices();
-                    if (!countActiveSuppliers) {
-                        $('.supplier-product-status:first').bootstrapSwitch('state', true);
+        bootbox.dialog({
+            message: '<div class="align-center">{$smarty.const.TEXT_DELETE_ALL_CONFIRM}</div>',
+            //title: '',
+            buttons: {
+                success: {
+                    label: "{$smarty.const.TEXT_BTN_YES}",
+                    className: "btn-delete",
+                    callback: function () {
+                        $.post('{Yii::$app->urlManager->createUrl('categories/check-supplier-delete')}', { pId: '{$pInfo->products_id}', sId: id }, function(response, status) {
+                            if (status == "success") {
+                                if (response.status == 'ok') {
+                                    $('#suppliers{$pInfo->products_id}-' + id).remove();
+                                    getCountSuppliersPrices();
+                                    if (!countActiveSuppliers) {
+                                        $('.supplier-product-status:first').bootstrapSwitch('state', true);
+                                    }
+                                    $(document).trigger('suppliers:deleted', [{ 'supplierId': id}]);
+                                }
+                                if (response.message && response.message != '') {
+                                    alert(response.message);
+                                }
+                            }
+                        }, 'json');
                     }
-                }
-                if (response.message && response.message != '') {
-                    alert(response.message);
+                },
+                cancel: {
+                    label: "{$smarty.const.TEXT_BTN_NO}",
+                    className: "btn-cancel",
                 }
             }
-        }, 'json');
+        });
         return false;
     }
 
@@ -229,7 +249,7 @@
             supplierPrice = doRound(document.forms['product_edit'].elements['suppliers_data[{$pInfo->products_id}][' + e.value + '][suppliers_price]'].value, 6);
         }
       countActiveSuppliers++;
-      if (supplierPrice > 0) {
+      if (supplierPrice >= 0) {
         countSuppliersPrices++;
       }
     });
@@ -285,6 +305,23 @@
       }
   }
 
+  function getSupplierPriceInputs(target_id = '') {
+      var supplierPriceInputs = $('#suppliers-placeholder{(int)$pInfo->products_id} .js-supplier-cost').not('[readonly]');
+      var isInventory = target_id.indexOf('-')!==-1;
+      if ( isInventory ) {
+          // inventory
+          supplierPriceInputs = $('#'+target_id).parents('.popup-box-wrap-page').find('.js-supplier-cost').not('[readonly]');
+      }
+      if (supplierPriceInputs.length < 1) {
+          connsole.log("Can't find price input for supplier: " + target_id);
+      }
+      return supplierPriceInputs;
+  }
+
+  function getSupplierPriceInput(suppliersId, target_id = '') {
+      return $('#suppliers{(int)$pInfo->products_id}-' + suppliersId).find('.js-supplier-cost');
+  }
+
   function chooseSupplierPrice(target_id) {
       var supplierCount = countSuppliersPrices;
       var isInventory = target_id.indexOf('-')!==-1;
@@ -314,40 +351,57 @@
       },"html");
       return false;
     } else {
-        var supplierPriceInputs = $('#suppliers-placeholder{(int)$pInfo->products_id} .js-supplier-cost').not('[readonly]');
-        if ( isInventory ) {
-            // inventory
-            supplierPriceInputs = $('#'+target_id).parents('.popup-box-wrap-page').find('.js-supplier-cost').not('[readonly]');
-        }
+        var supplierPriceInputs = getSupplierPriceInputs(target_id);
         for(var __idx=0; __idx<supplierPriceInputs.length; __idx++ ) {
             supplierPriceInput = supplierPriceInputs[__idx];
             var supplierPrice = doRound(supplierPriceInput.value, 6);
-            if (supplierPrice > 0) {
+            if (supplierPrice >= 0) {
               selectSupplierPrice($(supplierPriceInput).parents('.js-supplier-product').data('supplier-id'), target_id);
+              var supplierName =  $(supplierPriceInput).parents('.js-supplier-product').find('.widget-header h4').clone().children().remove().end().text().trim();
+              //alert('Price will be changed to price from supplier "' +supplierName+ '"');
               break;
             }
         }
     }
   }
 
+  var undoPrice = null;
+  function clickUndoPriceBtn(target) {
+      if (undoPrice != null) {
+          $('input.default_price').filter(function() {
+              return this.id.match(/products_group_price.*/);
+          }).val(undoPrice).change().keyup();
+          undoPrice = null;
+          $(document).trigger('suppliers:group-price-changed');
+      }
+      $(target).hide();
+  }
+
   var supplierSelect = new supplierQueueClass();
   function selectSupplierPrice(id, target_id) {
-      var supplierPriceInput = document.forms['product_edit'].elements['suppliers_data[{$pInfo->products_id}][' + id + '][suppliers_price]'];
-      if ( !supplierPriceInput ) {
-          // inventory
-          supplierPriceInput = $('#'+target_id).parents('.popup-box-wrap-page').find('.js-supplier-cost').get(0);
-      }
+      var supplierPriceInput = getSupplierPriceInput(id, target_id)[0];
       var supplierPrice = doRound(supplierPriceInput.value, 6);
-      if (supplierPrice > 0) {
+      if (supplierPrice >= 0) {
           supplierSelect.onDataArrive = function (serverData) {
               if (serverData.data && serverData.data[id] && serverData.data[id].result) {
                   var priceCalculated = serverData.data[id];
+                  var price = doRound(priceCalculated.result.resultPrice, 6);
                   if (typeof(target_id) == "object") {
-                      $(target_id).val(doRound(priceCalculated.result.resultPrice, 6)).keyup();
+                      var prev = parseFloat($(target_id).val().replace(/[^(\d+)\.(\d+)]/g, '')) || 0;
+                      $(target_id).val(price).keyup();
                   } else {
-                      $('#' + target_id).val(doRound(priceCalculated.result.resultPrice, 6)).keyup();
+                      var prev = parseFloat($('#' + target_id).val().replace(/[^(\d+)\.(\d+)]/g, '')) || 0;
+                      $('#' + target_id).val(price).keyup();
+                  }
+                  if (prev == price) {
+                      alert('The price is exactly the same already. Nothing changed');
+                  } else {
+                      undoPrice = prev;
+                      $('#products_group_price_undo_btn').show();
+                      $(document).trigger('suppliers:group-price-changed');
                   }
               }
+              $(document).trigger('suppliers:selected-manually', { 'suppliers_id': id, 'price': price });
           };
 
           var $updatedBlock = $(supplierPriceInput).parents('.js-supplier-product');
@@ -360,9 +414,9 @@
               manufacturers_id: $('#save_product_form .js-product-manufacturer').val(),
               currencies_id : $('.js-supplier-currency',$updatedBlock).val(),
               PRICE: $('.js-supplier-cost',$updatedBlock).val(),
-              MARGIN: $('.js-supplier-margin',$updatedBlock).not('[disabled]').textInputNullableValue(),
-              SURCHARGE: $('.js-supplier-surcharge',$updatedBlock).not('[disabled]').textInputNullableValue(),
-              DISCOUNT: $('.js-supplier-discount',$updatedBlock).not('[disabled]').textInputNullableValue()
+              MARGIN: $('.js-supplier-margin',$updatedBlock).textInputNullableValue(),
+              SURCHARGE: $('.js-supplier-surcharge',$updatedBlock).textInputNullableValue(),
+              DISCOUNT: $('.js-supplier-discount',$updatedBlock).textInputNullableValue()
           },0);
     }
   }

@@ -1800,10 +1800,10 @@ class CustomersController extends Sceleton {
             $customerId = Yii::$app->request->get('customer_id');
         }
         if (!$customerId || !$file) {
-            die;
+            $path = DIR_FS_DOWNLOAD;
+        } else {
+            $path = DIR_FS_DOWNLOAD . 'customers' . DIRECTORY_SEPARATOR . $customerId . DIRECTORY_SEPARATOR;
         }
-
-        $path = DIR_FS_DOWNLOAD . 'customers' . DIRECTORY_SEPARATOR . $customerId . DIRECTORY_SEPARATOR;
 
         $messageStack = \Yii::$container->get('message_stack');
 

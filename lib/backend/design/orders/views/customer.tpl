@@ -3,7 +3,7 @@
 <div class="pr-add-det-box pr-add-det-box01 after">
     {if $customer_id}
         <div class="cr-ord-cust">
-            <span>{$smarty.const.T_CUSTOMER}
+            <span class="heading">{$smarty.const.T_CUSTOMER}
             {if \common\helpers\Acl::checkExtensionAllowed('Communication')}
                 &nbsp;&nbsp;<a style="font-size: 14px; text-transform: lowercase" href="{\Yii::$app->urlManager->createUrl(['extensions/index', 'module' => 'Communication', 'action' => 'adminActionTopicInsert', 'ctCustomer' => $order->customer['name']|default, 'ctCustomerId' => $customer_id])}">Communicate</a>
             {/if}

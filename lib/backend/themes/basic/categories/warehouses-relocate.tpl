@@ -71,6 +71,14 @@
                 {tep_draw_pull_down_menu('to_warehouse', \common\helpers\Warehouses::get_warehouses(), '', 'class="form-control form-control-small" onchange="return checkWarehouseLocationTo()"')}
             </div>
             <div id="location-to" class="t-col-1"></div>
+            <div class="input-row" style="float:left">
+                <label>{\common\helpers\Translation::getTranslationValue('TEXT_EXPIRY_DATE', 'admin/categories')}</label>
+                {Html::textInput('expiry_date', '', ['autocomplete'=>"off", 'class'=> "datepicker form-control form-control-small-qty"])}
+            </div>
+            <div class="input-row" style="float:left">
+                <label>{$smarty.const.TEXT_WAREHOUSES_PRODUCTS_BATCH_NAME}</label>
+                {Html::textInput('batch_name', '', ['autocomplete'=>"off", 'class'=> "form-control form-control-small-qty"])}
+            </div>
         </div>
     {/if}
     </div>
@@ -123,6 +131,22 @@ function checkWarehouseLocationTo() {
     
     checkWarehouseLocationFrom();
     checkWarehouseLocationTo();
+    
+    $( ".datepicker" ).datepicker({
+        minDate: 0,
+        changeMonth: true,
+        changeYear: true,
+        showOtherMonths:true,
+        autoSize: false,
+        dateFormat: '{$smarty.const.DATE_FORMAT_DATEPICKER}',
+        onSelect: function (e) {
+            if ($(this).val().length > 0) {
+                $(this).siblings('span').addClass('active_options');
+            } else {
+                $(this).siblings('span').removeClass('active_options');
+            }
+        }
+    })
   })(jQuery)
 
   $('#warehouses_relocate_form').on('submit', function() {

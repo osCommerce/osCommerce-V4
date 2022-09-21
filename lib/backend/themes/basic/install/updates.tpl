@@ -15,8 +15,8 @@
         },'html');
         return false;
     }
-    function runQuery() {
-        $('#updates_box').html('<iframe src="{Yii::$app->urlManager->createUrl('install/update-now')}" style="width:100%;min-height:400px;border:0px;"></iframe>');
+    function runQuery(force) {
+        $('#updates_box').html('<iframe src="{Yii::$app->urlManager->createUrl('install/update-now')}?force='+force+'" style="width:100%;min-height:400px;border:0px;"></iframe>');
         return false;
     }
     function checkActualStatus() {

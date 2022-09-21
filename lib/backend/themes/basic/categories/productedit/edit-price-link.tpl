@@ -12,7 +12,11 @@ Released under the GNU General Public License
     {if !is_array($fieldsDataDef)}
         {$fieldsDataDef=array()}
     {/if}
+    {if !empty($sInfo->specials_id)}
+<a href="{\Yii::$app->urlManager->createUrl(array_merge(['specials/product-price-edit', 'id' => $sInfo->specials_id,  'products_id' => $pInfo->products_id], $fieldsDataDef))}" class="edit-price-popup popUp">
+    {else}
 <a href="{\Yii::$app->urlManager->createUrl(array_merge(['categories/product-price-edit', 'products_id' => $pInfo->products_id], $fieldsDataDef))}" class="edit-price-popup popUp">
+    {/if}
     {if $all_hidden}
         {$smarty.const.TEXT_EDIT_GROUP_PRICE}
     {else}

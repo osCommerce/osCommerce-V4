@@ -1223,6 +1223,15 @@
                 <title>BOX_HEADING_FEATURED_TYPES</title>
                 <filename></filename>
             </item>
+            <item>
+                <sort_order>23</sort_order>
+                <acl_check></acl_check>
+                <config_check></config_check>
+                <box_type>0</box_type>
+                <path>specials-types</path>
+                <title>BOX_HEADING_SPECIALS_TAGS</title>
+                <filename></filename>
+            </item>
         </child>
     </item>
     <item>

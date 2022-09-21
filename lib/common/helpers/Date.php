@@ -284,7 +284,7 @@ class Date
         }
         return $dates;
     }
-    
+
     /**
      * get time interval between two dates
      * @param type $to
@@ -332,5 +332,28 @@ class Date
         }
 
         return preg_replace($patterns, $replacements, $rawDate);
+    }
+
+    public static function timeHumanize($date = '')
+    {
+        $return = '';
+        $date = strtotime(trim($date));
+        if ($date > 0) {
+            $date = (time() - $date);
+            if ($date > 0) {
+                $day = floor($date / (24 * 60 * 60));
+                $date = floor($date - ($day * (24 * 60 * 60)));
+                $hour = floor($date / (60 * 60));
+                $date = floor($date - ($hour * (60 * 60)));
+                $minute = floor($date / 60);
+                $date = floor($date - ($minute * 60));
+                $return = trim(
+                    (($day > 0) ? ($day . ' ' . TEXT_DAYS_COMMON . ' ') : '')
+                    . (($hour > 0) ? (str_pad($hour, 2, 0, STR_PAD_LEFT) . ' ' . TEXT_HOURS_COMMON . ' ') : '')
+                    . str_pad($minute, 2, 0, STR_PAD_LEFT) . ' ' . TEXT_MINUTES_COMMON
+                );
+            }
+        }
+        return $return;
     }
 }

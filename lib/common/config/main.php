@@ -121,6 +121,14 @@ return [
                     'logVars' => [],
                     'exportInterval' => 1,
                 ],
+                'supplier' => [
+                    'categories' => ['supplier*'],
+                    'logFile' => '@app/runtime/logs/supplier.log',
+                    'class' => 'yii\log\FileTarget',
+                    'levels' => ['error', 'warning', 'info'],
+                    'logVars' => [],
+                    'exportInterval' => 1,
+                ],
                 [
                     'categories' => ['yii\web\HttpException:404'],
                     'logFile' => '@app/runtime/logs/404_error.log',

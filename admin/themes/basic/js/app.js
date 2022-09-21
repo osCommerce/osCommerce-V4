@@ -460,7 +460,7 @@ var App = function() {
 
 	var handleWidgets = function() {
 		$('.widget .toolbar .widget-collapse').click(function() {
-			var widget         = $(this).parents(".widget");
+			var widget         = $(this).closest(".widget");
 			var widget_content = widget.children(".widget-content");
 			var widget_chart   = widget.children(".widget-chart");
 			var divider        = widget.children(".divider");

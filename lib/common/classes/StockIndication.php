@@ -552,7 +552,7 @@ class StockIndication
         //add purchased q-ty details
         $backOrderInfo = $backOrderFirst = [];
         if (\common\helpers\Acl::checkExtensionAllowed('PurchaseOrders') &&
-           ($oProduct->allow_backorder==1 || ($oProduct->allow_backorder==0 && defined('STOCK_ALLOW_BACKORDER_BY_DEFAULT') && STOCK_ALLOW_BACKORDER_BY_DEFAULT == 'True' ))) {
+           ($oProduct->allow_backorder==1 || ($oProduct->allow_backorder==0 && strtolower(\common\helpers\PlatformConfig::getVal('STOCK_ALLOW_BACKORDER_BY_DEFAULT')) == 'true' ))) {
             $backOrderInfo = \common\extensions\PurchaseOrders\helpers\PurchaseOrder::getOrderedProduct($uprid);
             if (count($backOrderInfo)) {
               $inQty = min(0, \common\helpers\Product::getAvailable($uprid, 0)); //suppose it could be negative
@@ -576,15 +576,16 @@ class StockIndication
 
 ///allow_out_of_stock_add_to_cart - out_of_stock should mean nothing in flags :( - in backend they're "allow add to cart", "allow checkout"
 
-        if (($stock_indication_id >0 && $stock_info_pre_lookup['allow_out_of_stock_add_to_cart'] != 0) || $data_array['products_quantity']>$_checkMinBuyQty) {
+        if (($stock_indication_id >0 && $stock_info_pre_lookup['allow_out_of_stock_add_to_cart'] != 0) || 
+            ($data_array['products_quantity']>$_checkMinBuyQty && $stock_indication_id == 0)) {
           ///indication allow add to cart with any stock level
-          // or product is in stock
+          // or product is in stock and add to cart by stock level
             $add_to_cart = $oProduct->cart_button;
         } elseif ($data_array['products_quantity'] <= $_checkMinBuyQty || $stock_info_pre_lookup['allow_out_of_stock_add_to_cart'] == 0) {
           // often default is out of stock so allow_out_of_stock_add_to_cart == 0
 
           if (\common\helpers\Acl::checkExtensionAllowed('PurchaseOrders') &&
-              ($oProduct->allow_backorder==1 || ($oProduct->allow_backorder==0 && defined('STOCK_ALLOW_BACKORDER_BY_DEFAULT') && STOCK_ALLOW_BACKORDER_BY_DEFAULT == 'True' ))) {
+              ($oProduct->allow_backorder==1 || ($oProduct->allow_backorder==0 && strtolower(\common\helpers\PlatformConfig::getVal('STOCK_ALLOW_BACKORDER_BY_DEFAULT')) == 'true' ))) {
               //check purchased stock (in PO, but not received yet)
             $backOrderQty = array_sum($backOrderInfo);
             if ($backOrderQty>0) {
@@ -675,7 +676,9 @@ class StockIndication
                     $stock_info['flags']['can_add_to_cart'] = false;
                     $stock_info['flags']['add_to_cart'] = false;
                     $stock_info['preorder_only'] = false;
+                    $stock_info['order_instock_bound'] = TRUE;
                 }
+                $stock_info['eol'] = true;
 
             }
 

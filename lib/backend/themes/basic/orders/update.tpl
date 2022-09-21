@@ -1,6 +1,6 @@
 {\backend\components\Currencies::widget(['currency' => $manager->get('currency')])}
 <div class="gridBg contentContainer">
-    <div class="btn-bar btn-bar-top after">
+    <div class="btn-bar btn-bar-top sm-1500">
         <div class="btn-left">
             <form action="{$app->urlManager->createUrl('orders/process-order')}" method="get" class="go-to-order" style="margin-left: 0px">
             {$smarty.const.TEXT_GO_TO_ORDER} <input type="text" class="form-control" name="orders_id"/> <button type="submit" class="btn btn-primary">{$smarty.const.TEXT_GO}</button>
@@ -11,26 +11,58 @@
         </div>
         {if $dropshipping}{$dropshipping->renderOrderProcessButton()}{/if}
         <div class="btn-right">
-        <a href="{$app->urlManager->createUrl(['orders/order-history', 'orders_id' => $order->order_id, 'cid' => $customer_id])}" class="btn-link-create popup">{$smarty.const.TEXT_ORDER_LEGEND}</a><span class="print_but" onclick="printDiv()">Print</span>
-        {foreach \common\helpers\Hooks::getList('orders/process-order', 'btn-bar-right') as $file}
-            {include file=$file}
-        {/foreach}
-        {if \common\helpers\Acl::rule(['ACL_ORDER', 'IMAGE_TRANSACTIONS'])}
-        {*if $order->hasTransactions()*}
-            <a href="{$app->urlManager->createUrl(['orders/payment-list', 'oID' => $order->order_id])}" class="btn popup btn-transaction" data-class="transactions-popup-box">{$smarty.const.IMAGE_TRANSACTIONS}</a>
-        {*/if*}
-        {/if}
-        {if $fraudView}{$fraudView->head()}{/if}
-        {if \common\helpers\Acl::rule(['ACL_ORDER', 'IMAGE_HOLD_ON'])}
-        <a href="{$app->urlManager->createUrl(['orders/hold-on', 'orders_id' => $order->order_id])}" class="btn popup btn-hold-on{if $order->isHoldOn()} holdOnOrder{/if}"><i class="icon-pushpin"></i>&nbsp;{$smarty.const.IMAGE_HOLD_ON}</a>
-        {/if}
-        {if \common\helpers\Acl::rule(['ACL_ORDER', 'IMAGE_EDIT'])}
-        <a href="{$app->urlManager->createUrl(['editor/order-edit', 'orders_id' => $order->order_id])}" class="btn btn-delete btn-edit">{$smarty.const.IMAGE_EDIT}</a>
-        {/if}
-        {if \common\helpers\Acl::rule(['ACL_ORDER', 'IMAGE_DELETE'])}
-        <a href="javascript:void(0)" onclick="return deleteOrder({$order->order_id});" class="btn btn-delete">{$smarty.const.IMAGE_DELETE}</a>
-        {/if}
-        <a href="{Yii::$app->urlManager->createUrl(['logger/popup', 'type' => 'Order', 'id' => $order->order_id])}" class="btn-link-create popup">{$smarty.const.TEXT_HISTORY}</a>
+
+            <a href="{$app->urlManager->createUrl(['orders/order-history', 'orders_id' => $order->order_id, 'cid' => $customer_id])}" class="btn btn-legend" title="{$smarty.const.TEXT_ORDER_LEGEND}">
+                <i class="osci-order-legend"></i>
+                <span class="title">{$smarty.const.TEXT_ORDER_LEGEND}</span>
+            </a>
+
+            <span class="print-button btn" onclick="printDiv()" title="{$smarty.const.TEXT_PRINT}">
+                <i class="osci-print"></i>
+                <span class="title">{$smarty.const.TEXT_PRINT}</span>
+            </span>
+
+            {foreach \common\helpers\Hooks::getList('orders/process-order', 'btn-bar-right') as $file}
+                {include file=$file}
+            {/foreach}
+
+            {if \common\helpers\Acl::rule(['ACL_ORDER', 'IMAGE_TRANSACTIONS'])}
+            {*if $order->hasTransactions()*}
+                <a href="{$app->urlManager->createUrl(['orders/payment-list', 'oID' => $order->order_id])}" class="btn btn-primary popup" data-class="transactions-popup-box" title="{$smarty.const.IMAGE_TRANSACTIONS}">
+                    <i class="osci-transactions"></i>
+                    <span class="title">{$smarty.const.IMAGE_TRANSACTIONS}</span>
+                </a>
+            {*/if*}
+            {/if}
+
+            {if $fraudView}{$fraudView->head()}{/if}
+
+            {if \common\helpers\Acl::rule(['ACL_ORDER', 'IMAGE_HOLD_ON'])}
+            <a href="{$app->urlManager->createUrl(['orders/hold-on', 'orders_id' => $order->order_id])}" class="btn btn-primary popup btn-hold-on{if $order->isHoldOn()} holdOnOrder{/if}" title="{$smarty.const.IMAGE_HOLD_ON}">
+                <i class="osci-hold-on-order"></i>
+                <span class="title">{$smarty.const.IMAGE_HOLD_ON}</span>
+            </a>
+            {/if}
+
+            {if \common\helpers\Acl::rule(['ACL_ORDER', 'IMAGE_EDIT'])}
+            <a href="{$app->urlManager->createUrl(['editor/order-edit', 'orders_id' => $order->order_id])}" class="btn btn-primary" title="{$smarty.const.IMAGE_EDIT}">
+                <i class="osci-edit"></i>
+                <span class="title">{$smarty.const.IMAGE_EDIT}</span>
+            </a>
+            {/if}
+
+            {if \common\helpers\Acl::rule(['ACL_ORDER', 'IMAGE_DELETE'])}
+            <a href="javascript:void(0)" onclick="return deleteOrder({$order->order_id});" class="btn btn-danger" title="{$smarty.const.IMAGE_DELETE}">
+                <i class="osci-delete"></i>
+                <span class="title">{$smarty.const.IMAGE_DELETE}</span>
+            </a>
+            {/if}
+
+            <a href="{Yii::$app->urlManager->createUrl(['logger/popup', 'type' => 'Order', 'id' => $order->order_id])}" class="btn btn-history" title="{$smarty.const.TEXT_HISTORY}">
+                <i class="osci-history"></i>
+                <span class="title">{$smarty.const.TEXT_HISTORY}</span>
+            </a>
+
         </div>
         {foreach \common\helpers\Hooks::getList('orders/process-order', 'btn-bar-top') as $filename}
             {include file=$filename}
@@ -123,7 +155,7 @@ $(document).ready(function() {
         $btnNextPrev.css('top', top)
     }
 
-    $('a.btn-link-create.popup').popUp({
+    $('a.btn-legend, .btn-history').popUp({
         box_class:'legend-info'
     });
 

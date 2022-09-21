@@ -20,37 +20,37 @@
                         {/foreach}
                     </tbody>
                 </table>
-                    <div class="countries_popup popup-box-wrap-page hide_popup" id="warehouses-table">
+                    <div class="countries_popup popup-box-wrap-page hide_popup warehouses-table">
                         <div class="around-pop-up-page"></div>
                         <div class="popup-box-page">
                             <div class="pop-up-close-page"></div>
                             <div class="pop-up-content-page">
                                 <div class="popup-heading">{$smarty.const.TEXT_SET_UP} {$smarty.const.BOX_WAREHOUSES_PRIORITY}</div>
                                 <div class="popup-content">
-                                    <div id="priorityList">
+                                    <div class="priorityList">
                                     {foreach $warehouse_priorities as $warehouse_priority}
                                         {assign var="rowId" value="{$warehouse_priority->handler_class}"}
                                     <div class="widget box box-no-shadow js-warehouse-priority" style="margin-bottom: 10px;" id="{$warehouse_priority->handler_class}">
                                         {Html::hiddenInput('priority['|cat:$rowId|cat:'][id]',$warehouse_priority->id)}
                                         {Html::hiddenInput('priority['|cat:$rowId|cat:'][sort_order]',$warehouse_priority->sort_order,['class'=>'js-sort-order'])}
-                                        <div class="widget-header after">
-                                            <div class="row">
-                                                <div class="col-md-8">
-                                                    <div class="handle_cat_list" style="margin: 0">
-                                                        <span class="handle" style="left: -12px;height:40px"><i class="icon-hand-paper-o"></i></span>
-                                                        <h4>{$warehouse_priority->title}</h4>
-                                                    </div>
+                                        <div class="widget-header">
+                                            <div class="row" style="flex-grow: 1">
+                                                <div class="col-md-1">
+                                                    <span class="handle"><i class="icon-hand-paper-o"></i></span>
+                                                </div>
+                                                <div class="col-md-7">
+                                                    <h4>{$warehouse_priority->title}</h4>
                                                 </div>
                                                 <div class="col-md-4 text-right">
                                                     <div style="padding-right: 40px;display: inline-block">
                                                     {$smarty.const.TEXT_STATUS}
-                                                        <input type="checkbox" name="priority[{$rowId}][handler_status]" {if $warehouse_priority->handler_status} checked{/if} class="js_check_status" value="1"/>
+                                                        <input type="checkbox" name="priority[{$rowId}][handler_status]" {if $warehouse_priority->handler_status} checked{/if} class="js_handler_status" value="1"/>
                                                     </div>
-                                                    <div class="toolbar no-padding">
-                                                        <div class="btn-group">
-                                                            <span class="btn btn-xs widget-collapse"><i class="icon-angle-down"></i></span>
-                                                        </div>
-                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="toolbar no-padding">
+                                                <div class="btn-group">
+                                                    <span class="btn btn-xs widget-collapse"><i class="icon-angle-down"></i></span>
                                                 </div>
                                             </div>
                                         </div>
@@ -93,10 +93,10 @@
                                     </div>
                                     {/foreach}
                                     </div>
-                                    <div class="btn-bar">
-                                        <div class="btn-left"><a href="#" class="btn btn-cancel-foot cancel-popup">{$smarty.const.IMAGE_CANCEL}</a></div>
-                                        <div class="btn-right"><a href="#" class="btn apply-popup">{$smarty.const.IMAGE_APPLY}</a></div>
-                                    </div>
+                                </div>
+                                <div class="btn-bar">
+                                    <div class="btn-left"><a href="#" class="btn btn-cancel-foot cancel-popup">{$smarty.const.IMAGE_CANCEL}</a></div>
+                                    <div class="btn-right"><a href="#" class="btn apply-popup">{$smarty.const.IMAGE_APPLY}</a></div>
                                 </div>
                             </div>
                         </div>
@@ -108,41 +108,64 @@
           </div>
 <script>
 $(document).ready(function(){
-   $('#priorityList').on('update_sort_order',function(event, manualUpdate){
-        $('.js-warehouse-priority').each(function(idx){
-            $(this).find('.js-sort-order').val(''+idx);
+    let warehousesTable = $('.warehouses-table').clone();
+    $('.popup_lang').on('click', function(e){
+        e.preventDefault();
+        $('.warehouses-table').removeClass('hide_popup');
+    })
+    applyPopUp()
+    function applyPopUp() {
+        $('.warehouses-table .apply-popup').on('click', function (e) {
+            e.preventDefault();
+            $('.warehouses-table').addClass('hide_popup')
+        })
+        $('.warehouses-table .cancel-popup, .warehouses-table .pop-up-close-page').on('click', function (e) {
+            e.preventDefault();
+            $('.warehouses-table').replaceWith(warehousesTable.clone())
+            applyPopUp()
+        })
+        $('.js_handler_status').bootstrapSwitch({
+            onText: "{$smarty.const.SW_ON}",
+            offText: "{$smarty.const.SW_OFF}",
+            handleWidth: '20px',
+            labelWidth: '24px'
         });
-    }); 
-    $('#priorityList').sortable({
-        axis: 'y',
-        update: function( event, ui ) {
-            $('#priorityList').trigger('update_sort_order',[true]);
-        }
-    });
-    $( '#priorityList' ).disableSelection();
-    
-    $('.js-weight-table').on('add_new_row',function () {
-        var $table = $(this);
-        var rowStr = $('tfoot', $table).html();
-        rowStr = rowStr.replace(/%%rowId%%/g,$table.parents('.js-warehouse-priority').attr('id'));
-        var rowCounter = parseInt($table.data('row-counter'),10);
-        rowStr = rowStr.replace(/%%rowCounter%%/g,rowCounter);
-        $table.data('row-counter',rowCounter+1);
-        $('tbody',$table).append(rowStr);
-    });
+        $('.priorityList').on('update_sort_order', function (event, manualUpdate) {
+            $('.js-warehouse-priority').each(function (idx) {
+                $(this).find('.js-sort-order').val('' + idx);
+            });
+        });
+        $('.priorityList').sortable({
+            axis: 'y',
+            update: function (event, ui) {
+                $('.priorityList').trigger('update_sort_order', [true]);
+            }
+        });
+        $('.priorityList').disableSelection();
 
-    $('.js-weight-table').each(function () {
-        var $table = $(this);
-        if ( $table.find('tbody tr').length==0 ) {
-            $table.trigger('add_new_row');
-        }
-    });
+        $('.js-weight-table').on('add_new_row', function () {
+            var $table = $(this);
+            var rowStr = $('tfoot', $table).html();
+            rowStr = rowStr.replace(/%%rowId%%/g, $table.parents('.js-warehouse-priority').attr('id'));
+            var rowCounter = parseInt($table.data('row-counter'), 10);
+            rowStr = rowStr.replace(/%%rowCounter%%/g, rowCounter);
+            $table.data('row-counter', rowCounter + 1);
+            $('tbody', $table).append(rowStr);
+        });
 
-    $('.js-warehouse-priority').on('click','.js-add-weight-row',function (event) {
-        $(event.delegateTarget).find('.js-weight-table').trigger('add_new_row')
-    });
-    $('.js-warehouse-priority').on('click','.js-remove-weight-row',function (event) {
-        $(event.target).parents('tr').remove();
-    });
+        $('.js-weight-table').each(function () {
+            var $table = $(this);
+            if ($table.find('tbody tr').length == 0) {
+                $table.trigger('add_new_row');
+            }
+        });
+
+        $('.js-warehouse-priority').on('click', '.js-add-weight-row', function (event) {
+            $(event.delegateTarget).find('.js-weight-table').trigger('add_new_row')
+        });
+        $('.js-warehouse-priority').on('click', '.js-remove-weight-row', function (event) {
+            $(event.target).parents('tr').remove();
+        });
+    }
 });
 </script>

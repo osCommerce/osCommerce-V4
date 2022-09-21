@@ -194,7 +194,11 @@ class CategoriesController extends Sceleton {
      * Index action is the default action in a controller.
      */
     public function actionIndex() {
-        global $login_id;
+        global $login_id, $navigation;
+
+        if (is_object($navigation) && method_exists($navigation, 'set_snapshot')){
+            $navigation->set_snapshot();
+        }
 
         $this->selectedMenu = array('catalog', 'categories');
         $this->navigation[] = array('link' => Yii::$app->urlManager->createUrl('categories/index'), 'title' => HEADING_TITLE);
@@ -679,35 +683,54 @@ class CategoriesController extends Sceleton {
 
                 case '':
                 case 'any':
-                    $filter_prod .= " and (";
-                    $filter_prod .= " pd.products_name like '%" . tep_db_input($search) . "%' ";
-                    $filter_prod .= " or pdd.products_name like '%" . tep_db_input($search) . "%' ";
-                    $filter_prod .= " or pd.products_internal_name like '%" . tep_db_input($search) . "%' ";
-                    $filter_prod .= " or pdd.products_internal_name like '%" . tep_db_input($search) . "%' ";
-                    $filter_prod .= " or pd.products_description like '%" . tep_db_input($search) . "%' ";
-                    $filter_prod .= " or pd.products_head_title_tag like '%" . tep_db_input($search) . "%' ";
-                    $filter_prod .= " or pd.products_head_desc_tag like '%" . tep_db_input($search) . "%' ";
-                    $filter_prod .= " or pd.products_head_keywords_tag like '%" . tep_db_input($search) . "%' ";
+                    /** @var \common\extensions\PlainProductsDescription\PlainProductsDescription  $ext  */
+                    $ext = \common\helpers\Acl::checkExtensionAllowed('PlainProductsDescription', 'allowed');
+                    if ($ext && $ext::isEnabled()) {
+                        $searchBuilder = new \common\components\SearchBuilder('simple');
+                        $searchBuilder->setSearchInDesc(SEARCH_IN_DESCRIPTION == 'True');
+                        $searchBuilder->setSearchInternal(true);
+                        $searchBuilder->searchInProperty = false;
+                        $searchBuilder->searchInAttributes = false;
+                        $searchBuilder->parseKeywords($search);
+                        $productsQuery = \common\models\Products::find()->distinct()->alias('p');
+                        $searchBuilder->addProductsRestriction($productsQuery);
+                        $productsQuery->select('p.products_id')->orderBy('p.products_id');
 
-                    $filter_prod .= " or p.products_model like '%" . tep_db_input($search) . "%' ";
-                    if (\common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed')) {
-                        $use_iventory = true;
-                        $filter_prod .= " or i.products_model like '%" . tep_db_input($search) . "%' ";
-                        // add search in suppliers
-                        $filter_prod .= " or suppp.suppliers_product_name like '%" . tep_db_input($search) . "%' ";
-                        $filter_prod .= " or suppp.suppliers_model like '%" . tep_db_input($search) . "%' ";
-                        $filter_prod .= " or suppp.suppliers_upc like '%" . tep_db_input($search) . "%' ";
+                        $filter_prod .= " and (";
+                        $filter_prod .= "p.products_id in ('" . implode("','", $productsQuery->asArray()->column()) . "') ";
+                        $filter_prod .= ") ";
+                        
+                    } else {
+                        $filter_prod .= " and (";
+                        $filter_prod .= " pd.products_name like '%" . tep_db_input($search) . "%' ";
+                        $filter_prod .= " or pdd.products_name like '%" . tep_db_input($search) . "%' ";
+                        $filter_prod .= " or pd.products_internal_name like '%" . tep_db_input($search) . "%' ";
+                        $filter_prod .= " or pdd.products_internal_name like '%" . tep_db_input($search) . "%' ";
+                        $filter_prod .= " or pd.products_description like '%" . tep_db_input($search) . "%' ";
+                        $filter_prod .= " or pd.products_head_title_tag like '%" . tep_db_input($search) . "%' ";
+                        $filter_prod .= " or pd.products_head_desc_tag like '%" . tep_db_input($search) . "%' ";
+                        $filter_prod .= " or pd.products_head_keywords_tag like '%" . tep_db_input($search) . "%' ";
+
+                        $filter_prod .= " or p.products_model like '%" . tep_db_input($search) . "%' ";
+                        if (\common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed')) {
+                            $use_iventory = true;
+                            $filter_prod .= " or i.products_model like '%" . tep_db_input($search) . "%' ";
+                            // add search in suppliers
+                            $filter_prod .= " or suppp.suppliers_product_name like '%" . tep_db_input($search) . "%' ";
+                            $filter_prod .= " or suppp.suppliers_model like '%" . tep_db_input($search) . "%' ";
+                            $filter_prod .= " or suppp.suppliers_upc like '%" . tep_db_input($search) . "%' ";
+                        }
+
+                        $filter_prod .= " or p.products_ean like '%" . tep_db_input($search) . "%' ";
+                        $filter_prod .= " or p.products_upc like '%" . tep_db_input($search) . "%' ";
+                        $filter_prod .= " or p.products_asin like '%" . tep_db_input($search) . "%' ";
+                        $filter_prod .= " or p.products_isbn like '%" . tep_db_input($search) . "%' ";
+                        $filter_prod .= " or p.products_file like '%" . tep_db_input($search) . "%' ";
+                        $filter_prod .= " or p.products_image like '%" . tep_db_input($search) . "%' ";
+                        $filter_prod .= " or p.products_seo_page_name like '%" . tep_db_input($search) . "%' ";
+                        $filter_prod .= " or pd.products_seo_page_name like '%" . tep_db_input($search) . "%' ";
+                        $filter_prod .= ") ";
                     }
-
-                    $filter_prod .= " or p.products_ean like '%" . tep_db_input($search) . "%' ";
-                    $filter_prod .= " or p.products_upc like '%" . tep_db_input($search) . "%' ";
-                    $filter_prod .= " or p.products_asin like '%" . tep_db_input($search) . "%' ";
-                    $filter_prod .= " or p.products_isbn like '%" . tep_db_input($search) . "%' ";
-                    $filter_prod .= " or p.products_file like '%" . tep_db_input($search) . "%' ";
-                    $filter_prod .= " or p.products_image like '%" . tep_db_input($search) . "%' ";
-                    $filter_prod .= " or p.products_seo_page_name like '%" . tep_db_input($search) . "%' ";
-                    $filter_prod .= " or pd.products_seo_page_name like '%" . tep_db_input($search) . "%' ";
-                    $filter_prod .= ") ";
                     $filter_cat .= " and (";
                     $filter_cat .= " cd.categories_name like '%" . tep_db_input($search) . "%' ";
                     $filter_cat .= " or cdd.categories_name like '%" . tep_db_input($search) . "%' ";
@@ -1112,7 +1135,7 @@ class CategoriesController extends Sceleton {
                         ->offset(max($offset, 0))
                         ->limit($length);
 
-                $products_query_raw = $products_in_category->createCommand()->getRawSql();  // backward compatibility 
+                $products_query_raw = $products_in_category->createCommand()->getRawSql();  // backward compatibility
                 $products_all = $products_in_category->asArray()->all();
                 foreach ($products_all as $products) {
                     if ( empty($products['products_name']) ) {
@@ -2681,15 +2704,29 @@ class CategoriesController extends Sceleton {
 
           $this->view->suppliers = [];
           $service->get('\common\models\SuppliersProducts', 'sProduct');
-          
+
           if (!\common\helpers\Attributes::has_product_attributes($pInfo->products_id ) || $pInfo->without_inventory || ((\common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed')) ? 0 : 1) ){
-              $sProducts = \common\models\SuppliersProducts::getSupplierProducts((int)$pInfo->products_id)->all();
+              //$sProducts = \common\models\SuppliersProducts::getSupplierProducts((int)$pInfo->products_id)->all();
+              $sProducts = \common\models\SuppliersProducts::find()->alias('sp')
+                  ->joinWith('supplier s')
+                  ->where(['sp.products_id' => (int)$pInfo->products_id ])
+                  ->orderBy(new \yii\db\Expression('if(sp.sort_order is null, s.sort_order, sp.sort_order)'))
+                  ->all();
+              $pInfo->supplier_default_sort = 1;
               if (!$sProducts){
                   $sProduct = (new \common\models\SuppliersProducts())->saveDefaultSupplierProduct(['products_id' => (int)$pInfo->products_id]);
                   if ($sProduct) $sProducts = [$sProduct];
+              } else {
+                  if (count($sProducts) > 1) {
+                    foreach ($sProducts as $sProduct) {
+                        if (!is_null($sProduct->sort_order)) {
+                            $pInfo->supplier_default_sort = 0;
+                            break;
+                        }
+                    }
+                  }
               }
           }
-
           if (!empty($sProducts)){
               foreach($sProducts as $sProduct){
                   $this->view->suppliers[$sProduct->suppliers_id] = $sProduct;
@@ -2910,7 +2947,15 @@ class CategoriesController extends Sceleton {
                 }
             }
         }
-        
+
+        global $navigation;
+        if (sizeof($navigation->snapshot) > 0) {
+            $backUrl = Yii::$app->urlManager->createUrl(array_merge([$navigation->snapshot['page']], $navigation->snapshot['get']));
+        } else {
+            $categoryId = \common\models\Products2Categories::findOne(['products_id' => $pInfo->products_id])->categories_id;
+            $backUrl = Yii::$app->urlManager->createUrl(['category', 'category_id' => $categoryId]);
+        }
+
         return $this->render('productedit.tpl', [
             'infoBreadCrumb' => $editProductInPath,
             'infoSubProducts' => $infoSubProducts,
@@ -2936,6 +2981,7 @@ class CategoriesController extends Sceleton {
             'popup' => false,
             'hideSuppliersPart' => false,
             'hidden_admin_language' => $hidden_admin_language,
+            'backUrl' => $backUrl,
         ]);
     }
 
@@ -4049,7 +4095,7 @@ class CategoriesController extends Sceleton {
         }
 ////////////////////////////////
 
-        
+
         /** @var \common\extensions\NotifyProductsDate\NotifyProductsDate $npd */
         if ($npd = \common\helpers\Acl::checkExtensionAllowed('NotifyProductsDate', 'allowed')) {
             $npd::productSave($all_inventory_uprids_array);
@@ -4075,6 +4121,7 @@ class CategoriesController extends Sceleton {
                         $suppliers_data[$products_id] = $suppliers_data[0];
                         unset($suppliers_data[0]);
                     }
+                    $sort_order = \Yii::$app->request->post('suppliers-default-sort', 0) ? null : 0;
                     foreach($suppliers_data[$products_id] as $suppliers_id => $data) {
                         if (isset($sProducts[$suppliers_id])){
                             $sProduct = $sProducts[$suppliers_id];
@@ -4087,6 +4134,7 @@ class CategoriesController extends Sceleton {
                         }
                         $data['suppliers_price_discount'] = \common\helpers\Suppliers::getDiscountValuesTable($suppliers_discount[$products_id][$suppliers_id] ?? null);
                         $sProduct->load($data, null);
+                        $sProduct->sort_order = is_null($sort_order) ? null : $sort_order++;
                         $sProduct->saveSupplierProduct($data);
                     }
                     foreach($sProducts as $sProduct) $sProduct->delete();
@@ -4145,8 +4193,11 @@ class CategoriesController extends Sceleton {
                     }
                 }
             }
+            if (!empty(\common\helpers\PriceFormula::getProductModelForAutoUpdate($products_id))) {
+                \common\helpers\PriceFormula::applyDb($products_id);
+            }
         }
-        
+
         /**
          * Images
          */
@@ -4162,7 +4213,7 @@ class CategoriesController extends Sceleton {
             $productProperties = new \backend\models\ProductEdit\SaveProductProperties($productModel);
             $productProperties->save();
         }
-        
+
         /**
          * Videos
          */
@@ -4179,18 +4230,18 @@ class CategoriesController extends Sceleton {
         foreach (\common\helpers\Hooks::getList('categories/productedit-beforesave') as $filename) {
             include($filename);
         }
-        
+
         $productModel->save(false);
-        
+
         foreach (\common\helpers\Hooks::getList('categories/productedit') as $filename) {
             include($filename);
         }
-        
+
         if ($TabAccess->tabDataSave('TEXT_PRODUCT_SOAP_CONFIG')
              && class_exists('\backend\models\EP\Datasource\HolbiSoap') ) {
             \backend\models\EP\Datasource\HolbiSoap::productUpdate($products_id, Yii::$app->request->post('soap_config', []));
         }
-        
+
         $productModel->save(false);
 
         \common\helpers\Product::fillGlobalSort(0, $products_id);
@@ -5074,6 +5125,13 @@ class CategoriesController extends Sceleton {
         }
         $this->view->xsellProducts = $xsellProducts;
 
+        global $navigation;
+        if (sizeof($navigation->snapshot) > 0) {
+            $backUrl = Yii::$app->urlManager->createUrl(array_merge([$navigation->snapshot['page']], $navigation->snapshot['get']));
+        } else {
+            $backUrl = Yii::$app->urlManager->createUrl(['category', 'category_id' => $cInfo->parent_id]);
+        }
+
         return $this->render('categoryedit', [
                     'infoBreadCrumb' => $editCategoryInPath,
                     'categories_id' => $categories_id,
@@ -5087,6 +5145,7 @@ class CategoriesController extends Sceleton {
                     'upload_path' => \Yii::getAlias('@web') . '/uploads/',
                     'images' => \common\helpers\Image::getCategorisAdditionlImages($categories_id),
                     'bannerGroups' => $bannerGroups,
+                    'backUrl' => $backUrl,
         ]);
     }
 
@@ -6485,7 +6544,6 @@ class CategoriesController extends Sceleton {
             <script>
                 $('body').scrollTop(0);
                 /* $('.pop-mess .pop-up-close-alert, .noti-btn .btn').click(function(){
-                 console.log('1');
                  $(this).parents('.pop-mess').remove();
                  }); */
             </script>
@@ -6680,7 +6738,7 @@ class CategoriesController extends Sceleton {
                 'price_with_tax' => isset($calculateData['price_with_tax'])?$calculateData['price_with_tax']:null,
             ];
 
-            if ( $params['PRICE']>0 ) {
+            if ( $params['PRICE']>=0 ) {
                 $data[$_supplierId]['result'] = \common\helpers\PriceFormula::applyRules($params, $_supplierId);
                 if ( $data[$_supplierId]['result']===false ) {
                     $data[$_supplierId]['error'] = 'No applicable rule found';
@@ -6729,7 +6787,7 @@ class CategoriesController extends Sceleton {
 
         $suppliers_data_query = tep_db_query("select * from " . TABLE_SUPPLIERS . " order by is_default DESC, sort_order, suppliers_name");
         while ($suppliers_data = tep_db_fetch_array($suppliers_data_query)) {
-            if ( !isset($suppliers_load[$suppliers_data['suppliers_id']]['suppliers_price']) || $suppliers_load[$suppliers_data['suppliers_id']]['suppliers_price']<=0 ) continue;
+            if ( !isset($suppliers_load[$suppliers_data['suppliers_id']]['suppliers_price']) || $suppliers_load[$suppliers_data['suppliers_id']]['suppliers_price']<0 ) continue;
 
             $calculateData = $suppliers_load[$suppliers_data['suppliers_id']];
             if ( !isset($calculateData['status']) ) continue;
@@ -6743,11 +6801,11 @@ class CategoriesController extends Sceleton {
                 'categories_id' => (isset($calculateData['categories_id']) && is_array($calculateData['categories_id']))?array_map('intval',$calculateData['categories_id']):[],
                 'manufacturers_id' => $manufacturers_id,
                 'currencies_id' => isset($calculateData['currencies_id'])?intval($calculateData['currencies_id']):0,
-                'PRICE' => isset($calculateData['suppliers_price'])?floatval($calculateData['suppliers_price']):0,
-                'MARGIN' => isset($calculateData['suppliers_margin_percentage'])?$calculateData['suppliers_margin_percentage']:null,
-                'SURCHARGE' => isset($calculateData['suppliers_surcharge_amount'])?$calculateData['suppliers_surcharge_amount']:null,
-                'DISCOUNT' => isset($calculateData['supplier_discount'])?$calculateData['supplier_discount']:null,
-                'tax_rate' => isset($calculateData['tax_rate'])?$calculateData['tax_rate']:null,
+                'PRICE' => isset($calculateData['suppliers_price'])?((float)$calculateData['suppliers_price']):0,
+                'MARGIN' => isset($calculateData['suppliers_margin_percentage'])? ((float)$calculateData['suppliers_margin_percentage']):null,
+                'SURCHARGE' => isset($calculateData['suppliers_surcharge_amount'])? ((float)$calculateData['suppliers_surcharge_amount']):null,
+                'DISCOUNT' => isset($calculateData['supplier_discount'])?((float)$calculateData['supplier_discount']):null,
+                'tax_rate' => isset($calculateData['tax_rate'])?((float)$calculateData['tax_rate']):null,
                 'price_with_tax' => isset($calculateData['price_with_tax'])?$calculateData['price_with_tax']:null,
             ];
 
@@ -7506,10 +7564,62 @@ order by status desc, sort_order
         }
     }
 
+    public function actionStockInfo() {
+        $this->layout = false;
+
+        $prid = Yii::$app->request->get('prid');
+
+        $warehouseNames = \yii\helpers\ArrayHelper::map(\common\helpers\Warehouses::get_warehouses(true), 'id', 'text');
+        $blocks =\common\models\LocationBlocks::find()->asArray()->all();
+        $blocksList = [];
+        foreach ($blocks as $value) {
+            $blocksList[$value['block_id']] = $value['block_name'];
+        }
+
+        $existStock = \common\models\WarehousesProducts::find()
+            ->select(['warehouse_id', 'suppliers_id', 'location_id', 'layers_id', 'batch_id', 'products_quantity'])
+            ->where(['products_id' => $prid])
+            ->orderBy(['warehouse_id' => SORT_ASC, 'suppliers_id' => SORT_ASC, 'location_id' => SORT_ASC, 'layers_id' => SORT_ASC, 'batch_id' => SORT_ASC])
+            ->asArray()
+            ->all();
+
+        $stockList = [];
+        foreach ($existStock as $stock) {
+            if ($stock['products_quantity'] <= 0) {
+                continue;
+            }
+            $location = \common\helpers\Warehouses::getLocationPath($stock['location_id'], $stock['warehouse_id'], $blocksList);
+            if (empty($location)) {
+                $location = 'N/A';
+            }
+            $layer = 'N/A';
+            if ($stock['layers_id']) {
+                $layer = \common\helpers\Date::date_short(\common\helpers\Warehouses::getExpiryDateByLayersID($stock['layers_id'])); 
+            }
+            $batch = 'N/A';
+            if ($stock['batch_id']) {
+                $batch = \common\helpers\Warehouses::getBatchNameByBatchID($stock['batch_id']); 
+            }
+            $stockList[] = [
+                'id' => $stock['location_id'] . '_' . $stock['layers_id'] . '_' . $stock['batch_id'],
+                'warehouse' => isset($warehouseNames[$stock['warehouse_id']]) ? $warehouseNames[$stock['warehouse_id']] : '',
+                'supplier' => \common\helpers\Suppliers::getSupplierName($stock['suppliers_id']),
+                'location' => $location,
+                'layer' => $layer,
+                'batch' => $batch,
+                'qty' => $stock['products_quantity'],
+            ];
+        }
+
+        return $this->renderAjax('stock-info', ['stockList' => $stockList]);
+    }
+
     public function actionProductQuantityUpdate() {
         \common\helpers\Translation::init('admin/categories');
 
         $box_location = Yii::$app->request->post('box_location');
+        $isAutoallocate = (int)Yii::$app->request->post('is_autoallocate');
+
         $locationIds = explode(",", $box_location);
         $location_id = 0;
         if (is_array($locationIds)) {
@@ -7519,6 +7629,11 @@ order by status desc, sort_order
                 }
             }
         }
+        $expiry_date = Yii::$app->request->post('expiry_date', '');
+        $expiry_date = \common\helpers\Date::prepareInputDate($expiry_date);
+        $layers_id = \common\helpers\Warehouses::getWarehousesProductsLayersIDbyExpiryDate($expiry_date);
+        $batch_name = Yii::$app->request->post('batch_name', '');
+        $batch_id = \common\helpers\Warehouses::getWarehousesProductsBatchIDbyBatchName($batch_name);
 
         $warehouse_id = (int) $_POST['warehouse_id'];
         $w_suppliers_id = (int)Yii::$app->request->post('w_suppliers_id', 0);
@@ -7535,17 +7650,19 @@ order by status desc, sort_order
 
             if ($inventory_quantity_update_prefix == '-') {
                 $existLocations = \common\models\WarehousesProducts::find()
-                    ->select(['location_id', 'warehouse_stock_quantity'])
+                    ->select(['location_id', 'layers_id', 'batch_id', 'warehouse_stock_quantity'])
                     ->where(['warehouse_id' => $warehouse_id, 'suppliers_id' => $w_suppliers_id, 'products_id' => $_POST['uprid']])
-                    ->orderBy(['location_id' => SORT_ASC])
+                    ->orderBy(['location_id' => SORT_ASC, 'layers_id' => SORT_ASC, 'batch_id' => SORT_ASC])
                     ->asArray()
                     ->all();
                 foreach ($existLocations as $location) {
-                    if (isset($_POST['stock_minus_qty_' . $location['location_id']]) && $_POST['stock_minus_qty_' . $location['location_id']] > 0) {
+                    if (isset($_POST['stock_minus_qty_' . $location['location_id'] . '_' . $location['layers_id'] . '_' . $location['batch_id']]) && $_POST['stock_minus_qty_' . $location['location_id'] . '_' . $location['layers_id'] . '_' . $location['batch_id']] > 0) {
                         $updateData[] = [
-                            'quantity' => (int)  $_POST['stock_minus_qty_' . $location['location_id']],
+                            'quantity' => (int) $_POST['stock_minus_qty_' . $location['location_id'] . '_' . $location['layers_id'] . '_' . $location['batch_id']],
                             'prefix' => $inventory_quantity_update_prefix,
                             'location' => $location['location_id'],
+                            'layers_id' => $location['layers_id'],
+                            'batch_id' => $location['batch_id'],
                         ];
                     }
                 }
@@ -7554,6 +7671,8 @@ order by status desc, sort_order
                     'quantity' => $inventory_quantity_update,
                     'prefix' => $inventory_quantity_update_prefix,
                     'location' => $location_id,
+                    'layers_id' => $layers_id,
+                    'batch_id' => $batch_id,
                 ];
             }
 
@@ -7570,12 +7689,19 @@ order by status desc, sort_order
 
                     if ($warehouse_id > 0) {
                         $parameters = [
+                            'layers_id' => $updateItem['layers_id'],
+                            'batch_id' => $updateItem['batch_id'],
                             'admin_id' => $login_id,
                             'comments' => (TEXT_MANUALL_STOCK_UPDATE . (trim($stock_comments) != '' ? ': ' . $stock_comments : ''))
                         ];
                         $check_data['warehouse_quantity'] = \common\helpers\Warehouses::update_products_quantity($_POST['uprid'], $warehouse_id, $updateItem['quantity'], $updateItem['prefix'], $w_suppliers_id, $updateItem['location'], $parameters);
+                        if ($isAutoallocate) {
+                            \common\helpers\Product::doAllocateAutomatic($_POST['uprid'], true);
+                        }
                         $check_data['allocated_quantity'] = \common\helpers\Product::getAllocated($_POST['uprid']);
                         $check_data['temporary_quantity'] = \common\helpers\Product::getAllocatedTemporary($_POST['uprid']);
+                        $check_data['allocated_temporary_quantity'] = \common\helpers\Product::getAllocatedTemporary($_POST['uprid'], true);
+                        $check_data['deficit_quantity'] = \common\helpers\Product::getStockDeficit($_POST['uprid']);
                     } else {
                         tep_db_query("update " . TABLE_INVENTORY . " set products_quantity = products_quantity " . $updateItem['prefix'] . $updateItem['quantity'] . " where products_id = '" . tep_db_input($_POST['uprid']) . "'");
 
@@ -7584,8 +7710,13 @@ order by status desc, sort_order
                         } else {
                             $check_data['warehouse_quantity'] += $updateItem['quantity'];
                         }
+                        if ($isAutoallocate) {
+                            \common\helpers\Product::doAllocateAutomatic($_POST['uprid'], true);
+                        }
                         $check_data['allocated_quantity'] = \common\helpers\Product::getAllocated($_POST['uprid']);
                         $check_data['temporary_quantity'] = \common\helpers\Product::getAllocatedTemporary($_POST['uprid']);
+                        $check_data['allocated_temporary_quantity'] = \common\helpers\Product::getAllocatedTemporary($_POST['uprid'], true);
+                        $check_data['deficit_quantity'] = \common\helpers\Product::getStockDeficit($_POST['uprid']);
                     }
                     $check_data['products_quantity'] = $check_data['warehouse_quantity'] - ($check_data['allocated_quantity'] + $check_data['temporary_quantity']);
                     $check_data['ordered_quantity'] = $check_data['ordered_stock_quantity'];
@@ -7600,17 +7731,19 @@ order by status desc, sort_order
 
             if ($products_quantity_update_prefix == '-') {
                 $existLocations = \common\models\WarehousesProducts::find()
-                    ->select(['location_id', 'warehouse_stock_quantity'])
+                    ->select(['location_id', 'layers_id', 'batch_id', 'warehouse_stock_quantity'])
                     ->where(['warehouse_id' => $warehouse_id, 'suppliers_id' => $w_suppliers_id, 'products_id' => $_POST['uprid']])
-                    ->orderBy(['location_id' => SORT_ASC])
+                    ->orderBy(['location_id' => SORT_ASC, 'layers_id' => SORT_ASC, 'batch_id' => SORT_ASC])
                     ->asArray()
                     ->all();
                 foreach ($existLocations as $location) {
-                    if (isset($_POST['stock_minus_qty_' . $location['location_id']]) && $_POST['stock_minus_qty_' . $location['location_id']] > 0) {
+                    if (isset($_POST['stock_minus_qty_' . $location['location_id'] . '_' . $location['layers_id'] . '_' . $location['batch_id']]) && $_POST['stock_minus_qty_' . $location['location_id'] . '_' . $location['layers_id'] . '_' . $location['batch_id']] > 0) {
                         $updateData[] = [
-                            'quantity' => (int)  $_POST['stock_minus_qty_' . $location['location_id']],
+                            'quantity' => (int) $_POST['stock_minus_qty_' . $location['location_id'] . '_' . $location['layers_id'] . '_' . $location['batch_id']],
                             'prefix' => $products_quantity_update_prefix,
                             'location' => $location['location_id'],
+                            'layers_id' => $location['layers_id'],
+                            'batch_id' => $location['batch_id'],
                         ];
                     }
                 }
@@ -7619,6 +7752,8 @@ order by status desc, sort_order
                     'quantity' => $products_quantity_update,
                     'prefix' => $products_quantity_update_prefix,
                     'location' => $location_id,
+                    'layers_id' => $layers_id,
+                    'batch_id' => $batch_id,
                 ];
             }
 
@@ -7631,12 +7766,19 @@ order by status desc, sort_order
 
                     if ($warehouse_id > 0) {
                         $parameters = [
+                            'layers_id' => $updateItem['layers_id'],
+                            'batch_id' => $updateItem['batch_id'],
                             'admin_id' => $login_id,
                             'comments' => (TEXT_MANUALL_STOCK_UPDATE . (trim($stock_comments) != '' ? ': ' . $stock_comments : ''))
                         ];
                         $check_data['warehouse_quantity'] = \common\helpers\Warehouses::update_products_quantity($_POST['uprid'], $warehouse_id, $updateItem['quantity'], $updateItem['prefix'], $w_suppliers_id, $updateItem['location'], $parameters);
+                        if ($isAutoallocate) {
+                            \common\helpers\Product::doAllocateAutomatic($_POST['uprid'], true);
+                        }
                         $check_data['allocated_quantity'] = \common\helpers\Product::getAllocated($_POST['uprid']);
                         $check_data['temporary_quantity'] = \common\helpers\Product::getAllocatedTemporary($_POST['uprid']);
+                        $check_data['allocated_temporary_quantity'] = \common\helpers\Product::getAllocatedTemporary($_POST['uprid'], true);
+                        $check_data['deficit_quantity'] = \common\helpers\Product::getStockDeficit($_POST['uprid']);
                     } else {
                         tep_db_query("update " . TABLE_PRODUCTS . " set products_quantity = products_quantity " . $updateItem['prefix'] . $updateItem['quantity'] . " where products_id = '" . (int) $_POST['uprid'] . "'");
 
@@ -7645,8 +7787,13 @@ order by status desc, sort_order
                         } else {
                             $check_data['warehouse_quantity'] += $updateItem['quantity'];
                         }
+                        if ($isAutoallocate) {
+                            \common\helpers\Product::doAllocateAutomatic($_POST['uprid'], true);
+                        }
                         $check_data['allocated_quantity'] = \common\helpers\Product::getAllocated($_POST['uprid']);
                         $check_data['temporary_quantity'] = \common\helpers\Product::getAllocatedTemporary($_POST['uprid']);
+                        $check_data['allocated_temporary_quantity'] = \common\helpers\Product::getAllocatedTemporary($_POST['uprid'], true);
+                        $check_data['deficit_quantity'] = \common\helpers\Product::getStockDeficit($_POST['uprid']);
                     }
                     $check_data['products_quantity'] = $check_data['warehouse_quantity'] - ($check_data['allocated_quantity'] + $check_data['temporary_quantity']);
                     $check_data['ordered_quantity'] = $check_data['ordered_stock_quantity'];
@@ -7663,11 +7810,78 @@ order by status desc, sort_order
                 }
             }
         }
+        if (isset($response['allocated_quantity'])) {
+            $response['allocated_quantity'] -= $response['allocated_temporary_quantity'];
+        }
         foreach ($response as &$value) {
             $value = \common\helpers\Product::getVirtualItemQuantity($_POST['uprid'], $value);
         }
         unset($value);
         echo json_encode($response);
+    }
+
+    public function actionProductStockDetails() {
+
+        $uprid = Yii::$app->request->post('uprid');
+        $invAllowed = \common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed');
+        if ($invAllowed) {
+            $uprid = \common\helpers\Inventory::normalizeInventoryId($uprid);
+        }
+
+        $pInfo = \common\models\Products::findOne((int)$uprid)->getAttributes();
+        if ( ($pInfo->parent_products_id??null) && ($pInfo->products_id_stock??null) ) {
+            $prid = $pInfo->products_id_stock ?? null;
+            $pInfo = \common\models\Products::findOne($prid)->getAttributes();
+
+            if ($invAllowed) {
+                $uprid = $prid . substr($uprid, strpos($uprid, '{'));
+            } else {
+                $uprid = $prid;
+            }
+        }
+
+        if ($invAllowed && strpos($uprid, '{') !== false && \common\helpers\Inventory::get_prid($uprid) > 0) {
+            $_data = tep_db_fetch_array(tep_db_query("select products_quantity, ordered_stock_quantity, suppliers_stock_quantity from " . TABLE_INVENTORY . " where products_id = '" . tep_db_input($uprid) . "'"));
+
+            $check_data['warehouse_quantity'] = \common\helpers\Product::getQuantity($uprid);
+            
+        } else {
+            $_data = (array)$pInfo;
+            $check_data['warehouse_quantity'] = $_data['warehouse_stock_quantity'];
+        }
+
+        $check_data['ordered_quantity'] = $_data['ordered_stock_quantity']??0;
+        $check_data['suppliers_quantity'] = $_data['suppliers_stock_quantity']??0;
+
+        $check_data['allocated_quantity'] = \common\helpers\Product::getAllocated($uprid);
+        $check_data['temporary_quantity'] = \common\helpers\Product::getAllocatedTemporary($uprid);
+        $check_data['allocated_temporary_quantity'] = \common\helpers\Product::getAllocatedTemporary($uprid, true);
+        $check_data['deficit_quantity'] = \common\helpers\Product::getStockDeficit($uprid);
+
+        $check_data['products_quantity'] = $check_data['warehouse_quantity'] - ($check_data['allocated_quantity'] + $check_data['temporary_quantity']);
+
+        
+        $response = $check_data;
+        
+        if (!empty($response)){
+            if ($ext = \common\helpers\Acl::checkExtensionAllowed('ProductAssets', 'allowed')){
+                if ($ext::getControlInstance($uprid)->needStockControl()){
+                    $response['warehouse_quantity'] = $ext::checkStock($uprid);
+                    $response['products_quantity'] = $response['warehouse_quantity'] - ($response['allocated_quantity'] + $response['temporary_quantity']);
+                }
+            }
+        }
+        if (isset($response['allocated_quantity'])) {
+            $response['allocated_quantity'] -= $response['allocated_temporary_quantity'];
+        }
+        foreach ($response as &$value) {
+            $value = \common\helpers\Product::getVirtualItemQuantity($uprid, $value);
+        }
+        unset($value);
+
+        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+        return $response;
+
     }
 
     public function actionStock() {
@@ -7887,20 +8101,23 @@ order by status desc, sort_order
                 $updateData = [];
 
                 $existLocations = \common\models\WarehousesProducts::find()
-                    ->select(['location_id', 'warehouse_stock_quantity'])
+                    ->select(['location_id', 'layers_id', 'batch_id', 'warehouse_stock_quantity'])
                     ->where(['warehouse_id' => $from_warehouse, 'suppliers_id' => $suppliers_id, 'products_id' => $prid])
                     ->orderBy(['location_id' => SORT_ASC])
                     ->asArray()
                     ->all();
                 foreach ($existLocations as $location) {
-                    if (isset($_POST['stock_minus_qty_' . $location['location_id']]) && $_POST['stock_minus_qty_' . $location['location_id']] > 0) {
+                    if (isset($_POST['stock_minus_qty_' . $location['location_id'] . '_' . $location['layers_id'] . '_' . $location['batch_id']]) &&
+                        $_POST['stock_minus_qty_' . $location['location_id'] . '_' . $location['layers_id'] . '_' . $location['batch_id']] > 0) {
                         $updateData[] = [
-                            'quantity' => (int)  $_POST['stock_minus_qty_' . $location['location_id']],
+                            'quantity' => (int) $_POST['stock_minus_qty_' . $location['location_id'] . '_' . $location['layers_id'] . '_' . $location['batch_id']],
                             'prefix' => '-',
                             'location' => $location['location_id'],
+                            'layer' => $location['layers_id'],
+                            'batch' => $location['batch_id'],
                             'warehouse_id' => $from_warehouse,
                         ];
-                        $quantity_update += (int)  $_POST['stock_minus_qty_' . $location['location_id']];
+                        $quantity_update += (int) $_POST['stock_minus_qty_' . $location['location_id'] . '_' . $location['layers_id'] . '_' . $location['batch_id']];
                     }
                 }
 
@@ -7910,7 +8127,7 @@ order by status desc, sort_order
                         tep_db_query("insert into " . TABLE_INVENTORY . " set inventory_id = '', products_id = '" . tep_db_input($prid) . "', prid = '" . (int) \common\helpers\Inventory::get_prid($prid) . "'");
                     }
                 }
-                if ($quantity_update > 0 && $from_warehouse != $to_warehouse) {
+                if ($quantity_update > 0 /* && $from_warehouse != $to_warehouse */) {
 
                     $location_id = 0;
                     $locationIds = Yii::$app->request->post('box_location');
@@ -7921,11 +8138,18 @@ order by status desc, sort_order
                             }
                         }
                     }
+                    $expiry_date = Yii::$app->request->post('expiry_date', '');
+                    $expiry_date = \common\helpers\Date::prepareInputDate($expiry_date);
+                    $layers_id = \common\helpers\Warehouses::getWarehousesProductsLayersIDbyExpiryDate($expiry_date);
+                    $batch_name = Yii::$app->request->post('batch_name', '');
+                    $batch_id = \common\helpers\Warehouses::getWarehousesProductsBatchIDbyBatchName($batch_name);
 
                     $updateData[] = [
                         'quantity' => $quantity_update,
                         'prefix' => '+',
                         'location' => $location_id,
+                        'layer' => $layers_id,
+                        'batch' => $batch_id,
                         'warehouse_id' => $to_warehouse,
                     ];
                     //$quantity_update = min($quantity_update, \common\helpers\Warehouses::get_products_quantity($prid, $from_warehouse, $suppliers_id));
@@ -7938,6 +8162,8 @@ order by status desc, sort_order
                     ];
 
                     foreach ($updateData as $updateItem) {
+                        $parameters['layers_id'] = $updateItem['layer'];
+                        $parameters['batch_id'] = $updateItem['batch'];
                         \common\helpers\Warehouses::update_products_quantity($prid, $updateItem['warehouse_id'], $updateItem['quantity'], $updateItem['prefix'], $suppliers_id, $updateItem['location'], $parameters);
                     }
                 }
@@ -8422,9 +8648,9 @@ order by status desc, sort_order
         $prefix = Yii::$app->request->post('prefix');
         if ($prefix == '-') {
             $existLocations = \common\models\WarehousesProducts::find()
-                ->select(['location_id', 'products_quantity'])
+                ->select(['location_id', 'layers_id', 'batch_id', 'products_quantity'])
                 ->where(['warehouse_id' => $warehouse_id, 'suppliers_id' => $suppliers_id, 'products_id' => $products_id])
-                ->orderBy(['location_id' => SORT_ASC])
+                ->orderBy(['location_id' => SORT_ASC, 'layers_id' => SORT_ASC, 'batch_id' => SORT_ASC])
                 ->asArray()
                 ->all();
 
@@ -8437,8 +8663,14 @@ order by status desc, sort_order
                 if (empty($name)) {
                     $name = 'N/A';
                 }
+                if ($location['layers_id']) {
+                    $name .= ', ' . \common\helpers\Translation::getTranslationValue('TEXT_EXPIRY_DATE', 'admin/categories') . ' ' . \common\helpers\Date::date_short(\common\helpers\Warehouses::getExpiryDateByLayersID($location['layers_id'])); 
+                }
+                if ($location['batch_id']) {
+                    $name .= ', ' . TEXT_WAREHOUSES_PRODUCTS_BATCH_NAME . ' ' . \common\helpers\Warehouses::getBatchNameByBatchID($location['batch_id']); 
+                }
                 $locationList[] = [
-                    'id' => $location['location_id'],
+                    'id' => $location['location_id'] . '_' . $location['layers_id'] . '_' . $location['batch_id'],
                     'name' => $name,
                     'qty' => $location['products_quantity'],
                 ];
@@ -8596,7 +8828,7 @@ order by status desc, sort_order
         unset($locationBlockRecord);
         $productAllocatedTemporaryArray = [];
         foreach (\common\helpers\Product::getAllocatedTemporaryArray($uProductId) as $productAllocatedTemporaryRecord) {
-            $productAllocatedTemporaryArray[$productAllocatedTemporaryRecord['warehouse_id']][$productAllocatedTemporaryRecord['suppliers_id']][$productAllocatedTemporaryRecord['location_id']][] = $productAllocatedTemporaryRecord;
+            $productAllocatedTemporaryArray[$productAllocatedTemporaryRecord['warehouse_id']][$productAllocatedTemporaryRecord['suppliers_id']][$productAllocatedTemporaryRecord['location_id']][$productAllocatedTemporaryRecord['layers_id']][$productAllocatedTemporaryRecord['batch_id']][] = $productAllocatedTemporaryRecord;
         }
         unset($productAllocatedTemporaryRecord);
         $warehouseProductArray = [];
@@ -8604,15 +8836,17 @@ order by status desc, sort_order
             $warehouseId = $warehouseProductRecord['warehouse_id'];
             $supplierId = $warehouseProductRecord['suppliers_id'];
             $locationId = $warehouseProductRecord['location_id'];
+            $layersId = $warehouseProductRecord['layers_id'];
+            $batchId = $warehouseProductRecord['batch_id'];
             $warehouseAvailable = $warehouseProductRecord['warehouse_stock_quantity'];
-            if (isset($productAllocatedTemporaryArray[$warehouseId][$supplierId][$locationId])) {
-                foreach ($productAllocatedTemporaryArray[$warehouseId][$supplierId][$locationId] as $productAllocatedTemporaryRecord) {
+            if (isset($productAllocatedTemporaryArray[$warehouseId][$supplierId][$locationId][$layersId][$batchId])) {
+                foreach ($productAllocatedTemporaryArray[$warehouseId][$supplierId][$locationId][$layersId][$batchId] as $productAllocatedTemporaryRecord) {
                     $warehouseAvailable -= $productAllocatedTemporaryRecord['temporary_stock_quantity'];
                 }
-                unset($productAllocatedTemporaryArray[$warehouseId][$supplierId][$locationId]);
+                unset($productAllocatedTemporaryArray[$warehouseId][$supplierId][$locationId][$layersId][$batchId]);
                 unset($productAllocatedTemporaryRecord);
             }
-            $warehouseProductArray[$warehouseId][$supplierId][$locationId] = [
+            $warehouseProductArray[$warehouseId][$supplierId][$locationId][$layersId][$batchId] = [
                 'quantity' => $warehouseAvailable,
                 'allocated_real' => 0,
                 'allocated_update' => 0
@@ -8621,22 +8855,34 @@ order by status desc, sort_order
             unset($warehouseId);
             unset($supplierId);
             unset($locationId);
+            unset($layersId);
+            unset($batchId);
         }
         unset($productAllocatedTemporaryArray);
         unset($warehouseProductRecord);
         $orderProductAllocatedArray = [];
         foreach ($warehouseProductArray as $warehouseId => $supplierArray) {
             foreach ($supplierArray as $supplierId => $locationArray) {
-                foreach ($locationArray as $locationId => $warehouseProductRecord) {
-                    $locationName = trim(\common\helpers\Warehouses::getLocationPath($locationId, $warehouseId, $locationBlockList));
-                    $orderProductAllocatedArray[$warehouseId][$supplierId][$locationId] = [
-                        'allocated_real' => 0,
-                        'allocated_update' => 0,
-                        'warehouseName' => (isset($warehouseNameList[$warehouseId]) ? $warehouseNameList[$warehouseId] : 'N/A'),
-                        'supplierName' => (isset($supplierNameList[$supplierId]) ? $supplierNameList[$supplierId] : 'N/A'),
-                        'locationName' => (($locationName != '') ? $locationName : 'N/A')
-                    ];
-                    unset($locationName);
+                foreach ($locationArray as $locationId => $layersArray) {
+                    foreach ($layersArray as $layersId => $batchArray) {
+                        foreach ($batchArray as $batchId => $warehouseProductRecord) {
+                            $locationName = trim(\common\helpers\Warehouses::getLocationPath($locationId, $warehouseId, $locationBlockList));
+                            if ($layersId) {
+                                $locationName .= ', ' . \common\helpers\Translation::getTranslationValue('TEXT_EXPIRY_DATE', 'admin/categories') . ' ' . \common\helpers\Date::date_short(\common\helpers\Warehouses::getExpiryDateByLayersID($layersId)); 
+                            }
+                            if ($batchId) {
+                                $locationName .= ', ' . TEXT_WAREHOUSES_PRODUCTS_BATCH_NAME . ' ' . \common\helpers\Warehouses::getBatchNameByBatchID($batchId); 
+                            }
+                            $orderProductAllocatedArray[$warehouseId][$supplierId][$locationId][$layersId][$batchId] = [
+                                'allocated_real' => 0,
+                                'allocated_update' => 0,
+                                'warehouseName' => (isset($warehouseNameList[$warehouseId]) ? $warehouseNameList[$warehouseId] : 'N/A'),
+                                'supplierName' => (isset($supplierNameList[$supplierId]) ? $supplierNameList[$supplierId] : 'N/A'),
+                                'locationName' => (($locationName != '') ? $locationName : 'N/A')
+                            ];
+                            unset($locationName);
+                        }
+                    }
                 }
                 unset($warehouseProductRecord);
                 unset($locationId);
@@ -8703,8 +8949,16 @@ order by status desc, sort_order
                 $warehouseId = $orderProductAllocateRecord['warehouse_id'];
                 $supplierId = $orderProductAllocateRecord['suppliers_id'];
                 $locationId = $orderProductAllocateRecord['location_id'];
+                $layersId = $orderProductAllocateRecord['layers_id'];
+                $batchId = $orderProductAllocateRecord['batch_id'];
                 $locationName = trim(\common\helpers\Warehouses::getLocationPath($locationId, $warehouseId, $locationBlockList));
-                $orderProductArray[$orderProductId]['allocatedArray'][$warehouseId][$supplierId][$locationId] = [
+                if ($layersId) {
+                    $locationName .= ', ' . \common\helpers\Translation::getTranslationValue('TEXT_EXPIRY_DATE', 'admin/categories') . ' ' . \common\helpers\Date::date_short(\common\helpers\Warehouses::getExpiryDateByLayersID($layersId)); 
+                }
+                if ($batchId) {
+                    $locationName .= ', ' . TEXT_WAREHOUSES_PRODUCTS_BATCH_NAME . ' ' . \common\helpers\Warehouses::getBatchNameByBatchID($batchId); 
+                }
+                $orderProductArray[$orderProductId]['allocatedArray'][$warehouseId][$supplierId][$locationId][$layersId][$batchId] = [
                     'allocated_real' => $productAllocated,
                     'allocated_update' => $productAllocated,
                     'warehouseName' => (isset($warehouseNameList[$warehouseId]) ? $warehouseNameList[$warehouseId] : 'N/A'),
@@ -8712,19 +8966,21 @@ order by status desc, sort_order
                     'locationName' => (($locationName != '') ? $locationName : 'N/A')
                 ];
                 unset($locationName);
-                if (!isset($warehouseProductArray[$warehouseId][$supplierId][$locationId])) {
-                    $warehouseProductArray[$warehouseId][$supplierId][$locationId] = [
+                if (!isset($warehouseProductArray[$warehouseId][$supplierId][$locationId][$layersId][$batchId])) {
+                    $warehouseProductArray[$warehouseId][$supplierId][$locationId][$layersId][$batchId] = [
                         'quantity' => 0,
                         'allocated_real' => 0,
                         'allocated_update' => 0
                     ];
                 }
-                $warehouseProductArray[$warehouseId][$supplierId][$locationId]['allocated_real'] += $productAllocated;
-                $warehouseProductArray[$warehouseId][$supplierId][$locationId]['allocated_update'] += $productAllocated;
+                $warehouseProductArray[$warehouseId][$supplierId][$locationId][$layersId][$batchId]['allocated_real'] += $productAllocated;
+                $warehouseProductArray[$warehouseId][$supplierId][$locationId][$layersId][$batchId]['allocated_update'] += $productAllocated;
                 unset($productAllocated);
                 unset($warehouseId);
                 unset($supplierId);
                 unset($locationId);
+                unset($layersId);
+                unset($batchId);
             }
             unset($orderProductAllocateRecord);
             unset($orderProductRecord);
@@ -8746,10 +9002,14 @@ order by status desc, sort_order
                 }
                 foreach ($warehouseArray as $warehouseId => $supplierArray) {
                     foreach ($supplierArray as $supplierId => $locationArray) {
-                        foreach ($locationArray as $locationId => $allocatedUpdate) {
-                            if (isset($orderProductArray[$orderProductId]['allocatedArray'][$warehouseId][$supplierId][$locationId])) {
-                                $orderProductArray[$orderProductId]['allocated_update'] += (int)$allocatedUpdate;
-                                $orderProductArray[$orderProductId]['allocatedArray'][$warehouseId][$supplierId][$locationId]['allocated_update'] = (int)$allocatedUpdate;
+                        foreach ($locationArray as $locationId => $layersArray) {
+                            foreach ($layersArray as $layersId => $batchArray) {
+                                foreach ($batchArray as $batchId => $allocatedUpdate) {
+                                    if (isset($orderProductArray[$orderProductId]['allocatedArray'][$warehouseId][$supplierId][$locationId][$layersId][$batchId])) {
+                                        $orderProductArray[$orderProductId]['allocated_update'] += (int)$allocatedUpdate;
+                                        $orderProductArray[$orderProductId]['allocatedArray'][$warehouseId][$supplierId][$locationId][$layersId][$batchId]['allocated_update'] = (int)$allocatedUpdate;
+                                    }
+                                }
                             }
                         }
                         unset($allocatedUpdate);
@@ -8766,15 +9026,19 @@ order by status desc, sort_order
             unset($orderProductId);
             foreach ($warehouseProductArray as $warehouseId => $supplierArray) {
                 foreach ($supplierArray as $supplierId => $locationArray) {
-                    foreach ($locationArray as $locationId => $warehouseProductRecord) {
-                        $warehouseProductArray[$warehouseId][$supplierId][$locationId]['allocated_update'] = 0;
-                        foreach ($orderProductArray as $orderProductId => $orderProductData) {
-                            if (isset($orderProductData['allocatedArray'][$warehouseId][$supplierId][$locationId])) {
-                                $warehouseProductArray[$warehouseId][$supplierId][$locationId]['allocated_update'] += $orderProductData['allocatedArray'][$warehouseId][$supplierId][$locationId]['allocated_update'];
+                    foreach ($locationArray as $locationId => $layersArray) {
+                        foreach ($layersArray as $layersId => $batchArray) {
+                            foreach ($batchArray as $batchId => $warehouseProductRecord) {
+                                $warehouseProductArray[$warehouseId][$supplierId][$locationId][$layersId][$batchId]['allocated_update'] = 0;
+                                foreach ($orderProductArray as $orderProductId => $orderProductData) {
+                                    if (isset($orderProductData['allocatedArray'][$warehouseId][$supplierId][$locationId][$layersId][$batchId])) {
+                                        $warehouseProductArray[$warehouseId][$supplierId][$locationId][$layersId][$batchId]['allocated_update'] += $orderProductData['allocatedArray'][$warehouseId][$supplierId][$locationId][$layersId][$batchId]['allocated_update'];
+                                    }
+                                }
+                                unset($orderProductData);
+                                unset($orderProductId);
                             }
                         }
-                        unset($orderProductData);
-                        unset($orderProductId);
                     }
                     unset($warehouseProductRecord);
                     unset($locationId);
@@ -8796,18 +9060,22 @@ order by status desc, sort_order
             if ($return['status'] == 'ok') {
                 foreach ($warehouseProductArray as $warehouseId => $supplierArray) {
                     foreach ($supplierArray as $supplierId => $locationArray) {
-                        foreach ($locationArray as $locationId => $warehouseProductRecord) {
-                            if ($warehouseProductRecord['allocated_update'] > 0 AND $warehouseProductRecord['quantity'] < $warehouseProductRecord['allocated_update']) {
-                                foreach ($orderProductArray as $orderProductId => $orderProductData) {
-                                    if (isset($orderProductData['allocatedArray'][$warehouseId][$supplierId][$locationId])) {
-                                        if ($orderProductData['allocatedArray'][$warehouseId][$supplierId][$locationId]['allocated_update'] > $orderProductData['allocatedArray'][$warehouseId][$supplierId][$locationId]['allocated_real']) {
-                                            $return = ['status' => 'error', 'message' => TEXT_OPR_ERROR_INVALID];
-                                            break 4;
+                        foreach ($locationArray as $locationId => $layersArray) {
+                            foreach ($layersArray as $layersId => $batchArray) {
+                                foreach ($batchArray as $batchId => $warehouseProductRecord) {
+                                    if ($warehouseProductRecord['allocated_update'] > 0 AND $warehouseProductRecord['quantity'] < $warehouseProductRecord['allocated_update']) {
+                                        foreach ($orderProductArray as $orderProductId => $orderProductData) {
+                                            if (isset($orderProductData['allocatedArray'][$warehouseId][$supplierId][$locationId][$layersId][$batchId])) {
+                                                if ($orderProductData['allocatedArray'][$warehouseId][$supplierId][$locationId][$layersId][$batchId]['allocated_update'] > $orderProductData['allocatedArray'][$warehouseId][$supplierId][$locationId][$layersId][$batchId]['allocated_real']) {
+                                                    $return = ['status' => 'error', 'message' => TEXT_OPR_ERROR_INVALID];
+                                                    break 6;
+                                                }
+                                            }
                                         }
+                                        unset($orderProductData);
+                                        unset($orderProductId);
                                     }
                                 }
-                                unset($orderProductData);
-                                unset($orderProductId);
                             }
                         }
                         unset($warehouseProductRecord);
@@ -8824,43 +9092,53 @@ order by status desc, sort_order
                 foreach ($orderProductArray as $orderProductId => $orderProductData) {
                     foreach ($orderProductData['allocatedArray'] as $warehouseId => $supplierArray) {
                         foreach ($supplierArray as $supplierId => $locationArray) {
-                            foreach ($locationArray as $locationId => $allocatedUpdate) {
-                                $orderProductAllocateRecord = \common\models\OrdersProductsAllocate::find()
-                                    ->where(['orders_products_id' => $orderProductId])
-                                    ->andWhere(['warehouse_id' => $warehouseId])
-                                    ->andWhere(['suppliers_id' => $supplierId])
-                                    ->andWhere(['location_id' => $locationId])
-                                    ->one();
-                                if ($allocatedUpdate['allocated_update'] <= 0) {
-                                    if ($orderProductAllocateRecord instanceof \common\models\OrdersProductsAllocate) {
-                                        try {
-                                            if ($orderProductAllocateRecord->allocate_dispatched > 0) {
-                                                $orderProductAllocateRecord->allocate_received = $orderProductAllocateRecord->allocate_dispatched;
-                                                $orderProductAllocateRecord->save();
-                                            } else {
-                                                $orderProductAllocateRecord->delete();
+                            foreach ($locationArray as $locationId => $layersArray) {
+                                foreach ($layersArray as $layersId => $batchArray) {
+                                    foreach ($batchArray as $batchId => $allocatedUpdate) {
+                                        $orderProductAllocateRecord = \common\models\OrdersProductsAllocate::find()
+                                            ->where(['orders_products_id' => $orderProductId])
+                                            ->andWhere(['warehouse_id' => $warehouseId])
+                                            ->andWhere(['suppliers_id' => $supplierId])
+                                            ->andWhere(['location_id' => $locationId])
+                                            ->andWhere(['layers_id' => $layersId])
+                                            ->andWhere(['batch_id' => $batchId])
+                                            ->one();
+                                        if ($allocatedUpdate['allocated_update'] <= 0) {
+                                            if ($orderProductAllocateRecord instanceof \common\models\OrdersProductsAllocate) {
+                                                try {
+                                                    if ($orderProductAllocateRecord->allocate_dispatched > 0) {
+                                                        $orderProductAllocateRecord->allocate_received = $orderProductAllocateRecord->allocate_dispatched;
+                                                        $orderProductAllocateRecord->save();
+                                                    } else {
+                                                        $orderProductAllocateRecord->delete();
+                                                    }
+                                                } catch (\Exception $exc) {}
                                             }
-                                        } catch (\Exception $exc) {}
+                                        } else {
+                                            if (!($orderProductAllocateRecord instanceof \common\models\OrdersProductsAllocate)) {
+                                                $orderProductAllocateRecord = new \common\models\OrdersProductsAllocate();
+                                                $orderProductAllocateRecord->orders_products_id = $orderProductId;
+                                                $orderProductAllocateRecord->warehouse_id = $warehouseId;
+                                                $orderProductAllocateRecord->suppliers_id = $supplierId;
+                                                $orderProductAllocateRecord->location_id = $locationId;
+                                                $orderProductAllocateRecord->layers_id = $layersId;
+                                                $orderProductAllocateRecord->batch_id = $batchId;
+                                                $orderProductAllocateRecord->platform_id = $orderProductData['platformId'];
+                                                $orderProductAllocateRecord->orders_id = $orderProductData['orderId'];
+                                                $orderProductAllocateRecord->prid = (int)$uProductId;
+                                                $orderProductAllocateRecord->products_id = $uProductId;
+                                                $orderProductAllocateRecord->suppliers_price = \common\models\SuppliersProducts::getSuppliersPrice($uProductId, $supplierId);
+                                                $orderProductAllocateRecord->is_temporary = \common\helpers\Order::isAllocateTemporary($orderProductData['orderId']);
+                                                $orderProductAllocateRecord->datetime = date('Y-m-d H:i:s');
+                                            }
+                                            $orderProductAllocateRecord->allocate_received = ($orderProductAllocateRecord->allocate_dispatched + $allocatedUpdate['allocated_update']);
+                                            try {
+                                                $orderProductAllocateRecord->save();
+                                            } catch (\Exception $exc) {}
+                                        }
+                                        unset($orderProductAllocateRecord);
                                     }
-                                } else {
-                                    if (!($orderProductAllocateRecord instanceof \common\models\OrdersProductsAllocate)) {
-                                        $orderProductAllocateRecord = new \common\models\OrdersProductsAllocate();
-                                        $orderProductAllocateRecord->orders_products_id = $orderProductId;
-                                        $orderProductAllocateRecord->warehouse_id = $warehouseId;
-                                        $orderProductAllocateRecord->suppliers_id = $supplierId;
-                                        $orderProductAllocateRecord->location_id = $locationId;
-                                        $orderProductAllocateRecord->platform_id = $orderProductData['platformId'];
-                                        $orderProductAllocateRecord->orders_id = $orderProductData['orderId'];
-                                        $orderProductAllocateRecord->prid = (int)$uProductId;
-                                        $orderProductAllocateRecord->products_id = $uProductId;
-                                        $orderProductAllocateRecord->suppliers_price = \common\models\SuppliersProducts::getSuppliersPrice($uProductId, $supplierId);
-                                    }
-                                    $orderProductAllocateRecord->allocate_received = ($orderProductAllocateRecord->allocate_dispatched + $allocatedUpdate['allocated_update']);
-                                    try {
-                                        $orderProductAllocateRecord->save();
-                                    } catch (\Exception $exc) {}
                                 }
-                                unset($orderProductAllocateRecord);
                             }
                             unset($allocatedUpdate);
                             unset($locationId);
@@ -8879,8 +9157,11 @@ order by status desc, sort_order
                 \common\helpers\Product::isValidAllocated($uProductId);
                 $productRecord = \common\helpers\Product::getRecord($uProductId, true);
                 if ($productRecord instanceof \common\models\Products) {
-                    $return['available'] = $productRecord->products_quantity;
-                    $return['allocated'] = $productRecord->allocated_stock_quantity;
+                    $return['allocated_temporary'] = \common\helpers\Product::getAllocatedTemporary($uProductId, true);
+                    $return['deficit'] = \common\helpers\Product::getVirtualItemQuantity($uProductId, \common\helpers\Product::getStockDeficit($uProductId));
+                    $return['available'] = \common\helpers\Product::getVirtualItemQuantity($uProductId, $productRecord->products_quantity);
+                    $return['allocated'] = \common\helpers\Product::getVirtualItemQuantity($uProductId, ($productRecord->allocated_stock_quantity - $return['allocated_temporary']));
+                    $return['allocated_temporary'] = \common\helpers\Product::getVirtualItemQuantity($uProductId, $return['allocated_temporary']);
                 }
                 unset($productRecord);
             }
@@ -8943,26 +9224,124 @@ order by status desc, sort_order
         ]);
     }
 
+    public function actionOrdersProductsStock()
+    {
+        $this->layout = false;
+        \common\helpers\Translation::init('admin/categories');
+        $uProductId = \common\helpers\Inventory::normalize_id_excl_virtual(Yii::$app->request->get('prid'));
+        $warehouseNameList = [];
+        foreach (\common\models\Warehouses::find()->asArray(true)->all() as $warehouseRecord) {
+            $warehouseNameList[$warehouseRecord['warehouse_id']] = $warehouseRecord['warehouse_name'];
+        }
+        unset($warehouseRecord);
+        $supplierNameList = [];
+        foreach (\common\models\Suppliers::find()->asArray(true)->all() as $supplierRecord) {
+            $supplierNameList[$supplierRecord['suppliers_id']] = $supplierRecord['suppliers_name'];
+        }
+        unset($supplierRecord);
+        $locationBlockList = [];
+        foreach (\common\models\LocationBlocks::find()->asArray(true)->all() as $locationBlockRecord) {
+            $locationBlockList[$locationBlockRecord['block_id']] = $locationBlockRecord['block_name'];
+        }
+        unset($locationBlockRecord);
+        $allocationArray = [];
+        foreach (\common\helpers\Product::getAllocatedArray($uProductId, true, true) as $opaRecord) {
+            if ((int)$opaRecord['is_temporary'] > 0) {
+                continue;
+            }
+            $opaRecord['order_link'] = ('<a target="_blank" href="'
+                . tep_href_link('orders/process-order', 'orders_id=' . $opaRecord['orders_id'])
+                . '">' . $opaRecord['orders_id'] . '</a>'
+            );
+            $orderRecord = \common\models\Orders::find()->where(['orders_id' => $opaRecord['orders_id']])->asArray(true)->one();
+            if (is_array($orderRecord) AND isset($orderRecord['customers_lastname'])) {
+                $opaRecord['customer_name'] = ('<a target="_blank" href="'
+                    . tep_href_link('customers/customeredit', 'customers_id=' . $orderRecord['customers_id'])
+                    . '">' . trim(trim($orderRecord['customers_firstname']) . ' ' . trim($orderRecord['customers_lastname']))
+                    . '</a>'
+                );
+            }
+            unset($orderRecord);
+            $opaRecord['warehouse_name'] = ($warehouseNameList[$opaRecord['warehouse_id']] ?? '');
+            $opaRecord['supplier_name'] = ($supplierNameList[$opaRecord['suppliers_id']] ?? '');
+            $opaRecord['location_name'] = trim(\common\helpers\Warehouses::getLocationPath($opaRecord['location_id'], $opaRecord['warehouse_id'], $locationBlockList));
+            $allocationArray[] = $opaRecord;
+        }
+        unset($locationBlockList);
+        unset($warehouseNameList);
+        unset($supplierNameList);
+        unset($opaRecord);
+        return $this->render('orders-products-stock', [
+            'allocationArray' => $allocationArray
+        ]);
+    }
+
+    public function actionOrdersProductsDeficit()
+    {
+        $this->layout = false;
+        \common\helpers\Translation::init('admin/categories');
+        $uProductId = \common\helpers\Inventory::normalize_id_excl_virtual(Yii::$app->request->get('prid'));
+        $deficitArray = [];
+        foreach (\common\models\OrdersProducts::find()
+            ->select(['*', '(products_quantity - (qty_cnld + qty_rcvd)) AS deficit'])
+            ->where(['uprid' => $uProductId])
+            ->andWhere(['>', '(products_quantity - (qty_cnld + qty_rcvd))', 0])
+            ->andWhere(['NOT IN', 'orders_products_status', [
+                \common\helpers\OrderProduct::OPS_QUOTED,
+            ]])
+            ->asArray(true)->all() as $opRecord
+        ) {
+            $opRecord['order_link'] = ('<a target="_blank" href="'
+                . tep_href_link('orders/process-order', 'orders_id=' . $opRecord['orders_id'])
+                . '">' . $opRecord['orders_id'] . '</a>'
+            );
+            $orderRecord = \common\models\Orders::find()->where(['orders_id' => $opRecord['orders_id']])->asArray(true)->one();
+            if (is_array($orderRecord) AND isset($orderRecord['customers_lastname'])) {
+                $opRecord['datetime'] = $orderRecord['date_purchased'];
+                $opRecord['customer_name'] = ('<a target="_blank" href="'
+                    . tep_href_link('customers/customeredit', 'customers_id=' . $orderRecord['customers_id'])
+                    . '">' . trim(trim($orderRecord['customers_firstname']) . ' ' . trim($orderRecord['customers_lastname']))
+                    . '</a>'
+                );
+            }
+            unset($orderRecord);
+            $deficitArray[] = $opRecord;
+        }
+        unset($opRecord);
+        return $this->render('orders-products-deficit', [
+            'deficitArray' => $deficitArray
+        ]);
+    }
+
     public function actionOrdersProductsTemporaryStock()
     {
         $this->layout = false;
         if (Yii::$app->request->post('action', '') == 'delete') {
-            $orders_products_id = (int)Yii::$app->request->post('orders_products_id', 0);
-            foreach (\common\models\OrdersProductsAllocate::find()
-                        ->where(['orders_products_id' => $orders_products_id])
-                        ->andWhere(['is_temporary' => 1])
-                        ->andWhere(['allocate_dispatched' => 0])
-                        ->asArray(false)->all() as $opAllocateRecord) {
-                try {
+            try {
+                $allocationId = trim(Yii::$app->request->post('allocation_id', ''));
+                $searchArray = explode('_', $allocationId);
+                $opAllocateRecord = \common\models\OrdersProductsAllocate::find()
+                    ->where(['is_temporary' => 1])
+                    ->andWhere(['allocate_dispatched' => 0])
+                    ->andWhere(['orders_products_id' => ($searchArray[0] ?? -1)])
+                    ->andWhere(['warehouse_id' => ($searchArray[1] ?? -1)])
+                    ->andWhere(['suppliers_id' => ($searchArray[2] ?? -1)])
+                    ->andWhere(['location_id' => ($searchArray[3] ?? -1)])
+                    ->asArray(false)->one();
+                unset($searchArray);
+                if ($opAllocateRecord instanceof \common\models\OrdersProductsAllocate) {
+                    $ordersProductsId = $opAllocateRecord->orders_products_id;
                     $opAllocateRecord->delete();
-                } catch (\Exception $exc) {
-
+                    \common\helpers\OrderProduct::evaluate($ordersProductsId);
+                    unset($ordersProductsId);
+                    echo json_encode([
+                        'id' => $allocationId
+                    ]);
                 }
+                unset($opAllocateRecord);
+            } catch (\Exception $exc) {
+                \Yii::warning(($exc->getMessage() . ' ' . $exc->getTraceAsString()), 'Error.Backend.Controller.Categories.actionOrdersProductsTemporaryStock.delete');
             }
-            \common\helpers\OrderProduct::evaluate($orders_products_id);
-            echo json_encode([
-                'id' => $orders_products_id
-            ]);
             die();
         }
         \common\helpers\Translation::init('admin/categories');
@@ -8972,19 +9351,43 @@ order by status desc, sort_order
             $warehouseNameList[$warehouseRecord['warehouse_id']] = $warehouseRecord['warehouse_name'];
         }
         unset($warehouseRecord);
+        $supplierNameList = [];
+        foreach (\common\models\Suppliers::find()->asArray(true)->all() as $supplierRecord) {
+            $supplierNameList[$supplierRecord['suppliers_id']] = $supplierRecord['suppliers_name'];
+        }
+        unset($supplierRecord);
+        $locationBlockList = [];
+        foreach (\common\models\LocationBlocks::find()->asArray(true)->all() as $locationBlockRecord) {
+            $locationBlockList[$locationBlockRecord['block_id']] = $locationBlockRecord['block_name'];
+        }
+        unset($locationBlockRecord);
+        $orderStatusExpiredDurationHours = (int)\common\helpers\Configuration::get_configuration_key_value('ORDER_STATUS_TEMPORARY_ALLOCATION_EXPIRED_DURATION');
+        if ($orderStatusExpiredDurationHours < 1) {
+            $orderStatusExpiredDurationHours = 1;
+        }
         $temporaryArray = [];
         foreach (\common\helpers\Product::getAllocatedTemporaryArray($uProductId, true, true) as $opTemporaryRecord) {
-            $opTemporaryRecord['orders_link'] = '<a href="' . tep_href_link('orders/process-order', 'orders_id=' . $opTemporaryRecord['orders_id']) . '" target="_blank">' . $opTemporaryRecord['orders_id'] . '<a>';
+            $opTemporaryRecord['allocation_id'] = "{$opTemporaryRecord['orders_products_id']}_{$opTemporaryRecord['warehouse_id']}_{$opTemporaryRecord['suppliers_id']}_{$opTemporaryRecord['location_id']}";
+            $opTemporaryRecord['orders_link'] = '<a href="' . tep_href_link('orders/process-order', 'orders_id=' . $opTemporaryRecord['orders_id']) . '" target="_blank">' . $opTemporaryRecord['orders_id'] . '</a>';
             $orderRecord = \common\models\Orders::find()->where(['orders_id' => $opTemporaryRecord['orders_id']])->asArray()->one();
             if (is_array($orderRecord) && isset($orderRecord['customers_lastname'])) {
-                $opTemporaryRecord['customer_name'] = '<a href="' . tep_href_link('customers/customeredit', 'customers_id=' . $orderRecord['customers_id']) . '" target="_blank">' . trim($orderRecord['customers_firstname']) . ' ' . trim($orderRecord['customers_lastname']) . '<a>';
+                $opTemporaryRecord['customer_name'] = '<a href="' . tep_href_link('customers/customeredit', 'customers_id=' . $orderRecord['customers_id']) . '" target="_blank">' . trim($orderRecord['customers_firstname']) . ' ' . trim($orderRecord['customers_lastname']) . '</a>';
             }
-            unset($customerRecord);
-            $opTemporaryRecord['warehouse_name'] = (isset($warehouseNameList[$opTemporaryRecord['warehouse_id']]) ? $warehouseNameList[$opTemporaryRecord['warehouse_id']] : '');
+            unset($orderRecord);
+            $opTemporaryRecord['warehouse_name'] = ($warehouseNameList[$opTemporaryRecord['warehouse_id']] ?? '');
+            $opTemporaryRecord['supplier_name'] = ($supplierNameList[$opTemporaryRecord['suppliers_id']] ?? '');
+            $opTemporaryRecord['location_name'] = trim(\common\helpers\Warehouses::getLocationPath($opTemporaryRecord['location_id'], $opTemporaryRecord['warehouse_id'], $locationBlockList));
+            $timeExpire = (strtotime($opTemporaryRecord['datetime']) + $orderStatusExpiredDurationHours * 60 * 60);
+            $timeExpire = ((($timeExpire - time()) < 0) ? ' style="color: red;"' : '');
+            $opTemporaryRecord['allocate_time'] = ('<span' . $timeExpire . '>' . \common\helpers\Date::timeHumanize($opTemporaryRecord['datetime']) . '</span>');
+            unset($timeExpire);
             $temporaryArray[] = $opTemporaryRecord;
         }
+        unset($orderStatusExpiredDurationHours);
         unset($opTemporaryRecord);
+        unset($locationBlockList);
         unset($warehouseNameList);
+        unset($supplierNameList);
         return $this->render('orders-products-temporary-stock', [
             'temporaryArray' => $temporaryArray
         ]);
@@ -9142,7 +9545,7 @@ order by status desc, sort_order
         return $catalog->search($seacrh);
       }
     }
-    
+
     public function actionDemoCleanup() {
         set_time_limit(0);
         $sdn = \common\helpers\Acl::checkExtensionAllowed('SeoRedirectsNamed', 'allowed');
@@ -9166,11 +9569,12 @@ order by status desc, sort_order
             return;
         }
         \common\helpers\Translation::init('admin/categories');
+        \common\helpers\Translation::init('admin/categories/productedit');
         $currencies = Yii::$container->get('currencies');
-        
+
         $this->layout = false;
         $currencies_id = \Yii::$app->request->post('currencies_id', \Yii::$app->request->get('currencies_id', 0));
-        $products_id = \Yii::$app->request->post('products_id', $products_id = \Yii::$app->request->get('products_id', 0));
+        $products_id = \Yii::$app->request->post('products_id', \Yii::$app->request->get('products_id', 0));
         $group_id = \Yii::$app->request->post('group_id', 0);
         $only_price = \Yii::$app->request->post('only_price', 0);
 
@@ -9235,7 +9639,7 @@ order by status desc, sort_order
 //              'all_hidden' => (count($this->view->groups_m)==1),
 //              'maxHeight' => '400px',
           ];
-        
+
         $this->view->useMarketPrices = (USE_MARKET_PRICES == 'True');
 
         $groups = [0 => TEXT_CHOOSE_GROUP] + $groups;
@@ -9260,32 +9664,20 @@ order by status desc, sort_order
         $this->ProductEditTabAccess->setProduct($pInfo);
 
         if ($only_price) {
-                /*
-            if ( $pInfo->parent_products_id ) {
-                $priceViewObj = new ViewPriceData(\common\models\Products::findOne($pInfo->products_id_price));
-                $priceViewObj->populateView($this->view, $currencies);
-                / *
-                if (count($this->view->attributes) > 0) { // attributes added to system
-                    $parentProductModel = \common\models\Products::findOne($pInfo->parent_products_id);
-                    $attributes = new ViewAttributes($parentProductModel, true);
-                    $attributes->populateView($this->view);
-                }
-
-            }*/
             if ( $pInfo->products_id_price && $pInfo->products_id != $pInfo->products_id_price ) {
                 $priceViewObj = new ViewPriceData(\common\models\Products::findOne($pInfo->products_id_price));
             }else {
                 $priceViewObj = new ViewPriceData($pInfo);
             }
-            $priceViewObj->populateView($this->view, $currencies);
+            $priceViewObj->populateView($this->view);
             if ($this->view->useMarketPrices) {
                 $data = $this->view->price_tabs_data[$currencies_id][$group_id];
             } else {
-                $data = $this->view->price_tabs_data[$group_id];
+                $data = $this->view->price_tabs_data[$group_id] ?? null;
             }
             $data['tabdata'] = $tabdata;
             $data['groups_id'] = $group_id;
-            
+
             unset($this->view->price_tabs);
             unset($this->view->price_tabs_data);
             $this->view->price_tabs_data = $data;
@@ -9456,6 +9848,59 @@ order by status desc, sort_order
 
         return $res;
 
+    }
+
+    public function actionSetSuppliersStock() {
+        $ret = [];
+        ///suppliers_data[362][9][suppliers_quantity]
+        $suppliers_data = \Yii::$app->request->post('suppliers_data', []);
+
+        $cnt = 0; $qty = 0;
+
+        if (!empty($suppliers_data) && is_array($suppliers_data)) {
+            foreach ($suppliers_data as $products_id => $suppliers ) {
+                if (!empty($suppliers) && is_array($suppliers)) {
+                    foreach ($suppliers as $supplier_id => $data) {
+                        try {
+                            $qty = intval($data['suppliers_quantity']);
+                            $products_id = \common\helpers\Inventory::normalize_id_excl_virtual($products_id);
+                            $m = SuppliersProducts::findOne([
+                                  'suppliers_id' => (int)$supplier_id,
+                                  'products_id' => (int)$products_id,
+                                  'uprid' => $products_id,
+                                ]);
+                            if (empty($m )) {
+                                $m = new SuppliersProducts([
+                                  'suppliers_id' => (int)$supplier_id,
+                                  'products_id' => (int)$products_id,
+                                  'uprid' => $products_id,
+                                ]);
+                                $m->loadDefaultValues();
+                            }
+                            $m->suppliers_quantity = $qty;
+                            $m->save(false);
+
+                            if (!isset($ret[$products_id])) {
+                                $ret[$products_id] = [];
+                            }
+                            $ret[$products_id][$supplier_id] = ['value' => $qty];
+                        } catch (\Exception $e) {
+                            \Yii::warning(" #### " .print_r($e->getMessage() . $e->getTraceAsString(), true), 'TLDEBUG');
+                        }
+                        
+                        $cnt++;
+                    }
+                }
+                \common\helpers\Product::doCache($products_id);
+            }
+        }
+        //only 1 qty updated = simple response.
+        if ($cnt == 1 ) {
+            $ret = ['value' => $qty];
+        }
+
+        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+        return $ret;
     }
 
 }

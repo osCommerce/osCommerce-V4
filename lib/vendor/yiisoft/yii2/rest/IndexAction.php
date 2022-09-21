@@ -1,8 +1,8 @@
 <?php
 /**
- * @link http://www.yiiframework.com/
+ * @link https://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
- * @license http://www.yiiframework.com/license/
+ * @license https://www.yiiframework.com/license/
  */
 
 namespace yii\rest;
@@ -25,7 +25,7 @@ use yii\helpers\ArrayHelper;
 class IndexAction extends Action
 {
     /**
-     * @var callable a PHP callable that will be called to prepare a data provider that
+     * @var callable|null a PHP callable that will be called to prepare a data provider that
      * should return a collection of the models. If not set, [[prepareDataProvider()]] will be used instead.
      * The signature of the callable should be:
      *
@@ -66,7 +66,7 @@ class IndexAction extends Action
     public $prepareSearchQuery;
     /**
      * @var DataFilter|null data filter to be used for the search filter composition.
-     * You must setup this field explicitly in order to enable filter processing.
+     * You must set up this field explicitly in order to enable filter processing.
      * For example:
      *
      * ```php

@@ -363,6 +363,9 @@ class Specials {
         'description' => self::statusDescriptionText($special['specials_enabled'], $special['specials_disabled'], $expired, $scheduled),
         'start_date' => Date::datetime_short($special['start_date']),
         'expires_date' => Date::datetime_short($special['expires_date']),
+        'total_qty' => $special['total_qty'],
+        'max_per_order' => $special['max_per_order'],
+        'sold' => (!empty($special['total_qty'])?self::getSoldOnlyQty(['specials_id' => $special['specials_id']]):0),
         'id' => $special['specials_id']
         ];
 

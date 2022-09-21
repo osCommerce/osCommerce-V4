@@ -27,6 +27,8 @@ use Yii;
  * @property int $ordered_stock_quantity
  * @property int $suppliers_id
  * @property int $location_id
+ * @property int $layers_id
+ * @property int $batch_id
  */
 class WarehousesProducts extends \yii\db\ActiveRecord
 {
@@ -39,7 +41,7 @@ class WarehousesProducts extends \yii\db\ActiveRecord
     }
     
     public static function primaryKey() {
-        return ['warehouse_id', 'products_id', 'suppliers_id', 'location_id'];
+        return ['warehouse_id', 'products_id', 'suppliers_id', 'location_id', 'layers_id', 'batch_id'];
     }
     
     public function getWarehouse(){

@@ -1,5 +1,5 @@
 {use class="\common\classes\platform"}
-{use class="yii\helpers\Html"}
+{use class="common\helpers\Html"}
 <div class="filter_pad">
   <div class="widget"><div class="widget-header" style="margin-bottom: 0;"><h4>{$smarty.const.TABLE_HEAD_PLATFORM_PRODUCT_ASSIGN}</h4></div>
   <table class="table tabl-res table-striped table-hover table-responsive table-bordered table-switch-on-off double-grid">

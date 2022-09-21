@@ -80,6 +80,10 @@ class Order
         tep_db_query("delete from tracking_numbers where orders_id = '" . (int) $order_id . "'");
         tep_db_query("delete from tracking_numbers_to_orders_products where orders_id = '" . (int) $order_id . "'");
 
+        foreach (\common\helpers\Hooks::getList('orders/after-delete') as $filename) {
+            include($filename);
+        }
+
         $OrdersDeleteHistory = new \common\models\OrdersDeleteHistory();
         $OrdersDeleteHistory->loadDefaultValues();
         $OrdersDeleteHistory->orders_id = (int) $order_id;

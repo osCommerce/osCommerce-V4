@@ -744,8 +744,8 @@ case 'wishlist_add_cart':   reset ($lvnr);
             }
 // }}
             if (isset($_GET['products_id']) && \common\helpers\Product::check_product((int)$_GET['products_id'])) {
-                if (!Yii::$app->user->isGuest) { tep_db_query("delete from " . TABLE_WISHLIST . " WHERE customers_id='".(int)$customer_id."' AND products_id=" . (int)$products_id); }
-                $qty = (is_numeric($_GET['qty']) ? $_GET['qty'] : 1);
+                if (!Yii::$app->user->isGuest) { tep_db_query("delete from " . TABLE_WISHLIST . " WHERE customers_id='".(int)$customer_id."' AND products_id=" . (int)$_GET['products_id']); }
+                $qty = (isset($_GET['qty']) ? (int)$_GET['qty'] : 1);
                 $qty = (int)($qty * \common\helpers\Product::getVirtualItemQuantityValue($_GET['products_id']));
                 if (\common\helpers\Attributes::has_product_attributes($_GET['products_id'])) {
                     if (!Yii::$app->request->isAjax){

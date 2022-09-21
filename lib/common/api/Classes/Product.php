@@ -112,8 +112,11 @@ class Product extends AbstractClass
              */
             foreach (\common\models\Inventory::find()->where(['prid' => $productId])->asArray(true)->all() as $inventoryRecord ) {
                 $inventoryRecord['inventoryPricesRecordArray'] = \common\models\InventoryPrices::find()->where(['inventory_id' => $inventoryRecord['inventory_id']])->asArray(true)->all();
-                $inventoryRecord['platformInventoryControlRecordArray'] = \common\models\PlatformInventoryControl::find()->where(['products_id' => (int)$productId])->asArray(true)->all();
-                $inventoryRecord['warehouseInventoryControlRecordArray'] = \common\models\WarehouseInventoryControl::find()->where(['products_id' => (int)$productId])->asArray(true)->all();
+
+                if ($extScl = \common\helpers\Acl::checkExtensionAllowed('StockControl', 'allowed')) {
+                    $extScl::updateApiProductInventoryLoad(&$inventoryRecord);
+                }
+
                 $this->inventoryRecordArray[] = $inventoryRecord;
             }
             unset($inventoryRecord);
@@ -157,14 +160,11 @@ class Product extends AbstractClass
              * Warehouses Products
              */
             $this->warehousesProductsRecordArray = \common\models\WarehousesProducts::find()->where(['prid' => $productId])->asArray(true)->all();
-            /**
-             * Platforms Stock Control
-             */
-            $this->platformStockControlRecordArray = \common\models\PlatformStockControl::find()->where(['products_id' => $productId])->asArray(true)->all();
-            /**
-             * Warehouses Stock Control
-             */
-            $this->warehouseStockControlRecordArray = \common\models\WarehouseStockControl::find()->where(['products_id' => $productId])->asArray(true)->all();
+
+            if ($extScl = \common\helpers\Acl::checkExtensionAllowed('StockControl', 'allowed')) {
+                $extScl::updateApiProductLoad($this);
+            }
+
             // ...
             return true;
         }
@@ -837,59 +837,11 @@ class Product extends AbstractClass
                         unset($inventoryRecord['inventoryImagesArray']);
                     }
                 }
-                if (count($inventoryRecord['platformInventoryControlRecordArray']) > 0) {
-                    foreach ($inventoryRecord['platformInventoryControlRecordArray'] as $platformInventoryControlRecord) {
-                        $platformId = (int)(isset($platformInventoryControlRecord['platform_id']) ? $platformInventoryControlRecord['platform_id'] : 0);
-                        unset($platformInventoryControlRecord['products_id']);
-                        unset($platformInventoryControlRecord['platform_id']);
-                        if ($platformId > 0) {
-                            $inventoryClass = \common\models\PlatformInventoryControl::find()->where(['products_id' => $this->productId, 'platform_id' => $platformId])->one();
-                            if (!($inventoryClass instanceof \common\models\PlatformInventoryControl)) {
-                                $inventoryClass = new \common\models\PlatformInventoryControl();
-                                $inventoryClass->loadDefaultValues();
-                                $inventoryClass->products_id = $this->productId;
-                                $inventoryClass->platform_id = $platformId;
-                            }
-                            $inventoryClass->setAttributes($inventoryRecord, false);
-                            if ($inventoryClass->save(false)) {
 
-                            } else {
-                                $this->messageAdd($inventoryClass->getErrorSummary(true));
-                            }
-                            unset($inventoryClass);
-                        }
-                        unset($platformId);
-                    }
-                    unset($platformInventoryControlRecord);
+                if ($extScl = \common\helpers\Acl::checkExtensionAllowed('StockControl', 'allowed')) {
+                    $extScl::updateApiProductInventorySave($this, $inventoryRecord, $inventoryId, $uprid);
                 }
-                if (($inventoryId > 0) AND (count($inventoryRecord['warehouseInventoryControlRecordArray']) > 0)) {
-                    foreach ($inventoryRecord['warehouseInventoryControlRecordArray'] as $warehouseInventoryControlRecord) {
-                        $platformId = (int)(isset($warehouseInventoryControlRecord['platform_id']) ? $warehouseInventoryControlRecord['platform_id'] : 0);
-                        unset($warehouseInventoryControlRecord['products_id']);
-                        unset($warehouseInventoryControlRecord['platform_id']);
-                        if ($platformId > 0) {
-                            $inventoryClass = \common\models\WarehouseInventoryControl::find()->where(['products_id' => $this->productId, 'platform_id' => $platformId])->one();
-                            if (!($inventoryClass instanceof \common\models\WarehouseInventoryControl)) {
-                                $inventoryClass = new \common\models\WarehouseInventoryControl();
-                                $inventoryClass->loadDefaultValues();
-                                $inventoryClass->products_id = $this->productId;
-                                $inventoryClass->platform_id = $platformId;
-                            }
-                            $inventoryClass->setAttributes($warehouseInventoryControlRecord, false);
-                            if ($inventoryClass->save(false)) {
 
-                            } else {
-                                $this->messageAdd($inventoryClass->getErrorSummary(true));
-                            }
-                            unset($inventoryClass);
-                        }
-                        unset($warehouseId);
-                        unset($platformId);
-                    }
-                    unset($warehouseInventoryControlRecord);
-                }
-                unset($uprid);
-                unset($inventoryId);
             }
             unset($key);
             unset($inventoryRecord);
@@ -1179,58 +1131,11 @@ class Product extends AbstractClass
                 unset($warehouseId);
             }
             unset($warehousesProductsRecord);
-            /**
-             * Platforms Stock Control
-             */
-            foreach ($this->platformStockControlRecordArray as $platformStockControlRecord) {
-                $platformId = (int)(isset($platformStockControlRecord['platform_id']) ? $platformStockControlRecord['platform_id'] : 0);
-                unset($platformStockControlRecord['products_id']);
-                unset($platformStockControlRecord['platform_id']);
-                if ($platformId > 0) {
-                    $platformStockClass = \common\models\PlatformStockControl::find()->where(['products_id' => $this->productId, 'platform_id' => $platformId])->one();
-                    if (!($platformStockClass instanceof \common\models\PlatformStockControl)) {
-                        $platformStockClass = new \common\models\PlatformStockControl();
-                        $platformStockClass->loadDefaultValues();
-                        $platformStockClass->products_id = $this->productId;
-                        $platformStockClass->platform_id = $platformId;
-                    }
-                    $platformStockClass->setAttributes($platformStockControlRecord, false);
-                    if ($platformStockClass->save(false)) {
 
-                    } else {
-                        $this->messageAdd($platformStockClass->getErrorSummary(true));
-                    }
-                    unset($platformStockClass);
-                }
-                unset($platformId);
+            if ($extScl = \common\helpers\Acl::checkExtensionAllowed('StockControl', 'allowed')) {
+                $extScl::updateApiProductSave($this);
             }
-            unset($platformStockControlRecord);
-            /**
-             * Warehouses Stock Control
-             */
-            foreach ($this->warehouseStockControlRecordArray as $warehouseStockControlRecord) {
-                $platformId = (int)(isset($warehouseStockControlRecord['platform_id']) ? $warehouseStockControlRecord['platform_id'] : 0);
-                unset($warehouseStockControlRecord['products_id']);
-                unset($warehouseStockControlRecord['platform_id']);
-                if ($platformId > 0) {
-                    $warehouseStockClass = \common\models\WarehouseStockControl::find()->where(['products_id' => $this->productId, 'platform_id' => $platformId])->one();
-                    if (!($warehouseStockClass instanceof \common\models\WarehouseStockControl)) {
-                        $warehouseStockClass = new \common\models\WarehouseStockControl();
-                        $warehouseStockClass->loadDefaultValues();
-                        $warehouseStockClass->products_id = $this->productId;
-                        $warehouseStockClass->platform_id = $platformId;
-                    }
-                    $warehouseStockClass->setAttributes($warehouseStockControlRecord, false);
-                    if ($warehouseStockClass->save(false)) {
 
-                    } else {
-                        $this->messageAdd($warehouseStockClass->getErrorSummary(true));
-                    }
-                    unset($warehouseStockClass);
-                }
-                unset($platformId);
-            }
-            unset($warehouseStockControlRecord);
             // ...
             // OLD SEO REDIRECT
             foreach ($this->oldSeoRedirectArray as $seoRedirectArray) {

@@ -165,6 +165,8 @@ class Theme
         } else {
             $themeArchive = $designBoxes['theme_name'] . '_' . $designBoxes['widget_name'] . '_' . $id;
         }
+        FileHelper::createDirectory($fsCatalog);
+        chmod($fsCatalog, 0755);
 
         $zip = new \ZipArchive();
         if ($zip->open($fsCatalog . $themeArchive . '.zip', \ZipArchive::CREATE) !== TRUE) {

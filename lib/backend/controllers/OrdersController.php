@@ -65,6 +65,12 @@ class OrdersController extends Sceleton {
     }
 
     public function actionIndex() {
+        global $login_id, $navigation;
+
+        if (is_object($navigation) && method_exists($navigation, 'set_snapshot')){
+            $navigation->set_snapshot();
+        }
+
         $this->selectedMenu = array('customers', 'orders');
         $this->navigation[] = array('link' => Yii::$app->urlManager->createUrl('orders/index'), 'title' => HEADING_TITLE);
         if (\common\helpers\Acl::rule(['ACL_ORDER', 'IMAGE_NEW'])) {
@@ -168,6 +174,11 @@ class OrdersController extends Sceleton {
               'value' => 'brand',
               'selected' => '',
               ], */
+            [
+                'name' => TEXT_WAREHOUSES_PRODUCTS_BATCH_NAME,
+                'value' => 'batchName',
+                'selected' => '',
+            ],
             [
                 'name' => TEXT_CLIENT_NAME,
                 'value' => 'fullname',
@@ -352,6 +363,8 @@ class OrdersController extends Sceleton {
                     $this->view->filters->platform[] = (int) $_platform_id;
         }
 
+        $this->view->filters->deficit_only = (int)Yii::$app->request->get('deficit_only', 0);
+
         $admin = new AdminCarts;
         $admin->loadCustomersBaskets();
         $ids = $admin->getVirtualCartIDs();
@@ -446,7 +459,7 @@ class OrdersController extends Sceleton {
         $cid = Yii::$app->request->get('cid', 0);
 
         $params['show_recovery_details'] = false;
-        if (($ext = \common\helpers\Acl::checkExtensionAllowed('CustomersBasket')) && defined('RCS_SHOW_AT_ORDERS') && RCS_SHOW_AT_ORDERS == 'true' && $orders_id && $cid) {
+        if (($ext = \common\helpers\Acl::checkExtensionAllowed('RecoverShoppingCart')) && defined('RCS_SHOW_AT_ORDERS') && RCS_SHOW_AT_ORDERS == 'true' && $orders_id && $cid) {
             $params['show_recovery_details'] = true;
 
             $ext::initTranslation('order-history');
@@ -515,11 +528,11 @@ class OrdersController extends Sceleton {
         if (isset($_GET['search']['value']) && tep_not_null($_GET['search']['value'])) {
             $keywords = tep_db_input(tep_db_prepare_input($_GET['search']['value']));
             $searchFields = ['o.order_number', 'o.customers_telephone', 'o.delivery_telephone', 'o.billing_telephone', 'o.customers_lastname', 'o.customers_firstname', 'o.customers_email_address', 'o.orders_id', 'op.products_model', 'op.products_name'];
-            
+
             if ( is_numeric($keywords) ) {
                 $searchFields[] = 'o.api_client_order_id';
             }
-            
+
             /** @var \common\extensions\InvoiceNumberFormat\InvoiceNumberFormat $infExt */
             if ($infExt = \common\helpers\Acl::checkExtensionAllowed('InvoiceNumberFormat', 'allowed')){
                 if ($infExt::hasInvoiceNumber()){
@@ -718,6 +731,14 @@ class OrdersController extends Sceleton {
                     break;
                 case 'brand':
                     break;
+                case 'batchName':
+                    if ( !$_orders_products_allocate_joined ) {
+                        $orders_query_raw->leftJoin("orders_products_allocate opa", "opa.orders_id = o.orders_id");
+                        $_orders_products_allocate_joined = true;
+                    }
+                    $orders_query_raw->leftJoin("warehouses_products_batches wpb", "wpb.batch_id = opa.batch_id");
+                    $orders_query_raw->andWhere([$operator, "wpb.batch_name", $search]);
+                    break;
                 case 'fullname':
                     $orders_query_raw->andWhere([$operator, "o.customers_name", $search]);
                     break;
@@ -869,6 +890,14 @@ class OrdersController extends Sceleton {
         }
         if (isset($output['walkin']) && is_array($output['walkin'])) {
             $orders_query_raw->andWhere(["in", "o.admin_id", $output['walkin']]);
+        }
+
+        if (isset($output['deficit_only']) AND ((int)$output['deficit_only'] > 0)) {
+            if ( !$_orders_products_joined ) {
+               $_orders_products_joined = true;
+               $orders_query_raw->leftJoin(TABLE_ORDERS_PRODUCTS . " op", "(op.orders_id = o.orders_id)");
+            }
+            $orders_query_raw->andWhere('((op.products_quantity - op.qty_cnld) > op.qty_rcvd)');
         }
 
         $orders_query_raw->groupBy("o.orders_id");
@@ -1322,6 +1351,7 @@ class OrdersController extends Sceleton {
         if ($_session->has('search_condition')) {
             $pagin_model->andWhere($_session->get('search_condition'));
         }
+        $_orders_products_allocate_joined = false;
         if( $filter){
             $pagin_model->leftJoin(TABLE_ORDERS_PRODUCTS . " op", "o.orders_id = op.orders_id")
                     ->leftJoin(TABLE_ORDERS_STATUS . " s", "o.orders_status=s.orders_status_id")
@@ -1331,11 +1361,19 @@ class OrdersController extends Sceleton {
                     !(\common\helpers\Acl::rule(['BOX_HEADING_CUSTOMERS', 'BOX_CUSTOMERS_ORDERS', 'RULE_ALLOW_SUPPLIERS']))
                 ) {
                 $pagin_model->leftJoin("orders_products_allocate opa", "opa.orders_id = o.orders_id");
+                $_orders_products_allocate_joined = true;
             }
             $pagin_model->leftJoin(TABLE_ORDERS_STATUS_HISTORY." osh", "o.orders_id = osh.orders_id");
         }
         if ($filter && \common\helpers\Acl::checkExtensionAllowed('Handlers', 'allowed')) {
             $pagin_model->leftJoin("handlers_products hp", "hp.products_id = op.products_id");
+        }
+        if ($filter && strpos($pagin_model->andWhere($filter)->createCommand()->getRawSql(),'wpb')!==false){
+            if ( !$_orders_products_allocate_joined ) {
+                $pagin_model->leftJoin("orders_products_allocate opa", "opa.orders_id = o.orders_id");
+                $_orders_products_allocate_joined = true;
+            }
+            $pagin_model->leftJoin("warehouses_products_batches wpb", "wpb.batch_id = opa.batch_id");
         }
 
         $order_next = $pagin_model->where("o.orders_id > '" . (int) $order->order_id . "'")
@@ -1378,6 +1416,13 @@ class OrdersController extends Sceleton {
             $fraudView = \common\extensions\FraudAddress\FraudAddress::fraudView($order);
         }
 
+        global $navigation;
+        if (sizeof($navigation->snapshot) > 0) {
+            $addedPages['backUrl'] = Yii::$app->urlManager->createUrl(array_merge([$navigation->snapshot['page']], $navigation->snapshot['get']));
+        } else {
+            $addedPages['backUrl'] = Yii::$app->urlManager->createUrl(['orders']);
+        }
+
         return $this->render('update',[
             'queryParams' => $queryParams,
             'messsages' => $messageStack->messages,
@@ -1391,7 +1436,7 @@ class OrdersController extends Sceleton {
             'fraudView' => $fraudView,
             'dropshipping' => $dropshipping ?? null,
             'addedPages' => $addedPages,
-            'pageName' => $pageName
+            'pageName' => $pageName,
         ]);
     }
 
@@ -1474,7 +1519,7 @@ class OrdersController extends Sceleton {
                       ]);
                 }
                 ////
-                
+
                 $manager->loadCart(new \common\classes\shopping_cart);
                 $cart = $manager->getCart();
 
@@ -1736,7 +1781,7 @@ class OrdersController extends Sceleton {
             $message = '<p>'.WARNING_ORDER_NOT_UPDATED.'</p>';
             $messages[] = ['messageType' => 'warning', 'message' => $message];
         }
-        
+
         foreach (\common\helpers\Hooks::getList('orders/process-order') as $filename) {
             include($filename);
         }
@@ -2595,11 +2640,15 @@ class OrdersController extends Sceleton {
                     $supplierName = (isset($supplierNameList[$opaRecord['suppliers_id']]) ? $supplierNameList[$opaRecord['suppliers_id']] : 'N/A');
                     $locationName = trim(\common\helpers\Warehouses::getLocationPath($opaRecord['location_id'], $opaRecord['warehouse_id'], $locationBlockList));
                     $locationName = (($locationName != '') ? $locationName : 'N/A');
+                    $layersName = \common\helpers\Date::date_short(\common\helpers\Warehouses::getExpiryDateByLayersID($opaRecord['layers_id']));
+                    $layersName = ($layersName != '' ? \common\helpers\Translation::getTranslationValue('TEXT_EXPIRY_DATE', 'admin/categories') . ' ' . $layersName : 'N/A');
+                    $batchName = \common\helpers\Warehouses::getBatchNameByBatchID($opaRecord['batch_id']);
+                    $batchName = ($batchName != '' ? TEXT_WAREHOUSES_PRODUCTS_BATCH_NAME . ' ' . $batchName : 'N/A');
                     // QUOTED
                     $min = 0;
                     $max = (int)$opaRecord['allocate_received'];
                     if ($min != $max) {
-                        $quotedArray[$opaRecord['warehouse_id']][$opaRecord['suppliers_id']][$opaRecord['location_id']] = [
+                        $quotedArray[$opaRecord['warehouse_id']][$opaRecord['suppliers_id']][$opaRecord['location_id']][$opaRecord['layers_id']][$opaRecord['batch_id']] = [
                             'value' => 0,
                             'min' => $min,
                             'max' => $max,
@@ -2613,7 +2662,9 @@ class OrdersController extends Sceleton {
                             ],
                             'warehouseName' => $warehouseName,
                             'supplierName' => $supplierName,
-                            'locationName' => $locationName
+                            'locationName' => $locationName,
+                            'layersName' => $layersName,
+                            'batchName' => $batchName,
                         ];
                     }
                     unset($max);
@@ -2624,7 +2675,7 @@ class OrdersController extends Sceleton {
                     $max = (int)$opaRecord['allocate_received'];
                     $quantityReceived += $max;
                     if ($min != $max) {
-                        $receivedArray[$opaRecord['warehouse_id']][$opaRecord['suppliers_id']][$opaRecord['location_id']] = [
+                        $receivedArray[$opaRecord['warehouse_id']][$opaRecord['suppliers_id']][$opaRecord['location_id']][$opaRecord['layers_id']][$opaRecord['batch_id']] = [
                             'value' => $max,
                             'min' => $min,
                             'max' => $max,
@@ -2639,7 +2690,9 @@ class OrdersController extends Sceleton {
                             ],
                             'warehouseName' => $warehouseName,
                             'supplierName' => $supplierName,
-                            'locationName' => $locationName
+                            'locationName' => $locationName,
+                            'layersName' => $layersName,
+                            'batchName' => $batchName,
                         ];
                     }
                     unset($max);
@@ -2649,13 +2702,15 @@ class OrdersController extends Sceleton {
                     $min = 0;
                     $max = ((int)$opaRecord['allocate_received'] - (int)$opaRecord['allocate_dispatched']);
                     if ($min != $max) {
-                        $dispatchedArray[$opaRecord['warehouse_id']][$opaRecord['suppliers_id']][$opaRecord['location_id']] = [
+                        $dispatchedArray[$opaRecord['warehouse_id']][$opaRecord['suppliers_id']][$opaRecord['location_id']][$opaRecord['layers_id']][$opaRecord['batch_id']] = [
                             'value' => 0,
                             'min' => $min,
                             'max' => $max,
                             'warehouseName' => $warehouseName,
                             'supplierName' => $supplierName,
-                            'locationName' => $locationName
+                            'locationName' => $locationName,
+                            'layersName' => $layersName,
+                            'batchName' => $batchName,
                         ];
                     }
                     unset($max);
@@ -2665,13 +2720,15 @@ class OrdersController extends Sceleton {
                     $min = 0;
                     $max = ((int)$opaRecord['allocate_dispatched'] - (int)$opaRecord['allocate_delivered']);
                     if ($min != $max) {
-                        $deliveredArray[$opaRecord['warehouse_id']][$opaRecord['suppliers_id']][$opaRecord['location_id']] = [
+                        $deliveredArray[$opaRecord['warehouse_id']][$opaRecord['suppliers_id']][$opaRecord['location_id']][$opaRecord['layers_id']][$opaRecord['batch_id']] = [
                             'value' => 0,
                             'min' => $min,
                             'max' => $max,
                             'warehouseName' => $warehouseName,
                             'supplierName' => $supplierName,
-                            'locationName' => $locationName
+                            'locationName' => $locationName,
+                            'layersName' => $layersName,
+                            'batchName' => $batchName,
                         ];
                     }
                     unset($max);
@@ -2681,6 +2738,8 @@ class OrdersController extends Sceleton {
                     unset($warehouseName);
                     unset($supplierName);
                     unset($locationName);
+                    unset($layersName);
+                    unset($batchName);
                 }
                 unset($opaRecord);
 
@@ -2688,13 +2747,13 @@ class OrdersController extends Sceleton {
                 $min = 0;
                 $max = ($quantityReal - $quantityReceived);
                 if ($min != $max OR $quantityReal == 0) {
-                    $cancelledArray[0][0][0] = [
+                    $cancelledArray[0][0][0][0][0] = [
                         'value' => $orderProductRecord->qty_cnld,
                         'min' => $min,
                         'max' => ($max + (int)$orderProductRecord->qty_cnld)
                     ];
                 } else {
-                    $cancelledArray[0][0][0] = [
+                    $cancelledArray[0][0][0][0][0] = [
                         'html' => \yii\helpers\Html::checkbox('evaluation_state_restock', false, ['label' => TEXT_EVALUATION_STATE_RESTOCK])
                     ];
                 }
@@ -2708,35 +2767,37 @@ class OrdersController extends Sceleton {
                 $uProductId = \common\helpers\Inventory::getInventoryId($orderProductRecord->uprid);
                 $paArray = [];
                 foreach (\common\helpers\Product::getAllocatedArray($uProductId) as $paRecord) {
-                    $paArray[$paRecord['warehouse_id']][$paRecord['suppliers_id']][$paRecord['location_id']][] = $paRecord;
+                    $paArray[$paRecord['warehouse_id']][$paRecord['suppliers_id']][$paRecord['location_id']][$paRecord['layers_id']][$paRecord['batch_id']][] = $paRecord;
                 }
                 unset($paRecord);
                 $patArray = [];
                 foreach (\common\helpers\Product::getAllocatedTemporaryArray($uProductId) as $patRecord) {
-                    $patArray[$patRecord['warehouse_id']][$patRecord['suppliers_id']][$patRecord['location_id']][] = $patRecord;
+                    $patArray[$patRecord['warehouse_id']][$patRecord['suppliers_id']][$patRecord['location_id']][$patRecord['layers_id']][$patRecord['batch_id']][] = $patRecord;
                 }
                 unset($patRecord);
                 foreach (\common\helpers\Warehouses::getProductArray($uProductId) as $wpRecord) {
                     $warehouseId = $wpRecord['warehouse_id'];
                     $supplierId = $wpRecord['suppliers_id'];
                     $locationId = $wpRecord['location_id'];
+                    $layersId = $wpRecord['layers_id'];
+                    $batchId = $wpRecord['batch_id'];
                     $available = (int)$wpRecord['warehouse_stock_quantity'];
-                    if (isset($paArray[$warehouseId][$supplierId][$locationId])) {
-                        foreach ($paArray[$warehouseId][$supplierId][$locationId] as $paRecord) {
+                    if (isset($paArray[$warehouseId][$supplierId][$locationId][$layersId][$batchId])) {
+                        foreach ($paArray[$warehouseId][$supplierId][$locationId][$layersId][$batchId] as $paRecord) {
                             $available -= (int)$paRecord['allocate_received'];
                         }
-                        unset($paArray[$warehouseId][$supplierId][$locationId]);
+                        unset($paArray[$warehouseId][$supplierId][$locationId][$layersId][$batchId]);
                         unset($paRecord);
                     }
-                    if (isset($patArray[$warehouseId][$supplierId][$locationId])) {
-                        foreach ($patArray[$warehouseId][$supplierId][$locationId] as $patRecord) {
+                    if (isset($patArray[$warehouseId][$supplierId][$locationId][$layersId][$batchId])) {
+                        foreach ($patArray[$warehouseId][$supplierId][$locationId][$layersId][$batchId] as $patRecord) {
                             $available -= (int)$patRecord['temporary_stock_quantity'];
                         }
-                        unset($patArray[$warehouseId][$supplierId][$locationId]);
+                        unset($patArray[$warehouseId][$supplierId][$locationId][$layersId][$batchId]);
                         unset($patRecord);
                     }
-                    if (isset($receivedArray[$warehouseId][$supplierId][$locationId])) {
-                        $receivedRecord = &$receivedArray[$warehouseId][$supplierId][$locationId];
+                    if (isset($receivedArray[$warehouseId][$supplierId][$locationId][$layersId][$batchId])) {
+                        $receivedRecord = &$receivedArray[$warehouseId][$supplierId][$locationId][$layersId][$batchId];
                         $available += $receivedRecord['max'];
                         if ($receivedRecord['max'] < $available) {
                             $receivedRecord['max'] = $available;
@@ -2747,22 +2808,32 @@ class OrdersController extends Sceleton {
                         $supplierName = (isset($supplierNameList[$supplierId]) ? $supplierNameList[$supplierId] : 'N/A');
                         $locationName = trim(\common\helpers\Warehouses::getLocationPath($locationId, $warehouseId, $locationBlockList));
                         $locationName = (($locationName != '') ? $locationName : 'N/A');
-                        $receivedArray[$warehouseId][$supplierId][$locationId] = [
+                        $layersName = \common\helpers\Date::date_short(\common\helpers\Warehouses::getExpiryDateByLayersID($layersId)); 
+                        $layersName = ($layersName != '' ? \common\helpers\Translation::getTranslationValue('TEXT_EXPIRY_DATE', 'admin/categories') . ' ' . $layersName : 'N/A');
+                        $batchName = \common\helpers\Warehouses::getBatchNameByBatchID($batchId);
+                        $batchName = ($batchName != '' ? TEXT_WAREHOUSES_PRODUCTS_BATCH_NAME . ' ' . $batchName : 'N/A');
+                        $receivedArray[$warehouseId][$supplierId][$locationId][$layersId][$batchId] = [
                             'value' => 0,
                             'min' => 0,
                             'max' => $available,
                             'awaiting' => $quantityRealParent,
                             'warehouseName' => $warehouseName,
                             'supplierName' => $supplierName,
-                            'locationName' => $locationName
+                            'locationName' => $locationName,
+                            'layersName' => $layersName,
+                            'batchName' => $batchName,
                         ];
                         unset($warehouseName);
                         unset($supplierName);
                         unset($locationName);
+                        unset($layersName);
+                        unset($batchName);
                     }
                     unset($warehouseId);
                     unset($supplierId);
                     unset($locationId);
+                    unset($layersId);
+                    unset($batchId);
                     unset($available);
                 }
                 unset($quantityRealParent);
@@ -2776,17 +2847,17 @@ class OrdersController extends Sceleton {
                 unset($paArray);
 
                 if (count($quotedArray) == 0) {
-                    $quotedArray[0][0][0] = [
+                    $quotedArray[0][0][0][0][0] = [
                         'html' => \yii\helpers\Html::checkbox('evaluation_state_reset_cancel', false, ['label' => TEXT_EVALUATION_STATE_RESET_CANCEL])
                     ];
                 }
                 if (count($dispatchedArray) == 0) {
-                    $dispatchedArray[0][0][0] = [
+                    $dispatchedArray[0][0][0][0][0] = [
                         'html' => \yii\helpers\Html::checkbox('evaluation_state_force', false, ['label' => TEXT_EVALUATION_STATE_FORCE])
                     ];
                 }
                 if (count($deliveredArray) == 0) {
-                    $deliveredArray[0][0][0] = [
+                    $deliveredArray[0][0][0][0][0] = [
                         'html' => \yii\helpers\Html::checkbox('evaluation_state_force', false, ['label' => TEXT_EVALUATION_STATE_FORCE])
                     ];
                 }
@@ -2879,9 +2950,13 @@ class OrdersController extends Sceleton {
                     if (is_array($opUpdateArray)) {
                         foreach ($opUpdateArray as $warehouseId => $supplierArray) {
                             foreach ($supplierArray as $supplierId => $locationArray) {
-                                foreach ($locationArray as $locationId => $quantityUpdate) {
-                                    if ($quantityUpdate > 0) {
-                                        \common\helpers\OrderProduct::doQuoteSpecific($opRecord, $quantityUpdate, $warehouseId, $supplierId, $locationId);
+                                foreach ($locationArray as $locationId => $layersArray) {
+                                    foreach ($layersArray as $layersId => $batchArray) {
+                                        foreach ($batchArray as $batchId => $quantityUpdate) {
+                                            if ($quantityUpdate > 0) {
+                                                \common\helpers\OrderProduct::doQuoteSpecific($opRecord, $quantityUpdate, $warehouseId, $supplierId, $locationId, $layersId, $batchId);
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -2892,18 +2967,22 @@ class OrdersController extends Sceleton {
                 } elseif ($opStatus == \common\helpers\OrderProduct::OPS_RECEIVED) {
                     if (is_array($opUpdateArray)) {
                         foreach (\common\helpers\OrderProduct::getAllocatedArray($opRecord, true) as $opaRecord) {
-                            if (isset($opUpdateArray[$opaRecord['warehouse_id']][$opaRecord['suppliers_id']][$opaRecord['location_id']])
-                                AND (int)$opUpdateArray[$opaRecord['warehouse_id']][$opaRecord['suppliers_id']][$opaRecord['location_id']] < (int)$opaRecord['allocate_received']
+                            if (isset($opUpdateArray[$opaRecord['warehouse_id']][$opaRecord['suppliers_id']][$opaRecord['location_id']][$opaRecord['layers_id']][$opaRecord['batch_id']])
+                                AND (int)$opUpdateArray[$opaRecord['warehouse_id']][$opaRecord['suppliers_id']][$opaRecord['location_id']][$opaRecord['layers_id']][$opaRecord['batch_id']] < (int)$opaRecord['allocate_received']
                             ) {
-                                \common\helpers\OrderProduct::doAllocateSpecific($opRecord, $opUpdateArray[$opaRecord['warehouse_id']][$opaRecord['suppliers_id']][$opaRecord['location_id']], $opaRecord['warehouse_id'], $opaRecord['suppliers_id'], $opaRecord['location_id']);
-                                unset($opUpdateArray[$opaRecord['warehouse_id']][$opaRecord['suppliers_id']][$opaRecord['location_id']]);
+                                \common\helpers\OrderProduct::doAllocateSpecific($opRecord, $opUpdateArray[$opaRecord['warehouse_id']][$opaRecord['suppliers_id']][$opaRecord['location_id']][$opaRecord['layers_id']][$opaRecord['batch_id']], $opaRecord['warehouse_id'], $opaRecord['suppliers_id'], $opaRecord['location_id'], $opaRecord['layers_id'], $opaRecord['batch_id']);
+                                unset($opUpdateArray[$opaRecord['warehouse_id']][$opaRecord['suppliers_id']][$opaRecord['location_id']][$opaRecord['layers_id']][$opaRecord['batch_id']]);
                             }
                         }
                         unset($opaRecord);
                         foreach ($opUpdateArray as $warehouseId => $supplierArray) {
                             foreach ($supplierArray as $supplierId => $locationArray) {
-                                foreach ($locationArray as $locationId => $quantityUpdate) {
-                                    \common\helpers\OrderProduct::doAllocateSpecific($opRecord, $quantityUpdate, $warehouseId, $supplierId, $locationId);
+                                foreach ($locationArray as $locationId => $layersArray) {
+                                    foreach ($layersArray as $layersId => $batchArray) {
+                                        foreach ($batchArray as $batchId => $quantityUpdate) {
+                                            \common\helpers\OrderProduct::doAllocateSpecific($opRecord, $quantityUpdate, $warehouseId, $supplierId, $locationId, $layersId, $batchId);
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -2912,8 +2991,12 @@ class OrdersController extends Sceleton {
                     if (is_array($opUpdateArray)) {
                         foreach ($opUpdateArray as $warehouseId => $supplierArray) {
                             foreach ($supplierArray as $supplierId => $locationArray) {
-                                foreach ($locationArray as $locationId => $quantityUpdate) {
-                                    \common\helpers\OrderProduct::doDispatchSpecific($opRecord, $quantityUpdate, $warehouseId, $supplierId, $locationId);
+                                foreach ($locationArray as $locationId => $layersArray) {
+                                    foreach ($layersArray as $layersId => $batchArray) {
+                                        foreach ($batchArray as $batchId => $quantityUpdate) {
+                                            \common\helpers\OrderProduct::doDispatchSpecific($opRecord, $quantityUpdate, $warehouseId, $supplierId, $locationId, $layersId, $batchId);
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -2924,8 +3007,12 @@ class OrdersController extends Sceleton {
                     if (is_array($opUpdateArray)) {
                         foreach ($opUpdateArray as $warehouseId => $supplierArray) {
                             foreach ($supplierArray as $supplierId => $locationArray) {
-                                foreach ($locationArray as $locationId => $quantityUpdate) {
-                                    \common\helpers\OrderProduct::doDeliverSpecific($opRecord, $quantityUpdate, $warehouseId, $supplierId, $locationId);
+                                foreach ($locationArray as $locationId => $layersArray) {
+                                    foreach ($layersArray as $layersId => $batchArray) {
+                                        foreach ($batchArray as $batchId => $quantityUpdate) {
+                                            \common\helpers\OrderProduct::doDeliverSpecific($opRecord, $quantityUpdate, $warehouseId, $supplierId, $locationId, $layersId, $batchId);
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -2936,19 +3023,23 @@ class OrdersController extends Sceleton {
                     if (is_array($opUpdateArray)) {
                         foreach ($opUpdateArray as $warehouseId => $supplierArray) {
                             foreach ($supplierArray as $supplierId => $locationArray) {
-                                foreach ($locationArray as $locationId => $quantityUpdate) {
-                                    $quantityReceived = \common\helpers\OrderProduct::getReceived($opRecord, true);
-                                    if ($quantityUpdate < 0) {
-                                        $quantityUpdate = 0;
+                                foreach ($locationArray as $locationId => $layersArray) {
+                                    foreach ($layersArray as $layersId => $batchArray) {
+                                        foreach ($batchArray as $batchId => $quantityUpdate) {
+                                            $quantityReceived = \common\helpers\OrderProduct::getReceived($opRecord, true);
+                                            if ($quantityUpdate < 0) {
+                                                $quantityUpdate = 0;
+                                            }
+                                            if ($quantityUpdate > ($opRecord->products_quantity - $quantityReceived)) {
+                                                $quantityUpdate = ($opRecord->products_quantity - $quantityReceived);
+                                            }
+                                            $opRecord->qty_cnld = $quantityUpdate;
+                                            try {
+                                                $opRecord->save();
+                                            } catch (\Exception $exc) {}
+                                            \common\helpers\OrderProduct::evaluate($opRecord);
+                                        }
                                     }
-                                    if ($quantityUpdate > ($opRecord->products_quantity - $quantityReceived)) {
-                                        $quantityUpdate = ($opRecord->products_quantity - $quantityReceived);
-                                    }
-                                    $opRecord->qty_cnld = $quantityUpdate;
-                                    try {
-                                        $opRecord->save();
-                                    } catch (\Exception $exc) {}
-                                    \common\helpers\OrderProduct::evaluate($opRecord);
                                 }
                             }
                         }
@@ -2989,6 +3080,7 @@ class OrdersController extends Sceleton {
         }
 
         if (Yii::$app->request->isAjax) {
+            $qty_dfct = 0;
             $qty_cnld = 0;
             $qty_rcvd = 0;
             $qty_dspd = 0;
@@ -2998,6 +3090,7 @@ class OrdersController extends Sceleton {
             $opsColour = '#000000';
             $opsmColour = '#000000';
             if ($opRecord instanceof \common\models\OrdersProducts) {
+                $qty_dfct = \common\helpers\OrderProduct::getStockDeficit($opRecord);
                 $qty_cnld = $opRecord->qty_cnld;
                 $qty_rcvd = $opRecord->qty_rcvd;
                 $qty_dspd = $opRecord->qty_dspd;
@@ -3022,6 +3115,7 @@ class OrdersController extends Sceleton {
                 unset($opsmRecord);
             }
             $opArray = [(int)$opRecord->orders_products_id => [
+                'qty_dfct' => $qty_dfct,
                 'qty_cnld' => $qty_cnld,
                 'qty_rcvd' => $qty_rcvd,
                 'qty_dspd' => $qty_dspd,
@@ -3061,6 +3155,7 @@ class OrdersController extends Sceleton {
                 }
                 unset($oppsmRecord);
                 $opArray[(int)$oppRecord->orders_products_id] = [
+                    'qty_dfct' => \common\helpers\OrderProduct::getStockDeficit($oppRecord),
                     'qty_cnld' => $oppRecord->qty_cnld,
                     'qty_rcvd' => $oppRecord->qty_rcvd,
                     'qty_dspd' => $oppRecord->qty_dspd,
@@ -3078,6 +3173,7 @@ class OrdersController extends Sceleton {
             }
             unset($oppRecord);
             foreach ($opArray as &$opInformation) {
+                $opInformation['qty_dfct'] = \common\helpers\Product::getVirtualItemQuantity($opInformation['prid'], $opInformation['qty_dfct']);
                 $opInformation['qty_cnld'] = \common\helpers\Product::getVirtualItemQuantity($opInformation['prid'], $opInformation['qty_cnld']);
                 $opInformation['qty_rcvd'] = \common\helpers\Product::getVirtualItemQuantity($opInformation['prid'], $opInformation['qty_rcvd']);
                 $opInformation['qty_dspd'] = \common\helpers\Product::getVirtualItemQuantity($opInformation['prid'], $opInformation['qty_dspd']);

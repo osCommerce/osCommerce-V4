@@ -11,7 +11,8 @@
 
 namespace Imagine\Gd;
 
-use Imagine\Draw\DrawerInterface;
+use Imagine\Draw\AlphaBlendingAwareDrawerInterface;
+use Imagine\Driver\InfoProvider;
 use Imagine\Exception\InvalidArgumentException;
 use Imagine\Exception\RuntimeException;
 use Imagine\Image\AbstractFont;
@@ -24,7 +25,7 @@ use Imagine\Image\PointInterface;
 /**
  * Drawer implementation using the GD PHP extension.
  */
-final class Drawer implements DrawerInterface
+final class Drawer implements AlphaBlendingAwareDrawerInterface, InfoProvider
 {
     /**
      * @var resource|\GdImage
@@ -32,9 +33,9 @@ final class Drawer implements DrawerInterface
     private $resource;
 
     /**
-     * @var array
+     * @var bool
      */
-    private $info;
+    private $alphaBlending = true;
 
     /**
      * Constructs Drawer with a given gd image resource.
@@ -43,8 +44,18 @@ final class Drawer implements DrawerInterface
      */
     public function __construct($resource)
     {
-        $this->loadGdInfo();
         $this->resource = $resource;
+    }
+
+    /**
+     * {@inheritdoc}
+     *
+     * @see \Imagine\Driver\InfoProvider::getDriverInfo()
+     * @since 1.3.0
+     */
+    public static function getDriverInfo($required = true)
+    {
+        return DriverInfo::get($required);
     }
 
     /**
@@ -60,16 +71,16 @@ final class Drawer implements DrawerInterface
         }
         imagesetthickness($this->resource, $thickness);
 
-        if (false === imagealphablending($this->resource, true)) {
+        if ($this->applyAlphaBlending() === false) {
             throw new RuntimeException('Draw arc operation failed');
         }
 
-        if (false === imagearc($this->resource, $center->getX(), $center->getY(), $size->getWidth(), $size->getHeight(), $start, $end, $this->getColor($color))) {
-            imagealphablending($this->resource, false);
+        if (imagearc($this->resource, $center->getX(), $center->getY(), $size->getWidth(), $size->getHeight(), $start, $end, $this->getColor($color)) === false) {
+            $this->revertAlphaBlending();
             throw new RuntimeException('Draw arc operation failed');
         }
 
-        if (false === imagealphablending($this->resource, false)) {
+        if ($this->revertAlphaBlending() === false) {
             throw new RuntimeException('Draw arc operation failed');
         }
 
@@ -91,26 +102,26 @@ final class Drawer implements DrawerInterface
         }
         imagesetthickness($this->resource, $thickness);
 
-        if (false === imagealphablending($this->resource, true)) {
+        if ($this->applyAlphaBlending() === false) {
             throw new RuntimeException('Draw chord operation failed');
         }
 
         if ($fill) {
             $style = IMG_ARC_CHORD;
-            if (false === imagefilledarc($this->resource, $center->getX(), $center->getY(), $size->getWidth(), $size->getHeight(), $start, $end, $this->getColor($color), $style)) {
-                imagealphablending($this->resource, false);
+            if (imagefilledarc($this->resource, $center->getX(), $center->getY(), $size->getWidth(), $size->getHeight(), $start, $end, $this->getColor($color), $style) === false) {
+                $this->revertAlphaBlending();
                 throw new RuntimeException('Draw chord operation failed');
             }
         } else {
             foreach (array(IMG_ARC_NOFILL, IMG_ARC_NOFILL | IMG_ARC_CHORD) as $style) {
-                if (false === imagefilledarc($this->resource, $center->getX(), $center->getY(), $size->getWidth(), $size->getHeight(), $start, $end, $this->getColor($color), $style)) {
-                    imagealphablending($this->resource, false);
+                if (imagefilledarc($this->resource, $center->getX(), $center->getY(), $size->getWidth(), $size->getHeight(), $start, $end, $this->getColor($color), $style) === false) {
+                    $this->revertAlphaBlending();
                     throw new RuntimeException('Draw chord operation failed');
                 }
             }
         }
 
-        if (false === imagealphablending($this->resource, false)) {
+        if ($this->revertAlphaBlending() === false) {
             throw new RuntimeException('Draw chord operation failed');
         }
 
@@ -154,19 +165,19 @@ final class Drawer implements DrawerInterface
         if (function_exists('imageantialias')) {
             imageantialias($this->resource, true);
         }
-        if (false === imagealphablending($this->resource, true)) {
+        if ($this->applyAlphaBlending() === false) {
             throw new RuntimeException('Draw ellipse operation failed');
         }
 
         if (function_exists('imageantialias')) {
             imageantialias($this->resource, true);
         }
-        if (false === $callback($this->resource, $center->getX(), $center->getY(), $size->getWidth(), $size->getHeight(), $this->getColor($color))) {
-            imagealphablending($this->resource, false);
+        if ($callback($this->resource, $center->getX(), $center->getY(), $size->getWidth(), $size->getHeight(), $this->getColor($color)) === false) {
+            $this->revertAlphaBlending();
             throw new RuntimeException('Draw ellipse operation failed');
         }
 
-        if (false === imagealphablending($this->resource, false)) {
+        if ($this->revertAlphaBlending() === false) {
             throw new RuntimeException('Draw ellipse operation failed');
         }
 
@@ -186,16 +197,16 @@ final class Drawer implements DrawerInterface
         }
         imagesetthickness($this->resource, $thickness);
 
-        if (false === imagealphablending($this->resource, true)) {
+        if ($this->applyAlphaBlending() === false) {
             throw new RuntimeException('Draw line operation failed');
         }
 
-        if (false === imageline($this->resource, $start->getX(), $start->getY(), $end->getX(), $end->getY(), $this->getColor($color))) {
-            imagealphablending($this->resource, false);
+        if (imageline($this->resource, $start->getX(), $start->getY(), $end->getX(), $end->getY(), $this->getColor($color)) === false) {
+            $this->revertAlphaBlending();
             throw new RuntimeException('Draw line operation failed');
         }
 
-        if (false === imagealphablending($this->resource, false)) {
+        if ($this->revertAlphaBlending() === false) {
             throw new RuntimeException('Draw line operation failed');
         }
 
@@ -221,16 +232,16 @@ final class Drawer implements DrawerInterface
             $style = IMG_ARC_EDGED | IMG_ARC_NOFILL;
         }
 
-        if (false === imagealphablending($this->resource, true)) {
+        if ($this->applyAlphaBlending() === false) {
             throw new RuntimeException('Draw chord operation failed');
         }
 
-        if (false === imagefilledarc($this->resource, $center->getX(), $center->getY(), $size->getWidth(), $size->getHeight(), $start, $end, $this->getColor($color), $style)) {
-            imagealphablending($this->resource, false);
+        if (imagefilledarc($this->resource, $center->getX(), $center->getY(), $size->getWidth(), $size->getHeight(), $start, $end, $this->getColor($color), $style) === false) {
+            $this->revertAlphaBlending();
             throw new RuntimeException('Draw chord operation failed');
         }
 
-        if (false === imagealphablending($this->resource, false)) {
+        if ($this->revertAlphaBlending() === false) {
             throw new RuntimeException('Draw chord operation failed');
         }
 
@@ -244,16 +255,16 @@ final class Drawer implements DrawerInterface
      */
     public function dot(PointInterface $position, ColorInterface $color)
     {
-        if (false === imagealphablending($this->resource, true)) {
+        if ($this->applyAlphaBlending() === false) {
             throw new RuntimeException('Draw point operation failed');
         }
 
-        if (false === imagesetpixel($this->resource, $position->getX(), $position->getY(), $this->getColor($color))) {
-            imagealphablending($this->resource, false);
+        if (imagesetpixel($this->resource, $position->getX(), $position->getY(), $this->getColor($color)) === false) {
+            $this->revertAlphaBlending();
             throw new RuntimeException('Draw point operation failed');
         }
 
-        if (false === imagealphablending($this->resource, false)) {
+        if ($this->revertAlphaBlending() === false) {
             throw new RuntimeException('Draw point operation failed');
         }
 
@@ -284,16 +295,16 @@ final class Drawer implements DrawerInterface
             $callback = 'imagerectangle';
         }
 
-        if (false === imagealphablending($this->resource, true)) {
+        if ($this->applyAlphaBlending() === false) {
             throw new RuntimeException('Draw polygon operation failed');
         }
 
-        if (false === $callback($this->resource, $minX, $minY, $maxX, $maxY, $this->getColor($color))) {
-            imagealphablending($this->resource, false);
+        if ($callback($this->resource, $minX, $minY, $maxX, $maxY, $this->getColor($color)) === false) {
+            $this->revertAlphaBlending();
             throw new RuntimeException('Draw polygon operation failed');
         }
 
-        if (false === imagealphablending($this->resource, false)) {
+        if ($this->revertAlphaBlending() === false) {
             throw new RuntimeException('Draw polygon operation failed');
         }
 
@@ -327,16 +338,20 @@ final class Drawer implements DrawerInterface
             $callback = 'imagepolygon';
         }
 
-        if (false === imagealphablending($this->resource, true)) {
+        if ($this->applyAlphaBlending() === false) {
             throw new RuntimeException('Draw polygon operation failed');
         }
 
-        if (false === $callback($this->resource, $points, count($coordinates), $this->getColor($color))) {
-            imagealphablending($this->resource, false);
+        if (false === (
+            PHP_VERSION_ID < 80000
+                ? $callback($this->resource, $points, count($coordinates), $this->getColor($color))
+                : $callback($this->resource, $points, $this->getColor($color))
+        )) {
+            $this->revertAlphaBlending();
             throw new RuntimeException('Draw polygon operation failed');
         }
 
-        if (false === imagealphablending($this->resource, false)) {
+        if ($this->revertAlphaBlending() === false) {
             throw new RuntimeException('Draw polygon operation failed');
         }
 
@@ -350,10 +365,7 @@ final class Drawer implements DrawerInterface
      */
     public function text($string, AbstractFont $font, PointInterface $position, $angle = 0, $width = null)
     {
-        if (!$this->info['FreeType Support']) {
-            throw new RuntimeException('GD is not compiled with FreeType support');
-        }
-
+        static::getDriverInfo()->requireFeature(DriverInfo::FEATURE_TEXTFUNCTIONS);
         $angle = -1 * $angle;
         $fontsize = $font->getSize();
         $fontfile = $font->getFile();
@@ -364,7 +376,7 @@ final class Drawer implements DrawerInterface
             $string = $font->wrapText($string, $width, $angle);
         }
 
-        if (false === imagealphablending($this->resource, true)) {
+        if ($this->applyAlphaBlending() === false) {
             throw new RuntimeException('Font mask operation failed');
         }
 
@@ -375,16 +387,50 @@ final class Drawer implements DrawerInterface
                 $fontfile = $fontfileRealpath;
             }
         }
-        if (false === imagefttext($this->resource, $fontsize, $angle, $x, $y, $this->getColor($font->getColor()), $fontfile, $string)) {
-            imagealphablending($this->resource, false);
+        if (imagefttext($this->resource, $fontsize, $angle, $x, $y, $this->getColor($font->getColor()), $fontfile, $string) === false) {
+            $this->revertAlphaBlending();
             throw new RuntimeException('Font mask operation failed');
         }
 
-        if (false === imagealphablending($this->resource, false)) {
+        if ($this->revertAlphaBlending() === false) {
             throw new RuntimeException('Font mask operation failed');
         }
 
         return $this;
+    }
+
+    /**
+     * {@inheritdoc}
+     *
+     * @see \Imagine\Draw\AlphaBlendingAwareDrawerInterface::getAlphaBlending()
+     */
+    public function getAlphaBlending()
+    {
+        return $this->alphaBlending;
+    }
+
+    /**
+     * {@inheritdoc}
+     *
+     * @see \Imagine\Draw\AlphaBlendingAwareDrawerInterface::setAlphaBlending()
+     */
+    public function setAlphaBlending($value)
+    {
+        $this->alphaBlending = (bool) $value;
+
+        return $this;
+    }
+
+    /**
+     * {@inheritdoc}
+     *
+     * @see \Imagine\Draw\AlphaBlendingAwareDrawerInterface::withAlphaBlending()
+     */
+    public function withAlphaBlending($value)
+    {
+        $result = clone $this;
+
+        return $result->setAlphaBlending($value);
     }
 
     /**
@@ -403,20 +449,35 @@ final class Drawer implements DrawerInterface
             throw new InvalidArgumentException('GD driver only supports RGB colors');
         }
 
-        $gdColor = imagecolorallocatealpha($this->resource, $color->getRed(), $color->getGreen(), $color->getBlue(), (100 - $color->getAlpha()) * 127 / 100);
-        if (false === $gdColor) {
+        $gdColor = imagecolorallocatealpha($this->resource, $color->getRed(), $color->getGreen(), $color->getBlue(), round((100 - $color->getAlpha()) * 127 / 100));
+        if ($gdColor === false) {
             throw new RuntimeException(sprintf('Unable to allocate color "RGB(%s, %s, %s)" with transparency of %d percent', $color->getRed(), $color->getGreen(), $color->getBlue(), $color->getAlpha()));
         }
 
         return $gdColor;
     }
 
-    private function loadGdInfo()
+    /**
+     * Apply the alpha blending value.
+     *
+     * @param resource|\GdImage|null $to the GD image. If null we'll apply the alpha blending to the current resource.
+     *
+     * @return bool
+     */
+    protected function applyAlphaBlending($to = null)
     {
-        if (!function_exists('gd_info')) {
-            throw new RuntimeException('Gd not installed');
-        }
+        return $this->getAlphaBlending() ? imagealphablending($to ? $to : $this->resource, true) : true;
+    }
 
-        $this->info = gd_info();
+    /**
+     * Revert the alpha blending value to the initial state.
+     *
+     * @param resource|\GdImage|null $to the GD image. If null we'll apply the alpha blending to the current resource.
+     *
+     * @return bool
+     */
+    protected function revertAlphaBlending($to = null)
+    {
+        return $this->getAlphaBlending() ? imagealphablending($to ? $to : $this->resource, false) : true;
     }
 }

@@ -56,8 +56,68 @@ a.job-button:hover{ text-decoration: none; }
 .job-button .icon-play{ color: #006400 }
 </style>
 <script type="text/javascript">
-function file_deploy(fileName, choosePlatform) {
-    if (choosePlatform == 1) {
+function file_deploy(fileName, chooseType) {
+    if (chooseType == 2) { // install new language
+        bootbox.dialog({
+            message: '<div class="installPopupArea">{$smarty.const.TEXT_NEW_LANGUAGE_INTRO|escape:javascript}</div>',
+            title: "{$smarty.const.TEXT_NEW_LANGUAGE|escape:javascript}",
+            buttons: {
+                done:{
+                    label: "{$smarty.const.TEXT_BTN_OK|escape:javascript}",
+                    className: "btn-cancel",
+                    callback: function() {
+                        $.ajax({
+                            url:'install/deploy-file',
+                            type: 'POST',
+                            cache: false,
+                            data: {
+                                name: fileName,
+                            },
+                            success:function(data) {
+                                alertMessage('<div class="popup-content">'+data.text+'</div>');
+                                if ( data.status=='ok' ) {
+                                    $('#tblFiles').trigger('reload');
+                                }
+                            }
+                        });
+                    }
+                }
+            }
+        });
+        return false;
+    }
+    if (chooseType == 3) { // update language settings
+        bootbox.dialog({
+            message: '<div class="installPopupArea">{$smarty.const.TEXT_UPDATE_LANGUAGE_SETTINGS|escape:javascript}: {Html::dropDownList('locale','1',['1' => 'Yes', '0' => 'No'],['class'=>'form-control'])|escape:javascript}</div>',
+            title: "{$smarty.const.TEXT_UPDATE_LANGUAGE|escape:javascript}",
+            buttons: {
+                done:{
+                    label: "{$smarty.const.TEXT_BTN_OK|escape:javascript}",
+                    className: "btn-cancel",
+                    callback: function() {
+                        var locale = $('select[name="locale"]').val();
+                        $.ajax({
+                            url:'install/deploy-file',
+                            type: 'POST',
+                            cache: false,
+                            data: {
+                                name: fileName,
+                                locale: locale
+                            },
+                            success:function(data) {
+                                alertMessage('<div class="popup-content">'+data.text+'</div>');
+                                if ( data.status=='ok' ) {
+                                    $('#tblFiles').trigger('reload');
+                                }
+                            }
+                        });
+                    }
+                }
+            }
+        });
+        return false;
+    }
+    if (chooseType == 1) { // platform
         bootbox.dialog({
             message: '<div class="installPopupArea">{$smarty.const.BOX_PLATFORMS}: {Html::dropDownList('platform',\common\classes\platform::defaultId(),$platforms,['class'=>'form-control'])|escape:javascript}</div>',
             title: "Choose platform",

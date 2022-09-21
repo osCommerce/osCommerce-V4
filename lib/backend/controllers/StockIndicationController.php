@@ -214,10 +214,7 @@ class StockIndicationController extends Sceleton  {
                 $odata['text'][ $_text['language_id'] ] = $_text;
             }
         }
-        $odata['linked_stock_terms'] = \yii\helpers\ArrayHelper::index(
-            \common\models\ProductsStockStatusesCrossLink::find()->where(['stock_indication_id'=>$odata['stock_indication_id']])->asArray()->all(),
-            'stock_delivery_terms_id'
-        );
+        $odata['linked_stock_terms'] = empty($odata['stock_indication_id']) ? null : \common\models\ProductsStockStatusesCrossLink::find()->where(['stock_indication_id'=>$odata['stock_indication_id']])->asArray()->indexBy('stock_delivery_terms_id')->all();
         $oInfo = new \objectInfo($odata, false);
 
         $stock_indication_text_inputs = [];
@@ -225,13 +222,13 @@ class StockIndicationController extends Sceleton  {
         for ($i=0, $n=sizeof($languages); $i<$n; $i++) {
             $stock_indication_text_inputs[$languages[$i]['id']] =  \common\helpers\Html::textInput(
                     'stock_indication_text[' . $languages[$i]['id'] . ']',
-                    $oInfo->text[$languages[$i]['id']]['stock_indication_text'],
+                    $oInfo->text[$languages[$i]['id']]['stock_indication_text'] ?? null,
                     ['class'=>'form-control']
             );
         }
 
         $gets = array_filter(\Yii::$app->request->getQueryParams());
-        $gets['stock_indication_id'] = $oInfo->stock_indication_id;
+        $gets['stock_indication_id'] = $oInfo->stock_indication_id ?? null;
 
         return $this->render('edit', [
             'actionUrl' => Yii::$app->urlManager->createUrl(['stock-indication/save'] + $gets),

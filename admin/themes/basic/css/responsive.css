@@ -60,9 +60,15 @@ html, body{min-width: 960px;}
     .bundl-box .bu-num, .bundl-box .bu-price, .bundl-box .bu-disc{width: 19%;}
     .bu-box-set{text-align: right; padding: 10px 10px 10px 47%;}
 	.row.dashboard-top .widget-content {padding: 13px 10px 14px;}
-	.context-categories .top-buttons .btn {font-size:0px;}
-	.context-categories .top-buttons .btn i{margin-right:0px;}
-	.context-categories .top-buttons .btn i:before {width:28px; height:28px; background-size:28px;}
+	.context-categories .top-buttons .btn.create_bundle, .context-categories .top-buttons .btn.create_product, 
+	.context-categories .top-buttons .btn.create_category, .context-categories .top-buttons .btn.create_brand, 
+	.context-categories .top-buttons .btn.remove_product  {font-size:0px;}
+	.context-categories .top-buttons .btn.create_bundle i, .context-categories .top-buttons .btn.create_product i, 
+	.context-categories .top-buttons .btn.create_category i, .context-categories .top-buttons .btn.create_brand i, 
+	.context-categories .top-buttons .btn.remove_product i {margin-right:0px;}
+	.context-categories .top-buttons .btn.create_bundle i:before, .context-categories .top-buttons .btn.create_product i:before, 
+	.context-categories .top-buttons .btn.create_category i:before, .context-categories .top-buttons .btn.create_brand i:before, 
+	.context-categories .top-buttons .btn.remove_product i:before {width:28px; height:28px; background-size:28px;}
 }
 
 @media(max-width: 1660px){
@@ -113,15 +119,8 @@ html, body{min-width: 960px;}
     #tab_1_3 .edp-pc-box .cbox-right{width: 57%;}
     .assig-attr-sub-table td.ast-price.ast-price-w{width: 480px;}
 		.top_bead h1{font-size:20px;}
-		.process-order-box{margin: 0 -10px 15px;}
-		.process-order-box > div{margin: 0 10px; width: calc(20% - 20px); font-size: 13px;}
-                .pr-add-det-wrapp2 .process-order-box > div {width: calc(25% - 20px);}
-		.cr-ord-cust, .process-order-box .pr-add-det-box.pr-add-det-box01 .cr-ord-cust{padding: 0 0 0 50px;}
 		.cr-ord-cust:before{font-size: 24px; width: 40px; line-height: 40px}
-                .process-order-box .cr-ord-cust-email:before{margin: 2px 0 0 25px;}
                 .tracking-qr-code img{max-width: 75px;}
-                .tracking-first .tracking-qr-code{right: -16px; top: -35px;}
-    .process-order-box .cr-ord-cust > div.tracking_number{font-size: 13px;}
 	.table-orders .ord-total:before {float:none;}
 	.ord-total-info {top:-43px;}
 	.ord-box-img {top:30px;}
@@ -239,7 +238,6 @@ html, body{min-width: 960px;}
     .c-list-date-last span{font-size: 12px;}
     .widget-header .btn-link-create{font-size: 13px;}
     .tracking-qr-code img{max-width: 60px;}
-    .tracking-first .tracking-qr-code{right: -20px;}
     .process-order-box .cr-ord-cust > div.tracking_number{font-size: 12px;}
 	.widget.box.box-wrapp-blue .widget-content .filter-box table td.td_small .form-control{width:250px;}
 	.dataTables_footer .col-md-6{width:100%;}

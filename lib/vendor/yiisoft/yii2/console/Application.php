@@ -1,8 +1,8 @@
 <?php
 /**
- * @link http://www.yiiframework.com/
+ * @link https://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
- * @license http://www.yiiframework.com/license/
+ * @license https://www.yiiframework.com/license/
  */
 
 namespace yii\console;
@@ -170,7 +170,7 @@ class Application extends \yii\base\Application
      *
      * @param string $route the route that specifies the action.
      * @param array $params the parameters to be passed to the action
-     * @return int|Response the result of the action. This can be either an exit code or Response object.
+     * @return int|Response|null the result of the action. This can be either an exit code or Response object.
      * Exit code 0 means normal, and other values mean abnormal. Exit code of `null` is treated as `0` as well.
      * @throws Exception if the route is invalid
      */

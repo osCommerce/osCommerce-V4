@@ -380,53 +380,9 @@ class SaveAttributesAndInventory
                     $all_inventory_ids_array[] = $inventory_id;
                     $all_inventory_uprids_array[] = $db_uprid;
 
-                    //--- Stock control Start
-                    if (Yii::$app->request->post('inventory_control_present', 0)) {
-                        $stock_control = (int)Yii::$app->request->post('inventory_control_' . $post_uprid);
-                        if (((int)Yii::$app->request->post('manual_stock_unlimited', 0) > 0) OR ((int)Yii::$app->request->post('is_bundle', 0) > 0)) {
-                            $stock_control = 0;
-                        }
-                        tep_db_query("update " . TABLE_INVENTORY . " set stock_control = '" . $stock_control . "' where products_id = '" . tep_db_input($db_uprid) . "'");
-                        switch ($stock_control) {
-                            case 0:
-                                break;
-                            case 1:
-                                $platformStock = \common\models\Platforms::find()->where(['status' => 1])->orderBy("sort_order")->all();
-                                foreach ($platformStock as $platform) {
-                                    $current_quantity = (int)Yii::$app->request->post('platform_to_qty_' . $post_uprid . '_' . (int)$platform->platform_id);
-                                    $object = \common\models\PlatformInventoryControl::findOne(['products_id' => tep_db_input($db_uprid), 'platform_id' => $platform->platform_id]);
-                                    if (is_object($object)) {
-                                        if ($current_quantity != $object->current_quantity) {
-                                            $object->current_quantity = $current_quantity;
-                                            $object->manual_quantity = $current_quantity;
-                                            $object->save();
-                                        }
-                                    } else {
-                                        $object = new \common\models\PlatformInventoryControl();
-                                        $object->products_id = tep_db_input($db_uprid);
-                                        $object->platform_id = (int)$platform->platform_id;
-                                        $object->current_quantity = $current_quantity;
-                                        $object->manual_quantity = $current_quantity;
-                                        $object->save();
-                                    }
-                                }
-                                break;
-                            case 2:
-                                \common\models\WarehouseInventoryControl::deleteAll(['products_id' => tep_db_input($db_uprid)]);
-                                $platformStock = \common\models\Platforms::find()->where(['status' => 1])->orderBy("sort_order")->all();
-                                foreach ($platformStock as $platform) {
-                                    $object = new \common\models\WarehouseInventoryControl();
-                                    $object->products_id = tep_db_input($db_uprid);
-                                    $object->platform_id = (int)$platform->platform_id;
-                                    $object->warehouse_id = (int)Yii::$app->request->post('platform_to_warehouse_' . $post_uprid . '_' . (int)$platform->platform_id);
-                                    $object->save();
-                                }
-                                break;
-                            default:
-                                break;
-                        }
+                    if ($extScl = \common\helpers\Acl::checkExtensionAllowed('StockControl', 'allowed')) {
+                        $extScl::saveAttributesAndInventorySave($db_uprid);
                     }
-                    //--- Stock control End
                 }
                 \common\models\Inventory::deleteAll(['AND', ['prid' => (int)$products_id], ['NOT IN', 'inventory_id', $all_inventory_ids_array]]);
                 \common\models\InventoryPrices::deleteAll(['AND', ['prid' => (int)$products_id], ['NOT IN', 'inventory_id', $all_inventory_ids_array]]);
@@ -473,13 +429,15 @@ class SaveAttributesAndInventory
         }
 
         $switch_off_stock_ids = \common\classes\StockIndication::productDisableByStockIds();
-        tep_db_query(
-            "update " . TABLE_PRODUCTS . " " .
-            "set products_status = 0 " .
-            "where products_id = '" . (int) $products_id . "' " .
-            " AND products_quantity<=0 " .
-            " AND stock_indication_id IN ('" . implode("','", $switch_off_stock_ids) . "')"
-        );
+        if (!empty($switch_off_stock_ids)) {
+            tep_db_query(
+                "update " . TABLE_PRODUCTS . " " .
+                "set products_status = 0 " .
+                "where products_id = '" . (int) $products_id . "' " .
+                " AND products_quantity<=0 " .
+                " AND stock_indication_id IN ('" . implode("','", $switch_off_stock_ids) . "')"
+            );
+        }
 
         $settings = \common\helpers\Product::getSettings($products_id);
         if ($settings){

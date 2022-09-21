@@ -1,8 +1,8 @@
 <?php
 /**
- * @link http://www.yiiframework.com/
+ * @link https://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
- * @license http://www.yiiframework.com/license/
+ * @license https://www.yiiframework.com/license/
  */
 
 namespace yii\web;
@@ -89,8 +89,8 @@ abstract class MultiFieldSession extends Session
 
     /**
      * Composes storage field set for session writing.
-     * @param string $id Optional session id
-     * @param string $data Optional session data
+     * @param string|null $id Optional session id
+     * @param string|null $data Optional session data
      * @return array storage fields
      */
     protected function composeFields($id = null, $data = null)

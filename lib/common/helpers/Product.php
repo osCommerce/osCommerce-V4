@@ -548,24 +548,8 @@ class Product {
             $stock_query = tep_db_query("select products_quantity, suppliers_stock_quantity, stock_control from " . TABLE_INVENTORY . " where products_id = '" . tep_db_input($products_id) . "'");
             if (tep_db_num_rows($stock_query)) {
                 $stock_values = tep_db_fetch_array($stock_query);
-                if ($stock_values['stock_control'] == 1) {
-                    $platformInventoryControl = \common\models\PlatformInventoryControl::findOne(['products_id' => tep_db_input($products_id), 'platform_id' => \common\classes\platform::currentId()]);
-                    if (is_object($platformInventoryControl)) {
-                        $stock_values['products_quantity'] = $platformInventoryControl->current_quantity;
-                    }
-                }
-                if ($stock_values['stock_control'] == 2) {
-
-                    $warehouseInventoryControl = \common\models\WarehouseInventoryControl::findOne(['products_id' => tep_db_input($products_id), 'platform_id' => \common\classes\platform::currentId()]);
-                    if (is_object($warehouseInventoryControl)) {
-                        $warehouse_id = $warehouseInventoryControl->warehouse_id;
-                        $suppliers_id = 0;
-                        $warehouses_stock_query = tep_db_query("select w.warehouse_id, w.warehouse_name, sum(wp.products_quantity) as products_quantity, sum(wp.allocated_stock_quantity) as allocated_stock_quantity, sum(wp.temporary_stock_quantity) as temporary_stock_quantity, sum(wp.warehouse_stock_quantity) as warehouse_stock_quantity, sum(wp.ordered_stock_quantity) as ordered_stock_quantity from  " . TABLE_WAREHOUSES . " w left join " . TABLE_WAREHOUSES_PRODUCTS . " wp on wp.warehouse_id = w.warehouse_id " . ($suppliers_id > 0 ? " and wp.suppliers_id = '" . (int) $suppliers_id . "'" : '') . " and products_id = '" . (int) $products_id . "' and wp.prid = '" . (int) $products_id . "' where w.status = '1' and w.warehouse_id = '" . $warehouse_id . "'");
-                        if (tep_db_num_rows($warehouses_stock_query) > 0) {
-                            $warehouses_stock = tep_db_fetch_array($warehouses_stock_query);
-                            $stock_values['products_quantity'] = $warehouses_stock['products_quantity'];
-                        }
-                    }
+                if ($extScl = \common\helpers\Acl::checkExtensionAllowed('StockControl', 'allowed')) {
+                    $extScl::updateGetProductStockInventory($products_id, $stock_values);
                 }
                 if (($ext = \common\helpers\Acl::checkExtensionAllowed('ReportFreezeStock')) && $ext::isFreezed()) {
                     $freezeInventory = \common\extensions\ReportFreezeStock\models\FreezeInventory::find()->where(['products_id' => $products_id])->asArray()->one();
@@ -577,24 +561,8 @@ class Product {
                 $products_id = \common\helpers\Inventory::get_prid($products_id);
                 $stock_query = tep_db_query("select products_quantity, suppliers_stock_quantity, stock_control from " . TABLE_PRODUCTS . " where products_id = '" . (int) $products_id . "'");
                 $stock_values = tep_db_fetch_array($stock_query);
-                if ($stock_values['stock_control'] == 1) {
-                    $platformStockControl = \common\models\PlatformStockControl::findOne(['products_id' => (int)$products_id, 'platform_id' => \common\classes\platform::currentId()]);
-                    if (is_object($platformStockControl)) {
-                        $stock_values['products_quantity'] = $platformStockControl->current_quantity;
-                    }
-                }
-                if ($stock_values['stock_control'] == 2) {
-
-                    $warehouseStockControl = \common\models\WarehouseStockControl::findOne(['products_id' => $products_id, 'platform_id' => \common\classes\platform::currentId()]);
-                    if (is_object($warehouseStockControl)) {
-                        $warehouse_id = $warehouseStockControl->warehouse_id;
-                        $suppliers_id = 0;
-                        $warehouses_stock_query = tep_db_query("select w.warehouse_id, w.warehouse_name, sum(wp.products_quantity) as products_quantity, sum(wp.allocated_stock_quantity) as allocated_stock_quantity, sum(wp.temporary_stock_quantity) as temporary_stock_quantity, sum(wp.warehouse_stock_quantity) as warehouse_stock_quantity, sum(wp.ordered_stock_quantity) as ordered_stock_quantity from  " . TABLE_WAREHOUSES . " w left join " . TABLE_WAREHOUSES_PRODUCTS . " wp on wp.warehouse_id = w.warehouse_id " . ($suppliers_id > 0 ? " and wp.suppliers_id = '" . (int) $suppliers_id . "'" : '') . " and products_id = '" . (int) $products_id . "' and wp.prid = '" . (int) $products_id . "' where w.status = '1' and w.warehouse_id = '" . $warehouse_id . "'");
-                        if (tep_db_num_rows($warehouses_stock_query) > 0) {
-                            $warehouses_stock = tep_db_fetch_array($warehouses_stock_query);
-                            $stock_values['products_quantity'] = $warehouses_stock['products_quantity'];
-                        }
-                    }
+                if ($extScl = \common\helpers\Acl::checkExtensionAllowed('StockControl', 'allowed')) {
+                    $extScl::updateGetProductStockProduct($products_id, $stock_values);
                 }
                 if (($ext = \common\helpers\Acl::checkExtensionAllowed('ReportFreezeStock')) && $ext::isFreezed()) {
                     $freezeProducts = \common\extensions\ReportFreezeStock\models\FreezeProducts::find()->where(['products_id' => (int)$products_id])->asArray()->one();
@@ -606,23 +574,8 @@ class Product {
         } else {
             $products_id = \common\helpers\Inventory::get_prid($products_id);
             $stock_values = static::getProductColumns((int) $products_id, ['products_quantity', 'suppliers_stock_quantity', 'stock_control']);
-            if ($stock_values['stock_control'] == 1) {
-                $platformStockControl = \common\models\PlatformStockControl::findOne(['products_id' => (int)$products_id, 'platform_id' => \common\classes\platform::currentId()]);
-                if (is_object($platformStockControl)) {
-                    $stock_values['products_quantity'] = $platformStockControl->current_quantity;
-                }
-            }
-            if ($stock_values['stock_control'] == 2) {
-                $warehouseStockControl = \common\models\WarehouseStockControl::findOne(['products_id' => $products_id, 'platform_id' => \common\classes\platform::currentId()]);
-                if (is_object($warehouseStockControl)) {
-                    $warehouse_id = $warehouseStockControl->warehouse_id;
-                    $suppliers_id = 0;
-                    $warehouses_stock_query = tep_db_query("select w.warehouse_id, w.warehouse_name, sum(wp.products_quantity) as products_quantity, sum(wp.allocated_stock_quantity) as allocated_stock_quantity, sum(wp.temporary_stock_quantity) as temporary_stock_quantity, sum(wp.warehouse_stock_quantity) as warehouse_stock_quantity, sum(wp.ordered_stock_quantity) as ordered_stock_quantity from  " . TABLE_WAREHOUSES . " w left join " . TABLE_WAREHOUSES_PRODUCTS . " wp on wp.warehouse_id = w.warehouse_id " . ($suppliers_id > 0 ? " and wp.suppliers_id = '" . (int) $suppliers_id . "'" : '') . " and products_id = '" . (int) $products_id . "' and wp.prid = '" . (int) $products_id . "' where w.status = '1' and w.warehouse_id = '" . $warehouse_id . "'");
-                    if (tep_db_num_rows($warehouses_stock_query) > 0) {
-                        $warehouses_stock = tep_db_fetch_array($warehouses_stock_query);
-                        $stock_values['products_quantity'] = $warehouses_stock['products_quantity'];
-                    }
-                }
+            if ($extScl = \common\helpers\Acl::checkExtensionAllowed('StockControl', 'allowed')) {
+                $extScl::updateGetProductStockProduct($products_id, $stock_values);
             }
             if (($ext = \common\helpers\Acl::checkExtensionAllowed('ReportFreezeStock')) && $ext::isFreezed()) {
                 $freezeProducts = \common\extensions\ReportFreezeStock\models\FreezeProducts::find()->where(['products_id' => (int)$products_id])->asArray()->one();
@@ -654,8 +607,8 @@ class Product {
             }
         }
         $cat_r = tep_db_query(
-               "SELECT c.categories_id, c.stock_limit 
-                FROM categories c 
+               "SELECT c.categories_id, c.stock_limit
+                FROM categories c
                 INNER JOIN products_to_categories p2c ON (c.categories_id=p2c.categories_id)
                 INNER JOIN platforms_categories pc ON (pc.categories_id=p2c.categories_id and pc.platform_id='" . \common\classes\platform::currentId() . "') ".
                 "WHERE p2c.products_id='".$products_id."' ");
@@ -1310,7 +1263,7 @@ class Product {
  * @param float $default price
  * @return float product price in selected currency for specified group
  */
-    public static function get_products_price($products_id, $qty = 1, $price = 0, $curr_id = 0, $group_id = 0) { 
+    public static function get_products_price($products_id, $qty = 1, $price = 0, $curr_id = 0, $group_id = 0) {
         return \common\models\Product\Price::getInstance($products_id)->getProductPrice([
             'qty' => $qty,
             'curr_id' => $curr_id,
@@ -1851,6 +1804,8 @@ class Product {
         $locationId = (int)$locationId;
         if ($productQuantity != 0 AND $warehouseId > 0 AND $supplierId > 0) {
             $parameterArray = (is_array($parameterArray) ? $parameterArray : []);
+            $layers_id = (int)(isset($parameterArray['layers_id']) ? $parameterArray['layers_id'] : 0);
+            $batch_id = (int)(isset($parameterArray['batch_id']) ? $parameterArray['batch_id'] : 0);
             $uProductId = \common\helpers\Inventory::normalize_id_excl_virtual($uProductId);
             $productRecord = self::getRecord($uProductId);
             if (($ext = \common\helpers\Acl::checkExtensionAllowed('ReportFreezeStock')) && $ext::isFreezeProductRecord($productRecord)) {
@@ -1901,6 +1856,8 @@ class Product {
                     $stockHistoryRecord->warehouse_id = $warehouseId;
                     $stockHistoryRecord->suppliers_id = $supplierId;
                     $stockHistoryRecord->location_id = $locationId;
+                    $stockHistoryRecord->layers_id = $layers_id;
+                    $stockHistoryRecord->batch_id = $batch_id;
                     $stockHistoryRecord->products_id = $uProductId;
                     $stockHistoryRecord->prid = (int)$uProductId;
                     $stockHistoryRecord->products_model = (($inventoryRecord->products_model != '') ? $inventoryRecord->products_model : $productRecord->products_model);
@@ -1957,6 +1914,8 @@ class Product {
                     $stockHistoryRecord->warehouse_id = $warehouseId;
                     $stockHistoryRecord->suppliers_id = $supplierId;
                     $stockHistoryRecord->location_id = $locationId;
+                    $stockHistoryRecord->layers_id = $layers_id;
+                    $stockHistoryRecord->batch_id = $batch_id;
                     $stockHistoryRecord->products_id = $uProductId;
                     $stockHistoryRecord->prid = (int)$uProductId;
                     $stockHistoryRecord->products_model = (($inventoryRecord->products_model != '') ? $inventoryRecord->products_model : $productRecord->products_model);
@@ -2030,6 +1989,24 @@ class Product {
     }
 
     /**
+     * Get product's stock deficit quantity
+     * (Stock deficit = Real quantity - Received [Real quantity -> 0])
+     * @param mixed $uProductId Product Id or Product Inventory Id
+     * @return int product's stock deficit quantity
+     */
+    public static function getStockDeficit($uProductId = 0)
+    {
+        $uProductId = \common\helpers\Inventory::normalize_id_excl_virtual($uProductId);
+        return (int)\common\models\OrdersProducts::find()
+            ->where(['uprid' => $uProductId])
+            ->andWhere(['>', '(products_quantity - (qty_cnld + qty_rcvd))', 0])
+            ->andWhere(['NOT IN', 'orders_products_status', [
+                \common\helpers\OrderProduct::OPS_QUOTED,
+            ]])
+            ->sum('products_quantity - (qty_cnld + qty_rcvd)');
+    }
+
+    /**
      * Get Product quantity
      * @param string $uProductId Product Id or Product Inventory Id
      * @return integer Product quantity
@@ -2084,9 +2061,11 @@ class Product {
      * @param mixed $warehouseId Warehouse id. Calculate for specific Warehouse if passed
      * @param mixed $supplierId Supplier id. Calculate for specific Supplier if passed
      * @param mixed $locationId Location id. Calculate for specific Location if passed
+     * @param mixed $layersId Layers id. Calculate for specific Layer if passed
+     * @param mixed $batchId Batch id. Calculate for specific Batch if passed
      * @return integer available Product quantity
      */
-    public static function getAvailable($uProductId = 0, $platformId = false, $warehouseId = false, $supplierId = false, $locationId = false)
+    public static function getAvailable($uProductId = 0, $platformId = false, $warehouseId = false, $supplierId = false, $locationId = false, $layersId = false, $batchId = false)
     {
         $return = 0;
         $uProductId = \common\helpers\Inventory::normalize_id_excl_virtual($uProductId);
@@ -2108,32 +2087,8 @@ class Product {
                     $platformId = \common\classes\platform::currentId();
                 }
                 $platformId = (int)$platformId;
-                if (\common\helpers\Inventory::isInventory($uProductId) != true) {
-                    $productRecord = self::getRecord($uProductId);
-                    if ($productRecord instanceof \common\models\Products AND $productRecord->stock_control == 1) {
-                        $isStockControl = 0;
-                        $platformStockControl = \common\models\PlatformStockControl::find()->andWhere(['products_id' => $uProductId, 'platform_id' => $platformId])
-                            ->cache((defined('ALLOW_ANY_QUERY_CACHE') && ALLOW_ANY_QUERY_CACHE=='True')?self::PRODUCT_RECORD_CACHE : -1)
-                            ->one();
-                        if ($platformStockControl instanceof \common\models\PlatformStockControl) {
-                            $isStockControl = $platformStockControl->current_quantity;
-                        }
-                        unset($platformStockControl);
-                    }
-                    unset($productRecord);
-                } else {
-                    $inventoryRecord = \common\helpers\Inventory::getRecord($uProductId);
-                    if ($inventoryRecord instanceof \common\models\Inventory AND $inventoryRecord->stock_control == 1) {
-                        $isStockControl = 0;
-                        $platformInventoryControl = \common\models\PlatformInventoryControl::find()->andWhere(['products_id' => $uProductId, 'platform_id' => $platformId])
-                            ->cache((defined('ALLOW_ANY_QUERY_CACHE') && ALLOW_ANY_QUERY_CACHE=='True')?self::PRODUCT_RECORD_CACHE : -1)
-                            ->one();
-                        if ($platformInventoryControl instanceof \common\models\PlatformInventoryControl) {
-                            $isStockControl = $platformInventoryControl->current_quantity;
-                        }
-                        unset($platformInventoryControl);
-                    }
-                    unset($inventoryRecord);
+                if ($extScl = \common\helpers\Acl::checkExtensionAllowed('StockControl', 'allowed')) {
+                    $isStockControl = $extScl::updateGetAvailable($uProductId, $platformId);
                 }
             }
             $platformArray[] = $platformId;
@@ -2147,8 +2102,10 @@ class Product {
             $warehouseIdArray = self::getWarehouseIdPriorityArray($uProductId, 1, $platformId);
             $supplierIdArray = self::getSupplierIdPriorityArray($uProductId);
             $locationIdArray = self::getLocationIdPriorityArray($uProductId);
+            $layersIdArray = self::getLayersIdPriorityArray($uProductId);
+            $batchIdArray = self::getBatchIdPriorityArray($uProductId);
             foreach (\common\helpers\Warehouses::getProductArray($uProductId, $platformId) as $warehouseProductRecord) {
-                if (isset($warehouseProductSkipArray[$warehouseProductRecord['warehouse_id']][$warehouseProductRecord['suppliers_id']][$warehouseProductRecord['location_id']])) {
+                if (isset($warehouseProductSkipArray[$warehouseProductRecord['warehouse_id']][$warehouseProductRecord['suppliers_id']][$warehouseProductRecord['location_id']][$warehouseProductRecord['layers_id']][$warehouseProductRecord['batch_id']])) {
                     continue;
                 }
                 if ($warehouseId !== false AND $warehouseId != $warehouseProductRecord['warehouse_id']) {
@@ -2160,6 +2117,12 @@ class Product {
                 if ($locationId !== false AND $locationId != $warehouseProductRecord['location_id']) {
                     continue;
                 }
+                if ($layersId !== false AND $layersId != $warehouseProductRecord['layers_id']) {
+                    continue;
+                }
+                if ($batchId !== false AND $batchId != $warehouseProductRecord['batch_id']) {
+                    continue;
+                }
                 if (!in_array($warehouseProductRecord['warehouse_id'], $warehouseIdArray)) {
                     continue;
                 }
@@ -2169,12 +2132,18 @@ class Product {
                 if (!in_array($warehouseProductRecord['location_id'], $locationIdArray)) {
                     continue;
                 }
-                $warehouseProductSkipArray[$warehouseProductRecord['warehouse_id']][$warehouseProductRecord['suppliers_id']][$warehouseProductRecord['location_id']] = $warehouseProductRecord;
+                if (!in_array($warehouseProductRecord['layers_id'], $layersIdArray)) {
+                    continue;
+                }
+                if (!in_array($warehouseProductRecord['batch_id'], $batchIdArray)) {
+                    continue;
+                }
+                $warehouseProductSkipArray[$warehouseProductRecord['warehouse_id']][$warehouseProductRecord['suppliers_id']][$warehouseProductRecord['location_id']][$warehouseProductRecord['layers_id']][$warehouseProductRecord['batch_id']] = $warehouseProductRecord;
                 $return += $warehouseProductRecord['warehouse_stock_quantity'];
             }
             unset($warehouseProductRecord);
             foreach ($productAllocatedArray as $productAllocatedRecord) {
-                if (isset($productAllocatedSkipArray[$productAllocatedRecord['warehouse_id']][$productAllocatedRecord['suppliers_id']][$productAllocatedRecord['location_id']][$productAllocatedRecord['orders_products_id']])) {
+                if (isset($productAllocatedSkipArray[$productAllocatedRecord['warehouse_id']][$productAllocatedRecord['suppliers_id']][$productAllocatedRecord['location_id']][$productAllocatedRecord['layers_id']][$productAllocatedRecord['batch_id']][$productAllocatedRecord['orders_products_id']])) {
                     continue;
                 }
                 if ($platformId != $productAllocatedRecord['platform_id']) {
@@ -2189,6 +2158,12 @@ class Product {
                 if ($locationId !== false AND $locationId != $productAllocatedRecord['location_id']) {
                     continue;
                 }
+                if ($layersId !== false AND $layersId != $productAllocatedRecord['layers_id']) {
+                    continue;
+                }
+                if ($batchId !== false AND $batchId != $productAllocatedRecord['batch_id']) {
+                    continue;
+                }
                 if (!in_array($productAllocatedRecord['warehouse_id'], $warehouseIdArray)) {
                     continue;
                 }
@@ -2198,12 +2173,18 @@ class Product {
                 if (!in_array($productAllocatedRecord['location_id'], $locationIdArray)) {
                     continue;
                 }
-                $productAllocatedSkipArray[$productAllocatedRecord['warehouse_id']][$productAllocatedRecord['suppliers_id']][$productAllocatedRecord['location_id']][$productAllocatedRecord['orders_products_id']] = $productAllocatedRecord;
+                if (!in_array($productAllocatedRecord['layers_id'], $layersIdArray)) {
+                    continue;
+                }
+                if (!in_array($productAllocatedRecord['batch_id'], $batchIdArray)) {
+                    continue;
+                }
+                $productAllocatedSkipArray[$productAllocatedRecord['warehouse_id']][$productAllocatedRecord['suppliers_id']][$productAllocatedRecord['location_id']][$productAllocatedRecord['layers_id']][$productAllocatedRecord['batch_id']][$productAllocatedRecord['orders_products_id']] = $productAllocatedRecord;
                 $return += ($productAllocatedRecord['allocate_dispatched'] - $productAllocatedRecord['allocate_received']);
             }
             unset($productAllocatedRecord);
             foreach ($productAllocatedTemporaryArray as $productAllocatedTemporaryRecord) {
-                if (isset($productAllocatedTemporarySkipArray[$productAllocatedTemporaryRecord['warehouse_id']][$productAllocatedTemporaryRecord['suppliers_id']][$productAllocatedTemporaryRecord['location_id']][$productAllocatedTemporaryRecord['temporary_stock_id']])) {
+                if (isset($productAllocatedTemporarySkipArray[$productAllocatedTemporaryRecord['warehouse_id']][$productAllocatedTemporaryRecord['suppliers_id']][$productAllocatedTemporaryRecord['location_id']][$productAllocatedTemporaryRecord['layers_id']][$productAllocatedTemporaryRecord['batch_id']][$productAllocatedTemporaryRecord['temporary_stock_id']])) {
                     continue;
                 }
                 if ($warehouseId !== false AND $warehouseId != $productAllocatedTemporaryRecord['warehouse_id']) {
@@ -2215,6 +2196,12 @@ class Product {
                 if ($locationId !== false AND $locationId != $productAllocatedTemporaryRecord['location_id']) {
                     continue;
                 }
+                if ($layersId !== false AND $layersId != $productAllocatedTemporaryRecord['layers_id']) {
+                    continue;
+                }
+                if ($batchId !== false AND $batchId != $productAllocatedTemporaryRecord['batch_id']) {
+                    continue;
+                }
                 if (!in_array($productAllocatedTemporaryRecord['warehouse_id'], $warehouseIdArray)) {
                     continue;
                 }
@@ -2224,13 +2211,21 @@ class Product {
                 if (!in_array($productAllocatedTemporaryRecord['location_id'], $locationIdArray)) {
                     continue;
                 }
-                $productAllocatedTemporarySkipArray[$productAllocatedTemporaryRecord['warehouse_id']][$productAllocatedTemporaryRecord['suppliers_id']][$productAllocatedTemporaryRecord['location_id']][$productAllocatedTemporaryRecord['temporary_stock_id']] = $productAllocatedTemporaryRecord;
+                if (!in_array($productAllocatedTemporaryRecord['layers_id'], $layersIdArray)) {
+                    continue;
+                }
+                if (!in_array($productAllocatedTemporaryRecord['batch_id'], $batchIdArray)) {
+                    continue;
+                }
+                $productAllocatedTemporarySkipArray[$productAllocatedTemporaryRecord['warehouse_id']][$productAllocatedTemporaryRecord['suppliers_id']][$productAllocatedTemporaryRecord['location_id']][$productAllocatedTemporaryRecord['layers_id']][$productAllocatedTemporaryRecord['batch_id']][$productAllocatedTemporaryRecord['temporary_stock_id']] = $productAllocatedTemporaryRecord;
                 $return -= $productAllocatedTemporaryRecord['temporary_stock_quantity'];
             }
             unset($productAllocatedTemporaryRecord);
             unset($warehouseIdArray);
             unset($supplierIdArray);
             unset($locationIdArray);
+            unset($layersIdArray);
+            unset($batchIdArray);
         }
         unset($productAllocatedTemporarySkipArray);
         unset($productAllocatedTemporaryArray);
@@ -2241,6 +2236,8 @@ class Product {
         unset($warehouseId);
         unset($supplierId);
         unset($locationId);
+        unset($layersId);
+        unset($batchId);
         unset($platformId);
         unset($uProductId);
         if ($isStockControl !== false) {
@@ -2393,7 +2390,7 @@ class Product {
     public static function getStockOrdered($uProductId = 0, $isStrict = false)
     {
         if (\common\helpers\Acl::checkExtensionAllowed('PurchaseOrders')) {
-            return \common\extensions\PurchaseOrders\helpers\PurchaseOrder::getStockOrdered($uProductId0, $isStrict);
+            return \common\extensions\PurchaseOrders\helpers\PurchaseOrder::getStockOrdered($uProductId, $isStrict);
         } else {
             return 0;
         }
@@ -2441,28 +2438,13 @@ class Product {
             $platformId = (int)$platformId;
         }
         $isStockControl = false;
-        if (\common\helpers\Inventory::isInventory($uProductId) != true) {
-            $productRecord = self::getRecord($uProductId);
-            if ($productRecord instanceof \common\models\Products AND $productRecord->stock_control == 2) {
+        if ($extScl = \common\helpers\Acl::checkExtensionAllowed('StockControl', 'allowed')) {
+            $warehouseArray = $extScl::updateGetAvailable($uProductId, $platformId);
+            if (is_array($warehouseArray)) {
+                $return = $warehouseArray;
                 $isStockControl = true;
-                $warehouseStockControlRecord = \common\models\WarehouseStockControl::findOne(['products_id' => $productRecord->products_id, 'platform_id' => $platformId]);
-                if ($warehouseStockControlRecord instanceof \common\models\WarehouseStockControl) {
-                    $return[] = (int)$warehouseStockControlRecord->warehouse_id;
-                }
-                unset($warehouseStockControlRecord);
             }
-            unset($productRecord);
-        } else {
-            $inventoryRecord = \common\helpers\Inventory::getRecord($uProductId);
-            if ($inventoryRecord instanceof \common\models\Inventory AND $inventoryRecord->stock_control == 2) {
-                $isStockControl = true;
-                $warehouseInventoryControl = \common\models\WarehouseInventoryControl::findOne(['products_id' => $inventoryRecord->products_id, 'platform_id' => $platformId]);
-                if ($warehouseInventoryControl instanceof \common\models\WarehouseInventoryControl) {
-                    $return[] = (int)$warehouseInventoryControl->warehouse_id;
-                }
-                unset($warehouseInventoryControl);
-            }
-            unset($inventoryRecord);
+            unset($warehouseArray);
         }
         if ($isStockControl == false) {
             $warehouseQuery = \common\models\Warehouses::find()->alias('w')
@@ -2572,6 +2554,64 @@ class Product {
     }
 
     /**
+     * Get Layers stock allocation priority for Product.
+     * @param string $uProductId Product Id or Product Inventory Id
+     * @return array array of Layers Id
+     */
+    public static function getLayersIdPriorityArray($uProductId = 0)
+    {
+        $return = [];
+        $uProductId = \common\helpers\Inventory::normalize_id_excl_virtual($uProductId);
+        $productRecord = self::getRecord($uProductId);
+        if ($productRecord instanceof \common\models\Products) {
+            $layersQuery = \common\models\WarehousesProducts::find()->alias('wp')
+                ->leftJoin(['wpl' => \common\models\WarehousesProductsLayers::tableName()], 'wp.layers_id = wpl.layers_id')
+                ->where(['wp.products_id' => $uProductId])
+                ->andWhere(['wp.prid' => $productRecord->products_id])
+                ->orderBy(new \yii\db\Expression('wpl.expiry_date is null asc, wpl.expiry_date asc'))
+                ->groupBy(['wp.layers_id'])
+                ->asArray(true);
+            foreach ($layersQuery->all() as $warehouseProductRecord) {
+                $return[] = (int)$warehouseProductRecord['layers_id'];
+            }
+            unset($warehouseProductRecord);
+            unset($layersQuery);
+        }
+        unset($productRecord);
+        unset($uProductId);
+        return $return;
+    }
+
+    /**
+     * Get Batch stock allocation priority for Product.
+     * @param string $uProductId Product Id or Product Inventory Id
+     * @return array array of Batch Id
+     */
+    public static function getBatchIdPriorityArray($uProductId = 0)
+    {
+        $return = [];
+        $uProductId = \common\helpers\Inventory::normalize_id_excl_virtual($uProductId);
+        $productRecord = self::getRecord($uProductId);
+        if ($productRecord instanceof \common\models\Products) {
+            $batchQuery = \common\models\WarehousesProducts::find()->alias('wp')
+                ->leftJoin(['wpb' => \common\models\WarehousesProductsBatches::tableName()], 'wp.batch_id = wpb.batch_id')
+                ->where(['wp.products_id' => $uProductId])
+                ->andWhere(['wp.prid' => $productRecord->products_id])
+                ->orderBy(new \yii\db\Expression('wpb.batch_name is null asc, wpb.batch_name asc'))
+                ->groupBy(['wp.batch_id'])
+                ->asArray(true);
+            foreach ($batchQuery->all() as $warehouseProductRecord) {
+                $return[] = (int)$warehouseProductRecord['batch_id'];
+            }
+            unset($warehouseProductRecord);
+            unset($batchQuery);
+        }
+        unset($productRecord);
+        unset($uProductId);
+        return $return;
+    }
+
+    /**
      * Get array of Product's Children Set
      * @param mixed $productRecord Product Id or Product Inventory Id or instance of Products model
      * @param boolean $asArray switching return type between array of arrays or array of instances of SetsProducts
@@ -2651,7 +2691,7 @@ class Product {
 
                 $warehouseProductArray = [];
                 foreach (\common\models\WarehousesProducts::find()->where(['prid' => $productId])->all() as $warehouseProductRecord) {
-                    $key = ((int)$warehouseProductRecord->warehouse_id . '_' . (int)$warehouseProductRecord->suppliers_id . '_' . (int)$warehouseProductRecord->location_id);
+                    $key = ((int)$warehouseProductRecord->warehouse_id . '_' . (int)$warehouseProductRecord->suppliers_id . '_' . (int)$warehouseProductRecord->location_id . '_' . (int)$warehouseProductRecord->layers_id . '_' . (int)$warehouseProductRecord->batch_id);
                     $warehouseProductRecord->products_quantity = $warehouseProductRecord->warehouse_stock_quantity;
                     $warehouseProductRecord->allocated_stock_quantity = 0;
                     $warehouseProductRecord->temporary_stock_quantity = 0;
@@ -2665,7 +2705,7 @@ class Product {
                     foreach (\common\models\OrdersProductsTemporaryStock::find()->where(['prid' => $productId])
                         ->asArray(true)->all() as $productAllocatedTemporaryRecord
                     ) {
-                        $key = ((int)$productAllocatedTemporaryRecord['warehouse_id'] . '_' . (int)$productAllocatedTemporaryRecord['suppliers_id'] . '_' . (int)$productAllocatedTemporaryRecord['location_id']);
+                        $key = ((int)$productAllocatedTemporaryRecord['warehouse_id'] . '_' . (int)$productAllocatedTemporaryRecord['suppliers_id'] . '_' . (int)$productAllocatedTemporaryRecord['location_id'] . '_' . (int)$productAllocatedTemporaryRecord['layers_id'] . '_' . (int)$productAllocatedTemporaryRecord['batch_id']);
                         $productAllocatedTemporaryArray[$key][] = $productAllocatedTemporaryRecord;
                         unset($key);
                     }
@@ -2677,7 +2717,7 @@ class Product {
                     ->andWhere('allocate_dispatched < allocate_received')
                     ->asArray(true)->all() as $productAllocatedRecord
                 ) {
-                    $key = ((int)$productAllocatedRecord['warehouse_id'] . '_' . (int)$productAllocatedRecord['suppliers_id'] . '_' . (int)$productAllocatedRecord['location_id']);
+                    $key = ((int)$productAllocatedRecord['warehouse_id'] . '_' . (int)$productAllocatedRecord['suppliers_id'] . '_' . (int)$productAllocatedRecord['location_id'] . '_' . (int)$productAllocatedRecord['layers_id'] . '_' . (int)$productAllocatedRecord['batch_id']);
                     $productAllocatedArray[$key][] = $productAllocatedRecord;
                     unset($key);
                 }
@@ -2694,6 +2734,8 @@ class Product {
                             $warehouseProductRecord->warehouse_id = $productAllocatedRecord['warehouse_id'];
                             $warehouseProductRecord->suppliers_id = $productAllocatedRecord['suppliers_id'];
                             $warehouseProductRecord->location_id = $productAllocatedRecord['location_id'];
+                            $warehouseProductRecord->layers_id = $productAllocatedRecord['layers_id'];
+                            $warehouseProductRecord->batch_id = $productAllocatedRecord['batch_id'];
                         }
                         $warehouseProductRecord->allocated_stock_quantity += ($productAllocatedRecord['allocate_received'] - $productAllocatedRecord['allocate_dispatched']);
                         $warehouseProductRecord->products_quantity = ($warehouseProductRecord->warehouse_stock_quantity - $warehouseProductRecord->allocated_stock_quantity);
@@ -2716,6 +2758,8 @@ class Product {
                             $warehouseProductRecord->warehouse_id = $productAllocatedTemporaryRecord['warehouse_id'];
                             $warehouseProductRecord->suppliers_id = $productAllocatedTemporaryRecord['suppliers_id'];
                             $warehouseProductRecord->location_id = $productAllocatedTemporaryRecord['location_id'];
+                            $warehouseProductRecord->layers_id = $productAllocatedTemporaryRecord['layers_id'];
+                            $warehouseProductRecord->batch_id = $productAllocatedTemporaryRecord['batch_id'];
                         }
                         $warehouseProductRecord->temporary_stock_quantity += $productAllocatedTemporaryRecord['temporary_stock_quantity'];
                         $warehouseProductRecord->products_quantity = ($warehouseProductRecord->warehouse_stock_quantity - ($warehouseProductRecord->allocated_stock_quantity + $warehouseProductRecord->temporary_stock_quantity));
@@ -2751,6 +2795,8 @@ class Product {
                                 $warehouseProductCollectionRecord->warehouse_id = $warehouseProductRecord->warehouse_id;
                                 $warehouseProductCollectionRecord->suppliers_id = $warehouseProductRecord->suppliers_id;
                                 $warehouseProductCollectionRecord->location_id = $warehouseProductRecord->location_id;
+                                $warehouseProductCollectionRecord->layers_id = $warehouseProductRecord->layers_id;
+                                $warehouseProductCollectionRecord->batch_id = $warehouseProductRecord->batch_id;
                                 $warehouseProductCollectionRecord->warehouse_stock_quantity += $warehouseProductRecord->warehouse_stock_quantity;
                                 $warehouseProductCollectionRecord->allocated_stock_quantity += $warehouseProductRecord->allocated_stock_quantity;
                                 $warehouseProductCollectionRecord->temporary_stock_quantity += $warehouseProductRecord->temporary_stock_quantity;
@@ -2844,10 +2890,14 @@ class Product {
                     reset($supplierId);
                     $supplierId = (int)current($supplierId);
                     $locationId = 0;
+                    $layersId = 0;
+                    $batchId = 0;
                     $warehouseProductRecord = new \common\models\WarehousesProducts();
                     $warehouseProductRecord->warehouse_id = $warehouseId;
                     $warehouseProductRecord->suppliers_id = $supplierId;
                     $warehouseProductRecord->location_id = $locationId;
+                    $warehouseProductRecord->layers_id = $layersId;
+                    $warehouseProductRecord->batch_id = $batchId;
                     $warehouseProductRecord->products_id = $iId;
                     $warehouseProductRecord->prid = (int)$iId;
                     $warehouseProductRecord->products_model = $productRecord->products_model;
@@ -2871,7 +2921,7 @@ class Product {
             foreach (\common\models\WarehousesProducts::find()->where(['prid' => $productId])
                 ->andWhere(['IN', 'products_id', array_map('strval', array_keys($inventoryArray))])->all() as $warehouseProductRecord
             ) {
-                $key = ((int)$warehouseProductRecord->warehouse_id . '_' . (int)$warehouseProductRecord->suppliers_id . '_' . (int)$warehouseProductRecord->location_id);
+                $key = ((int)$warehouseProductRecord->warehouse_id . '_' . (int)$warehouseProductRecord->suppliers_id . '_' . (int)$warehouseProductRecord->location_id . '_' . (int)$warehouseProductRecord->layers_id . '_' . (int)$warehouseProductRecord->batch_id);
                 $warehouseProductRecord->products_quantity = $warehouseProductRecord->warehouse_stock_quantity;
                 $warehouseProductRecord->allocated_stock_quantity = 0;
                 $warehouseProductRecord->temporary_stock_quantity = 0;
@@ -2885,7 +2935,7 @@ class Product {
                 ->andWhere('allocate_dispatched < allocate_received')
                 ->andWhere(['IN', 'products_id', array_map('strval', array_keys($inventoryArray))])->asArray(true)->all() as $productAllocatedRecord
             ) {
-                $key = ((int)$productAllocatedRecord['warehouse_id'] . '_' . (int)$productAllocatedRecord['suppliers_id'] . '_' . (int)$productAllocatedRecord['location_id']);
+                $key = ((int)$productAllocatedRecord['warehouse_id'] . '_' . (int)$productAllocatedRecord['suppliers_id'] . '_' . (int)$productAllocatedRecord['location_id'] . '_' . (int)$productAllocatedRecord['layers_id'] . '_' . (int)$productAllocatedRecord['batch_id']);
                 $productAllocatedArray[$key][] = $productAllocatedRecord;
                 unset($key);
             }
@@ -2896,7 +2946,7 @@ class Product {
                 foreach (\common\models\OrdersProductsTemporaryStock::find()->where(['prid' => $productId])
                     ->andWhere(['IN', 'normalize_id', array_map('strval', array_keys($inventoryArray))])->asArray(true)->all() as $productAllocatedTemporaryRecord
                 ) {
-                    $key = ((int)$productAllocatedTemporaryRecord['warehouse_id'] . '_' . (int)$productAllocatedTemporaryRecord['suppliers_id'] . '_' . (int)$productAllocatedTemporaryRecord['location_id']);
+                    $key = ((int)$productAllocatedTemporaryRecord['warehouse_id'] . '_' . (int)$productAllocatedTemporaryRecord['suppliers_id'] . '_' . (int)$productAllocatedTemporaryRecord['location_id'] . '_' . (int)$productAllocatedTemporaryRecord['layers_id'] . '_' . (int)$productAllocatedTemporaryRecord['batch_id']);
                     $productAllocatedTemporaryArray[$key][] = $productAllocatedTemporaryRecord;
                     unset($key);
                 }
@@ -2915,6 +2965,8 @@ class Product {
                         $warehouseProductRecord->warehouse_id = $productAllocatedRecord['warehouse_id'];
                         $warehouseProductRecord->suppliers_id = $productAllocatedRecord['suppliers_id'];
                         $warehouseProductRecord->location_id = $productAllocatedRecord['location_id'];
+                        $warehouseProductRecord->layers_id = $productAllocatedRecord['layers_id'];
+                        $warehouseProductRecord->batch_id = $productAllocatedRecord['batch_id'];
                     }
                     $warehouseProductRecord->allocated_stock_quantity += ($productAllocatedRecord['allocate_received'] - $productAllocatedRecord['allocate_dispatched']);
                     $warehouseProductRecord->products_quantity = ($warehouseProductRecord->warehouse_stock_quantity - $warehouseProductRecord->allocated_stock_quantity);
@@ -2937,6 +2989,8 @@ class Product {
                         $warehouseProductRecord->warehouse_id = $productAllocatedTemporaryRecord['warehouse_id'];
                         $warehouseProductRecord->suppliers_id = $productAllocatedTemporaryRecord['suppliers_id'];
                         $warehouseProductRecord->location_id = $productAllocatedTemporaryRecord['location_id'];
+                        $warehouseProductRecord->layers_id = $productAllocatedTemporaryRecord['layers_id'];
+                        $warehouseProductRecord->batch_id = $productAllocatedTemporaryRecord['batch_id'];
                     }
                     $warehouseProductRecord->temporary_stock_quantity += $productAllocatedTemporaryRecord['temporary_stock_quantity'];
                     $warehouseProductRecord->products_quantity = ($warehouseProductRecord->warehouse_stock_quantity - ($warehouseProductRecord->allocated_stock_quantity + $warehouseProductRecord->temporary_stock_quantity));
@@ -2973,6 +3027,8 @@ class Product {
                             $warehouseProductCollectionRecord->warehouse_id = $warehouseProductRecord->warehouse_id;
                             $warehouseProductCollectionRecord->suppliers_id = $warehouseProductRecord->suppliers_id;
                             $warehouseProductCollectionRecord->location_id = $warehouseProductRecord->location_id;
+                            $warehouseProductCollectionRecord->layers_id = $warehouseProductRecord->layers_id;
+                            $warehouseProductCollectionRecord->batch_id = $warehouseProductRecord->batch_id;
                             $warehouseProductCollectionRecord->warehouse_stock_quantity += $warehouseProductRecord->warehouse_stock_quantity;
                             $warehouseProductCollectionRecord->allocated_stock_quantity += $warehouseProductRecord->allocated_stock_quantity;
                             $warehouseProductCollectionRecord->temporary_stock_quantity += $warehouseProductRecord->temporary_stock_quantity;
@@ -3528,7 +3584,7 @@ class Product {
                   $current_ex = $details['actual_bundle_price_ex'];
                 }
             }
-            
+
             $special_clear = ($details['full_bundle_price_clear'] > $details['actual_bundle_price_clear']?$details['actual_bundle_price_clear']:false);
             $old_clear = ($details['full_bundle_price_clear'] > $details['actual_bundle_price_clear']?$details['full_bundle_price_clear']:false);
             $special_ex_clear = ($details['full_bundle_price_clear'] > $details['actual_bundle_price_clear']?$details['actual_bundle_price_clear_ex']:false);
@@ -3603,7 +3659,7 @@ class Product {
               $product['special_price'] = $priceInstance->getInventorySpecialPrice(['qty' => $qty]);
             }
 
-            
+
             if (isset($product['special_price']) && $product['special_price'] !== false) {
                 $special_value = $product['special_price'];
                 $special_clear = $currencies->display_price_clear($product['special_price'], $product['tax_rate'], $qty);

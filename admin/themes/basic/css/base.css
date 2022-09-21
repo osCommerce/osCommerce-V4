@@ -71,12 +71,12 @@ strong {
     padding: 5px 5px 0;
     border-width: 1px 1px 0;
     z-index: 100;
-    background: #fff;
+    background: #f7f5ff;
     position: relative;
 }
 
 .tp-all-pages-btn{
-    border: 1px solid #fff;
+    border: 1px solid #f7f5ff;
 }
 
 .tp-all-pages-btn.active{
@@ -210,8 +210,7 @@ strong {
   left: 0;
   padding: 5px 5px 5px 0;
   z-index: 2;
-  background: #fff;
-  background: linear-gradient(to right,#fff 60%,transparent 100%);
+  background: #f7f5ff;
 }
 
 .scrtabs-tab-scroll-arrow span {
@@ -234,7 +233,7 @@ strong {
   left: auto;
   right: 0;
   padding: 5px 0 5px 5px;
-  background: linear-gradient(to left,#fff 60%,transparent 100%);
+  background: #f7f5ff;
 }
 
 .scrtabs-tab-scroll-arrow .glyphicon-chevron-left:before{
@@ -295,10 +294,15 @@ div.checker span{
     vertical-align: top!important;
 }
 
+input[disabled],
+textarea[disabled],
+input[readonly],
+select[readonly],
+textarea[readonly] ,
 .form-control[disabled],
 .form-control[readonly],
 fieldset[disabled] .form-control{
-    background-color: #eee!important;
+    background-color: #eee;
 }
 
 .is-virtual:after {
@@ -588,3 +592,13 @@ div.pop-up-content form#products_status .warning {
 #adminChatMainHolder{display: none;}
 .adminChatBtn{float: right; cursor: pointer; color: #fff; padding: 10px 0 9px 15px; font-size: 20px;}
 #adminChatMainHolder .pop-up-content{padding: 20px 20px;}
+
+select[disabled], select:disabled {
+    background-color: #fff !important;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    border: none;
+    cursor: default !important;
+    box-shadow: none;
+}

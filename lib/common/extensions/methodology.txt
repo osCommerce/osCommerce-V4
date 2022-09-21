@@ -137,6 +137,7 @@ In addition a list of available values page_name and page_area:
 'categories/productedit', 'details-right-column'
 'categories/productedit', 'details-actions'
 'categories/productedit', 'details-actions-subproduct'
+'categories/productedit', 'details-after-actions'
 'categories/productedit', 'seo-tab'
 'categories/productedit', 'marketing/tab-navs'
 'categories/productedit', 'marketing/tab-content'
@@ -153,6 +154,7 @@ In addition a list of available values page_name and page_area:
 'orders/process-order', 'totals-block'
 'orders/process-order', 'btn-bar-top'
 'orders/process-order', 'btn-bar-bottom'
+'orders/after-delete', '' // helpers/order.php
 'Order', 'save_order/before'
 'Order', 'save_order/after'
 'order-manager/check-free-shipping', ''

@@ -1,8 +1,8 @@
 <?php
 /**
- * @link http://www.yiiframework.com/
+ * @link https://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
- * @license http://www.yiiframework.com/license/
+ * @license https://www.yiiframework.com/license/
  */
 
 namespace yii\web;
@@ -52,7 +52,7 @@ use yii\helpers\Url;
  * @property-read bool $isServerError Whether this response indicates a server error.
  * @property-read bool $isSuccessful Whether this response is successful.
  * @property int $statusCode The HTTP status code to send with the response.
- * @property-write \Exception|\Error|\Throwable $statusCodeByException The exception object.
+ * @property-write \Throwable $statusCodeByException The exception object.
  *
  * @author Qiang Xue <qiang.xue@gmail.com>
  * @author Carsten Brandt <mail@cebe.cc>
@@ -127,7 +127,7 @@ class Response extends \yii\base\Response
      */
     public $data;
     /**
-     * @var string the response content. When [[data]] is not null, it will be converted into [[content]]
+     * @var string|null the response content. When [[data]] is not null, it will be converted into [[content]]
      * according to [[format]] when the response is being sent out.
      * @see data
      */
@@ -142,7 +142,7 @@ class Response extends \yii\base\Response
      */
     public $stream;
     /**
-     * @var string the charset of the text response. If not set, it will use
+     * @var string|null the charset of the text response. If not set, it will use
      * the value of [[Application::charset]].
      */
     public $charset;
@@ -152,7 +152,7 @@ class Response extends \yii\base\Response
      */
     public $statusText = 'OK';
     /**
-     * @var string the version of the HTTP protocol to use. If not set, it will be determined via `$_SERVER['SERVER_PROTOCOL']`,
+     * @var string|null the version of the HTTP protocol to use. If not set, it will be determined via `$_SERVER['SERVER_PROTOCOL']`,
      * or '1.1' if that is not available.
      */
     public $version;
@@ -273,7 +273,7 @@ class Response extends \yii\base\Response
      * Sets the response status code.
      * This method will set the corresponding status text if `$text` is null.
      * @param int $value the status code
-     * @param string $text the status text. If not set, it will be set automatically based on the status code.
+     * @param string|null $text the status text. If not set, it will be set automatically based on the status code.
      * @throws InvalidArgumentException if the status code is invalid.
      * @return $this the response object itself
      */
@@ -297,7 +297,7 @@ class Response extends \yii\base\Response
 
     /**
      * Sets the response status code based on the exception.
-     * @param \Exception|\Error|\Throwable $e the exception object.
+     * @param \Throwable $e the exception object.
      * @throws InvalidArgumentException if the status code is invalid.
      * @return $this the response object itself
      * @since 2.0.12
@@ -500,7 +500,7 @@ class Response extends \yii\base\Response
      * ```
      *
      * @param string $filePath the path of the file to be sent.
-     * @param string $attachmentName the file name shown to the user. If null, it will be determined from `$filePath`.
+     * @param string|null $attachmentName the file name shown to the user. If null, it will be determined from `$filePath`.
      * @param array $options additional options for sending the file. The following options are supported:
      *
      *  - `mimeType`: the MIME type of the content. If not set, it will be guessed based on `$filePath`
@@ -635,10 +635,10 @@ class Response extends \yii\base\Response
     /**
      * Sets a default set of HTTP headers for file downloading purpose.
      * @param string $attachmentName the attachment file name
-     * @param string $mimeType the MIME type for the response. If null, `Content-Type` header will NOT be set.
+     * @param string|null $mimeType the MIME type for the response. If null, `Content-Type` header will NOT be set.
      * @param bool $inline whether the browser should open the file within the browser window. Defaults to false,
      * meaning a download dialog will pop up.
-     * @param int $contentLength the byte length of the file being downloaded. If null, `Content-Length` header will NOT be set.
+     * @param int|null $contentLength the byte length of the file being downloaded. If null, `Content-Length` header will NOT be set.
      * @return $this the response object itself
      */
     public function setDownloadHeaders($attachmentName, $mimeType = null, $inline = false, $contentLength = null)
@@ -712,11 +712,11 @@ class Response extends \yii\base\Response
      *
      * As this header directive is non-standard different directives exists for different web servers applications:
      *
-     * - Apache: [X-Sendfile](http://tn123.org/mod_xsendfile)
-     * - Lighttpd v1.4: [X-LIGHTTPD-send-file](http://redmine.lighttpd.net/projects/lighttpd/wiki/X-LIGHTTPD-send-file)
-     * - Lighttpd v1.5: [X-Sendfile](http://redmine.lighttpd.net/projects/lighttpd/wiki/X-LIGHTTPD-send-file)
-     * - Nginx: [X-Accel-Redirect](http://wiki.nginx.org/XSendfile)
-     * - Cherokee: [X-Sendfile and X-Accel-Redirect](http://www.cherokee-project.com/doc/other_goodies.html#x-sendfile)
+     * - Apache: [X-Sendfile](https://tn123.org/mod_xsendfile/)
+     * - Lighttpd v1.4: [X-LIGHTTPD-send-file](https://redmine.lighttpd.net/projects/lighttpd/wiki/X-LIGHTTPD-send-file)
+     * - Lighttpd v1.5: [X-Sendfile](https://redmine.lighttpd.net/projects/lighttpd/wiki/X-LIGHTTPD-send-file)
+     * - Nginx: [X-Accel-Redirect](https://www.nginx.com/resources/wiki/XSendfile)
+     * - Cherokee: [X-Sendfile and X-Accel-Redirect](https://cherokee-project.com/doc/other_goodies.html#x-sendfile)
      *
      * So for this method to work the X-SENDFILE option/module should be enabled by the web server and
      * a proper xHeader should be sent.
@@ -744,7 +744,7 @@ class Response extends \yii\base\Response
      * ```
      *
      * @param string $filePath file name with full path
-     * @param string $attachmentName file name shown to the user. If null, it will be determined from `$filePath`.
+     * @param string|null $attachmentName file name shown to the user. If null, it will be determined from `$filePath`.
      * @param array $options additional options for sending the file. The following options are supported:
      *
      *  - `mimeType`: the MIME type of the content. If not set, it will be guessed based on `$filePath`
@@ -860,7 +860,7 @@ class Response extends \yii\base\Response
      *
      * @param string|array $url the URL to be redirected to. This can be in one of the following formats:
      *
-     * - a string representing a URL (e.g. "http://example.com")
+     * - a string representing a URL (e.g. "https://example.com")
      * - a string representing a URL alias (e.g. "@example.com")
      * - an array in the format of `[$route, ...name-value pairs...]` (e.g. `['site/index', 'ref' => 1]`).
      *   Note that the route is with respect to the whole application, instead of relative to a controller or module.
@@ -886,26 +886,29 @@ class Response extends \yii\base\Response
             $url[0] = '/' . ltrim($url[0], '/');
         }
         $request = Yii::$app->getRequest();
-        $url = Url::to($url);
-        if (strncmp($url, '/', 1) === 0 && strncmp($url, '//', 2) !== 0) {
-            $url = $request->getHostInfo() . $url;
+        $normalizedUrl = Url::to($url);
+        if (
+            $normalizedUrl !== null
+            && strncmp($normalizedUrl, '/', 1) === 0
+            && strncmp($normalizedUrl, '//', 2) !== 0
+        ) {
+            $normalizedUrl = $request->getHostInfo() . $normalizedUrl;
         }
 
-        if ($checkAjax) {
-            if ($request->getIsAjax()) {
-                if (in_array($statusCode, [301, 302]) && preg_match('/Trident\/|MSIE[ ]/', (string)$request->userAgent)) {
-                    $statusCode = 200;
-                }
-                if ($request->getIsPjax()) {
-                    $this->getHeaders()->set('X-Pjax-Url', $url);
-                } else {
-                    $this->getHeaders()->set('X-Redirect', $url);
-                }
+        if ($checkAjax && $request->getIsAjax()) {
+            if (
+                in_array($statusCode, [301, 302])
+                && preg_match('/Trident\/|MSIE[ ]/', (string)$request->userAgent)
+            ) {
+                $statusCode = 200;
+            }
+            if ($request->getIsPjax()) {
+                $this->getHeaders()->set('X-Pjax-Url', $normalizedUrl);
             } else {
-                $this->getHeaders()->set('Location', $url);
+                $this->getHeaders()->set('X-Redirect', $normalizedUrl);
             }
         } else {
-            $this->getHeaders()->set('Location', $url);
+            $this->getHeaders()->set('Location', $normalizedUrl);
         }
 
         $this->setStatusCode($statusCode);

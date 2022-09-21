@@ -11,16 +11,17 @@
 
 namespace Imagine\Gmagick;
 
+use Imagine\Driver\InfoProvider;
 use Imagine\Exception\InvalidArgumentException;
-use Imagine\Exception\NotSupportedException;
 use Imagine\Exception\OutOfBoundsException;
 use Imagine\Exception\RuntimeException;
 use Imagine\Factory\ClassFactoryInterface;
 use Imagine\Image\AbstractLayers;
+use Imagine\Image\Format;
 use Imagine\Image\Metadata\MetadataBag;
 use Imagine\Image\Palette\PaletteInterface;
 
-class Layers extends AbstractLayers
+class Layers extends AbstractLayers implements InfoProvider
 {
     /**
      * @var \Imagine\Gmagick\Image
@@ -64,6 +65,17 @@ class Layers extends AbstractLayers
     /**
      * {@inheritdoc}
      *
+     * @see \Imagine\Driver\InfoProvider::getDriverInfo()
+     * @since 1.3.0
+     */
+    public static function getDriverInfo($required = true)
+    {
+        return DriverInfo::get($required);
+    }
+
+    /**
+     * {@inheritdoc}
+     *
      * @see \Imagine\Image\LayersInterface::merge()
      */
     public function merge()
@@ -85,7 +97,7 @@ class Layers extends AbstractLayers
      */
     public function coalesce()
     {
-        throw new NotSupportedException('Gmagick does not support coalescing');
+        static::getDriverInfo()->requireFeature(DriverInfo::FEATURE_COALESCELAYERS);
     }
 
     /**
@@ -95,24 +107,25 @@ class Layers extends AbstractLayers
      */
     public function animate($format, $delay, $loops)
     {
-        if ('gif' !== strtolower($format)) {
-            throw new NotSupportedException('Animated picture is currently only supported on gif');
+        $formatInfo = Format::get($format);
+        if ($formatInfo === null || $formatInfo->getID() !== Format::ID_GIF) {
+            throw new InvalidArgumentException('Animated picture is currently only supported on gif');
         }
 
         if (!is_int($loops) || $loops < 0) {
             throw new InvalidArgumentException('Loops must be a positive integer.');
         }
 
-        if (null !== $delay && (!is_int($delay) || $delay < 0)) {
+        if ($delay !== null && (!is_int($delay) || $delay < 0)) {
             throw new InvalidArgumentException('Delay must be either null or a positive integer.');
         }
 
         try {
-            foreach ($this as $offset => $layer) {
+            for ($offset = 0; $offset < $this->count(); $offset++) {
                 $this->resource->setimageindex($offset);
                 $this->resource->setimageformat($format);
 
-                if (null !== $delay) {
+                if ($delay !== null) {
                     $this->resource->setimagedelay($delay / 10);
                 }
 
@@ -130,6 +143,7 @@ class Layers extends AbstractLayers
      *
      * @see \Iterator::current()
      */
+    #[\ReturnTypeWillChange]
     public function current()
     {
         return $this->extractAt($this->offset);
@@ -163,6 +177,7 @@ class Layers extends AbstractLayers
      *
      * @see \Iterator::key()
      */
+    #[\ReturnTypeWillChange]
     public function key()
     {
         return $this->offset;
@@ -173,6 +188,7 @@ class Layers extends AbstractLayers
      *
      * @see \Iterator::next()
      */
+    #[\ReturnTypeWillChange]
     public function next()
     {
         ++$this->offset;
@@ -183,6 +199,7 @@ class Layers extends AbstractLayers
      *
      * @see \Iterator::rewind()
      */
+    #[\ReturnTypeWillChange]
     public function rewind()
     {
         $this->offset = 0;
@@ -193,6 +210,7 @@ class Layers extends AbstractLayers
      *
      * @see \Iterator::valid()
      */
+    #[\ReturnTypeWillChange]
     public function valid()
     {
         return $this->offset < count($this);
@@ -203,6 +221,7 @@ class Layers extends AbstractLayers
      *
      * @see \Countable::count()
      */
+    #[\ReturnTypeWillChange]
     public function count()
     {
         try {
@@ -217,6 +236,7 @@ class Layers extends AbstractLayers
      *
      * @see \ArrayAccess::offsetExists()
      */
+    #[\ReturnTypeWillChange]
     public function offsetExists($offset)
     {
         return is_int($offset) && $offset >= 0 && $offset < count($this);
@@ -227,6 +247,7 @@ class Layers extends AbstractLayers
      *
      * @see \ArrayAccess::offsetGet()
      */
+    #[\ReturnTypeWillChange]
     public function offsetGet($offset)
     {
         return $this->extractAt($offset);
@@ -237,20 +258,21 @@ class Layers extends AbstractLayers
      *
      * @see \ArrayAccess::offsetSet()
      */
+    #[\ReturnTypeWillChange]
     public function offsetSet($offset, $image)
     {
         if (!$image instanceof Image) {
             throw new InvalidArgumentException('Only a Gmagick Image can be used as layer');
         }
 
-        if (null === $offset) {
+        if ($offset === null) {
             $offset = count($this) - 1;
         } else {
             if (!is_int($offset)) {
                 throw new InvalidArgumentException('Invalid offset for layer, it must be an integer');
             }
 
-            if (count($this) < $offset || 0 > $offset) {
+            if (count($this) < $offset || $offset < 0) {
                 throw new OutOfBoundsException(sprintf('Invalid offset for layer, it must be a value between 0 and %d, %d given', count($this), $offset));
             }
 
@@ -269,9 +291,7 @@ class Layers extends AbstractLayers
             }
             $this->resource->addimage($frame);
 
-            /*
-             * ugly hack to bypass issue https://bugs.php.net/bug.php?id=64623
-             */
+            // ugly hack to bypass issue https://bugs.php.net/bug.php?id=64623
             if (count($this) == 2) {
                 $this->resource->setimageindex($offset + 1);
                 $this->resource->nextimage();
@@ -290,6 +310,7 @@ class Layers extends AbstractLayers
      *
      * @see \ArrayAccess::offsetUnset()
      */
+    #[\ReturnTypeWillChange]
     public function offsetUnset($offset)
     {
         try {

@@ -4,6 +4,10 @@ namespace PHPStan\PhpDocParser\Ast\PhpDoc;
 
 use PHPStan\PhpDocParser\Ast\Node;
 use PHPStan\PhpDocParser\Ast\NodeAttributes;
+use function array_column;
+use function array_filter;
+use function array_map;
+use function implode;
 
 class PhpDocNode implements Node
 {
@@ -34,7 +38,6 @@ class PhpDocNode implements Node
 
 
 	/**
-	 * @param  string $tagName
 	 * @return PhpDocTagNode[]
 	 */
 	public function getTagsByName(string $tagName): array
@@ -50,11 +53,11 @@ class PhpDocNode implements Node
 	 */
 	public function getVarTagValues(string $tagName = '@var'): array
 	{
-		return array_column(
-			array_filter($this->getTagsByName($tagName), static function (PhpDocTagNode $tag): bool {
-				return $tag->value instanceof VarTagValueNode;
-			}),
-			'value'
+		return array_filter(
+			array_column($this->getTagsByName($tagName), 'value'),
+			static function (PhpDocTagValueNode $value): bool {
+				return $value instanceof VarTagValueNode;
+			}
 		);
 	}
 
@@ -64,11 +67,25 @@ class PhpDocNode implements Node
 	 */
 	public function getParamTagValues(string $tagName = '@param'): array
 	{
-		return array_column(
-			array_filter($this->getTagsByName($tagName), static function (PhpDocTagNode $tag): bool {
-				return $tag->value instanceof ParamTagValueNode;
-			}),
-			'value'
+		return array_filter(
+			array_column($this->getTagsByName($tagName), 'value'),
+			static function (PhpDocTagValueNode $value): bool {
+				return $value instanceof ParamTagValueNode;
+			}
+		);
+	}
+
+
+	/**
+	 * @return TypelessParamTagValueNode[]
+	 */
+	public function getTypelessParamTagValues(string $tagName = '@param'): array
+	{
+		return array_filter(
+			array_column($this->getTagsByName($tagName), 'value'),
+			static function (PhpDocTagValueNode $value): bool {
+				return $value instanceof TypelessParamTagValueNode;
+			}
 		);
 	}
 
@@ -78,11 +95,11 @@ class PhpDocNode implements Node
 	 */
 	public function getTemplateTagValues(string $tagName = '@template'): array
 	{
-		return array_column(
-			array_filter($this->getTagsByName($tagName), static function (PhpDocTagNode $tag): bool {
-				return $tag->value instanceof TemplateTagValueNode;
-			}),
-			'value'
+		return array_filter(
+			array_column($this->getTagsByName($tagName), 'value'),
+			static function (PhpDocTagValueNode $value): bool {
+				return $value instanceof TemplateTagValueNode;
+			}
 		);
 	}
 
@@ -92,11 +109,11 @@ class PhpDocNode implements Node
 	 */
 	public function getExtendsTagValues(string $tagName = '@extends'): array
 	{
-		return array_column(
-			array_filter($this->getTagsByName($tagName), static function (PhpDocTagNode $tag): bool {
-				return $tag->value instanceof ExtendsTagValueNode;
-			}),
-			'value'
+		return array_filter(
+			array_column($this->getTagsByName($tagName), 'value'),
+			static function (PhpDocTagValueNode $value): bool {
+				return $value instanceof ExtendsTagValueNode;
+			}
 		);
 	}
 
@@ -106,11 +123,11 @@ class PhpDocNode implements Node
 	 */
 	public function getImplementsTagValues(string $tagName = '@implements'): array
 	{
-		return array_column(
-			array_filter($this->getTagsByName($tagName), static function (PhpDocTagNode $tag): bool {
-				return $tag->value instanceof ImplementsTagValueNode;
-			}),
-			'value'
+		return array_filter(
+			array_column($this->getTagsByName($tagName), 'value'),
+			static function (PhpDocTagValueNode $value): bool {
+				return $value instanceof ImplementsTagValueNode;
+			}
 		);
 	}
 
@@ -120,11 +137,11 @@ class PhpDocNode implements Node
 	 */
 	public function getUsesTagValues(string $tagName = '@use'): array
 	{
-		return array_column(
-			array_filter($this->getTagsByName($tagName), static function (PhpDocTagNode $tag): bool {
-				return $tag->value instanceof UsesTagValueNode;
-			}),
-			'value'
+		return array_filter(
+			array_column($this->getTagsByName($tagName), 'value'),
+			static function (PhpDocTagValueNode $value): bool {
+				return $value instanceof UsesTagValueNode;
+			}
 		);
 	}
 
@@ -134,11 +151,11 @@ class PhpDocNode implements Node
 	 */
 	public function getReturnTagValues(string $tagName = '@return'): array
 	{
-		return array_column(
-			array_filter($this->getTagsByName($tagName), static function (PhpDocTagNode $tag): bool {
-				return $tag->value instanceof ReturnTagValueNode;
-			}),
-			'value'
+		return array_filter(
+			array_column($this->getTagsByName($tagName), 'value'),
+			static function (PhpDocTagValueNode $value): bool {
+				return $value instanceof ReturnTagValueNode;
+			}
 		);
 	}
 
@@ -148,11 +165,11 @@ class PhpDocNode implements Node
 	 */
 	public function getThrowsTagValues(string $tagName = '@throws'): array
 	{
-		return array_column(
-			array_filter($this->getTagsByName($tagName), static function (PhpDocTagNode $tag): bool {
-				return $tag->value instanceof ThrowsTagValueNode;
-			}),
-			'value'
+		return array_filter(
+			array_column($this->getTagsByName($tagName), 'value'),
+			static function (PhpDocTagValueNode $value): bool {
+				return $value instanceof ThrowsTagValueNode;
+			}
 		);
 	}
 
@@ -162,25 +179,25 @@ class PhpDocNode implements Node
 	 */
 	public function getMixinTagValues(string $tagName = '@mixin'): array
 	{
-		return array_column(
-			array_filter($this->getTagsByName($tagName), static function (PhpDocTagNode $tag): bool {
-				return $tag->value instanceof MixinTagValueNode;
-			}),
-			'value'
+		return array_filter(
+			array_column($this->getTagsByName($tagName), 'value'),
+			static function (PhpDocTagValueNode $value): bool {
+				return $value instanceof MixinTagValueNode;
+			}
 		);
 	}
 
 
 	/**
-	 * @return \PHPStan\PhpDocParser\Ast\PhpDoc\DeprecatedTagValueNode[]
+	 * @return DeprecatedTagValueNode[]
 	 */
 	public function getDeprecatedTagValues(): array
 	{
-		return array_column(
-			array_filter($this->getTagsByName('@deprecated'), static function (PhpDocTagNode $tag): bool {
-				return $tag->value instanceof DeprecatedTagValueNode;
-			}),
-			'value'
+		return array_filter(
+			array_column($this->getTagsByName('@deprecated'), 'value'),
+			static function (PhpDocTagValueNode $value): bool {
+				return $value instanceof DeprecatedTagValueNode;
+			}
 		);
 	}
 
@@ -190,11 +207,11 @@ class PhpDocNode implements Node
 	 */
 	public function getPropertyTagValues(string $tagName = '@property'): array
 	{
-		return array_column(
-			array_filter($this->getTagsByName($tagName), static function (PhpDocTagNode $tag): bool {
-				return $tag->value instanceof PropertyTagValueNode;
-			}),
-			'value'
+		return array_filter(
+			array_column($this->getTagsByName($tagName), 'value'),
+			static function (PhpDocTagValueNode $value): bool {
+				return $value instanceof PropertyTagValueNode;
+			}
 		);
 	}
 
@@ -204,11 +221,11 @@ class PhpDocNode implements Node
 	 */
 	public function getPropertyReadTagValues(string $tagName = '@property-read'): array
 	{
-		return array_column(
-			array_filter($this->getTagsByName($tagName), static function (PhpDocTagNode $tag): bool {
-				return $tag->value instanceof PropertyTagValueNode;
-			}),
-			'value'
+		return array_filter(
+			array_column($this->getTagsByName($tagName), 'value'),
+			static function (PhpDocTagValueNode $value): bool {
+				return $value instanceof PropertyTagValueNode;
+			}
 		);
 	}
 
@@ -218,11 +235,11 @@ class PhpDocNode implements Node
 	 */
 	public function getPropertyWriteTagValues(string $tagName = '@property-write'): array
 	{
-		return array_column(
-			array_filter($this->getTagsByName($tagName), static function (PhpDocTagNode $tag): bool {
-				return $tag->value instanceof PropertyTagValueNode;
-			}),
-			'value'
+		return array_filter(
+			array_column($this->getTagsByName($tagName), 'value'),
+			static function (PhpDocTagValueNode $value): bool {
+				return $value instanceof PropertyTagValueNode;
+			}
 		);
 	}
 
@@ -232,11 +249,11 @@ class PhpDocNode implements Node
 	 */
 	public function getMethodTagValues(string $tagName = '@method'): array
 	{
-		return array_column(
-			array_filter($this->getTagsByName($tagName), static function (PhpDocTagNode $tag): bool {
-				return $tag->value instanceof MethodTagValueNode;
-			}),
-			'value'
+		return array_filter(
+			array_column($this->getTagsByName($tagName), 'value'),
+			static function (PhpDocTagValueNode $value): bool {
+				return $value instanceof MethodTagValueNode;
+			}
 		);
 	}
 
@@ -246,11 +263,11 @@ class PhpDocNode implements Node
 	 */
 	public function getTypeAliasTagValues(string $tagName = '@phpstan-type'): array
 	{
-		return array_column(
-			array_filter($this->getTagsByName($tagName), static function (PhpDocTagNode $tag): bool {
-				return $tag->value instanceof TypeAliasTagValueNode;
-			}),
-			'value'
+		return array_filter(
+			array_column($this->getTagsByName($tagName), 'value'),
+			static function (PhpDocTagValueNode $value): bool {
+				return $value instanceof TypeAliasTagValueNode;
+			}
 		);
 	}
 
@@ -260,11 +277,53 @@ class PhpDocNode implements Node
 	 */
 	public function getTypeAliasImportTagValues(string $tagName = '@phpstan-import-type'): array
 	{
-		return array_column(
-			array_filter($this->getTagsByName($tagName), static function (PhpDocTagNode $tag): bool {
-				return $tag->value instanceof TypeAliasImportTagValueNode;
-			}),
-			'value'
+		return array_filter(
+			array_column($this->getTagsByName($tagName), 'value'),
+			static function (PhpDocTagValueNode $value): bool {
+				return $value instanceof TypeAliasImportTagValueNode;
+			}
+		);
+	}
+
+
+	/**
+	 * @return AssertTagValueNode[]
+	 */
+	public function getAssertTagValues(string $tagName = '@phpstan-assert'): array
+	{
+		return array_filter(
+			array_column($this->getTagsByName($tagName), 'value'),
+			static function (PhpDocTagValueNode $value): bool {
+				return $value instanceof AssertTagValueNode;
+			}
+		);
+	}
+
+
+	/**
+	 * @return AssertTagPropertyValueNode[]
+	 */
+	public function getAssertPropertyTagValues(string $tagName = '@phpstan-assert'): array
+	{
+		return array_filter(
+			array_column($this->getTagsByName($tagName), 'value'),
+			static function (PhpDocTagValueNode $value): bool {
+				return $value instanceof AssertTagPropertyValueNode;
+			}
+		);
+	}
+
+
+	/**
+	 * @return AssertTagMethodValueNode[]
+	 */
+	public function getAssertMethodTagValues(string $tagName = '@phpstan-assert'): array
+	{
+		return array_filter(
+			array_column($this->getTagsByName($tagName), 'value'),
+			static function (PhpDocTagValueNode $value): bool {
+				return $value instanceof AssertTagMethodValueNode;
+			}
 		);
 	}
 

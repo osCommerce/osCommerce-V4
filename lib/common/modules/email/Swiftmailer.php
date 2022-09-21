@@ -94,6 +94,18 @@ class Swiftmailer implements MailerInterface {
         $this->message->setBcc($bcc);
     }
 
+    protected function parseEmails($email_addresses_string)
+    {
+        $mail_list = [];
+        foreach (preg_split('/,(?=([^\"]*\"[^\"]*\")*[^\"]*$)/', $email_addresses_string, -1, PREG_SPLIT_NO_EMPTY) as $split_mail){
+            if (preg_match('/^((.*?)\s+)?([^\s]+)$/', trim($split_mail), $_split_mail)) {
+                $_toName = trim($_split_mail[1], '" ');
+                $mail_list[trim($_split_mail[3], '< >')] = $_toName?$_toName:null;
+            }
+        }
+        return $mail_list;
+    }
+
     public function send($to_name, $to_email_address, $from_email_name, $from_email_address, $email_subject, $headers) {
         $this->message
             ->setSubject($email_subject)
@@ -103,12 +115,7 @@ class Swiftmailer implements MailerInterface {
 
         $mailTo = [];
         if ( empty($to_name) ){
-            foreach (preg_split('/,(?=([^\"]*\"[^\"]*\")*[^\"]*$)/', $to_email_address, -1, PREG_SPLIT_NO_EMPTY) as $split_mail){
-                if (preg_match('/^((.*?)\s+)?([^\s]+)$/', trim($split_mail), $_split_mail)) {
-                    $_toName = trim($_split_mail[1], '" ');
-                    $mailTo[trim($_split_mail[3], '< >')] = $_toName?$_toName:null;
-                }
-            }
+            $mailTo = $this->parseEmails($to_email_address);
         }else{
             $mailTo[trim($to_email_address, '< >')] = $to_name;
         }
@@ -126,7 +133,11 @@ class Swiftmailer implements MailerInterface {
         if (is_array($headers)) {
             $messageHeaders = $this->message->getHeaders();
             foreach ($headers as $key => $value) {
-                $messageHeaders->addTextHeader($key, $value);
+                if ( strtolower($key)=='cc' ){
+                    $this->message->setCc($this->parseEmails($value));
+                }else {
+                    $messageHeaders->addTextHeader($key, $value);
+                }
             }
         }
         return $this->mailer->send($this->message);

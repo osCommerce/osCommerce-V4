@@ -149,6 +149,45 @@ class MenuHelper {
         return $response;
     }
 
+    /**
+     * Get menu chain from id
+     * @param $menuId
+     * @return null|array ['BOX_HEADING_CUSTOMERS', 'BOX_CUSTOMERS_CUSTOMERS']
+     */
+    private static function getAdminMenuChain($menuId)
+    {
+        $res = [];
+        do {
+            $menu = \common\models\AdminBoxes::findOne($menuId);
+            if (empty($menu)) {
+                \Yii::warning(__FUNCTION__ . " - cannot create menu chain for $menuId");
+                return;
+            }
+            $res[] = $menu->title;
+            $menuId = $menu->parent_id;
+        } while ($menuId != 0);
+        return array_reverse($res);
+    }
+
+    private static function forceAclForMenu($menuId)
+    {
+        $menuChain = self::getAdminMenuChain($menuId);
+        if (empty($menuChain)) return;
+        $parentId = 0;
+        foreach ($menuChain as $menuTitle) {
+            $acl = \common\models\AccessControlList::findOne(['access_control_list_key' => $menuTitle, 'parent_id' => $parentId]);
+            if (empty($acl)) {
+                $acl = new \common\models\AccessControlList();
+                $acl->parent_id = $parentId;
+                $acl->access_control_list_key = $menuTitle;
+                $acl->sort_order = 10;
+                $acl->save(false);
+            }
+            $parentId = $acl->access_control_list_id;
+        }
+        return $acl;
+    }
+
     /* extracted from below importAdminTree */
     private static function createAdminMenuItemAndCheckAcl($item)
     {
@@ -173,21 +212,11 @@ class MenuHelper {
         $object->filename = (string)($item['filename'] ?? null);
         $object->save(false);
         //--- update acl
-        $acl = \common\models\AccessControlList::findOne(['access_control_list_key' => $object->title]);
-        if (!is_object($acl)) {
-            $acl = new \common\models\AccessControlList();
-            $acl->access_control_list_key = $object->title;
-        }
-        if ($parent == 0) {
-            $acl->parent_id = $parent;
+        $cnt = \common\models\AccessControlList::find()->where(['access_control_list_key' => $object->title])->count();
+        if ( $cnt != 1) {
+            $acl = self::forceAclForMenu($object->box_id);
         } else {
-            $parentObject = \common\models\AdminBoxes::findOne($parent);
-            if (is_object($parentObject)) {
-                $parentAcl = \common\models\AccessControlList::findOne(['access_control_list_key' => $parentObject->title]);
-                if (is_object($parentAcl)) {
-                    $acl->parent_id = $parentAcl->access_control_list_id;
-                }
-            }
+            $acl = \common\models\AccessControlList::findOne(['access_control_list_key' => $object->title]);
         }
         $acl->sort_order = $object->sort_order;
         $acl->save();
@@ -207,10 +236,24 @@ class MenuHelper {
 
     public static function getAdminMenuItemByTitle($array_or_title)
     {
-        $title = is_array($array_or_title)? ($array_or_title['title']??null) : (string)$array_or_title;
+        if (is_array($array_or_title)) {
+            $title = $array_or_title['title'] ?? null;
+            $parent_id = $array_or_title['parent_id'] ?? null;
+            if (is_null($parent_id) && isset($array_or_title['parent'])) {
+                $parent_id = self::getAdminMenuItemByTitle($array_or_title['parent']);
+            }
+        } else {
+            $title = (string) $array_or_title;
+            $parent_id = null;
+            $cnt = \common\models\AdminBoxes::find()->where(['title' => $title])->count();
+            if ($cnt > 1) {
+                \Yii::warning(__FUNCTION__ . " - inconsistent search result for $title. More than one row: $cnt");
+            }
+        }
         if (!empty($title)) {
             return \common\models\AdminBoxes::find()
                     ->where(['title' => $title])
+                    ->andFilterWhere(['parent_id' => $parent_id])
                     ->one();
         }
     }
@@ -256,10 +299,10 @@ class MenuHelper {
 
         $row = self::getAdminMenuItemByTitle($array_or_title);
         if (empty($row)) {
-            return; 'removeAdminMenu: cant find item';
+            return 'removeAdminMenu: cant find item';
         }
         if (!empty($child = self::getAdminMenuChild($array_or_title))) {
-            return; 'removeAdminMenu: cant delete item because of child: ' . count($child);
+            return 'removeAdminMenu: cant delete item because of child: ' . count($child);
         }
         $row->delete();
     }

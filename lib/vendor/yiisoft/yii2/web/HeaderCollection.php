@@ -1,8 +1,8 @@
 <?php
 /**
- * @link http://www.yiiframework.com/
+ * @link https://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
- * @license http://www.yiiframework.com/license/
+ * @license https://www.yiiframework.com/license/
  */
 
 namespace yii\web;
@@ -227,7 +227,7 @@ class HeaderCollection extends BaseObject implements \IteratorAggregate, \ArrayA
      * It is implicitly called when you use something like `$header = $collection[$name];`.
      * This is equivalent to [[get()]].
      * @param string $name the header name
-     * @return string the header value with the specified name, null if the named header does not exist.
+     * @return string|null the header value with the specified name, null if the named header does not exist.
      */
     #[\ReturnTypeWillChange]
     public function offsetGet($name)

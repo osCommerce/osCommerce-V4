@@ -314,10 +314,9 @@ class EventsController extends Controller {
               } else {
                 $pid = false;
               }
+              $cnt = -1;
               if (!empty($count) && (int)$count > 0) {
                 $cnt = $count;
-              } else {
-                $cnt = $ext::PPD_PRODUCTS_BATCH;
               }
               $ext::reindex($pid, $cnt);
             } else {

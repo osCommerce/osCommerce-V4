@@ -169,16 +169,16 @@ class StockDeliveryTermsController extends Sceleton  {
       }
 
       $oInfo = new \objectInfo($odata, false);
-
+      \common\helpers\Php8::nullObjProps($oInfo, ['stock_delivery_terms_id', 'stock_code', 'text_stock_code', 'delivery_delay', 'is_default']);
 
       $status_inputs_string = '';
       $status_short_inputs_string = '';
       $languages = \common\helpers\Language::get_languages();
       for ($i=0, $n=sizeof($languages); $i<$n; $i++) {
         $status_inputs_string .=
-          '<div class="langInput">' . $languages[$i]['image'] . tep_draw_input_field('stock_delivery_terms_text[' . $languages[$i]['id'] . ']', $oInfo->text[$languages[$i]['id']]['stock_delivery_terms_text']) . '</div>';
+          '<div class="langInput">' . $languages[$i]['image'] . tep_draw_input_field('stock_delivery_terms_text[' . $languages[$i]['id'] . ']', $oInfo->text[$languages[$i]['id']]['stock_delivery_terms_text'] ?? null) . '</div>';
         $status_short_inputs_string .=
-          '<div class="langInput">' . $languages[$i]['image'] . tep_draw_input_field('stock_delivery_terms_short_text[' . $languages[$i]['id'] . ']', $oInfo->text[$languages[$i]['id']]['stock_delivery_terms_short_text']) . '</div>';
+          '<div class="langInput">' . $languages[$i]['image'] . tep_draw_input_field('stock_delivery_terms_short_text[' . $languages[$i]['id'] . ']', $oInfo->text[$languages[$i]['id']]['stock_delivery_terms_short_text'] ?? null) . '</div>';
 
       }
 
@@ -212,7 +212,7 @@ class StockDeliveryTermsController extends Sceleton  {
 
       echo '<div class="btn-toolbar btn-toolbar-order">';
       echo
-        '<input type="button" value="' . IMAGE_UPDATE . '" class="btn btn-no-margin" onclick="itemSave('.($oInfo->stock_delivery_terms_id?$oInfo->stock_delivery_terms_id:0).')">'.
+        '<input type="button" value="' . IMAGE_UPDATE . '" class="btn btn-no-margin" onclick="itemSave('.($oInfo->stock_delivery_terms_id ?? 0).')">'.
         '<input type="button" value="' . IMAGE_CANCEL . '" class="btn btn-cancel" onclick="resetStatement()">';
       echo '</div>';
       echo '</form>';

@@ -59,9 +59,17 @@ class SupplierEdit extends \yii\base\Widget {
         
         $open_hours = \common\models\SuppliersDispatchTime::find()->where(['suppliers_id' => (int) $this->service->supplier->suppliers_id])->all();
         
+        global $languages_id;
+        $countries_list = array('' => '');
+        $countries_query = tep_db_query("select countries_iso_code_2, countries_name from " . TABLE_COUNTRIES . " where language_id = '" . (int) $languages_id . "' and status = 1 order by countries_name");
+        while ($countries = tep_db_fetch_array($countries_query)) {
+            $countries_list[$countries['countries_iso_code_2']] = $countries['countries_name'];
+        }
+        
         return $this->render('supplier-edit',[
             'service' => $this->service,
             'taxClassesVariants' => $taxClassesVariants,
+            'countries_list' => $countries_list,
             'sInfo' => $sInfo,
             'path' => $this->getPath() . \Yii::$app->controller->id.'/'.\Yii::$app->controller->action->id,
             'generatePath' => $this->getPath() . \Yii::$app->controller->id.'/generate-key',

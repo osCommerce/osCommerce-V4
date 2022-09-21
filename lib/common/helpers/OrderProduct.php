@@ -85,7 +85,7 @@ class OrderProduct
     /**
      * Automatically allocating stock for Order Product from Warehouse stock.
      * Rules: Received Dispatched Allocations locked on amount of Dispatched quantity.
-     * Behaviour: updating already present Allocations by Warehouse/Supplier/Location (W/S/L) priority, cleaning up unavailable Allocations, Allocating deficit by W/S/L priority
+     * Behaviour: updating already present Allocations by Warehouse/Supplier/Location/Layer/Batch (W/S/L/L/B) priority, cleaning up unavailable Allocations, Allocating deficit by W/S/L/L/B priority
      * @param \common\models\OrdersProducts $orderProductRecord
      * @param \common\models\Orders $orderRecord
      * @param \common\models\Products $productRecord
@@ -94,6 +94,7 @@ class OrderProduct
     private static function doAllocateAutomaticWarehouse(\common\models\OrdersProducts $orderProductRecord, \common\models\Orders $orderRecord, \common\models\Products $productRecord)
     {
         $uProductId = \common\helpers\Inventory::getInventoryId($orderProductRecord->uprid);
+        $isTemporary = \common\helpers\Order::isAllocateTemporary($orderRecord);
         $productQuantityReal = self::getQuantityReal($orderProductRecord);
 
         $force_sell_from_collect_warehouse_id = false;
@@ -143,11 +144,6 @@ class OrderProduct
             }
         }
 
-        $warehouseProductArray = [];
-        foreach (\common\helpers\Warehouses::getProductArray($uProductId, $orderRecord->platform_id) as $warehouseProductRecord) {
-            $warehouseProductArray[$warehouseProductRecord['warehouse_id']][$warehouseProductRecord['suppliers_id']][$warehouseProductRecord['location_id']] = $warehouseProductRecord;
-        }
-        unset($warehouseProductRecord);
         $warehouseIdArray = \common\helpers\Product::getWarehouseIdPriorityArray($uProductId, $productQuantityReal, $orderRecord->platform_id);
 
         if ( $force_sell_from_collect_warehouse_id!==false ){
@@ -160,297 +156,298 @@ class OrderProduct
 
         $supplierIdArray = \common\helpers\Product::getSupplierIdPriorityArray($uProductId);
         $locationIdArray = \common\helpers\Product::getLocationIdPriorityArray($uProductId);
-        $isTemporary = \common\helpers\Order::isAllocateTemporary($orderRecord);
-        $productQuantityReceived = 0;
-        $orderProductAllocatedArray = [];
-        foreach (self::getAllocatedArray($orderProductRecord, false) as $orderProductAllocatedRecord) {
-            $orderProductAllocatedArray[$orderProductAllocatedRecord->warehouse_id][$orderProductAllocatedRecord->suppliers_id][$orderProductAllocatedRecord->location_id] = $orderProductAllocatedRecord;
-            $productQuantityReceived += $orderProductAllocatedRecord->allocate_dispatched;
-        }
-        unset($orderProductAllocatedRecord);
+        $layerIdArray = \common\helpers\Product::getLayersIdPriorityArray($uProductId);
+        $batchIdArray = \common\helpers\Product::getBatchIdPriorityArray($uProductId);
 
-        $productAllocatedTemporaryArray = [];
-        foreach (\common\helpers\Product::getAllocatedTemporaryArray($uProductId) as $productAllocatedTemporaryRecord) {
-            $productAllocatedTemporaryArray[$productAllocatedTemporaryRecord['warehouse_id']][$productAllocatedTemporaryRecord['suppliers_id']][$productAllocatedTemporaryRecord['location_id']][] = $productAllocatedTemporaryRecord;
+        $warehouseProductArray = [];
+        foreach (\common\helpers\Warehouses::getProductArray($uProductId, $orderRecord->platform_id) as $warehouseProductRecord) {
+            $warehouseProductArray[$warehouseProductRecord['layers_id']][$warehouseProductRecord['warehouse_id']][$warehouseProductRecord['suppliers_id']][$warehouseProductRecord['location_id']][$warehouseProductRecord['batch_id']] = $warehouseProductRecord;
         }
-        unset($productAllocatedTemporaryRecord);
-
-        // UPDATE EXISTING ALLOCATION BY PRIORITY
-        if (count($orderProductAllocatedArray) > 0) {
-            $productAllocatedArray = [];
-            foreach (\common\helpers\Product::getAllocatedArray($uProductId) as $productAllocatedRecord) {
-                $productAllocatedArray[$productAllocatedRecord['warehouse_id']][$productAllocatedRecord['suppliers_id']][$productAllocatedRecord['location_id']][] = $productAllocatedRecord;
-            }
-            unset($productAllocatedRecord);
+        unset($warehouseProductRecord);
+        $warehouseProductPriorityArray = [];
+        foreach ($layerIdArray as $layerId) {
             foreach ($warehouseIdArray as $warehouseId) {
                 foreach ($supplierIdArray as $supplierId) {
                     foreach ($locationIdArray as $locationId) {
-                        if ($productQuantityReceived >= $productQuantityReal) {
-                            break 3;
+                        foreach ($batchIdArray as $batchId) {
+                            if (isset($warehouseProductArray[$layerId][$warehouseId][$supplierId][$locationId][$batchId])) {
+                                $warehouseProduct = $warehouseProductArray[$layerId][$warehouseId][$supplierId][$locationId][$batchId];
+                                if (($warehouseProduct['layers_id'] == $layerId)
+                                    AND ($warehouseProduct['warehouse_id'] == $warehouseId)
+                                    AND ($warehouseProduct['suppliers_id'] == $supplierId)
+                                    AND ($warehouseProduct['location_id'] == $locationId)
+                                    AND ($warehouseProduct['batch_id'] == $batchId)
+                                ) {
+                                    $key = "{$warehouseProduct['layers_id']}_{$warehouseProduct['warehouse_id']}_{$warehouseProduct['suppliers_id']}_{$warehouseProduct['location_id']}_{$warehouseProduct['batch_id']}";
+                                    $warehouseProductPriorityArray[$key] = $warehouseProduct;
+                                    unset($key);
+                                }
+                            }
+                            unset($warehouseProduct);
                         }
-                        if (isset($orderProductAllocatedArray[$warehouseId][$supplierId][$locationId])) {
-                            $orderProductAllocated = $orderProductAllocatedArray[$warehouseId][$supplierId][$locationId];
-                            if (isset($warehouseProductArray[$warehouseId][$supplierId][$locationId])) {
-                                $orderProductAllocated->products_id = $uProductId;
-                                $orderProductAllocated->is_temporary = $isTemporary;
-                                $orderProductAllocated->datetime = date('Y-m-d H:i:s');
-                                $orderProductAllocated->allocate_received = 0;
-                                $stockQuantity = $warehouseProductArray[$warehouseId][$supplierId][$locationId]['warehouse_stock_quantity'];
-                                if (isset($productAllocatedTemporaryArray[$warehouseId][$supplierId][$locationId])) {
-                                    foreach ($productAllocatedTemporaryArray[$warehouseId][$supplierId][$locationId] as $productAllocatedTemporaryRecord) {
-                                        $stockQuantity -= ($productAllocatedTemporaryRecord['temporary_stock_quantity'] > 0 ? $productAllocatedTemporaryRecord['temporary_stock_quantity'] : 0);
-                                    }
-                                    unset($productAllocatedTemporaryRecord);
-                                }
-                                $stockAllocated = 0;
-                                if (isset($productAllocatedArray[$warehouseId][$supplierId][$locationId])) {
-                                    foreach ($productAllocatedArray[$warehouseId][$supplierId][$locationId] as $productAllocated) {
-                                        if ($orderProductRecord->orders_products_id == $productAllocated['orders_products_id']) {
-                                            $orderProductAllocated->allocate_received += $productAllocated['allocate_received'];
-                                        }
-                                        $stockAllocated += $productAllocated['allocate_received'];
-                                    }
-                                    unset($productAllocated);
-                                }
-                                unset($productAllocated);
-                                $stockReceived = ($stockQuantity - $stockAllocated + $orderProductAllocated->allocate_received);
-                                if ($stockReceived <= 0 AND $orderProductAllocated->allocate_dispatched == 0) {
-                                    try {
-                                        $orderProductAllocated->delete();
-                                    } catch (\Exception $exc) {}
-                                } else {
-                                    if (($productQuantityReceived - $orderProductAllocated->allocate_dispatched + $stockReceived) > $productQuantityReal) {
-                                        $stockReceived = ($productQuantityReal - $productQuantityReceived + $orderProductAllocated->allocate_dispatched);
-                                    }
-                                    if ($stockReceived < $orderProductAllocated->allocate_dispatched) {
-                                        $stockReceived = $orderProductAllocated->allocate_dispatched;
-                                    }
-                                    $productQuantityReceived += ($stockReceived - $orderProductAllocated->allocate_dispatched);
-                                    $orderProductAllocated->allocate_received = $stockReceived;
-                                    try {
-                                        ($stockReceived > 0 ? $orderProductAllocated->save() : $orderProductAllocated->delete());
-                                    } catch (\Exception $exc) {}
-                                }
-                                unset($stockAllocated);
-                                unset($stockQuantity);
-                                unset($stockReceived);
-                            } else {
-                                if ($orderProductAllocated->allocate_dispatched > 0) {
-                                    $orderProductAllocated->allocate_received = $orderProductAllocated->allocate_dispatched;
-                                    $orderProductAllocated->is_temporary = 0;
-                                    $orderProductAllocated->datetime = date('Y-m-d H:i:s');
-                                    try {
-                                        $orderProductAllocated->save();
-                                    } catch (\Exception $exc) {}
-                                } else {
-                                    try {
-                                        $orderProductAllocated->delete();
-                                    } catch (\Exception $exc) {}
-                                }
-                            }
-                            unset($orderProductAllocated);
-                            unset($orderProductAllocatedArray[$warehouseId][$supplierId][$locationId]);
-                            if (count($orderProductAllocatedArray[$warehouseId][$supplierId]) == 0) {
-                                unset($orderProductAllocatedArray[$warehouseId][$supplierId]);
-                            }
-                            if (count($orderProductAllocatedArray[$warehouseId]) == 0) {
-                                unset($orderProductAllocatedArray[$warehouseId]);
-                            }
-                            if (count($orderProductAllocatedArray) == 0) {
-                                break 3;
-                            }
-                        }
+                        unset($batchId);
+                    }
+                    unset($locationId);
+                }
+                unset($supplierId);
+            }
+            unset($warehouseId);
+        }
+        unset($warehouseProductArray);
+        unset($layerId);
+
+        $productQuantityReceived = 0;
+        $orderProductAllocatedArray = [];
+        // REMOVE EXISTING NON PRIORITY ALLOCATION
+        foreach (self::getAllocatedArray($orderProductRecord, false) as $orderProductAllocated) {
+            $key = "{$orderProductAllocated->layers_id}_{$orderProductAllocated->warehouse_id}_{$orderProductAllocated->suppliers_id}_{$orderProductAllocated->location_id}_{$orderProductAllocated->batch_id}";
+            if (!isset($warehouseProductPriorityArray[$key])) {
+                if ($orderProductAllocated->allocate_dispatched > 0) {
+                    try {
+                        $orderProductAllocated->allocate_received = $orderProductAllocated->allocate_dispatched;
+                        $orderProductAllocated->is_temporary = 0;
+                        $orderProductAllocated->datetime = date('Y-m-d H:i:s');
+                        $orderProductAllocated->save(false);
+                    } catch (\Exception $exc) {
+                        \Yii::warning(($exc->getMessage() . ' ' . $exc->getTraceAsString()), 'Error.Helper.OrderProduct.doAllocateAutomaticWarehouse.RENPA.update');
+                    }
+                } else {
+                    try {
+                        $orderProductAllocated->allocate_dispatched = 0;
+                        $orderProductAllocated->allocate_received = 0;
+                        $orderProductAllocated->delete();
+                    } catch (\Exception $exc) {
+                        \Yii::warning(($exc->getMessage() . ' ' . $exc->getTraceAsString()), 'Error.Helper.OrderProduct.doAllocateAutomaticWarehouse.RENPA.delete');
                     }
                 }
+            } else {
+                $orderProductAllocatedArray[$key] = $orderProductAllocated;
             }
-            unset($productAllocatedArray);
-            unset($warehouseId);
-            unset($supplierId);
-            unset($locationId);
+            $productQuantityReal -= (int)$orderProductAllocated->allocate_dispatched;
+            $productQuantityReceived += ((int)$orderProductAllocated->allocate_received - (int)$orderProductAllocated->allocate_dispatched);
+            unset($key);
         }
-        // EOF UPDATE EXISTING ALLOCATION BY PRIORITY
+        unset($orderProductAllocated);
+        // EOF REMOVE EXISTING NON PRIORITY ALLOCATION
 
-        // UPDATE EXISTING NON PRIORITY ALLOCATION
-        if (count($orderProductAllocatedArray) > 0) {
+        if ($productQuantityReal < 0) {
+            return false;
+        }
+
+        $productAllocatedTemporaryArray = [];
+        /*foreach (\common\helpers\Product::getAllocatedTemporaryArray($uProductId) as $productAllocatedTemporaryRecord) {
+            $productAllocatedTemporaryArray[$productAllocatedTemporaryRecord['layers_id']][$productAllocatedTemporaryRecord['warehouse_id']][$productAllocatedTemporaryRecord['suppliers_id']][$productAllocatedTemporaryRecord['location_id']][$productAllocatedTemporaryRecord['batch_id']][] = $productAllocatedTemporaryRecord;
+        }
+        unset($productAllocatedTemporaryRecord);*/
+
+        // UPDATE INVALID ALLOCATION
+        if ($productQuantityReceived > $productQuantityReal) {
             $productAllocatedArray = [];
-            foreach (\common\helpers\Product::getAllocatedArray($uProductId) as $productAllocatedRecord) {
-                $productAllocatedArray[$productAllocatedRecord['warehouse_id']][$productAllocatedRecord['suppliers_id']][$productAllocatedRecord['location_id']][] = $productAllocatedRecord;
+            foreach (\common\helpers\Product::getAllocatedArray($uProductId, false) as $productAllocatedRecord) {
+                $productAllocatedArray[$productAllocatedRecord->layers_id][$productAllocatedRecord->warehouse_id][$productAllocatedRecord->suppliers_id][$productAllocatedRecord->location_id][$productAllocatedRecord->batch_id][] = $productAllocatedRecord;
             }
             unset($productAllocatedRecord);
-            foreach ($orderProductAllocatedArray as $warehouseId => $supplierArray) {
-                foreach ($supplierArray as $supplierId => $locationArray) {
-                    foreach ($locationArray as $locationId => $orderProductAllocated) {
-                        if ($productQuantityReceived >= $productQuantityReal AND $productQuantityReceived == self::getReceived($orderProductRecord, true)) {
-                            break 3;
-                        }
-                        if (in_array($warehouseId, $warehouseIdArray)
-                            AND in_array($supplierId, $supplierIdArray)
-                            AND in_array($locationId, $locationIdArray)
-                            AND isset($warehouseProductArray[$warehouseId][$supplierId][$locationId])
-                        ) {
-                            $orderProductAllocated->products_id = $uProductId;
-                            $orderProductAllocated->is_temporary = $isTemporary;
-                            $orderProductAllocated->datetime = date('Y-m-d H:i:s');
-                            $orderProductAllocated->allocate_received = 0;
-                            $stockQuantity = $warehouseProductArray[$warehouseId][$supplierId][$locationId]['warehouse_stock_quantity'];
-                            if (isset($productAllocatedTemporaryArray[$warehouseId][$supplierId][$locationId])) {
-                                foreach ($productAllocatedTemporaryArray[$warehouseId][$supplierId][$locationId] as $productAllocatedTemporaryRecord) {
-                                    $stockQuantity -= ($productAllocatedTemporaryRecord['temporary_stock_quantity'] > 0 ? $productAllocatedTemporaryRecord['temporary_stock_quantity'] : 0);
+            foreach (['update', 'remove'] as $type) {
+                foreach (array_reverse($warehouseProductPriorityArray, true) as $key => $warehouseProduct) {
+                    if (isset($orderProductAllocatedArray[$key])) {
+                        $orderProductAllocated = $orderProductAllocatedArray[$key];
+                        if ($type == 'update') {
+                            $layerId = (int)$orderProductAllocated->layers_id;
+                            $warehouseId = (int)$orderProductAllocated->warehouse_id;
+                            $supplierId = (int)$orderProductAllocated->suppliers_id;
+                            $locationId = (int)$orderProductAllocated->location_id;
+                            $batchId = (int)$orderProductAllocated->batch_id;
+                            $stockQuantity = (int)$warehouseProduct['warehouse_stock_quantity'];
+                            if (isset($productAllocatedTemporaryArray[$layerId][$warehouseId][$supplierId][$locationId][$batchId])) {
+                                foreach ($productAllocatedTemporaryArray[$layerId][$warehouseId][$supplierId][$locationId][$batchId] as $productAllocatedTemporaryRecord) {
+                                    $stockQuantity -= (($productAllocatedTemporaryRecord['temporary_stock_quantity'] > 0) ? $productAllocatedTemporaryRecord['temporary_stock_quantity'] : 0);
                                 }
                                 unset($productAllocatedTemporaryRecord);
                             }
-                            $stockAllocated = 0;
-                            if (isset($productAllocatedArray[$warehouseId][$supplierId][$locationId])) {
-                                foreach ($productAllocatedArray[$warehouseId][$supplierId][$locationId] as $productAllocated) {
-                                    if ($orderProductRecord->orders_products_id == $productAllocated['orders_products_id']) {
-                                        $orderProductAllocated->allocate_received += $productAllocated['allocate_received'];
+                            if (isset($productAllocatedArray[$layerId][$warehouseId][$supplierId][$locationId][$batchId])) {
+                                foreach ($productAllocatedArray[$layerId][$warehouseId][$supplierId][$locationId][$batchId] as $productAllocated) {
+                                    if ($orderProductAllocated->orders_products_id == $productAllocated->orders_products_id) {
+                                        continue;
                                     }
-                                    $stockAllocated += $productAllocated['allocate_received'];
+                                    $stockQuantity -= ($productAllocated->allocate_received - $productAllocated->allocate_dispatched);
                                 }
                                 unset($productAllocated);
                             }
-                            unset($productAllocated);
-                            $stockReceived = ($stockQuantity - $stockAllocated + $orderProductAllocated->allocate_received);
-                            if ($stockReceived <= 0 AND $orderProductAllocated->allocate_dispatched == 0) {
-                                try {
-                                    $orderProductAllocated->delete();
-                                } catch (\Exception $exc) {}
-                            } else {
-                                if (($productQuantityReceived - $orderProductAllocated->allocate_dispatched + $stockReceived) > $productQuantityReal) {
-                                    $stockReceived = ($productQuantityReal - $productQuantityReceived + $orderProductAllocated->allocate_dispatched);
-                                }
-                                if ($stockReceived < $orderProductAllocated->allocate_dispatched) {
-                                    $stockReceived = $orderProductAllocated->allocate_dispatched;
-                                }
-                                $productQuantityReceived += ($stockReceived - $orderProductAllocated->allocate_dispatched);
-                                $orderProductAllocated->allocate_received = $stockReceived;
-                                try {
-                                    ($stockReceived > 0 ? $orderProductAllocated->save() : $orderProductAllocated->delete());
-                                } catch (\Exception $exc) {}
+                            $receivedQuantity = $orderProductAllocated->allocate_received;
+                            if ($orderProductAllocated->allocate_received > ($stockQuantity + $orderProductAllocated->allocate_dispatched)) {
+                                $orderProductAllocated->allocate_received = ($stockQuantity + $orderProductAllocated->allocate_dispatched);
                             }
-                            unset($stockAllocated);
-                            unset($stockQuantity);
-                            unset($stockReceived);
-                        } else {
-                            if ($orderProductAllocated->allocate_dispatched > 0) {
+                            if ($orderProductAllocated->allocate_dispatched > $orderProductAllocated->allocate_received) {
                                 $orderProductAllocated->allocate_received = $orderProductAllocated->allocate_dispatched;
-                                $orderProductAllocated->is_temporary = 0;
-                                $orderProductAllocated->datetime = date('Y-m-d H:i:s');
-                                try {
-                                    $orderProductAllocated->save();
-                                } catch (\Exception $exc) {}
-                            } else {
-                                try {
-                                    $orderProductAllocated->delete();
-                                } catch (\Exception $exc) {}
                             }
+                            $productQuantityReceived += ($orderProductAllocated->allocate_received - $receivedQuantity);
+                            unset($receivedQuantity);
+                            unset($stockQuantity);
+                            unset($warehouseId);
+                            unset($supplierId);
+                            unset($locationId);
+                            unset($batchId);
+                            unset($layerId);
+                        } elseif ($type == 'remove') {
+                            if ($productQuantityReceived <= $productQuantityReal) {
+                                break 2;
+                            }
+                            $receivedQuantity = ($orderProductAllocated->allocate_received - $orderProductAllocated->allocate_dispatched);
+                            if (($productQuantityReceived - $receivedQuantity) < $productQuantityReal) {
+                                $receivedQuantity = ($productQuantityReceived - $productQuantityReal);
+                            }
+                            $productQuantityReceived -= $receivedQuantity;
+                            $orderProductAllocated->allocate_received -= $receivedQuantity;
+                            unset($receivedQuantity);
+                        }
+                        try {
+                            (($orderProductAllocated->allocate_received > 0)
+                                ? $orderProductAllocated->save(false)
+                                : $orderProductAllocated->delete()
+                            );
+                        } catch (\Exception $exc) {
+                            \Yii::warning(($exc->getMessage() . ' ' . $exc->getTraceAsString()), 'Error.Helper.OrderProduct.doAllocateAutomaticWarehouse.UIA.update');
                         }
                     }
                 }
+                $orderProductAllocatedArray = [];
+                foreach (self::getAllocatedArray($orderProductRecord, false) as $orderProductAllocated) {
+                    $key = "{$orderProductAllocated->layers_id}_{$orderProductAllocated->warehouse_id}_{$orderProductAllocated->suppliers_id}_{$orderProductAllocated->location_id}_{$orderProductAllocated->batch_id}";
+                    if (isset($warehouseProductPriorityArray[$key])) {
+                        $orderProductAllocatedArray[$key] = $orderProductAllocated;
+                    }
+                    unset($key);
+                }
+                unset($orderProductAllocated);
             }
-            unset($productAllocatedArray);
             unset($orderProductAllocated);
-            unset($locationArray);
-            unset($supplierArray);
-            unset($warehouseId);
-            unset($supplierId);
-            unset($locationId);
+            unset($productAllocatedArray);
+            unset($warehouseProduct);
+            unset($type);
+            unset($key);
         }
-        // EOF UPDATE EXISTING NON PRIORITY ALLOCATION
-
         unset($orderProductAllocatedArray);
+        // EOF UPDATE INVALID ALLOCATION
 
         // ALLOCATE BY PRIORITY
-        $productAllocatedArray = [];
-        foreach (\common\helpers\Product::getAllocatedArray($uProductId) as $productAllocatedRecord) {
-            $productAllocatedArray[$productAllocatedRecord['warehouse_id']][$productAllocatedRecord['suppliers_id']][$productAllocatedRecord['location_id']][] = $productAllocatedRecord;
-        }
-        unset($productAllocatedRecord);
-        foreach ($warehouseIdArray as $warehouseId) {
-            foreach ($supplierIdArray as $supplierId) {
-                foreach ($locationIdArray as $locationId) {
-                    if ($productQuantityReceived >= $productQuantityReal) {
-                        break 3;
+        foreach (['pallet', 'pack', 'item'] as $type) {
+            $multiplier = 1;
+            if ($type == 'pallet') {
+                $multiplier = ((int)$productRecord->pack_unit * (int)$productRecord->packaging);
+            } elseif ($type == 'pack') {
+                $multiplier = (int)$productRecord->pack_unit;
+            }
+            if ($multiplier <= 0) {
+                continue;
+            }
+            $productAllocatedArray = [];
+            foreach (\common\helpers\Product::getAllocatedArray($uProductId, false) as $productAllocatedRecord) {
+                $productAllocatedArray[$productAllocatedRecord->layers_id][$productAllocatedRecord->warehouse_id][$productAllocatedRecord->suppliers_id][$productAllocatedRecord->location_id][$productAllocatedRecord->batch_id][] = $productAllocatedRecord;
+            }
+            unset($productAllocatedRecord);
+            foreach ($warehouseProductPriorityArray as $warehouseProduct) {
+                if ($productQuantityReceived >= $productQuantityReal) {
+                    break 2;
+                }
+                $layerId = (int)$warehouseProduct['layers_id'];
+                $warehouseId = (int)$warehouseProduct['warehouse_id'];
+                $supplierId = (int)$warehouseProduct['suppliers_id'];
+                $locationId = (int)$warehouseProduct['location_id'];
+                $batchId = (int)$warehouseProduct['batch_id'];
+                $stockQuantity = (int)$warehouseProduct['warehouse_stock_quantity'];
+                if (isset($productAllocatedTemporaryArray[$layerId][$warehouseId][$supplierId][$locationId][$batchId])) {
+                    foreach ($productAllocatedTemporaryArray[$layerId][$warehouseId][$supplierId][$locationId][$batchId] as $productAllocatedTemporaryRecord) {
+                        $stockQuantity -= (($productAllocatedTemporaryRecord['temporary_stock_quantity'] > 0) ? $productAllocatedTemporaryRecord['temporary_stock_quantity'] : 0);
                     }
-                    if (isset($warehouseProductArray[$warehouseId][$supplierId][$locationId])) {
-                        $stockQuantity = $warehouseProductArray[$warehouseId][$supplierId][$locationId]['warehouse_stock_quantity'];
-                        if (isset($productAllocatedTemporaryArray[$warehouseId][$supplierId][$locationId])) {
-                            foreach ($productAllocatedTemporaryArray[$warehouseId][$supplierId][$locationId] as $productAllocatedTemporaryRecord) {
-                                $stockQuantity -= ($productAllocatedTemporaryRecord['temporary_stock_quantity'] > 0 ? $productAllocatedTemporaryRecord['temporary_stock_quantity'] : 0);
-                            }
-                            unset($productAllocatedTemporaryRecord);
+                    unset($productAllocatedTemporaryRecord);
+                }
+                $orderProductAllocateRecord = false;
+                if (isset($productAllocatedArray[$layerId][$warehouseId][$supplierId][$locationId][$batchId])) {
+                    foreach ($productAllocatedArray[$layerId][$warehouseId][$supplierId][$locationId][$batchId] as $productAllocated) {
+                        $stockQuantity -= ((int)$productAllocated->allocate_received - (int)$productAllocated->allocate_dispatched);
+                        if ($orderProductRecord->orders_products_id == $productAllocated->orders_products_id) {
+                            $orderProductAllocateRecord = $productAllocated;
                         }
-                        $stockAllocated = 0;
-                        if (isset($productAllocatedArray[$warehouseId][$supplierId][$locationId])) {
-                            foreach ($productAllocatedArray[$warehouseId][$supplierId][$locationId] as $productAllocated) {
-                                if ($orderProductRecord->orders_products_id == $productAllocated['orders_products_id']) {
-                                    unset($productAllocated);
-                                    unset($stockAllocated);
-                                    unset($stockQuantity);
-                                    continue 2;
-                                }
-                                $stockAllocated += $productAllocated['allocate_received'];
-                            }
-                            unset($productAllocated);
-                        }
-                        $stockReceived = ($stockQuantity - $stockAllocated);
-                        if ($stockReceived > 0) {
-                            if (($productQuantityReceived + $stockReceived) > $productQuantityReal) {
-                                $stockReceived = $productQuantityReal - $productQuantityReceived;
-                            }
-                            $productQuantityReceived += $stockReceived;
-                            $orderProductAllocateRecord = new \common\models\OrdersProductsAllocate();
-                            try {
-                                $orderProductAllocateRecord->orders_products_id = $orderProductRecord->orders_products_id;
-                                $orderProductAllocateRecord->warehouse_id = $warehouseId;
-                                $orderProductAllocateRecord->suppliers_id = $supplierId;
-                                $orderProductAllocateRecord->location_id = $locationId;
-                                $orderProductAllocateRecord->platform_id = $orderRecord->platform_id;
-                                $orderProductAllocateRecord->orders_id = $orderRecord->orders_id;
-                                $orderProductAllocateRecord->prid = $productRecord->products_id;
-                                $orderProductAllocateRecord->products_id = $uProductId;
-                                $orderProductAllocateRecord->allocate_received = $stockReceived;
-                                $orderProductAllocateRecord->is_temporary = $isTemporary;
-                                $orderProductAllocateRecord->datetime = date('Y-m-d H:i:s');
-                                $orderProductAllocateRecord->suppliers_price = \common\models\SuppliersProducts::getSuppliersPrice($uProductId, $supplierId);
-                                $orderProductAllocateRecord->save();
-                                unset($orderProductAllocateRecord);
-                            } catch (\Exception $exc) {}
-                        }
-                        unset($stockAllocated);
-                        unset($stockQuantity);
-                        unset($stockReceived);
+                    }
+                    unset($productAllocated);
+                }
+                if ($stockQuantity < $multiplier) {
+                    continue;
+                }
+                $stockQuantity = (int)(floor($stockQuantity / $multiplier) * $multiplier);
+                if ($stockQuantity > 0) {
+                    if (($productQuantityReceived + $stockQuantity) > $productQuantityReal) {
+                        $stockQuantity = ($productQuantityReal - $productQuantityReceived);
+                        $stockQuantity = (int)(floor($stockQuantity / $multiplier) * $multiplier);
                     }
                 }
+                if ($stockQuantity > 0) {
+                    $productQuantityReceived += $stockQuantity;
+                    try {
+                        if (!($orderProductAllocateRecord instanceof \common\models\OrdersProductsAllocate)) {
+                            $orderProductAllocateRecord = new \common\models\OrdersProductsAllocate();
+                            $orderProductAllocateRecord->orders_products_id = $orderProductRecord->orders_products_id;
+                            $orderProductAllocateRecord->layers_id = $layerId;
+                            $orderProductAllocateRecord->warehouse_id = $warehouseId;
+                            $orderProductAllocateRecord->suppliers_id = $supplierId;
+                            $orderProductAllocateRecord->location_id = $locationId;
+                            $orderProductAllocateRecord->batch_id = $batchId;
+                            $orderProductAllocateRecord->platform_id = $orderRecord->platform_id;
+                            $orderProductAllocateRecord->orders_id = $orderRecord->orders_id;
+                            $orderProductAllocateRecord->prid = $productRecord->products_id;
+                            $orderProductAllocateRecord->products_id = $uProductId;
+                        }
+                        $orderProductAllocateRecord->allocate_received += $stockQuantity;
+                        $orderProductAllocateRecord->is_temporary = $isTemporary;
+                        $orderProductAllocateRecord->datetime = date('Y-m-d H:i:s');
+                        $orderProductAllocateRecord->suppliers_price = \common\models\SuppliersProducts::getSuppliersPrice($uProductId, $supplierId);
+                        $orderProductAllocateRecord->save(false);
+                    } catch (\Exception $exc) {
+                        \Yii::warning(($exc->getMessage() . ' ' . $exc->getTraceAsString()), 'Error.Helper.OrderProduct.doAllocateAutomaticWarehouse.ABP.save');
+                    }
+                    unset($orderProductAllocateRecord);
+                }
+                unset($stockQuantity);
             }
         }
         unset($productAllocatedArray);
+        unset($warehouseProduct);
         unset($warehouseId);
         unset($supplierId);
         unset($locationId);
+        unset($batchId);
+        unset($multiplier);
+        unset($layerId);
+        unset($type);
         // EOF ALLOCATE BY PRIORITY
 
         unset($productAllocatedTemporaryArray);
-        unset($warehouseProductArray);
+        unset($warehouseProductPriorityArray);
         unset($productQuantityReal);
         unset($warehouseIdArray);
         unset($supplierIdArray);
         unset($locationIdArray);
+        unset($batchIdArray);
         unset($productRecord);
+        unset($layerIdArray);
         unset($orderRecord);
+        unset($isTemporary);
         unset($uProductId);
         try {
             $orderProductRecord->qty_rcvd = $productQuantityReceived;
             $orderProductRecord->save();
-        } catch (\Exception $exc) {}
+        } catch (\Exception $exc) {
+            \Yii::warning(($exc->getMessage() . ' ' . $exc->getTraceAsString()), 'Error.Helper.OrderProduct.doAllocateAutomaticWarehouse.orderProductRecord.save');
+        }
         unset($productQuantityReceived);
+        unset($orderProductRecord);
         return true;
     }
 
     /**
      * Automatically allocating stock for Order Product from Warehouse unlimited stock.
      * Rules: Received Dispatched Allocations locked on amount of Dispatched quantity.
-     * Behaviour: updating already present Allocations by Warehouse/Supplier/Location (W/S/L) priority, cleaning up unavailable Allocations, Allocating deficit by W/S/L priority
+     * Behaviour: updating already present Allocations by Warehouse/Supplier/Location/Layers/Batch (W/S/L/L/B) priority, cleaning up unavailable Allocations, Allocating deficit by W/S/L/L/B priority
      * @param \common\models\OrdersProducts $orderProductRecord
      * @param \common\models\Orders $orderRecord
      * @param \common\models\Products $productRecord
@@ -463,34 +460,40 @@ class OrderProduct
         $warehouseIdArray = \common\helpers\Product::getWarehouseIdPriorityArray($uProductId, $productQuantityReal, $orderRecord->platform_id);
         $supplierIdArray = \common\helpers\Product::getSupplierIdPriorityArray($uProductId);
         $locationIdArray = \common\helpers\Product::getLocationIdPriorityArray($uProductId);
+        $layerIdArray = \common\helpers\Product::getLayersIdPriorityArray($uProductId);
+        $batchIdArray = \common\helpers\Product::getBatchIdPriorityArray($uProductId);
         $productQuantityReceived = 0;
         $orderProductAllocatedArray = [];
         foreach (self::getAllocatedArray($orderProductRecord, false) as $orderProductAllocatedRecord) {
-            $orderProductAllocatedArray[$orderProductAllocatedRecord->warehouse_id][$orderProductAllocatedRecord->suppliers_id][$orderProductAllocatedRecord->location_id] = $orderProductAllocatedRecord;
+            $orderProductAllocatedArray[$orderProductAllocatedRecord->warehouse_id][$orderProductAllocatedRecord->suppliers_id][$orderProductAllocatedRecord->location_id][$orderProductAllocatedRecord->layers_id][$orderProductAllocatedRecord->batch_id] = $orderProductAllocatedRecord;
             $productQuantityReceived += $orderProductAllocatedRecord->allocate_dispatched;
         }
         unset($orderProductAllocatedRecord);
 
         // UPDATE EXISTING ALLOCATION BY PRIORITY
         if (count($orderProductAllocatedArray) > 0) {
-            foreach ($warehouseIdArray as $warehouseId) {
-                foreach ($supplierIdArray as $supplierId) {
-                    foreach ($locationIdArray as $locationId) {
-                        if ($productQuantityReceived >= $productQuantityReal) {
-                            break 3;
-                        }
-                        if (isset($orderProductAllocatedArray[$warehouseId][$supplierId][$locationId])) {
-                            $orderProductAllocated = $orderProductAllocatedArray[$warehouseId][$supplierId][$locationId];
-                            $orderProductAllocated->products_id = $uProductId;
-                            $stockReceived = ($productQuantityReal - $productQuantityReceived + $orderProductAllocated->allocate_dispatched);
-                            $productQuantityReceived += ($stockReceived - $orderProductAllocated->allocate_dispatched);
-                            $orderProductAllocated->allocate_received = $stockReceived;
-                            try {
-                                ($stockReceived > 0 ? $orderProductAllocated->save() : $orderProductAllocated->delete());
-                            } catch (\Exception $exc) {}
-                            unset($stockReceived);
-                            unset($orderProductAllocated);
-                            unset($orderProductAllocatedArray[$warehouseId][$supplierId][$locationId]);
+            foreach ($layerIdArray as $layerId) {
+                foreach ($warehouseIdArray as $warehouseId) {
+                    foreach ($supplierIdArray as $supplierId) {
+                        foreach ($locationIdArray as $locationId) {
+                            foreach ($batchIdArray as $batchId) {
+                                if ($productQuantityReceived >= $productQuantityReal) {
+                                    break 5;
+                                }
+                                if (isset($orderProductAllocatedArray[$warehouseId][$supplierId][$locationId][$layerId][$batchId])) {
+                                    $orderProductAllocated = $orderProductAllocatedArray[$warehouseId][$supplierId][$locationId][$layerId][$batchId];
+                                    $orderProductAllocated->products_id = $uProductId;
+                                    $stockReceived = ($productQuantityReal - $productQuantityReceived + $orderProductAllocated->allocate_dispatched);
+                                    $productQuantityReceived += ($stockReceived - $orderProductAllocated->allocate_dispatched);
+                                    $orderProductAllocated->allocate_received = $stockReceived;
+                                    try {
+                                        ($stockReceived > 0 ? $orderProductAllocated->save() : $orderProductAllocated->delete());
+                                    } catch (\Exception $exc) {}
+                                    unset($stockReceived);
+                                    unset($orderProductAllocated);
+                                    unset($orderProductAllocatedArray[$warehouseId][$supplierId][$locationId][$layerId][$batchId]);
+                                }
+                            }
                         }
                     }
                 }
@@ -498,35 +501,45 @@ class OrderProduct
             unset($warehouseId);
             unset($supplierId);
             unset($locationId);
+            unset($layerId);
+            unset($batchId);
         }
         // EOF UPDATE EXISTING ALLOCATION BY PRIORITY
 
         // UPDATE EXISTING NON PRIORITY ALLOCATION
         foreach ($orderProductAllocatedArray as $warehouseId => $supplierArray) {
             foreach ($supplierArray as $supplierId => $locationArray) {
-                foreach ($locationArray as $locationId => $orderProductAllocated) {
-                    if ($productQuantityReceived >= $productQuantityReal AND $productQuantityReceived == self::getReceived($orderProductRecord, true)) {
-                        break 3;
-                    }
-                    if ($orderProductAllocated->allocate_dispatched > 0) {
-                        $orderProductAllocated->allocate_received = $orderProductAllocated->allocate_dispatched;
-                        try {
-                            $orderProductAllocated->save();
-                        } catch (\Exception $exc) {}
-                    } else {
-                        try {
-                            $orderProductAllocated->delete();
-                        } catch (\Exception $exc) {}
+                foreach ($locationArray as $locationId => $layersArray) {
+                    foreach ($layersArray as $layerId => $batchArray) {
+                        foreach ($batchArray as $batchId => $orderProductAllocated) {
+                            if ($productQuantityReceived >= $productQuantityReal AND $productQuantityReceived == self::getReceived($orderProductRecord, true)) {
+                                break 5;
+                            }
+                            if ($orderProductAllocated->allocate_dispatched > 0) {
+                                $orderProductAllocated->allocate_received = $orderProductAllocated->allocate_dispatched;
+                                try {
+                                    $orderProductAllocated->save();
+                                } catch (\Exception $exc) {}
+                            } else {
+                                try {
+                                    $orderProductAllocated->delete();
+                                } catch (\Exception $exc) {}
+                            }
+                        }
                     }
                 }
             }
         }
         unset($orderProductAllocated);
         unset($locationArray);
+        unset($layersArray);
+        unset($batchArray);
         unset($supplierArray);
         unset($warehouseId);
         unset($supplierId);
         unset($locationId);
+        unset($layerId);
+        unset($batchId);
         // EOF UPDATE EXISTING NON PRIORITY ALLOCATION
 
         unset($orderProductAllocatedArray);
@@ -534,42 +547,48 @@ class OrderProduct
         // ALLOCATE BY PRIORITY
         $productAllocatedArray = [];
         foreach (\common\helpers\Product::getAllocatedArray($uProductId) as $productAllocatedRecord) {
-            $productAllocatedArray[$productAllocatedRecord['warehouse_id']][$productAllocatedRecord['suppliers_id']][$productAllocatedRecord['location_id']][] = $productAllocatedRecord;
+            $productAllocatedArray[$productAllocatedRecord['warehouse_id']][$productAllocatedRecord['suppliers_id']][$productAllocatedRecord['location_id']][$productAllocatedRecord['layers_id']][$productAllocatedRecord['batch_id']][] = $productAllocatedRecord;
         }
         unset($productAllocatedRecord);
-        foreach ($warehouseIdArray as $warehouseId) {
-            foreach ($supplierIdArray as $supplierId) {
-                foreach ($locationIdArray as $locationId) {
-                    if ($productQuantityReceived >= $productQuantityReal) {
-                        break 3;
-                    }
-                    if (isset($productAllocatedArray[$warehouseId][$supplierId][$locationId])) {
-                        foreach ($productAllocatedArray[$warehouseId][$supplierId][$locationId] as $productAllocated) {
-                            if ($productAllocated['orders_products_id'] == $orderProductRecord->orders_products_id) {
-                                unset($productAllocated);
-                                continue 2;
+        foreach ($layerIdArray as $layerId) {
+            foreach ($warehouseIdArray as $warehouseId) {
+                foreach ($supplierIdArray as $supplierId) {
+                    foreach ($locationIdArray as $locationId) {
+                        foreach ($batchIdArray as $batchId) {
+                            if ($productQuantityReceived >= $productQuantityReal) {
+                                break 5;
                             }
+                            if (isset($productAllocatedArray[$warehouseId][$supplierId][$locationId][$layerId][$batchId])) {
+                                foreach ($productAllocatedArray[$warehouseId][$supplierId][$locationId][$layerId][$batchId] as $productAllocated) {
+                                    if ($productAllocated['orders_products_id'] == $orderProductRecord->orders_products_id) {
+                                        unset($productAllocated);
+                                        continue 2;
+                                    }
+                                }
+                                unset($productAllocated);
+                            }
+                            $stockReceived = $productQuantityReal - $productQuantityReceived;
+                            $productQuantityReceived += $stockReceived;
+                            $orderProductAllocateRecord = new \common\models\OrdersProductsAllocate();
+                            try {
+                                $orderProductAllocateRecord->orders_products_id = $orderProductRecord->orders_products_id;
+                                $orderProductAllocateRecord->warehouse_id = $warehouseId;
+                                $orderProductAllocateRecord->suppliers_id = $supplierId;
+                                $orderProductAllocateRecord->location_id = $locationId;
+                                $orderProductAllocateRecord->layers_id = $layerId;
+                                $orderProductAllocateRecord->batch_id = $batchId;
+                                $orderProductAllocateRecord->platform_id = $orderRecord->platform_id;
+                                $orderProductAllocateRecord->orders_id = $orderRecord->orders_id;
+                                $orderProductAllocateRecord->prid = $productRecord->products_id;
+                                $orderProductAllocateRecord->products_id = $uProductId;
+                                $orderProductAllocateRecord->allocate_received = $stockReceived;
+                                $orderProductAllocateRecord->suppliers_price = \common\models\SuppliersProducts::getSuppliersPrice($uProductId, $supplierId);
+                                $orderProductAllocateRecord->save();
+                                unset($orderProductAllocateRecord);
+                            } catch (\Exception $exc) {}
+                            unset($stockReceived);
                         }
-                        unset($productAllocated);
                     }
-                    $stockReceived = $productQuantityReal - $productQuantityReceived;
-                    $productQuantityReceived += $stockReceived;
-                    $orderProductAllocateRecord = new \common\models\OrdersProductsAllocate();
-                    try {
-                        $orderProductAllocateRecord->orders_products_id = $orderProductRecord->orders_products_id;
-                        $orderProductAllocateRecord->warehouse_id = $warehouseId;
-                        $orderProductAllocateRecord->suppliers_id = $supplierId;
-                        $orderProductAllocateRecord->location_id = $locationId;
-                        $orderProductAllocateRecord->platform_id = $orderRecord->platform_id;
-                        $orderProductAllocateRecord->orders_id = $orderRecord->orders_id;
-                        $orderProductAllocateRecord->prid = $productRecord->products_id;
-                        $orderProductAllocateRecord->products_id = $uProductId;
-                        $orderProductAllocateRecord->allocate_received = $stockReceived;
-                        $orderProductAllocateRecord->suppliers_price = \common\models\SuppliersProducts::getSuppliersPrice($uProductId, $supplierId);
-                        $orderProductAllocateRecord->save();
-                        unset($orderProductAllocateRecord);
-                    } catch (\Exception $exc) {}
-                    unset($stockReceived);
                 }
             }
         }
@@ -577,12 +596,16 @@ class OrderProduct
         unset($warehouseId);
         unset($supplierId);
         unset($locationId);
+        unset($layerId);
+        unset($batchId);
         // EOF ALLOCATE BY PRIORITY
 
         unset($productQuantityReal);
         unset($warehouseIdArray);
         unset($supplierIdArray);
         unset($locationIdArray);
+        unset($layerIdArray);
+        unset($batchIdArray);
         unset($productRecord);
         unset($orderRecord);
         unset($uProductId);
@@ -601,14 +624,18 @@ class OrderProduct
      * @param mixed $warehouseId Warehouse id
      * @param mixed $supplierId Supplier id
      * @param mixed $locationId Location id
+     * @param mixed $layerId Layer id
+     * @param mixed $batchId Batch id
      * @return boolean false on error, true on success
      */
-    public static function doAllocateSpecific($orderProductRecord = 0, &$quantity = 0, $warehouseId = 0, $supplierId = 0, $locationId = 0)
+    public static function doAllocateSpecific($orderProductRecord = 0, &$quantity = 0, $warehouseId = 0, $supplierId = 0, $locationId = 0, $layerId = 0, $batchId = 0)
     {
         global $login_id;
         $warehouseId = (int)$warehouseId;
         $supplierId = (int)$supplierId;
         $locationId = (int)$locationId;
+        $layerId = (int)$layerId;
+        $batchId = (int)$batchId;
         $quantityAwaiting = (int)$quantity;
         $quantity = 0;
         $orderProductRecord = self::getRecord($orderProductRecord);
@@ -619,6 +646,8 @@ class OrderProduct
                     ->andWhere(['warehouse_id' => $warehouseId])
                     ->andWhere(['suppliers_id' => $supplierId])
                     ->andWhere(['location_id' => $locationId])
+                    ->andWhere(['layers_id' => $layerId])
+                    ->andWhere(['batch_id' => $batchId])
                     ->asArray(false)->one();
                 if ($opAllocateRecord instanceof \common\models\OrdersProductsAllocate) {
                     if ($quantityAwaiting > (int)$opAllocateRecord->allocate_received) {
@@ -636,6 +665,8 @@ class OrderProduct
                             ->andWhere(['warehouse_id' => $warehouseId])
                             ->andWhere(['suppliers_id' => $supplierId])
                             ->andWhere(['location_id' => $locationId])
+                            ->andWhere(['layers_id' => $layerId])
+                            ->andWhere(['batch_id' => $batchId])
                             ->asArray(true)->one();
                         if ($quantityAwaiting > 0 AND is_array($wpRecord) AND (int)$wpRecord['products_quantity'] > 0) {
                             if ($quantityAwaiting > (int)$wpRecord['products_quantity']) {
@@ -653,7 +684,7 @@ class OrderProduct
                         unset($wpRecord);
                     } elseif ($quantityAwaiting < $opAllocateRecord->allocate_received) {
                         $quantityAwaiting = ((int)$opAllocateRecord->allocate_received - $quantityAwaiting);
-                        self::doQuoteSpecific($orderProductRecord, $quantityAwaiting, $warehouseId, $supplierId, $locationId);
+                        self::doQuoteSpecific($orderProductRecord, $quantityAwaiting, $warehouseId, $supplierId, $locationId, $layerId, $batchId);
                     }
                 } elseif ($quantityAwaiting > 0) {
                     $orderRecord = \common\helpers\Order::getRecord($orderProductRecord->orders_id);
@@ -665,6 +696,8 @@ class OrderProduct
                             ->andWhere(['warehouse_id' => $warehouseId])
                             ->andWhere(['suppliers_id' => $supplierId])
                             ->andWhere(['location_id' => $locationId])
+                            ->andWhere(['layers_id' => $layerId])
+                            ->andWhere(['batch_id' => $batchId])
                             ->asArray(true)->one();
                         if (is_array($wpRecord)) {
                             if ((int)$wpRecord['products_quantity'] > 0) {
@@ -676,6 +709,8 @@ class OrderProduct
                                 $opAllocateRecord->warehouse_id = $warehouseId;
                                 $opAllocateRecord->suppliers_id = $supplierId;
                                 $opAllocateRecord->location_id = $locationId;
+                                $opAllocateRecord->layers_id = $layerId;
+                                $opAllocateRecord->batch_id = $batchId;
                                 $opAllocateRecord->platform_id = $orderRecord->platform_id;
                                 $opAllocateRecord->orders_id = $orderRecord->orders_id;
                                 $opAllocateRecord->prid = $wpRecord['prid'];
@@ -709,6 +744,8 @@ class OrderProduct
         unset($warehouseId);
         unset($supplierId);
         unset($locationId);
+        unset($layerId);
+        unset($batchId);
         unset($login_id);
         return ($quantity > 0 ? true : false);
     }
@@ -764,7 +801,10 @@ class OrderProduct
                     $quantityAwaiting, '-',
                     $orderProductAllocateRecord->suppliers_id,
                     $orderProductAllocateRecord->location_id,
-                    $updateStockParams
+                    array_merge($updateStockParams, [
+                        'layers_id' => $orderProductAllocateRecord->layers_id,
+                        'batch_id' => $orderProductAllocateRecord->batch_id
+                    ])
                 );
                 if ($warehouseStockQuantityNew < $warehouseStockQuantity) {
                     $quantityAwaiting = ($warehouseStockQuantity - $warehouseStockQuantityNew);
@@ -779,7 +819,11 @@ class OrderProduct
                             $quantityAwaiting, '+',
                             $orderProductAllocateRecord->suppliers_id,
                             $orderProductAllocateRecord->location_id,
-                            array_merge($updateStockParams,['comments' => TEXT_ORDER_PRODUCT_DO_DISPATCH_ERROR_RESTOCK])
+                            array_merge($updateStockParams, [
+                                'layers_id' => $orderProductAllocateRecord->layers_id,
+                                'batch_id' => $orderProductAllocateRecord->batch_id,
+                                'comments' => TEXT_ORDER_PRODUCT_DO_DISPATCH_ERROR_RESTOCK
+                            ])
                         );
                         $quantityAwaiting = 0;
                     }
@@ -863,9 +907,11 @@ class OrderProduct
      * @param mixed $warehouseId Warehouse id. Dispatch from specific Warehouse if passed
      * @param mixed $supplierId Supplier id. Dispatch from specific Supplier if passed
      * @param mixed $locationId Location id. Dispatch from specific Location if passed
+     * @param mixed $layerId Layer id. Dispatch from specific Layer if passed
+     * @param mixed $batchId Batch id. Dispatch from specific Batch if passed
      * @return boolean false on error, true on success
      */
-    public static function doDispatchSpecific($orderProductRecord = 0, &$quantity = 0, $warehouseId = false, $supplierId = false, $locationId = false)
+    public static function doDispatchSpecific($orderProductRecord = 0, &$quantity = 0, $warehouseId = false, $supplierId = false, $locationId = false, $layerId = false, $batchId = false)
     {
         global $login_id;
         $quantityAwaiting = (int)$quantity;
@@ -896,6 +942,12 @@ class OrderProduct
                     if ($locationId !== false AND $locationId != $opAllocateRecord->location_id) {
                         continue;
                     }
+                    if ($layerId !== false AND $layerId != $opAllocateRecord->layers_id) {
+                        continue;
+                    }
+                    if ($batchId !== false AND $batchId != $opAllocateRecord->batch_id) {
+                        continue;
+                    }
                     $awaitingDispatch = ((int)$opAllocateRecord->allocate_received - (int)$opAllocateRecord->allocate_dispatched);
                     if ($awaitingDispatch > 0) {
                         if ($awaitingDispatch > $quantityAwaiting) {
@@ -908,7 +960,10 @@ class OrderProduct
                             $awaitingDispatch, '-',
                             $opAllocateRecord->suppliers_id,
                             $opAllocateRecord->location_id,
-                            $updateStockParams
+                            array_merge($updateStockParams, [
+                                'layers_id' => $opAllocateRecord->layers_id,
+                                'batch_id' => $opAllocateRecord->batch_id,
+                            ])
                         );
                         $quantityWarehouse -= $quantityWarehouseNew;
                         $awaitingDispatch = (($quantityWarehouse >= 0 AND $quantityWarehouse <= $awaitingDispatch) ? $quantityWarehouse : $awaitingDispatch);
@@ -927,7 +982,11 @@ class OrderProduct
                                     $awaitingDispatch, '+',
                                     $opAllocateRecord->suppliers_id,
                                     $opAllocateRecord->location_id,
-                                    array_merge($updateStockParams,['comments' => TEXT_ORDER_PRODUCT_DO_DISPATCH_ERROR_RESTOCK])
+                                    array_merge($updateStockParams, [
+                                        'layers_id' => $opAllocateRecord->layers_id,
+                                        'batch_id' => $opAllocateRecord->batch_id,
+                                        'comments' => TEXT_ORDER_PRODUCT_DO_DISPATCH_ERROR_RESTOCK
+                                    ])
                                 );
                             }
                         }
@@ -948,6 +1007,8 @@ class OrderProduct
         unset($warehouseId);
         unset($supplierId);
         unset($locationId);
+        unset($layerId);
+        unset($batchId);
         unset($login_id);
         return ($quantity > 0 ? true : false);
     }
@@ -987,14 +1048,18 @@ class OrderProduct
      * @param mixed $warehouseId Warehouse id
      * @param mixed $supplierId Supplier id
      * @param mixed $locationId Location id
+     * @param mixed $layerId Layer id
+     * @param mixed $batchId Batch id
      * @return boolean false on error, true on success
      */
-    public static function doDeliverSpecific($orderProductRecord = 0, &$quantity = 0, $warehouseId = 0, $supplierId = 0, $locationId = 0)
+    public static function doDeliverSpecific($orderProductRecord = 0, &$quantity = 0, $warehouseId = 0, $supplierId = 0, $locationId = 0, $layerId = 0, $batchId = 0)
     {
         global $login_id;
         $warehouseId = (int)$warehouseId;
         $supplierId = (int)$supplierId;
         $locationId = (int)$locationId;
+        $layerId = (int)$layerId;
+        $batchId = (int)$batchId;
         $quantityAwaiting = (int)$quantity;
         $quantity = 0;
         $orderProductRecord = self::getRecord($orderProductRecord);
@@ -1005,6 +1070,8 @@ class OrderProduct
                     ->andWhere(['warehouse_id' => $warehouseId])
                     ->andWhere(['suppliers_id' => $supplierId])
                     ->andWhere(['location_id' => $locationId])
+                    ->andWhere(['layers_id' => $layerId])
+                    ->andWhere(['batch_id' => $batchId])
                     ->asArray(false)->one();
                 if ($opAllocateRecord instanceof \common\models\OrdersProductsAllocate) {
                     if ($quantityAwaiting > ((int)$opAllocateRecord->allocate_dispatched - (int)$opAllocateRecord->allocate_delivered)) {
@@ -1029,6 +1096,8 @@ class OrderProduct
         unset($warehouseId);
         unset($supplierId);
         unset($locationId);
+        unset($layerId);
+        unset($batchId);
         unset($login_id);
         return ($quantity > 0 ? true : false);
     }
@@ -1071,7 +1140,11 @@ class OrderProduct
                             $orderProductAllocateRecord->allocate_dispatched, '+',
                             $orderProductAllocateRecord->suppliers_id,
                             $orderProductAllocateRecord->location_id,
-                            array_merge($updateStockParams,['comments' => $messageStock])
+                            array_merge($updateStockParams, [
+                                'layers_id' => $orderProductAllocateRecord->layers_id,
+                                'batch_id' => $orderProductAllocateRecord->batch_id,
+                                'comments' => $messageStock
+                            ])
                         );
                     }
                     try {
@@ -1117,13 +1190,17 @@ class OrderProduct
      * @param mixed $warehouseId Warehouse id for specific warehouse
      * @param mixed $supplierId Supplier id for specific supplier
      * @param mixed $locationId Location id for specific location
+     * @param mixed $layerId Layer id for specific layer
+     * @param mixed $batchId Batch id for specific batch
      * @return boolean false on error, true on success
      */
-    public static function doCancelSpecific($orderProductRecord = 0, &$quantity = 0, $isUseDeficit = false, $warehouseId = 0, $supplierId = 0, $locationId = 0)
+    public static function doCancelSpecific($orderProductRecord = 0, &$quantity = 0, $isUseDeficit = false, $warehouseId = 0, $supplierId = 0, $locationId = 0, $layerId = 0, $batchId = 0)
     {
         $warehouseId = (int)$warehouseId;
         $supplierId = (int)$supplierId;
         $locationId = (int)$locationId;
+        $layerId = (int)$layerId;
+        $batchId = (int)$batchId;
         $quantityQuote = (int)$quantity;
         $quantity = 0;
         $orderProductRecord = self::getRecord($orderProductRecord);
@@ -1148,9 +1225,15 @@ class OrderProduct
                     if ($locationId > 0) {
                         $opAllocateQuery->andWhere(['location_id' => $locationId]);
                     }
+                    if ($layerId > 0) {
+                        $opAllocateQuery->andWhere(['layers_id' => $layerId]);
+                    }
+                    if ($batchId > 0) {
+                        $opAllocateQuery->andWhere(['batch_id' => $batchId]);
+                    }
                     foreach ($opAllocateQuery->asArray(true)->all() as $opAllocateRecord) {
                         $quantityAwaiting = $quantityQuoteTmp;
-                        if (\common\helpers\OrderProduct::doQuoteSpecific($orderProductRecord, $quantityAwaiting, $opAllocateRecord['warehouse_id'], $opAllocateRecord['suppliers_id'], $opAllocateRecord['location_id'])) {
+                        if (\common\helpers\OrderProduct::doQuoteSpecific($orderProductRecord, $quantityAwaiting, $opAllocateRecord['warehouse_id'], $opAllocateRecord['suppliers_id'], $opAllocateRecord['location_id'], $opAllocateRecord['layers_id'], $opAllocateRecord['batch_id'])) {
                             $quantityQuoteTmp -= $quantityAwaiting;
                             if ($quantityQuoteTmp <= 0) {
                                 $quantityQuoteTmp = 0;
@@ -1178,6 +1261,8 @@ class OrderProduct
         unset($warehouseId);
         unset($supplierId);
         unset($locationId);
+        unset($layerId);
+        unset($batchId);
         return ($quantity > 0 ? true : false);
     }
 
@@ -1227,14 +1312,18 @@ class OrderProduct
      * @param mixed $warehouseId Warehouse id
      * @param mixed $supplierId Supplier id
      * @param mixed $locationId Location id
+     * @param mixed $layerId Layer id
+     * @param mixed $batchId Batch id
      * @return boolean false on error, true on success
      */
-    public static function doQuoteSpecific($orderProductRecord = 0, &$quantity = 0, $warehouseId = 0, $supplierId = 0, $locationId = 0)
+    public static function doQuoteSpecific($orderProductRecord = 0, &$quantity = 0, $warehouseId = 0, $supplierId = 0, $locationId = 0, $layerId = 0, $batchId = 0)
     {
         global $login_id;
         $warehouseId = (int)$warehouseId;
         $supplierId = (int)$supplierId;
         $locationId = (int)$locationId;
+        $layerId = (int)$layerId;
+        $batchId = (int)$batchId;
         $quantityAwaiting = (int)$quantity;
         $quantity = 0;
         $orderProductRecord = self::getRecord($orderProductRecord);
@@ -1253,6 +1342,8 @@ class OrderProduct
                     ->andWhere(['warehouse_id' => $warehouseId])
                     ->andWhere(['suppliers_id' => $supplierId])
                     ->andWhere(['location_id' => $locationId])
+                    ->andWhere(['layers_id' => $layerId])
+                    ->andWhere(['batch_id' => $batchId])
                     ->asArray(false)->one();
                 if ($opAllocateRecord instanceof \common\models\OrdersProductsAllocate) {
                     if ($quantityAwaiting > (int)$opAllocateRecord->allocate_received) {
@@ -1269,7 +1360,11 @@ class OrderProduct
                             $quantityRestock, '+',
                             $opAllocateRecord->suppliers_id,
                             $opAllocateRecord->location_id,
-                            array_merge($updateStockParams,['comments' => TEXT_ORDER_PRODUCT_DO_QUOTE_RESTOCK])
+                            array_merge($updateStockParams, [
+                                'layers_id' => $opAllocateRecord->layers_id,
+                                'batch_id' => $opAllocateRecord->batch_id,
+                                'comments' => TEXT_ORDER_PRODUCT_DO_QUOTE_RESTOCK
+                            ])
                         );
                         if ($quantityWarehouse == $quantityWarehouseNew) {
                             $quantityRestock = 0;
@@ -1313,6 +1408,8 @@ class OrderProduct
         unset($warehouseId);
         unset($supplierId);
         unset($locationId);
+        unset($layerId);
+        unset($batchId);
         unset($login_id);
         return ($quantity > 0 ? true : false);
     }

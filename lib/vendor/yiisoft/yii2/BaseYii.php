@@ -1,8 +1,8 @@
 <?php
 /**
- * @link http://www.yiiframework.com/
+ * @link https://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
- * @license http://www.yiiframework.com/license/
+ * @license https://www.yiiframework.com/license/
  */
 
 namespace yii;
@@ -93,7 +93,7 @@ class BaseYii
      */
     public static function getVersion()
     {
-        return '2.0.45';
+        return '2.0.46';
     }
 
     /**
@@ -203,11 +203,11 @@ class BaseYii
      * @param string $alias the alias name (e.g. "@yii"). It must start with a '@' character.
      * It may contain the forward-slash '/' which serves as a boundary character when performing
      * alias translation by [[getAlias()]].
-     * @param string $path the path corresponding to the alias. If this is null, the alias will
+     * @param string|null $path the path corresponding to the alias. If this is null, the alias will
      * be removed. Trailing '/' and '\' characters will be trimmed. This can be
      *
      * - a directory or a file path (e.g. `/tmp`, `/tmp/main.txt`)
-     * - a URL (e.g. `http://www.yiiframework.com`)
+     * - a URL (e.g. `https://www.yiiframework.com`)
      * - a path alias (e.g. `@yii/base`). In this case, the path alias will be converted into the
      *   actual path first by calling [[getAlias()]].
      *
@@ -262,7 +262,7 @@ class BaseYii
      *    to include the file associated with the corresponding path alias
      *    (e.g. `@yii/base/Component.php`);
      *
-     * This autoloader allows loading classes that follow the [PSR-4 standard](http://www.php-fig.org/psr/psr-4/)
+     * This autoloader allows loading classes that follow the [PSR-4 standard](https://www.php-fig.org/psr/psr-4/)
      * and have its top-level namespace or sub-namespaces defined as path aliases.
      *
      * Example: When aliases `@yii` and `@yii/bootstrap` are defined, classes in the `yii\bootstrap` namespace
@@ -384,7 +384,7 @@ class BaseYii
 
     /**
      * Sets the logger object.
-     * @param Logger $logger the logger object.
+     * @param Logger|null $logger the logger object.
      */
     public static function setLogger($logger)
     {
@@ -502,7 +502,7 @@ class BaseYii
     public static function powered()
     {
         return \Yii::t('yii', 'Powered by {yii}', [
-            'yii' => '<a href="http://www.yiiframework.com/" rel="external">' . \Yii::t('yii',
+            'yii' => '<a href="https://www.yiiframework.com/" rel="external">' . \Yii::t('yii',
                     'Yii Framework') . '</a>',
         ]);
     }
@@ -528,7 +528,7 @@ class BaseYii
      * @param string $category the message category.
      * @param string $message the message to be translated.
      * @param array $params the parameters that will be used to replace the corresponding placeholders in the message.
-     * @param string $language the language code (e.g. `en-US`, `en`). If this is null, the current
+     * @param string|null $language the language code (e.g. `en-US`, `en`). If this is null, the current
      * [[\yii\base\Application::language|application language]] will be used.
      * @return string the translated message.
      */

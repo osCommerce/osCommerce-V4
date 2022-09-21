@@ -72,7 +72,7 @@
                   yaxis : 1
                 }
               ];
-              var plot1 = $.plot("#chart_multiple", series_multiple1, $.extend(true, {}, Plugins.getFlotDefaults(), {
+              var plot1 = $.plot("#chart_multiple", series_multiple1, $.extend(true, { }, Plugins.getFlotDefaults(), {
                 yaxes: [ {
                   position : 'left',
                   tickFormatter: someFunc1,

@@ -60,6 +60,16 @@ class Suppliers {
         return $ids;
     }
 
+    public static function orderedIdsForProduct($products_id)
+    {
+        return \common\models\SuppliersProducts::find()->alias('sp')
+            ->select('sp.suppliers_id')
+            ->joinWith('supplier s')
+            ->where(['sp.products_id' => (int)$products_id])
+            ->orderBy(new \yii\db\Expression('if(sp.sort_order is null, s.sort_order, sp.sort_order)'))
+            ->column();
+    }
+
     public static function orderedActiveIds()
     {
         static $ids;

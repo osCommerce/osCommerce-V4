@@ -11,6 +11,8 @@ use Yii;
  * @property integer $warehouse_id
  * @property integer $suppliers_id
  * @property integer $location_id
+ * @property integer $layers_id
+ * @property integer $batch_id
  * @property integer $platform_id
  * @property integer $orders_id
  * @property integer $prid
@@ -35,8 +37,8 @@ class OrdersProductsAllocate extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['orders_products_id', 'warehouse_id', 'suppliers_id', 'location_id', 'platform_id', 'orders_id', 'prid', 'products_id', 'allocate_received'], 'required'],
-            [['orders_products_id', 'warehouse_id', 'suppliers_id', 'location_id', 'platform_id', 'orders_id', 'prid', 'allocate_received', 'allocate_dispatched', 'allocate_delivered'], 'integer'],
+            [['orders_products_id', 'warehouse_id', 'suppliers_id', 'location_id', 'layers_id', 'batch_id', 'platform_id', 'orders_id', 'prid', 'products_id', 'allocate_received'], 'required'],
+            [['orders_products_id', 'warehouse_id', 'suppliers_id', 'location_id', 'layers_id', 'batch_id', 'platform_id', 'orders_id', 'prid', 'allocate_received', 'allocate_dispatched', 'allocate_delivered'], 'integer'],
             [['products_id'], 'string', 'max' => 255]
         ];
     }
@@ -51,6 +53,8 @@ class OrdersProductsAllocate extends \yii\db\ActiveRecord
             'warehouse_id' => 'Warehouse ID',
             'suppliers_id' => 'Suppliers ID',
             'location_id' => 'Location ID',
+            'layers_id' => 'Layers ID',
+            'batch_id' => 'Batch ID',
             'platform_id' => 'Platform ID',
             'orders_id' => 'Orders ID',
             'prid' => 'Prid',

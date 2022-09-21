@@ -1,6 +1,6 @@
 {use class = "yii\helpers\Html"}
 {use class = "yii\helpers\Url"}
-
+{\backend\assets\ProcessOrderAsset::register($this)|void}
 {if is_array($messsages) && $messsages}
     {foreach $messsages as $messages_block}
         {foreach $messages_block as $message}
@@ -42,6 +42,13 @@
 {Html::endForm()}
     {$manager->render('Buttons', ['manager' => $manager, 'order' => $order, 'addedPages' => $addedPages])}
 <script>
+    (function($) {
+        setTimeout(function(){
+            $('#status_edit').on('change', function() {
+                $('.btn-cancel-foot', this).html('{$smarty.const.IMAGE_CANCEL}')
+            })
+        }, 500)
+    })($);
     function getTrackingList() {
         $.get('orders/tracking-list', {
             'orders_id': '{$order->order_id}',

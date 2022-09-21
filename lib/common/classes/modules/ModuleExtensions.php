@@ -353,6 +353,9 @@ class ModuleExtensions extends Module {
         if ($setup = static::checkSetup('getAclArray')) {
             $aclArray = $setup::getAclArray();
             if (is_array($aclArray) && count($aclArray) > 0) {
+                // place parent keys in the end to delete their later
+                uasort($aclArray, function($a, $b) { return count($b) <=> count($a); });
+
                 foreach($aclArray as $key => $acl) {
                     $migrate->dropAcl($acl);
                 }

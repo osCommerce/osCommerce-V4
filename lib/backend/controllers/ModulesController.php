@@ -490,6 +490,27 @@ class ModulesController extends Sceleton
               }
        }
 
+    private function generateClickFuncForRemoveBtn($module)
+    {
+        if ($module instanceof \common\classes\modules\Module) {
+            $isEnabled = $module->is_module_enabled($this->selected_platform_id);
+            $res =  sprintf("changeModule('%s', 'remove', %s", $module->code, $isEnabled?'true':'false');
+            if ($module instanceof \common\classes\modules\ModuleExtensions) {
+                $res .= ', [';
+                if ($module->isAbleToDropDatatables()) {
+                    $res .= "'tables',";
+                }
+                if ($module->isAbleToDeleteAcl()) {
+                    $res .= "'acl',";
+                }
+                $res = rtrim($res, ',');
+                $res .= ']';
+            }
+            $res .= ')';
+            return $res;
+        }
+    }
+
     public function actionList()
     {
           $draw = Yii::$app->request->get('draw', 1);
@@ -598,11 +619,10 @@ class ModulesController extends Sceleton
               if ($mInfo->status == '1') {
                 $installed = true;
                 $active = $module->is_module_enabled($this->selected_platform_id);
-                $param_remove_data = ($set==='extensions' && ($module->isAbleToDropDatatables() || $module->isAbleToDeleteAcl()) ) ? ','. ($active?'true':'false') . ', true' : '';
-                $buttons .= '<button class="btn btn-small" onClick="return changeModule(\'' . $mInfo->code . '\', \'remove\'' .$param_remove_data. ')" title="' . TEXT_REMOVE . '">' . TEXT_REMOVE . '</button>';
+                $buttons .= '<button class="btn btn-small" onClick="return ' . $this->generateClickFuncForRemoveBtn($module) . '" title="' . TEXT_REMOVE . '">' . TEXT_REMOVE . '</button>';
               }else{
                 $active = false;
-                $param_remove_data = ($set==='extensions' && $module->isAbleToDeleteAcl() ) ? ','. ($active?'true':'false') . ', true' : '';
+                $param_remove_data = ($set==='extensions' && $module->isAbleToDeleteAcl() ) ? ',false, true' : '';
                 $buttons .= '<input type="button" class="btn btn-small" title="'.IMAGE_INSTALL.'" value="' . \common\helpers\Output::output_string(IMAGE_INSTALL) . '" onClick="return changeModule(\'' . $module->code . '\', \'install\''.$param_remove_data.')">';
               }
 
@@ -844,7 +864,7 @@ class ModulesController extends Sceleton
                     echo '<a class="btn btn-edit btn-default btn-no-margin" href="' .$translate_link. '">' . IMAGE_BUTTON_TRANSLATE . '</a>';
                   }else{
                       echo '<a class="btn btn-edit btn-primary btn-no-margin" href="' .$edit_link. '">'.IMAGE_EDIT.'</a>';
-                      echo '<button class="btn btn-delete" onClick="return changeModule(\'' . $mInfo->code . '\', \'remove\')">' . TEXT_REMOVE . '</button>';
+                      echo '<button class="btn btn-delete" onClick="return ' . $this->generateClickFuncForRemoveBtn($module) . '">' . TEXT_REMOVE . '</button>';
                   }
 
                 //$contents[] = array('align' => 'center', 'text' => '<input type="button" class="btn btn-delete" value="Remove" onClick="return changeModule(\'' . $mInfo->code . '\', \'remove\')"> <input type="button" class="btn btn-primary" value="Edit" onClick="return editModule(\'' . $mInfo->code . '\')"> ');
@@ -854,7 +874,7 @@ class ModulesController extends Sceleton
                 $contents[] = array('text' => '<br>' . $keys);*/
               } else {
                   echo '<div class="btn-toolbar btn-toolbar-order">';
-                  echo '<input type="button" class="btn btn-primary btn-process-order" value="' . IMAGE_INSTALL . '" onClick="return changeModule(\'' . $mInfo->code . '\', \'install\')">';
+                  echo '<input type="button" class="btn btn-primary btn-process-order" value="' . IMAGE_INSTALL . '" onClick="return changeModule(\'' . $mInfo->code . '\', \'install\', false ' . ($module->isAbleToDeleteAcl()?',true':'') . ')">';
                   echo '</div>';
                   echo '<div class="module_row"><div>' .(defined($mInfo->description.'_TITLE')? constant($mInfo->description.'_TITLE'):$mInfo->description) . '</div></div>';
                 /*$contents[] = array('align' => 'center', 'text' => '<input type="button" class="btn" value="Install" onClick="return changeModule(\'' . $mInfo->code . '\', \'install\')">');

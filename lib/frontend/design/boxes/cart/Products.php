@@ -61,6 +61,8 @@ class Products extends Widget
         }
 
         \frontend\design\Info::addBlockToWidgetsList('cart-listing');
+
+        $productsDecorated = $cartDecorator->getProducts(); // all $cartDecorator properties are set only after getProducts()!!!
         
         $bounded = false;
         if ($cartDecorator->bound_quantity_ordered){
@@ -74,7 +76,7 @@ class Products extends Widget
         if ($cart->count_contents() > 0) {
             $popup = (int)Yii::$app->request->get('popup', 0);
             return IncludeTpl::widget(['file' => 'boxes/cart/products' . ($this->type ? '-' . $this->type : '') . '.tpl', 'params' => [
-              'products' => $cartDecorator->getProducts(),
+              'products' => $productsDecorated,
               'allow_checkout' => !($cartDecorator->oos_product_incart || $bounded),
               'oos_product_incart' => $cartDecorator->oos_product_incart,
               'bound_quantity_ordered' => $bounded,

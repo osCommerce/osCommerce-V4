@@ -81,6 +81,70 @@
                             <label>{$smarty.const.ENTRY_BUSINESS}</label>{Html::textInput('suppliers_data[company_vat]', $service->supplier->company_vat, ['class' => 'form-control'])}
                         </div>
                     </div>
+{if $service->supplier->hasAttribute('contact_name')}
+                    <div class="w-line-row w-line-row-1">
+                        <div class="wl-td">
+                            <label>Contact Name</label>
+                            {Html::textInput('suppliers_data[contact_name]', $service->supplier->contact_name, ['class' => "form-control"])}
+                        </div>
+                    </div>
+{/if}
+{if $service->supplier->hasAttribute('contact_phone')}
+                    <div class="w-line-row w-line-row-1">
+                        <div class="wl-td">
+                            <label>Contact Phone</label>
+                            {Html::textarea('suppliers_data[contact_phone]', $service->supplier->contact_phone, ['class' => "form-control"])}
+                        </div>
+                    </div>
+{/if}
+{if $service->supplier->hasAttribute('street_address')}
+                    <div class="w-line-row w-line-row-1">
+                        <div class="wl-td">
+                            <label>Street Address</label>
+                            {Html::textInput('suppliers_data[street_address]', $service->supplier->street_address, ['class' => "form-control"])}
+                        </div>
+                    </div>
+{/if}
+{if $service->supplier->hasAttribute('suburb')}
+                    <div class="w-line-row w-line-row-1">
+                        <div class="wl-td">
+                            <label>Suburb</label>
+                            {Html::textInput('suppliers_data[suburb]', $service->supplier->suburb, ['class' => "form-control"])}
+                        </div>
+                    </div>
+{/if}
+{if $service->supplier->hasAttribute('city')}
+                    <div class="w-line-row w-line-row-1">
+                        <div class="wl-td">
+                            <label>Town/City</label>
+                            {Html::textInput('suppliers_data[city]', $service->supplier->city, ['class' => "form-control"])}
+                        </div>
+                    </div>
+{/if}
+{if $service->supplier->hasAttribute('postcode')}
+                    <div class="w-line-row w-line-row-1">
+                        <div class="wl-td">
+                            <label>Post Code</label>
+                            {Html::textInput('suppliers_data[postcode]', $service->supplier->postcode, ['class' => "form-control"])}
+                        </div>
+                    </div>
+{/if}
+{if $service->supplier->hasAttribute('state')}
+                    <div class="w-line-row w-line-row-1">
+                        <div class="wl-td">
+                            <label>State/Province</label>
+                            {Html::textInput('suppliers_data[state]', $service->supplier->state, ['class' => "form-control"])}
+                        </div>
+                    </div>
+{/if}
+{if $service->supplier->hasAttribute('country')}
+                    <div class="w-line-row w-line-row-1">
+                        <div class="wl-td">
+                            <label>Country</label>
+                            {Html::dropDownList('suppliers_data[country]', $service->supplier->country, $countries_list, ['class'=>'form-control'])}
+                        </div>
+                    </div>
+{/if}
                 </div>
             </div>
 
@@ -269,6 +333,38 @@
                     <h4>{$smarty.const.TEXT_ADDITIONAL_INFO}</h4>
                 </div>    
                 <div class="widget-content">
+{if $service->supplier->hasAttribute('awrs_no')}
+                    <div class="w-line-row w-line-row-1">
+                        <div class="wl-td">
+                            <label>AWRS Number</label>
+                            {Html::textInput('suppliers_data[awrs_no]', $service->supplier->awrs_no, ['class' => "form-control"])}
+                        </div>
+                    </div>
+{/if}
+{if $service->supplier->hasAttribute('sage_code')}
+                    <div class="w-line-row w-line-row-1">
+                        <div class="wl-td">
+                            <label>Sage Code</label>
+                            {Html::textInput('suppliers_data[sage_code]', $service->supplier->sage_code, ['class' => "form-control"])}
+                        </div>
+                    </div>
+{/if}
+{if $service->supplier->hasAttribute('payment_delay')}
+                    <div class="w-line-row w-line-row-1">
+                        <div class="wl-td">
+                            <label>Payment Delay</label>
+                            {Html::textInput('suppliers_data[payment_delay]', $service->supplier->payment_delay, ['class' => "form-control"])}
+                        </div>
+                    </div>
+{/if}
+{if $service->supplier->hasAttribute('supply_delay')}
+                    <div class="w-line-row w-line-row-1">
+                        <div class="wl-td">
+                            <label>Supply Delay</label>
+                            {Html::textInput('suppliers_data[supply_delay]', $service->supplier->supply_delay, ['class' => "form-control"])}
+                        </div>
+                    </div>
+{/if}
                     <div class="w-line-row w-line-row-1">
                         <div class="wl-td">
                             <label>{$smarty.const.TEXT_CONDITION}</label>

@@ -42,20 +42,44 @@
                 <div class="stock-block">
                     <div class="available-stock">
                         <div>{$smarty.const.TEXT_STOCK_QUANTITY_INFO}</div>
-                        <div class="val" id="products_quantity_info">{$pInfo->products_quantity}</div>
+                        <div class="val" id="products_quantity_info">{if ($pInfo->products_quantity > 0)}{$pInfo->products_quantity}{else}0{/if}</div>
                         <input type="hidden" name="products_quantity" value="{$pInfo->products_quantity}">
                     </div>
 
                     <div class="temporary">
-                        <div>{$smarty.const.TEXT_STOCK_TEMPORARY_QUANTITY}</div>
+                        <div>
+                        {if ($pInfo->products_id > 0)}
+                            <a href="{Yii::$app->urlManager->createUrl(['categories/temporary-stock', 'prid' => $pInfo->products_id])}" class="right-link-upd">{$smarty.const.TEXT_STOCK_TEMPORARY_QUANTITY}</a>
+                        {else}
+                            {$smarty.const.TEXT_STOCK_TEMPORARY_QUANTITY}
+                        {/if}
+                        </div>
                         <div class="val" id="temporary_quantity_info">{$pInfo->temporary_quantity}</div>
                         <input type="hidden" name="temporary_quantity" value="{$pInfo->temporary_quantity}">
                     </div>
 
                     <div class="total-allocated">
-                        <div>{$smarty.const.TEXT_STOCK_ALLOCATED_QUANTITY}</div>
+                        <div>
+                        {if ($pInfo->products_id > 0)}
+                            <a href="{Yii::$app->urlManager->createUrl(['categories/orders-products-stock', 'prid' => $pInfo->products_id])}" class="right-link-upd">{$smarty.const.TEXT_STOCK_ALLOCATED_QUANTITY}</a>
+                        {else}
+                            {$smarty.const.TEXT_STOCK_ALLOCATED_QUANTITY}
+                        {/if}
+                        </div>
                         <div class="val" id="allocated_quantity_info">{$pInfo->allocated_quantity}</div>
                         <input type="hidden" name="allocated_quantity" value="{$pInfo->allocated_quantity}">
+
+                    </div>
+
+                    <div class="allocated-temporary">
+                        <div>
+                            {if ($pInfo->products_id > 0)}
+                                <a href="{Yii::$app->urlManager->createUrl(['categories/orders-products-temporary-stock', 'prid' => $pInfo->products_id])}" class="right-link-upd">{$smarty.const.TEXT_STOCK_TEMPORARY_ALLOCATED}</a>
+                            {else}
+                                {$smarty.const.TEXT_STOCK_TEMPORARY_ALLOCATED}
+                            {/if}
+                        </div>
+                        <div class="val" id="allocated_temporary_quantity_info">{$pInfo->allocated_temporary_quantity}</div>
                     </div>
 
                     <div class="real-stock-total">
@@ -64,16 +88,37 @@
                         <input type="hidden" name="warehouse_quantity" value="{$pInfo->warehouse_quantity}">
                     </div>
 
-                    <div class="available">
-                        <div>{$smarty.const.TEXT_STOCK_SUPPLIERS_QUANTITY}</div>
-                        <div class="val" id="suppliers_quantity_info">{$pInfo->suppliers_quantity}</div>
-                        <input type="hidden" name="suppliers_quantity" value="{$pInfo->suppliers_quantity}">
+                    <div class="deficit-quantity">
+                        <div>
+                            {if ($pInfo->products_id > 0)}
+                                <a href="{Yii::$app->urlManager->createUrl(['categories/orders-products-deficit', 'prid' => $pInfo->products_id])}" class="right-link-upd">{$smarty.const.TEXT_STOCK_DEFICIT_QUANTITY}</a>
+                            {else}
+                                {$smarty.const.TEXT_STOCK_DEFICIT_QUANTITY}
+                            {/if}
+                        </div>
+                        <div class="val" id="deficit_quantity_info">{$pInfo->deficit_quantity}</div>
+                        <input type="hidden" name="deficit_quantity" value="{\common\helpers\Product::getStockDeficit($pInfo->products_id)}">
                     </div>
 
+                    <div class="overallocated-quantity-holder"></div>
+                    <div class="overallocated-quantity" id="overallocated_quantity_info_holder" style="{if ($pInfo->products_quantity < 0)}{else}display: none;{/if}">
+                        <div>{$smarty.const.TEXT_STOCK_OVERALLOCATED_QUANTITY}</div>
+                        <div class="val" style="color: red;" id="overallocated_quantity_info">{abs($pInfo->products_quantity)}</div>
+                    </div>
+
+                    <div class="ordered-stock-holder"></div>
+                    {if \common\helpers\Acl::checkExtensionAllowed('PurchaseOrders')}
                     <div class="ordered-stock">
                         <div>{$smarty.const.TEXT_STOCK_ORDERED_QUANTITY}</div>
                         <div class="val" id="ordered_quantity_info">{$pInfo->ordered_quantity}</div>
                         <input type="hidden" name="ordered_quantity" value="{\common\helpers\Product::getStockOrdered($pInfo->products_id)}">
+                    </div>
+                    {/if}
+
+                    <div class="available">
+                        <div class="p-r-1">{$smarty.const.TEXT_STOCK_SUPPLIERS_QUANTITY}</div>
+                        <div class="val" id="suppliers_quantity_info">{$pInfo->suppliers_quantity}</div>
+                        <input type="hidden" name="suppliers_quantity" value="{$pInfo->suppliers_quantity}">
                     </div>
 
                     <div class="buttons">
@@ -133,6 +178,7 @@
         params.push({ name: 'warehouse_id', value: $('[name="warehouse_id"]').val()});
         params.push({ name: 'w_suppliers_id', value: $('[name="w_suppliers_id"]').val()});
         params.push({ name: 'stock_comments', value: $('[name="stock_comments"]').val()});
+        params.push({ name: 'is_autoallocate', value: $('[name="is_autoallocate"]:checked').val()});
 
         var loc = [];
         $('[name="box_location[]"]').each(function() {
@@ -149,7 +195,22 @@
                 if (data.products_quantity != undefined) {
                     //$('[name="products_quantity_update"]').val('');
                     $('[name="products_quantity"]').val(data.products_quantity);
-                    $('#products_quantity_info').html(data.products_quantity);
+                    if (data.products_quantity >= 0) {
+                        $('#products_quantity_info').html(data.products_quantity);
+                        $('#overallocated_quantity_info_holder').hide();
+                        $('#overallocated_quantity_info').html(0);
+                    } else {
+                        $('#products_quantity_info').html(0);
+                        $('#overallocated_quantity_info').html(Math.abs(data.products_quantity));
+                        $('#overallocated_quantity_info_holder').show();
+                    }
+                }
+                if (data.allocated_temporary_quantity != undefined) {
+                    $('#allocated_temporary_quantity_info').html(data.allocated_temporary_quantity);
+                }
+                if (data.deficit_quantity != undefined) {
+                    $('[name="deficit_quantity"]').val(data.deficit_quantity);
+                    $('#deficit_quantity_info').html(data.deficit_quantity);
                 }
                 if (data.allocated_quantity != undefined) {
                     $('[name="allocated_quantity"]').val(data.allocated_quantity);
@@ -225,42 +286,19 @@
                 <div class="t-row">
                     {if \common\helpers\Acl::checkExtensionAllowed('MinimumOrderQty', 'allowed')}
                         {\common\extensions\MinimumOrderQty\MinimumOrderQty::productBlock($pInfo)}
-                    {else}
-                        <div class="t-col-2 dis_module">
-                            <div class="edp-line">
-                                <label>{$smarty.const.TEXT_PRODUCTS_ORDER_QUANTITY_MINIMAL}:</label>
-                                <input class="form-control form-control-small-qty" type="text" disabled>
-                            </div>
-                        </div>
                     {/if}
                     {if \common\helpers\Acl::checkExtensionAllowed('MaxOrderQty', 'allowed')}
                         {\common\extensions\MaxOrderQty\MaxOrderQty::productBlock($pInfo)}
-                    {else}
-                        <div class="t-col-2 dis_module">
-                            <div class="edp-line">
-                                <label>{$smarty.const.TEXT_PRODUCTS_ORDER_QUANTITY_MAX}:</label>
-                                <input class="form-control form-control-small-qty" type="text" disabled>
-                            </div>
-                        </div>
                     {/if}
                 </div>
                 {if \common\helpers\Acl::checkExtensionAllowed('OrderQuantityStep', 'allowed')}
                     {\common\extensions\OrderQuantityStep\OrderQuantityStep::productBlock($pInfo)}
-                {else}
-                    <div class="t-row">
-                        <div class="t-col-2 dis_module">
-                            <div class="edp-line">
-                                <label>{$smarty.const.TEXT_PRODUCTS_ORDER_QUANTITY_STEP}:</label>
-                                <input class="form-control form-control-small-qty" type="text" disabled>
-                            </div>
-                        </div>
-                    </div>
                 {/if}
                 <div class="edp-line">
                     <label>{$smarty.const.TEXT_DATE_AVAILABLE}</label>
                     {tep_draw_input_field('products_date_available', $pInfo->products_date_available, 'class="datepicker form-control form-control-small"' )}
                 </div>
-                
+
                     {\common\extensions\NotifyProductsDate\NotifyProductsDate::renderCheckBox($pInfo->products_id)}
                 <div class="edp-line edp-line-heig">
                     <label>{$smarty.const.TEXT_FEATURED_PRODUCT}</label>

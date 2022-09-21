@@ -21,7 +21,7 @@
       <div class="col-md-12">
         <div id="specials_list_data">
           <div class="">
-          <table class="table table-striped table-bordered table-hover table-responsive table-ordering double-grid table-specials"
+          <table class="table table-striped table-bordered table-hover table-responsive table-ordering table-checkable double-grid table-specials"
                  checkable_list="{$app->controller->view->sortColumns}"
                        order_list="{$app->controller->view->sortNow}"
                        order_by="{$app->controller->view->sortNowDir}"{*data_ajax="{Yii::$app->urlManager->createUrl(['specials/list', 'popup' => 1, 'prid' => $prid])}"*}>
@@ -83,15 +83,16 @@
                     {$sold=Specials::getSoldOnlyQty(['specials_id' => $special['specials_id']])}
                     {/if}
                   <td class="sold {if !empty($special['total_qty']) && $special['total_qty']<=$sold}sold-out red{/if}">{if !empty($special['total_qty']) || !empty($special['max_per_order'])}
-                      {$special['total_qty']} / {$special['max_per_order']}
-                      <span class="right-link sold {if $special['total_qty']<=$sold}sold-out red{/if}">({$sold})</span>
+                      {$special['total_qty']} <span title="{$smarty.const.TABLE_HEADING_PRODUCTS_SOLD|escape}" style="cursor:pointer" class="_right-link sold {if $special['total_qty']<=$sold}sold-out red{/if}">({$sold})</span> / {$special['max_per_order']}
+                      
                       {/if}
                   </td>
                   <td>{Specials::statusDescriptionText($special['specials_enabled'], $special['specials_disabled'], $expired, $scheduled)}</td>
                   <td>
-                    <a href="{Yii::$app->urlManager->createUrl(['specials/specialedit', 'popup'=>1, 'products_id' => $prid, 'id' => $special['specials_id']])}" class="right-link edit">{$smarty.const.IMAGE_EDIT}</a><br>
+                    <a href="{Yii::$app->urlManager->createUrl(['specials/specialedit', 'popup'=>1, '_hash_' => $hash, 'products_id' => $prid, 'id' => $special['specials_id']])}" class="right-link edit">{$smarty.const.IMAGE_EDIT}</a><br>
+                    {if \common\helpers\Acl::checkExtensionAllowed('ReportOrderedProducts')}
                     <a class="right-link report" href="{Yii::$app->urlManager->createUrl(['ordered-products-report', 'specials_id' => $special['specials_id'], 'start_date' => Date::formatCalendarDate($special['specials_date_added']) ])}" target="_blank">{$smarty.const.IMAGE_REPORT}</a>
-
+                    {/if}
                   </td>
                 </tr>
               {/foreach}
@@ -108,11 +109,27 @@
 <script>
   var table;
   (function($){
-    table = $('.table-specials').dataTable( {
+
+    table = $('.table-specials');
+    var options = {
         'pageLength': 10,
-        'order': [[ 0, 'desc' ]],
-        //'columnDefs': [ { 'visible': false, 'targets': 0 } ],
-    } );
+    }
+    if (table.hasClass('table-ordering')) {
+        var data_order_list = table.attr('order_list');//data
+        var data_order_by = table.attr('order_by');//data
+        var column_index_list = data_order_list.split(',');
+        var column_index_by = data_order_by.split(',');
+        var aoColumnDefs = [];
+        for(var column_key in column_index_list) {
+            aoColumnDefs.push([parseInt(column_index_list[column_key],10), column_index_by[column_key]]);
+        }
+console.log(aoColumnDefs);
+        $.extend(true, options, {
+            'order': aoColumnDefs
+        });
+    }
+
+    table = $('.table-specials').dataTable( options );
     var oSettings = table.fnSettings();
     oSettings._iDisplayStart = 0;
     table.fnDraw();

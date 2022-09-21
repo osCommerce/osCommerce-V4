@@ -11,6 +11,7 @@
 
 namespace Imagine\Gmagick;
 
+use Imagine\Driver\InfoProvider;
 use Imagine\Exception\InvalidArgumentException;
 use Imagine\Exception\NotSupportedException;
 use Imagine\Exception\RuntimeException;
@@ -27,17 +28,28 @@ use Imagine\Image\Palette\RGB;
 
 /**
  * Imagine implementation using the Gmagick PHP extension.
+ *
+ * @final
  */
-class Imagine extends AbstractImagine
+class Imagine extends AbstractImagine implements InfoProvider
 {
     /**
      * @throws \Imagine\Exception\RuntimeException
      */
     public function __construct()
     {
-        if (!class_exists('Gmagick')) {
-            throw new RuntimeException('Gmagick not installed');
-        }
+        static::getDriverInfo()->checkVersionIsSupported();
+    }
+
+    /**
+     * {@inheritdoc}
+     *
+     * @see \Imagine\Driver\InfoProvider::getDriverInfo()
+     * @since 1.3.0
+     */
+    public static function getDriverInfo($required = true)
+    {
+        return DriverInfo::get($required);
     }
 
     /**
@@ -74,8 +86,8 @@ class Imagine extends AbstractImagine
         $width = $size->getWidth();
         $height = $size->getHeight();
 
-        $palette = null !== $color ? $color->getPalette() : new RGB();
-        $color = null !== $color ? $color : $palette->color('fff');
+        $palette = $color !== null ? $color->getPalette() : new RGB();
+        $color = $color !== null ? $color : $palette->color('fff');
 
         try {
             $gmagick = new \Gmagick();
@@ -133,7 +145,7 @@ class Imagine extends AbstractImagine
 
         $content = stream_get_contents($resource);
 
-        if (false === $content) {
+        if ($content === false) {
             throw new InvalidArgumentException('Couldn\'t read given resource');
         }
 

@@ -248,6 +248,10 @@ class Price extends Widget
             $special_ex = TEXT_FREE;
         }
 
+        if (!empty($stock_info['eol']) && (empty($stock_info['flags']['can_add_to_cart']) || empty($stock_info['flags']['add_to_cart']))){
+            return '';
+        }
+
         return IncludeTpl::widget(['file' => 'boxes/product/price.tpl', 'params' =>  $pDetails['formatted'] + [
             'qty' => $qty,
             'id' => $this->id,

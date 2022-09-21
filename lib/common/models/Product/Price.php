@@ -137,8 +137,12 @@ class Price extends BasePrice {
           $params['qty'] = 1;
       }
       //skip pack packaging if only units are passed
-      if (is_array($params['qty']) && array_keys($params['qty']) == ['unit']) {
-        $params['qty'] = $params['qty']['unit'];
+      if (is_array($params['qty']) ) {
+          if (array_keys($params['qty']) == ['unit']) {
+            $params['qty'] = $params['qty']['unit'];
+          } elseif(!isset($params['type'])) {
+              $params['type'] = array_keys($params['qty'])[0];
+          }
       }
 
       foreach (self::$stateKeys as $k) {

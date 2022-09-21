@@ -1,8 +1,8 @@
 <?php
 /**
- * @link http://www.yiiframework.com/
+ * @link https://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
- * @license http://www.yiiframework.com/license/
+ * @license https://www.yiiframework.com/license/
  */
 
 namespace yii\helpers;
@@ -38,7 +38,7 @@ class BaseStringHelper
      *
      * @param string $string the input string. Must be one character or longer.
      * @param int $start the starting position
-     * @param int $length the desired portion length. If not specified or `null`, there will be
+     * @param int|null $length the desired portion length. If not specified or `null`, there will be
      * no limit on length i.e. the output will be until the end of the string.
      * @return string the extracted part of string, or FALSE on failure or an empty string.
      * @see https://www.php.net/manual/en/function.substr.php
@@ -108,10 +108,14 @@ class BaseStringHelper
     /**
      * Truncates a string to the number of characters specified.
      *
+     * In order to truncate for an exact length, the $suffix char length must be counted towards the $length. For example
+     * to have a string which is exactly 255 long with $suffix `...` of 3 chars, then `StringHelper::truncate($string, 252, '...')`
+     * must be used to ensure you have 255 long string afterwards.
+     *
      * @param string $string The string to truncate.
      * @param int $length How many characters from original string to include into truncated string.
      * @param string $suffix String to append to the end of truncated string.
-     * @param string $encoding The charset to use, defaults to charset currently used by application.
+     * @param string|null $encoding The charset to use, defaults to charset currently used by application.
      * @param bool $asHtml Whether to treat the string being truncated as HTML and preserve proper HTML tags.
      * This parameter is available since version 2.0.1.
      * @return string the truncated string.

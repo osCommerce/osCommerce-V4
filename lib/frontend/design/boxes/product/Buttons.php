@@ -87,7 +87,7 @@ class Buttons extends Widget
             return sprintf(TEXT_PLEASE_LOGIN_CART, tep_href_link(FILENAME_LOGIN,'','SSL'));
         }
 
-      $cart_button = isset(\common\models\Products::findOne($params['products_id'])->cart_button) ? \common\models\Products::findOne($params['products_id'])->cart_button : 1;
+      $cart_button = isset($product->cart_button) ? $product->cart_button : 1;
       return IncludeTpl::widget(['file' => 'boxes/product/buttons.tpl', 'params' => [
         'compare_link' => $compare_link,
         'wishlist_link' => $wishlist_link,

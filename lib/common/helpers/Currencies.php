@@ -117,6 +117,12 @@ class Currencies {
         }
     }
 
+    public static function getDefaultCurrencyId()
+    {
+        $currencies = \Yii::$container->get('currencies');
+        return isset($currencies->currencies[DEFAULT_CURRENCY])? $currencies->currencies[DEFAULT_CURRENCY]['id'] : self::getCurrencyId(DEFAULT_CURRENCY);
+    }
+
     public static function getCurrencyId($code) {
         static $_cache = [];
         if ( !isset($_cache[$code]) ) {
@@ -128,7 +134,7 @@ class Currencies {
         }
         return $_cache[$code];
     }
-    
+
     public static function getCurrencyCode($currencies_id) {
         static $_cache = [];
         if ( !isset($_cache[(int)$currencies_id]) ) {

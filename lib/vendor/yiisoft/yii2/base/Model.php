@@ -1,8 +1,8 @@
 <?php
 /**
- * @link http://www.yiiframework.com/
+ * @link https://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
- * @license http://www.yiiframework.com/license/
+ * @license https://www.yiiframework.com/license/
  */
 
 namespace yii\base;
@@ -46,7 +46,6 @@ use yii\validators\Validator;
  * 'Username must contain only word characters.', ], 'email' => [ 'Email address is invalid.', ] ] ``` .
  * @property-read array $firstErrors The first errors. The array keys are the attribute names, and the array
  * values are the corresponding error messages. An empty array will be returned if there is no error.
- * @property-read ArrayIterator $iterator An iterator for traversing the items in the list.
  * @property string $scenario The scenario that this model is in. Defaults to [[SCENARIO_DEFAULT]].
  * @property-read ArrayObject|\yii\validators\Validator[] $validators All the validators declared in the
  * model.
@@ -260,21 +259,15 @@ class Model extends Component implements StaticInstanceInterface, IteratorAggreg
 
     /**
      * Returns the list of attribute names.
+     *
      * By default, this method returns all public non-static properties of the class.
      * You may override this method to change the default behavior.
-     * @return array list of attribute names.
+     *
+     * @return string[] list of attribute names.
      */
     public function attributes()
     {
-        $class = new ReflectionClass($this);
-        $names = [];
-        foreach ($class->getProperties(\ReflectionProperty::IS_PUBLIC) as $property) {
-            if (!$property->isStatic()) {
-                $names[] = $property->getName();
-            }
-        }
-
-        return $names;
+        return array_keys(Yii::getObjectVars($this));
     }
 
     /**
@@ -1051,5 +1044,16 @@ class Model extends Component implements StaticInstanceInterface, IteratorAggreg
     public function offsetUnset($offset)
     {
         $this->$offset = null;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function __clone()
+    {
+        parent::__clone();
+
+        $this->_errors = null;
+        $this->_validators = null;
     }
 }

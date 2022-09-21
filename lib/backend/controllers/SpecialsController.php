@@ -25,6 +25,10 @@ use \common\helpers\Group;
 class SpecialsController extends Sceleton {
 
   public $acl = ['BOX_HEADING_MARKETING_TOOLS', 'BOX_CATALOG_SPECIALS'];
+    /**
+     * @var \backend\models\ProductEdit\TabAccess
+     */
+    public $ProductEditTabAccess;
   private static $dateOptions = ['active_on', 'start_between', 'end_between'];
   private static $by = [
     [
@@ -71,6 +75,12 @@ class SpecialsController extends Sceleton {
     'dfrom' => ['list' => ['\common\helpers\Date', 'prepareInputDate']],
     'dto' => ['list' => ['\common\helpers\Date', 'prepareInputDate']]
   ];
+
+    public function init()
+    {
+        parent::init();
+        $this->ProductEditTabAccess = new \backend\models\ProductEdit\TabAccess();
+    }
 
   public function actionIndex() {
 
@@ -247,6 +257,7 @@ class SpecialsController extends Sceleton {
     $currencies = Yii::$container->get('currencies');
     $params['price'] = $currencies->format($pInfo['products_price']);
     $params['priceGross'] = $currencies->display_price($pInfo['products_price'], $tax);
+    $params['hash'] =  \Yii::$app->request->get('_hash_', false);
 
     
     return $this->renderAjax('index-popup', $params + ['prid' => $prid, 'items' => $items, 'tax' => $tax]);
@@ -702,7 +713,9 @@ class SpecialsController extends Sceleton {
     </div>
     <div class="btn-toolbar btn-toolbar-order">
       <a class="btn btn-edit btn-no-margin" href="<?php echo Yii::$app->urlManager->createUrl(['specials/specialedit', 'id' => $sInfo->specials_id, 'bp' => $backParams]); ?>"><?php echo IMAGE_EDIT ?></a><button class="btn btn-delete" onclick="return deleteItemConfirm(<?php echo $item_id; ?>)"><?php echo IMAGE_DELETE; ?></button>
+      <?php if (\common\helpers\Acl::checkExtensionAllowed('ReportOrderedProducts')) { ?>
       <a class="btn btn-no-margin" href="<?php echo Yii::$app->urlManager->createUrl(['ordered-products-report', 'specials_id' => $sInfo->specials_id, 'start_date' => Date::formatCalendarDate($sInfo->specials_date_added)]); ?>"><?php echo IMAGE_REPORT ?></a>
+      <?php } ?>
     </div>
     <?php
     }
@@ -1129,9 +1142,11 @@ class SpecialsController extends Sceleton {
     $specialsId = (int) Yii::$app->request->get('id');
     $productsId = (int) Yii::$app->request->get('products_id');
     $popup = (int) Yii::$app->request->get('popup', 0);
+    $popupEdit = (int) Yii::$app->request->get('popup_edit', 0);
     $bp = Yii::$app->request->get('bp', []);
 
     $this->view->headingTitle = BOX_CATALOG_SPECIALS;
+    $this->view->useMarketPrices = (USE_MARKET_PRICES == 'True');
     $this->selectedMenu = array('marketing', 'specials');
     \common\helpers\Translation::init('admin/categories');
 
@@ -1172,10 +1187,9 @@ class SpecialsController extends Sceleton {
         //$this->view->defaultCurrency = $currencies->currencies[DEFAULT_CURRENCY]['id'];
         $this->view->defaultSaleId = (empty($sInfo->specials_id)?0:$sInfo->specials_id);
         $this->view->defaultCurrency = $this->view->defaultCurrency ?? null;
-        $this->view->useMarketPrices = $this->view->useMarketPrices ?? null;
 
         $priceViewObj = new ViewPriceData($pInfo);
-        $priceViewObj->populateView($this->view, $currencies);
+        $priceViewObj->populateView($this->view);
         $this->view->tax_classes = [0 => TEXT_NONE];
         $tmp = \common\models\TaxClass::find()->select('tax_class_id, tax_class_title')->orderBy('tax_class_title')->asArray()->indexBy('tax_class_id')->all();
         if (!empty($tmp)) {
@@ -1195,46 +1209,6 @@ class SpecialsController extends Sceleton {
 
 ////--------------
           
-
-        $this->view->useMarketPrices = (USE_MARKET_PRICES == 'True');
-// init price tabs
-        $this->view->price_tabs = $this->view->price_tabparams = [];
-////currencies tabs and params
-        if ($this->view->useMarketPrices) {
-          $this->view->currenciesTabs = [];
-          foreach ($currencies->currencies as $value) {
-            $value['def_data'] = ['currencies_id' => $value['id']];
-            $value['title'] = $value['symbol_left'] . ' ' . $value['code'] . ' ' . $value['symbol_right'];
-            $this->view->currenciesTabs[] = $value;
-          }
-          $this->view->price_tabs[] = $this->view->currenciesTabs;
-          $this->view->price_tabparams[] =  [
-              'cssClass' => 'tabs-currencies',
-              'tabs_type' => 'hTab',
-              //'include' => 'test/test.tpl',
-          ];
-        }
-
-       /* $tmp = [
-                'groups_id' => 0,
-                'currencies_id' => $currencies->currencies[DEFAULT_CURRENCY]['id'],
-                'products_group_price' => $prod['products_price'],
-                'products_group_price_gross' => round($prod['products_price'] + round($prod['products_price']*$_tax, 6), $_roundTo),
-                'products_group_special_price' => (isset($_def_sale['status']) ? $_def_sale['specials_new_products_price']:0),
-                'products_group_special_price_gross' => (isset($_def_sale['status']) ? round($_def_sale['specials_new_products_price'] + round($_def_sale['specials_new_products_price']*$_tax, 6), $_roundTo):0),
-                'expires_date' => !empty($_def_sale['expires_date']) ? $_def_sale['expires_date']:'',
-                'start_date' => !empty($_def_sale['start_date']) ? $_def_sale['start_date']:'',
-                'tax_rate' => (double)$_tax,
-                'round_to' => (int)$_roundTo,
-            ];
-            if (CUSTOMERS_GROUPS_ENABLE != 'True') {
-                $price_tabs_data = $tmp;
-            } else {
-                $price_tabs_data[0] = $tmp;
-            }
-*/
-
-/// re-arrange data arrays for design templates
 // init price tabs
         $this->view->price_tabs = $this->view->price_tabparams = [];
 ////currencies tabs and params
@@ -1268,6 +1242,9 @@ class SpecialsController extends Sceleton {
             $value['id'] = $value['groups_id'];
             $value['title'] = $value['groups_name'];
             $value['def_data'] = ['groups_id' => $value['id']];
+            if (empty($value['apply_groups_discount_to_specials'])) {
+                $value['groups_discount'] = 0;
+            }
             unset($value['groups_name']);
             unset($value['groups_id']);
             $tmp[] = $value;
@@ -1279,11 +1256,11 @@ class SpecialsController extends Sceleton {
               //'callback' => 'productPriceBlock', // smarty function which will be called before children tabs , data passed as params params
               'callback_bottom' => '',
               'tabs_type' => 'lTab',
-              'aboveTabs' => (count($this->view->groups_m)>=count($this->view->groups)? '../productedit/edit-price-link.tpl':''),
+              'aboveTabs' => (!empty($sInfo->specials_id) && count($this->view->groups_m)<(1+count($this->view->groups))? '../productedit/edit-price-link.tpl':''),
+              'all_hidden' => (count($this->view->groups_m)==1),
               'maxHeight' => '400px',
           ];
         }
-        $this->view->useMarketPrices = (USE_MARKET_PRICES == 'True');
 
         //$this->view->price_tabs['sInfo'] = $sInfo; //star, end dates, statu, flags are the same for all tabs now
 
@@ -1335,7 +1312,7 @@ class SpecialsController extends Sceleton {
       //old jquery ajax with hash compatibility
       $hash =  \Yii::$app->request->get('_hash_', false);
 
-      return $this->renderAjax($template, $params + ['popup' => 1, 'hash' => $hash]);
+      return $this->renderAjax($template, $params + ['popup' => 1, 'popup_edit' => $popupEdit, 'hash' => $hash]);
     } else {
       if (is_array($bp)) {
         $params['back_url'] = \Yii::$app->urlManager->createUrl(['specials'] + $bp);
@@ -1392,5 +1369,250 @@ class SpecialsController extends Sceleton {
   }
 
 
+    /**
+     * works only with customers groups.
+     */
+    public function actionProductPriceEdit() {
+
+        if (!defined('CUSTOMERS_GROUPS_ENABLE') || CUSTOMERS_GROUPS_ENABLE != 'True') {
+            return;
+        }
+
+        \common\helpers\Translation::init('admin/categories');
+        $currencies = Yii::$container->get('currencies');
+        $this->layout = false;
+
+        $params = [];
+
+        $params['currencies'] = $currencies;
+        $params['currencies_id'] = $currencies_id = \Yii::$app->request->post('currencies_id', \Yii::$app->request->get('currencies_id', 0));
+        $group_id = \Yii::$app->request->post('group_id', 0);
+        $only_price = \Yii::$app->request->post('only_price', 0);
+
+        $params['specials_id'] = $specialsId = (int) \Yii::$app->request->post('id', \Yii::$app->request->get('id', 0));
+        $params['products_id'] = $productsId = (int) \Yii::$app->request->post('products_id', \Yii::$app->request->get('products_id', 0));
+        $popup = (int) Yii::$app->request->get('popup', 0);
+
+        $this->view->useMarketPrices = (USE_MARKET_PRICES == 'True');
+        $this->view->headingTitle = BOX_CATALOG_SPECIALS;
+        \common\helpers\Translation::init('admin/categories');
+
+        
+        $sInfo = $pInfo = null;
+        $error = false;
+        if (!empty($specialsId) && !empty($productsId)) {
+            $template = 'specialedit-group-popup';
+            $currencies = Yii::$container->get('currencies');
+
+            if (!empty($specialsId)) {
+                $sInfo = \common\models\Specials::find()->andWhere(['specials_id' => $specialsId])->with(['prices', 'backendProductDescription'])->one();
+                if (!empty($sInfo->specials_id)) {
+                    $pInfo = $sInfo->product;
+                    unset($sInfo->product);
+                }
+            }
+            if (empty($sInfo->specials_id) && !empty($productsId)) {
+                $pInfo = \common\models\Products::find()->andWhere(['products_id' => $productsId])->with(['backendDescription'])->one();
+            }
+
+            if (!empty($pInfo)) {
+              //fill in tabs details
+              $params['sInfo'] =  (object)\yii\helpers\ArrayHelper::toArray($sInfo);
+              $params['pInfo'] = (object)\yii\helpers\ArrayHelper::toArray($pInfo);
+              if (!empty($sInfo->specials_id)) {
+                $params['pInfo']->specials_id = $sInfo->specials_id;
+              }
+              $this->view->defaultSaleId = (empty($sInfo->specials_id)?0:$sInfo->specials_id);
+              $this->view->defaultCurrency = $this->view->defaultCurrency ?? null;
+            }
+
+
+        } else {
+            $error = true;
+        }
+
+        if ($error) {
+            return '';
+        }
+
+////currencies tabs and params
+
+        $this->view->price_tabs = $this->view->price_tabparams = [];
+        if ($this->view->useMarketPrices) {
+          $this->view->currenciesTabs = [];
+          foreach ($currencies->currencies as $value) {
+            $value['def_data'] = ['currencies_id' => $value['id']];
+            $value['title'] = $value['symbol_left'] . ' ' . $value['code'] . ' ' . $value['symbol_right'];
+            $this->view->currenciesTabs[] = $value;
+          }
+          $this->view->price_tabs[] = $this->view->currenciesTabs;
+          $this->view->price_tabparams[] =  [
+              'cssClass' => 'tabs-currencies',
+              'tabs_type' => 'hTab',
+              //'include' => 'test/test.tpl',
+          ];
+        }
+
+    //// groups tabs and params
+          $this->view->groups = [];
+          /** @var \common\extensions\UserGroups\UserGroups $ext */
+          if ($ext = \common\helpers\Acl::checkExtensionAllowed('UserGroups', 'allowed')) {
+              $ext::getGroups();
+          }
+
+          $this->view->groups_m = $this->view->groups;
+          $tabdata = $groups = $tmp = [];
+          foreach ($this->view->groups_m as $value) {
+            $value['id'] = $value['groups_id'];
+            $value['title'] = $value['groups_name'];
+            $value['def_data'] = ['groups_id' => $value['id']];
+            unset($value['groups_name']);
+            //unset($value['groups_id']);
+            if (empty($value['apply_groups_discount_to_specials'])) {
+                $value['groups_discount'] = 0;
+            }
+            $tmp[] = $value;
+            if ($group_id == $value['id']) {
+                $tabdata = $value;
+            }
+            if ($value['per_product_price']==0) {
+                $groups[$value['id']] = $value['title'];
+            }
+          }
+          //$this->view->price_tabs[] = $tmp;
+          $this->view->price_tabs = $tabdata;
+          unset($tmp);
+
+
+
+        if ($only_price) {
+            if ($group_id == 0) {
+                return '';
+            }
+
+
+            if ( $pInfo->products_id_price && $pInfo->products_id != $pInfo->products_id_price ) {
+                $priceViewObj = new ViewPriceData(\common\models\Products::findOne($pInfo->products_id_price));
+            }else {
+                $priceViewObj = new ViewPriceData($pInfo);
+            }
+            $priceViewObj->populateView($this->view);
+            
+            $this->view->tax_classes = [0 => TEXT_NONE];
+            $tmp = \common\models\TaxClass::find()->select('tax_class_id, tax_class_title')->orderBy('tax_class_title')->asArray()->indexBy('tax_class_id')->all();
+            if (!empty($tmp)) {
+              $this->view->tax_classes += \yii\helpers\ArrayHelper::getColumn($tmp, 'tax_class_title');
+            }
+
+            if ($this->view->useMarketPrices) {
+                $data = $this->view->price_tabs_data[$currencies_id][$group_id];
+                $data['currencies_id'] = $currencies_id;
+            } else {
+                $data = $this->view->price_tabs_data[$group_id] ?? null;
+            }
+            $data['tabdata'] = $tabdata;
+            $data['groups_id'] = $group_id;
+
+
+            $this->ProductEditTabAccess->setProduct($pInfo);
+            unset($this->view->price_tabs);
+            unset($this->view->price_tabs_data);
+            $this->view->price_tabs_data = $data;
+            $params += [
+                        'pInfo' => $pInfo,
+                        'data' => $data,
+                        'TabAccess' => $this->ProductEditTabAccess,
+                        'idSuffix' => '_' . ($this->view->useMarketPrices?$currencies_id . '_':'') . $group_id,
+                        'fieldSuffix' => ($this->view->useMarketPrices?'[' . $currencies_id . ']':'') . '[' . $group_id . ']',
+                        'default_currency' => $currencies->currencies[DEFAULT_CURRENCY],
+                        'only_price' => 1
+                ];
+
+            return $this->renderAjax($template, $params);
+        } else {
+            $groups = [0 => TEXT_CHOOSE_GROUP] + $groups;
+            $params['groups'] = $groups;
+
+
+            return $this->render($template, $params);
+        }
+    }
+    
+    public function actionGroupPriceSubmit() {
+
+        if (!defined('CUSTOMERS_GROUPS_ENABLE') || CUSTOMERS_GROUPS_ENABLE != 'True') {
+            return;
+        }
+/*
+
+        products_id	"1240"
+specials_id	"165"
+currencies_id	"0"
+group_id	"1"
+special_price[cur_id]?[group_id]?	"9"
+ */
+
+        \common\helpers\Translation::init('admin/categories');
+        $currencies = Yii::$container->get('currencies');
+        $this->layout = false;
+        $msg = '';
+        $error = false;
+
+        $currencies_id = \Yii::$app->request->post('currencies_id', 0);
+        $group_id = \Yii::$app->request->post('group_id', 0);
+        $specials_id = (int) \Yii::$app->request->post('specials_id', 0);
+        $special_price = \Yii::$app->request->post('special_price', []);
+        if (defined('USE_MARKET_PRICES') && (USE_MARKET_PRICES == 'True')) {
+            $price = $special_price[$currencies_id][$group_id] ?? null;
+        } else {
+            $price = $special_price[$group_id] ?? null;
+        }
+
+        if (!is_null($price) && $price!='' && !empty($specials_id) && !empty($group_id)) {
+            try {
+                $spq = \common\models\SpecialsPrices::find()
+                    ->andWhere([
+                      'specials_id' => $specials_id,
+                      'groups_id' => $group_id,
+                      ]);
+                if (!defined('USE_MARKET_PRICES') || (USE_MARKET_PRICES != 'True')) {
+                    $currencies_id = 0;
+                }
+                $spq->andWhere([
+                      'currencies_id' => $currencies_id
+                    ]);
+
+                $sp = $spq->one();
+                if (empty($sp)) {
+                    $sp = new \common\models\SpecialsPrices();
+                    $sp->setAttributes([
+                      'specials_id' => $specials_id,
+                      'groups_id' => $group_id,
+                      'currencies_id' => $currencies_id
+                    ], false);
+                }
+                $sp->specials_new_products_price = $price;
+                $sp->save(false);
+            } catch (\Exception $e) {
+                $error = true;
+                $msg = $e->getMessage();
+                \Yii::warning(" #### " .print_r($e->getMessage() . ' ' . $e->getTraceAsString(), true), 'TLDEBUG');
+            }
+            
+        } else {
+            $error = true;
+            $msg = TEXT_ERROR_ON_SAVE;
+        }
+
+
+        \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+        return ['result' => !$error, 'message' => $msg];
+
+
+
+
+
+
+    }
 
 }

@@ -2,7 +2,7 @@
 
 <div class="btn-bar" style="padding: 0; text-align: center;">
     <div class="btn-left">
-        <a href="javascript:void(0)" onclick="return resetStatement();" class="btn btn-back">{$smarty.const.IMAGE_BACK}</a>
+        <a href="{$addedPages['backUrl']}" class="btn btn-cancel-foot">{$smarty.const.IMAGE_BACK}</a>
     </div>
     {$manager->render('Unprocessed', ['order' => $order])}
     {if \common\helpers\Acl::rule(['ACL_ORDER', 'TEXT_SEND_CUSTOMER_REQUEST'])}{$manager->render('Request', ['manager' => $manager, 'order' => $order])}{/if}

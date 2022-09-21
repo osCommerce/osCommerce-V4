@@ -160,13 +160,13 @@ Released under the GNU General Public License
   {if $id_prefix==''}
     {assign var="id_prefix" value={"tab`$_assetsTabsCount++`"} }
   {/if}
+  {if $data|@count > 0 && !empty($data[0]['aboveTabs'])}
+    <div class="nav-tabs-left-above p-t-1">
+      {$all_hidden=$data[0]['all_hidden']}
+      {include file={$data[0]['aboveTabs']}}
+    </div>
+  {/if}
   <div class="tabbable tabs-left" id="{$id_prefix}_tabbable_custom">
-    {if $data|@count > 0 && !empty($data[0]['aboveTabs'])}
-        <div class="cols-md-12 nav-tabs-left-above">
-            {$all_hidden=$data[0]['all_hidden']}
-            {include file={$data[0]['aboveTabs']}}
-        </div>
-    {/if}
 
     {if $data|@count > 1}
       {call lTabTabs id=$id_prefix tabData=$data}

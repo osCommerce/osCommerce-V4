@@ -75,6 +75,10 @@ $(document).ready(function(){
                       $('.r_check_sale_prod', tab).on('click', rPriceSwitch);
                       $('.r_check_sale_prod', tab).on('vswitch', bsPriceSwitch);
                     }
+                    var mask_money = $('.mask-money');
+                    if (mask_money && mask_money.length<0+{intval($smarty.const.CATALOG_SPEED_UP_DESIGN)})
+                    mask_money.setMaskMoney();
+
                     $('.pop-up-content .group-price-table').removeClass('loading');
                     $('.pop-up-content .group-price-table').css('cursor', '');
 
@@ -117,97 +121,6 @@ $(document).ready(function(){
 
 </script>
 
-{function productSaleOnlyPriceBlock}
-{* $data: [ name => val], $fieldSuffix: '[1][0]'  $idSuffix: '-1-0' *}
-{* workaround for switchers: group on/off *}
-{if $smarty.const.CUSTOMERS_GROUPS_ENABLE != 'True'}
-  {if empty($data['products_group_price'])  }
-    {$data['products_group_price']=0}
-    {$data['products_group_price_gross']=0}
-  {/if}
-  {if empty($data['products_group_special_price']) }
-    {$data['products_group_special_price']=0}
-    {$data['products_group_special_price_gross']=0}
-  {/if}
-{/if}
-{if !$app->controller->view->useMarketPrices }
-  {$data['currencies_id']=$default_currency['id']}
-{/if}
-{if !isset($data['products_group_special_price']) || $data['products_group_special_price']==''}
-  {if $data['groups_id']>0 }
-    {$data['products_group_special_price']='-2'}
-  {else}
-    {$data['products_group_special_price']='0'}
-  {/if}
-  {$showSalesDiv=0}
-{else}
-  {$showSalesDiv=1}
-{/if}
-{$showSalesDiv=1}
-
-    <div id="group_price_container{$idSuffix}" class="js_group_price" data-base_price="{$data['base_price']|escape}" data-group_discount="{$data['tabdata']['groups_discount']}" data-currencies-id="{$data['currencies_id']}" data-base_special_price="{$data['base_specials_price']|escape}" >
-
-      <div id="div_wrap_hide{$idSuffix}" {if round($data['products_group_price'])==-1}style="display:none;"{/if}>
-        <!-- specials/sales -->
-        <div class="our-pr-line after our-pr-line-check-box1 dfullcheck sale_to_dis {if $data['specials_disabled']>0 }dis_module{/if}">
-          <div class="{if ($default_currency['id']!=$data['currencies_id']) }market_sales_switch{/if}" {*if ($default_currency['id']!=$data['currencies_id']) }style="display:none;"{/if*}>
-
-            {if $data['groups_id']>0 }
-            <div class="our-pr-line after div_sale_prod div_sale_prod{$idSuffix}" {if ($showSalesDiv==0)}style="display:none;"{/if}>
-              <label>{$smarty.const.TEXT_ENABLE_SALE}</label>
-              <label for="popt{$idSuffix}_s2"><input type="radio" class="price-options" id="popt{$idSuffix}_s2" value="-2" {if $data['products_group_special_price']=='-2'}checked{/if} data-idsuffix="{$idSuffix}"/>{$smarty.const.TEXT_PRICE_SWITCH_MAIN_PRICE}</label>
-              <label for="popt{$idSuffix}_s1"><input type="radio" class="price-options" id="popt{$idSuffix}_s1" value="1" {if round($data['products_group_special_price'])>=0}checked{/if} data-idsuffix="{$idSuffix}"/>{sprintf($smarty.const.TEXT_PRICE_SWITCH_OWN_PRICE, $data['tabdata']['title'])}</label>
-              <label for="popt{$idSuffix}_s0"><input type="radio" class="price-options" id="popt{$idSuffix}_s0" value="-1" {if $data['products_group_special_price']=='-1'}checked{/if} data-idsuffix="{$idSuffix}"/>{sprintf($smarty.const.TEXT_PRICE_SWITCH_DISABLE, $data['tabdata']['title'])}</label>
-            </div>
-            {else}
-            <div class="our-pr-line after div_sale_prod">
-              <label for="popt{$idSuffix}_s2"><input type="radio" class="price-options" id="popt{$idSuffix}_s2" value="1" {if $data['products_group_special_price']!='-1'}checked{/if} data-idsuffix="{$idSuffix}"/>{sprintf($smarty.const.TEXT_ENABLED_FOR, $data['tabdata']['title'])}</label>
-              <label for="popt{$idSuffix}_s0"><input type="radio" class="price-options" id="popt{$idSuffix}_s0" value="-1" {if $data['products_group_special_price']=='-1'}checked{/if} data-idsuffix="{$idSuffix}"/>{sprintf($smarty.const.TEXT_PRICE_SWITCH_DISABLE, $data['tabdata']['title'])}</label>
-            </div>
-
-            {/if}
-
-          </div>
-        </div>
-        <div class="{if ($default_currency['id']!=$data['currencies_id']) }market_sales_switch{/if} sale_to_dis {if $data['specials_disabled']>0 }dis_module{/if}">
-        <div id="div_sale_prod{$idSuffix}" class="sale-prod-line-block after div_sale_prod div_sale_prod{$idSuffix}" {if ($showSalesDiv==0 || $data['products_group_special_price']==-1)}style="display:none;"{/if}>
-          <div class="_sale-prod-line our-pr-line">
-          <div>
-            <label class="sale-info1">{$smarty.const.TEXT_SALE}<span class="colon">:</span></label>
-            {if $data['products_group_special_price']>0.001}
-              {$val = $data['products_group_special_price']}
-            {else}
-              {$val=''}
-              {*$val = $data['base_specials_price']*((100-$data['tabdata']['groups_discount'])/100)*}
-            {/if}
-            <input id="special_price{$idSuffix}" data-idsuffix="{$idSuffix}" name="special_price{$fieldSuffix|escape}" value='{$val|escape}' onKeyUp="updateGrossPrice(this);" data-roundTo="{$data['round_to']}" class="form-control mask-money" {if $data['groups_id']>0 && round($data['products_group_special_price'])==-2}style="display:none;"{/if} data-precision="{$smarty.const.MAX_CURRENCY_EDIT_PRECISION}" data-currency="{$data['currencies_id']}"/>
-{if $data['groups_id']>0 }
-            <span id="span_special_price{$idSuffix}" class="form-control-span"{if $data['products_group_specials_price']>-0.99}style="display:none;"{/if}>{$currencies->formatById($val, false, $data['currencies_id'])|escape}</span>
-{/if}
-          </div>
-          <div>
-            <label class="sale-info1">{$smarty.const.TEXT_SALE_GROSS}<span class="colon">:</span></label>
-            {if $data['products_group_special_price_gross']>0.001}
-              {$val = $data['products_group_special_price_gross']}
-            {else}
-              {*$val = $data['base_specials_price_gross']*((100-$data['tabdata']['groups_discount'])/100)*}
-              {$val=''}
-            {/if}
-            <input id="special_price_gross{$idSuffix}" data-idsuffix="{$idSuffix}" value='{$val|escape}' onKeyUp="updateNetPrice(this);" class="form-control mask-money" {if $data['groups_id']>0 && round($data['products_group_special_price'])==-2}style="display:none;"{/if}  data-currency="{$data['currencies_id']}" data-roundto="{$data['round_to']}"/>
-{if true || $data['groups_id']>0 }
-            <span id="span_special_price_gross{$idSuffix}" class="form-control-span" {if $data['products_group_specials_price']<-1.1}style="display:none;"{/if}>{$currencies->formatById($val, false, $data['currencies_id'])}</span>
-{/if}
-          </div>
-          </div>
-        </div>
-        </div>
-
-
-      </div>
-    </div>
-{/function}
-
-
 {function SalesParams}
   {*tabs=$app->controller->view->price_tabs tabparams=$tabparams  fieldsData=$app->controller->view->price_tabs_data  id_prefix = $id_prefix*}
   {if $smarty.const.CUSTOMERS_GROUPS_ENABLE != 'True' || !$app->controller->view->useMarketPrices}
@@ -228,21 +141,4 @@ $(document).ready(function(){
           </div>
 
 
-
-{*
-          <div class="limits">
-            <div class="sale-prod-line _our-pr-line">
-              <div class="_disable-btn">
-                <label class="inline">{$smarty.const.TEXT_MAX_QTY_TO_SELL}<span class="colon">:</span></label>
-                <div class="info-hint"><div class="info-hint-box"><div class="info-hint-mustache"></div>{$smarty.const.TEXT_LEAVE_EMPTY_FOR_NO_LIMITS}</div></div>
-                <input name="total_qty{$fieldSuffix|escape}" value='{if !empty($data['total_qty'])}{$data['total_qty']}{/if}' class="form-control"/>
-              </div>
-              <div class="_disable-btn">
-                <label>{$smarty.const.TEXT_MAX_QTY_TO_SELL_IN_ORDER}<span class="colon">:</span></label>
-                <input name="max_per_order{$fieldSuffix|escape}" value='{if !empty($data['max_per_order'])}{$data['max_per_order']}{/if}' class="form-control"/>
-              </div>
-            </div>
-          </div>
-        </div>
-*}
 {/function}

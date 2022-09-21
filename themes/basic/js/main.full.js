@@ -418,18 +418,22 @@ $.fn.quantity = function(options){
             _this.on('keydown', function(e){
                 if (e.keyCode === 27) {
                     _this.trigger('reset_good_quantity');
+                    var new_value = _this.val().replace(((virtual_item_qty > 1) ?/[^0-9\.]/g : /[^0-9]/g), '');
+                    _this.trigger('check_quantity', [new_value * virtual_item_qty, true]);
                     return false;
                 }
                 if (fast_step[e.key]) {
                     if ( !isNaN(parseInt(_this.val(),10)) ) {
                         var setVal = parseInt(_this.val(),10)+fast_step[e.key];
                         _this.val(setVal<0?0:setVal);
+                        var new_value = _this.val().replace(((virtual_item_qty > 1) ?/[^0-9\.]/g : /[^0-9]/g), '');
+                        _this.trigger('check_quantity', [new_value * virtual_item_qty, true]);
                     }
                     return false;
                 }
                 return true;
             });
-            _this.on('keyup', function(e){
+            _this.on('change', function(e){
                 var new_value = _this.val().replace(((virtual_item_qty > 1) ?/[^0-9\.]/g : /[^0-9]/g), '');
 
                 delay(function(){
