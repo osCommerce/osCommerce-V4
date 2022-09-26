@@ -3127,7 +3127,7 @@ input.popup-heading-small-text {
   margin-right: 20px;
 }
 .choose-visibility select {
-  width: 300px;
+  width: calc(100% - 20px);
   display: inline-block;
 }
 

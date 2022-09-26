@@ -588,6 +588,9 @@ html, body{min-width: 960px;}
     .edp-line .btn {
         margin-bottom: 3px;
     }
+    .upload-container.upload-container-with-button .upload-file-template {
+        padding-top: 10%;
+    }
 }
 
 @media(max-width: 1150px){

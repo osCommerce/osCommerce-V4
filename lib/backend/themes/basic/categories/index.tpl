@@ -661,9 +661,12 @@ function onClickEvent(obj, table, event) {
     $('#catalog_management_data .scroll_col').html('');
     var event_id = $(obj).find('input.cell_identify').val();
     var type_code = $(obj).find('input.cell_type').val();
+    let get = { };
+    const url = new URL(window.location.href);
+    url.searchParams.forEach((val, key) => { get[key] = val})
     if (type_code == 'category') {
         $("#catalog_management_title").text('Category Management');
-        $.post("categories/categoryactions", { 'categories_id' : event_id }, function(data, status){
+        $.post("categories/categoryactions", { 'categories_id' : event_id, get }, function(data, status){
             if (status == "success") {
                 $('#catalog_management_data .scroll_col').html(data);
                 $("#catalog_management").show();
@@ -673,7 +676,7 @@ function onClickEvent(obj, table, event) {
         },"html");
     } else if (type_code == 'product') {
         $("#catalog_management_title").text('Product Management');
-        $.post("categories/productactions", { 'products_id' : event_id, 'categories_id':$('#global_id').val() }, function(data, status){
+        $.post("categories/productactions", { 'products_id' : event_id, 'categories_id':$('#global_id').val(), get }, function(data, status){
             if (status == "success") {
                 $('#catalog_management_data .scroll_col').html(data);
                 $("#catalog_management").show();
@@ -685,7 +688,7 @@ function onClickEvent(obj, table, event) {
     } else if (type_code == 'parent') {
         event_id = $('#global_id').val();
         $("#catalog_management_title").text('Category Management');
-        $.post("categories/categoryactions", { 'categories_id' : event_id }, function(data, status){
+        $.post("categories/categoryactions", { 'categories_id' : event_id, get }, function(data, status){
             if (status == "success") {
                 $('#catalog_management_data .scroll_col').html(data);
                 $("#catalog_management").show();

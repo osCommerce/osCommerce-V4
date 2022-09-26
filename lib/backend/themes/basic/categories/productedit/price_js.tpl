@@ -993,6 +993,18 @@
             $('#modal-manually-landed-price', dialogBlock).val(fieldLandedPrice);
         });
 
+        $('.js-supplier-margin, .js-supplier-surcharge, .js-supplier-discount').on('nullable-save', function (event) {
+            var supplierBlock = $(event.target).closest('.js-supplier-product');
+            var suppliers_id = supplierBlock.data('supplier-id');
+            var postData = $('input', supplierBlock).serializeArray();
+            postData.push({ name: 'save_products_id', value: {(int)$pInfo->products_id} });
+            postData.push({ name: 'save_suppliers_id', value: suppliers_id });
+
+            $.post('{Yii::$app->urlManager->createUrl('categories/save-supplier-fields')}', postData, function(data, status) {
+            }, "json");
+
+        });
+
     });
     //===== Price and Cost END =====//
 </script>

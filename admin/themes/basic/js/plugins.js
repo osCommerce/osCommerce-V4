@@ -385,11 +385,11 @@ if ( !$('.table tbody tr').hasClass('selected') ) {
     if ($("#row_id").val() == undefined) {
         $('.table tbody tr:eq(0)').click();
     } else {
-        var sel = $('.table tbody tr:eq(' + $("#row_id").val() + ')');
+        var sel = $('.table > tbody > tr:eq(' + $("#row_id").val() + ')');
         if (sel[0] == undefined) {
             $("#row_id").val(0);
         }
-        $('.table tbody tr:eq(' + $("#row_id").val() + ')').click();
+        $('.table > tbody > tr:eq(' + $("#row_id").val() + ')').click();
     }
 }
 $('tr td .uniform').click(function() { 

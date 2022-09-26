@@ -56,6 +56,8 @@ class SupplierService implements \IteratorAggregate {
 
         if (!$this->supplier) {
             $this->supplier = new Suppliers();
+            $this->supplier->country = 'GB';
+            $this->supplier->invoice_needed_to_complete_po = 1;
         }
 
         $this->supplier->getAuthData()->one();

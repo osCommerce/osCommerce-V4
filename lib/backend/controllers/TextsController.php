@@ -1178,8 +1178,8 @@ class TextsController extends Sceleton {
 
         $query = tep_db_query( $main_sql );
         while( $data = tep_db_fetch_array( $query ) ) {
-            $data = preg_replace("/\r?\n/", '\n', $data);
-            $data = preg_replace("/\t/", '\t', $data);
+//            $data = preg_replace("/\r?\n/", '\n', $data);
+//            $data = preg_replace("/\t/", '\t', $data);
             $CSV->write_array($data);
         }
         die();

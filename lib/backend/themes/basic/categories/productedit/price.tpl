@@ -112,7 +112,7 @@ if $smarty.const.CUSTOMERS_GROUPS_ENABLE != 'True' || substr($idSuffix, -2)=='_0
                 <span id="autoprice_info" style="display: none;">{$smarty.const.TEXT_PRICE_COST}: <a href="{\Yii::$app->urlManager->createUrl(['configuration/index', 'groupid' => 'BOX_CATALOG_SUPPIERS', 'row' => 1])}">{$smarty.const.SUPPLIER_PRICE_SELECTION}</a></span>
                 <span id="manualprice" style="display: none;">
                      <a href="javascript:void(0)" class="btn" id="products_group_price{$idSuffix}_btn" onclick="return chooseSupplierPrice('products_group_price{$idSuffix}')" {if {round($data['products_group_price'])}==-2}style="display:none;"{/if}{if ((is_null($data['supplier_price_manual']) and SUPPLIER_UPDATE_PRICE_MODE=='Auto') or (!is_null($data['supplier_price_manual']) and $data['supplier_price_manual']==0))} disabled="disabled"{/if}>{$smarty.const.TEXT_PRICE_COST}</a>
-                     <a href="javascript:void(0)" class="btn" id="products_group_price_undo_btn" onclick="return clickUndoPriceBtn(this)" style="display: none;">Undo</a>
+                     <a href="javascript:void(0)" class="btn" id="products_group_price_undo_btn" onclick="return clickUndoPriceBtn(this)" style="display: none;">{$smarty.const.TEXT_SUPPLIER_PRICE_UNDO}</a>
                 </span>
               <div class="pull-right">
                 <label>
@@ -408,7 +408,7 @@ if $smarty.const.CUSTOMERS_GROUPS_ENABLE != 'True' || substr($idSuffix, -2)=='_0
         <div class="edp-line">
                 <span class="edp-qty-t" style="display:none;">{$smarty.const.TEXT_APPLICABLE}</b></span>
             </div>
-          <span id="supplier-default-sort-holder" style="display: block; float: right; text-align: right;"><label>Default sort: {Html::checkbox('suppliers-default-sort', {$pInfo->supplier_default_sort}, ['class' => 'check_on_off'])}</label></span>
+          <span id="supplier-default-sort-holder" style="display: block; float: right; text-align: right;"><label>{$smarty.const.TEXT_SUPPLIER_SORT_HEADER} {Html::checkbox('suppliers-default-sort', {$pInfo->supplier_default_sort}, ['class' => 'check_on_off'])}</label></span>
       </div>
       <div class="widget-content edp-qty-update">
         {include file="supplierproduct-list.tpl"}
@@ -729,17 +729,17 @@ var bsPriceParams = {
         <div class="modal-dialog vertical-align-center modal-little">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Edit Landed Price</h5>
+                    <h5 class="modal-title">{$smarty.const.TEXT_SUPPLIERS_EDIT_LANDED_PRICE}</h5>
                 </div>
                 <div class="modal-body">
-                    <label class="modal-block">{Html::radio('modal-selected-type', true, ['value' => 'calculate'])} Calculated: <span id="modal-calculated-landed-price">10</span></label>
-                    <label class="modal-block">{Html::radio('modal-selected-type', false, ['value' => 'manually'])} Manually: </label>
+                    <label class="modal-block">{Html::radio('modal-selected-type', true, ['value' => 'calculate'])} {$smarty.const.TEXT_SUPPLIER_LANDED_PRICE_CALC} <span id="modal-calculated-landed-price">10</span></label>
+                    <label class="modal-block">{Html::radio('modal-selected-type', false, ['value' => 'manually'])} {$smarty.const.TEXT_SUPPLIER_LANDED_PRICE_MANUAL} </label>
                     {Html::textInput('modal-manually-landed-price', null, ['size' => 10, 'style' => 'width: 100px; margin-left: 17px'])}
 
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary save-changes" data-dismiss="modal">Save changes</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">{$smarty.const.TEXT_CLOSE}</button>
+                    <button type="button" class="btn btn-primary save-changes" data-dismiss="modal">{$smarty.const.IMAGE_SAVE}</button>
                 </div>
             </div>
         </div>

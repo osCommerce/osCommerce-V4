@@ -84,8 +84,8 @@ use Yii;
       }
     }
 
-    function set_snapshot($page = '') {
-        if (Yii::$app->request->isAjax) {
+    function set_snapshot($page = '', $ajax = false) {
+        if (Yii::$app->request->isAjax && !$ajax) {
             return '';
         }
       global $PHP_SELF, $request_type;

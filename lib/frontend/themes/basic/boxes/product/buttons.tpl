@@ -51,8 +51,8 @@
   tl('{Info::themeFile('/js/main.js')}' , function(){
       var $box = $('#box-{$id}');
     if (useCarousel){
-        pCarousel.restoreItems();
-        pCarousel.buildCursor(parseInt('{$products_id}'));
+        window.pCarousel.restoreItems();
+        window.pCarousel.buildCursor(parseInt('{$products_id}'));
     }
     $('#btn-notify').on('click', function() {
       alertMessage('\

@@ -18,7 +18,7 @@
                     {if !$service->supplier->is_default}
                     <div class="w-line-row w-line-row-1">
                         <div class="wl-td">
-                            <label>{$smarty.const.TEXT_DEFAULT}</label>{Html::checkbox('suppliers_data[is_default]', $service->supplier->is_default, ['class' => 'check_on_off' ])}
+                            <label>{$smarty.const.TEXT_DEFAULT}</label>{Html::checkbox('suppliers_data[is_default]', $service->supplier->is_default, ['class' => 'check_on_off', 'uncheck' => 0])}
                         </div>
                     </div>
                     {/if}
@@ -27,7 +27,7 @@
                     {if !$service->supplier->is_default}
                     <div class="w-line-row w-line-row-1">
                         <div class="wl-td">
-                            <label>{$smarty.const.TEXT_STATUS}</label>{Html::checkbox('suppliers_data[status]', $service->supplier->status, ['class' => 'check_on_off' ])}
+                            <label>{$smarty.const.TEXT_STATUS}</label>{Html::checkbox('suppliers_data[status]', $service->supplier->status, ['class' => 'check_on_off', 'uncheck' => 0])}
                         </div>
                     </div>
                     {/if}
@@ -59,7 +59,7 @@
                     </div>
                     <div class="w-line-row w-line-row-1">
                         <div class="wl-td">
-                            <label>{$smarty.const.TEXT_SUPPLIER_PRICES_WITH_TAX}</label>{Html::checkbox('suppliers_data[supplier_prices_with_tax]', $service->supplier->supplier_prices_with_tax, ['class' => 'check_on_off' ])}
+                            <label>{$smarty.const.TEXT_SUPPLIER_PRICES_WITH_TAX}</label>{Html::checkbox('suppliers_data[supplier_prices_with_tax]', $service->supplier->supplier_prices_with_tax, ['class' => 'check_on_off', 'uncheck' => 0])}
                         </div>
                     </div>
                 </div>
@@ -253,7 +253,13 @@
                     <h4>{$smarty.const.BOX_PURCHASE_ORDERS}</h4>
                 </div>    
                 <div class="widget-content">
-                    
+{if $service->supplier->hasAttribute('invoice_needed_to_complete_po')}
+                    <div class="w-line-row w-line-row-1">
+                        <div class="wl-td">
+                            <label>Is invoice needed to complete PO?</label>{Html::checkbox('suppliers_data[invoice_needed_to_complete_po]', $service->supplier->invoice_needed_to_complete_po, ['class' => 'check_on_off', 'uncheck' => 0])}
+                        </div>
+                    </div>
+{/if}
                     <div class="w-line-row w-line-row-1">
                         <div class="wl-td">
                             <label>Send Emails To</label>
@@ -269,7 +275,7 @@
                     <div class="w-line-row w-line-row-1">
                         <div class="wl-td">
                             <label>Auto re-order active</label>
-                            {Html::checkbox('suppliers_data[reorder_auto]', $service->supplier->reorder_auto, ['value'=>'1', 'class' => 'js_check_autoorder_status check_on_off'])}
+                            {Html::checkbox('suppliers_data[reorder_auto]', $service->supplier->reorder_auto, ['value'=>'1', 'class' => 'js_check_autoorder_status check_on_off', 'uncheck' => 0])}
                         </div>
                     </div>
                     <div class="can_set_autoorder">

@@ -426,7 +426,8 @@
 .js-main-text-input-nullable .icon-ok {
     color: var(--color-info);
 }
-}
+.js-main-text-input-nullable input:not([readonly])::placeholder {
+    color: var(--input-background);
 }
 
 .warehouses-table .popup-content{

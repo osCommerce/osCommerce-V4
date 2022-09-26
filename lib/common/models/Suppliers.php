@@ -32,9 +32,9 @@ class Suppliers extends ActiveRecord
             [['suppliers_name', 'condition', 'condition_description', 'company','company_vat', 'send_email', 'document_format', 'contact_name', 'contact_phone', 'awrs_no', 'sage_code', 'street_address', 'suburb', 'city', 'postcode', 'state', 'country'], 'string',],
             [['suppliers_name', 'condition', 'condition_description', 'company', 'company_vat', 'contact_name', 'contact_phone', 'awrs_no', 'sage_code', 'street_address', 'suburb', 'city', 'postcode', 'state'], 'default', 'value' => '', 'on' => ['insert', 'update']], // not null fields
             [['country'], 'default', 'value' => 'GB', 'on' => ['insert', 'update']], // not null fields
-            [[ 'status', 'currencies_id', 'delivery_days_min', 'delivery_days_max', 'tax_class_id', 'supplier_prices_with_tax', 'tax_rate', 'reorder_auto', 'send_qty', 'send_amount', 'warehouse_id', 'payment_delay', 'supply_delay'], 'number'],
+            [[ 'status', 'currencies_id', 'delivery_days_min', 'delivery_days_max', 'tax_class_id', 'supplier_prices_with_tax', 'tax_rate', 'reorder_auto', 'send_qty', 'send_amount', 'warehouse_id', 'payment_delay', 'supply_delay', 'invoice_needed_to_complete_po'], 'number'],
             [['is_default', 'tax_rate', 'send_amount', 'payment_delay', 'supply_delay', ], 'default', 'value' => 0, 'skipOnEmpty' => false],
-            [['status', 'send_qty'], 'default', 'value' => 1, 'skipOnEmpty' => false]
+            [['status', 'send_qty', 'invoice_needed_to_complete_po'], 'default', 'value' => 1, 'skipOnEmpty' => false]
             //['price_formula', 'default'],
         ];
     }

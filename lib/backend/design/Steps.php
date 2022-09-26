@@ -596,7 +596,7 @@ class Steps
         $themeName = $step['theme_name'];
 
         $blockName = self::blockNameToDb($data['block_name'], $themeName);
-        Theme::blocksTreeImport($data['content'], $themeName, $blockName, $data['content']['sort_order']);
+        Theme::blocksTreeImport($data['content'], $themeName, $blockName, $data['content']['sort_order'], false, false);
 
         $siblings = DesignBoxesTmp::find()->where([
             'block_name' => $blockName,
@@ -902,7 +902,7 @@ class Steps
                     'theme_name' => $themeName,
                     'selector' => $item['selector'],
                     'attribute' => $item['attribute'],
-                    'visibility' => $item['visibility'],
+                    'visibility' => $item['visibility'] ?? '',
                     'media' => $item['media'],
                     'accessibility' => $item['accessibility'],
                 ];

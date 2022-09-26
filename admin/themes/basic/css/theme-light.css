@@ -43,6 +43,8 @@ body {
 
     --link-color: #0077e4;
     --primary-color: #7b5bb9;
+
+    --input-background: #ffffff;
 }
 
 .btn-bar-top {

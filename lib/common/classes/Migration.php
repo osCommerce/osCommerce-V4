@@ -811,4 +811,27 @@ class Migration extends \yii\db\Migration {
         }
     }
 
+    public function updateTheme($themeName, $migrationPath)
+    {
+        echo "\nMigration for " . $themeName . " theme \n";
+        if (!\common\models\DesignBoxes::find(['theme_name' => $themeName])) {
+            echo $themeName . " theme not found \n";
+            return '';
+        }
+
+        $filePath = DIR_FS_CATALOG . DIRECTORY_SEPARATOR . trim($migrationPath, DIRECTORY_SEPARATOR);
+
+        if (!is_file($filePath)) {
+            echo "Migration file not found: " . $filePath . " \n";
+        }
+
+        $migration = json_decode(file_get_contents($filePath), true);
+        if ( $result = \backend\design\Steps::applyMigration($themeName, $migration) ) {
+            \backend\design\Theme::saveThemeVersion($themeName);
+            echo $result . "\n";
+            return '';
+        }
+
+        echo "Migration not applied \n";
+    }
 }

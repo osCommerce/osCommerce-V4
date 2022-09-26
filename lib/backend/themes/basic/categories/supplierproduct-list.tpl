@@ -394,7 +394,7 @@
                       $('#' + target_id).val(price).keyup();
                   }
                   if (prev == price) {
-                      alert('The price is exactly the same already. Nothing changed');
+                      alert('{$smarty.const.TEXT_SUPPLIER_SET_PRICE_ERR_SAME}');
                   } else {
                       undoPrice = prev;
                       $('#products_group_price_undo_btn').show();

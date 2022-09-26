@@ -194,11 +194,7 @@ class CategoriesController extends Sceleton {
      * Index action is the default action in a controller.
      */
     public function actionIndex() {
-        global $login_id, $navigation;
-
-        if (is_object($navigation) && method_exists($navigation, 'set_snapshot')){
-            $navigation->set_snapshot();
-        }
+        global $login_id;
 
         $this->selectedMenu = array('catalog', 'categories');
         $this->navigation[] = array('link' => Yii::$app->urlManager->createUrl('categories/index'), 'title' => HEADING_TITLE);
@@ -1317,6 +1313,11 @@ class CategoriesController extends Sceleton {
 
         \common\helpers\Translation::init('admin/categories');
 
+        global $navigation;
+        if (is_object($navigation) && method_exists($navigation, 'set_snapshot')) {
+            $navigation->set_snapshot(['page' => 'categories', 'get' => Yii::$app->request->post('get')], true);
+        }
+
         $this->layout = false;
 
         $categories_id = Yii::$app->request->post('categories_id', 0);
@@ -1346,6 +1347,11 @@ class CategoriesController extends Sceleton {
         \common\helpers\Translation::init('admin/categories');
 
         $currencies = Yii::$container->get('currencies');
+
+        global $navigation;
+        if (is_object($navigation) && method_exists($navigation, 'set_snapshot')) {
+            $navigation->set_snapshot(['page' => 'categories', 'get' => Yii::$app->request->post('get')], true);
+        }
 
         $this->layout = false;
 
@@ -9901,6 +9907,22 @@ order by status desc, sort_order
 
         Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
         return $ret;
+    }
+
+    public function actionSaveSupplierFields()
+    {
+        $productId = \Yii::$app->request->post('save_products_id');
+        $uprid = \Yii::$app->request->post('uprid', $productId);
+        $supplierId = \Yii::$app->request->post('save_suppliers_id');
+        $supplierData = \Yii::$app->request->post('suppliers_data');
+        if (empty($productId) || empty($supplierId) || empty($supplierData)) return;
+
+        $supplier = \common\models\SuppliersProducts::findOne(['products_id' => $productId, 'uprid' => $uprid, 'suppliers_id' => $supplierId]);
+        if (empty($supplier)) return;
+        foreach(['supplier_discount', 'suppliers_surcharge_amount', 'suppliers_margin_percentage'] as $field) {
+            $supplier->$field = empty($supplierData[$productId][$supplierId][$field]) ? null : $supplierData[$productId][$supplierId][$field];
+        }
+        $supplier->save(false);
     }
 
 }

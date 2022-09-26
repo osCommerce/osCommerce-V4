@@ -8,7 +8,6 @@
       <span class="title">{$smarty.const.CREDIT_AMOUNT}:</span>
       <span class="amount-val">{$credit_amount}</span>
     </div>
-    <div class="text">{$smarty.const.ENTER_AMOUNT}</div>
       {if $message_discount_gv}
           {$message_discount_gv}
       {/if}
@@ -18,7 +17,7 @@
 
       <input  autocomplete="off"
               class="cot_gv_amount"
-              placeholder="0"
+              placeholder="{$smarty.const.ENTER_AMOUNT}"
               name="credit_apply[gv][cot_gv_amount]"
               value="{$cot_gv_amount}"
               type="text"/>

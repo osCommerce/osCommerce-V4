@@ -936,6 +936,72 @@ class Warehouses {
         }
     }
 
+    public static function getLocations($warehouse_id, $with_blocks = true, $only_final = true, $separator = ', ') {
+        $blocks = [];
+        $locations = [];
+        $parentMap = [];
+
+        $locationList = [];
+        foreach (\common\models\Locations::find()
+                ->where(['warehouse_id' => $warehouse_id])
+                ->orderBy(['parrent_id' => SORT_ASC, 'location_name' => SORT_ASC])
+                ->all() as $location) {
+            $locations[$location->location_id] = $location;
+            if (!isset($parentMap[$location->parrent_id]))
+                $parentMap[$location->parrent_id] = [];
+            $parentMap[$location->parrent_id][] = $location->location_id;
+            if (!isset($blocks[$location->block_id])) {
+                $blocks[$location->block_id] = $location->locationBlock->block_name;
+            }
+
+            $locationList[$location->location_id] = [
+                'location_id' => $location->location_id,
+                'parent_id' => $location->parrent_id,
+                'is_final' => $location->is_final,
+                'block_name' => $blocks[$location->block_id],
+                'location_name' => $location->location_name,
+                'complete_name' => [], //[$blocks[$location->block_id].': '.$location->location_name]
+            ];
+        }
+
+        $maxLevel = 0;
+        foreach ($locationList as $_locId => $locationVariant) {
+            $level = 0;
+            $parent_id = $locationVariant['parent_id'];
+            $weight = [];
+            $weight[] = array_search($_locId, $parentMap[$parent_id]) + 1;
+            $completeName = [];
+            $completeName[] = ($with_blocks ? $locationVariant['block_name'] . ': ' : '') . $locationVariant['location_name'];
+            while ($parent_id != 0) {
+                if (!isset($locationList[$parent_id])) {
+                    $level = false;
+                    break;
+                }
+                $completeName[] = ($with_blocks ? $locationList[$parent_id]['block_name'] . ': ' : '') . $locationList[$parent_id]['location_name'];
+                $parent_id = $locationList[$parent_id]['parent_id'];
+                $weight[] = array_search($_locId, $parentMap[$parent_id]) + 1;
+                $level++;
+            }
+            if ($level === false) {
+                unset($locationList[$_locId]);
+            } else {
+                $maxLevel = max($maxLevel, $level);
+                $locationList[$_locId]['level'] = $level;
+                $locationList[$_locId]['complete_name'] = implode($separator, array_reverse($completeName));
+            }
+        }
+
+        if ($only_final) {
+            foreach ($locationList as $_locId => $locationVariant) {
+                if (!$locationVariant['is_final']) {
+                    unset($locationList[$_locId]);
+                }
+            }        
+        }
+
+        return /* array_values */($locationList);
+    }
+
     public static function getWarehousesProductsLayersIDbyExpiryDate($expiry_date) {
         list($year, $month, $day) = explode('-', $expiry_date); 
         if (checkdate((int)$month, (int)$day, (int)$year)) {

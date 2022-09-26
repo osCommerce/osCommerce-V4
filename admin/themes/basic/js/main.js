@@ -835,6 +835,7 @@ $(document).ready(function(){
         const $input = $group.find('input');
         inputNullableTmpVal = $input.val();
         $input.removeAttr('readonly');
+        $input.trigger('focus')
         $('.js-input-nullable-edit', $group).hide();
         $('.js-input-nullable-close', $group).show();
         $('.js-input-nullable-save', $group).show();
@@ -863,6 +864,7 @@ $(document).ready(function(){
           if ($input.val()!=='') $input.val('');
           $('.js-input-nullable-default', $group).hide();
         }
+        $input.trigger('nullable-save');
     });
     $(document).on('click', '.js-main-text-input-nullable .js-input-nullable-undo', function(event){
         const $group = $(event.target).parents('.js-main-text-input-nullable');

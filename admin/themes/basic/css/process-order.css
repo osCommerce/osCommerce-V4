@@ -112,3 +112,9 @@
         padding-left: 0;
     }
 }
+
+.transaction-id {
+    display: inline-block;
+    max-width: 150px;
+    word-break: break-all;
+}

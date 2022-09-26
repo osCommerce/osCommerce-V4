@@ -149,7 +149,7 @@
         <div class="row price-qty-row">
             <div class="col-sm-4 price-qty-col">
                 <div class="bs-supplier-price-cell">
-                    <label>Our (landed) price</label>
+                    <label>{$smarty.const.TEXT_SUPPLIERS_OUR_PRICE}</label>
                     <div class="row">
                         <div class="col-sm-6"><div id="supplier_cost_price_net_{$idPart}" class="js-supplier-landed-price-net-displayed"></div>{$smarty.const.TEXT_NET}</div>
                         <div class="col-sm-6"><div id="supplier_cost_price_gross_{$idPart}"><span class="js-supplier-landed-price-gross-displayed"></span><i class="icon-pencil link-cursor color-hilite js-supplier-landed-price-edit" data-toggle="modal" data-target="#editLandedPrice" data-supplier_id="{$idPart}"></i></div>{$smarty.const.TEXT_GROSS}<div class="js-overridden-mark" style>manually overridden</div></div>
@@ -159,7 +159,7 @@
                 </div>
                 <div class="supplier-cols">
                         <label>{$smarty.const.TEXT_SUPPLIERS_QUANTITY}</label>
-                        {Html::textInputNullable('suppliers_data['|cat:$uprid|cat:']['|cat:$sInfo->suppliers_id|cat:'][suppliers_quantity]', $sInfo->suppliers_quantity, array_merge($options,['class'=>'supplier-qty', 'placeholder' => $sInfo->suppliers_quantity, 'button' => ['options'=> ['class' => 'supplier-qty' ]] ]))}
+                        {Html::textInputNullable('suppliers_data['|cat:$uprid|cat:']['|cat:$sInfo->suppliers_id|cat:'][suppliers_quantity]', $sInfo->suppliers_quantity, array_merge($options,['class'=>'supplier-qty', 'button' => ['options'=> ['class' => 'supplier-qty' ]] ]))}
                         {*Html::textInput('suppliers_data['|cat:$uprid|cat:']['|cat:$sInfo->suppliers_id|cat:'][suppliers_quantity]', $sInfo->suppliers_quantity, array_merge($options,['class'=>'form-control js-supplier-recalc']))*}
                 </div>
             </div>

@@ -606,6 +606,8 @@ class DesignController extends Sceleton {
                 return $importBlock;
             }
 
+            $arr = Theme::blocksTree($boxId);
+
             $data = [
                 'content' => $arr,
                 'id' => $boxId,
@@ -651,6 +653,8 @@ class DesignController extends Sceleton {
             } else {
                 return $importBlock;
             }
+
+            $arr = Theme::blocksTree($boxId);
 
             $data = [
                 'content' => $arr,
@@ -1641,6 +1645,8 @@ class DesignController extends Sceleton {
 
         DesignBoxesTmp::deleteAll(['id' => (int)$params['box_id']]);
         DesignBoxesSettingsTmp::deleteAll(['box_id' => (int)$params['box_id']]);
+
+        $arr = Theme::blocksTree($boxId);
 
         $data = [
             'content' => $arr,

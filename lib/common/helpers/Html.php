@@ -33,9 +33,11 @@ class Html extends \yii\helpers\Html
 
         $button['options']['style'] = ['display' => 'none'];
 
-        $button['options']['title'] = RETURN_DEFAULT_VALUE;
-        $button['options']['class'] = array_merge($class, ['js-input-nullable-undo']);
-        $inputButton .= static::tag('div', '<i class="icon-undo"></i>', $button['options']);
+        if (isset($options['placeholder']) && $options['placeholder'] !== '') {
+            $button['options']['title'] = RETURN_DEFAULT_VALUE;
+            $button['options']['class'] = array_merge($class, ['js-input-nullable-undo']);
+            $inputButton .= static::tag('div', '<i class="icon-undo"></i>', $button['options']);
+        }
 
         $button['options']['title'] = IMAGE_CANCEL;
         $button['options']['class'] = array_merge($class, ['js-input-nullable-close']);
