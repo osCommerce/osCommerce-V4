@@ -92,7 +92,8 @@ class ot_shipping extends ModuleTotal {
         $shipping_tax_calculated = 0;
         if (tep_not_null($order->info['shipping_method'] ?? null)) {
             $tax_class = 0;
-            if ($shipping_module && is_object($shipping_module) && $shipping_module->tax_class > 0) {
+            if ($shipping_module && is_object($shipping_module) && $shipping_module->tax_class > 0 
+                && abs(\common\helpers\Tax::get_tax_rate( $shipping_module->tax_class, $this->delivery['country']['id']??STORE_COUNTRY, $this->delivery['zone_id']??STORE_ZONE ))>0 ) {
 
                 if (!$shipping_module->useDelivery()){
                     $this->delivery = ['country'=> ['id' => STORE_COUNTRY], 'zone_id' => STORE_ZONE];
@@ -102,7 +103,18 @@ class ot_shipping extends ModuleTotal {
                 $tax_class = $taxation['tax_class_id'];
                 $shipping_tax = $taxation['tax'];
                 $shipping_tax_description = $taxation['tax_description'];
-                $shipping_tax_calculated = \common\helpers\Tax::roundTax(\common\helpers\Tax::calculate_tax($order->info['shipping_cost'], $shipping_tax));
+                if (defined('PRICE_WITH_BACK_TAX') && PRICE_WITH_BACK_TAX == 'True') {
+                    if ($shipping_tax>0) {
+                        $order->info['shipping_cost_exc_tax'] = \common\helpers\Tax::roundTax(\common\helpers\Tax::get_untaxed_value($order->info['shipping_cost'], $shipping_tax));
+                        $shipping_tax_calculated = $order->info['shipping_cost'] - $order->info['shipping_cost_exc_tax'];
+                    } else {
+                        $order->info['shipping_cost_exc_tax'] = \common\helpers\Tax::roundTax(\common\helpers\Tax::get_untaxed_value($order->info['shipping_cost'], abs($shipping_tax)));
+                        $shipping_tax_calculated =  0;
+                    }
+                } else {
+                    $order->info['shipping_cost_exc_tax'] = $order->info['shipping_cost'];
+                    $shipping_tax_calculated = \common\helpers\Tax::roundTax(\common\helpers\Tax::calculate_tax($order->info['shipping_cost'], $shipping_tax));
+                }
 
                 if (!isset($order->info['tax'])) {
                     $order->info['tax'] = 0;
@@ -118,25 +130,40 @@ class ot_shipping extends ModuleTotal {
                 }
                 
                 $order->info['tax'] += $shipping_tax_calculated;
-                //$order->info['tax_shipping'] = $shipping_tax_calculated;
                 $order->info['tax_groups'][$shipping_tax_description] += $shipping_tax_calculated;
-                //$order->info['tax_groups_shipping']["$shipping_tax_description"] += $shipping_tax_calculated;
-                $order->info['total'] += $shipping_tax_calculated; //total must include tax, but correct total if new shipping is posted
-                $order->info['total_inc_tax'] += $shipping_tax_calculated;
+                if (defined('PRICE_WITH_BACK_TAX') && PRICE_WITH_BACK_TAX == 'True') {
+                    if ( $shipping_tax > 0 ) {
+                        $order->info['shipping_cost_inc_tax'] = $order->info['shipping_cost'];
+                    } else {
+                        $subTax = $order->info['shipping_cost'] - $order->info['shipping_cost_exc_tax'];
+                        $order->info['shipping_cost'] = $order->info['shipping_cost_inc_tax'] = $order->info['shipping_cost_exc_tax'];
+                        $order->info['total'] -= $subTax;
+                        $order->info['total_inc_tax'] -= $subTax;
+                        $order->info['total_exc_tax'] -= $subTax;
+                    }
+                } else {
+                    $order->info['total'] += $shipping_tax_calculated; //total must include tax, but correct total if new shipping is posted
+                    $order->info['total_inc_tax'] += $shipping_tax_calculated;
+                    $order->info['shipping_cost_inc_tax'] = $order->info['shipping_cost'] + $shipping_tax_calculated;
+                    if (DISPLAY_PRICE_WITH_TAX == 'true') {
+                        $order->info['shipping_cost'] += $shipping_tax_calculated;
+                    }
+                }
 
-                $order->info['shipping_cost_exc_tax'] = $order->info['shipping_cost'];
-                $order->info['shipping_cost_inc_tax'] = $order->info['shipping_cost'] + $shipping_tax_calculated;
+                 
 
-                if (DISPLAY_PRICE_WITH_TAX == 'true')
-                    $order->info['shipping_cost'] += $shipping_tax_calculated;
             }
+
             if ($replacing_value != -1) {
                 $cart = $this->manager->getCart();
                 $order->info['total_inc_tax'] -= $order->info['shipping_cost_inc_tax'];
                 $order->info['total_exc_tax'] -= $order->info['shipping_cost_exc_tax'];
                 $order->info['total'] -= $order->info['shipping_cost'];
-                if (DISPLAY_PRICE_WITH_TAX != 'true'){
-                  $order->info['total'] -= $shipping_tax_calculated;
+                if (defined('PRICE_WITH_BACK_TAX') && PRICE_WITH_BACK_TAX == 'True') {
+                } else {
+                    if (DISPLAY_PRICE_WITH_TAX != 'true'){
+                      $order->info['total'] -= $shipping_tax_calculated;
+                    }
                 }
 
                 if (is_array($replacing_value)) {

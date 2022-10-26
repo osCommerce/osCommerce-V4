@@ -20,20 +20,27 @@ use Yii;
  */
 class Props extends \common\classes\AbstractProps {
 
+    private static $workers = null;
+
+    public static function getWorkers()
+    {
+        if (is_null(self::$workers)) {
+            self::$workers = [
+                /* classes of \common\classes\PropsWorkerAbstract */
+                \common\classes\PropsWorkerAttrText::class
+            ];
+            foreach (\common\helpers\Hooks::getList('product_props/init_workers') as $filename) {
+                include($filename);
+            }
+        }
+        return self::$workers;
+    }
+
     public static function ParamsToXml($params = array(), $productId = false) {
         $data = [];
-        /*
-          if ( !empty($params['personalisation_recipe']) ) {
-          $params['personalisation_recipe'] = json_decode(tep_db_prepare_input($params['personalisation_recipe']),true);
-          if ( is_array($params['personalisation_recipe']) ) {
-          $data['recipe'] = [
-          'option' => TEXT_PERSONALISED,
-          'value' => TEXT_PERSONALISED_YES,
-          'data' => $params['personalisation_recipe'],
-          ];
-          }
-          } */
-
+        foreach (self::getWorkers() as $worker) {
+            $data = array_merge($data, $worker::paramsToXml($params, $productId));
+        }
         if (count($data) == 0) {
             return '';
         }
@@ -96,7 +103,9 @@ class Props extends \common\classes\AbstractProps {
      * @return type
      */
     public static function normalize_id($uprid) {
-        //$uprid = preg_replace('#\{recipe\}[^{]*#','',$uprid);
+        foreach (self::getWorkers() as $worker) {
+            $uprid = $worker::normalize_id($uprid);
+        }
         return $uprid;
     }
 
@@ -107,34 +116,29 @@ class Props extends \common\classes\AbstractProps {
      * @return type
      */
     public static function cartUprid($products_id, $props) {
-        /* $products_id = preg_replace('#\{recipe\}[^{]*#','',$products_id);
-          if ( !empty($props) ) {
-          $propsData = static::XmlToParams($props);
-          if ( is_array($propsData) && !empty($propsData['recipe']) && is_array($propsData['recipe']['data']) ) {
-          if ( !empty($propsData['recipe']['data']['recipe_id']) ) {
-          $products_id .= '{recipe}'.$propsData['recipe']['data']['recipe_id'];
-          }
-          }
-          } */
+        $products_id = self::normalize_id($products_id);
+        if (!empty($props)) {
+            $propsData = self::XmlToParams($props);
+            if (is_array($propsData)) {
+                foreach (self::getWorkers() as $worker) {
+                    $products_id = $worker::cartUprid($products_id, $propsData);
+                }
+            }
+        }
         return $products_id;
     }
 
+    /**
+     * Modify props on cart add
+     * @param $props string props xml
+     * @return string props xml
+     */
     public static function onCartAdd($props) {
-        /* if ( !empty($props) ) {
-          $data = static::XmlToParams($props);
-          if ( is_array($data) && isset($data['recipe']['data']) && !empty($data['recipe']['data']['recipe_id']) ) {
-          $recipe_id = $data['recipe']['data']['recipe_id'];
-          if ( $logoStat = Slapp::getRecipesLogoStat([$recipe_id]) ){
-          if ( isset($logoStat[$recipe_id]) ) {
-          $data['recipe']['stat'] = $logoStat[$recipe_id];
-          $data['recipe']['stat']['checkTime'] = date('Y-m-d H:i:s');
-          $props = static::toXML($data);
-          }
-          }
-          }
-          } */
-
-        return $props;
+        $propsData = empty($props)? [] : static::XmlToParams($props);
+        foreach (self::getWorkers() as $worker) {
+            $propsData = $worker::onCartAdd($propsData);
+        }
+        return static::toXML($propsData);
     }
 
     /**
@@ -195,19 +199,19 @@ class Props extends \common\classes\AbstractProps {
      * @return mixed
      */
     public static function applyToCartProductArray($cartProduct) {
-        if (isset($cartProduct['propsData']) && is_array($cartProduct['propsData'])) {
-            if (isset($cartProduct['propsData']['recipe']) && isset($cartProduct['propsData']['recipe']['data'])) {
-                if (isset($cartProduct['propsData']['recipe']['data']['views']) && is_array($cartProduct['propsData']['recipe']['data']['views'])) {
-                    $views = array_values($cartProduct['propsData']['recipe']['data']['views']);
-                    foreach ($views as $view) {
-                        if (is_array($view) && !empty($view['image'])) {
-                            $cartProduct['image_external'] = $view['image'];
-                            break;
-                        }
-                    }
-                }
-            }
-        }
+//        if (isset($cartProduct['propsData']) && is_array($cartProduct['propsData'])) {
+//            if (isset($cartProduct['propsData']['recipe']) && isset($cartProduct['propsData']['recipe']['data'])) {
+//                if (isset($cartProduct['propsData']['recipe']['data']['views']) && is_array($cartProduct['propsData']['recipe']['data']['views'])) {
+//                    $views = array_values($cartProduct['propsData']['recipe']['data']['views']);
+//                    foreach ($views as $view) {
+//                        if (is_array($view) && !empty($view['image'])) {
+//                            $cartProduct['image_external'] = $view['image'];
+//                            break;
+//                        }
+//                    }
+//                }
+//            }
+//        }
         return $cartProduct;
     }
 

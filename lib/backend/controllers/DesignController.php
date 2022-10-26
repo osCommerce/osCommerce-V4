@@ -2388,6 +2388,8 @@ class DesignController extends Sceleton {
         if ($_FILES['file']['error'] == UPLOAD_ERR_OK  && is_uploaded_file($_FILES['file']['tmp_name'])) {
             $migration = json_decode(file_get_contents($_FILES['file']['tmp_name']), true);
             if ( $result = Steps::applyMigration($get['theme_name'], $migration) ) {
+                Theme::elementsSave($get['theme_name']);
+                DesignBoxesCache::deleteAll(['theme_name' => $get['theme_name']]);
                 Theme::saveThemeVersion($get['theme_name']);
                 return $result;
             }

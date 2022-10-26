@@ -140,7 +140,7 @@ class SpecialsController extends Sceleton {
     ksort($specialsTypesArr);
     $this->view->types = $specialsTypesArr;
 
-    if (CUSTOMERS_GROUPS_ENABLE == 'True' ) {
+    if (\common\helpers\Extensions::isCustomerGroupsAllowed() ) {
       $this->view->groups = [];
       /** @var \common\extensions\UserGroups\UserGroups $ext */
       if ($ext = \common\helpers\Acl::checkExtensionAllowed('UserGroups', 'allowed')) {
@@ -573,7 +573,7 @@ class SpecialsController extends Sceleton {
           }
         }
         if (empty($prices[0][$checkGroup]['text'])) {
-          if (!defined('CUSTOMERS_GROUPS_ENABLE') || CUSTOMERS_GROUPS_ENABLE != 'True') {
+          if (!\common\helpers\Extensions::isCustomerGroupsAllowed()) {
             $newPrice = TEXT_DISABLED;
           } elseif ($checkGroup==0) {
             $newPrice = sprintf(TEXT_PRICE_SWITCH_DISABLE, TEXT_MAIN);
@@ -1101,7 +1101,7 @@ class SpecialsController extends Sceleton {
 
     tep_db_query("delete from " . TABLE_SPECIALS . " where specials_id = '" . (int) $specials_id . "'");
 
-    if (USE_MARKET_PRICES == 'True' || CUSTOMERS_GROUPS_ENABLE == 'True') {
+    if (USE_MARKET_PRICES == 'True' || \common\helpers\Extensions::isCustomerGroupsAllowed()) {
       tep_db_query("delete from " . TABLE_SPECIALS_PRICES . " where specials_id = '" . tep_db_input($specials_id) . "'");
     }
     ?>
@@ -1228,7 +1228,7 @@ class SpecialsController extends Sceleton {
         }
 
     //// groups tabs and params
-        if (CUSTOMERS_GROUPS_ENABLE == 'True' ) {
+        if (\common\helpers\Extensions::isCustomerGroupsAllowed() ) {
           $this->view->groups = [];
           /** @var \common\extensions\UserGroups\UserGroups $ext */
           if ($ext = \common\helpers\Acl::checkExtensionAllowed('UserGroups', 'allowed')) {
@@ -1374,7 +1374,7 @@ class SpecialsController extends Sceleton {
      */
     public function actionProductPriceEdit() {
 
-        if (!defined('CUSTOMERS_GROUPS_ENABLE') || CUSTOMERS_GROUPS_ENABLE != 'True') {
+        if (!\common\helpers\Extensions::isCustomerGroupsAllowed()) {
             return;
         }
 
@@ -1540,7 +1540,7 @@ class SpecialsController extends Sceleton {
     
     public function actionGroupPriceSubmit() {
 
-        if (!defined('CUSTOMERS_GROUPS_ENABLE') || CUSTOMERS_GROUPS_ENABLE != 'True') {
+        if (!\common\helpers\Extensions::isCustomerGroupsAllowed()) {
             return;
         }
 /*

@@ -132,7 +132,7 @@ class Block extends Widget
 </script>
 ';
             } else {
-                if (is_file(Yii::getAlias('@app') . DIRECTORY_SEPARATOR . 'design' . DIRECTORY_SEPARATOR . 'boxes' . DIRECTORY_SEPARATOR .  str_replace('\\', DIRECTORY_SEPARATOR, $widget['widget_name']) . '.php')){
+                if (is_file(DIR_FS_CATALOG . 'lib' . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'design' . DIRECTORY_SEPARATOR . 'boxes' . DIRECTORY_SEPARATOR .  str_replace('\\', DIRECTORY_SEPARATOR, $widget['widget_name']) . '.php')){
                     $widgetHtml = $widgetName::widget($widgetArray);
                 } elseif (($ext_widget = \common\helpers\Acl::runExtensionWidget($widget['widget_name'], $widgetArray)) !== false){
                     $widgetHtml = $ext_widget;

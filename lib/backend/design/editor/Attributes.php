@@ -20,6 +20,7 @@ use common\helpers\Acl;
 class Attributes extends Widget {
     
     public $attributes;
+    public $attrText;
     public $settings;
     public $complex = false;
     
@@ -33,6 +34,7 @@ class Attributes extends Widget {
     public function run(){
         return $this->render('attributes', [
             'attributes' => $this->attributes,
+            'attrText' => $this->attrText,
             'settings' => $this->settings,
             'complex' => $this->complex,
         ]);

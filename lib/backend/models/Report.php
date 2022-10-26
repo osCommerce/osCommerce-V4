@@ -280,7 +280,7 @@ class Report {
     public function getCustomerGroups($code = '', $empty_string = false)
     {
         $variants = [];
-        if (defined('CUSTOMERS_GROUPS_ENABLE') && CUSTOMERS_GROUPS_ENABLE == 'True') {
+        if (\common\helpers\Extensions::isCustomerGroupsAllowed()) {
             $variants = \common\helpers\Group::get_customer_groups_list($code, $empty_string);
         }
         return $variants;

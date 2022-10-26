@@ -16,11 +16,44 @@ class PasswordForgottenNewPasswordController extends Controller {
     public $layout = false;
 
     public function actionIndex() {
+        if (\Yii::$app->request->isAjax) {
+            if (\Yii::$app->request->get('action', null) == 'gp') {
+                \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+                return \common\helpers\Password::randomize(false);
+            }
+            die();
+        }
+
+        $token = \Yii::$app->request->get('token', null);
+        $adminInfo = null;
+        \common\models\Admin::updateAll(
+            ['token' => '', 'token_date' => '0000-00-00 00:00:00'],
+            ['<=', 'token_date', date('Y-m-d H:i:s', strtotime(
+                    '-' . (int)trim(defined('FORGOTTEN_PASSWORD_TOKEN_EXPIRE_MIN') ? constant('FORGOTTEN_PASSWORD_TOKEN_EXPIRE_MIN') : 5) . ' minutes'
+                ))
+            ]
+        );
+        foreach (\common\models\Admin::find()
+            ->where(['!=', 'token', ''])
+            //->andWhere(['<', 'login_failture', 4])
+            ->asArray(false)->each(10) as $aRecord
+        ) {
+            if (\common\helpers\Password::validate_password($token, $aRecord->getToken(), 'backend')
+                AND \common\helpers\Password::validate_password($aRecord->admin_email_address, $aRecord->admin_email_token, 'backend')
+            ) {
+                $adminInfo = $aRecord;
+                break;
+            }
+        }
+        unset($aRecord);
+        if (!is_object($adminInfo)) {
+            tep_admin_check_login();
+            tep_redirect(tep_href_link(FILENAME_LOGIN, '', 'SSL'));
+        }
+
         \common\helpers\Translation::init('account/password');
         \common\helpers\Translation::init('admin/admin_account');
         \common\helpers\Translation::init('main');
-
-        $token = \Yii::$app->request->get('token', null);
 
         $message_account_password = '';
         if (empty($token)) {
@@ -32,31 +65,15 @@ class PasswordForgottenNewPasswordController extends Controller {
                 $message_account_password = TEXT_INVALID_TOKEN;
                 $save = false;
             }
+            if (!is_object($adminInfo)) {
+                $message_account_password = TEXT_INVALID_TOKEN;
+                $save = false;
+            }
             if ($save) {
                 $admin_password = \Yii::$app->request->post('password_new', null);
                 $admin_password_confirm = \Yii::$app->request->post('password_confirmation', null);
                 if ($admin_password != $admin_password_confirm) {
                     $message_account_password = TEXT_MESS_PASSWORD_WRONG;
-                    $save = false;
-                }
-            }
-            if ($save) {
-                $adminInfo = null;
-                foreach (\common\models\Admin::find()
-                    ->where(['!=', 'token', ''])
-                    //->andWhere(['<', 'login_failture', 4])
-                    ->asArray(false)->each(10) as $aRecord
-                ) {
-                    if (\common\helpers\Password::validate_password($token, $aRecord->getToken(), 'backend')
-                        AND \common\helpers\Password::validate_password($aRecord->admin_email_address, $aRecord->admin_email_token, 'backend')
-                    ) {
-                        $adminInfo = $aRecord;
-                        break;
-                    }
-                }
-                unset($aRecord);
-                if (!is_object($adminInfo)) {
-                    $message_account_password = TEXT_INVALID_TOKEN;
                     $save = false;
                 }
             }

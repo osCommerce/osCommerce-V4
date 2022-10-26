@@ -29,18 +29,23 @@ body {
     --color-info: #008ae8;
     --color-warning: #fd7a13;
     --color-danger: #f00;
+    --color-dim: #858484;
 
     --border-color-tiny: #d9d9d9;
     --border-color-midle: #caccd3;
     --border-color-strong: #caccd3;
+    --border-color-selected: #008ae8;
 
     --heading-color: #bdbdbd;
+    --main-color: #bdbdbd;
 
-    --background-color-1: #f7f5ff;
+    --background-color-1: #222222;
     --background-color-2: #ece9f9;
     --background-color-3: #e8e1ff;
+    --background-color-4: #eeeeee;
 
     --link-color: #0077e4;
+    --primary-color: #7b5bb9;
 
     --input-background: #313131;
 }

@@ -582,16 +582,36 @@ class Address {
             'n' => self::getGenderName('n'),
         ];
     }
-    
+
+    /**
+     * from several addressbook entries
+     * @param type $addresses
+     * @return type
+     */
     public static function skipEntryKey($addresses = []){
         if (is_array($addresses)){
             foreach($addresses as $key => $address){
-                $keys = array_keys($address);
+                /*$keys = array_keys($address);
                 $keys = array_map(function($value){return str_replace("entry_", "", $value);}, $keys);
-                $addresses[$key] = array_combine($keys, array_values($address));
+                $addresses[$key] = array_combine($keys, array_values($address));*/
+                $addresses[$key] = self::skipEntry($address);
             }
         }
         return $addresses;
+    }
+
+/**
+ * skip entry from 1 address array
+ * @param array $address
+ * @return array
+ */
+    public static function skipEntry($address = []){
+        if (is_array($address) && !empty($address)) {
+            $keys = array_keys($address);
+            $keys = array_map(function($el){return str_replace("entry_", "", $el);}, $keys);
+            $address = array_combine($keys, array_values($address));
+        }
+        return $address;
     }
     
     public static function addCountriesKey(array $address){
@@ -660,4 +680,28 @@ class Address {
       }
       return $ret;
     }
+
+    public static function isEmpty($address, $withCountry = false) {
+        return !notEmpty($address, $withCountry);
+    }
+
+    public static function notEmpty($address, $withCountry = false) {
+        $ret = false;
+        $checkKeys = ['company', 'firstname', 'lastname', 'postcode', 'street_address', 'city', 'state'];
+        if ( $withCountry )  {
+            $checkKeys[] = 'country';
+        }
+        $tmp = self::skipEntry($address);
+        if (is_array($tmp)) {
+            foreach ($tmp as $k => $v) {
+                if (in_array($k, $checkKeys) && !empty($v)) {
+                    $ret = true;
+                    break;
+                }
+            }
+        }
+
+        return $ret;
+    }
+
 }

@@ -337,7 +337,7 @@ function getProduct(url, products_id, is_pack, is_modified, holder){
             },
             getProducts: function(obj, reProd){
                 var product = this;
-                var products = $('input, select', holder).serializeArray();
+                var products = $('input, select, textarea', holder).serializeArray();
                 var productQty = $('input[name="product_info[][qty]"]', holder);
                 var index = $(holder).index();
                 $.each(products, function(i, e){

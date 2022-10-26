@@ -167,7 +167,7 @@ class Customer {
     }
 
     public static function get_customers_group($customer_id) {
-        if (CUSTOMERS_GROUPS_ENABLE == 'True') {
+        if (\common\helpers\Extensions::isCustomerGroupsAllowed()) {
             $check = tep_db_query("select * from " . TABLE_CUSTOMERS . " where customers_id = '" . tep_db_input($customer_id) . "'");
             $checkData = tep_db_fetch_array($check);
             return $checkData['groups_id'];

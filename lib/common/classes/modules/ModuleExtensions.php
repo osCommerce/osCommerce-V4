@@ -461,6 +461,16 @@ class ModuleExtensions extends Module {
         return  in_array($operation, $config) || (in_array('default', $config) && in_array($operation, self::TRANLATION_KEYS_DEF_OPERATIONS[$isPrivateKey]));
     }
 
+    /**
+     * @param $migrate \common\classes\Migration
+     */
+    public static function reinstallTranslation($migrate)
+    {
+        static::removeTranslationArray(null, $migrate);
+        static::installTranslationArray(null, $migrate);
+    }
+
+
     /*
      * Developer can use it to update translation constants by URL:
      * https://localhost/admin/extensions?module=YourExt&action=actionRefreshTranslation
@@ -470,10 +480,8 @@ class ModuleExtensions extends Module {
         if (\common\helpers\System::isDevelopment()) {
             $migrate = new \common\classes\Migration();
             $migrate->compact = true;
-            static::removeTranslationArray(null, $migrate);
-            echo "removed<br>";
-            static::installTranslationArray(null, $migrate);
-            echo "installed<br>";
+            reinstallTranslation($migrate);
+            echo "translation reinstalled<br>";
         }
     }
 

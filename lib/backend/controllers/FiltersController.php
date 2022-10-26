@@ -354,7 +354,7 @@ class FiltersController extends Sceleton {
             }
             $this->view->filters->search = $search;
 
-            $this->view->filters->showGroup = (CUSTOMERS_GROUPS_ENABLE == 'True');
+            $this->view->filters->showGroup = \common\helpers\Extensions::isCustomerGroupsAllowed();
             $group = '';
             if (isset($GET['group'])) {
                 $group = $GET['group'];

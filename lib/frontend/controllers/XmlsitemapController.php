@@ -452,7 +452,7 @@ class XmlsitemapController extends Sceleton
           "FROM ".TABLE_PRODUCTS_TO_CATEGORIES." p2c {$categories_join}, " . TABLE_PRODUCTS_DESCRIPTION . " pd, ".TABLE_PRODUCTS." p {$products_join} ".
           " LEFT JOIN ".TABLE_PRODUCTS_DESCRIPTION . " pdnoi ON pdnoi.products_id=p.products_id AND pdnoi.platform_id='".(int)Yii::$app->get('platform')->config()->getPlatformToDescription()."' AND pdnoi.language_id IN ('".implode("','",$platform_enabled_languages)."') AND pdnoi.noindex_option!=1 ".
           (
-          (USE_MARKET_PRICES == 'True' || CUSTOMERS_GROUPS_ENABLE == 'True')?
+          (USE_MARKET_PRICES == 'True' || \common\helpers\Extensions::isCustomerGroupsAllowed())?
               " LEFT JOIN " . TABLE_PRODUCTS_PRICES . " pp ".
               "ON p.products_id = pp.products_id and pp.groups_id = '" . (int)$customer_groups_id . "' ".
               "and pp.currencies_id = '" . (USE_MARKET_PRICES == 'True' ? (int)\Yii::$app->settings->get('currency_id') : 0). "' ":
@@ -464,7 +464,7 @@ class XmlsitemapController extends Sceleton
           "AND p.products_status!=0  " . \common\helpers\Product::get_sql_product_restrictions(array('p', 'pd', 's', 'sp', 'pp')) . " ".
           (Affiliate::id()>0?" and p2a.affiliate_id is not null ":'').
           (
-          (USE_MARKET_PRICES == 'True' || CUSTOMERS_GROUPS_ENABLE == 'True')?
+          (USE_MARKET_PRICES == 'True' || \common\helpers\Extensions::isCustomerGroupsAllowed())?
               "AND if(pp.products_group_price is null, 1, pp.products_group_price != -1) ":
               ""
           ).
@@ -620,7 +620,7 @@ class XmlsitemapController extends Sceleton
       "SELECT SQL_CALC_FOUND_ROWS DISTINCT m.* ".
       "FROM ".TABLE_MANUFACTURERS." m, ".TABLE_PRODUCTS." p {$products_join} ".
       (
-      (USE_MARKET_PRICES == 'True' || CUSTOMERS_GROUPS_ENABLE == 'True')?
+      (USE_MARKET_PRICES == 'True' || \common\helpers\Extensions::isCustomerGroupsAllowed())?
         " LEFT JOIN " . TABLE_PRODUCTS_PRICES . " pp ".
         "ON p.products_id = pp.products_id and pp.groups_id = '" . (int)$customer_groups_id . "' ".
         "and pp.currencies_id = '" . (USE_MARKET_PRICES == 'True' ? (int)\Yii::$app->settings->get('currency_id') : 0). "' ":
@@ -628,7 +628,7 @@ class XmlsitemapController extends Sceleton
       ).
       "WHERE m.manufacturers_id=p.manufacturers_id AND p.products_status!=0  " . \common\helpers\Product::get_sql_product_restrictions(array('p', 'pd', 's', 'sp', 'pp')) . "".
       (
-      (USE_MARKET_PRICES == 'True' || CUSTOMERS_GROUPS_ENABLE == 'True')?
+      (USE_MARKET_PRICES == 'True' || \common\helpers\Extensions::isCustomerGroupsAllowed())?
         "AND if(pp.products_group_price is null, 1, pp.products_group_price != -1) ":
         ""
       ).
@@ -795,7 +795,7 @@ class XmlsitemapController extends Sceleton
       "p.products_image ".
       "FROM ".TABLE_PRODUCTS_TO_CATEGORIES." p2c {$categories_join}, " . TABLE_PRODUCTS_DESCRIPTION . " pd, ".TABLE_PRODUCTS." p {$products_join} ".
       (
-      (USE_MARKET_PRICES == 'True' || CUSTOMERS_GROUPS_ENABLE == 'True')?
+      (USE_MARKET_PRICES == 'True' || \common\helpers\Extensions::isCustomerGroupsAllowed())?
         " LEFT JOIN " . TABLE_PRODUCTS_PRICES . " pp ".
         "ON p.products_id = pp.products_id and pp.groups_id = '" . (int)$customer_groups_id . "' ".
         "and pp.currencies_id = '" . (USE_MARKET_PRICES == 'True' ? (int)\Yii::$app->settings->get('currency_id') : 0). "' ":
@@ -806,7 +806,7 @@ class XmlsitemapController extends Sceleton
       "AND p.products_status!=0  " . \common\helpers\Product::get_sql_product_restrictions(array('p', 'pd', 's', 'sp', 'pp')) . "".
       (Affiliate::id()>0?" and p2a.affiliate_id is not null ":'').
       (
-      (USE_MARKET_PRICES == 'True' || CUSTOMERS_GROUPS_ENABLE == 'True')?
+      (USE_MARKET_PRICES == 'True' || \common\helpers\Extensions::isCustomerGroupsAllowed())?
         "AND if(pp.products_group_price is null, 1, pp.products_group_price != -1) ":
         ""
       )

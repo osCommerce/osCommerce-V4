@@ -3617,7 +3617,6 @@ div.create_item a{color:#fff;}
 .category_list select.form-control{height: 34px;}
 .sorting_collapse{padding: 7px 5px;}
 .cat_search_by{padding: 0 5px;}
-.top_cat, .top_brands{box-shadow: 0px 5px 8px 0px rgba(0,0,0,0.3);margin: 0 -5px;position: relative;z-index: 10;}
 .cat_buttons, .cat_brand_buttons{margin: 0 -5px;padding: 12px 5px 3px;border-top:1px solid #a7a7a7;}
 .cat_buttons button{margin: 0 0 0 4%;width: 48%;padding: 6px 0 !important;text-align: center; font-size: 0.95vw;float: left;}
 .btn-add-category:before{content: "\f07b";font-family: FontAwesome;font-weight: 400;margin: 0 7px 0 -7px;}
@@ -3627,36 +3626,13 @@ div.create_item a{color:#fff;}
 /*.li_block{display: table;width: 100%;}*/
 .li_block{position: relative;padding: 0 0 0 29px;box-shadow: 0px 0px 2px 0px rgba(0,0,0,0.3);margin: 0 0 4px;}
 
-.handle{position: absolute; border:solid #c1c1c1;border-width: 1px 0 1px 1px;text-align: center;font-size: 16px;color:#555555;background: #eeeeee;height: 40px;line-height: 40px;left:0;top:0;width: 29px;cursor: pointer;}
+.handle{position: absolute; border:solid #c1c1c1;border-width: 1px 0 1px 1px;text-align: center;font-size: 16px;color:#555555;background: #eeeeee;height: 40px;line-height: 40px;left:0;top:0;width: 29px;cursor: move;}
 .handle:hover, .handle:active, .jcarousel li.active span.handle:hover{background: #008ae8;color:#fff;border-color: #0167ad;}
-.cat_li{border:1px solid #c1c1c1;font-size: 16px;color:#424242;padding: 9px 91px 9px 6px;background: #f9f9f9;position: relative;/*overflow-x: hidden;*/overflow-y: visible;white-space: nowrap;  text-overflow: ellipsis;display: block;cursor: pointer; min-height: 40px;}
-.cat_li:hover, .selected .cat_li, .selected .brand_li{border-color: #008ae8;}
-.categories_ul li{margin: 0 0 4px;}
-.categories_ul ul{padding: 4px 0 0 23px;}
-.cat_main_box, .brand_box{height: 492px;padding: 8px 0 0;margin: 0 -5px 0 0;overflow: auto;}
-.cat_main_box > .categories_ul{padding: 0 5px 0 0;}
-.collapse_span{position: absolute;right:0;top:0;height: 100%;font-size: 16px;color:#858484;line-height: 40px;width: 21px;cursor: pointer;}
-.collapse_span:before{font-family: FontAwesome;content: "\f068";}
-.collapse_span.c_up:before{content: "\f067";}
-.cat_li a, .brand_li a{position: absolute;font-size: 20px;top:9px;display: none;}
-.cat_li:hover a, .selected .cat_li a, .brand_li:hover a, .selected .brand_li a{display: block;}
-.cat_li a:hover, .brand_li a:hover{text-decoration: none !important;}
-.cat_li a.edit_cat{right:72px;color:#008ae8;}
-.cat_li a.delete_cat{right:37px;color:#f52f1b;}
-.brand_li a.edit_brand{right:72px;color:#008ae8;}
-.brand_li a.delete_brand{right:37px;color:#f52f1b;}
-.cat_main_box > ul > li > div{font-weight: bold;}
-.cat_main_box > ul ul{font-size: 15px;}
+
 .row_fields, .row_fields_check{font-size: 16px;font-size: 0.85vw;padding: 8px 0 0;}
 .row_fields_check input, .row_fields_check span{display: inline-block;vertical-align: middle !important;}
 .row_fields_check input{margin: 0 4px 0 0 !important;}
-.top_brands{padding: 0 5px 8px;}
-.sort_by_brands{float: left;width: 35%;box-sizing: border-box;padding: 0 0 0 8px;}
-.brand_box ul{list-style: none;padding: 0;margin: 0 5px 0 0;}
-.brand_li{font-size: 16px;font-weight: 600;display: block;padding: 8px;background: #f9f9f9;border:1px solid #c1c1c1;cursor: pointer;}
-.brand_box .li_block{margin: 0 0 4px;}
-.cat_brand_buttons button{width: 100%;}
-.cat_brand_buttons button i{margin: 0 10px 0 0;}
+
 .btn-move:before {content: "\f0d1";font-family: FontAwesome;font-weight: 400;margin: 0 7px 0 -7px;}
 .btn-copy:before{content: "\f0c5";font-family: FontAwesome;font-weight: 400;margin: 0 7px 0 -7px;}
 .row_with_label{padding-left: 90px;}
@@ -4075,25 +4051,7 @@ th.dataTableHeadingContent{background-color: #dfe0e4!important;color: #424242;fo
 #modules_list_data td:last-child{width:200px;text-align:center;}
 .popup-box-wrap.popup-box-wrap-mysql {position:fixed;}
 .scroll_col .popup-box-wrap{position:fixed;top:25%;}
-.brand_li > span, .cat_li > span{
-  display:block;
-}
-.brand_li > span.cat_text, .cat_li > span.cat_text{
-  overflow: hidden;
-  position: relative;
-  height: 20px;
-}
-.brand_li > span:after, .cat_li > span:after {
-  content: '';
-  position: absolute;
-  width: 20px;
-  height: 100%;
-  right: 0;
-  top: 0;
-  background: -moz-linear-gradient(left, transparent 0%, #f9f9f9 100%);
-  background: -webkit-linear-gradient(top, transparent 0%,#f9f9f9 100%);
-  background: linear-gradient(to right, transparent 0%,#f9f9f9 100%);
-}
+
 #trackingNumber .edit-btn-bar{padding:0 20px 20px;}
 .trackWrap .alert{margin:0;}
 #modules_list_data table.dataTable tbody > tr > td.modules_divider_cell{background:#dfe0e4;}

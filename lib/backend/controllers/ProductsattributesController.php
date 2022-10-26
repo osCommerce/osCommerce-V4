@@ -170,8 +170,11 @@ class ProductsattributesController extends Sceleton {
                 ->joinWith('description pd', false)
                 ->joinWith('productAttributes pa', false)
                 ->andWhere([$subOption ? 'pa.options_values_id' : 'pa.options_id' => $item_id])
-                ->select(['name' => ProductNameDecorator::descriptionExpr(), 'p.products_model', 'p.products_id'])
-                ->distinct();
+                ->select( 'p.products_model, p.products_id')
+                ->addSelect(['name' => ProductNameDecorator::descriptionExpr()])
+                ->asArray()
+                ->distinct()
+                ->all();
 
         foreach ($response as $num => $row) {
             $response[$num]['model'] = tep_not_null($row['products_model']) ? ' ( ' . $row['products_model'] . ' )' : '';
@@ -244,6 +247,7 @@ class ProductsattributesController extends Sceleton {
                 foreach ($languages as $languages_data) {
                     $Dvalue = \common\models\ProductsOptionsValues::find()->where(['products_options_values_id' => $products_options_id, 'language_id' => $languages_data['id']])->asArray()->one();
                     if (is_array($Dvalue)) {
+                        $type = $Dvalue['custom_input_type'];
                         $options[$languages_data['id']] = [
                             'option_name' => $Dvalue['products_options_values_name'],
                             'option_name_alias' => $Dvalue['products_options_values_name_alias'],
@@ -272,7 +276,7 @@ class ProductsattributesController extends Sceleton {
                     'options' => $options,
                     'process_type' => $process_type,
                     'type_code' => $type_code,
-                    'type' => $type,
+                    'type' => $type ?? null,
                     'is_virtual' => $is_virtual ?? null,
                     'display_filter' => $display_filter ?? null,
                     'display_search' => $display_search ?? null,
@@ -336,6 +340,7 @@ class ProductsattributesController extends Sceleton {
                     $obj->products_options_values_name = $option;
                     $obj->products_options_values_name_alias = $option_name_alias[$_language_id];
                     $obj->language_id = (int) $_language_id;
+                    $obj->custom_input_type = $type;
                     if ($same_all_languages) {
                         $obj->products_options_values_name = $option_name[$_def_l];
                         $obj->products_options_values_name_alias = $option_name_alias[$_def_l];

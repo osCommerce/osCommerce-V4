@@ -85,12 +85,6 @@ if (!file_exists('../lib/common/extensions/VatOnOrder/VatOnOrder.php')) {
     define('ACCOUNT_COMPANY_VAT', 'disabled');
     define('ACCOUNT_CUSTOMS_NUMBER', 'disabled');
 }
-if (!file_exists('../lib/common/extensions/UserGroups/UserGroups.php')) {
-    define('CUSTOMERS_GROUPS_ENABLE', 'False');
-}
-if (!file_exists('../lib/common/extensions/ProductBundles/ProductBundles.php')) {
-    define('PRODUCTS_BUNDLE_SETS', 'False');
-}
 
 if (defined('PLATFORM_ID') && PLATFORM_ID > 0) {
     $platformDefault = tep_db_fetch_array(tep_db_query("select * from platforms where platform_id=" . PLATFORM_ID . "LIMIT 1 "));

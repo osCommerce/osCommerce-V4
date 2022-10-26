@@ -213,7 +213,7 @@ class Inventory {
         if (USE_MARKET_PRICES != 'True') {
             $currency_id = 0;
         }
-        if (CUSTOMERS_GROUPS_ENABLE != 'True') {
+        if (!\common\helpers\Extensions::isCustomerGroupsAllowed()) {
             $group_id = 0;
         }
         if ($currency_id == 0 && $group_id == 0) {
@@ -232,7 +232,7 @@ class Inventory {
         if (USE_MARKET_PRICES != 'True') {
             $currency_id = 0;
         }
-        if (CUSTOMERS_GROUPS_ENABLE != 'True') {
+        if (!\common\helpers\Extensions::isCustomerGroupsAllowed()) {
             $group_id = 0;
         }
         if ($currency_id == 0 && $group_id == 0) {
@@ -251,7 +251,7 @@ class Inventory {
         if (USE_MARKET_PRICES != 'True') {
             $currency_id = 0;
         }
-        if (CUSTOMERS_GROUPS_ENABLE != 'True') {
+        if (!\common\helpers\Extensions::isCustomerGroupsAllowed()) {
             $group_id = 0;
         }
         if ($currency_id == 0 && $group_id == 0) {
@@ -270,7 +270,7 @@ class Inventory {
         if (USE_MARKET_PRICES != 'True') {
             $currency_id = 0;
         }
-        if (CUSTOMERS_GROUPS_ENABLE != 'True') {
+        if (!\common\helpers\Extensions::isCustomerGroupsAllowed()) {
             $group_id = 0;
         }
         if ($ext = \common\helpers\Acl::checkExtensionAllowed('AttributesQuantity', 'allowed')) {

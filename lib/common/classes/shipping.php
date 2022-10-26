@@ -159,7 +159,7 @@ class shipping extends modules\ModuleCollection {
                 $groups_id = (int)DEFAULT_USER_GROUP;
             }
             if ((defined('USE_MARKET_PRICES') && USE_MARKET_PRICES == 'True') ||
-                (defined('CUSTOMERS_GROUPS_ENABLE') && CUSTOMERS_GROUPS_ENABLE == 'True')) {
+                \common\helpers\Extensions::isCustomerGroupsAllowed()) {
                 $q = \common\models\ProductsPrices::find()->select('shipping_surcharge_price, products_id')
                     ->where([
                       'products_id' => $productsIds,

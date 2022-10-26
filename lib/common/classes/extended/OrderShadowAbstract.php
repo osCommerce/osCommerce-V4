@@ -109,6 +109,10 @@ abstract class OrderShadowAbstract implements OrderInterface {
         $this->manager->defineOrderTaxAddress();
 
         $currencies = \Yii::$container->get('currencies');
+        /*
+        if (\common\helpers\Address::isEmpty($this->tax_address) ) {
+            $this->tax_address = $this->manager->getTaxAddress();
+        }*/
 
         $_defCountry = false;
         \common\helpers\Php8::nullArrProps($this->tax_address, ['entry_country_id', 'entry_zone_id']);
@@ -132,7 +136,7 @@ abstract class OrderShadowAbstract implements OrderInterface {
         $products = $cart->get_products();
 
         $_products = [];
-        foreach ($products as $product){
+        foreach ($products as $product) {
             if ( isset($product['linked_products']) && is_array($product['linked_products']) ){
                 $linked_products = $product['linked_products'];
                 unset($product['linked_products']);
@@ -222,7 +226,8 @@ abstract class OrderShadowAbstract implements OrderInterface {
                         'value_id' => $products[$i]['attributes'][0]);
                 } else
 // }}
-                if (is_array($products[$i]['attributes']))
+                if (is_array($products[$i]['attributes'])) {
+                    $attrText = \common\classes\PropsWorkerAttrText::getAttrText($products[$i]['props'] ?? null);
                     foreach ($products[$i]['attributes'] as $option => $value) {
 // {{ Products Bundle Sets
                         if (in_array((string) $option, $bundle_prods_options))
@@ -232,8 +237,8 @@ abstract class OrderShadowAbstract implements OrderInterface {
                         $attributes = tep_db_fetch_array($attributes_query);
                         $attributes['options_values_price'] = \common\helpers\Attributes::get_options_values_price($attributes['products_attributes_id']??null, $products[$i]['quantity'] ?? 0);
 
-                        $this->products[$index]['attributes'][$subindex] = array('option' => $attributes['products_options_name']??null,
-                            'value' => $attributes['products_options_values_name']??null,
+                        $this->products[$index]['attributes'][$subindex] = array('option' => $attributes['products_options_name'],
+                            'value' => ((isset($attrText[$option]) && !empty($attrText[$option])) ? $attrText[$option] : ($attributes['products_options_values_name']??null)),
                             'option_id' => $option,
                             'value_id' => $value,
                             'prefix' => $attributes['price_prefix']??null,
@@ -241,7 +246,9 @@ abstract class OrderShadowAbstract implements OrderInterface {
 
                         $subindex++;
                     }
+                }
             }
+
 // {{ Products Bundle Sets
             foreach ($bundle_prods_options_array as $bundle_prods_option) {
                 $this->products[$index]['attributes'][$subindex] = $bundle_prods_option;
@@ -431,9 +438,13 @@ abstract class OrderShadowAbstract implements OrderInterface {
                 $this->info['subtotal'] += $shown_price;
 
                 if (defined('PRICE_WITH_BACK_TAX') && PRICE_WITH_BACK_TAX == 'True') {
-                    $this->info['subtotal_exc_tax'] += \common\helpers\Tax::reduce_tax_always($this->products[$index]['final_price'] * ($this->products[$index]['qty'] - $cancelledQty), $this->products[$index]['tax']);
-                    //$this->info['subtotal_exc_tax'] += $this->products[$index]['final_price'] * ($this->products[$index]['qty'] - $cancelledQty);//redo
-                    $this->info['subtotal_inc_tax'] += $this->products[$index]['final_price'] * ($this->products[$index]['qty'] - $cancelledQty);
+                    if ($_tax>0) {
+                        $this->info['subtotal_exc_tax'] += \common\helpers\Tax::reduce_tax_always($_price * $_qty, $_tax);
+                        $this->info['subtotal_inc_tax'] += $_price * $_qty;
+                    } else {
+                        $this->info['subtotal_exc_tax'] += \common\helpers\Tax::reduce_tax_always($_price * $_qty, abs($_tax));
+                        $this->info['subtotal_inc_tax'] += \common\helpers\Tax::reduce_tax_always($_price * $_qty, abs($_tax));
+                    }
                 } else {
                   if (PRODUCTS_PRICE_QTY_ROUND == 'true') {
                     $this->info['subtotal_exc_tax'] += round($_price, $_roundTo) * $_qty;
@@ -444,15 +455,18 @@ abstract class OrderShadowAbstract implements OrderInterface {
                   }
                 }
 
-                $products_tax = $this->products[$index]['tax'];
+                $products_tax = abs($this->products[$index]['tax']);
                 $products_tax_description = $this->products[$index]['tax_description'];
                 if (DISPLAY_PRICE_WITH_TAX == 'true') {
-                    $this->info['tax'] += \common\helpers\Tax::roundTax($shown_price - ($shown_price / (($products_tax < 10) ? "1.0" . str_replace('.', '', $products_tax) : "1." . str_replace('.', '', $products_tax))));
-                    if (isset($this->info['tax_groups']["$products_tax_description"])) {
-                        $this->info['tax_groups']["$products_tax_description"] += \common\helpers\Tax::roundTax($shown_price - ($shown_price / (($products_tax < 10) ? "1.0" . str_replace('.', '', $products_tax) : "1." . str_replace('.', '', $products_tax))));
-                    } else {
-                        $this->info['tax_groups']["$products_tax_description"] = \common\helpers\Tax::roundTax($shown_price - ($shown_price / (($products_tax < 10) ? "1.0" . str_replace('.', '', $products_tax) : "1." . str_replace('.', '', $products_tax))));
+                    if ($_tax>0) {
+                        $this->info['tax'] += \common\helpers\Tax::roundTax($shown_price - ($shown_price / (($products_tax < 10) ? "1.0" . str_replace('.', '', $products_tax) : "1." . str_replace('.', '', $products_tax))));
+                        if (isset($this->info['tax_groups']["$products_tax_description"])) {
+                            $this->info['tax_groups']["$products_tax_description"] += \common\helpers\Tax::roundTax($shown_price - ($shown_price / (($products_tax < 10) ? "1.0" . str_replace('.', '', $products_tax) : "1." . str_replace('.', '', $products_tax))));
+                        } else {
+                            $this->info['tax_groups']["$products_tax_description"] = \common\helpers\Tax::roundTax($shown_price - ($shown_price / (($products_tax < 10) ? "1.0" . str_replace('.', '', $products_tax) : "1." . str_replace('.', '', $products_tax))));
+                        }
                     }
+
                 } else {
                     $this->info['tax'] += \common\helpers\Tax::roundTax(($products_tax / 100) * $shown_price);
                     if (isset($this->info['tax_groups']["$products_tax_description"])) {

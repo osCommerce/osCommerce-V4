@@ -21,6 +21,52 @@
                             <label>Username:<span class="fieldRequired">*</span></label>{Html::textInput('username', '', ['maxlength' => '8', 'size' => '32', 'required' => true, 'class' => 'form-control'])}can not begin with test, number or .<br>can not contain - or _
                         </div>
                     </div>!-->
+                    <div class="w-line-row w-line-row-1 widget-domain-alias">
+                        <table class="tl-grid js-customer-multiemails">
+                            <thead>
+                                <tr>
+                                    <th>Aliases (the same rules as domain)</th>
+                                    <th class="actions delete-header">&nbsp;</th>
+                                </tr>
+                            </thead>
+                            <tbody class="tbody" data-rows-count="0">
+                                
+                                
+                            </tbody>
+                            <tfoot class="tfoot" style="display: none">
+                                <tr class="multi-emails-row">
+                                    <td>{Html::input('text', '_unhide_domain_alias[%idx%]', '', ['class' => 'form-control'])}</td>
+                                    <td><span class="remove-ast" onclick="multiEmailsDeleteRow(this);"></span></td>
+
+                                </tr>
+                            </tfoot>
+                        </table>
+                        &nbsp;
+                        <div class="buttons_hours">
+                            <button type="button" class="btn js-add-customer-multiemails" >{$smarty.const.TEXT_ADD_MORE}</button>
+                        </div>
+                    </div>
+<script type="text/javascript">
+function multiEmailsDeleteRow(el){
+  $(el).parents('.multi-emails-row').remove();
+}
+$(document).ready(function(){
+    
+    $('.js-customer-multiemails').on('add_row',function(){
+        var skelHtml = $('.widget-domain-alias .tfoot').html();
+        var $body = $('.widget-domain-alias .tbody');
+        var counter = parseInt($body.attr('data-rows-count'),10)+1;
+        $body.attr('data-rows-count',counter);
+        skelHtml = skelHtml.replace(/_unhide_/g,'',skelHtml);
+        skelHtml = skelHtml.replace(/%idx%/g, counter,skelHtml);
+        $body.append(skelHtml);
+    });
+    
+    $('.js-add-customer-multiemails').on('click',function(){
+        $('.js-customer-multiemails').trigger('add_row');
+    });
+});
+</script>
                 </div>
             </div>
             <div class="widget box box-no-shadow">

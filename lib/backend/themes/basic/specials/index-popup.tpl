@@ -36,7 +36,7 @@
               {foreach $items as $special}
                 {$allGross=''}{$allNet=''}
 
-                {*if ($smarty.const.CUSTOMERS_GROUPS_ENABLE != 'True' && $smarty.const.USE_MARKET_PRICES != 'True') }
+                {*if (!\common\helpers\Extensions::isCustomerGroupsAllowed() && $smarty.const.USE_MARKET_PRICES != 'True') }
                     {$special['prices'][0] = $special}
                     {$special['prices'][0]['groups_id'] = 0}
                     {$special['prices'][0]['currencies_id'] = 0}
@@ -63,7 +63,7 @@
                   {$expired = false}
                 {/if}
                 {if empty($prices[0][0]['text'])}
-                  {if $smarty.const.CUSTOMERS_GROUPS_ENABLE != 'True'}
+                  {if !\common\helpers\Extensions::isCustomerGroupsAllowed()}
                     {$prices[0][0]['text'] = $smarty.const.TEXT_DISABLED}
                   {else}
                     {$prices[0][0]['text'] = sprintf($smarty.const.TEXT_PRICE_SWITCH_DISABLE, $smarty.const.TEXT_MAIN)}

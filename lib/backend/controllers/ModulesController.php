@@ -1025,7 +1025,7 @@ class ModulesController extends Sceleton
             if (method_exists($module, 'getLabels')) {
                 $restriction .= $module->getLabels($this->selected_platform_id);
             }
-            if (method_exists($module, 'getZeroPrice')) {
+            if (method_exists($module, 'getZeroPrice') && !($module instanceof \common\classes\modules\ModuleExtensions)) {
                 $restriction .= $module->getZeroPrice($this->selected_platform_id);
             }
             if (method_exists($module, 'getVisibility')) {
@@ -1207,7 +1207,7 @@ class ModulesController extends Sceleton
 
         if (class_exists($module)) {
 
-          if (method_exists($object, 'setZeroPrice')) {
+          if (method_exists($object, 'setZeroPrice') && !($object instanceof \common\classes\modules\ModuleExtensions)) {
             $object->setZeroPrice();
           }
           if (method_exists($object, 'setVisibility')) {

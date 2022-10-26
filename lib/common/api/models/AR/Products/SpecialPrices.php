@@ -50,7 +50,7 @@ class SpecialPrices extends EPMap
                     'groups_id' => 0,
                     'currencies_id' => $currency['currencies_id'],
                 ];
-                if ( defined('CUSTOMERS_GROUPS_ENABLE') && CUSTOMERS_GROUPS_ENABLE=='True' ) {
+                if ( \common\helpers\Extensions::isCustomerGroupsAllowed() ) {
                     foreach (\common\helpers\Group::get_customer_groups() as $groupInfo) {
                         $keyCode = $currency['code'] . '_' . $groupInfo['groups_id'];
                         $keyCodes[$keyCode] = [
@@ -62,7 +62,7 @@ class SpecialPrices extends EPMap
                 }
             }
         }else{
-            if ( defined('CUSTOMERS_GROUPS_ENABLE') && CUSTOMERS_GROUPS_ENABLE=='True' ) {
+            if ( \common\helpers\Extensions::isCustomerGroupsAllowed() ) {
                 $keyCodes[\common\helpers\Currencies::systemCurrencyCode().'_0'] = [
                     'specials_id' => null,
                     'groups_id' => 0,

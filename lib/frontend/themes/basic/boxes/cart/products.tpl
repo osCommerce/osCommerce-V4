@@ -61,13 +61,16 @@
                     {/if}
 
                     {Packs::widget(['product' => $product])}
-
                     <div class="attributes">
                         {if isset($product.attr)}
                         {foreach $product.attr as $attr}
                             <div class="">
                                 <strong>{$attr.products_options_name}:</strong>
-                                <span>{$attr.products_options_values_name}</span>
+                                {if $attr.products_options_values_text}
+                                    <span>{$attr.products_options_values_text}</span>
+                                {else}
+                                    <span>{$attr.products_options_values_name}</span>
+                                {/if}
                             </div>
                         {/foreach}
                         {/if}

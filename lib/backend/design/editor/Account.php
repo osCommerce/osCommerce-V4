@@ -35,7 +35,7 @@ class Account extends Widget {
             'contact' => $this->contactForm,
             'shipping' => $this->shippingForm,
             'billing' => $this->billingForm,
-            'showGroup' => (CUSTOMERS_GROUPS_ENABLE == 'True'),
+            'showGroup' => \common\helpers\Extensions::isCustomerGroupsAllowed(),
             'platforms' => \yii\helpers\ArrayHelper::map(\common\classes\platform::getList(false), 'id', 'text'),
             'groups' => \yii\helpers\ArrayHelper::map(\common\models\Groups::find()->all(), 'groups_id', 'groups_name'),
             'url' => \yii\helpers\Url::to(array_merge(['editor/create-account'], Yii::$app->request->getQueryParams())),

@@ -157,7 +157,7 @@ class CustomersController extends Sceleton {
         $this->view->filters->flag = (int)Yii::$app->request->get('flag');
         $this->view->filters->marker = (int)Yii::$app->request->get('marker');
 
-        $this->view->filters->showGroup = (CUSTOMERS_GROUPS_ENABLE == 'True');
+        $this->view->filters->showGroup = \common\helpers\Extensions::isCustomerGroupsAllowed();
         $group = '';
         if (isset($GET['group'])) {
             $group = $GET['group'];
@@ -1339,7 +1339,7 @@ class CustomersController extends Sceleton {
 
 
         $this->view->showOtherGroups = false;
-        $this->view->showGroup = (CUSTOMERS_GROUPS_ENABLE == 'True');
+        $this->view->showGroup = \common\helpers\Extensions::isCustomerGroupsAllowed();
         if ($this->view->showGroup) {
           /** @var \common\extensions\ExtraGroups\ExtraGroups $ext */
           if ($ext = \common\helpers\Acl::checkExtensionAllowed('ExtraGroups', 'allowed')) {

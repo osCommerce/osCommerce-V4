@@ -846,11 +846,15 @@ class OrderProduct
                     foreach ($warehouseIdArray as $warehouseId) {
                         foreach ($supplierIdArray as $supplierId) {
                             $locationId = 0;
+                            $layerId = 0;
+                            $batchId = 0;
                             $orderProductAllocateRecord = \common\models\OrdersProductsAllocate::find()
                                 ->where(['orders_products_id' => $orderProductRecord->orders_products_id])
                                 ->andWhere(['warehouse_id' => $warehouseId])
                                 ->andWhere(['suppliers_id' => $supplierId])
                                 ->andWhere(['location_id' => $locationId])
+                                ->andWhere(['layers_id' => $layerId])
+                                ->andWhere(['batch_id' => $batchId])
                                 ->one();
                             if (!($orderProductAllocateRecord instanceof \common\models\OrdersProductsAllocate)) {
                                 $orderProductAllocateRecord = new \common\models\OrdersProductsAllocate();
@@ -858,6 +862,8 @@ class OrderProduct
                                 $orderProductAllocateRecord->warehouse_id = $warehouseId;
                                 $orderProductAllocateRecord->suppliers_id = $supplierId;
                                 $orderProductAllocateRecord->location_id = $locationId;
+                                $orderProductAllocateRecord->layers_id = $layerId;
+                                $orderProductAllocateRecord->batch_id = $batchId;
                                 $orderProductAllocateRecord->platform_id = $orderRecord->platform_id;
                                 $orderProductAllocateRecord->orders_id = $orderRecord->orders_id;
                                 $orderProductAllocateRecord->prid = $orderProductRecord->products_id;
@@ -1814,11 +1820,15 @@ class OrderProduct
      */
     public static function getStockOrdered($orderProductRecord = 0)
     {
+        $return = 0;
         if (\common\helpers\Acl::checkExtensionAllowed('PurchaseOrders')) {
-            return \common\extensions\PurchaseOrders\helpers\PurchaseOrder::getStockOrdered($orderProductRecord);
-        } else {
-            return 0;
+            $orderProductRecord = self::getRecord($orderProductRecord);
+            if ($orderProductRecord instanceof \common\models\OrdersProducts) {
+                $return = \common\extensions\PurchaseOrders\helpers\PurchaseOrder::getStockOrdered($orderProductRecord->uprid, false);
+            }
+            unset($orderProductRecord);
         }
+        return $return;
     }
 
     /**

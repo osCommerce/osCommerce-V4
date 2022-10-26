@@ -33,14 +33,23 @@
                 if (status == "success") {
                     if (data.ok == 1) {
                         //if (hide==1) {
-                        console.log(id);
-                        console.log(data.hidden_admin_language);
-                        console.log(jQuery.inArray(id, data.hidden_admin_language));
                         if (jQuery.inArray(id, data.hidden_admin_language) !== -1) {
                             $('#lang_wrap_' + id).addClass('dis_module');
                         } else {
                             $('#lang_wrap_' + id).removeClass('dis_module');
                         }
+                        
+                        $('.popup').popUp({
+                                        box: "<div class='popup-box-wrap'><div class='around-pop-up'></div><div class='popup-box'><div class='pop-up-close'></div><div class='popup-heading cat-head'>{$smarty.const.TEXT_NOTIFIC|escape}</div><div class='alert alert-success'>{$smarty.const.TEXT_MESSEAGE_SUCCESS|escape}</div></div></div>",
+                                        
+                                        event:'show'
+                         });
+
+                        setTimeout(function(){
+                            closePopup();
+                        }, 1500);
+
+
                     } else {
                         alert("{$smarty.const.TEXT_MESSAGE_ERROR|escape:'javascript'}");
                     }
@@ -237,35 +246,11 @@ $(document).ready(function(){
 </script>
 {$accountFeatures = DEPARTMENTS_ID}
 <div class="account_wrapper after{if $accountFeatures  > 0}{else} full_account{/if}">
-{if false &&  $accountFeatures  > 0}
-    <div class="account_left">
-        <div class="sub_acc_title"><i class="icon-ok-sign"></i>{$smarty.const.TEXT_ACCOUNT_SUBSCRIPTION}</div>
-            <div class="ac_box">                
-                <div class="ac_box_price">
-                    <div class="ac_box_title">Ecommerce<span>supermarket</span></div>
-                    <div class="acbp_01">&pound;18<span>per month</span></div>                 
-                </div>
-                <div class="ac_box_ac">
-                    <span>If people don't notice</span>
-                    <span>Sed ut perspiciatis</span>
-                    <span>Nemo enim ipsam voluptatem</span>
-                    <span>Ut enim ad minima veniam</span>
-                    <span>Quis autem</span>
-                </div>
-                <div class="ac_box_but">
-                    <a href="#" class="change_sub">Change subscription</a>
-                </div>
-                <div class="ac_box_link">
-                    <a href="#" class="popup-edit-acc">Subscription history</a>
-                </div>
-            </div>
-    </div>
-{/if}
     <div class="account_right  {if $accountFeatures  > 0}account_right_dep{/if}">
         <div class="sub_acc_title"><i class="icon-user"></i>{$smarty.const.TEXT_MAIN_DETAILS}
 				<div class="admin_lang after">
 				<span class="title_lang">{$smarty.const.TEXT_LANGUAGES}</span>
-                {$languages = \common\helpers\Language::get_languages()}
+                {$languages = \common\helpers\Language::get_languages(false, true)}
                 {foreach $languages as $lKey => $lItem}
                     <span class="{if in_array($lItem['id'], $global_hidden_admin_language) }dis_module{/if}" id='lang_wrap_{$lItem['id']}'
                           {if in_array($lItem['id'], $global_hidden_admin_language)  && !in_array($lItem['id'], $hidden_admin_language)}

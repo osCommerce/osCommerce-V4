@@ -10,7 +10,17 @@
     {if $popup == 1}
         <div class="popup-content popup-content-cgr">    
     {/if}
-    
+
+{if $ext = \common\helpers\Acl::checkExtensionAllowed('UserGroupsExtraDiscounts', 'allowed')}
+<div class="tabbable tabbable-custom">
+  <ul class="nav nav-tabs">
+    <li class="active"><a href="#tab_0" class="flag-span" data-toggle="tab"><span>{$smarty.const.TEXT_MAIN}</span></a></li>
+    {$ext::showTabHeading()}
+  </ul>
+  <div class="tab-content">
+    <div class="tab-pane active" id="tab_0">
+{/if}
+
     <div class="col-md-12" style="display:inline-block;">
         <div class="col-md-6">
             <div class="widget box box-no-shadow">
@@ -143,6 +153,16 @@
 {/if}
 
     </div>
+
+{if $ext = \common\helpers\Acl::checkExtensionAllowed('UserGroupsExtraDiscounts', 'allowed')}
+    </div>
+
+    {$ext::showTabContent($mInfo)}
+
+  </div>
+</div>
+{/if}
+
     {if $popup == 1}
         </div>
     {/if}

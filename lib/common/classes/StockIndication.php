@@ -607,7 +607,7 @@ class StockIndication
             $add_to_cart = 0;
         }
 
-        $instock_condition = $cart_qty > 0 ? (($data_array['products_quantity'] - $cart_qty) >= $_checkMinBuyQty) : ($data_array['products_quantity'] > $_checkMinBuyQty);
+        $instock_condition = $cart_qty > 0 ? (($data_array['products_quantity'] - $cart_qty) >= 0) : ($data_array['products_quantity'] > $_checkMinBuyQty);
         $instock_condition = $instock_condition?$instock_condition:($backOrderQty>0);
         //if ( ($instock_condition || ($on_cart_page && $data_array['products_quantity']>0)) && !$stock_info_pre_lookup['request_for_quote'] ) {
         if ($stock_indication_id == 0 && ($instock_condition || ($on_cart_page && $data_array['products_quantity'] > 0)))

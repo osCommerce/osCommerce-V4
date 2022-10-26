@@ -71,12 +71,6 @@ if (defined('WL_ENABLED') && WL_ENABLED === true) {
 // include the list of project database tables
   require(DIR_WS_INCLUDES . 'database_tables.php');
 
-if (!file_exists('lib/common/extensions/ProductBundles/ProductBundles.php')) {
-    define('PRODUCTS_BUNDLE_SETS', 'False');
-}
-if (!file_exists('lib/common/extensions/UserGroups/UserGroups.php')) {
-    define('CUSTOMERS_GROUPS_ENABLE', 'False');
-}
 if (!file_exists('lib/common/extensions/VatOnOrder/VatOnOrder.php')) {
     define('ACCOUNT_COMPANY', 'disabled');
     define('ACCOUNT_COMPANY_VAT_ID', 'disabled');

@@ -2,6 +2,11 @@
 {use class="backend\assets\DesignAsset"}
 {DesignAsset::register($this)|void}
 {include 'menu.tpl'}
+<style type="text/css">
+  .choose-visibility select {
+    width: 300px;
+  }
+</style>
 
 
 <div class="choose-visibility">

@@ -894,7 +894,7 @@ class Product {
                 }
             }
 /*
-            if (\common\helpers\Acl::checkExtensionAllowed('ProductBundles', 'allowed') && PRODUCTS_BUNDLE_SETS == 'True') {
+            if (\common\helpers\Acl::checkExtensionAllowed('ProductBundles', 'allowed')) {
                 $vids = array();
                 $attributes_query = tep_db_query("select options_id, options_values_id from " . TABLE_PRODUCTS_ATTRIBUTES . " where products_id = '" . (int) $prid . "'");
                 while ($attributes = tep_db_fetch_array($attributes_query)) {
@@ -1002,7 +1002,7 @@ class Product {
         tep_db_query("delete from " . TABLE_PRODUCTS_PRICES . " where products_id = '" . (int) $product_id . "'");
         tep_db_query("delete from " . TABLE_PRODUCTS_COMMENTS . " where products_id = '" . $product_id . "'");
 
-        if (defined('PRODUCTS_BUNDLE_SETS') && PRODUCTS_BUNDLE_SETS == 'True') {
+        if (\common\helpers\Acl::checkExtensionAllowed('ProductBundles')) {
             tep_db_query("delete from " . TABLE_SETS_PRODUCTS . " where sets_id = '" . (int) $product_id . "'");
         }
 
@@ -1035,6 +1035,10 @@ class Product {
         if ( $schemaCheck ) {
             tep_db_query("DELETE FROM products_linked_children WHERE parent_product_id='".$product_id."'");
             tep_db_query("DELETE FROM products_linked_children WHERE linked_product_id='".$product_id."'");
+        }
+
+        foreach (\common\helpers\Hooks::getList('product/after-delete') as $filename) {
+            include($filename);
         }
 
         if (defined('USE_CACHE') && USE_CACHE == 'true') {
@@ -1075,14 +1079,17 @@ class Product {
             \common\helpers\System::reset_cache_block('also_purchased');
         }
 
-        // todo: AdminHooks
         $var_tables = [
-            TABLE_CUSTOMERS_BASKET, TABLE_CUSTOMERS_BASKET_ATTRIBUTES,  // CustomerBasket ext
+            TABLE_CUSTOMERS_BASKET, TABLE_CUSTOMERS_BASKET_ATTRIBUTES,
         ];
         foreach($var_tables as $table) {
           if ( \Yii::$app->db->schema->getTableSchema($table) ) {
              tep_db_query("TRUNCATE TABLE $table");
           }
+        }
+
+        foreach (\common\helpers\Hooks::getList('product/after-trunk') as $filename) {
+            include($filename);
         }
 
     }
@@ -1133,7 +1140,7 @@ class Product {
             '\common\models\GroupsProducts' => 'products_id',
             '\common\models\ProductsPrices' => 'products_id',
         ];
-        if (defined('PRODUCTS_BUNDLE_SETS') && PRODUCTS_BUNDLE_SETS == 'True') {
+        if (\common\helpers\Acl::checkExtensionAllowed('ProductBundles')) {
             $copyModels['\common\models\SetsProducts'] = 'sets_id';
         }
         foreach ($copyModels as $copyModelClass=>$copyProductColumn){
@@ -1239,7 +1246,7 @@ class Product {
         if (defined('USE_MARKET_PRICES') && USE_MARKET_PRICES != 'True') {
             $currency_id = 0;
         }
-        if (defined('CUSTOMERS_GROUPS_ENABLE') && CUSTOMERS_GROUPS_ENABLE != 'True') {
+        if (!\common\helpers\Extensions::isCustomerGroupsAllowed()) {
             $group_id = 0;
         }
         if ($currency_id == 0 && $group_id == 0) {
@@ -1301,7 +1308,7 @@ class Product {
         }
 
         $apply_discount = false;
-        if ((defined('USE_MARKET_PRICES') && USE_MARKET_PRICES == 'True') || (defined('CUSTOMERS_GROUPS_ENABLE') && CUSTOMERS_GROUPS_ENABLE == 'True')) {
+        if ((defined('USE_MARKET_PRICES') && USE_MARKET_PRICES == 'True') || \common\helpers\Extensions::isCustomerGroupsAllowed()) {
             $query = tep_db_query("select pp.products_group_discount_price as products_price_discount, pp.products_group_price from " . TABLE_PRODUCTS_PRICES . " pp where pp.products_id = '" . (int)$products_id . "' and pp.groups_id = '" . (int)$_customer_groups_id . "' and pp.currencies_id = '" . (USE_MARKET_PRICES == 'True'? $_currency_id :'0'). "'");
             $num_rows = tep_db_num_rows($query);
             $data = tep_db_fetch_array($query);
@@ -1389,7 +1396,7 @@ class Product {
         if (defined('USE_MARKET_PRICES') && USE_MARKET_PRICES != 'True') {
             $currency_id = 0;
         }
-        if (defined('CUSTOMERS_GROUPS_ENABLE') && CUSTOMERS_GROUPS_ENABLE != 'True') {
+        if (\common\helpers\Extensions::isCustomerGroupsAllowed()) {
             $group_id = 0;
         }
         if ($currency_id == 0 && $group_id == 0) {
@@ -1465,7 +1472,7 @@ class Product {
 
     public static function getBonuses($products_id, $groups_id, ?float $price = null){
         if (\common\helpers\Acl::checkExtensionAllowed('BonusActions')) {
-            if (defined('CUSTOMERS_GROUPS_ENABLE') && CUSTOMERS_GROUPS_ENABLE == 'True') {
+            if (\common\helpers\Extensions::isCustomerGroupsAllowed()) {
                 $bonusPoints = tep_db_fetch_array(
                     tep_db_query(
                         "select if(pp.bonus_points_price > 0, pp.bonus_points_price, p.bonus_points_price) as bonus_points_price, if(pp.bonus_points_cost > 0, pp.bonus_points_cost, p.bonus_points_cost) as bonus_points_cost from " . TABLE_PRODUCTS_PRICES . " pp, " . TABLE_PRODUCTS . " p where p.products_id=pp.products_id and p.products_id = '" . (int)$products_id . "' and pp.groups_id = '" . (int)$groups_id . "' and pp.currencies_id = '0'"
@@ -2389,11 +2396,11 @@ class Product {
      */
     public static function getStockOrdered($uProductId = 0, $isStrict = false)
     {
+        $return = 0;
         if (\common\helpers\Acl::checkExtensionAllowed('PurchaseOrders')) {
-            return \common\extensions\PurchaseOrders\helpers\PurchaseOrder::getStockOrdered($uProductId, $isStrict);
-        } else {
-            return 0;
+            $return = \common\extensions\PurchaseOrders\helpers\PurchaseOrder::getStockOrdered($uProductId, $isStrict);
         }
+        return $return;
     }
 
     /**
@@ -3630,7 +3637,7 @@ class Product {
                   $current_ex_one = $currencies->display_price($product['products_price'], 0, 1, false, false);
                 }
 
-                if (CUSTOMERS_GROUPS_ENABLE == 'True' && \common\helpers\Customer::check_customer_groups($customer_groups_id, 'groups_price_as_special') && !isset($product['products_price_main'])) {
+                if (\common\helpers\Extensions::isCustomerGroupsAllowed() && \common\helpers\Customer::check_customer_groups($customer_groups_id, 'groups_price_as_special') && !isset($product['products_price_main'])) {
                   $_p = \common\models\Products::find()->select(['products_price_main' => 'products_price', 'products_id'])
                         ->where('products_id=:products_id', [':products_id' => (int) $product['products_id']])->asArray()->one();
                   if (!empty($_p)) {
@@ -3688,7 +3695,7 @@ class Product {
                   $current_ex = $currencies->display_price($product['products_price'], 0, $qty, false, false);
                 }
 
-                if (CUSTOMERS_GROUPS_ENABLE == 'True' && \common\helpers\Customer::check_customer_groups($customer_groups_id, 'groups_price_as_special') && !isset($product['products_price_main'])) {
+                if (\common\helpers\Extensions::isCustomerGroupsAllowed() && \common\helpers\Customer::check_customer_groups($customer_groups_id, 'groups_price_as_special') && !isset($product['products_price_main'])) {
                   $_p = \common\models\Products::find()->select(['products_price_main' => 'products_price', 'products_id'])
                         ->where('products_id=:products_id', [':products_id' => (int) $product['products_id']])->asArray()->one();
                   if (!empty($_p)) {

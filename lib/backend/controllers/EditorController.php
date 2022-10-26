@@ -1683,6 +1683,7 @@ class EditorController extends Sceleton {
                         $recordsTotal++;
                         if ($index >= $start && $index <= ($start+$length)) {
                              if (is_array($product['attributes'])){
+                                $attrText = \common\classes\PropsWorkerAttrText::getAttrText($product['props']);
                                 $_attributes = [];
                                 foreach ($product['attributes'] as $option => $value) {
                                     $attributes_query = tep_db_query("select pa.products_attributes_id, popt.products_options_name, poval.products_options_values_name, pa.options_values_price, pa.price_prefix from " . TABLE_PRODUCTS_OPTIONS . " popt, " . TABLE_PRODUCTS_OPTIONS_VALUES . " poval, " . TABLE_PRODUCTS_ATTRIBUTES . " pa where pa.products_id = '" . (int) $product['id'] . "' and pa.options_id = '" . (int) $option . "' and pa.options_id = popt.products_options_id and pa.options_values_id = '" . (int) $value . "' and pa.options_values_id = poval.products_options_values_id and popt.language_id = '" . (int) $this->manager->get('languages_id') . "' and poval.language_id = '" . (int) $this->manager->get('languages_id') . "'");
@@ -1727,7 +1728,8 @@ class EditorController extends Sceleton {
 							//
                                 foreach ($product['attributes'] as $option => $value) {
                                     $nameColumn .= '<div class="prop-tab-det-inp"><small>&ndash; ';
-                                    $nameColumn .= $value['value'];
+                                    $nameColumn .= $value['option'] . ' : ';
+                                    $nameColumn .= $attrText[$value['option_id']] ?? $value['value'];
                                     $nameColumn .= '</small></div>';
                                 }
                             }

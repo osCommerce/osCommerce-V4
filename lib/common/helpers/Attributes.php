@@ -328,7 +328,7 @@ class Attributes {
         $currency_id = \Yii::$app->settings->get('currency_id');
 
         $bundle_attributes = array();
-        if (defined('PRODUCTS_BUNDLE_SETS') && PRODUCTS_BUNDLE_SETS == 'True' && is_array($attributes) && count($attributes) > 0) {
+        if (\common\helpers\Acl::checkExtensionAllowed('ProductBundles') && is_array($attributes) && count($attributes) > 0) {
             $_attribute_options = array_keys($attributes);
             foreach ($_attribute_options as $_attribute_option) {
                 if (strpos($_attribute_option, '-') === false)
@@ -381,7 +381,7 @@ class Attributes {
             " max( if(pa.default_option_value=1, pa.options_values_id, 0)) as default_option_value, ".
             " p.products_id, p.products_tax_class_id, popt.products_options_id, popt.products_options_name, popt.type, popt.products_options_image, popt.products_options_color ".
             "from " . TABLE_PRODUCTS . " p, " . TABLE_PRODUCTS_OPTIONS . " popt, " . TABLE_PRODUCTS_OPTIONS_VALUES . " pov, " . TABLE_PRODUCTS_ATTRIBUTES . " pa "
-            . ((USE_MARKET_PRICES == 'True' || CUSTOMERS_GROUPS_ENABLE == 'True')?
+            . ((USE_MARKET_PRICES == 'True' || \common\helpers\Extensions::isCustomerGroupsAllowed())?
              " join " . TABLE_PRODUCTS_ATTRIBUTES_PRICES . " pap on pap.products_attributes_id=pa.products_attributes_id and groups_id = '" . (int) $customer_groups_id . "' and currencies_id = '" . (USE_MARKET_PRICES == 'True' ? (int) $currency_id : 0) . "' and pap.attributes_group_price != -1"
             :'')
             . " where p.products_id = '" . (int) $products_id . "' and pa.products_id = p.products_id and pa.options_id = popt.products_options_id and popt.language_id = '" . (int) $languages_id . "' "
@@ -413,7 +413,7 @@ class Attributes {
         while ($products_options_name = tep_db_fetch_array($products_options_name_query)) {
             $products_options_array = array();
             $products_options_query = tep_db_query(
-                    "select pa.products_attributes_id, pov.products_options_values_id, pov.products_options_values_name, pa.options_values_price, pa.price_prefix, pov.products_options_values_color, pov.products_options_values_image " .
+                    "select pa.products_attributes_id, pov.products_options_values_id, pov.products_options_values_name, pa.options_values_price, pa.price_prefix, pov.products_options_values_color, pov.products_options_values_image, pov.custom_input_type " .
                     "from " . TABLE_PRODUCTS_ATTRIBUTES . " pa, " . TABLE_PRODUCTS_OPTIONS_VALUES . " pov " .
                     "where pa.products_id = '" . (int) $products_id . "' and pa.options_id = '" . (int) $products_options_name['products_options_id'] . "' and pa.options_values_id = pov.products_options_values_id and pov.language_id = '" . (int) $languages_id . "' " .
                     "order by pa.products_options_sort_order, pov.products_options_values_sort_order, pov.products_options_values_name");
@@ -433,7 +433,8 @@ class Attributes {
                     'id' => $products_options['products_options_values_id'], 
                     'text' => $products_options['products_options_values_name'],
                     'color' => $products_options['products_options_values_color'], 
-                    'image' => $products_options['products_options_values_image'], 
+                    'image' => $products_options['products_options_values_image'],
+                    'type' => $products_options['custom_input_type'],
                 ];
               } 
             }
@@ -550,7 +551,7 @@ class Attributes {
         $customer_groups_id = (int) \Yii::$app->storage->get('customer_groups_id');
         $currency_id = \Yii::$app->settings->get('currency_id');
         $apply_discount = false;
-        if (USE_MARKET_PRICES == 'True' || CUSTOMERS_GROUPS_ENABLE == 'True') {
+        if (USE_MARKET_PRICES == 'True' || \common\helpers\Extensions::isCustomerGroupsAllowed()) {
             $query = tep_db_query("select attributes_group_discount_price as products_attributes_discount_price, attributes_group_price as options_values_price from " . TABLE_PRODUCTS_ATTRIBUTES_PRICES . " where products_attributes_id=" . (int) $products_attributes_id . " and groups_id = '" . (int) $customer_groups_id . "' and currencies_id = '" . (USE_MARKET_PRICES == 'True' ? (int) $currency_id : 0) . "'");
             $num_rows = tep_db_num_rows($query);
             $data = tep_db_fetch_array($query);
@@ -604,7 +605,7 @@ class Attributes {
 
         if ( empty($products_attributes_id) ) return null;
 
-        if (USE_MARKET_PRICES == 'True' || CUSTOMERS_GROUPS_ENABLE == 'True') {
+        if (USE_MARKET_PRICES == 'True' || \common\helpers\Extensions::isCustomerGroupsAllowed()) {
             $query = tep_db_query("select attributes_group_price as options_values_price from " . TABLE_PRODUCTS_ATTRIBUTES_PRICES . " where products_attributes_id=" . (int) $products_attributes_id . " and groups_id = '" . (int) $customer_groups_id . "' and currencies_id = '" . (USE_MARKET_PRICES == 'True' ? (int) $curr_id : 0) . "'");
             $num_rows = tep_db_num_rows($query);
             $data = tep_db_fetch_array($query);
@@ -633,7 +634,7 @@ class Attributes {
         if (USE_MARKET_PRICES != 'True') {
             $currency_id = 0;
         }
-        if (CUSTOMERS_GROUPS_ENABLE != 'True') {
+        if (!\common\helpers\Extensions::isCustomerGroupsAllowed()) {
             $group_id = 0;
         }
         if ($currency_id == 0 && $group_id == 0) {
@@ -650,14 +651,14 @@ class Attributes {
 
     public static function get_attributes_price_edit_order($attributes_id, $currency_id = 0, $group_id = 0, $qty = 1, $recalculate_value = false) {
         $price = self::get_attributes_price($attributes_id, $currency_id, $group_id, false);
-        if (CUSTOMERS_GROUPS_ENABLE == 'True' && $group_id != 0 && ($price === false || $price == -2) && $recalculate_value) {
+        if (\common\helpers\Extensions::isCustomerGroupsAllowed() && $group_id != 0 && ($price === false || $price == -2) && $recalculate_value) {
             $discount = tep_db_fetch_array(tep_db_query('select groups_discount from ' . TABLE_GROUPS . " where groups_id = '" . $group_id . "'"));
             $price = self::get_attributes_price($attributes_id, $currency_id, 0);
             $price = $price * (100 - $discount['groups_discount']) / 100;
         }
         if ($qty > 1) {
             $discount_price = self::get_attributes_discount_price($attributes_id, $currency_id, $group_id, false);
-            if (CUSTOMERS_GROUPS_ENABLE == 'True' && $group_id != 0 && $discount_price === false && $recalculate_value) {
+            if (\common\helpers\Extensions::isCustomerGroupsAllowed() && $group_id != 0 && $discount_price === false && $recalculate_value) {
                 $discount_price = self::get_attributes_discount_price($attributes_id, $currency_id, 0, false);
                 $apply_discount = true;
             }
@@ -693,7 +694,7 @@ class Attributes {
         if (USE_MARKET_PRICES != 'True') {
             $currency_id = 0;
         }
-        if (CUSTOMERS_GROUPS_ENABLE != 'True') {
+        if (!\common\helpers\Extensions::isCustomerGroupsAllowed()) {
             $group_id = 0;
         }
         if ($currency_id == 0 && $group_id == 0) {
@@ -710,7 +711,7 @@ class Attributes {
 
     public static function get_attributes_prices($attributes_id, $_tax=0) {
       $currencies = \Yii::$container->get('currencies');
-      if ((USE_MARKET_PRICES != 'True') && (CUSTOMERS_GROUPS_ENABLE != 'True')) {
+      if ((USE_MARKET_PRICES != 'True') && !\common\helpers\Extensions::isCustomerGroupsAllowed()) {
         $data_query = tep_db_query("select 0 as groups_id, 0 as currencies_id, options_values_price as products_group_price, products_attributes_discount_price as products_attributes_discount_price from " . TABLE_PRODUCTS_ATTRIBUTES . " where  products_attributes_id  = '" . $attributes_id . "'");
       } else {
         $data_query = tep_db_query("select groups_id, currencies_id, attributes_group_price as products_group_price, attributes_group_discount_price as products_attributes_discount_price from " . TABLE_PRODUCTS_ATTRIBUTES_PRICES . " where products_attributes_id = '" . $attributes_id . "'");
@@ -729,11 +730,11 @@ class Attributes {
           }
         }
         unset($data['products_attributes_discount_price']);
-        if ((USE_MARKET_PRICES == 'True') && (CUSTOMERS_GROUPS_ENABLE == 'True')) {
+        if ((USE_MARKET_PRICES == 'True') && (\common\helpers\Extensions::isCustomerGroupsAllowed())) {
           $ret[$data['currencies_id']][$data['groups_id']] = $data;
         } elseif ((USE_MARKET_PRICES == 'True')) {
           $ret[$data['currencies_id']] = $data;
-        } elseif ((CUSTOMERS_GROUPS_ENABLE == 'True')) {
+        } elseif ((\common\helpers\Extensions::isCustomerGroupsAllowed())) {
           $ret[$data['groups_id']] = $data;
         } else {
           $ret = $data;
@@ -746,7 +747,7 @@ class Attributes {
         if (USE_MARKET_PRICES != 'True') {
             $currency_id = 0;
         }
-        if (CUSTOMERS_GROUPS_ENABLE != 'True') {
+        if (!\common\helpers\Extensions::isCustomerGroupsAllowed()) {
             $group_id = 0;
         }
         if ($currency_id == 0 && $group_id == 0) {
@@ -763,7 +764,7 @@ class Attributes {
 
     public static function get_template_attributes_prices($attributes_id, $_tax=0) {
         $currencies = \Yii::$container->get('currencies');
-        if ((USE_MARKET_PRICES != 'True') && (CUSTOMERS_GROUPS_ENABLE != 'True')) {
+        if ((USE_MARKET_PRICES != 'True') && (!\common\helpers\Extensions::isCustomerGroupsAllowed())) {
             $data_query = tep_db_query("select 0 as groups_id, 0 as currencies_id, options_values_price as products_group_price, products_attributes_discount_price as products_attributes_discount_price from " . TABLE_OPTIONS_TEMPLATES_ATTRIBUTES . " where  options_templates_attributes_id  = '" . $attributes_id . "'");
         } else {
             $data_query = tep_db_query("select groups_id, currencies_id, attributes_group_price as products_group_price, attributes_group_discount_price as products_attributes_discount_price from " . TABLE_OPTIONS_TEMPLATES_ATTRIBUTES_PRICES . " where options_templates_attributes_id = '" . $attributes_id . "'");
@@ -775,11 +776,11 @@ class Attributes {
 
             $data['qty_discounts'] = [];
             unset($data['products_attributes_discount_price']);
-            if ((USE_MARKET_PRICES == 'True') && (CUSTOMERS_GROUPS_ENABLE == 'True')) {
+            if ((USE_MARKET_PRICES == 'True') && (\common\helpers\Extensions::isCustomerGroupsAllowed())) {
                 $ret[$data['currencies_id']][$data['groups_id']] = $data;
             } elseif ((USE_MARKET_PRICES == 'True')) {
                 $ret[$data['currencies_id']] = $data;
-            } elseif ((CUSTOMERS_GROUPS_ENABLE == 'True')) {
+            } elseif ((\common\helpers\Extensions::isCustomerGroupsAllowed())) {
                 $ret[$data['groups_id']] = $data;
             } else {
                 $ret = $data;

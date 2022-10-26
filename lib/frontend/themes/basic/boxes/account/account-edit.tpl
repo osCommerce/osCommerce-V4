@@ -50,8 +50,12 @@
             {/if}
         </div>
     {/if}
+	<div class="col-right">
+        <label for="{$editModel->formName()}-email_address">{field_label const="ENTRY_EMAIL_ADDRESS" required_text="*"}</label>
+        {Html::activeInput('email', $editModel, 'email_address', ['data-required' => "{$smarty.const.EMAIL_REQUIRED}", 'data-pattern' => "email"])}
+    </div>
     {if in_array(ACCOUNT_LANDLINE, ['required', 'required_register', 'visible', 'visible_register'])}
-        <div class="col-right">
+        <div class="col-left">
             <label for="{$editModel->formName()}-landline">{field_label const="ENTRY_LANDLINE" configuration="ACCOUNT_LANDLINE"}</label>
             {if in_array(ACCOUNT_LANDLINE, ['required', 'required_register'])}
                 {Html::activeTextInput($editModel, 'landline', ['data-required' => "{sprintf($smarty.const.ENTRY_LANDLINE_NUMBER_ERROR, $smarty.const.ENTRY_LANDLINE_MIN_LENGTH)}", 'data-pattern' => "{$re1}{$smarty.const.ENTRY_LANDLINE_MIN_LENGTH}{$re2}"])}
@@ -61,10 +65,6 @@
         </div>
     {/if}
 
-    <div class="col-full">
-        <label for="{$editModel->formName()}-email_address">{field_label const="ENTRY_EMAIL_ADDRESS" required_text="*"}</label>
-        {Html::activeInput('email', $editModel, 'email_address', ['data-required' => "{$smarty.const.EMAIL_REQUIRED}", 'data-pattern' => "email"])}
-    </div>
 
     {if in_array(ACCOUNT_DOB, ['required', 'required_register', 'visible', 'visible_register'])}
         <div class="col-full dob-input">

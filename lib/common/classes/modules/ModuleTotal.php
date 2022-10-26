@@ -90,7 +90,7 @@ abstract class ModuleTotal extends Module {
     
     function getZeroPrice($platform_id) {
         if ($ext = \common\helpers\Acl::checkExtensionAllowed('ModulesZeroPrice', 'allowed')) {
-            return $ext::getZeroPrice($platform_id, $this);
+            return \common\helpers\Modules::getInfoLinkForExtension('ModulesZeroPrice') .$ext::getZeroPrice($platform_id, $this);
         }
     }
     

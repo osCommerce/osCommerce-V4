@@ -47,6 +47,7 @@ class Logo extends Widget
             $lang_id = $languages_id;
         }
 
+        $this->settings[0]['logo_from'] = $this->settings[0]['logo_from']??null;
         if ($this->settings[0]['logo_from'] == 'platform') {
             $platform = \common\models\Platforms::find()
                 ->select('logo')
@@ -73,7 +74,7 @@ class Logo extends Widget
 
         if ((!$image || isset($image) && is_string($image) && strpos($image, '/na.png')) && defined("THEME_NAME")) {
             $logo = Info::widgetSettings('Logo', false, 'header');
-            if ($logo[$lang_id]['logo']) {
+            if ($logo[$lang_id]['logo'] ?? null) {
                 $image = Info::themeImage($logo[$lang_id]['logo']);
             }
         }

@@ -383,6 +383,7 @@ class Mail {
         try {
             $message = \common\modules\email\Transport::getTransport();
         } catch (\Exception $e) {
+            \Yii::warning($e->getMessage() . "\n" . $e->getTraceAsString());
             echo $e->getMessage();
         }
 
@@ -394,20 +395,8 @@ class Mail {
                     $email_text = preg_replace('#(<br */?>\s*){3,}#i', '<br><br>', $email_text);
                 }
             }
-
-            $attr = self::$designTemplate ? 'page_name=' . self::$designTemplate : '';
-            if (isset($settings['platform_id']) && $settings['platform_id'] > 0) {
-                $attr .= '&platform_id=' . $settings['platform_id'];
-                $attr .= '&theme_name=' . \backend\design\Theme::getThemeName($settings['platform_id']);
-            }
-            if (function_exists('tep_catalog_href_link')) {
-                $contents = @file_get_contents(tep_catalog_href_link('email-template', $attr));
-            } else {
-                $contents = @file_get_contents(tep_href_link('email-template', $attr, 'NONSSL', false));
-            }
-            if (empty($contents)) {
-                $contents = '##EMAIL_TEXT##';
-            }
+            $themeName = \backend\design\Theme::getThemeName($settings['platform_id'] ?? \common\classes\platform::currentId() );
+            $contents = self::getEmailContent(self::$designTemplate ?? '', $themeName);
             $contents = str_replace(array("\r\n", "\n", "\r"), '', $contents);
 			if ( is_array($email_params) && empty($email_params['STORE_URL']) ) {
                 if (\frontend\design\Info::isTotallyAdmin()) {
@@ -641,6 +630,20 @@ class Mail {
                     $emailTexts
                 )->execute();
         }
+    }
+
+    public static function getEmailContent($pageName, $themeName)
+    {
+        defined('THEME_NAME') or define('THEME_NAME', $themeName);
+        if (empty($pageName)) {
+            $pageName = \common\classes\design::pageName('email');
+        }
+        try {
+            $res = \frontend\design\Block::widget(['name' => $pageName, 'params' => ['type' => 'email', 'params' => ['absoluteUrl' => true, 'theme_name' => $themeName, 'page_block' => 'email']]]);
+        } catch (\Exception $e) {
+            \Yii::warning(__FUNCTION__ . ' : ' . $e->getMessage() . "\n" . $e->getTraceAsString());
+        }
+        return empty($res)? '##EMAIL_TEXT##' : $res;
     }
 
 }

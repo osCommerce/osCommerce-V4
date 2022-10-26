@@ -22,6 +22,7 @@ use common\helpers\Inventory;
 class ProductInsulatorService {
 
     public $data = [];
+    /** @var \common\services\OrderManager $manager */
     public $manager;
     public $uprid;
     public $result = [];
@@ -219,7 +220,8 @@ class ProductInsulatorService {
         $response['data'] = \common\helpers\Attributes::getDetails($this->uprid, $attributes, $this->data);
         $response['product_attributes_html'] = '';
         if ($response['data']['attributes_array']) {
-            $response['product_attributes_html'] = $this->manager->render('Attributes', ['attributes' => $response['data']['attributes_array']]);
+            $attrText = $this->data['attr_text'] ?? \common\classes\PropsWorkerAttrText::getAttrTextCart($this->manager->getCart(), $this->uprid);
+            $response['product_attributes_html'] = $this->manager->render('Attributes', ['attributes' => $response['data']['attributes_array'], 'attrText' => $attrText]);
         }
         return $response;
     }
@@ -374,7 +376,8 @@ class ProductInsulatorService {
             } elseif (is_array($this->data['custom_bundles'] ?? null)) {
                 $added = $cart->add_custom_bundle(true, 'add');
             } else {
-                $added = $cart->add_cart(Inventory::get_prid($this->uprid), $packQty, $this->data['id'] ?? null, false, 0, $this->data['gift_wrap'] ?? null);
+                $props = Yii::$app->get('PropsHelper')::ParamsToXml($this->data, $this->uprid);
+                $added = $cart->add_cart(Inventory::get_prid($this->uprid), $packQty, $this->data['id'] ?? null, false, 0, $this->data['gift_wrap'] ?? null, $props);
             }
         }
         if (!is_null($added)) {

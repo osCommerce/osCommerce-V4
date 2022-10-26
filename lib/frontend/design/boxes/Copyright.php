@@ -47,9 +47,9 @@ class Copyright extends Widget
             ])
             ->asArray()->one();
 
-        $text = TEXT_COPYRIGHT;
+        $text = \common\helpers\Translation::getTranslationValue('TEXT_COPYRIGHT', 'main');
 
-        if (isset($information['seo_page_name']) && $information['seo_page_name'] && preg_match('/href=\"[^"]{0,}' . $information['seo_page_name'] . '[^"]{0,}\"/', TEXT_COPYRIGHT)) {
+        if (isset($information['seo_page_name']) && $information['seo_page_name'] && preg_match('/href=\"[^"]{0,}' . $information['seo_page_name'] . '[^"]{0,}\"/', $text)) {
             $text = preg_replace('/<a href=\"[^"]{0,}' . $information['seo_page_name'] . '[^"]{0,}\">([^\<]+)<\/a>/', '<span>$1</span>', $text);
         }
 

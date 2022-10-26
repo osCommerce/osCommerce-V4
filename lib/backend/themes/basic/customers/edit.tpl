@@ -15,9 +15,11 @@
                     <div class="status-left" style="float: none;">
                         <span>{$smarty.const.ENTRY_ACTIVE}</span>
                         {Html::activeCheckBox($customerForm, 'status', ['class' => 'check_bot_switch_on_off'])}
-                    <div class="btn-right">
-                        <a href="{Yii::$app->urlManager->createUrl(['logger/popup', 'type' => 'Customer', 'id' => $cInfo->customers_id])}" class="btn-link-create popup">{$smarty.const.TEXT_HISTORY}</a>
-                    </div>
+                        {if \common\helpers\Acl::checkExtensionAllowed('ReportChangesHistory')}
+                        <div class="btn-right">
+                            <a href="{Yii::$app->urlManager->createUrl(['logger/popup', 'type' => 'Customer', 'id' => $cInfo->customers_id])}" class="btn-link-create popup">{$smarty.const.TEXT_HISTORY}</a>
+                        </div>
+                        {/if}
                     </div>
                 </div>
             </div>

@@ -235,6 +235,7 @@ class Migration extends \yii\db\Migration {
             );
         }
         foreach ($keys as $key => $value) {
+            $hash = md5($key . '-' . $entity);
             if (is_array($value)) {
                 // per language $value -- 'en' => 'english', 'fr' => 'French'
                 foreach ($language_map as $languageCode => $languageId) {
@@ -249,38 +250,41 @@ class Migration extends \yii\db\Migration {
                     }
                     $this->db->createCommand(
                             "INSERT IGNORE INTO `translation` " .
-                            "  (language_id, translation_key, translation_entity, translation_value, checked, translated) " .
-                            "  VALUES (:languages_id, :text_key, :entity, :text_value, :checked, :translated)",
+                            "  (language_id, translation_key, translation_entity, translation_value, checked, translated, hash) " .
+                            "  VALUES (:languages_id, :text_key, :entity, :text_value, :checked, :translated, :hash)",
                             [
                                 'languages_id' => (int) $languageId,
                                 'entity' => $entity,
                                 'text_key' => $key,
                                 'text_value' => $languageValue,
                                 'checked' => $checked,
-                                'translated' => $translated
+                                'translated' => $translated,
+                                'hash' => $hash,
                             ]
                     )->execute();
                 }
             } else {
                 $this->db->createCommand(
                         "INSERT IGNORE INTO `translation` " .
-                        "  (language_id, translation_key, translation_entity, translation_value, checked, translated) " .
-                        "  VALUES (1, :text_key, :entity, :text_value, 1, 1)",
+                        "  (language_id, translation_key, translation_entity, translation_value, checked, translated, hash) " .
+                        "  VALUES (1, :text_key, :entity, :text_value, 1, 1, :hash)",
                         [
                             'entity' => $entity,
                             'text_key' => $key,
                             'text_value' => $value,
+                            'hash' => $hash,
                         ]
                 )->execute();
 
                 $this->db->createCommand(
                         "INSERT IGNORE INTO `translation` " .
-                        "  (language_id, translation_key, translation_entity, translation_value) " .
-                        "  SELECT languages_id, :text_key, :entity, :text_value FROM languages",
+                        "  (language_id, translation_key, translation_entity, translation_value, hash) " .
+                        "  SELECT languages_id, :text_key, :entity, :text_value, :hash FROM languages",
                         [
                             'entity' => $entity,
                             'text_key' => $key,
                             'text_value' => $value,
+                            'hash' => $hash,
                         ]
                 )->execute();
             }
@@ -827,6 +831,8 @@ class Migration extends \yii\db\Migration {
 
         $migration = json_decode(file_get_contents($filePath), true);
         if ( $result = \backend\design\Steps::applyMigration($themeName, $migration) ) {
+            \backend\design\Theme::elementsSave($themeName);
+            \common\models\DesignBoxesCache::deleteAll(['theme_name' => $themeName]);
             \backend\design\Theme::saveThemeVersion($themeName);
             echo $result . "\n";
             return '';
@@ -834,4 +840,32 @@ class Migration extends \yii\db\Migration {
 
         echo "Migration not applied \n";
     }
+
+    /**
+     * @param $code string class name of extension
+     */
+    public function installExt(string $code)
+    {
+        $res = \common\helpers\Modules::installExtSafe($code);
+        if (!is_null($res)) {
+            echo "Error while installing $code: $res\n";
+        }
+    }
+
+    public function uninstallExt(string $code)
+    {
+        $res = \common\helpers\Modules::uninstallExtSafe($code);
+        if (!is_null($res)) {
+            echo "Error while uninstalling $code: $res\n";
+        }
+    }
+
+    public function reinstallExtTranslation(string $code)
+    {
+        if ($ext = \common\helpers\Acl::checkExtensionAllowed($code)) {
+            $ext::reinstallTranslation($this);
+            echo "Translation was reinstalled for extension $code\n";
+        }
+    }
+
 }

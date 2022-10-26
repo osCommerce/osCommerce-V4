@@ -36,6 +36,9 @@ class Info
     if ( Yii::$app->id=='app-console' || Yii::$app->storage->get('is_admin')) {
         return true;
     }
+    if (\common\helpers\System::isBackend()) {
+        return true;
+    }
     $params = Yii::$app->request->get();
 
     $referer = Yii::$app->request->headers['referer'] ?? ''; // php 8.1: strpos(): Passing null to parameter #1 ($haystack) of type string is deprecated
@@ -1198,6 +1201,7 @@ class Info
       
        $times = array();
       if ($platform_id){
+        \common\helpers\Translation::forceConst(['TEXT_DAY_MO', 'TEXT_DAY_TU', 'TEXT_DAY_WE', 'TEXT_DAY_TH', 'TEXT_DAY_FR', 'TEXT_DAY_SA', 'TEXT_DAY_SU'], 'main');
         foreach(Yii::$app->get('platform')->getConfig($platform_id)->getOpenHours() as $item){
             $allDays = ['', TEXT_DAY_MO, TEXT_DAY_TU, TEXT_DAY_WE, TEXT_DAY_TH, TEXT_DAY_FR, TEXT_DAY_SA, TEXT_DAY_SU];
             $days = explode(',', $item['days']);
@@ -1543,7 +1547,7 @@ class Info
       if (defined('THEME_NAME') && !$theme_name){
           $theme_name = THEME_NAME;
       }
-    if ($theme_name){
+    if (\common\helpers\System::isFrontend()){
       $app = Yii::getAlias('@webroot') . '/';
     } else {
       $app = Yii::getAlias('@webroot') . '/../';

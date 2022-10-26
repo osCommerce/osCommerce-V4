@@ -4,19 +4,19 @@
 {assign var=re2 value='}'}
 <div class="contact-info form-inputs">
 {$model = $manager->getCustomerContactForm()}
-{if in_array(ACCOUNT_EMAIL, ['required', 'required_register', 'visible', 'visible_register'])}
-<div class="col-full">
-    <label>
-        <span>{field_label const="ENTRY_EMAIL_ADDRESS" configuration="ACCOUNT_EMAIL"}</span>
-        {if in_array(ACCOUNT_EMAIL, ['required', 'required_register'])}
-            {Html::activeInput('email', $model, 'email_address', ['data-required' => "{$smarty.const.EMAIL_REQUIRED}", 'data-pattern' => "email"])}
-        {else}
-            {Html::activeInput('email', $model, 'email_address', ['data-pattern' => "email"])}
-        {/if}
-    </label>
-</div>
-{/if}
 <div class="columns">
+    {if in_array(ACCOUNT_EMAIL, ['required', 'required_register', 'visible', 'visible_register'])}
+		<div class="col-2">
+			<label>
+				<span>{field_label const="ENTRY_EMAIL_ADDRESS" configuration="ACCOUNT_EMAIL"}</span>
+				{if in_array(ACCOUNT_EMAIL, ['required', 'required_register'])}
+					{Html::activeInput('email', $model, 'email_address', ['data-required' => "{$smarty.const.EMAIL_REQUIRED}", 'data-pattern' => "email"])}
+				{else}
+					{Html::activeInput('email', $model, 'email_address', ['data-pattern' => "email"])}
+				{/if}
+			</label>
+		</div>
+	{/if}
     {if in_array(ACCOUNT_TELEPHONE, ['required', 'required_register', 'visible', 'visible_register'])}
         <div class="col-2">
             <label>

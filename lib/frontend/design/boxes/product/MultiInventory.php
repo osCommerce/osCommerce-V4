@@ -76,7 +76,7 @@ class MultiInventory extends Widget {
                 
                     if (\Yii::$app->request->isAjax || $type=='listing' || $type=='productListing') {
                         $details['image_widget'] = \frontend\design\boxes\product\Images::widget(['params'=>['uprid'=>$details['current_uprid']], 'settings' => \frontend\design\Info::widgetSettings('product\Images', false, 'product')]);
-                        $details['images'] = \frontend\design\Info::$jsGlobalData['products'][$details['products_id']]['images'];
+                        $details['images'] = \frontend\design\Info::$jsGlobalData['products'][$details['products_id']]['images'] ?? null;
                         $details['defaultImage'] = \frontend\design\Info::$jsGlobalData['products'][$details['products_id']]['defaultImage'];
                         $details['productId'] = $params['products_id'];
                         if ($type=='productListing'){

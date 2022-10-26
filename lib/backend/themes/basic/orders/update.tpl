@@ -58,10 +58,12 @@
             </a>
             {/if}
 
+            {if \common\helpers\Acl::checkExtensionAllowed('ReportChangesHistory')}
             <a href="{Yii::$app->urlManager->createUrl(['logger/popup', 'type' => 'Order', 'id' => $order->order_id])}" class="btn btn-history" title="{$smarty.const.TEXT_HISTORY}">
                 <i class="osci-history"></i>
                 <span class="title">{$smarty.const.TEXT_HISTORY}</span>
             </a>
+            {/if}
 
         </div>
         {foreach \common\helpers\Hooks::getList('orders/process-order', 'btn-bar-top') as $filename}

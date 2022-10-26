@@ -279,7 +279,7 @@ class OptionsTemplatesController extends Sceleton {
         }
 
     //// groups tabs and params
-        if (CUSTOMERS_GROUPS_ENABLE == 'True' ) {
+        if (\common\helpers\Extensions::isCustomerGroupsAllowed() ) {
             $this->view->groups_m = array_merge(array(array('groups_id' => 0, 'groups_name' => TEXT_MAIN)), $this->view->groups);
             $tmp = [];
             foreach ($this->view->groups_m as $value) {
@@ -584,7 +584,7 @@ class OptionsTemplatesController extends Sceleton {
                     $db_prices = ArrayHelper::index($OptionsTemplatesAttribute->getPrices()->all(), function($model){
                         return $model->groups_id.'_'.$model->currencies_id;
                     });
-                    if (USE_MARKET_PRICES == 'True' || CUSTOMERS_GROUPS_ENABLE == 'True') {
+                    if (USE_MARKET_PRICES == 'True' || \common\helpers\Extensions::isCustomerGroupsAllowed()) {
                         foreach ($currencies_ids as $post_currencies_id => $currencies_id) {
                             foreach ($groups as $groups_id => $non) {
                                 $sql_data_array = [
@@ -693,7 +693,7 @@ class OptionsTemplatesController extends Sceleton {
         }
 
         //// groups tabs and params
-        if (CUSTOMERS_GROUPS_ENABLE == 'True' && count($this->view->groups)>0) {
+        if (\common\helpers\Extensions::isCustomerGroupsAllowed() && count($this->view->groups)>0) {
             $this->view->groups_m = array_merge(array(array('groups_id' => 0, 'groups_name' => TEXT_MAIN)), $this->view->groups);
             $tmp = [];
             foreach ($this->view->groups_m as $value) {
@@ -807,7 +807,7 @@ class OptionsTemplatesController extends Sceleton {
         }
 
         //// groups tabs and params
-        if (CUSTOMERS_GROUPS_ENABLE == 'True' && count($this->view->groups)>0) {
+        if (\common\helpers\Extensions::isCustomerGroupsAllowed() && count($this->view->groups)>0) {
             $this->view->groups_m = array_merge(array(array('groups_id' => 0, 'groups_name' => TEXT_MAIN)), $this->view->groups);
             $tmp = [];
             foreach ($this->view->groups_m as $value) {

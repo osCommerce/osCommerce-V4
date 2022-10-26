@@ -59,7 +59,9 @@
                 linkCss('{$app->view->theme->baseUrl}/css/menus-dark.css?{$version}', 'dark');
                 setTimeout(() => {
                     let element = document.getElementById('themeDark');
-                    element.classList.add('active');
+                    if (element) {
+                        element.classList.add('active');
+                    }
                 }, 1000);
             } else {
                 linkCss('{$app->view->theme->baseUrl}/css/theme-light.css?{$version}', 'light');
@@ -69,7 +71,9 @@
                 linkCss('{$app->view->theme->baseUrl}/css/menus.css?{$version}', 'light');
                 setTimeout(() => {
                     let element = document.getElementById('themeLight');
-                    element.classList.add('active');
+                    if (element) {
+                        element.classList.add('active');
+                    }
                 }, 1000);
             }
         }

@@ -21,7 +21,7 @@ class TlErrorHandler extends \yii\web\ErrorHandler
                     if (PHP_VERSION_ID >= 80100) {
                         if ($code == E_DEPRECATED) {
                             if (preg_match('/^([_\w\d]*)\(\): Passing null to parameter #\d/', $message, $match)) {
-                                if (!in_array($match[1], explode(' ', 'strpos stripos strrpos mb_strrpos strlen str_replace substr parse_str addslashes strtotime trim basename stripslashes defined round number_format explode class_exists urldecode json_decode html_entity_decode preg_replace')) ) {
+                                if (!in_array($match[1], explode(' ', 'abs strpos stripos strrpos mb_strrpos strlen str_replace substr parse_str addslashes strtotime trim basename stripslashes defined round number_format explode class_exists urldecode json_decode html_entity_decode preg_replace')) ) {
                                     \Yii::warning($message, 'PHP81Warning');
                                 }
                                 return true;

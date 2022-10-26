@@ -23,7 +23,7 @@ class DepartmentsController extends Sceleton {
 
         $this->view->departmentsTable = array(
             array(
-                'title' => 'Date added',
+                'title' => DEPARTMENT_DATE_ADDED,
                 'not_important' => 0
             ),
             array(
@@ -44,6 +44,10 @@ class DepartmentsController extends Sceleton {
             ),
             array(
                 'title' => TABLE_HEADING_STATUS,
+                'not_important' => 0
+            ),
+            array(
+                'title' => DEPARTMENT_KEEP_ALIVE,
                 'not_important' => 0
             ),
         );
@@ -112,7 +116,7 @@ class DepartmentsController extends Sceleton {
             $orderBy = "locked asc, departments_status desc, departments_sort_order, departments_id";
         }
 
-        $departments_query_raw = "select departments_id, departments_store_name, departments_http_server, departments_https_server, departments_enable_ssl, departments_http_catalog, departments_https_catalog, departments_design_template_name, departments_firstname, departments_lastname, departments_email_address, departments_status, departments_created, departments_modified, locked from " . TABLE_DEPARTMENTS . " where 1 " . $search . " order by " . $orderBy;
+        $departments_query_raw = "select * from " . TABLE_DEPARTMENTS . " where 1 " . $search . " order by " . $orderBy;
         $departments_split = new \splitPageResults($current_page_number, $length, $departments_query_raw, $departments_query_numrows);
         $departments_query = tep_db_query($departments_query_raw);
 
@@ -123,6 +127,11 @@ class DepartmentsController extends Sceleton {
                 $status = '<input type="checkbox" name="check_status" class="check_on_off" value="' . $departments['departments_id'] . '" /></div>';
             }
 
+            if ((int) $departments['keep_alive'] > 0) {
+                $keep = '<input type="checkbox" name="keep_alive" class="keep_on_off" value="' . $departments['departments_id'] . '" checked /></div>';
+            } else {
+                $keep = '<input type="checkbox" name="keep_alive" class="keep_on_off" value="' . $departments['departments_id'] . '" /></div>';
+            }
             //$begin = '<div class="handle_dep_list"><div class="module_title">';
             //$end = '</div></div>';
             if ($departments['locked'] == 1) {
@@ -144,6 +153,7 @@ class DepartmentsController extends Sceleton {
                 '<div class="'.($departments['departments_status']>0 && $departments['locked'] == 0 ?'':' hide-page').'">'.$departments['departments_firstname'] . ' ' . $departments['departments_lastname'].'</div>',
                 '<div class="'.($departments['departments_status']>0 && $departments['locked'] == 0 ?'':' hide-page').'">'.$departments['departments_email_address'].'</div>',
                 $status,
+                $keep,
             );
         }
 
@@ -651,6 +661,8 @@ class DepartmentsController extends Sceleton {
         $departments_http_server_short = tep_db_prepare_input(Yii::$app->request->post('departments_http_server'));
         $departments_http_server = $departments_http_server_short . '.' . CPANEL_PARENT_DOMAIN;
         
+        $domain_alias = (array)Yii::$app->request->post('domain_alias', []);
+        
         if (defined('CPANEL_TYPE') && CPANEL_TYPE == 'Virtualmin') {
             $departments_db_database = $user;
             $departments_db_server_username = $user;
@@ -797,7 +809,8 @@ class DepartmentsController extends Sceleton {
             'departments_db_store_sessions' => $departments_db_store_sessions,
             'api_key' => $api_key,
             'departments_status' => $departments_status,
-            'departments_created' => 'now()'
+            'departments_created' => 'now()',
+            'alias' => implode(";", $domain_alias),
         );
         tep_db_perform(TABLE_DEPARTMENTS, $sql_data_array);
         $departments_id = tep_db_insert_id();
@@ -828,6 +841,7 @@ class DepartmentsController extends Sceleton {
         $conf = "";
         $conf .= "action=create\n";
         $conf .= "domain=". $departments_http_server . "\n";
+        $conf .= "alias=". implode(";", $domain_alias) . "\n";
         $conf .= "username=". $user . "\n";
         $conf .= "password=". $password . "\n";
         $conf .= "db_name=". $departments_db_database . "\n";
@@ -880,6 +894,7 @@ class DepartmentsController extends Sceleton {
                         'callback_url' => tep_catalog_href_link('', '', 'SSL'),
                         'admin_username' => $admin_username,
                         'admin_password' => $user_password,
+                        'alias' => $domain_alias,
                     ];
         $xml_data = new \SimpleXMLElement('<?xml version="1.0" encoding="UTF-8"?><response/>');
         $this->array_to_xml($data,$xml_data);
@@ -953,6 +968,12 @@ class DepartmentsController extends Sceleton {
             @unlink(CPANEL_PARENT_PATH . $dInfo->departments_ftp_username . '_unsuspend.settings');
         }
         tep_db_query("update " . TABLE_DEPARTMENTS . " set departments_status = '" . ($status == 'true' ? 1 : 0) . "', departments_modified = now() where departments_id = '" . (int) $departments_id . "'");
+    }
+    
+    public function actionKeepAlive() {
+        $departments_id = Yii::$app->request->post('dID');
+        $status = Yii::$app->request->post('status');
+        tep_db_query("update " . TABLE_DEPARTMENTS . " set keep_alive = '" . ($status == 'true' ? 1 : 0) . "', departments_modified = now() where departments_id = '" . (int) $departments_id . "'");
     }
 
     public function actionConfirmitemdelete() {

@@ -70,7 +70,7 @@ class ProductListing extends Widget
         Info::addBoxToCss('quantity');
         Info::addBoxToCss('slick');
 
-        Info::addJsData(['GROUPS_DISABLE_CHECKOUT' => GROUPS_DISABLE_CART]);
+        Info::addJsData(['GROUPS_DISABLE_CHECKOUT' => defined('GROUPS_DISABLE_CART') ? GROUPS_DISABLE_CART : false]);
     }
 
     public function run()

@@ -35,14 +35,15 @@ class Steps
 
     if ($change_active) tep_db_perform(TABLE_THEMES_STEPS, array('active' => '0'), 'update', "active = '1' and theme_name='" . tep_db_input($theme_name) . "'");
 
+    global $_SESSION;
     $sql_data_array = array(
-      'parent_id' => $before['steps_id'],
+      'parent_id' => $before['steps_id'] ?? 0,
       'event' => $event,
       'data' => json_encode($data),
       'theme_name' => $theme_name,
       'date_added' => 'now()',
       'active' => $change_active ? '1' : '',
-      'admin_id' => $_SESSION['login_id'],
+      'admin_id' => ($_SESSION && $_SESSION['login_id'] ? $_SESSION['login_id'] : 0),
     );
     tep_db_perform(TABLE_THEMES_STEPS, $sql_data_array);
   }
@@ -162,10 +163,14 @@ class Steps
     {
         if (preg_match ('/^[0-9]{5}/', $blockName) > 0) {
             $blockSplit = explode('-', $blockName);
-            $blockNameDb = DesignBoxesTmp::findOne([
+            $_blockNameDb = DesignBoxesTmp::findOne([
                 'microtime' => $blockSplit[0],
                 'theme_name' => $themeName
-            ])->id;
+            ]);
+            if (!$_blockNameDb) {
+                return '';
+            }
+            $blockNameDb = $_blockNameDb->id;
             $blockNameDb = 'block-' . $blockNameDb;
             if (isset($blockSplit[1])) {
                 $blockNameDb = $blockNameDb . '-' . $blockSplit[1];
@@ -330,7 +335,7 @@ class Steps
     {
         $themeMedia = Style::getThemeMedia($themeName, false);
         foreach ($settings as $key => $setting) {
-            if (strlen($setting['visibility']) > 1) {
+            if ($setting['visibility'] && strlen($setting['visibility']) > 1 && !str_contains($setting['visibility'], ',')) {
                 if (!$themeMedia[$setting['visibility']]) {
                     $themesSetting = new ThemesSettings();
                     $themesSetting->theme_name = $themeName;
@@ -451,7 +456,11 @@ class Steps
         $data = $step['data'];
         $themeName = $step['theme_name'];
 
-        $boxId = DesignBoxesTmp::findOne(['microtime' => $data['microtime'], 'theme_name' => $themeName])->id;
+        $box = DesignBoxesTmp::findOne(['microtime' => $data['microtime'], 'theme_name' => $themeName]);
+        if (!$box) {
+            return;
+        }
+        $boxId = $box->id;
         DesignBoxesTmp::deleteAll(['microtime' => $data['microtime'], 'theme_name' => $themeName]);
         DesignBoxesSettingsTmp::deleteAll(['microtime' => $data['microtime'], 'theme_name' => $themeName]);
 

@@ -109,7 +109,13 @@
                     <div class="ordered-stock-holder"></div>
                     {if \common\helpers\Acl::checkExtensionAllowed('PurchaseOrders')}
                     <div class="ordered-stock">
-                        <div>{$smarty.const.TEXT_STOCK_ORDERED_QUANTITY}</div>
+                        <div>
+                            {if ($pInfo->products_id > 0)}
+                                <a href="{Yii::$app->urlManager->createUrl(['purchase-orders/list-pending', 'prid' => $pInfo->products_id])}" class="right-link-upd">{$smarty.const.TEXT_STOCK_ORDERED_QUANTITY}</a>
+                            {else}
+                                {$smarty.const.TEXT_STOCK_ORDERED_QUANTITY}
+                            {/if}
+                        </div>
                         <div class="val" id="ordered_quantity_info">{$pInfo->ordered_quantity}</div>
                         <input type="hidden" name="ordered_quantity" value="{\common\helpers\Product::getStockOrdered($pInfo->products_id)}">
                     </div>

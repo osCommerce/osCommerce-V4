@@ -1323,7 +1323,7 @@ abstract class OrderAbstract extends OrderShadowAbstract{
                     $sql_data_array = array('orders_id' => $this->order_id,
                         'orders_products_id' => $order_products_id,
                         'products_options' => $attributes_values['products_options_name'],
-                        'products_options_values' => $attributes_values['products_options_values_name'],
+                        'products_options_values' => $this->products[$i]['attributes'][$j]['value'],
                         'options_values_price' => $attributes_values['options_values_price'],
                         'price_prefix' => $attributes_values['price_prefix'],
                         'products_options_id' => $this->products[$i]['attributes'][$j]['option_id'],
@@ -1339,7 +1339,7 @@ abstract class OrderAbstract extends OrderShadowAbstract{
                             'download_count' => ($attributes_values['products_attributes_maxcount'] ? $attributes_values['products_attributes_maxcount'] : DOWNLOAD_MAX_COUNT));
                         tep_db_perform($this->table_prefix . TABLE_ORDERS_PRODUCTS_DOWNLOAD, $sql_data_array);
                     }
-                    $products_ordered_attributes[] = htmlspecialchars($attributes_values['products_options_name']) . ': ' . htmlspecialchars($attributes_values['products_options_values_name']);
+                    $products_ordered_attributes[] = htmlspecialchars($attributes_values['products_options_name']) . ': ' . htmlspecialchars($this->products[$i]['attributes'][$j]['value']);
                 }
             }
 
@@ -1589,7 +1589,7 @@ abstract class OrderAbstract extends OrderShadowAbstract{
 
             $email_params['ORDER_COMMENTS'] = str_replace(array("\r\n", "\n", "\r"), '<br>', $notify_comments);
 
-            list($email_subject, $email_text) = \common\helpers\Mail::get_parsed_email_template($emailTemplate, $email_params, -1, $platform_id, -1, $emailDesignTemplate);
+            list($email_subject, $email_text) = \common\helpers\Mail::get_parsed_email_template($emailTemplate, $email_params, $languages_id, $platform_id, -1, $emailDesignTemplate);
 
             $attachment = false;
 

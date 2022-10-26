@@ -1334,10 +1334,13 @@ class Categories {
         $groups = [0];
         if ($ext = \common\helpers\Acl::checkExtensionAllowed('UserGroupsRestrictions', 'allowed')) {
             $groups = array_merge($groups, \common\helpers\Group::get_customer_groups_list());
+            if (count($groups) > 20) {
+                return true;
+            }
         }
 
         $errors = false;
-        /*
+
         foreach ($categories as $category) {
             $categoryDataArray = [];
             foreach ($platforms as $platform) {
@@ -1368,7 +1371,7 @@ class Categories {
                 }
             }
         }
-        */
+
         return !$errors;
     }
 }

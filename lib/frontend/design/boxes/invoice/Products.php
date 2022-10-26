@@ -16,6 +16,7 @@ use Yii;
 use yii\base\Widget;
 use frontend\design\IncludeTpl;
 use frontend\design\Info;
+use \backend\design\editor\Formatter;
 
 class Products extends Widget
 {
@@ -76,9 +77,11 @@ class Products extends Widget
                             </td>
                                 <td style=" border-top: 1px solid #ccc">' . $product['model'] . '</td>
                                 <td style=" border-top: 1px solid #ccc">' . \common\helpers\Tax::display_tax_value($product['tax']) . '%</td>
-                                <td style="text-align:right; border-top: 1px solid #ccc">' . $currencies->format(($currencies->calculate_price_in_order($order->info, $product['final_price']) * \common\helpers\Product::getVirtualItemQuantityValue($product['id'])), true, $order->info['currency'], $order->info['currency_value']) . '</td>
-                                <td style="text-align:right; border-top: 1px solid #ccc">' . $currencies->format($currencies->calculate_price_in_order($order->info, $product['final_price'], 0, $product['qty']), true, $order->info['currency'], $order->info['currency_value']) . '</td>
-                                <td style="text-align:right; border-top: 1px solid #ccc"><b>' . $currencies->format($currencies->calculate_price_in_order($order->info, $product['final_price'], $product['tax'], $product['qty']), true, $order->info['currency'], $order->info['currency_value']) . '</b></td>
+
+                                <td style="text-align:right; border-top: 1px solid #ccc">' . $currencies->format(($currencies->calculate_price_in_order($order->info, $product['final_price']) * \common\helpers\Product::getVirtualItemQuantityValue($product['id'])), true, ($order->info['invoice_currency']??$order->info['currency']), ($order->info['invoice_currency_value']??$order->info['currency_value'])) . '</td>
+                                <td style="text-align:right; border-top: 1px solid #ccc">' . Formatter::priceEx((\common\helpers\Product::getVirtualItemQuantityValue($product['id']) * $product['final_price']), $product['tax'], $product['qty'], ($order->info['invoice_currency']??$order->info['currency']), ($order->info['invoice_currency_value']??$order->info['currency_value']))
+. '</td>'
+                            . '<td style="text-align:right; border-top: 1px solid #ccc"><b>' .  Formatter::price((\common\helpers\Product::getVirtualItemQuantityValue($product['id']) * $product['final_price']), $product['tax'], $product['qty'], ($order->info['invoice_currency']??$order->info['currency']), ($order->info['invoice_currency_value']??$order->info['currency_value'])) . '</b></td>
                             </tr>';
                     }
                     $counter++;

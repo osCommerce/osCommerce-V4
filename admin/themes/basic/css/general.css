@@ -501,4 +501,9 @@
 .btn-bar-top .btn-left form .btn {
     margin-left: 5px;
 }
-
+.select2-drop {
+    z-index: 10100;
+}
+.modal {
+    z-index: 10000;
+}

@@ -407,10 +407,12 @@ class Acl
      */
     public static function checkExtensionTableExist($class, $relativeModelName)
     {
-        if ($ext = self::checkExtension($class)) {
-            $modelClass = $ext . "\\$relativeModelName";
+        if ($ext = self::checkExtension($class, 'enabled')) {
+            $reflection_class = new \ReflectionClass($ext);
+            $namespace = $reflection_class->getNamespaceName();
+            $modelClass = $namespace . "\\$relativeModelName";
             if (!class_exists($modelClass)) {
-                $modelClass = $ext . "\\models\\$relativeModelName";
+                $modelClass = $namespace . "\\models\\$relativeModelName";
             }
             if (class_exists($modelClass) && \Yii::$app->db->schema->getTableSchema($modelClass::tablename()) !==null) {
                 return $modelClass;

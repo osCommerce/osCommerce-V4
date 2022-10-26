@@ -32,6 +32,10 @@
             <td class="main">{Html::textInput('departments_https_server', $dInfo->departments_https_server, ['maxlength'=>'128', 'size'=>'32', 'class'=>'form-control'])}</td>
           </tr>
           <tr>
+              <td class="main"><label>Alias</label></td>
+              <td class="main">{str_replace(';', '<br>', $dInfo->alias)}</td>
+          </tr>
+          <tr>
             <td class="main"><label>{$smarty.const.ENTRY_ENABLE_SSL}</label></td>
             <td class="main">{Html::radioList('departments_enable_ssl', (int)$dInfo->departments_enable_ssl, [1 => TEXT_YES, 0 => TEXT_NO])}</td>
           </tr>

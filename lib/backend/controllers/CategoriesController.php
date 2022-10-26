@@ -199,7 +199,9 @@ class CategoriesController extends Sceleton {
         $this->selectedMenu = array('catalog', 'categories');
         $this->navigation[] = array('link' => Yii::$app->urlManager->createUrl('categories/index'), 'title' => HEADING_TITLE);
         if (true === \common\helpers\Acl::rule(['TABLE_HEADING_PRODUCTS', 'IMAGE_EDIT'])) {
-            $this->topButtons[] = '<a href="' . Yii::$app->urlManager->createUrl(['categories/productedit', 'bundle' => '1']) . '" class="js_create_new_product btn btn-primary addprbtn create_bundle" title="Create bundle"><i class="icon-cubes"></i>' . TEXT_CREATE_NEW_BUNDLE . '</a>';
+            if (\common\helpers\Acl::checkExtensionAllowed('ProductBundles')) {
+                $this->topButtons[] = '<a href="' . Yii::$app->urlManager->createUrl(['categories/productedit', 'bundle' => '1']) . '" class="js_create_new_product btn btn-primary addprbtn create_bundle" title="Create bundle"><i class="icon-cubes"></i>' . TEXT_CREATE_NEW_BUNDLE . '</a>';
+            }
             $this->topButtons[] = '<a href="' . Yii::$app->urlManager->createUrl('categories/productedit') . '" class="js_create_new_product btn btn-primary addprbtn create_product" title="Create product"><i class="icon-cubes"></i>' . TEXT_CREATE_NEW_PRODUCT . '</a>';
         }
         if (true === \common\helpers\Acl::rule(['TEXT_CATEGORIES', 'IMAGE_EDIT'])) {
@@ -2110,7 +2112,7 @@ class CategoriesController extends Sceleton {
             \common\helpers\Html::endForm() .
             '</div>';
 
-        if (\common\helpers\Acl::rule(['TABLE_HEADING_PRODUCTS', 'IMAGE_EDIT', 'TAB_BUNDLES'])) {
+        if (\common\helpers\Acl::checkExtensionAllowed('ProductBundles') && \common\helpers\Acl::rule(['TABLE_HEADING_PRODUCTS', 'IMAGE_EDIT', 'TAB_BUNDLES'])) {
           $editProductBundleSwitcher = true;
         } else {
           $editProductBundleSwitcher = false;
@@ -2134,6 +2136,9 @@ class CategoriesController extends Sceleton {
           }else{
               if (empty($product['products_name'])) {
                   $product['products_name'] = \common\helpers\Product::get_products_name($product['products_id']);
+              }
+              if ($product['is_bundle'] > 0) { // allow to unbundle even if ProductsBundles is not installed
+                  $editProductBundleSwitcher = true;
               }
           }
           $pInfo = new \objectInfo($product);
@@ -2844,7 +2849,7 @@ class CategoriesController extends Sceleton {
         }
 
     //// groups tabs and params
-        if (CUSTOMERS_GROUPS_ENABLE == 'True' ) {
+        if (\common\helpers\Extensions::isCustomerGroupsAllowed()) {
           $this->view->groups_m = array_merge(array(array('groups_id' => 0, 'groups_name' => TEXT_MAIN)), array_filter($this->view->groups, function($e) { return $e['per_product_price']; }));
           $tmp = [];
           foreach ($this->view->groups_m as $value) {
@@ -2965,7 +2970,7 @@ class CategoriesController extends Sceleton {
         return $this->render('productedit.tpl', [
             'infoBreadCrumb' => $editProductInPath,
             'infoSubProducts' => $infoSubProducts,
-            'editProductBundleSwitcher' => $editProductBundleSwitcher,
+            'editProductBundleSwitcher' => $editProductBundleSwitcher, // allowed ProductBundles ext or product->is_bundle
             'default_currency' => $currencies->currencies[DEFAULT_CURRENCY],
             'currencies' => $currencies,
             'languages' => $languages,
@@ -3128,7 +3133,7 @@ class CategoriesController extends Sceleton {
         }
 
     //// groups tabs and params
-        if (CUSTOMERS_GROUPS_ENABLE == 'True' && count($this->view->groups)>0) {
+        if (\common\helpers\Extensions::isCustomerGroupsAllowed() && count($this->view->groups)>0) {
           $this->view->groups_m = array_merge(array(array('groups_id' => 0, 'groups_name' => TEXT_MAIN)), $this->view->groups);
           $tmp = [];
           foreach ($this->view->groups_m as $value) {
@@ -3287,7 +3292,7 @@ class CategoriesController extends Sceleton {
         }
 
         //// groups tabs and params
-        if (CUSTOMERS_GROUPS_ENABLE == 'True' && count($this->view->groups)>0) {
+        if (\common\helpers\Extensions::isCustomerGroupsAllowed() && count($this->view->groups)>0) {
             $this->view->groups_m = array_merge(array(array('groups_id' => 0, 'groups_name' => TEXT_MAIN)), $this->view->groups);
             $tmp = [];
             foreach ($this->view->groups_m as $value) {
@@ -3388,7 +3393,7 @@ class CategoriesController extends Sceleton {
         }
 
     //// groups tabs and params
-        if (CUSTOMERS_GROUPS_ENABLE == 'True' && count($this->view->groups)>0) {
+        if (\common\helpers\Extensions::isCustomerGroupsAllowed() && count($this->view->groups)>0) {
           $this->view->groups_m = array_merge(array(array('groups_id' => 0, 'groups_name' => TEXT_MAIN)), $this->view->groups);
           $tmp = [];
           foreach ($this->view->groups_m as $value) {
@@ -3656,13 +3661,16 @@ class CategoriesController extends Sceleton {
             $packaging->prepareSave();
         }
 
+
         if ($TabAccess->tabDataSave('TAB_BUNDLES')) {
-            if (PRODUCTS_BUNDLE_SETS == 'True') {
+            if (\common\helpers\Acl::checkExtensionAllowed('ProductBundles')) {
                 $sql_data_array['is_bundle'] = tep_db_prepare_input(Yii::$app->request->post('is_bundle'));
                 //$sql_data_array['products_sets_price'] = tep_db_prepare_input(Yii::$app->request->post('products_sets_price');
                 $sql_data_array['use_sets_discount'] = tep_db_prepare_input(Yii::$app->request->post('use_sets_discount'));
                 $sql_data_array['products_sets_discount'] = tep_db_prepare_input(Yii::$app->request->post('products_sets_discount'));
                 $sql_data_array['products_sets_price_formula'] = tep_db_prepare_input(Yii::$app->request->post('products_sets_price_formula'));
+            } elseif (Yii::$app->request->post('is_bundle') == 0) { // allow to reset bundle
+                $sql_data_array['is_bundle'] = tep_db_prepare_input(Yii::$app->request->post('is_bundle'));
             }
         }
 
@@ -3796,7 +3804,7 @@ class CategoriesController extends Sceleton {
           }
           $gift_wrap = Yii::$app->request->post('gift_wrap', 0);
           if (is_array($gift_wrap) || $gift_wrap>0) {
-            if (is_array($gift_wrap) && (USE_MARKET_PRICES == 'True' || CUSTOMERS_GROUPS_ENABLE == 'True')) {
+            if (is_array($gift_wrap) && (USE_MARKET_PRICES == 'True' || \common\helpers\Extensions::isCustomerGroupsAllowed())) {
               foreach ($currencies_ids as $post_currencies_id => $currencies_id)  {
                 foreach (($groups_price?$groups_price:$groups) as $groups_id => $non) {
                   $sql_data_array = ['products_id' => (int)$products_id,
@@ -3882,7 +3890,7 @@ class CategoriesController extends Sceleton {
           tep_db_perform(TABLE_PRODUCTS, $sql_data_array, 'update', "products_id = '" . (int) $products_id . "'");
 //2 group prices specials. etc
 
-          if (USE_MARKET_PRICES == 'True' || CUSTOMERS_GROUPS_ENABLE == 'True') {
+          if (USE_MARKET_PRICES == 'True' || \common\helpers\Extensions::isCustomerGroupsAllowed()) {
             if ($groups_price ?? null) {
               \common\models\ProductsPrices::deleteAll([
                 'products_id' => (int) $old_products_id,
@@ -4123,9 +4131,15 @@ class CategoriesController extends Sceleton {
                 \common\helpers\Suppliers::removeUprids($products_id);
                 $sProducts = \yii\helpers\ArrayHelper::index(SuppliersProducts::getSupplierProducts($products_id)->all(), 'suppliers_id');
                 if (is_array($suppliers_data) && count($suppliers_data)){
-                    if (isset($suppliers_data[0]) && !isset($suppliers_data[$products_id])){
+                    foreach($suppliers_data as $supplier_uprid => $unused) {
+                        break;
+                    }
+                    if (isset($suppliers_data[0]) && !isset($suppliers_data[$products_id])) {
                         $suppliers_data[$products_id] = $suppliers_data[0];
                         unset($suppliers_data[0]);
+                    } elseif (strpos($supplier_uprid, '{') !== false && \common\helpers\Inventory::get_prid($supplier_uprid) == $products_id) {
+                        $suppliers_data[$products_id] = $suppliers_data[$supplier_uprid];
+                        unset($suppliers_data[$supplier_uprid]);
                     }
                     $sort_order = \Yii::$app->request->post('suppliers-default-sort', 0) ? null : 0;
                     foreach($suppliers_data[$products_id] as $suppliers_id => $data) {
@@ -9571,7 +9585,7 @@ order by status desc, sort_order
      */
     public function actionProductPriceEdit() {
 
-        if (!defined('CUSTOMERS_GROUPS_ENABLE') || CUSTOMERS_GROUPS_ENABLE != 'True' ) {
+        if (!\common\helpers\Extensions::isCustomerGroupsAllowed()) {
             return;
         }
         \common\helpers\Translation::init('admin/categories');
@@ -9713,7 +9727,7 @@ order by status desc, sort_order
 
     public function actionGroupPriceSubmit() {
 
-        if (!defined('CUSTOMERS_GROUPS_ENABLE') || CUSTOMERS_GROUPS_ENABLE != 'True' ) {
+        if (!\common\helpers\Extensions::isCustomerGroupsAllowed()) {
             return;
         }
 
@@ -9760,7 +9774,7 @@ order by status desc, sort_order
                 }
                 $gift_wrap = Yii::$app->request->post('gift_wrap', 0);
                 if (is_array($gift_wrap) || $gift_wrap > 0) {
-                    if (is_array($gift_wrap) && (USE_MARKET_PRICES == 'True' || CUSTOMERS_GROUPS_ENABLE == 'True')) {
+                    if (is_array($gift_wrap) && (USE_MARKET_PRICES == 'True' || \common\helpers\Extensions::isCustomerGroupsAllowed())) {
                         foreach ($currencies_ids as $post_currencies_id => $currencies_id) {
                             foreach (($groups_price ? $groups_price : $groups) as $groups_id => $non) {
                                 $sql_data_array = ['products_id' => (int) $products_id,
@@ -9793,7 +9807,7 @@ order by status desc, sort_order
 
     //2 group prices specials. etc
 
-                if (USE_MARKET_PRICES == 'True' || CUSTOMERS_GROUPS_ENABLE == 'True') {
+                if (USE_MARKET_PRICES == 'True' || \common\helpers\Extensions::isCustomerGroupsAllowed()) {
                     if ($groups_price ?? null) {
                         \common\models\ProductsPrices::deleteAll([
                           'products_id' => (int) $old_products_id,

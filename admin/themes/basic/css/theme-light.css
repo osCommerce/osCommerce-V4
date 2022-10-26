@@ -29,12 +29,15 @@ body {
     --color-info: #008ae8;
     --color-warning: #fd7a13;
     --color-danger: #f00;
+    --color-dim: #858484;
 
     --border-color-tiny: #d9d9d9;
     --border-color-midle: #caccd3;
     --border-color-strong: #caccd3;
+    --border-color-selected: #008ae8;
 
     --heading-color: #424242;
+    --main-color: #424242;
 
     --background-color-1: #f7f5ff;
     --background-color-2: #ece9f9;

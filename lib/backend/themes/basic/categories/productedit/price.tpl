@@ -43,7 +43,7 @@
 
   {if isset($app->controller->view->price_tabs) && $app->controller->view->price_tabs|@count > 0 }
 {* 2improve if tabs order is changed you must update the following "main" group condition:
-if $smarty.const.CUSTOMERS_GROUPS_ENABLE != 'True' || substr($idSuffix, -2)=='_0'
+if !\common\helpers\Extensions::isCustomerGroupsAllowed() || substr($idSuffix, -2)=='_0'
 *}
     {$tabparams = $app->controller->view->price_tabparams}
     {$tabparams[count($tabparams)-1]['callback'] = $price_tab_callback}
@@ -61,7 +61,7 @@ if $smarty.const.CUSTOMERS_GROUPS_ENABLE != 'True' || substr($idSuffix, -2)=='_0
 {* $data: [ name => val], $fieldSuffix: '[1][0]'  $idSuffix: '_1_0' *}
     <div id="group_price_container{$idSuffix}" class="js_group_price" data-base_price="{$data['base_price']|escape}" data-group_discount="{if isset($data['tabdata']['groups_discount'])}{$data['tabdata']['groups_discount']}{/if}" data-currencies-id="{if isset($data['currencies_id'])}{$data['currencies_id']}{/if}" data-base_special_price="{$data['base_specials_price']|escape}" >
 {* workaround for switchers: group on/off *}
-{if $smarty.const.CUSTOMERS_GROUPS_ENABLE != 'True'}
+{if !\common\helpers\Extensions::isCustomerGroupsAllowed()}
   {if {$data['products_group_price']<0} }
     {$data['products_group_price']=0}
     {$data['products_group_price_gross']=0}
@@ -92,7 +92,7 @@ if $smarty.const.CUSTOMERS_GROUPS_ENABLE != 'True' || substr($idSuffix, -2)=='_0
         <div class="our-pr-line after">
           <div>
             <label>{if PRICE_WITH_BACK_TAX == 'True'}{$smarty.const.TEXT_GROSS_PRICE}{else}{$smarty.const.TEXT_NET_PRICE}{/if}</label>
-            <input id="products_group_price{$idSuffix}" name="products_group_price{$fieldSuffix|escape}" value='{$data['products_group_price']|escape}' onKeyUp="updateGrossPrice(this);" data-roundTo="{$data['round_to']}" data-precision="{$smarty.const.MAX_CURRENCY_EDIT_PRECISION}" data-currency="{$data['currencies_id']}" class="js-products_group_price form-control{if ($smarty.const.CUSTOMERS_GROUPS_ENABLE != 'True' || $data['groups_id']==0) && ($app->controller->view->useMarketPrices != true || $default_currency['id']==$data['currencies_id'])} default_price {/if} mask-money" {if {round($data['products_group_price'])}==-2}style="display:none;"{/if}/>
+            <input id="products_group_price{$idSuffix}" name="products_group_price{$fieldSuffix|escape}" value='{$data['products_group_price']|escape}' onKeyUp="updateGrossPrice(this);" data-roundTo="{$data['round_to']}" data-precision="{$smarty.const.MAX_CURRENCY_EDIT_PRECISION}" data-currency="{$data['currencies_id']}" class="js-products_group_price form-control{if (!\common\helpers\Extensions::isCustomerGroupsAllowed() || $data['groups_id']==0) && ($app->controller->view->useMarketPrices != true || $default_currency['id']==$data['currencies_id'])} default_price {/if} mask-money" {if {round($data['products_group_price'])}==-2}style="display:none;"{/if}/>
 {if {$data['groups_id']}>0 }
             <span id="span_products_group_price{$idSuffix}" class="form-control-span"{if {round($data['products_group_price'])}>=0}style="display:none;"{/if}>{$currencies->formatById($data['base_price']*((100-$data['tabdata']['groups_discount'])/100), false, $data['currencies_id'])|escape}</span>
 {/if}
@@ -105,7 +105,7 @@ if $smarty.const.CUSTOMERS_GROUPS_ENABLE != 'True' || substr($idSuffix, -2)=='_0
               {/if}
           </div>
         </div>
-          {if ($smarty.const.CUSTOMERS_GROUPS_ENABLE != 'True' || $data['groups_id']==0) && ($app->controller->view->useMarketPrices != true || $default_currency['id']==$data['currencies_id'])}
+          {if (!\common\helpers\Extensions::isCustomerGroupsAllowed() || $data['groups_id']==0) && ($app->controller->view->useMarketPrices != true || $default_currency['id']==$data['currencies_id'])}
               {* supplier price is caclulated for default currency only*}
         <div class="our-pr-line dfullcheck after">
             <div class="supplier-price-cost disable-btn is-not-bundle">
@@ -190,8 +190,8 @@ if $smarty.const.CUSTOMERS_GROUPS_ENABLE != 'True' || substr($idSuffix, -2)=='_0
 {/if}
         <div class="our-pr-line after our-pr-line-check-box dfullcheck sale_to_dis {if $data['specials_disabled']>0 }dis_module{/if}">
           <div class="{if ($default_currency['id']!=$data['currencies_id']) }market_sales_switch{/if}" {if ($default_currency['id']!=$data['currencies_id']) }style="display:none;"{/if}>
-            {if $smarty.const.CUSTOMERS_GROUPS_ENABLE != 'True' || $data['groups_id']==0 }
-              {if $smarty.const.CUSTOMERS_GROUPS_ENABLE != 'True' }
+            {if !\common\helpers\Extensions::isCustomerGroupsAllowed() || $data['groups_id']==0 }
+              {if !\common\helpers\Extensions::isCustomerGroupsAllowed() }
                 {$dataToSwitch=$idSuffix}
               {else}
                 {$dataToSwitch=substr($idSuffix, 0, -2)}
@@ -252,7 +252,7 @@ if $smarty.const.CUSTOMERS_GROUPS_ENABLE != 'True' || substr($idSuffix, -2)=='_0
         <div class="{if ($default_currency['id']!=$data['currencies_id']) }market_sales_switch{/if} sale_to_dis {if $data['specials_disabled']>0 }dis_module{/if}" {if ($default_currency['id']!=$data['currencies_id'] && $data['sales_status']!=1) }style="display:none;"{/if}>
         <div id="div_sale_prod{$idSuffix}" class="sale-prod-line-block after div_sale_prod div_sale_prod{$idSuffix}" {if ($showSalesDiv==0 || $data['products_group_special_price']==-1)}style="display:none;"{/if}>
           <div class="_sale-prod-line our-pr-line">
-          {if ($smarty.const.CUSTOMERS_GROUPS_ENABLE != 'True' || $data['groups_id']==0) && ($app->controller->view->useMarketPrices != true || $default_currency['id']==$data['currencies_id'])}
+          {if (!\common\helpers\Extensions::isCustomerGroupsAllowed() || $data['groups_id']==0) && ($app->controller->view->useMarketPrices != true || $default_currency['id']==$data['currencies_id'])}
             <div class="_disable-btn">
               <label>{$smarty.const.TEXT_START_DATE}</label>
               <input id="special_start_date{$idSuffix}" {*if {$data['sales_status'] > 0}}readonly="readonly"{/if*} name="special_start_date{$fieldSuffix|escape}" value='{\common\helpers\Date::datepicker_date_time($data['start_date'])}' class="tldatetimepicker form-control"/>
@@ -346,7 +346,7 @@ if $smarty.const.CUSTOMERS_GROUPS_ENABLE != 'True' || substr($idSuffix, -2)=='_0
         <div class="our-pr-line after our-pr-line-check-box dfullcheck">
           <div>
             <label>{$smarty.const.TEXT_QUANTITY_DISCOUNT}</label>
-            {* always - else imposible to set up per group without discount to all if $smarty.const.CUSTOMERS_GROUPS_ENABLE != 'True' || substr($idSuffix, -2)=='_0'*}
+            {* always - else imposible to set up per group without discount to all if !\common\helpers\Extensions::isCustomerGroupsAllowed() || substr($idSuffix, -2)=='_0'*}
               {*{$dataToSwitch=$idSuffix}  inventory *}
               <input type="checkbox" value="1" name="qty_discount_status{$fieldSuffix|escape}" data-toswitch="prod_qty_discount{$idSuffix}" class="check_qty_discount_prod" id="check_qty_discount_prod{$idSuffix}" {if isset($data['qty_discounts']) && $data['qty_discounts']|@count > 0} checked="checked" {/if} />
             {*/if*}
@@ -367,7 +367,7 @@ if $smarty.const.CUSTOMERS_GROUPS_ENABLE != 'True' || substr($idSuffix, -2)=='_0
       </div>
     </div>
     <!-- disable any promo/discounts-->
-    {if ($smarty.const.CUSTOMERS_GROUPS_ENABLE != 'True' || $data['groups_id']==0) 
+    {if (!\common\helpers\Extensions::isCustomerGroupsAllowed() || $data['groups_id']==0)
         && ($app->controller->view->useMarketPrices != true || $default_currency['id']==$data['currencies_id'])
         && !$popup}
     <div class="our-pr-line after our-pr-line-check-box dfullcheck">
@@ -439,7 +439,7 @@ if $smarty.const.CUSTOMERS_GROUPS_ENABLE != 'True' || substr($idSuffix, -2)=='_0
 
 <script type="text/javascript">
   {$idSuffix=''}
-  {if $smarty.const.CUSTOMERS_GROUPS_ENABLE == 'True'}{$idSuffix="`$idSuffix`_0"}{/if}
+  {if \common\helpers\Extensions::isCustomerGroupsAllowed()}{$idSuffix="`$idSuffix`_0"}{/if}
   {if $app->controller->view->useMarketPrices }{$idSuffix="`$idSuffix`_0"}{/if} {*2check*}
               
   var rSaleOn = 1, rSavedSaleStart = '';

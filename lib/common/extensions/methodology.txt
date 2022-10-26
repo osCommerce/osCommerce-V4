@@ -130,7 +130,7 @@ In addition a list of available values page_name and page_area:
 'categories/brandedit', 'main-tab'
 'categories/brandedit', 'desc-tab'
 'categories/brandedit', 'seo-tab'
-'categories/productedit/before-save', ''
+'categories/productedit-beforesave', ''
 'categories/productedit', ''
 'categories/productedit/before-render', ''
 'categories/productedit', 'details-left-column'
@@ -150,6 +150,8 @@ In addition a list of available values page_name and page_area:
 'categories/categoryedit', 'seo-tab-without-lang' // after languages tabs
 'categories/supplier-price', ''
 'categories/auto-supplier-price', ''
+'product/after-delete', ''  //helpers/products.php
+'product/after-trunk', ''  //helpers/products.php
 'orders/process-order', ''
 'orders/process-order', 'totals-block'
 'orders/process-order', 'btn-bar-top'
@@ -172,5 +174,6 @@ In addition a list of available values page_name and page_area:
 'cart-factory/work', ''
 'cart-factory/work/end', ''
 'console-tools/logs-cleanup', ''
+'product_props/init_workers', ''
 </HOOKS>
 

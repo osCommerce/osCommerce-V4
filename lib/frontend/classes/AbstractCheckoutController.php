@@ -194,7 +194,7 @@ abstract class AbstractCheckoutController extends \frontend\controllers\Sceleton
                 if ($_sendto) {
                     $this->manager->changeCustomerAddressSelection('billing', $_sendto);
                 }
-                $this->manager->checkoutOrder();
+                $this->manager->checkoutOrderWithAddresses();
                 $data['address'] = $this->manager->render('AddressesList', ['manager' => $this->manager, 'mode' => 'single', 'type' => 'billing'], 'json');
                 $data['payments'] = $this->manager->render('PaymentMethod', ['manager' => $this->manager], 'json');
                 $data['order_totals'] = $this->manager->render('Totals', ['manager' => $this->manager], 'json');
@@ -296,17 +296,32 @@ abstract class AbstractCheckoutController extends \frontend\controllers\Sceleton
             case 'check_vat':
             case 'check_customs_number':
                 $modelName = tep_db_prepare_input(Yii::$app->request->post('checked_model'));
+                $shipAsBill = Yii::$app->request->post('ship_as_bill', false) && true;
+                $shipAsBill = $shipAsBill || (Yii::$app->request->post('bill_as_ship', false) && true);
                 if ($modelName == 'Shipping_address') {
                     $bAddress = $this->manager->getShippingForm();
-                    $_which = 'estimate_ship';
+                    if (!$shipAsBill) {
+                        $_which = ['estimate_ship'];
+                        $this->manager->resetDeliveryAddress();
+                    }
                 } else {
                     $bAddress = $this->manager->getBillingForm();
-                    $_which = 'estimate_bill';
+                    if (!$shipAsBill) {
+                        $_which = ['estimate_bill'];
+                        $this->manager->resetBillingAddress();
+                    }
+                }
+                if ($shipAsBill) {
+                    $_which = ['estimate_bill', 'estimate_ship'];
+                    $this->manager->resetDeliveryAddress();
+                    $this->manager->resetBillingAddress();
                 }
               /** @var common\forms\AddressForm $address */
                 $bAddress->preload(Yii::$app->request->post($modelName));
                 if ($bAddress->notEmpty(true)) {
-                  $this->manager->set($_which, ['country_id' => $bAddress->country, 'postcode' => $bAddress->postcode, 'zone' => $bAddress->state, 'company_vat' => $bAddress->company_vat, 'company_vat_date' => $bAddress->company_vat_date, 'company_vat_status' => 0, 'customs_number' => $bAddress->customs_number, 'customs_number_date' => $bAddress->customs_number_date, 'customs_number_status' => 0]);
+                    foreach( $_which as $_w) {
+                        $this->manager->set($_w, ['country_id' => $bAddress->country, 'postcode' => $bAddress->postcode, 'zone' => $bAddress->state, 'company_vat' => $bAddress->company_vat, 'company_vat_date' => $bAddress->company_vat_date, 'company_vat_status' => 0, 'customs_number' => $bAddress->customs_number, 'customs_number_date' => $bAddress->customs_number_date, 'customs_number_status' => 0]);
+                    }
                 }
                 $company_vat_status = 0;
                 $customer_company_vat_status = '&nbsp;';
@@ -346,6 +361,7 @@ abstract class AbstractCheckoutController extends \frontend\controllers\Sceleton
                         'customs_number_date' => $sAddress->customs_number_date,
                         'customs_number_status' => $sAddress->customs_number_status
                     ]);
+                    $this->manager->resetDeliveryAddress(); ///kostyl?? manager fills in delivery address in CartFactory during tax calculation for products in cart
                 }
 
                 /** @var \common\forms\AddressForm $bAddress */
@@ -364,6 +380,7 @@ abstract class AbstractCheckoutController extends \frontend\controllers\Sceleton
                         'customs_number_date' => $bAddress->customs_number_date,
                         'customs_number_status' => $bAddress->customs_number_status
                     ]);
+                    $this->manager->resetBillingAddress();
                 }
                 $this->manager->getShippingQuotesByChoice();
 

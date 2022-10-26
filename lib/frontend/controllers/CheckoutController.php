@@ -675,6 +675,27 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
 
         \common\components\google\widgets\GoogleTagmanger::setEvent('orderSuccess');
 
+        if (defined('AUTO_LOGOFF_GUEST_ON_SUCCESS') && AUTO_LOGOFF_GUEST_ON_SUCCESS=='True' && !\Yii::$app->user->isGuest) {
+            $customer = \Yii::$app->user->getIdentity();
+            if ($customer->opc_temp_account == 1) {
+                \Yii::$app->settings->clear(['languages_id']);
+                \Yii::$app->user->getIdentity()->logoffCustomer();
+
+                $cart->reset();
+
+                if ($ext = \common\helpers\Acl::checkExtension('Quotations', 'resetCart')) {
+                    $ext::resetCart();
+                }
+                if ($ext = \common\helpers\Acl::checkExtension('Samples', 'resetCart')) {
+                    $ext::resetCart();
+                }
+                if ( $ext = \common\helpers\Acl::checkExtension( 'MultiCart', 'resetCarts' ) ) {
+                    $ext::resetCarts();
+                }
+                unset($order_info_data['print_order_href']);
+            }
+        }
+
         return $this->render('success.tpl', array_merge([
                     'products' => '',
                     'continue_href' => tep_href_link(FILENAME_DEFAULT, '', 'NONSSL'),
@@ -962,7 +983,7 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
         }
             
         Yii::configure($this->manager, [
-            'combineShippings' => ((!defined('SHIPPING_SEPARATELY') || defined('SHIPPING_SEPARATELY') && SHIPPING_SEPARATELY == 'false') ? true : false),
+            'combineShippings' => !(($ext = \common\helpers\Extensions::isAllowed('CollectionPoints')) && $ext::isSeparateShipping()),
         ]);
     }
 

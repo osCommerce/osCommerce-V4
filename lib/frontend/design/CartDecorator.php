@@ -155,6 +155,7 @@ class CartDecorator
             $this->products[$i]['order_quantity_data'] = \common\helpers\Product::get_product_order_quantity($this->products[$i]['id']);
 
             if (isset($this->products[$i]['attributes']) && is_array($this->products[$i]['attributes'])){
+                $attrText = \common\classes\PropsWorkerAttrText::getAttrText($this->products[$i]['props'] ?? null);
                 if (isset($this->products[$i]['virtual_gift_card']) && $this->products[$i]['virtual_gift_card'] && $this->products[$i]['attributes'][0] > 0) {
                     $virtual_gift_card = tep_db_fetch_array(tep_db_query("select vgcb.products_id, if(length(pd1.products_name), pd1.products_name, pd.products_name) as products_name, p.products_model, p.products_image, p.products_weight, p.products_tax_class_id, vgcb.products_price, vgcb.virtual_gift_card_recipients_name, vgcb.virtual_gift_card_recipients_email, vgcb.virtual_gift_card_message, vgcb.virtual_gift_card_senders_name, vgcb.send_card_date from " . TABLE_VIRTUAL_GIFT_CARD_BASKET . " vgcb, " . TABLE_PRODUCTS_DESCRIPTION . " pd, " . TABLE_PRODUCTS . " p left join " . TABLE_PRODUCTS_DESCRIPTION . " pd1 on pd1.products_id = p.products_id and pd1.language_id = '" . (int)$languages_id ."' and pd1.platform_id = '" . (int)Yii::$app->get('platform')->config()->getPlatformToDescription() . "' where length(vgcb.virtual_gift_card_code) = 0 and vgcb.virtual_gift_card_basket_id = '" . (int)$this->products[$i]['attributes'][0] . "' and p.products_id = vgcb.products_id and pd.platform_id = '".intval(\common\classes\platform::defaultId())."' and pd.products_id = p.products_id and pd.language_id = '" . (int)$languages_id . "' and " . (!Yii::$app->user->isGuest? " vgcb.customers_id = '" . (int)Yii::$app->user->getId() . "'" : " vgcb.customers_id = '0' and vgcb.session_id = '" . Yii::$app->getSession()->get('gift_handler') . "'")));
                     $this->products[$i]['attr'][0]['products_id'] = $virtual_gift_card['products_id'];
@@ -184,6 +185,8 @@ class CartDecorator
                             $this->products[$i]['attr'][$option]['products_options_name'] = $attributes_values->productsOptions->products_options_name;
                             $this->products[$i]['attr'][$option]['options_values_id'] = $value;
                             $this->products[$i]['attr'][$option]['products_options_values_name'] = $attributes_values->productsOptionsValues->products_options_values_name;
+
+                            $this->products[$i]['attr'][$option]['products_options_values_text'] = $attrText[$option] ?? null;
                             $options_values_price = \common\helpers\Attributes::get_options_values_price($attributes_values->products_attributes_id);
                             $this->products[$i]['attr'][$option]['options_values_price'] = $options_values_price;
                             $this->products[$i]['attr'][$option]['price_prefix'] = $attributes_values->price_prefix;

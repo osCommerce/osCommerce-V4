@@ -24,10 +24,12 @@
     } else {
       die('</td></tr></table></td></tr></table><br><br><font color="#ff0000"><b>Error!</b></font><br><br><b>Unable to determine connection method on a link!<br><br>Known methods: NONSSL SSL<br><br>Function used:<br><br>tep_href_link(\'' . $page . '\', \'' . $parameters . '\', \'' . $connection . '\')</b>');
     }
+    // prevent double slash
+    $link = rtrim($link, '/') . '/' . ltrim($page, '/');
     if ($parameters == '') {
-      $link = $link . $page . '?' . SID;
+      $link = $link . '?' . SID;
     } else {
-      $link = $link . $page . '?' . $parameters . '&' . SID;
+      $link = $link . '?' . $parameters . '&' . SID;
     }
 
     while ( (substr($link, -1) == '&') || (substr($link, -1) == '?') ) $link = substr($link, 0, -1);

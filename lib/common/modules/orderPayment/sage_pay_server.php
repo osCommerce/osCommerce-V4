@@ -36,12 +36,16 @@ class sage_pay_server extends ModulePayment implements TransactionalInterface, P
     ];
     protected $encrypted_keys = ['MODULE_PAYMENT_SAGE_PAY_SERVER_ACCOUNT', 'MODULE_PAYMENT_SAGE_PAY_SERVER_ACCOUNT_PASSWORD'];
 
+
 // class constructor
     function __construct() {
         parent::__construct();
 
         $this->signature = 'sage_pay|sage_pay_server|2.0|2.3';
         $this->api_version = '3.00';
+    if (defined('MODULE_PAYMENT_SAGE_PAY_SERVER_API_VERSION')) {
+        $this->api_version = MODULE_PAYMENT_SAGE_PAY_SERVER_API_VERSION;
+    }
 
         $this->code = 'sage_pay_server';
         $this->title = MODULE_PAYMENT_SAGE_PAY_SERVER_TEXT_TITLE;
@@ -145,7 +149,7 @@ class sage_pay_server extends ModulePayment implements TransactionalInterface, P
     }
 
     protected function tlPopupJS(): string {
-        $this->registerCallback("popUpIframe");
+    $this->registerCallback("popUpIframe{$this->code}");
         \Yii::$app->getView()->registerJs(parent::tlPopupJS());
         return '';
     }
@@ -186,37 +190,66 @@ class sage_pay_server extends ModulePayment implements TransactionalInterface, P
         return false;
     }
 
-    /**
-     * Validate vpsSignature in POST against saved in session
-     */
-    public function validateResponse() {
-        $ret = false;
-        $sig_string = '';
-        $post = \Yii::$app->request->post();
-        foreach ([
-      'VPSTxId',
-      'VendorTxCode',
-      'Status',
-      'TxAuthNo',
-      'VendorName',
-      'AVSCV2',
-      'SecurityKey',
-      'AddressResult',
-      'PostCodeResult',
-      'CV2Result',
-      'GiftAid',
-      '3DSecureStatus',
-      'CAVV',
-      'AddressStatus',
-      'PayerStatus',
-      'CardType',
-      'Last4Digits',
-      'DeclineCode',
-      'ExpiryDate',
-      'FraudResponse',
-      'BankAuthCode',
-        ] as $key) {
-
+  /**
+   * Validate vpsSignature in POST against saved in session
+   */
+  public function validateResponse() {
+    $ret = false;
+    $sig_string = '';
+    $post = \Yii::$app->request->post();
+    if ($this->api_version == '3.00') {
+        $keys = [
+              'VPSTxId',
+              'VendorTxCode',
+              'Status',
+              'TxAuthNo',
+              'VendorName',
+              'AVSCV2',
+              'SecurityKey',
+              'AddressResult',
+              'PostCodeResult',
+              'CV2Result',
+              'GiftAid',
+              '3DSecureStatus',
+              'CAVV',
+              'AddressStatus',
+              'PayerStatus',
+              'CardType',
+              'Last4Digits',
+              'DeclineCode',
+              'ExpiryDate',
+              'FraudResponse',
+              'BankAuthCode',
+            ];
+    } else {
+        $keys = [
+              'VPSTxId',
+              'VendorTxCode',
+              'Status',
+              'TxAuthNo',
+              'VendorName',
+              'AVSCV2',
+              'SecurityKey',
+              'AddressResult',
+              'PostCodeResult',
+              'CV2Result',
+              'GiftAid',
+              '3DSecureStatus',
+              'CAVV',
+              'AddressStatus',
+              'PayerStatus',
+              'CardType',
+              'Last4Digits',
+              'DeclineCode',
+              'ExpiryDate',
+              'FraudResponse',
+              'BankAuthCode',
+              'ACSTransID',
+              'DSTransID',
+              'SchemeTraceID',
+            ];
+    }
+    foreach ($keys as $key) {
             if ($key == 'VendorName') {
                 // Please ensure the VendorName is lower case prior to hashing.
                 $sig_string .= strtolower(substr(MODULE_PAYMENT_SAGE_PAY_SERVER_VENDOR_LOGIN_NAME, 0, 15));
@@ -227,7 +260,6 @@ class sage_pay_server extends ModulePayment implements TransactionalInterface, P
                 $sig_string .= $post[$key];
             }
         }
-
         if (isset($post['VPSSignature']) && ($post['VPSSignature'] == strtoupper(md5($sig_string)))) {
             //MD5 value is returned in UPPER CASE.
             $ret = true;
@@ -436,54 +468,77 @@ class sage_pay_server extends ModulePayment implements TransactionalInterface, P
                     $transId = $tmp;
                 }
             }
-            $params = array('VPSProtocol' => $this->api_version,
-              'ReferrerID' => $this->referrer,
-              'Vendor' => substr(MODULE_PAYMENT_SAGE_PAY_SERVER_VENDOR_LOGIN_NAME, 0, 15),
-              'VendorTxCode' => substr(date('YmdHis') . '-' . ($transId ? $transId : $customer_id) . '-' . $cartID, 0, 40),
-              'Amount' => $_amount,
-              'Currency' => $_cur,
-              'Description' => substr(STORE_NAME, 0, 100),
-              'NotificationURL' => tep_href_link('callback/sage-server', 'check=SERVER&' . tep_session_name() . '=' . tep_session_id() . $partlyPaid, 'SSL', false),
-              'BillingSurname' => substr($order->billing['lastname'], 0, 20),
-              'BillingFirstnames' => substr($order->billing['firstname'], 0, 20),
-              'BillingAddress1' => substr($order->billing['street_address'], 0, 100),
-              'BillingAddress2' => substr($order->billing['suburb']??'', 0, 100),
-              'BillingCity' => substr($order->billing['city'], 0, 40),
-              'BillingPostCode' => substr($order->billing['postcode'], 0, 10),
-              'BillingCountry' => $order->billing['country']['iso_code_2'],
-              'BillingPhone' => substr($order->customer['telephone'], 0, 20),
-              'DeliverySurname' => substr($order->delivery['lastname'], 0, 20),
-              'DeliveryFirstnames' => substr($order->delivery['firstname'], 0, 20),
-              'DeliveryAddress1' => substr($order->delivery['street_address'], 0, 100),
-              'DeliveryAddress2' => substr($order->delivery['suburb']??'', 0, 100),
-              'DeliveryCity' => substr($order->delivery['city'], 0, 40),
-              'DeliveryPostCode' => substr($order->delivery['postcode'], 0, 10),
-              'DeliveryCountry' => @$order->delivery['country']['iso_code_2'],
-              'DeliveryPhone' => substr($order->customer['telephone'], 0, 20),
-              'CustomerEMail' => substr($order->customer['email_address'], 0, 255),
-              //'ApplyAVSCV2' => '2',
-              'Apply3DSecure' => '0');
-            if (!empty($VendorData)) {
-                $params['VendorData'] = $VendorData;
-            }
+      $params = array('VPSProtocol' => $this->api_version,
+        'ReferrerID' => $this->referrer,
+        'Vendor' => substr(MODULE_PAYMENT_SAGE_PAY_SERVER_VENDOR_LOGIN_NAME, 0, 15),
+        'VendorTxCode' => substr(date('YmdHis') . '-' . ($transId ? $transId : $customer_id) . '-' . $cartID, 0, 40),
+        'Amount' => $_amount,
+        'Currency' => $_cur,
+        'Description' => substr(STORE_NAME, 0, 100),
+        'NotificationURL' => tep_href_link('callback/sage-server', 'check=SERVER&' . tep_session_name() . '=' . tep_session_id() . $partlyPaid, 'SSL', false),
+        'BillingSurname' => substr($order->billing['lastname'], 0, 20),
+        'BillingFirstnames' => substr($order->billing['firstname'], 0, 20),
+        'BillingAddress1' => substr($order->billing['street_address'], 0, ($this->api_version == '3.00'?100:50)),
+        'BillingAddress2' => substr(trim(substr($order->billing['street_address'], ($this->api_version == '3.00'?100:50)) . ' ' . $order->billing['suburb']??''), 0, ($this->api_version == '3.00'?100:50)),
+        'BillingAddress3' => substr(trim(substr( trim(substr($order->billing['street_address'], ($this->api_version == '3.00'?100:50)) . ' ' . $order->billing['suburb']??''), ($this->api_version == '3.00'?100:50))), 0, ($this->api_version == '3.00'?100:50)),
 
-            $ip_address = \common\helpers\System::get_ip_address();
-            if ($this->manager->has('ptoken') && !empty($this->manager->get('ptoken'))) {
-                $params['Token'] = $this->manager->get('ptoken');
-                $params['StoreToken'] = 1;
-                if (defined('MODULE_PAYMENT_SAGE_PAY_3DS_SKIP') && (float) MODULE_PAYMENT_SAGE_PAY_3DS_SKIP >= $params['Amount']) {
-                    $params['Apply3DSecure'] = '2';
-                }
-            }
+        'BillingCity' => substr($order->billing['city'], 0, 40),
+        'BillingPostCode' => substr($order->billing['postcode'], 0, 10),
+        'BillingCountry' => $order->billing['country']['iso_code_2'],
+        'BillingPhone' => substr($order->customer['telephone'], 0, 20),
+        'DeliverySurname' => substr($order->delivery['lastname'], 0, 20),
+        'DeliveryFirstnames' => substr($order->delivery['firstname'], 0, 20),
+        'DeliveryAddress1' => substr($order->delivery['street_address'], 0, ($this->api_version == '3.00'?100:50)),
+        'DeliveryAddress2' => substr(trim(substr($order->delivery['street_address'], ($this->api_version == '3.00'?100:50)) . ' ' . $order->delivery['suburb']??''), 0, ($this->api_version == '3.00'?100:50)),
+        'DeliveryAddress3' => substr(trim(substr( trim(substr($order->delivery['street_address'], ($this->api_version == '3.00'?100:50)) . ' ' . $order->delivery['suburb']??''), ($this->api_version == '3.00'?100:50))), 0, ($this->api_version == '3.00'?100:50)),
+        'DeliveryCity' => substr($order->delivery['city'], 0, 40),
+        'DeliveryPostCode' => substr($order->delivery['postcode'], 0, 10),
+        'DeliveryCountry' => @$order->delivery['country']['iso_code_2'],
+        'DeliveryPhone' => substr($order->customer['telephone'], 0, 20),
+        'CustomerEMail' => substr($order->customer['email_address'], 0, ($this->api_version == '3.00'?80:255)),
+        //'ApplyAVSCV2' => '2',
+        'Apply3DSecure' => '0');
+        if (!empty($VendorData)) {
+            $params['VendorData'] = $VendorData;
+        }
+      $ip_address = \common\helpers\System::get_ip_address();
+      if ($this->manager->has('ptoken') && !empty($this->manager->get('ptoken'))) {
+        $params['Token'] = $this->manager->get('ptoken');
+        $params['StoreToken'] = 1;
+        if ($this->api_version != '3.00') {
+            $params['COFUsage'] = 'SUBSEQUENT';
+            $params['InitiatedType'] = 'CIT';
+        }
+
+        if (defined('MODULE_PAYMENT_SAGE_PAY_3DS_SKIP') && (float) MODULE_PAYMENT_SAGE_PAY_3DS_SKIP >= $params['Amount']) {
+          $params['Apply3DSecure'] = '2';
+          if ($this->api_version != '3.00') {
+            $params['ThreeDSExemptionIndicator'] = '01';
+            /*
+                01 = Low Value Transaction (LVT)
+                02 = TRA exemption
+                03 = Trusted beneficiaries exemption
+                04 = Secure corporate payment
+                05 = Delegated authentication
+                06 – 99 Reserved for future use
+             */
+          }
+        }
+      }
 
             if ($this->onBehalf()) {
                 $params['Apply3DSecure'] = '2';
                 $params['AccountType'] = 'M'; // by default 'E' so not set.
             }
 
-            if ($this->manager->has('use_token') && !empty($this->manager->get('use_token'))) {
-                $params['CreateToken'] = 1;
-            }
+      if ($this->manager->has('use_token') && !empty($this->manager->get('use_token'))) {
+        $params['CreateToken'] = 1;
+        if ($this->api_version != '3.00'
+             && (!$this->manager->has('ptoken') || empty($this->manager->get('ptoken')))  ) {
+            $params['COFUsage'] = 'FIRST';
+            $params['InitiatedType'] = 'CIT';
+        }
+      }
 
             if ((ip2long($ip_address) != -1) && (ip2long($ip_address) != false)) {
                 $params['ClientIPAddress'] = $ip_address;
@@ -783,87 +838,94 @@ EOD;
     public function configure_keys() {
         $status_id = defined('MODULE_PAYMENT_SAGE_PAY_SERVER_ORDER_STATUS_ID') ? MODULE_PAYMENT_SAGE_PAY_SERVER_ORDER_STATUS_ID : $this->getDefaultOrderStatusId();
 
-        return array(
-          'MODULE_PAYMENT_SAGE_PAY_SERVER_STATUS' => array(
-            'title' => 'Enable Opayo Server Module',
-            'value' => 'False',
-            'description' => 'Do you want to accept Opayo Server payments?',
-            'sort_order' => '0',
-            'set_function' => 'tep_cfg_select_option(array(\'True\', \'False\'), ',
-          ),
-          'MODULE_PAYMENT_SAGE_PAY_SERVER_VENDOR_LOGIN_NAME' => array(
-            'title' => 'Vendor Login Name',
-            'value' => '',
-            'description' => 'The vendor login name to connect to the gateway with.',
-            'sort_order' => '0',
-          ),
-          'MODULE_PAYMENT_SAGE_PAY_SERVER_ACCOUNT' => array(
-            'title' => 'Account login',
-            'value' => '',
-            'description' => 'Account login to get transaction details',
-            'sort_order' => '0',
-            'use_function' => '\\common\\modules\\orderPayment\\sage_pay_server::useConf',
-            'set_function' => 'setConf(',
-          ),
-          'MODULE_PAYMENT_SAGE_PAY_SERVER_ACCOUNT_PASSWORD' => array(
-            'title' => 'Account Password',
-            'value' => '',
-            'description' => 'Account password to get transaction details',
-            'sort_order' => '0',
-            'use_function' => '\\common\\modules\\orderPayment\\sage_pay_server::useConf',
-            'set_function' => 'setConf(',
-          ),
-          'MODULE_PAYMENT_SAGE_PAY_SERVER_PROFILE_PAGE' => array(
-            'title' => 'Profile Payment Page',
-            'value' => 'Normal',
-            'description' => 'Profile page to use for the payment page.',
-            'sort_order' => '0',
-            'set_function' => 'tep_cfg_select_option(array(\'Normal\', \'Low\'), ',
-          ),
-          'MODULE_PAYMENT_SAGE_PAY_SERVER_TRANSACTION_METHOD' => array(
-            'title' => 'Transaction Method',
-            'value' => 'Authenticate',
-            'description' => 'The processing method to use for each transaction.',
-            'sort_order' => '0',
-            'set_function' => 'tep_cfg_select_option(array(\'Authenticate\', \'Deferred\', \'Payment\'), ',
-          ),
-          'MODULE_PAYMENT_SAGE_PAY_SERVER_TRANSACTION_SERVER' => array(
-            'title' => 'Transaction Server',
-            'value' => 'Simulator',
-            'description' => 'Perform transactions on the production server or on the testing server.',
-            'sort_order' => '0',
-            'set_function' => 'tep_cfg_select_option(array(\'Live\', \'Test\', \'Simulator\'), ',
-          ),
-          'MODULE_PAYMENT_SAGE_PAY_SERVER_T3M_VERIFICATION' => array(
-            'title' => 'T3M verification',
-            'value' => 'Info',
-            'description' => 'Info - ignore if not available instantly, Optional - check for updates for up to 3 days, required - do not accept transaction if none t3m info available',
-            'sort_order' => '0',
-            'set_function' => 'tep_cfg_select_option(array(\'Info\', \'Optional\', \'Required\'), ',
-          ),
-          'MODULE_PAYMENT_SAGE_PAY_SERVER_USE_TOKENS' => array(
-            'title' => 'Allow tokens',
-            'value' => 'False',
-            'description' => 'Allow to save tokens.',
-            'sort_order' => '0',
-            'set_function' => 'tep_cfg_select_option(array(\'True\', \'False\'), ',
-          ),
-          'MODULE_PAYMENT_SAGE_PAY_SERVER_ZONE' => array(
-            'title' => 'Payment Zone',
-            'value' => '0',
-            'description' => 'If a zone is selected, only enable this payment method for that zone.',
-            'sort_order' => '2',
-            'use_function' => '\\common\\helpers\\Zones::get_zone_class_title',
-            'set_function' => 'tep_cfg_pull_down_zone_classes(',
-          ),
-          'MODULE_PAYMENT_SAGE_PAY_SERVER_ORDER_STATUS_ID' => array(
-            'title' => 'Set Order Status',
-            'value' => $status_id,
-            'description' => 'Set the status of orders made with this payment module to this value',
-            'sort_order' => '0',
-            'set_function' => 'tep_cfg_pull_down_order_statuses(',
-            'use_function' => '\\common\\helpers\\Order::get_order_status_name',
-          ),
+    return array(
+      'MODULE_PAYMENT_SAGE_PAY_SERVER_STATUS' => array(
+        'title' => 'Enable Sage Pay Server Module',
+        'value' => 'False',
+        'description' => 'Do you want to accept Sage Pay Server payments?',
+        'sort_order' => '0',
+        'set_function' => 'tep_cfg_select_option(array(\'True\', \'False\'), ',
+      ),
+      'MODULE_PAYMENT_SAGE_PAY_SERVER_VENDOR_LOGIN_NAME' => array(
+        'title' => 'Vendor Login Name',
+        'value' => '',
+        'description' => 'The vendor login name to connect to the gateway with.',
+        'sort_order' => '0',
+      ),
+      'MODULE_PAYMENT_SAGE_PAY_SERVER_ACCOUNT' => array(
+        'title' => 'Account login',
+        'value' => '',
+        'description' => 'Account login to get transaction details',
+        'sort_order' => '0',
+        'use_function' => '\\common\\modules\\orderPayment\\sage_pay_server::useConf',
+        'set_function' => 'setConf(',
+      ),
+      'MODULE_PAYMENT_SAGE_PAY_SERVER_ACCOUNT_PASSWORD' => array(
+        'title' => 'Account Password',
+        'value' => '',
+        'description' => 'Account password to get transaction details',
+        'sort_order' => '0',
+        'use_function' => '\\common\\modules\\orderPayment\\sage_pay_server::useConf',
+        'set_function' => 'setConf(',
+      ),
+      'MODULE_PAYMENT_SAGE_PAY_SERVER_API_VERSION' => array(
+        'title' => 'API Version',
+        'value' => '3.00',
+        'description' => '3DS version 2 (SCA) requires API 4.00',
+        'sort_order' => '0',
+        'set_function' => 'tep_cfg_select_option(array(\'4.00\', \'3.00\'), ',
+      ),
+      'MODULE_PAYMENT_SAGE_PAY_SERVER_PROFILE_PAGE' => array(
+        'title' => 'Profile Payment Page',
+        'value' => 'Normal',
+        'description' => 'Profile page to use for the payment page.',
+        'sort_order' => '0',
+        'set_function' => 'tep_cfg_select_option(array(\'Normal\', \'Low\'), ',
+      ),
+      'MODULE_PAYMENT_SAGE_PAY_SERVER_TRANSACTION_METHOD' => array(
+        'title' => 'Transaction Method',
+        'value' => 'Authenticate',
+        'description' => 'The processing method to use for each transaction.',
+        'sort_order' => '0',
+        'set_function' => 'tep_cfg_select_option(array(\'Authenticate\', \'Deferred\', \'Payment\'), ',
+      ),
+      'MODULE_PAYMENT_SAGE_PAY_SERVER_TRANSACTION_SERVER' => array(
+        'title' => 'Transaction Server',
+        'value' => 'Simulator',
+        'description' => 'Perform transactions on the production server or on the testing server.',
+        'sort_order' => '0',
+        'set_function' => 'tep_cfg_select_option(array(\'Live\', \'Test\', \'Simulator\'), ',
+      ),
+      'MODULE_PAYMENT_SAGE_PAY_SERVER_T3M_VERIFICATION' => array(
+        'title' => 'T3M verification',
+        'value' => 'Info',
+        'description' => 'Info - ignore if not available instantly, Optional - check for updates for up to 3 days, required - do not accept transaction if none t3m info available',
+        'sort_order' => '0',
+        'set_function' => 'tep_cfg_select_option(array(\'Info\', \'Optional\', \'Required\'), ',
+      ),
+      'MODULE_PAYMENT_SAGE_PAY_SERVER_USE_TOKENS' => array(
+        'title' => 'Allow tokens',
+        'value' => 'False',
+        'description' => 'Allow to save tokens.',
+        'sort_order' => '0',
+        'set_function' => 'tep_cfg_select_option(array(\'True\', \'False\'), ',
+      ),
+      'MODULE_PAYMENT_SAGE_PAY_SERVER_ZONE' => array(
+        'title' => 'Payment Zone',
+        'value' => '0',
+        'description' => 'If a zone is selected, only enable this payment method for that zone.',
+        'sort_order' => '2',
+        'use_function' => '\\common\\helpers\\Zones::get_zone_class_title',
+        'set_function' => 'tep_cfg_pull_down_zone_classes(',
+      ),
+      'MODULE_PAYMENT_SAGE_PAY_SERVER_ORDER_STATUS_ID' => array(
+        'title' => 'Set Order Status',
+        'value' => $status_id,
+        'description' => 'Set the status of orders made with this payment module to this value',
+        'sort_order' => '0',
+        'set_function' => 'tep_cfg_pull_down_order_statuses(',
+        'use_function' => '\\common\\helpers\\Order::get_order_status_name',
+      ),
           'MODULE_PAYMENT_SAGE_PAY_SERVER_ORDER_BEFORE_PAYMENT' => array(
             'title' => 'Save order before payment',
             'value' => 'False',
@@ -1237,7 +1299,7 @@ EOD;
           [deliverycity] => Geldrop
           [deliverypostcode] => 5662VT
           [deliverycountry] => NL
-          [deliveryphone] => +31634515732
+          [deliveryphone] => +316
           [cardholder] => Jdfgdiel
           [cardaddress] => gggg
           [cardcity] => Geldrop
@@ -1608,6 +1670,7 @@ EOD;
                     $this->_transactionDetails = false;
                     $details = $this->getTransactionDetails($transaction_id);
                     $response = $this->parseTransactionDetails($details);
+                    $response['deferred'] = 2;
                     $ret = $tm->updatePaymentTransaction($response['transaction_id'], $response);
                     $orderPaymentRecord = $this->searchRecord($transaction_id);
                     if (!empty($response['comments']) && $orderPaymentRecord && !empty($orderPaymentRecord->orders_payment_order_id)) {
@@ -1631,6 +1694,7 @@ EOD;
                           'payment_class' => $this->code,
                           'payment_method' => $this->title,
                           'parent_transaction_id' => $transaction_id,
+                          'deferred' => 2,
                           'orders_id' => 0
                     ]);
                     $transaction_id = trim($ret['VPSTxId'], '{}');

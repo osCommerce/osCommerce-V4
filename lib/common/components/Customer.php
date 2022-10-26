@@ -314,7 +314,7 @@ class Customer  extends \common\models\Customers implements \yii\web\IdentityInt
               $this->data['customers_customs_number_date'] = $addressBook->entry_customs_number_date;
             }
 
-            if (CUSTOMERS_GROUPS_ENABLE == 'True') {
+            if (\common\helpers\Extensions::isCustomerGroupsAllowed()) {
                 $this->data['customer_groups_id'] = $this->groups_id;
             } else {
                 $this->data['customer_groups_id'] = 0;

@@ -39,14 +39,20 @@ class CheckoutBtn extends Widget
     if (!Yii::$app->user->isGuest){
       $checkout_link = tep_href_link('checkout', '', 'SSL');
     } else {
-      $checkout_link = tep_href_link('checkout/login', '', 'SSL');
+      $checkout_link = tep_href_link('checkout', 'guest=1', 'SSL');
+    }
+	
+	if (CHECKOUT_BTN_TEXT == 'True'){
+      $title = '<span class="with-card">' . TEXT_PAY_WITH_CARD . '</span>';
+    } else {
+      $title = TEXT_PAY_NOW; 
     }
     
     $payment_modules = \common\services\OrderManager::loadManager($cart)->getPaymentCollection();
     $initialize_checkout_methods = $payment_modules->checkout_initialization_method();
 
     if ($cart->count_contents() > 0) {
-      return IncludeTpl::widget(['file' => 'boxes/cart/checkout-btn.tpl', 'params' => ['link' => $checkout_link, 'inline' => $initialize_checkout_methods]]);
+      return IncludeTpl::widget(['file' => 'boxes/cart/checkout-btn.tpl', 'params' => ['link' => $checkout_link, 'inline' => $initialize_checkout_methods, 'title' => $title]]);
     } else {
       return '';
     }

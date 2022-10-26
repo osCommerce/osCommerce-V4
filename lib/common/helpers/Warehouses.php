@@ -1003,7 +1003,7 @@ class Warehouses {
     }
 
     public static function getWarehousesProductsLayersIDbyExpiryDate($expiry_date) {
-        list($year, $month, $day) = explode('-', $expiry_date); 
+        list($year, $month, $day) = array_pad(explode('-', $expiry_date), 3, null);
         if (checkdate((int)$month, (int)$day, (int)$year)) {
             $warehousesProductsLayersRecord = \common\models\WarehousesProductsLayers::findOne(['expiry_date' => $expiry_date]);
             if (!($warehousesProductsLayersRecord instanceof \common\models\WarehousesProductsLayers)) {

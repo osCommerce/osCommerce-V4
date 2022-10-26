@@ -178,4 +178,9 @@ class Image {
             }
         }
     }
+
+    public static function info_image_if_exists($image, $alt, $width = '', $height = '') {
+        return str_replace(TEXT_IMAGE_NONEXISTENT, '', self::info_image($image, $alt, $width, $height));
+    }
+
 }

@@ -117,6 +117,7 @@ class Admin extends \yii\db\ActiveRecord
     public function updateToken() {
         $token = ('AT-' . strtoupper(md5(microtime(true))));
         $this->token = \common\helpers\Password::encrypt_password($token, 'backend');
+        $this->token_date = date('Y-m-d H:i:s');
         $this->update(false);
         return $token;
     }

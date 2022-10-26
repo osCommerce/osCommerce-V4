@@ -192,11 +192,36 @@ class OrderManager {
         }
     }
 
+    public function getTaxAddress() {
+        if ($this->isCustomerAssigned()) {
+            ///STOP2do
+            echo "#### <PRE>" . __FILE__ . ':' . __LINE__ . ' ' . print_r($this->getCustomersIdentity()->getAll(), true) . "</PRE>";
+            die;
+
+            $ret = $this->getCustomersIdentity()->get('customer_country_id');
+        } else {
+            $option = \common\helpers\Tax::getTaxAddressOption();
+            if ($option>0) { //shipping or any
+                $ret = \common\helpers\Country::getDefaultShippingCountryId($this->getPlatformId());
+            } else {//billing
+                $ret = \common\helpers\Country::getDefaultBillingCountryId($this->getPlatformId());
+            }
+        }
+        return $ret;
+    }
+
     public function getTaxCountry() {
         if ($this->isCustomerAssigned()) {
-            return $this->getCustomersIdentity()->get('customer_country_id');
+            $ret = $this->getCustomersIdentity()->get('customer_country_id');
+        } else {
+            $option = \common\helpers\Tax::getTaxAddressOption();
+            if ($option>0) { //shipping or any
+                $ret = \common\helpers\Country::getDefaultShippingCountryId($this->getPlatformId());
+            } else {//billing
+                $ret = \common\helpers\Country::getDefaultBillingCountryId($this->getPlatformId());
+            }
         }
-        return \common\helpers\PlatformConfig::getValue('STORE_COUNTRY', $this->getPlatformId());
+        return $ret;
     }
 
     public function setDefaultTaxZone() {
@@ -624,6 +649,7 @@ class OrderManager {
         return self::$instance;
     }
 
+    /** @var \common\classes\shopping_cart $_cart */
     protected $_cart;
 
     public function loadCart(\common\classes\shopping_cart $cart) {
@@ -679,7 +705,15 @@ class OrderManager {
         if ($this->isCustomerAssigned()) {
             return $this->getBillto() == $this->getSendto();
         } else {
-            return $this->getBillto() == $this->getSendto() || empty($this->getBillto());
+            return $this->getBillto() == $this->getSendto() ||
+                (
+                empty($this->getBillto()
+                && 0 && 
+                 (!\common\helpers\Country::checkPlatformCountry(null, null, 'bill') ||
+                  !\common\helpers\Country::checkPlatformCountry(null, null, 'ship') )
+                 
+                
+                ));
         }
         //return false;
     }
@@ -755,7 +789,7 @@ class OrderManager {
     protected function loadDefaultAddressValues($postfix) {
         if ($this->has('estimate' . $postfix)) {
             $estimate = $this->get('estimate' . $postfix);
-            $_country_info = \common\helpers\Country::get_countries($estimate['country_id'], true);
+            $_country_info = \common\helpers\Country::get_countries($estimate['country_id'], true, '', substr($postfix, 1));
             $address = [
                 'postcode' => $estimate['postcode'],
                 'zone_id' => (isset($estimate['zone']) && !empty($estimate['zone']) ? (is_int($estimate['zone']) ? $estimate['zone'] : \common\helpers\Zones::get_zone_id($estimate['country_id'], $estimate['zone'])) : 0),
@@ -797,6 +831,11 @@ class OrderManager {
 
     public function getDeliveryAddress() {
         static $address = null;
+/** /
+        $ee = new \Exception();
+        echo "getDeliveryAddress \$address#### <PRE>" . __FILE__ . ':' . __LINE__ . ' ' . print_r($address, true) . "</PRE>";
+        echo "#### <PRE>" . __FILE__ . ':' . __LINE__ . ' ' . print_r($ee->getTraceAsString(), true) . "</PRE>";
+/**/
         if (is_null($address) || $this->deliveryAddressChanged) {
             $address = [];
             if ($this->has('estimate_ship') || !$this->isCustomerAssigned()) {
@@ -917,31 +956,34 @@ class OrderManager {
     }
     public function changeCustomerTaxAddress($which = 2) {
       if ($this->isCustomerAssigned()) {
-        if (!defined('TAX_ADDRESS_OPTION') ) {
-          $option = 2;
+        $option = \common\helpers\Tax::getTaxAddressOption();
+        if ($option != 2 && $option != $which) {
+            return; // apprpriate address wasn't changed
         } else {
-          $option = (int)TAX_ADDRESS_OPTION;
-        }
-        if ($option<0 || $option>2) {
-          $option = 2;
-        }
-        if ($option != 2 && $which<2 && $which>=0) {
-          $option = $which;
+            $option = $which;
         }
 
         switch ($option) {
           case 0:
             $ab = $this->getCustomersIdentity()->getAddressBook($this->get('billto'));
             if ($ab && $ab->entry_country_id ) {
-              $this->getCustomersIdentity()->set('customer_country_id', $ab->entry_country_id, true);
-              $this->getCustomersIdentity()->set('customer_zone_id', $ab->entry_zone_id, true);
+                $this->getCustomersIdentity()->set('customer_country_id', $ab->entry_country_id, true);
+                $this->getCustomersIdentity()->set('customer_zone_id', $ab->entry_zone_id, true);
+                /** @var \common\extensions\VatOnOrder\VatOnOrder $VatOnOrder */
+                if ($VatOnOrder = \common\helpers\Acl::checkExtension('VatOnOrder', 'resetCustomerData')) {
+                    $VatOnOrder::resetCustomerData($ab);
+                }
             }
             break;
           case 1:
             $ab = $this->getCustomersIdentity()->getAddressBook($this->get('sendto'));
             if ($ab && $ab->entry_country_id) {
-              $this->getCustomersIdentity()->set('customer_country_id', $ab->entry_country_id, true);
-              $this->getCustomersIdentity()->set('customer_zone_id', $ab->entry_zone_id, true);
+                $this->getCustomersIdentity()->set('customer_country_id', $ab->entry_country_id, true);
+                $this->getCustomersIdentity()->set('customer_zone_id', $ab->entry_zone_id, true);
+                /** @var \common\extensions\VatOnOrder\VatOnOrder $VatOnOrder */
+                if ($VatOnOrder = \common\helpers\Acl::checkExtension('VatOnOrder', 'resetCustomerData')) {
+                    $VatOnOrder::resetCustomerData($ab);
+                }
             }
             break;
           case 2:
@@ -953,20 +995,37 @@ class OrderManager {
             if ($ab && $ab->entry_country_id && $ab->entry_country_id==$country_id && $ab->entry_zone_id==$zone_id) {
               $this->getCustomersIdentity()->set('customer_country_id', $ab->entry_country_id, true);
               $this->getCustomersIdentity()->set('customer_zone_id', $ab->entry_zone_id, true);
+                /** @var \common\extensions\VatOnOrder\VatOnOrder $VatOnOrder */
+                if ($VatOnOrder = \common\helpers\Acl::checkExtension('VatOnOrder', 'resetCustomerData')) {
+                    $VatOnOrder::resetCustomerData($ab);
+                }
+
             } else {
               $bab = $this->getCustomersIdentity()->getAddressBook($this->get('billto'));
 
               if ($bab && $bab->entry_country_id && $bab->entry_country_id==$country_id && $bab->entry_zone_id==$zone_id) {
                 $this->getCustomersIdentity()->set('customer_country_id', $bab->entry_country_id, true);
                 $this->getCustomersIdentity()->set('customer_zone_id', $bab->entry_zone_id, true);
+                /** @var \common\extensions\VatOnOrder\VatOnOrder $VatOnOrder */
+                if ($VatOnOrder = \common\helpers\Acl::checkExtension('VatOnOrder', 'resetCustomerData')) {
+                    $VatOnOrder::resetCustomerData($bab);
+                }
               } else {
               //match w/o zone
                 if ($ab && $ab->entry_country_id && $ab->entry_country_id==$country_id) {
                   $this->getCustomersIdentity()->set('customer_country_id', $ab->entry_country_id, true);
                   $this->getCustomersIdentity()->set('customer_zone_id', $ab->entry_zone_id, true);
+                    /** @var \common\extensions\VatOnOrder\VatOnOrder $VatOnOrder */
+                    if ($VatOnOrder = \common\helpers\Acl::checkExtension('VatOnOrder', 'resetCustomerData')) {
+                        $VatOnOrder::resetCustomerData($ab);
+                    }
                 } elseif ($bab && $bab->entry_country_id && $bab->entry_country_id==$country_id) {
                   $this->getCustomersIdentity()->set('customer_country_id', $bab->entry_country_id, true);
                   $this->getCustomersIdentity()->set('customer_zone_id', $bab->entry_zone_id, true);
+                    /** @var \common\extensions\VatOnOrder\VatOnOrder $VatOnOrder */
+                    if ($VatOnOrder = \common\helpers\Acl::checkExtension('VatOnOrder', 'resetCustomerData')) {
+                        $VatOnOrder::resetCustomerData($bab);
+                    }
                 }
               }
             }
@@ -1253,6 +1312,15 @@ class OrderManager {
                 } else {
                     $this->set('sendto', $defBook->address_book_id);
                 }
+
+                /** @var \common\extensions\VatOnOrder\VatOnOrder $VatOnOrder */
+                if ($VatOnOrder = \common\helpers\Acl::checkExtension('VatOnOrder', 'resetCustomerData')) {
+                    $option = \common\helpers\Tax::getTaxAddressOption();
+                    $tmp = ($option>0 && $shippingAddress->notEmpty())?$shippingAddress : $billingAddress;
+                    $ab = $tmp->attributes;
+                    $VatOnOrder::resetCustomerData($ab);
+                }
+
                 $this->remove('guest_email_address');
             }
         }
@@ -1386,19 +1454,36 @@ class OrderManager {
 
     public function totalProcess() {
         $this->triggerEvents(__FUNCTION__);
+//echo "manager #### <PRE>" . __FILE__ . ':' . __LINE__ . ' ' . print_r($this->getAll(), true) . "</PRE>";
+//echo "before #### <PRE>" . __FILE__ . ':' . __LINE__ . ' ' . print_r($this->getOrderInstance(), true) . "</PRE>";
+
         $ret =  $this->getTotalCollection()->process();
+//echo "after #### <PRE>" . __FILE__ . ':' . __LINE__ . ' ' . print_r($this->getOrderInstance(), true) . "</PRE>";
 
         if (defined('ALLOW_SEVERAL_TAX_COUNTRIES') && ALLOW_SEVERAL_TAX_COUNTRIES=='True' && is_array($ret)) {
 
             $order = $this->getOrderInstance();
             $total = $order->info['total_inc_tax'];
+            $currency = \Yii::$app->settings->get('currency');
+            if (\frontend\design\Info::isTotallyAdmin() && empty($currency) && defined('DEFAULT_CURRENCY')) {
+                $currency = DEFAULT_CURRENCY;
+            }
+            $currencies = \Yii::$container->get('currencies');
+            $rate = $currencies->rate($currency);
+            if ($rate!=1 && $rate>0) {
+                $total *= $rate;
+            }
+
             $skipTaxRates = $orderHash = [];
+//echo "\$total $total #### <PRE>"  . __FILE__ .':' . __LINE__ . ' ' . print_r($ret, true) ."</PRE>"; die;
+
             foreach ($ret as $ot) {
                 if (!empty($ot['code']) && !in_array($ot['code'], ['ot_tax'])) {
                     $orderHash[]  = [$ot['code'] => $ot['value_exc_vat']];
                 }
                 if (!empty($ot['code']) && $ot['code']=='ot_tax') { // could be several
                     $ri = \common\helpers\Tax::get_rate_info_from_desc(trim($ot['title'], ':'));
+//echo "#### <PRE>"  . __FILE__ .':' . __LINE__ . ' ' . print_r($ri, true) ."</PRE>";
 
                     if (is_array($ri)) {
                         if (isset($ri['max_total']) && is_numeric($ri['max_total']) && $total>=$ri['max_total']) {
@@ -1673,13 +1758,18 @@ class OrderManager {
     }
 
     public function checkoutOrderWithAddresses() {
-        /* $this->prepareOrderInfo();
+        /* calls
+          $this->prepareOrderInfo();
           $this->prepareOrderAddresses();
           $this->prepareOrderProducts();
           $this->prepareOrderTotals();
          */
+  //      echo "#### <PRE>" . __FILE__ . ':' . __LINE__ . ' ' . print_r($this->getOrderInstance(), true) . "</PRE>";
+
         $this->getOrderInstance()->cart();
-    }
+//        echo "#### <PRE>" . __FILE__ . ':' . __LINE__ . ' ' . print_r($this->getOrderInstance(), true) . "</PRE>";
+//        die;
+        }
 
     private $_renderPath = "\\frontend\\design\\boxes\\checkout\\";
 

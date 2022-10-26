@@ -96,7 +96,7 @@ class GiveawayController extends Sceleton {
 
     $this->view->filters->mode = Yii::$app->request->get('mode', '');
 
-    if (defined('CUSTOMERS_GROUPS_ENABLE') && CUSTOMERS_GROUPS_ENABLE == 'True') {
+    if (\common\helpers\Extensions::isCustomerGroupsAllowed()) {
       $this->view->filters->showGroup = true;
       $this->view->filters->groups = [0 => TEXT_MAIN] + \common\helpers\Group::get_customer_groups_list();
     }
@@ -444,7 +444,7 @@ class GiveawayController extends Sceleton {
         }
 
     //// groups tabs and params
-        if (CUSTOMERS_GROUPS_ENABLE == 'True' ) {
+        if (\common\helpers\Extensions::isCustomerGroupsAllowed() ) {
           $this->view->groups_m = array_merge(array(array('groups_id' => 0, 'groups_name' => TEXT_MAIN)), $this->view->groups);
           $tmp = [];
           foreach ($this->view->groups_m as $value) {

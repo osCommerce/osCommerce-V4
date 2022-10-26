@@ -213,7 +213,7 @@ class CurrenciesController extends Sceleton  {
             echo '</div>';
             echo '<div class="btn-toolbar btn-toolbar-order">';
             echo '<button class="btn btn-edit btn-no-margin" onclick="currencyEdit(' . $currencies_id . ')">' . IMAGE_EDIT . '</button><button class="btn btn-delete" onclick="currencyDelete(' . $currencies_id . ')">' . IMAGE_DELETE . '</button>';
-            if (USE_MARKET_PRICES == 'True' || (CUSTOMERS_GROUPS_ENABLE == 'True' && $cInfo->code == DEFAULT_CURRENCY)) {
+            if (USE_MARKET_PRICES == 'True' || (\common\helpers\Extensions::isCustomerGroupsAllowed() && $cInfo->code == DEFAULT_CURRENCY)) {
                 echo '<button class="btn btn-edit btn-no-margin" onclick="currencyRecalculate(\'' . $cInfo->code . '\')">' . IMAGE_RECALCULATE . '</button>';
             }
             echo '</div>';
@@ -234,7 +234,7 @@ class CurrenciesController extends Sceleton  {
       if (count($processTables)==0) {
         $processTables = array_keys(self::$priceTables);
       }
-      if (USE_MARKET_PRICES == 'True' || (CUSTOMERS_GROUPS_ENABLE == 'True' && $currenciesCode == DEFAULT_CURRENCY)) {
+      if (USE_MARKET_PRICES == 'True' || (\common\helpers\Extensions::isCustomerGroupsAllowed() && $currenciesCode == DEFAULT_CURRENCY)) {
         if ($currenciesCode != '') {
           $currencies = Yii::$container->get('currencies');
           if (isset($currencies->currencies[$currenciesCode]) && isset($currencies->currencies[$currenciesCode]['value']) && (float)$currencies->currencies[$currenciesCode]['value']>0) {

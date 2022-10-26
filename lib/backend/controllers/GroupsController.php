@@ -257,4 +257,47 @@ class GroupsController extends Sceleton {
             'status' => 'ok'
         );
     }
+
+    public function actionManufacturerSearch() {
+        if ($ext = \common\helpers\Acl::checkExtensionAllowed('UserGroupsExtraDiscounts', 'allowed')) {
+            return $ext::adminManufacturerSearch();
+        }
+    }
+
+    public function actionNewManufacturer() {
+        $this->layout = false;
+
+        if ($ext = \common\helpers\Acl::checkExtensionAllowed('UserGroupsExtraDiscounts', 'allowed')) {
+            return $ext::adminNewManufacturer();
+        }
+    }
+
+    public function actionProductSearch() {
+        if ($ext = \common\helpers\Acl::checkExtensionAllowed('UserGroupsExtraDiscounts', 'allowed')) {
+            return $ext::adminProductSearch();
+        }
+    }
+
+    public function actionNewProduct() {
+        $this->layout = false;
+
+        if ($ext = \common\helpers\Acl::checkExtensionAllowed('UserGroupsExtraDiscounts', 'allowed')) {
+            return $ext::adminNewProduct();
+        }
+    }
+
+    public function actionCategorySearch() {
+        if ($ext = \common\helpers\Acl::checkExtensionAllowed('UserGroupsExtraDiscounts', 'allowed')) {
+            return $ext::adminCategorySearch();
+        }
+    }
+
+    public function actionNewCategory() {
+        $this->layout = false;
+
+        if ($ext = \common\helpers\Acl::checkExtensionAllowed('UserGroupsExtraDiscounts', 'allowed')) {
+            return $ext::adminNewCategory();
+        }
+    }
+
 }

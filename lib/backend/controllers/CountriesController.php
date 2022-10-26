@@ -241,6 +241,11 @@ class CountriesController extends Sceleton  {
       echo '<div class="main_title">' . TEXT_COUNTRY_PHONE_PREFIX . '</div>';
       echo '<div class="main_value">' . tep_draw_input_field('dialling_prefix', $cInfo->dialling_prefix ?? null) . '</div>';
       echo '</div>';
+      
+      echo '<div class="main_row">';
+      echo '<div class="main_title" title="' . htmlspecialchars(TEXT_COUNTRY_CURRENCY_TIP).  '">' . TITLE_CURRENCY . '<div class="info-hint"><div class="info-hint-box"><div class="info-hint-mustache"></div>' . TEXT_COUNTRY_CURRENCY_TIP . '</div></div></div>';
+      echo '<div class="main_value">' . tep_draw_input_field('currency_code', $cInfo->currency_code ?? null) . '</div>';
+      echo '</div>';
 
       if (\common\helpers\Acl::checkExtensionAllowed('UploadCustomerId', 'allowed')) {
         echo '<div class="check_linear">';
@@ -267,6 +272,7 @@ class CountriesController extends Sceleton  {
 //      $countries_name = tep_db_prepare_input($_POST['countries_name']);
         $countries_iso_code_2 = tep_db_prepare_input(\Yii::$app->request->post('countries_iso_code_2'));
         $countries_iso_code_3 = tep_db_prepare_input(\Yii::$app->request->post('countries_iso_code_3'));
+        $currency_code = tep_db_prepare_input(\Yii::$app->request->post('currency_code'));
         $lat = tep_db_prepare_input(\Yii::$app->request->post('lat'));
         $lng = tep_db_prepare_input(\Yii::$app->request->post('lng'));
         $zoom = tep_db_prepare_input(\Yii::$app->request->post('zoom'));
@@ -300,10 +306,10 @@ class CountriesController extends Sceleton  {
 
                 $countries_name = tep_db_prepare_input($countries_name_array[$language_id]);
                 if ($i == 0) {
-                    tep_db_query("insert into " . TABLE_COUNTRIES . " (countries_name, countries_iso_code_2, countries_iso_code_3, address_format_id, language_id, status, sort_order, lat, lng, zoom, vat_code_prefix, vat_code_type, vat_code_chars, dialling_prefix) values ('" . tep_db_input($countries_name) . "', '" . tep_db_input($countries_iso_code_2) . "', '" . tep_db_input($countries_iso_code_3) . "', '" . (int) $address_format_id . "', '" . $language_id . "', '" . (int) $status . "', '" . (int) $sort_order . "', '" . (float) $lat . "', '" . (float) $lng . "', '" . (float) $zoom . "', '" . $vat_code_prefix . "', '" . (float) $vat_code_type . "', '" .  $vat_code_chars . "', '" . tep_db_input($dialling_prefix) . "')");
+                    tep_db_query("insert into " . TABLE_COUNTRIES . " (countries_name, countries_iso_code_2, countries_iso_code_3, currency_code, address_format_id, language_id, status, sort_order, lat, lng, zoom, vat_code_prefix, vat_code_type, vat_code_chars, dialling_prefix) values ('" . tep_db_input($countries_name) . "', '" . tep_db_input($countries_iso_code_2) . "', '" . tep_db_input($countries_iso_code_3) . "', '" . tep_db_input($currency_code) . "', '" . (int) $address_format_id . "', '" . $language_id . "', '" . (int) $status . "', '" . (int) $sort_order . "', '" . (float) $lat . "', '" . (float) $lng . "', '" . (float) $zoom . "', '" . $vat_code_prefix . "', '" . (float) $vat_code_type . "', '" .  $vat_code_chars . "', '" . tep_db_input($dialling_prefix) . "')");
                     $id = tep_db_insert_id();
                 } else {
-                    tep_db_query("insert into " . TABLE_COUNTRIES . " (countries_id, countries_name, countries_iso_code_2, countries_iso_code_3, address_format_id, language_id, status, sort_order, lat, lng, zoom, vat_code_prefix, vat_code_type, vat_code_chars, dialling_prefix) values (" . $id . ", '" . tep_db_input($countries_name) . "', '" . tep_db_input($countries_iso_code_2) . "', '" . tep_db_input($countries_iso_code_3) . "', '" . (int) $address_format_id . "', '" . $language_id . "', '" . (int) $status . "', '" . (int) $sort_order . "', '" . (float) $lat . "', '" . (float) $lng . "', '" . (float) $zoom . "', '" . $vat_code_prefix . "', '" . (float) $vat_code_type . "', '" .  $vat_code_chars . "', '" . tep_db_input($dialling_prefix) . "')");
+                    tep_db_query("insert into " . TABLE_COUNTRIES . " (countries_id, countries_name, countries_iso_code_2, countries_iso_code_3, currency_code, address_format_id, language_id, status, sort_order, lat, lng, zoom, vat_code_prefix, vat_code_type, vat_code_chars, dialling_prefix) values (" . $id . ", '" . tep_db_input($countries_name) . "', '" . tep_db_input($countries_iso_code_2) . "', '" . tep_db_input($countries_iso_code_3) . "', '" . tep_db_input($currency_code) . "', '" . (int) $address_format_id . "', '" . $language_id . "', '" . (int) $status . "', '" . (int) $sort_order . "', '" . (float) $lat . "', '" . (float) $lng . "', '" . (float) $zoom . "', '" . $vat_code_prefix . "', '" . (float) $vat_code_type . "', '" .  $vat_code_chars . "', '" . tep_db_input($dialling_prefix) . "')");
                 }
             }
             if ($extClass = \common\helpers\Acl::checkExtensionAllowed('UploadCustomerId', 'allowed')) {
@@ -318,7 +324,7 @@ class CountriesController extends Sceleton  {
                 $language_id = $languages[$i]['id'];
 
                 $countries_name = tep_db_prepare_input($countries_name_array[$language_id]);
-                tep_db_query("update " . TABLE_COUNTRIES . " set countries_name = '" . tep_db_input($countries_name) . "', countries_iso_code_2 = '" . tep_db_input($countries_iso_code_2) . "', countries_iso_code_3 = '" . tep_db_input($countries_iso_code_3) . "', address_format_id = '" . (int) $address_format_id . "', status='" . $status . "', sort_order='" . $sort_order . "', lat = '" . tep_db_input($lat) . "', lng = '" . tep_db_input($lng) . "', zoom ='" . tep_db_input($zoom) . "', vat_code_prefix ='" . $vat_code_prefix . "', vat_code_type ='" . $vat_code_type . "', vat_code_chars ='" . $vat_code_chars . "', dialling_prefix = '" . tep_db_input($dialling_prefix) . "' where countries_id = '" . (int) $countries_id . "' and language_id='" . $language_id . "'");
+                tep_db_query("update " . TABLE_COUNTRIES . " set countries_name = '" . tep_db_input($countries_name) . "', countries_iso_code_2 = '" . tep_db_input($countries_iso_code_2) . "', countries_iso_code_3 = '" . tep_db_input($countries_iso_code_3) . "', currency_code = '" . tep_db_input($currency_code) . "', address_format_id = '" . (int) $address_format_id . "', status='" . $status . "', sort_order='" . $sort_order . "', lat = '" . tep_db_input($lat) . "', lng = '" . tep_db_input($lng) . "', zoom ='" . tep_db_input($zoom) . "', vat_code_prefix ='" . $vat_code_prefix . "', vat_code_type ='" . $vat_code_type . "', vat_code_chars ='" . $vat_code_chars . "', dialling_prefix = '" . tep_db_input($dialling_prefix) . "' where countries_id = '" . (int) $countries_id . "' and language_id='" . $language_id . "'");
             }
             if ($extClass = \common\helpers\Acl::checkExtensionAllowed('UploadCustomerId', 'allowed')) {
               $extClass::countrySave($countries_id);

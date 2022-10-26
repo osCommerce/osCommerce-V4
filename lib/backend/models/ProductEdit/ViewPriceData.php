@@ -42,11 +42,11 @@ class ViewPriceData
         $gift_wrap = tep_db_query("select gw_id as gift_wrap_id, groups_id, currencies_id, gift_wrap_price, round(gift_wrap_price +round(gift_wrap_price *" . (double)$_tax . ", 6), " . (int)$_roundTo. ") as gift_wrap_price_gross from " . TABLE_GIFT_WRAP_PRODUCTS . " where products_id ='" . (int) $pInfo->products_id . "'");
         if (tep_db_num_rows($gift_wrap) > 0) {
             while ($data = tep_db_fetch_array($gift_wrap)){
-                if (USE_MARKET_PRICES == 'True' && CUSTOMERS_GROUPS_ENABLE == 'True') {
+                if (USE_MARKET_PRICES == 'True' && \common\helpers\Extensions::isCustomerGroupsAllowed()) {
                     $idx = '[' . $data['currencies_id'] . '][' . $data['groups_id'] . ']';
                 } elseif (USE_MARKET_PRICES == 'True') {
                     $idx = '[' . $data['currencies_id'] . ']';
-                } elseif (CUSTOMERS_GROUPS_ENABLE == 'True') {
+                } elseif (\common\helpers\Extensions::isCustomerGroupsAllowed()) {
                     $idx = '[' . $data['groups_id'] . ']';
                 } else {
                     $idx = '';
@@ -72,7 +72,7 @@ class ViewPriceData
         $view->qty_discounts_pack_unit = [];
         $view->qty_discounts_packaging = [];
 ///pseudo group "Main" or simple nothing
-        //if (CUSTOMERS_GROUPS_ENABLE == 'True' && !$view->useMarketPrices) {
+        //if (\common\helpers\Extensions::isCustomerGroupsAllowed() && !$view->useMarketPrices) {
 
         if ( !$view->useMarketPrices ) {
             $qty_discounts = []; $tmp = \common\helpers\Product::parseQtyDiscountArray($pInfo->products_price_discount);
@@ -93,7 +93,7 @@ class ViewPriceData
                 'currencies_id' => $view->defaultCurrency ?? \common\helpers\Currencies::getDefaultCurrencyId(),
                 'products_group_price' => $pInfo->products_price,
                 'products_group_price_gross' => round($pInfo->products_price + round($pInfo->products_price*$_tax, 6), $_roundTo),
-                'products_group_special_price' => (isset($_def_sale['specials_new_products_price']) && $_def_sale['status'] ? $_def_sale['specials_new_products_price']:0),
+                'products_group_special_price' => (isset($_def_sale['specials_new_products_price']) && $_def_sale['status'] ? $_def_sale['specials_new_products_price']:0), // ok in case of no groups & market prices else - 0
                 'products_group_special_price_gross' => (isset($_def_sale['specials_new_products_price']) && $_def_sale['status'] ? round($_def_sale['specials_new_products_price'] + round($_def_sale['specials_new_products_price']*$_tax, 6), $_roundTo):0),
                 'expires_date' => !empty($_def_sale['expires_date']) ? $_def_sale['expires_date']:'',
                 'start_date' => !empty($_def_sale['start_date']) ? $_def_sale['start_date']:'',
@@ -102,15 +102,15 @@ class ViewPriceData
                 'bonus_points_cost' => $pInfo->bonus_points_cost,
                 'shipping_surcharge_price' => $pInfo->shipping_surcharge_price,
                 'shipping_surcharge_price_gross' => round($pInfo->shipping_surcharge_price + round($pInfo->shipping_surcharge_price*$_tax, 6), $_roundTo),
-                'gift_wrap_id' => ((CUSTOMERS_GROUPS_ENABLE != 'True') ? (isset($gift_wrap_data['gift_wrap_id']) ? $gift_wrap_data['gift_wrap_id'] : 0) : (isset($gift_wrap_data[0]['gift_wrap_id']) ? $gift_wrap_data[0]['gift_wrap_id'] : 0) ),
+                'gift_wrap_id' => (!\common\helpers\Extensions::isCustomerGroupsAllowed() ? (isset($gift_wrap_data['gift_wrap_id']) ? $gift_wrap_data['gift_wrap_id'] : 0) : (isset($gift_wrap_data[0]['gift_wrap_id']) ? $gift_wrap_data[0]['gift_wrap_id'] : 0) ),
                 'delivery_option' => $delivery_option,
-                'gift_wrap_price' => ((CUSTOMERS_GROUPS_ENABLE != 'True') ? (isset($gift_wrap_data['gift_wrap_price']) ? $gift_wrap_data['gift_wrap_price'] : 0) : (isset($gift_wrap_data[0]['gift_wrap_price']) ? $gift_wrap_data[0]['gift_wrap_price'] : 0) ),
-                'gift_wrap_price_gross' => ((CUSTOMERS_GROUPS_ENABLE != 'True') ? (isset($gift_wrap_data['gift_wrap_price_gross']) ? $gift_wrap_data['gift_wrap_price_gross'] : 0) : (isset($gift_wrap_data[0]['gift_wrap_price_gross']) ? $gift_wrap_data[0]['gift_wrap_price_gross'] : 0) ),
+                'gift_wrap_price' => (!\common\helpers\Extensions::isCustomerGroupsAllowed() ? (isset($gift_wrap_data['gift_wrap_price']) ? $gift_wrap_data['gift_wrap_price'] : 0) : (isset($gift_wrap_data[0]['gift_wrap_price']) ? $gift_wrap_data[0]['gift_wrap_price'] : 0) ),
+                'gift_wrap_price_gross' => (!\common\helpers\Extensions::isCustomerGroupsAllowed() ? (isset($gift_wrap_data['gift_wrap_price_gross']) ? $gift_wrap_data['gift_wrap_price_gross'] : 0) : (isset($gift_wrap_data[0]['gift_wrap_price_gross']) ? $gift_wrap_data[0]['gift_wrap_price_gross'] : 0) ),
                 'tax_rate' => (double)$_tax,
                 'round_to' => (int)$_roundTo,
                 'qty_discounts' => $qty_discounts
             ];
-            if (CUSTOMERS_GROUPS_ENABLE != 'True') {
+            if (!\common\helpers\Extensions::isCustomerGroupsAllowed()) {
                 $price_tabs_data = $tmp;
             } else {
                 $price_tabs_data[0] = $tmp;
@@ -132,7 +132,7 @@ class ViewPriceData
                 'products_group_price_gross_pack_unit' => round($pInfo->products_price_pack_unit + round($pInfo->products_price_pack_unit*$_tax, 6), $_roundTo),
                 'qty_discounts' => $qty_discounts
             ];
-            if (CUSTOMERS_GROUPS_ENABLE != 'True') {
+            if (!\common\helpers\Extensions::isCustomerGroupsAllowed()) {
                 $pack_unit_price_tabs_data = $tmp;
             } else {
                 $pack_unit_price_tabs_data[0] = $tmp;
@@ -153,7 +153,7 @@ class ViewPriceData
                 'products_group_price_gross_packaging' => round($pInfo->products_price_packaging + round($pInfo->products_price_packaging*$_tax, 6), $_roundTo),
                 'qty_discounts' => $qty_discounts
             ];
-            if (CUSTOMERS_GROUPS_ENABLE != 'True') {
+            if (!\common\helpers\Extensions::isCustomerGroupsAllowed()) {
                 $packaging_price_tabs_data = $tmp;
             } else {
                 $packaging_price_tabs_data[0] = $tmp;
@@ -161,7 +161,7 @@ class ViewPriceData
 
         }
 
-        if ($view->useMarketPrices || CUSTOMERS_GROUPS_ENABLE == 'True') {
+        if ($view->useMarketPrices || \common\helpers\Extensions::isCustomerGroupsAllowed()) {
             $products_price_query = tep_db_query("select pp.groups_id, pp.currencies_id, pp.supplier_price_manual, pp.products_group_price, round(pp.products_group_price +round(pp.products_group_price *" . (double)$_tax . ", 6), " . (int)$_roundTo. ") as products_group_price_gross, pp.bonus_points_price,	pp.bonus_points_cost, pp.products_group_discount_price, pp.products_group_price_pack_unit, round(pp.products_group_price_pack_unit +round(pp.products_group_price_pack_unit *" . (double)$_tax . ", 6), " . (int)$_roundTo. ") as products_group_price_gross_pack_unit, pp.products_group_discount_price_pack_unit, pp.products_group_price_packaging, round(pp.products_group_price_packaging +round(pp.products_group_price_packaging *" . (double)$_tax . ", 6), " . (int)$_roundTo. ") as products_group_price_gross_packaging, pp.products_group_discount_price_packaging, sp.specials_new_products_price as products_group_special_price, round(sp.specials_new_products_price +round(sp.specials_new_products_price *" . (double)$_tax . ", 6), " . (int)$_roundTo. ") as products_group_special_price_gross, s.expires_date, s.start_date, ifnull(s.status, 0) as sales_status, ifnull(s.specials_disabled, -1) as specials_disabled, ifnull(s.specials_enabled, -1) as specials_enabled, (ifnull(s.start_date, now())>now()) as specials_scheduled, max_per_order, total_qty, pp.shipping_surcharge_price, round(pp.shipping_surcharge_price +round(pp.shipping_surcharge_price *" . (double)$_tax . ", 6), " . (int)$_roundTo. ") as shipping_surcharge_price_gross from " . TABLE_PRODUCTS_PRICES . " pp left join " . TABLE_SPECIALS . " s on pp.products_id=s.products_id and s.specials_id='" . (isset($pInfo->specials_id) ? (int)$pInfo->specials_id : 0) . "' left join " . TABLE_SPECIALS_PRICES . " sp on pp.groups_id=sp.groups_id and pp.currencies_id=sp.currencies_id and s.specials_id=sp.specials_id where pp.products_id = '" . (int)$pInfo->products_id . "' order by pp.currencies_id, pp.groups_id");
             $_tmp_keys = [
                 'price_tabs_data' => ['delivery_option', 'qty_discounts', 'supplier_price_manual', 'products_group_price', 'products_group_price_gross', 'products_group_special_price', 'products_group_special_price_gross', 'bonus_points_price', 'bonus_points_cost', 'expires_date', 'start_date', 'sales_status', 'specials_disabled', 'specials_enabled', 'max_per_order', 'total_qty', 'specials_scheduled', 'gift_wrap_id', 'gift_wrap_price', 'gift_wrap_price_gross', 'shipping_surcharge_price', 'shipping_surcharge_price_gross', 'tax_rate', 'round_to', 'base_price', 'base_price_gross', 'base_specials_price', 'base_specials_price_gross'],
@@ -181,7 +181,7 @@ class ViewPriceData
                     $_base_price_gross = $products_price_data['products_group_price_gross'];
                     $_base_special_price = $products_price_data['products_group_special_price'];
                     $_base_special_price_gross = $products_price_data['products_group_special_price_gross'];
-                } else {
+                } //else {
                     $products_price_data['base_price'] = $_base_price;
                     $products_price_data['base_price_gross'] = $_base_price_gross;
                     $products_price_data['base_specials_price'] = $_base_special_price;
@@ -190,7 +190,7 @@ class ViewPriceData
                         $products_price_data['products_group_special_price'] = $_base_special_price;
                         $products_price_data['products_group_special_price_gross'] = $_base_special_price_gross;
                     }
-                }
+                //}
                 
                 $delivery_option = 0;
                 if ($ext = \common\helpers\Acl::checkExtensionAllowed('DeliveryOptions', 'allowed')) {
@@ -198,7 +198,7 @@ class ViewPriceData
                 }
                 $products_price_data['delivery_option'] = $delivery_option;
 
-                if (USE_MARKET_PRICES == 'True' && CUSTOMERS_GROUPS_ENABLE == 'True') {
+                if (USE_MARKET_PRICES == 'True' && \common\helpers\Extensions::isCustomerGroupsAllowed()) {
                     foreach ($_tmp_keys as $k => $v) {
                         $_tmp_keys[$k] = array_merge($v, ['groups_id', 'currencies_id']);
                     }

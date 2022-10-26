@@ -39,7 +39,7 @@
             <item>
                 <sort_order>3</sort_order>
                 <acl_check>UserGroups,allowed</acl_check>
-                <config_check>CUSTOMERS_GROUPS_ENABLE,True</config_check>
+                <config_check></config_check>
                 <box_type>0</box_type>
                 <path>groups</path>
                 <title>BOX_CUSTOMERS_GROUPS</title>
@@ -162,7 +162,7 @@
             <item>
                 <sort_order>0</sort_order>
                 <acl_check></acl_check>
-                <config_check>SALES_STATS_DISPLAY,True</config_check>
+                <config_check></config_check>
                 <box_type>0</box_type>
                 <path>sales_statistics</path>
                 <title>BOX_REPORTS_SALES</title>

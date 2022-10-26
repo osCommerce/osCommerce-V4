@@ -79,7 +79,7 @@ class ConfiguratorPrice extends Price {
             return false;
         }
 
-        if (USE_MARKET_PRICES == 'True' || CUSTOMERS_GROUPS_ENABLE == 'True') {
+        if (USE_MARKET_PRICES == 'True' || \common\helpers\Extensions::isCustomerGroupsAllowed()) {
             $query = tep_db_query("select products_price_configurator  from " . TABLE_PRODUCTS_PRICES . " where products_id = '" . (int) $this->uprid . "' and groups_id = '" . (int) $_customer_groups_id . "' and currencies_id = '" . (USE_MARKET_PRICES == 'True' ? $_currency_id : '0') . "'");
             $data = tep_db_fetch_array($query);
             if (!$data || ($data['products_price_configurator'] == -2) || (USE_MARKET_PRICES != 'True' && $_customer_groups_id == 0)) {
@@ -91,6 +91,10 @@ class ConfiguratorPrice extends Price {
                 if ($this->relative->dSettings->applyGroupDiscount()){
                     $discount = Customer::check_customer_groups($_customer_groups_id, 'groups_discount');
                     $data['products_price_configurator'] = ($data['products_price_configurator']??0) * (1 - ($discount / 100));
+                    if ($ext = \common\helpers\Acl::checkExtension('UserGroupsExtraDiscounts', 'getProductDiscount')) {
+                        $product_discount = $ext::getProductDiscount($_customer_groups_id, $this->uprid);
+                        $data['products_price_configurator'] = $data['products_price_configurator'] * (1 - ($product_discount / 100));
+                    }
                 }
             }
         } else {

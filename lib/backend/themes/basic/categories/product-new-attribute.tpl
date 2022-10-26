@@ -16,7 +16,7 @@ Released under the GNU General Public License
 {$fieldSuffix="`$upridSuffix``$fieldSuffix`"}
     <div id="group_price_container{$idSuffix}" class="js_inventory_group_price js_group_price" data-base_price="{if isset($data['base_price'])}{$data['base_price']|escape:quotes}{/if}" data-group_discount="{if isset($data['tabdata']['groups_discount'])}{$data['tabdata']['groups_discount']}{/if}" data-currencies-id="{$data['currencies_id']}" data-uprid_suffix="{$upridSuffix}">
 {* workaround for switchers: group on/off *}
-{if ($smarty.const.CUSTOMERS_GROUPS_ENABLE != 'True' && $app->controller->view->useMarketPrices != true)  || $data['groups_id']==0}
+{if (!\common\helpers\Extensions::isCustomerGroupsAllowed() && $app->controller->view->useMarketPrices != true)  || $data['groups_id']==0}
   {if {$data['products_group_price']<0} }
     {$data['products_group_price']=0}
     {$data['products_group_price_gross']=0}
@@ -43,7 +43,7 @@ Released under the GNU General Public License
         <div class="our-pr-line after">
           <div>
             <label>{$smarty.const.TEXT_NET_PRICE}</label>
-            <input id="products_group_price{$idSuffix}" name="products_group_price_{$fieldSuffix|escape:quotes}" value='{$data['products_group_price']|escape:quotes}' onKeyUp="updateGrossPrice(this);" data-roundTo="{$data['round_to']}" class="form-control{if ($smarty.const.CUSTOMERS_GROUPS_ENABLE != 'True' || $data['groups_id']==0) && ($app->controller->view->useMarketPrices != true || $default_currency['id']==$data['currencies_id'])} default_currency{/if}" {if {round($data['products_group_price'])}==-2}style="display:none;"{/if}/>
+            <input id="products_group_price{$idSuffix}" name="products_group_price_{$fieldSuffix|escape:quotes}" value='{$data['products_group_price']|escape:quotes}' onKeyUp="updateGrossPrice(this);" data-roundTo="{$data['round_to']}" class="form-control{if (!\common\helpers\Extensions::isCustomerGroupsAllowed() || $data['groups_id']==0) && ($app->controller->view->useMarketPrices != true || $default_currency['id']==$data['currencies_id'])} default_currency{/if}" {if {round($data['products_group_price'])}==-2}style="display:none;"{/if}/>
 {if {$data['groups_id']}>0 }
             <span id="span_products_group_price{$idSuffix}" class="form-control-span"{if {round($data['products_group_price'])}>=0}style="display:none;"{/if}>{if isset($data['base_price'])}{$currencies->formatById($data['base_price']*((100-$data['tabdata']['groups_discount'])/100), false, $data['currencies_id'])|escape:quotes}{/if}</span>
 {/if}
@@ -57,7 +57,7 @@ Released under the GNU General Public License
         <div class="our-pr-line option-gross-price-line after">
           <div>
             <label>{$smarty.const.TEXT_GROSS_PRICE}</label>
-            <input id="products_group_price_gross{$idSuffix}" value='{$data['products_group_price_gross']|escape:quotes}' onKeyUp="updateNetPrice(this);" class="form-control{if ($smarty.const.CUSTOMERS_GROUPS_ENABLE != 'True' || $data['groups_id']==0) && ($app->controller->view->useMarketPrices != true || $default_currency['id']==$data['currencies_id'])} default_currency{/if}"{if {round($data['products_group_price'])}==-2}style="display:none;"{/if}/>
+            <input id="products_group_price_gross{$idSuffix}" value='{$data['products_group_price_gross']|escape:quotes}' onKeyUp="updateNetPrice(this);" class="form-control{if (!\common\helpers\Extensions::isCustomerGroupsAllowed() || $data['groups_id']==0) && ($app->controller->view->useMarketPrices != true || $default_currency['id']==$data['currencies_id'])} default_currency{/if}"{if {round($data['products_group_price'])}==-2}style="display:none;"{/if}/>
 {if {$data['groups_id']}>0 }
             <span id="span_products_group_price_gross{$idSuffix}" class="form-control-span"{if {round($data['products_group_price'])}>=0}style="display:none;"{/if}>{if isset($data['base_price_gross'])}{$currencies->formatById($data['base_price_gross']*((100-$data['tabdata']['groups_discount'])/100), false, $data['currencies_id'])|escape:quotes}{/if}</span>
 {/if}
@@ -75,12 +75,6 @@ Released under the GNU General Public License
       <td class="sort-pointer"></td>
         {if \common\helpers\Acl::checkExtensionAllowed('AttributesImages', 'allowed')}
           {\common\extensions\AttributesImages\AttributesImages::productBlock($option, $option)}
-        {else}
-            <td class="img-ast dis_module">
-                <div id="AdminSettns" class="int-upload">
-                    <select class="divselktr divselktr-{$option['products_options_id']}" disabled />
-                </div>
-            </td>
         {/if}
       <td class="name-ast">
           {$option['products_options_values_name']}

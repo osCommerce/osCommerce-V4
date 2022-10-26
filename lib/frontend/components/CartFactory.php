@@ -467,7 +467,7 @@ class CartFactory {
                         $cart->add_cart((int)$data['products_id'], $data['qty'], $data['id'], true, 0, null, $props);
                     }
                 } else {
-                    $cart->add_cart((int)$_POST['products_id'], $packQty, (isset($_POST['id']) ? $_POST['id'] : 0), true, 0, null, $props);
+                    $cart->add_cart((int)\Yii::$app->request->post('products_id'), $packQty, \Yii::$app->request->post('id'), true, 0, null, $props);
                 }
             }
             /* PC configurator addon end */

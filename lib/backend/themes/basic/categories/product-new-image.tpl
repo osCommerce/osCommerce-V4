@@ -145,71 +145,33 @@
         </div>
     </div>
 </div>
+{$AttributesImages = \common\helpers\Acl::checkExtensionAllowed('AttributesImages', 'allowed')}
+{$InventoryImages = \common\helpers\Acl::checkExtensionAllowed('InventortyImages', 'allowed')}
+{if $AttributesImages || $InventoryImages}
 <div class="box-gallery-right">
     <div class="tabbable tabbable-custom">
         <ul class="nav nav-tabs">
-                {if \common\helpers\Acl::checkExtensionAllowed('AttributesImages', 'allowed')}
-                    <li class="active"><a href="#tab_{$Key}_5_1" data-toggle="tab"><span>{$smarty.const.TEXT_ASSIGN_TO_ATTR}</span></a></li>
-                {else} 
-                    <li class="active"><a href="#tab_{$Key}_5_1" data-toggle="tab"><span class="dis_module">{$smarty.const.TEXT_ASSIGN_TO_ATTR}</span></a></li>
+                {$rightTabActive = 'class="active"'}
+                {if $AttributesImages}
+                    <li {$rightTabActive}><a href="#tab_{$Key}_5_1" data-toggle="tab"><span>{$smarty.const.TEXT_ASSIGN_TO_ATTR}</span></a></li>
+                    {$rightTabActive = ''}
                 {/if}
-                {if \common\helpers\Acl::checkExtensionAllowed('InventortyImages', 'allowed')}
-                    <li><a href="#tab_{$Key}_5_2" data-toggle="tab"><span>{$smarty.const.TEXT_ASSIGN_TO_INVENT}</span></a></li>
-                {else} 
-                    <li><a href="#tab_{$Key}_5_2" data-toggle="tab"><span class="dis_module">{$smarty.const.TEXT_ASSIGN_TO_INVENT}</span></a></li>
+                {if $InventoryImages}
+                    <li {$rightTabActive}><a href="#tab_{$Key}_5_2" data-toggle="tab"><span>{$smarty.const.TEXT_ASSIGN_TO_INVENT}</span></a></li>
+                    {$rightTabActive = ''}
                 {/if}
         </ul>
         <div class="tab-content">
-            {if \common\helpers\Acl::checkExtensionAllowed('AttributesImages', 'allowed')}
-                    {\common\extensions\AttributesImages\AttributesImages::productBlock2($Key, $Item)}
-                {else} 
-            <div class="tab-pane active dis_module" id="tab_{$Key}_5_1">
-              <div class="box-head-serch after">
-                  <input type="search" placeholder="Search by assigned attributes" disabled class="form-control">
-                <button onclick="return false"></button>
-              </div>
-
-              <div class="w-img-list w-img-list-attr">
-                <div class="w-img-list-ul js-option-images">
-                  {foreach $app->controller->view->selectedAttributes as $sel_attr_option}
-                    <label class="js-option-group-images" data-ov_id="{$sel_attr_option['products_options_id']}">{$sel_attr_option['products_options_name']}</label>
-                    <ul class="js-option-group-images" data-ov_id="{$sel_attr_option['products_options_id']}">
-                      {foreach $sel_attr_option['values'] as $sel_attr_value}
-                        <li class="js-option-value-images" data-ov_pair="{$sel_attr_option['products_options_id']}_{$sel_attr_value['products_options_values_id']}"><label><input type="checkbox" disabled class="uniform" {if Images::checkAttribute($Item['products_images_id'], $sel_attr_option['products_options_id'], $sel_attr_value['products_options_values_id'])}checked{/if} /> {$sel_attr_value['products_options_values_name']}</label></li>
-                      {/foreach}
-                    </ul>
-                  {/foreach}
-                </div>
-                <div class="w-btn-list" style="display: none;">
-                  <span class="btn">{$smarty.const.TEXT_ASSIGN}</span>
-                </div>
-              </div>
-            </div>
+                {if $AttributesImages}
+                    {$AttributesImages::productBlock2($Key, $Item)}
                 {/if}
-                {if \common\helpers\Acl::checkExtensionAllowed('InventortyImages', 'allowed')}
+                {if $InventoryImages}
                     {\common\extensions\InventortyImages\InventortyImages::productBlock2($Key)}
-                {else} 
-            <div class="tab-pane dis_module" id="tab_{$Key}_5_2">
-                <div class="box-head-serch after">
-                    <input type="search" placeholder="Search by assigned inventory" class="form-control">
-                    <button></button>
-                </div>
-                <!--div class="w-img-check-all">
-                    <span class="check_all_inv check-btn">{$smarty.const.TEXT_CHECK_ALL}</span><span class="uncheck_all_inv check-btn">{$smarty.const.TEXT_UNCHECK_ALL}</span>
-                </div-->
-                <div class="w-img-list w-img-list-attr">
-                    <div class="w-img-list-ul js_image_inventory" data-image_idx="{$Key}">
-
-                    </div>
-                    <div class="w-btn-list" style="display: none;">
-                        <span class="btn">{$smarty.const.TEXT_ASSIGN}</span>
-                    </div>
-                </div>
-            </div>
                 {/if}
-        </div>                    
+        </div>
     </div> 
 </div>
+{/if}
 <input type="hidden" name="products_images_id[{$Key}]" value="0" />
 <input type="hidden" id="deleted-image-{$Key}" name="products_images_deleted[{$Key}]" value="0" />
 </div>

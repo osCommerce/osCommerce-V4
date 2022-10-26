@@ -241,7 +241,7 @@ class BasePrice {
           }
         }
 
-        if (PRODUCTS_BUNDLE_SETS != 'True' && USE_MARKET_PRICES != 'True' && CUSTOMERS_GROUPS_ENABLE != 'True'
+        if (!\common\helpers\Acl::checkExtensionAllowed('ProductBundles') && USE_MARKET_PRICES != 'True' && !\common\helpers\Extensions::isCustomerGroupsAllowed()
             && $this->products_price['value'] > 0 && $qty == 1 && !$CustomerProductsPricePossible) {
             $this->saveCalculated('products_price');
             return $this->products_price['value'];
@@ -257,7 +257,7 @@ class BasePrice {
 
         $apply_discount = false;
         if (!$data) {
-          if (USE_MARKET_PRICES == 'True' || (CUSTOMERS_GROUPS_ENABLE == 'True' && (int)$_customer_groups_id>0) ){
+          if (USE_MARKET_PRICES == 'True' || (\common\helpers\Extensions::isCustomerGroupsAllowed() && (int)$_customer_groups_id>0) ){
               $data = $productItem->getProductsPrices([':products_id' => (int) $this->uprid, ':groups_id' => (int) $_customer_groups_id, ':currencies_id' => (USE_MARKET_PRICES == 'True' ? $_currency_id : '0')]);
               if (!$data || ($data['products_price'] == -2) || (USE_MARKET_PRICES != 'True' && $_customer_groups_id == 0)) {
                   if (USE_MARKET_PRICES == 'True') {
@@ -349,6 +349,10 @@ class BasePrice {
         if ($_customer_groups_id && $this->dSettings->applyGroupDiscount()) {
             $discount = Customer::check_customer_groups($_customer_groups_id, 'groups_discount');
             $this->products_price['value'] = $this->products_price['value'] * (1 - ($discount / 100));
+            if ($ext = \common\helpers\Acl::checkExtension('UserGroupsExtraDiscounts', 'getProductDiscount')) {
+                $product_discount = $ext::getProductDiscount($_customer_groups_id, $this->uprid);
+                $this->products_price['value'] = $this->products_price['value'] * (1 - ($product_discount / 100));
+            }
         }
     }
 
@@ -377,7 +381,7 @@ class BasePrice {
 
         if ($this->dSettings->applyQtyDiscount()){
             $apply_discount = false;
-            if (USE_MARKET_PRICES == 'True' || CUSTOMERS_GROUPS_ENABLE == 'True') {
+            if (USE_MARKET_PRICES == 'True' || \common\helpers\Extensions::isCustomerGroupsAllowed()) {
                 $data = ProductsPrices::find()->select(['products_group_discount_price as products_price_discount', 'products_group_price',
                                     'products_group_discount_price_pack_unit as products_price_discount_pack_unit', 'products_group_price_pack_unit',
                                     'products_group_discount_price_packaging as products_price_discount_packaging', 'products_group_price_packaging'])
@@ -504,7 +508,7 @@ class BasePrice {
                 $special_date_columns = ", s.expires_date AS special_expiration_date, promote_type ";
                 $special_date_columns .= ", s.max_per_order, s.total_qty ";
                 $special_date_columns .= ", IF(s.date_status_change IS NULL,IFNULL(s.specials_last_modified,specials_date_added), GREATEST(s.date_status_change,IFNULL(s.specials_last_modified,s.specials_date_added)) ) AS special_start_date ";
-                if (USE_MARKET_PRICES == 'True' || CUSTOMERS_GROUPS_ENABLE == 'True') {
+                if (USE_MARKET_PRICES == 'True' || \common\helpers\Extensions::isCustomerGroupsAllowed()) {
                     if (USE_MARKET_PRICES != 'True' && $_customer_groups_id == 0) {
                        $specials_query = tep_db_query("select s.specials_id, s.specials_new_products_price {$special_date_columns} from " . TABLE_SPECIALS . " s where s.products_id = '" . (int) $this->uprid . "' and s.status=1 and specials_new_products_price>0 and not exists (select * from " . TABLE_SPECIALS_PRICES . " sp where s.specials_id = sp.specials_id and sp.groups_id=0 and sp.specials_new_products_price=-1) order by specials_new_products_price>0 desc, s.specials_new_products_price");
                     } else {
@@ -574,6 +578,10 @@ class BasePrice {
                                 if (Customer::check_customer_groups($_customer_groups_id, 'apply_groups_discount_to_specials')) {
                                     $discount = Customer::check_customer_groups($_customer_groups_id, 'groups_discount');
                                     $this->special_price['value'] = $special['specials_new_products_price'] * (1 - ($discount / 100));
+                                    if ($ext = \common\helpers\Acl::checkExtension('UserGroupsExtraDiscounts', 'getProductDiscount')) {
+                                        $product_discount = $ext::getProductDiscount($_customer_groups_id, $this->uprid);
+                                        $this->special_price['value'] = $this->special_price['value'] * (1 - ($product_discount / 100));
+                                    }
                                 } else {
                                     $this->special_price['value'] = $special['specials_new_products_price'];
                                 }
@@ -801,13 +809,13 @@ class BasePrice {
             }
         }
 
-        if (PRODUCTS_BUNDLE_SETS != 'True' && USE_MARKET_PRICES != 'True' && CUSTOMERS_GROUPS_ENABLE != 'True' && $params['qty'] == 1) {
+        if (!\common\helpers\Acl::checkExtensionAllowed('ProductBundles') && USE_MARKET_PRICES != 'True' && !\common\helpers\Extensions::isCustomerGroupsAllowed() && $params['qty'] == 1) {
             return $this->inventory_price['value'];
         }
                 
         $discount = 0;
         if (!$this->calculate_full_price) {
-            if (USE_MARKET_PRICES == 'True' || CUSTOMERS_GROUPS_ENABLE == 'True') {
+            if (USE_MARKET_PRICES == 'True' || \common\helpers\Extensions::isCustomerGroupsAllowed()) {
                 $query = tep_db_query("select inventory_group_price as inventory_price from " . TABLE_INVENTORY_PRICES . " where products_id = '" . tep_db_input($this->uprid) . "' and groups_id = '" . (int) $_customer_groups_id . "' and currencies_id = '" . (USE_MARKET_PRICES == 'True' ? (int) $_currency_id : 0) . "' order by inventory_price asc limit 1");
                 $data = tep_db_fetch_array($query);
                 if (!$data || ($data['inventory_price'] == -2) || (USE_MARKET_PRICES != 'True' && $_customer_groups_id == 0)) {
@@ -819,13 +827,17 @@ class BasePrice {
                     if ($this->dSettings->applyGroupDiscount()){
                         $discount = Customer::check_customer_groups($_customer_groups_id, 'groups_discount');
                         $this->inventory_price['value'] = $data['inventory_price'] * (1 - ($discount / 100));
+                        if ($ext = \common\helpers\Acl::checkExtension('UserGroupsExtraDiscounts', 'getProductDiscount')) {
+                            $product_discount = $ext::getProductDiscount($_customer_groups_id, $this->uprid);
+                            $this->inventory_price['value'] = $this->inventory_price['value'] * (1 - ($product_discount / 100));
+                        }
                     }
                 } else {
                     $this->inventory_price['value'] = $data['inventory_price'];
                 }
             }
         } else { //do for full price        
-            if (USE_MARKET_PRICES == 'True' || CUSTOMERS_GROUPS_ENABLE == 'True') {
+            if (USE_MARKET_PRICES == 'True' || \common\helpers\Extensions::isCustomerGroupsAllowed()) {
                 $query = tep_db_query("select inventory_full_price from " . TABLE_INVENTORY_PRICES . " where products_id like '" . tep_db_input($this->uprid) . "' and groups_id = '" . (int) $_customer_groups_id . "' and currencies_id = '" . (USE_MARKET_PRICES == 'True' ? (int) $_currency_id : 0) . "' order by inventory_full_price asc limit 1");
                 $data = tep_db_fetch_array($query);
                 if (!$data || ($data['inventory_full_price'] == -2) || (USE_MARKET_PRICES != 'True' && $_customer_groups_id == 0)) {
@@ -837,6 +849,10 @@ class BasePrice {
                     if ($this->dSettings->applyGroupDiscount()){
                         $discount = Customer::check_customer_groups($_customer_groups_id, 'groups_discount');
                         $this->inventory_price['value'] = $data['inventory_full_price'] * (1 - ($discount / 100));
+                        if ($ext = \common\helpers\Acl::checkExtension('UserGroupsExtraDiscounts', 'getProductDiscount')) {
+                            $product_discount = $ext::getProductDiscount($_customer_groups_id, $this->uprid);
+                            $this->inventory_price['value'] = $this->inventory_price['value'] * (1 - ($product_discount / 100));
+                        }
                     }
                 } else {
                     $this->inventory_price['value'] = $data['inventory_full_price'];
@@ -870,7 +886,7 @@ class BasePrice {
         if ($this->dSettings->applyQtyDiscount()){
             if (!$this->calculate_full_price) {
                 $apply_discount = false;
-                if (USE_MARKET_PRICES == 'True' || CUSTOMERS_GROUPS_ENABLE == 'True') {
+                if (USE_MARKET_PRICES == 'True' || \common\helpers\Extensions::isCustomerGroupsAllowed()) {
                     $query = tep_db_query("select inventory_group_discount_price as inventory_discount_price, inventory_group_price as inventory_price from " . TABLE_INVENTORY_PRICES . " where products_id = '" . tep_db_input($this->uprid) . "' and groups_id = '" . (int) $_customer_groups_id . "' and currencies_id = '" . (USE_MARKET_PRICES == 'True' ? (int) $_currency_id : 0) . "'");
                     $data = tep_db_fetch_array($query);
                     if (!$data || ($data['inventory_discount_price'] == '' && $data['inventory_price'] == -2) || $data['inventory_discount_price'] == -2 || (USE_MARKET_PRICES != 'True' && $_customer_groups_id == 0)) {
@@ -905,10 +921,14 @@ class BasePrice {
                 if ($apply_discount && $this->dSettings->applyGroupDiscount()) {
                     $discount = Customer::check_customer_groups($_customer_groups_id, 'groups_discount');
                     $this->inventory_price['value'] = $this->inventory_price['value'] * (1 - ($discount / 100));
+                    if ($ext = \common\helpers\Acl::checkExtension('UserGroupsExtraDiscounts', 'getProductDiscount')) {
+                        $product_discount = $ext::getProductDiscount($_customer_groups_id, $this->uprid);
+                        $this->inventory_price['value'] = $this->inventory_price['value'] * (1 - ($product_discount / 100));
+                    }
                 }
             } else { // full price
                 $apply_discount = false;
-                if ((USE_MARKET_PRICES == 'True' || CUSTOMERS_GROUPS_ENABLE == 'True')) {
+                if ((USE_MARKET_PRICES == 'True' || \common\helpers\Extensions::isCustomerGroupsAllowed())) {
                     $query = tep_db_query("select inventory_discount_full_price, inventory_full_price from " . TABLE_INVENTORY_PRICES . " where products_id = '" . tep_db_input($this->uprid) . "' and groups_id = '" . (int) $_customer_groups_id . "' and currencies_id = '" . (USE_MARKET_PRICES == 'True' ? (int) $_currency_id : 0) . "'");
                     $data = tep_db_fetch_array($query);
                     if (!$data || ($data['inventory_discount_full_price'] == '' && $data['inventory_full_price'] == -2) || $data['inventory_discount_full_price'] == -2 || (USE_MARKET_PRICES != 'True' && $_customer_groups_id == 0)) {
@@ -943,6 +963,10 @@ class BasePrice {
                 if ($apply_discount && $this->dSettings->applyGroupDiscount()) {
                     $discount = Customer::check_customer_groups($_customer_groups_id, 'groups_discount');
                     $this->inventory_price['value'] = $this->inventory_price['value'] * (1 - ($discount / 100));
+                    if ($ext = \common\helpers\Acl::checkExtension('UserGroupsExtraDiscounts', 'getProductDiscount')) {
+                        $product_discount = $ext::getProductDiscount($_customer_groups_id, $this->uprid);
+                        $this->inventory_price['value'] = $this->inventory_price['value'] * (1 - ($product_discount / 100));
+                    }
                 }
             }
         }

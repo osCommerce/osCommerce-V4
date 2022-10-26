@@ -1,3 +1,4 @@
+{\backend\assets\Categories::register($this)|void}
 <!--=== Page Header ===-->
 {$directOutput=false}
 {include file="./cat_main_box.tpl"}
@@ -236,11 +237,25 @@
                               </div>
                               <div class="brand_box">
                                 <ul>
-                                    <li class="li_block"><span class="brand_li"><span id="0" onclick="changeBrand(this)">{$smarty.const.TEXT_ALL}</span></span></li>
-                                    <li class="li_block"><span class="brand_li"><span id="-1" onclick="changeBrand(this)">{$smarty.const.TEXT_ALL_WITHOUT_BRAND}</span></span></li>
+                                    <li class="li_block li-block-top"><span class="brand_li"><span id="0" onclick="changeBrand(this)">{$smarty.const.TEXT_ALL}</span></span></li>
+                                    <li class="li_block li-block-top"><span class="brand_li"><span id="-1" onclick="changeBrand(this)">{$smarty.const.TEXT_ALL_WITHOUT_BRAND}</span></span></li>
                                      {foreach $app->controller->view->brandsList as $brandItem}
-                                         <li id="brands-{$brandItem.id}" class="li_block{if $brandItem.id == $app->controller->view->filters->brand_id} selected{/if}"><span class="handle"><i class="icon-hand-paper-o"></i></span><span class="brand_li"><span class="brand_text" id="{$brandItem.id}" onClick="changeBrand(this)">{$brandItem.text}</span>{if \common\helpers\Acl::rule(['TEXT_LABEL_BRAND', 'IMAGE_EDIT'])}<a href="{Yii::$app->urlManager->createUrl(['categories/brandedit', 'manufacturers_id' => $brandItem.id])}" class="edit_brand"><i class="icon-pencil"></i></a>{/if}
-                                                 {if \common\helpers\Acl::rule(['TEXT_LABEL_BRAND', 'IMAGE_DELETE'])}<a class="delete_brand" href="{Yii::$app->urlManager->createUrl(['categories/confirm-manufacturer-delete', 'manufacturers_id' => $brandItem.id])}"><i class="icon-trash"></i></a>{/if}</span></li>
+                                         <li id="brands-{$brandItem.id}" class="li_block{if $brandItem.id == $app->controller->view->filters->brand_id} selected{/if}">
+
+                                             <span class="handle"><i class="icon-hand-paper-o"></i></span>
+
+                                             <span class="brand_li">
+                                                 <span class="brand_text" id="{$brandItem.id}" onClick="changeBrand(this)">{$brandItem.text}</span>
+
+                                                <span class="function-buttons">
+                                                 {if \common\helpers\Acl::rule(['TEXT_LABEL_BRAND', 'IMAGE_EDIT'])}<a href="{Yii::$app->urlManager->createUrl(['categories/brandedit', 'manufacturers_id' => $brandItem.id])}" class="edit_brand"><i class="icon-pencil"></i></a>{/if}
+
+                                                 {if \common\helpers\Acl::rule(['TEXT_LABEL_BRAND', 'IMAGE_DELETE'])}<a class="delete_brand" href="{Yii::$app->urlManager->createUrl(['categories/confirm-manufacturer-delete', 'manufacturers_id' => $brandItem.id])}"><i class="icon-trash"></i></a>{/if}
+
+                                                </span>
+                                             </span>
+
+                                         </li>
                                     {/foreach}
                                 </ul>
                               </div>
@@ -1225,20 +1240,45 @@ $(document).ready(function() {
       $(this).autocomplete("search");
     });    
 
-    $( ".cat_main_box" ).nestable();
+    /*$( ".cat_main_box" ).nestable();
     $( ".cat_main_box" ).on('change', function() {
-        var data = window.JSON.stringify($(this).nestable('serialize'));
+        console.log($(this).nestable('serialize'));
+        /!*var data = window.JSON.stringify($(this).nestable('serialize'));
         $.post("{Yii::$app->urlManager->createUrl('categories/sort-order')}", { 'categories' : data }, function(data, status){
             if (status == "success") {
                 resetStatement();
             } else {
                 alert("Request error.");
             }
-        },"html");
-    });
-    /*$( ".categories_ul" ).sortable({
-      handle: ".handle"
+        },"html");*!/
     });*/
+    $( ".categories_ul ol" ).sortable({
+        connectWith: ".categories_ul ol",
+        handle: ".handle",
+        update: function(){
+            const categories = JSON.stringify(categoriesTree($('.cat_main_box > ol > li')));
+            $.post("{Yii::$app->urlManager->createUrl('categories/sort-order')}", { categories }, function(data, status){
+                if (status == "success") {
+                    resetStatement();
+                } else {
+                    alert("Request error.");
+                }
+            },"html");
+        }
+    });
+
+    function categoriesTree($list){
+        const tree = [];
+        $list.each(function () {
+            const children = categoriesTree($('> ol > li', this))
+            if (children.length) {
+                tree.push({ id: $(this).data('id'), children})
+            }else {
+                tree.push({ id: $(this).data('id')})
+            }
+        })
+        return tree;
+    }
 
     $( ".datatable tbody" ).sortable({
         stop: function( event, ui ) {

@@ -25,8 +25,8 @@ Released under the GNU General Public License
 {Currencies::widget()}
 {function SalesParams}
   {*tabs=$app->controller->view->price_tabs tabparams=$tabparams  fieldsData=$app->controller->view->price_tabs_data  id_prefix = $id_prefix*}
-  {if $smarty.const.CUSTOMERS_GROUPS_ENABLE != 'True' || !$app->controller->view->useMarketPrices}
-    {if $smarty.const.CUSTOMERS_GROUPS_ENABLE != 'True' && !$app->controller->view->useMarketPrices}
+  {if !\common\helpers\Extensions::isCustomerGroupsAllowed() || !$app->controller->view->useMarketPrices}
+    {if !\common\helpers\Extensions::isCustomerGroupsAllowed() && !$app->controller->view->useMarketPrices}
       {$data=$fieldsData}
     {else}
       {$data=$fieldsData[0]}
@@ -35,7 +35,7 @@ Released under the GNU General Public License
     {$data=$fieldsData[0][0]}
   {/if}
           <div class="sales-dates">
-              {if $smarty.const.CUSTOMERS_GROUPS_ENABLE != 'True' }
+              {if !\common\helpers\Extensions::isCustomerGroupsAllowed() }
                 {$dataToSwitch=$idSuffix}
               {else}
                 {$dataToSwitch=substr($idSuffix, 0, -2)}
@@ -338,7 +338,7 @@ $(document).ready(function(){
 {function productSaleOnlyPriceBlock}
 {* $data: [ name => val], $fieldSuffix: '[1][0]'  $idSuffix: '-1-0' *}
 {* workaround for switchers: group on/off *}
-{if $smarty.const.CUSTOMERS_GROUPS_ENABLE != 'True'}
+{if !\common\helpers\Extensions::isCustomerGroupsAllowed()}
   {if empty($data['products_group_price'])  }
     {$data['products_group_price']=0}
     {$data['products_group_price_gross']=0}
@@ -393,8 +393,14 @@ $(document).ready(function(){
         <div class="{if ($default_currency['id']!=$data['currencies_id']) }market_sales_switch{/if} sale_to_dis {if $data['specials_disabled']>0 }dis_module{/if}">
         <div id="div_sale_prod{$idSuffix}" class="sale-prod-line-block after div_sale_prod div_sale_prod{$idSuffix}" {if ($showSalesDiv==0 || $data['products_group_special_price']==-1)}style="display:none;"{/if}>
           <div class="_sale-prod-line row">
-              <div class="col-xs-2 align-right">
-                  <label class="sale-info1">{$smarty.const.TEXT_SALE}<span class="colon">:</span></label>
+              <div class="{if $smarty.const.PRICE_WITH_BACK_TAX == 'True'}col-xs-3 {else}col-xs-2{/if} align-right">
+                  <label class="sale-info1">
+                        {if $smarty.const.PRICE_WITH_BACK_TAX == 'True'}
+                            {$smarty.const.TEXT_GROSS_PRICE}
+                        {else}
+                            {$smarty.const.TEXT_NET_PRICE}
+                        {/if}
+                      <span class="colon">:</span></label>
               </div>
           <div class="col-xs-3">
             {if $data['products_group_special_price']>0.001}
@@ -408,10 +414,10 @@ $(document).ready(function(){
             <span id="span_special_price{$idSuffix}" class="form-control-span"{if $data['products_group_specials_price']>-0.99}style="display:none;"{/if}>{$currencies->formatById($val, false, $data['currencies_id'])|escape}</span>
 {/if}
           </div>
-              <div class="col-xs-3 align-right">
+              <div class="col-xs-3 align-right" {if $smarty.const.PRICE_WITH_BACK_TAX == 'True'}style="display: none;"{/if}>
                   <label class="sale-info1">{$smarty.const.TEXT_SALE_GROSS}<span class="colon">:</span></label>
               </div>
-          <div class="col-xs-3">
+          <div class="col-xs-3" {if $smarty.const.PRICE_WITH_BACK_TAX == 'True'}style="display: none;"{/if}>
             {if $data['products_group_special_price_gross']>0.001}
               {$val = $data['products_group_special_price_gross']}
             {else}

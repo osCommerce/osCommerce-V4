@@ -116,7 +116,15 @@ function deleteSelectedOrders() {
 
     return false;
   }
-
+  function switchKeepAlive (item_id, status) {
+    $.post("{$app->urlManager->createUrl('departments/keep-alive')}", { 'dID' : item_id, 'status' : status }, function(data, status) {
+      if (status == "success") {
+        resetStatement(item_id);
+      } else {
+        alert("Request error.");
+      }
+    },"html");
+  }
   function switchDepartmentStatement (item_id, status) {
     $.post("{$app->urlManager->createUrl('departments/switch-status')}", { 'dID' : item_id, 'status' : status }, function(data, status) {
       if (status == "success") {
@@ -232,6 +240,16 @@ function deleteSelectedOrders() {
       }
     );    
 
+    $(".keep_on_off").bootstrapSwitch(
+      {
+        onSwitchChange: function (element, arguments) {
+          switchKeepAlive(element.target.value, arguments);
+          return true;  
+        },
+        handleWidth: '20px',
+        labelWidth: '24px'
+      }
+    );  
   }
 
   function onUnclickEvent(obj, table) {

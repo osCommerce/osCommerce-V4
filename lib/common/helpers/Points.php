@@ -21,7 +21,7 @@ class Points {
         if (USE_MARKET_PRICES != 'True') {
             $currency_id = 0;
         }
-        if (CUSTOMERS_GROUPS_ENABLE != 'True') {
+        if (!\common\helpers\Extensions::isCustomerGroupsAllowed()) {
             $group_id = 0;
         }
         if ($currency_id == 0 && $group_id == 0) {
@@ -40,7 +40,7 @@ class Points {
         if (USE_MARKET_PRICES != 'True') {
             $currency_id = 0;
         }
-        if (CUSTOMERS_GROUPS_ENABLE != 'True') {
+        if (!\common\helpers\Extensions::isCustomerGroupsAllowed()) {
             $group_id = 0;
         }
         if ($currency_id == 0 && $group_id == 0) {
@@ -70,7 +70,7 @@ class Points {
         try {
             /** @var GroupsService $groupsService */
             $groupsService = \Yii::createObject(GroupsService::class);
-            $groupsCoefficients = $groupsService->getBonusPointsCurrencyRates($coefficient[0], $coefficient[0] === false || !(defined('CUSTOMERS_GROUPS_ENABLE') && CUSTOMERS_GROUPS_ENABLE == 'True'));
+            $groupsCoefficients = $groupsService->getBonusPointsCurrencyRates($coefficient[0], $coefficient[0] === false || !\common\helpers\Extensions::isCustomerGroupsAllowed());
             foreach ($groupsCoefficients as $key => $groupsCoefficient) {
                 $coefficient[$key] = $groupsCoefficient;
             }
@@ -96,7 +96,7 @@ class Points {
             if ($groupId === null) {
                 return $coefficient;
             }
-            $isGroupEnabled = $configurationService->findValue('CUSTOMERS_GROUPS_ENABLE', $platformId);
+            $isGroupEnabled = \common\helpers\Extensions::isCustomerGroupsAllowed();
             if ($isGroupEnabled && $groupId === 0) {
                 $groupId = (int)$configurationService->findValue('DEFAULT_USER_GROUP', $platformId);
             }

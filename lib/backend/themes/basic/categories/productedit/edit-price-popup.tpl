@@ -123,8 +123,8 @@ $(document).ready(function(){
 
 {function SalesParams}
   {*tabs=$app->controller->view->price_tabs tabparams=$tabparams  fieldsData=$app->controller->view->price_tabs_data  id_prefix = $id_prefix*}
-  {if $smarty.const.CUSTOMERS_GROUPS_ENABLE != 'True' || !$app->controller->view->useMarketPrices}
-    {if $smarty.const.CUSTOMERS_GROUPS_ENABLE != 'True' && !$app->controller->view->useMarketPrices}
+  {if !\common\helpers\Extensions::isCustomerGroupsAllowed() || !$app->controller->view->useMarketPrices}
+    {if !\common\helpers\Extensions::isCustomerGroupsAllowed() && !$app->controller->view->useMarketPrices}
       {$data=$fieldsData}
     {else}
       {$data=$fieldsData[0]}

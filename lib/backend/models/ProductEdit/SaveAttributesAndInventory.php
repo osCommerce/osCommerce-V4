@@ -187,7 +187,7 @@ class SaveAttributesAndInventory
                 if ($without_inventory || \common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed') || \common\helpers\Attributes::is_virtual_option($option_id)) {
                     tep_db_query("delete from " . TABLE_PRODUCTS_ATTRIBUTES_PRICES . " where products_attributes_id = '" . (int) $products_attributes_id . "'");
                     ///['db' => 'products_group_price_packaging', 'dbdef' => -2, 'post' => 'products_group_price_packaging', 'f' => ['self', 'defGroupPrice']],
-                    if (USE_MARKET_PRICES == 'True' || CUSTOMERS_GROUPS_ENABLE == 'True') {
+                    if (USE_MARKET_PRICES == 'True' || \common\helpers\Extensions::isCustomerGroupsAllowed()) {
                         foreach ($currencies_ids as $post_currencies_id => $currencies_id) {
                             foreach ($groups as $groups_id => $non) {
                                 $sql_data_array = [
@@ -306,7 +306,7 @@ class SaveAttributesAndInventory
                     tep_db_query("DELETE FROM " . TABLE_INVENTORY_PRICES . " WHERE inventory_id = '" . (int)$inventory_id . "'");
 
                     ///['db' => 'products_group_price_packaging', 'dbdef' => -2, 'post' => 'products_group_price_packaging', 'f' => ['self', 'defGroupPrice']],
-                    if (USE_MARKET_PRICES == 'True' || CUSTOMERS_GROUPS_ENABLE == 'True') {
+                    if (USE_MARKET_PRICES == 'True' || \common\helpers\Extensions::isCustomerGroupsAllowed()) {
                         foreach ($currencies_ids as $post_currencies_id => $currencies_id) {
 //in tpl currency_id should be always correct, so w/o market price: $post_currencies_id (15) => $currencies_id (0)
                             foreach ($groups as $groups_id => $non) {

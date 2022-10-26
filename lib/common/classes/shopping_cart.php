@@ -783,7 +783,6 @@ class shopping_cart {
                 if ($gift_wrap && \common\helpers\Gifts::allow_gift_wrap($products_id)) {
                     $this->contents[$products_id]['gift_wrap'] = 1;
                 }
-
                 if (is_array($attributes)) {
                     $this->contents[$products_id]['attributes'] = $attributes;
                 }
@@ -886,7 +885,6 @@ class shopping_cart {
 /// use ONLY add_cart instead
 /// there could be problem with auto_giveaways.
     function update_quantity($products_id, $quantity = '', $attributes = '', $gift_wrap = false) {
-
         $customer_id = Yii::$app->user->getId();
 
         if (empty($quantity))
@@ -915,7 +913,7 @@ class shopping_cart {
         }
 
         if (is_array($attributes)) {
-            $this->contents[$products_id]['attributes'] = $attributes;
+           $this->contents[$products_id]['attributes'] = $attributes;
         }
 
         $this->contents[$products_id]['platform_id'] = $platform_id;
@@ -965,7 +963,7 @@ class shopping_cart {
                   }
                 }
 
-                if (USE_MARKET_PRICES == 'True' || CUSTOMERS_GROUPS_ENABLE == 'True') {
+                if (USE_MARKET_PRICES == 'True' || \common\helpers\Extensions::isCustomerGroupsAllowed()) {
                     $product_check_query = tep_db_query("select count(*) as total from " . TABLE_PRODUCTS . " p {$products2c_join} " . "  left join " . TABLE_PRODUCTS_PRICES . " pp on p.products_id = pp.products_id and pp.groups_id = '" . (int) $customer_groups_id . "' and pp.currencies_id = '" . (USE_MARKET_PRICES == 'True' ? (int)\Yii::$app->settings->get('currency_id') : 0) . "' where p.products_status = 1 " . \common\helpers\Product::get_sql_product_restrictions(array('p', 'pd', 's', 'sp', 'pp'), false) . " " . " and if(pp.products_group_price is null, 1, pp.products_group_price != -1) and p.products_id = '" . (int) $key . "'");
                 } else {
                     $product_check_query = tep_db_query("select count(*) as total from " . TABLE_PRODUCTS . " p {$products2c_join} " . " where p.products_status = 1 " . \common\helpers\Product::get_sql_product_restrictions(array('p', 'pd', 's', 'sp', 'pp'), false) . " " . " and p.products_id = '" . (int) $key . "'");
@@ -1089,7 +1087,7 @@ class shopping_cart {
             }
         } else {
             if (isset($this->contents[$products_id])) {
-                return $this->contents[$products_id]['reserved_qty'];
+                return $this->contents[$products_id]['reserved_qty'] ?? 0;
             } else {
                 return 0;
             }
@@ -1154,7 +1152,9 @@ class shopping_cart {
                 }
             }
         }
-        $this->cleanup();
+        if (empty($this->order_id)) { // don't clean up saved orders
+            $this->cleanup();
+        }
         /* PC configurator addon end */
 
         if (!tep_session_is_registered('last_removed')){
@@ -1389,7 +1389,7 @@ class shopping_cart {
                         if (is_array($this->contents[$products_id]['attributes'])) {
                             foreach ($this->contents[$products_id]['attributes'] as $option => $value) {
                                 $option_arr = explode('-', $option);
-                                $attribute_price_query = tep_db_query("select products_attributes_id, options_values_price, price_prefix, products_attributes_weight, products_attributes_weight_prefix from " . TABLE_PRODUCTS_ATTRIBUTES . " where products_id = '" . (int) ($option_arr[1] > 0 ? $option_arr[1] : $prid) . "' and options_id = '" . (int) $option_arr[0] . "' and options_values_id = '" . (int) $value . "'");
+                                $attribute_price_query = tep_db_query("select products_attributes_id, options_values_price, price_prefix, products_attributes_weight, products_attributes_weight_prefix from " . TABLE_PRODUCTS_ATTRIBUTES . " where products_id = '" . (int) (($option_arr[1]??0) > 0 ? $option_arr[1] : $prid) . "' and options_id = '" . (int) $option_arr[0] . "' and options_values_id = '" . (int) $value . "'");
                                 $attribute_price = tep_db_fetch_array($attribute_price_query);
                                 if (tep_not_null($attribute_price['products_attributes_weight'])) {
                                     if ($attribute_price['products_attributes_weight_prefix'] == '+' || $attribute_price['products_attributes_weight_prefix'] == '') {
@@ -1712,7 +1712,7 @@ class shopping_cart {
                         $stock_info['quantity_max'] = \common\helpers\Product::filter_product_order_quantity($stock_products_id, $stock_info['max_qty'], true);
                     }
 
-                    if (false && defined('PRODUCTS_BUNDLE_SETS') && PRODUCTS_BUNDLE_SETS == 'True' && $products['is_bundle'] && empty($val['attributes'])) {
+                    if (false && \common\helpers\Acl::checkExtensionAllowed('ProductBundles') && $products['is_bundle'] && empty($val['attributes'])) {
                       /// bundles kostyl' for now
                       $tmp = (isset($val['attributes']) && is_array($val['attributes']))?$val['attributes']:[];
                       $attributes_details = \common\helpers\Attributes::getDetails($products_id, $tmp, []);

@@ -37,6 +37,18 @@
             </div>
         </div>
     </div>
+{else}
+    <div class="properties_top">
+        <div class="properties_filter">
+            <ul class="pf_ul after">
+                <li>
+                    <label>Extra field</label>
+                    {Html::dropDownList('type', $type, ['' => 'none', '1' => 'text box', '2' => 'text area'], ['class'=>'form-control'])}
+                </li>
+            </ul>
+        </div>
+    </div>
+
 {/if}
     <div class="properties_bottom tabbable-custom">
         {if count($languages) > 1}

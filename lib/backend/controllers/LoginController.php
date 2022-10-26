@@ -35,7 +35,7 @@ class LoginController extends Controller {
         \Yii::$app->view->title = TEXT_SIGN_IN . ' | '. \common\classes\platform::name(\common\classes\platform::defaultId()) . ' | ' . \Yii::$app->name;
         return parent::__construct($id, $module);
     }
-    
+
     /**
      * Disable layout for the controller view
      */
@@ -50,6 +50,7 @@ class LoginController extends Controller {
         global $language, $navigation;
         $languages_id = \Yii::$app->settings->get('languages_id');
         \common\helpers\Translation::init('admin/main');
+        \common\helpers\Translation::init('admin/admin-login-view');
 
         $stamp = date('Y-m-d H:i:s', strtotime("-1 hour"));
         tep_db_query("update " . TABLE_ADMIN . " set login_failture = 0, login_failture_ip = '', login_failture_date = NULL where login_failture > 2 and login_failture_date IS NOT NULL and login_failture_date < '" . $stamp . "'");
@@ -156,6 +157,8 @@ class LoginController extends Controller {
                 $check_admin = tep_db_fetch_array($check_admin_query);
                 if (!\common\helpers\Password::validate_password($check_admin['admin_email_address'], $check_admin['admin_email_token'], 'backend')) {
                     $get['login'] = 'fail';
+                    $errorMessage = ('TEXT_' . strtoupper(\common\models\AdminLoginLog::$eventList[4]));
+                    $errorMessage = (defined($errorMessage) ? constant($errorMessage) : 'Wrong email security token');
                     $adminLoginLogRecord->all_event = 4;
                     $adminLoginLogRecord->all_user_id = $check_admin['admin_id'];
                     $adminLoginLogRecord->all_user = $check_admin['admin_email_address'];
@@ -354,7 +357,7 @@ class LoginController extends Controller {
                     }
                     tep_db_query("update " . TABLE_ADMIN . " set login_failture = 0, login_failture_ip = '', token = '', admin_logdate = now(), admin_lognum = admin_lognum+1 where admin_id = '" . (int)$login_id . "'");
                     \common\models\Fraud::cleanAddress();
-                    
+
                     $expiredFlag = false;
                     if (defined('ADMIN_PASSWORD_EXPIRE') && ADMIN_PASSWORD_EXPIRE != 'Never') {
                         $dateTimestamp2 = false;

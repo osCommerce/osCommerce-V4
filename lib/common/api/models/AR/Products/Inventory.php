@@ -52,7 +52,7 @@ class Inventory extends EPMap
     public function __construct(array $config = [])
     {
         $marketPresent = defined('USE_MARKET_PRICES') && USE_MARKET_PRICES=='True';
-        $groupsPresent = defined('CUSTOMERS_GROUPS_ENABLE') && CUSTOMERS_GROUPS_ENABLE=='True';
+        $groupsPresent = \common\helpers\Extensions::isCustomerGroupsAllowed();
         if ( !$marketPresent && !$groupsPresent ) {
             unset($this->childCollections['prices']);
         }

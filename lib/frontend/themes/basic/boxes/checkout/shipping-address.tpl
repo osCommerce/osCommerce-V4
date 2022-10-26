@@ -72,5 +72,5 @@
     </script>
     {/if}
 {else}
-    &nbsp;
+    
 {/if}

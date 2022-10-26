@@ -29,7 +29,7 @@ class PostArrayHelper
     {
         $data = $field['dbdef'];
 
-        if (USE_MARKET_PRICES == 'True' && CUSTOMERS_GROUPS_ENABLE == 'True') {
+        if (USE_MARKET_PRICES == 'True' && \common\helpers\Extensions::isCustomerGroupsAllowed()) {
             if (isset($field['flag'])) {
                 $tmp = Yii::$app->request->post($field['flag'], 0);
                 if (is_array($tmp)) {
@@ -101,7 +101,7 @@ class PostArrayHelper
                 }
             }
 
-        } elseif (CUSTOMERS_GROUPS_ENABLE == 'True') {
+        } elseif (\common\helpers\Extensions::isCustomerGroupsAllowed()) {
             if (isset($field['flag'])) {
                 $tmp = Yii::$app->request->post($field['flag'], 0);
                 if (is_array($tmp)) {

@@ -377,11 +377,20 @@ class Currencies {
             \Yii::$app->settings->set('currency', $currency);
         }
 
+        if (defined('PRICE_WITH_BACK_TAX') && PRICE_WITH_BACK_TAX == 'True') {
+            if ($products_tax<0) {
+                $method = 'reduce_tax_always';
+                $products_tax = abs($products_tax);
+            } else {
+                $method = 'add_tax';
+            }
+        } else
         if ($products_tax > 0 && \common\helpers\Tax::displayTaxable()){
           $method = 'add_tax_always';
         } else {
           $method = 'add_tax';
         }
+          
 
         if ( !is_numeric($quantity) ) $quantity = 1;
 
@@ -402,6 +411,12 @@ class Currencies {
  * @return string formatted price
  */
     function display_price($products_price, $products_tax, $quantity = 1, $microdata = true, $metaTags = false) {
+        $ret = $this->getPriceTaxable($products_price, $products_tax, $quantity);
+        if ($ret != '') {
+            $ret = $this->format($ret, true, '', '', $microdata, $metaTags);
+        }
+        return $ret;
+        /*
         if ($products_price === false) {
             return '';
         } else {
@@ -410,7 +425,7 @@ class Currencies {
               $products_tax = 0;
             }
             return $this->format($this->calculate_price($products_price, $products_tax, $quantity), true, '', '', $microdata, $metaTags);
-        }
+        }*/
     }
     
 /**
@@ -421,23 +436,23 @@ class Currencies {
  * @return string
  */
     function display_price_clear($products_price, $products_tax, $quantity = 1) {
+        $ret = $this->getPriceTaxable($products_price, $products_tax, $quantity);
+        if ($ret != '') {
+            $ret = $this->format_clear($ret);
+        }
+        return $ret;
+
+    }
+
+    function getPriceTaxable($products_price, $products_tax, $quantity = 1) {
+        $ret = '';
         if ($products_price === false) {
             return '';
         } else {
-            return (\common\helpers\Tax::displayTaxable()
-                        ?$this->format_clear($this->calculate_price($products_price, $products_tax, $quantity))
-                        :$this->format_clear($this->calculate_price($products_price, 0, $quantity))
-                        );
-            /*
-            if (\Yii::$app->storage->has('taxable')){
-                return (\Yii::$app->storage->get('taxable') 
-                        ?$this->format_clear($this->calculate_price($products_price, $products_tax, $quantity))
-                        :$this->format_clear($this->calculate_price($products_price, 0, $quantity))
-                        );
+            if ($products_tax > 0  && !\common\helpers\Tax::displayTaxable() ){
+              $products_tax = 0;
             }
-            return $this->format_clear($this->calculate_price($products_price, $products_tax, $quantity));
-             
-             */
+            return $this->calculate_price($products_price, $products_tax, $quantity);
         }
     }
 

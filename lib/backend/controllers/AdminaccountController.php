@@ -98,7 +98,7 @@ class AdminaccountController extends Sceleton
             $admin->saveAdditionalInfo($adminInfo);
             $hidden_admin_language = \common\helpers\Language::getAdminHiddenLanguages();
 
-            $ret = ['ok' => 1, 'hidden_admin_language' => $hidden_admin_language];
+            $ret = ['ok' => 1, 'hidden_admin_language' => array_values($hidden_admin_language)];
         }
         \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
         return $ret;

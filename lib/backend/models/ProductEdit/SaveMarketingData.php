@@ -79,7 +79,7 @@ class SaveMarketingData
               } else {
                   //shopping cart total
                   if (USE_MARKET_PRICES == 'True') {
-                      if (CUSTOMERS_GROUPS_ENABLE == 'True') {
+                      if (\common\helpers\Extensions::isCustomerGroupsAllowed()) {
                           // shopping_cart_price[2][11] - both group, currencies.
                           foreach ($shopping_cart_price[$group_id] as $currencies_id => $price) {
                               if ((int) $products_qty[$group_id][$currencies_id] <= 0)

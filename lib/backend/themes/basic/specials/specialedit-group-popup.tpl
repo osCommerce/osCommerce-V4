@@ -138,7 +138,7 @@ $(document).ready(function(){
 {function productSaleOnlyPriceBlock}
 {* $data: [ name => val], $fieldSuffix: '[1][0]'  $idSuffix: '-1-0' *}
 {* workaround for switchers: group on/off *}
-{if $smarty.const.CUSTOMERS_GROUPS_ENABLE != 'True'}
+{if !\common\helpers\Extensions::isCustomerGroupsAllowed()}
   {if empty($data['products_group_price'])  }
     {$data['products_group_price']=0}
     {$data['products_group_price_gross']=0}
@@ -191,7 +191,13 @@ $(document).ready(function(){
         <div id="div_sale_prod{$idSuffix}" class="sale-prod-line-block after div_sale_prod div_sale_prod{$idSuffix}" {if ($showSalesDiv==0 || $data['products_group_special_price']==-1)}style="display:none;"{/if}>
           <div class="_sale-prod-line our-pr-line">
           <div>
-            <label class="sale-info1">{$smarty.const.TEXT_SALE}<span class="colon">:</span></label>
+            <label class="sale-info1">
+                {if $smarty.const.PRICE_WITH_BACK_TAX == 'True'}
+                    {$smarty.const.TEXT_GROSS_PRICE}
+                {else}
+                    {$smarty.const.TEXT_NET_PRICE}
+                {/if}
+                <span class="colon">:</span></label>
             {if $data['products_group_special_price']>0.001}
               {$val = $data['products_group_special_price']}
             {else}
@@ -203,7 +209,7 @@ $(document).ready(function(){
             <span id="span_special_price{$idSuffix}" class="form-control-span"{if $data['products_group_specials_price']>-0.99}style="display:none;"{/if}>{$currencies->formatById($val, false, $data['currencies_id'])|escape}</span>
 {/if}
           </div>
-          <div>
+          <div {if $smarty.const.PRICE_WITH_BACK_TAX == 'True'}style="display: none;"{/if}>
             <label class="sale-info1">{$smarty.const.TEXT_SALE_GROSS}<span class="colon">:</span></label>
             {if $data['products_group_special_price_gross']>0.001}
               {$val = $data['products_group_special_price_gross']}

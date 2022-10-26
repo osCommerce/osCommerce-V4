@@ -6,9 +6,11 @@
 {if $infoBreadCrumb}
     <div class="breadcrumb-additional_info breadcrumb-for-category">{$infoBreadCrumb}
 {if $app->controller->view->usePopupMode == false}
+        {if \common\helpers\Acl::checkExtensionAllowed('ReportChangesHistory')}
         <div class="btn-right">
             <a href="{Yii::$app->urlManager->createUrl(['logger/popup', 'type' => 'Category', 'id' => $categories_id])}" class="btn-link-create popup">{$smarty.const.TEXT_HISTORY}</a>
         </div>
+        {/if}
 {/if}
     </div>
 {/if}

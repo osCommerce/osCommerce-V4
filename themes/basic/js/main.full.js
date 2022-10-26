@@ -1131,26 +1131,30 @@ $.fn.scrollBox = function(options){
         var parentHeight;
         var bottom;
         var windowWidth;
+        var recalculate = true;
 
         setTimeout(function(){
-            setSizes();
             boxPosition();
         }, 100);
 
-        $(window).on('resize', setSizes);
-        $(window).on('scroll', boxPosition);
+        $(window).on('scroll resize', boxPosition);
 
         function setSizes(){
-            top = scrollBox.parent().offset().top;
-            left = scrollBox.offset().left;
-            width = scrollBox.width();
-            height = scrollBox.height();
-            parentHeight = scrollBox.parent().parent().height();
-            bottom = parentBox.offset().top + parentBox.height();
-            windowWidth = $(window).width()
+            if (recalculate) {
+                top = scrollBox.parent().offset().top;
+                left = scrollBox.offset().left;
+                width = scrollBox.width();
+                height = scrollBox.height();
+                parentHeight = scrollBox.parent().parent().height();
+                bottom = parentBox.offset().top + parentBox.height();
+                windowWidth = $(window).width();
+                recalculate = false;
+                setTimeout(() => recalculate = true, 500)
+            }
         };
 
         function boxPosition(){
+            setSizes();
             var scroll = $(window).scrollTop();
             height = scrollBox.height();
             if (

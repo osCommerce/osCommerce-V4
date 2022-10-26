@@ -88,7 +88,7 @@ class ReviewsController extends Sceleton
               $products_join .= $this->sqlProductsToPlatformCategories();
             }
 
-            if (USE_MARKET_PRICES == 'True' || CUSTOMERS_GROUPS_ENABLE == 'True'){
+            if (USE_MARKET_PRICES == 'True' || \common\helpers\Extensions::isCustomerGroupsAllowed()){
                 $reviews_query_raw = "select distinct r.reviews_id, ".
                   "rd.reviews_text as reviews_text, r.reviews_rating, r.date_added, ".
                   "p.products_id, if(length(pd1.products_name), pd1.products_name, pd.products_name) as products_name, ".

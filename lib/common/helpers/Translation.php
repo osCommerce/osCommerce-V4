@@ -351,4 +351,14 @@ class Translation
     {
         \yii\caching\TagDependency::invalidate(\Yii::$app->getCache(),'translation');
     }
+
+    public static function forceConst($constNames, $entity)
+    {
+        if (!is_array($constNames)) {
+            $const = array($constNames);
+        }
+        foreach ($constNames as $constName) {
+            defined($constName) or define($constName, self::getValue($constName, $entity));
+        }
+    }
 }

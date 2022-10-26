@@ -43,7 +43,7 @@ class UserGroups extends \common\classes\modules\ModuleExtensions {
         if (!self::allowed()) {
             return '';
         }
-      if (CUSTOMERS_GROUPS_ENABLE == 'True') {
+      if (\common\helpers\Extensions::isCustomerGroupsAllowed()) {
         Yii::$app->controller->view->groups = self::getGroupsArray($typeCode);
       }
     }
@@ -58,7 +58,7 @@ class UserGroups extends \common\classes\modules\ModuleExtensions {
             return '';
         }
       $ret = [];
-      if (CUSTOMERS_GROUPS_ENABLE == 'True') {
+      if (\common\helpers\Extensions::isCustomerGroupsAllowed()) {
         $q = Groups::find()->orderBy('groups_name')->indexBy('groups_id')->asArray();
         /** @var \common\extensions\ExtraGroups\ExtraGroups $ext */
         if ($ext = \common\helpers\Acl::checkExtension('ExtraGroups', 'allowed')) {
@@ -78,7 +78,7 @@ class UserGroups extends \common\classes\modules\ModuleExtensions {
         if (!self::allowed()) {
             return '';
         }
-        if (CUSTOMERS_GROUPS_ENABLE == 'True') {
+        if (\common\helpers\Extensions::isCustomerGroupsAllowed()) {
             $groups_data_query = tep_db_query("select * from " . TABLE_GROUPS . " order by groups_id");
             while ($groups_data = tep_db_fetch_array($groups_data_query)) {
                 $products_price_data = tep_db_fetch_array(tep_db_query("select products_group_discount_price, products_group_discount_price_pack_unit, products_group_discount_price_packaging from " . TABLE_PRODUCTS_PRICES . " where products_id = '" . (int) $products_id . "' and groups_id = '" . (int) $groups_data['groups_id'] . "' and currencies_id = '" . (int) $currencie_id . "'"));
@@ -114,7 +114,7 @@ class UserGroups extends \common\classes\modules\ModuleExtensions {
         if (!self::allowed()) {
             return '';
         }
-        if (CUSTOMERS_GROUPS_ENABLE == 'True') {
+        if (\common\helpers\Extensions::isCustomerGroupsAllowed()) {
             $groups_data_query = tep_db_query("select * from " . TABLE_GROUPS . " order by groups_id");
             while ($groups_data = tep_db_fetch_array($groups_data_query)) {
                 $products_price_data = tep_db_fetch_array(tep_db_query("select * from " . TABLE_PRODUCTS_PRICES . " where products_id = '" . (int) $products_id . "' and groups_id = '" . (int) $groups_data['groups_id'] . "' and currencies_id = '0'"));
@@ -146,7 +146,7 @@ class UserGroups extends \common\classes\modules\ModuleExtensions {
         if (!self::allowed()) {
             return '';
         }
-        if (CUSTOMERS_GROUPS_ENABLE == 'True') {
+        if (\common\helpers\Extensions::isCustomerGroupsAllowed()) {
                     $data_query = tep_db_query("select * from " . TABLE_GROUPS . " order by groups_id");
                     while ($data = tep_db_fetch_array($data_query)) {
 
@@ -187,7 +187,7 @@ class UserGroups extends \common\classes\modules\ModuleExtensions {
         if (!self::allowed()) {
             return '';
         }
-        if (CUSTOMERS_GROUPS_ENABLE == 'True') {
+        if (\common\helpers\Extensions::isCustomerGroupsAllowed()) {
             $pack_unit_full_prices = Yii::$app->request->post('pack_unit_full_prices', array());
             $packaging_full_prices = Yii::$app->request->post('packaging_full_prices', array());
                 $groups_data_query = tep_db_query("select * from " . TABLE_GROUPS . " order by groups_id");
@@ -347,6 +347,10 @@ class UserGroups extends \common\classes\modules\ModuleExtensions {
           }
         }
 
+        if ($ext = \common\helpers\Acl::checkExtensionAllowed('UserGroupsExtraDiscounts', 'allowed')) {
+            $ext::adminEditGroups($item_id);
+        }
+
         foreach (\common\helpers\Hooks::getList('customergroups/groupedit/before-render') as $filename) {
             include($filename);
         }
@@ -479,6 +483,10 @@ class UserGroups extends \common\classes\modules\ModuleExtensions {
           if ($extraGroups::allowed()) {
             $group_type_id = $extraGroups::saveGroup($groups_id);
           }
+        }
+
+        if ($ext = \common\helpers\Acl::checkExtensionAllowed('UserGroupsExtraDiscounts', 'allowed')) {
+            $ext::adminSubmitGroups($groups_id);
         }
 
         if ($popup == 1) {

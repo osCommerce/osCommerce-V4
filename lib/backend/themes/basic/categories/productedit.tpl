@@ -16,7 +16,7 @@
 </div>
 {/if}
 {if $editProductBundleSwitcher }
-    <div class="btn-box-inv-price btn-is-bundle" style="float: right;">
+    <div class="btn-is-bundle" style="float: right;">
         <span data-value="1" class="btn">
             {sprintf($smarty.const.TEXT_THIS_IS_SWITCH_TO, $smarty.const.TEXT_REGULAR_PRODUCT, $smarty.const.TEXT_BUNDLE_PRODUCT)}
         </span>
@@ -49,7 +49,7 @@
 {tep_draw_hidden_field( 'categories_id', $categories_id )}
 {tep_draw_hidden_field( 'department_id', $selected_department_id )}
 {Html::hiddenInput( 'parent_products_id', $pInfo->parent_products_id )}
-{if $TabAccess->tabView('TAB_BUNDLES')}
+{if $editProductBundleSwitcher && $TabAccess->tabView('TAB_BUNDLES')}
 {tep_draw_hidden_field( 'is_bundle', $pInfo->is_bundle, 'id="is_bundle"' )}
 <script type="text/javascript">
   (function(){
@@ -200,7 +200,7 @@
             <li><a href="#tab_1_11" data-toggle="tab" title="{$smarty.const.TAB_PROPERTIES}"><span>{$smarty.const.TAB_PROPERTIES}</span></a></li>
     {/if}
 <!-- {*
-    {if $TabAccess->tabView('TAB_BUNDLES')}
+    {if \common\helpers\Acl::checkExtensionAllowed('ProductBundles') && $TabAccess->tabView('TAB_BUNDLES')}
             <li><a href="#tab_1_12" data-toggle="tab"><span>{$smarty.const.TAB_BUNDLES}</span></a></li>
     {/if}
 *} -->
@@ -275,7 +275,7 @@
             <li><a href="#tab_1_11" data-toggle="tab" title="{$smarty.const.TAB_PROPERTIES}"><span>{$smarty.const.TAB_PROPERTIES}</span></a></li>
     {/if}
 <!-- {*
-    {if $TabAccess->tabView('TAB_BUNDLES')}
+    {if \common\helpers\Acl::checkExtensionAllowed('ProductBundles') && $TabAccess->tabView('TAB_BUNDLES')}
             <li><a href="#tab_1_12" data-toggle="tab"><span>{$smarty.const.TAB_BUNDLES}</span></a></li>
     {/if}
 *} -->
@@ -431,7 +431,7 @@
             </div>
     {/if}
 <!-- {*
-    {if $TabAccess->tabView('TAB_BUNDLES')}
+    {if \common\helpers\Acl::checkExtensionAllowed('ProductBundles') && $TabAccess->tabView('TAB_BUNDLES')}
             <div class="tab-pane" id="tab_1_12">
               {if \common\helpers\Acl::checkExtensionAllowed('ProductBundles', 'allowed')}
                 {\common\extensions\ProductBundles\ProductBundles::productBlock($pInfo)}

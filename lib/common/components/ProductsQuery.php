@@ -159,7 +159,7 @@ class ProductsQuery {
         ->select('p.products_id')
         ;
     // hidden if -1 in customer group price
-    if (false && CUSTOMERS_GROUPS_ENABLE == 'True') { //USE_MARKET_PRICES == 'True' || no disable by currency, it's by group only
+    if (false && \common\helpers\Extensions::isCustomerGroupsAllowed()) { //USE_MARKET_PRICES == 'True' || no disable by currency, it's by group only
       $customer_groups_id = (int) \Yii::$app->storage->get('customer_groups_id');
       $currency_id = \Yii::$app->settings->get('currency_id');
       if ($customer_groups_id>0) {
@@ -672,7 +672,7 @@ class ProductsQuery {
                 ]);
 
 
-    if (USE_MARKET_PRICES == 'True' || CUSTOMERS_GROUPS_ENABLE == 'True') {
+    if (USE_MARKET_PRICES == 'True' || \common\helpers\Extensions::isCustomerGroupsAllowed()) {
       $currency_id = (int)\Yii::$app->settings->get('currency_id');
       $customer_groups_id = 0;
       if (\Yii::$app->storage->has('customer_groups_id')) {

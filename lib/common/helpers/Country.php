@@ -49,7 +49,7 @@ class Country {
 //                $countries_values = tep_db_fetch_array($countries);
                 $countries_values = \common\models\Countries::find()
                     ->where(['countries_id'=>(int)$countries_id, 'language_id' => (int)$languages_id, 'status'=>1])
-                    ->select(['countries_id', 'countries_name', 'countries_iso_code_2', 'countries_iso_code_3', 'lat', 'lng', 'zoom'])
+                    ->select(['countries_id', 'countries_name', 'countries_iso_code_2', 'countries_iso_code_3', 'address_format_id', 'dialling_prefix', 'lat', 'lng', 'zoom'])
                     ->cache(1200)
                     ->asArray()->one();
 
@@ -59,6 +59,8 @@ class Country {
                     'countries_name' => $countries_values['countries_name'] ?? null,
                     'countries_iso_code_2' => $countries_values['countries_iso_code_2'] ?? null,
                     'countries_iso_code_3' => $countries_values['countries_iso_code_3'] ?? null,
+                    'address_format_id' => $countries_values['address_format_id'] ?? null,
+                    'dialling_prefix' => $countries_values['dialling_prefix'] ?? null,
                     'latitude' => $countries_values['lat'] ?? null,
                     'longitude' => $countries_values['lng'] ?? null,
                     'zoom' => $countries_values['zoom'] ?? null,
@@ -191,6 +193,8 @@ class Country {
                     'title' => $d['countries_name'],
                     'iso_code_2' => $d['countries_iso_code_2'],
                     'iso_code_3' => $d['countries_iso_code_3'],
+                    'address_format_id' => $d['address_format_id'],
+                    'dialling_prefix' => $d['dialling_prefix'],
                     'zoom' => $d['zoom'],
                     'lng' => $d['lng'],
                     'lat' => $d['lat']
@@ -202,6 +206,8 @@ class Country {
                         'title' => $d['countries_name'],
                         'iso_code_2' => $d['countries_iso_code_2'],
                         'iso_code_3' => $d['countries_iso_code_3'],
+                        'address_format_id' => $d['address_format_id'],
+                        'dialling_prefix' => $d['dialling_prefix'],
                         'zoom' => $d['zoom'],
                         'lng' => $d['lng'],
                         'lat' => $d['lat']
@@ -239,6 +245,7 @@ class Country {
               'iso_code_2' => $d['countries_iso_code_2'],
               'iso_code_3' => $d['countries_iso_code_3'],
               'address_format_id' => $d['address_format_id'],
+              'dialling_prefix' => $d['dialling_prefix'],
               'zoom' => $d['zoom'],
               'lng' => $d['lng'],
               'lat' => $d['lat']
@@ -249,6 +256,54 @@ class Country {
       return $ret;
     }
 
+    public static function checkPlatformCountry($country_id=null, $platform_id = null, $type = '') {
+        if (is_null($country_id)) {
+            $country_id = STORE_COUNTRY; //2do platform
+        }
+        $c = \yii\helpers\ArrayHelper::getColumn(self::getPlatformCountries($platform_id, $type), 'id');
+        return in_array($country_id, $c);
+    }
+
+    public static function getDefaultShippingCountryId($platform_id = null) {
+        return self::getDefaultPlatformCountryId($platform_id, 'ship');
+    }
+
+    public static function getDefaultBillingCountryId($platform_id = null) {
+        return self::getDefaultPlatformCountryId($platform_id, 'bill');
+    }
+
+    public static function getDefaultTaxCountryId($platform_id = null) {
+        return self::getDefaultPlatformCountryId($platform_id, 'tax');
+    }
+
+    public static function getDefaultPlatformCountryId($platform_id = null, $type = 'ship') {
+        if (empty($platform_id)) {
+            if (defined('PLATFORM_ID') && PLATFORM_ID) {
+                $platform_id = PLATFORM_ID;
+            } else {
+                $platform_id = \common\classes\platform::defaultId();
+            }
+        }
+
+        /**@var \common\classes\platform_config $platform_config */
+        $platform_config = \Yii::$app->get('platform')->getConfig($platform_id);
+        $ret = $platform_config->const_value('STORE_COUNTRY', 0);
+
+        if (!in_array($type, ['ship', 'bill', 'tax'])) {
+            $type = 'ship';
+        }
+        $tmp = self::getPlatformCountries($platform_id, $type);
+        if (is_array($tmp)) {
+            $cl = \yii\helpers\ArrayHelper::getColumn($tmp, 'id');
+
+            if (is_array($cl) && !in_array($ret, $cl)) {
+                $ret = $cl[0];
+            }
+        }
+
+        return $ret;
+
+    }
 
 /**
  * select all countries assigned to platform either directly OR via appropriate geozone

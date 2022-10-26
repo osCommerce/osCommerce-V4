@@ -201,7 +201,7 @@ class Specials {
       } else {
         $currencies_ids[$_def_curr_id] = '0'; /// here is the post and db currencies_id are different.
       }
-      if (USE_MARKET_PRICES == 'True' || CUSTOMERS_GROUPS_ENABLE == 'True') {
+      if (USE_MARKET_PRICES == 'True' || \common\helpers\Extensions::isCustomerGroupsAllowed()) {
         foreach ($currencies_ids as $post_currencies_id => $currencies_id) {
           foreach ((($groups_price??null)?$groups_price:$groups) as $groups_id => $non) {
             $prices[] = [
@@ -411,7 +411,7 @@ class Specials {
       }
 
       $sPrices = $special->prices; //if there isn't records for group/currency the main price is applied to def group, currency.
-      if (empty($sPrices) || (CUSTOMERS_GROUPS_ENABLE != 'True' && USE_MARKET_PRICES != 'True')) {
+      if (empty($sPrices) || (!\common\helpers\Extensions::isCustomerGroupsAllowed() && USE_MARKET_PRICES != 'True')) {
         $sPrices[0] = $special->attributes;
         $sPrices[0]['groups_id'] = $sPrices[0]['currencies_id'] = 0;
       } elseif (!empty($sPrices) && is_array($sPrices)) {
@@ -605,7 +605,7 @@ class Specials {
       $ret .=  ' ' . (defined('TEXT_PROMOTIONS')? TEXT_PROMOTIONS: 'Promotion');
     }
     try {
-      if ( defined('CUSTOMERS_GROUPS_ENABLE') && CUSTOMERS_GROUPS_ENABLE == 'True' && !\Yii::$app->user->isGuest && \Yii::$app->storage->has('customer_groups_id')) {
+      if (\common\helpers\Extensions::isCustomerGroupsAllowed() && !\Yii::$app->user->isGuest && \Yii::$app->storage->has('customer_groups_id')) {
           $check = false;
         /** @var \common\extensions\PersonalDiscount\PersonalDiscount  $personalDiscount */
         if ($personalDiscount = \common\helpers\Acl::checkExtensionAllowed('PersonalDiscount', 'allowed')){

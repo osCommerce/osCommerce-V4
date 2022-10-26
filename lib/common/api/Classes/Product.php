@@ -114,7 +114,7 @@ class Product extends AbstractClass
                 $inventoryRecord['inventoryPricesRecordArray'] = \common\models\InventoryPrices::find()->where(['inventory_id' => $inventoryRecord['inventory_id']])->asArray(true)->all();
 
                 if ($extScl = \common\helpers\Acl::checkExtensionAllowed('StockControl', 'allowed')) {
-                    $extScl::updateApiProductInventoryLoad(&$inventoryRecord);
+                    $extScl::updateApiProductInventoryLoad($inventoryRecord);
                 }
 
                 $this->inventoryRecordArray[] = $inventoryRecord;

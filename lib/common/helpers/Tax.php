@@ -139,14 +139,22 @@ class Tax {
 
         if ($check_group && $ext = \common\helpers\Acl::checkExtensionAllowed('BusinessToBusiness', 'allowed')) {
             if ($ext::checkTaxRate($customer_groups_id)) {
-                return 0;
+                if (defined('PRICE_WITH_BACK_TAX') && PRICE_WITH_BACK_TAX == 'True') {
+                    $_pos = -1;
+                } else {
+                    return 0;
+                }
             }
         }
 
         /** @var \common\extensions\VatOnOrder\VatOnOrder $VatOnOrder */
         if ($VatOnOrder = \common\helpers\Acl::checkExtensionAllowed('VatOnOrder', 'allowed')) {
             if ($VatOnOrder::check_tax_rate($country_id != -1? true : false)) {
-                return 0;
+                if (defined('PRICE_WITH_BACK_TAX') && PRICE_WITH_BACK_TAX == 'True') {
+                    $_pos = -1;
+                } else {
+                    return 0;
+                }
             }
         }
 
@@ -163,7 +171,12 @@ class Tax {
         }
 
         if (\Yii::$app->storage->has('skipTaxRates')) {
-            $skip =  \Yii::$app->storage->get('skipTaxRates');
+            if (defined('PRICE_WITH_BACK_TAX') && PRICE_WITH_BACK_TAX == 'True') {
+                $skip =  0;
+                $_pos = -1;
+            } else {
+                $skip =  \Yii::$app->storage->get('skipTaxRates');
+            }
             $q = \common\models\TaxRates::find()->alias('tr')
                 ->leftJoin(['za' => \common\models\ZonesToTaxZones::tableName()], 'tr.tax_zone_id = za.geo_zone_id')
                 ->leftJoin(['tz' => \common\models\TaxZones::tableName()], 'tz.geo_zone_id = tr.tax_zone_id')
@@ -183,19 +196,19 @@ class Tax {
                 ->addGroupBy('tr.tax_priority')
                 ->select(['tax_rate' => (new \yii\db\Expression('sum(tax_rate)'))])
                 ;
-            //echo "<BR>\n " . $q->createCommand()->rawSql;
+//echo "<BR>\n " . $q->createCommand()->rawSql; 
             $taxes = $q->all();
             if (!empty($taxes) && is_array($taxes)) {
                 $tax_multiplier = 1.0;
                 foreach ($taxes as $tax) {
                     $tax_multiplier *= 1.0 + ($tax['tax_rate'] / 100);
                 }
-                return ($tax_multiplier - 1.0) * 100;
+                return $_pos*($tax_multiplier - 1.0) * 100;
             } else {
                 return 0;
             }
-        } 
-        
+        }
+
         if (isset($tax_rates_array[$class_id][$country_id][$zone_id])) {
             return $tax_rates_array[$class_id][$country_id][$zone_id];
         }
@@ -207,9 +220,10 @@ class Tax {
             while ($tax = tep_db_fetch_array($tax_query)) {
                 $tax_multiplier *= 1.0 + ($tax['tax_rate'] / 100);
             }
-            $tax_rates_array[$class_id][$country_id] = array($zone_id => ($tax_multiplier - 1.0) * 100);//echo '<pre>';print_r($tax_rates_array);die;
-//echo "<BR>\n tax rate " . (($tax_multiplier - 1.0) * 100) . '<br>';
-            return ($tax_multiplier - 1.0) * 100;
+
+            $ret = $_pos*($tax_multiplier - 1.0) * 100;
+            $tax_rates_array[$class_id][$country_id] = array($zone_id => $ret);//echo '<pre>';print_r($tax_rates_array);die;
+            return $ret;
         } else {
             $tax_rates_array[$class_id][$country_id] = array($zone_id => 0);
             return 0;
@@ -551,5 +565,68 @@ class Tax {
         }
         return $ret;
     }
+
+    public static function getRateDetails($tax_rate, $byField = 'tax_description') {
+        $q = \common\models\TaxRates::find();
+        if ($byField == 'id') {
+            $q->andWhere(['tax_rates_id' => $tax_rate]);
+        } else {
+            $q->andWhere(['tax_description' => $tax_rate]);
+        }
+        $q->cache(5);
+        $data = $q->asArray()->one();
+        return $data;
+    }
+    
+    public static function getCompanyVATId($tax_rate, $byField = 'tax_description', $platform_id = 0) {
+        $data = self::getRateDetails($tax_rate, $byField);
+        if (!empty($data['company_number'])) {
+            $ret = $data['company_number'];
+        } else {
+            //from platform details
+            if ($platform_id == 0) {
+                $platform_id = intval(\common\classes\platform::currentId());
+            }
+
+            $defaultAddress = \Yii::$app->get('platform')->getConfig($platform_id)->getPlatformAddress();
+            $ret = $defaultAddress['entry_company_vat']??'';
+        }
+        return $ret;
+    }
+
+    public static function getCompanyName($tax_rate, $byField = 'tax_description', $platform_id = 0) {
+        $data = self::getRateDetails($tax_rate, $byField);
+        if (!empty($data['company_name'])) {
+            $ret = $data['company_name'];
+        } else {
+            //from platform details
+            if ($platform_id == 0) {
+                $platform_id = intval(\common\classes\platform::currentId());
+            }
+
+            $defaultAddress = \Yii::$app->get('platform')->getConfig($platform_id)->getPlatformAddress();
+
+            $ret = $defaultAddress['entry_company']??'';
+        }
+        return $ret;
+    }
+
+    public static function getCompanyAddress($tax_rate, $byField = 'tax_description', $platform_id = 0) {
+        $data = self::getRateDetails($tax_rate, $byField);
+        if (!empty($data['company_address'])) {
+            $ret = $data['company_address'];
+        } else {
+            //from platform details
+            if ($platform_id == 0) {
+                $platform_id = intval(\common\classes\platform::currentId());
+            }
+
+            $data = \Yii::$app->get('platform')->getConfig($platform_id)->getPlatformAddress();
+            $ret = \common\helpers\Address::address_format(\common\helpers\Address::get_address_format_id($data['country_id']), $data, 1, '', '<br>');
+            
+        }
+        return $ret;
+    }
+
 
 }

@@ -44,6 +44,7 @@ class Settings extends Component {
         switch ($variable) {
             case 'currency': return DEFAULT_CURRENCY;
             case 'affiliate_id': return 0;
+            case 'customer_groups_id': return (defined('DEFAULT_USER_GROUP')?(int)DEFAULT_USER_GROUP:0);
         }
         return false;
     }
@@ -77,9 +78,17 @@ class Settings extends Component {
         }
         return false;
     }
-    
-    public function clear() {
-        $this->data = [];
+
+    public function clear($except = [])
+    {
+        if (is_array($except) && count($except) > 0) {
+            foreach (array_keys($this->data) as $key) {
+                if (in_array($key, $except)) continue;
+                unset($this->data[$key]);
+            }
+        } else {
+            $this->data = [];
+        }
         $this->save();
         return true;
     }

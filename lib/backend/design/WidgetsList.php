@@ -263,6 +263,7 @@ class WidgetsList
         $widgets[] = array('name' => 'checkout\Terms', 'title' => TEXT_TERMS_CONDITIONS, 'description' => '', 'type' => 'checkout', 'class' => '');
         $widgets[] = array('name' => 'DeliveryDay', 'title' => DELIVERY_DAY, 'description' => '', 'type' => 'checkout', 'class' => '');
         $widgets[] = array('name' => 'cart\FreeDelivery', 'title' => TEXT_FREE_DELIVERY, 'description' => '', 'type' => 'checkout', 'class' => '');
+		$widgets[] = array('name' => 'checkout\LoginOnForm', 'title' => 'Login On Form', 'description' => '', 'type' => 'checkout', 'class' => '');
         $widgets[] = array('name' => 'checkout\PayPalPayLater', 'title' => TEXT_PAYPAL_PARTNER_PAY_LATER_PLAN, 'description' => '', 'type' => 'cart', 'class' => '');
 
         return $widgets;
@@ -332,6 +333,7 @@ class WidgetsList
         $widgets[] = array('name' => 'Text', 'title' => TEXT_TEXT, 'description' => '', 'type' => 'invoice', 'class' => 'text');
         $widgets[] = array('name' => 'invoice\Products', 'title' => TABLE_HEADING_PRODUCTS, 'description' => '', 'type' => 'invoice', 'class' => 'products');
         $widgets[] = array('name' => 'invoice\StoreAddress', 'title' => TEXT_STORE_ADDRESS, 'description' => '', 'type' => 'invoice', 'class' => 'store-address');
+        $widgets[] = array('name' => 'invoice\CompanyTaxDetails', 'title' => CATEGORY_COMPANY, 'description' => '', 'type' => 'invoice', 'class' => '');
         $widgets[] = array('name' => 'invoice\StorePhone', 'title' => TEXT_STORE_PHONE, 'description' => '', 'type' => 'invoice', 'class' => 'store-phone');
         $widgets[] = array('name' => 'invoice\StoreEmail', 'title' => TEXT_STORE_EMAIL, 'description' => '', 'type' => 'invoice', 'class' => 'store-email');
         $widgets[] = array('name' => 'invoice\StoreSite', 'title' => TEXT_STORE_SITE, 'description' => '', 'type' => 'invoice', 'class' => 'store-site');
@@ -380,6 +382,7 @@ class WidgetsList
         $widgets[] = array('name' => 'Text', 'title' => TEXT_TEXT, 'description' => '', 'type' => 'packingslip', 'class' => 'text');
         $widgets[] = array('name' => 'packingslip\Products', 'title' => TABLE_HEADING_PRODUCTS, 'description' => '', 'type' => 'packingslip', 'class' => 'products');
         $widgets[] = array('name' => 'invoice\StoreAddress', 'title' => TEXT_STORE_ADDRESS, 'description' => '', 'type' => 'packingslip', 'class' => 'store-address');
+        $widgets[] = array('name' => 'invoice\CompanyTaxDetails', 'title' => CATEGORY_COMPANY, 'description' => '', 'type' => 'invoice', 'class' => '');
         $widgets[] = array('name' => 'invoice\ShippingMethod', 'title' => TEXT_CHOOSE_SHIPPING_METHOD, 'description' => '', 'type' => 'packingslip', 'class' => 'shipping-method');
         $widgets[] = array('name' => 'invoice\StorePhone', 'title' => TEXT_STORE_PHONE, 'description' => '', 'type' => 'packingslip', 'class' => 'store-phone');
         $widgets[] = array('name' => 'invoice\StoreEmail', 'title' => TEXT_STORE_EMAIL, 'description' => '', 'type' => 'packingslip', 'class' => 'store-email');
@@ -419,6 +422,7 @@ class WidgetsList
         $widgets[] = array('name' => 'gift\MessageView', 'title' => MESSAGE_VIEW, 'description' => '', 'type' => 'gift', 'class' => 'contact-form');
         $widgets[] = array('name' => 'gift\CodeView', 'title' => CODE_VIEW, 'description' => '', 'type' => 'gift', 'class' => 'contact-form');
         $widgets[] = array('name' => 'invoice\StoreAddress', 'title' => TEXT_STORE_ADDRESS, 'description' => '', 'type' => 'gift', 'class' => 'store-address');
+        $widgets[] = array('name' => 'invoice\CompanyTaxDetails', 'title' => CATEGORY_COMPANY, 'description' => '', 'type' => 'invoice', 'class' => '');
         $widgets[] = array('name' => 'invoice\StorePhone', 'title' => TEXT_STORE_PHONE, 'description' => '', 'type' => 'gift', 'class' => 'store-phone');
         $widgets[] = array('name' => 'invoice\StoreEmail', 'title' => TEXT_STORE_EMAIL, 'description' => '', 'type' => 'gift', 'class' => 'store-email');
         $widgets[] = array('name' => 'invoice\StoreSite', 'title' => TEXT_STORE_SITE, 'description' => '', 'type' => 'gift', 'class' => 'store-site');
@@ -438,6 +442,7 @@ class WidgetsList
         $widgets[] = array('name' => 'gift\MessageView', 'title' => MESSAGE_VIEW, 'description' => '', 'type' => 'gift', 'class' => 'contact-form');
         $widgets[] = array('name' => 'gift\CodeView', 'title' => CODE_VIEW, 'description' => '', 'type' => 'gift', 'class' => 'contact-form');
         $widgets[] = array('name' => 'invoice\StoreAddress', 'title' => TEXT_STORE_ADDRESS, 'description' => '', 'type' => 'gift', 'class' => 'store-address');
+        $widgets[] = array('name' => 'invoice\CompanyTaxDetails', 'title' => CATEGORY_COMPANY, 'description' => '', 'type' => 'invoice', 'class' => '');
         $widgets[] = array('name' => 'invoice\StorePhone', 'title' => TEXT_STORE_PHONE, 'description' => '', 'type' => 'gift', 'class' => 'store-phone');
         $widgets[] = array('name' => 'invoice\StoreEmail', 'title' => TEXT_STORE_EMAIL, 'description' => '', 'type' => 'gift', 'class' => 'store-email');
         $widgets[] = array('name' => 'invoice\StoreSite', 'title' => TEXT_STORE_SITE, 'description' => '', 'type' => 'gift', 'class' => 'store-site');
@@ -538,6 +543,7 @@ class WidgetsList
         $widgets[] = array('name' => 'Image', 'title' => TEXT_IMAGE_, 'description' => '', 'type' => 'pdf', 'class' => 'image');
         $widgets[] = array('name' => 'Text', 'title' => TEXT_TEXT, 'description' => '', 'type' => 'pdf', 'class' => 'text');
         $widgets[] = array('name' => 'invoice\StoreAddress', 'title' => TEXT_STORE_ADDRESS, 'description' => '', 'type' => 'pdf', 'class' => 'store-address');
+        $widgets[] = array('name' => 'invoice\CompanyTaxDetails', 'title' => CATEGORY_COMPANY, 'description' => '', 'type' => 'invoice', 'class' => '');
         //$widgets[] = array('name' => 'Copyright', 'title' => COPYRIGHT, 'description' => '', 'type' => 'pdf', 'class' => 'copyright');
         $widgets[] = array('name' => 'invoice\StorePhone', 'title' => TEXT_STORE_PHONE, 'description' => '', 'type' => 'pdf', 'class' => 'store-phone');
         $widgets[] = array('name' => 'invoice\StoreEmail', 'title' => TEXT_STORE_EMAIL, 'description' => '', 'type' => 'pdf', 'class' => 'store-email');

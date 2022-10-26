@@ -457,6 +457,7 @@ class InstallController extends Sceleton {
                                             }
                                         }
                                     }
+                                    $insert_id = $lang->languages_id;
                                 } else {
                                     // install new language and settings
                                     $max = tep_db_fetch_array(tep_db_query("select max(sort_order)+1 as sort_order from languages where 1"));
@@ -483,185 +484,11 @@ class InstallController extends Sceleton {
                                                 $lFormats->save(false);
                                             }
                                         }
-                                        $languages_id = \common\helpers\Language::get_default_language_id();
-//---------------------------- << COPIED FROM LanguagesController
-                    // create additional categories_description records
-                    $categories_query = tep_db_query("select c.categories_id, cd.categories_name, cd.affiliate_id, cd.categories_seo_page_name from " . TABLE_CATEGORIES . " c left join " . TABLE_CATEGORIES_DESCRIPTION . " cd on c.categories_id = cd.categories_id where cd.language_id = '" . (int) $languages_id . "'");
-                    while ($categories = tep_db_fetch_array($categories_query)) {
-                        tep_db_query("insert into " . TABLE_CATEGORIES_DESCRIPTION . " (categories_id, language_id, categories_name, affiliate_id, categories_seo_page_name) values ('" . (int) $categories['categories_id'] . "', '" . (int) $insert_id . "', '" . tep_db_input($categories['categories_name']) . "', '" . (int) $categories['affiliate_id'] . "', '" . tep_db_input($categories['categories_seo_page_name']) . "')");
-                    }
-                    tep_db_free_result($categories_query);
-
-                    // create additional products_description records
-                    $products_query = tep_db_query("select p.products_id, pd.products_name, pd.products_description, pd.products_url, pd.platform_id, pd.products_seo_page_name from " . TABLE_PRODUCTS . " p left join " . TABLE_PRODUCTS_DESCRIPTION . " pd on p.products_id = pd.products_id where pd.language_id = '" . (int) $languages_id . "'");
-                    while ($products = tep_db_fetch_array($products_query)) {
-                        tep_db_query("insert into " . TABLE_PRODUCTS_DESCRIPTION . " (products_id, language_id, products_name, products_description, products_url, platform_id, products_seo_page_name) values ('" . (int) $products['products_id'] . "', '" . (int) $insert_id . "', '" . tep_db_input($products['products_name']) . "', '" . tep_db_input($products['products_description']) . "', '" . tep_db_input($products['products_url']) . "', '" . (int) $products['platform_id'] . "', '" . tep_db_input($products['products_seo_page_name']) . "')");
-                    }
-                    tep_db_free_result($products_query);
-
-                    // create additional products_options records
-                    $products_options_query = tep_db_query("select products_options_id, products_options_name from " . TABLE_PRODUCTS_OPTIONS . " where language_id = '" . (int) $languages_id . "'");
-                    while ($products_options = tep_db_fetch_array($products_options_query)) {
-                        tep_db_query("insert into " . TABLE_PRODUCTS_OPTIONS . " (products_options_id, language_id, products_options_name) values ('" . (int) $products_options['products_options_id'] . "', '" . (int) $insert_id . "', '" . tep_db_input($products_options['products_options_name']) . "')");
-                    }
-                    tep_db_free_result($products_options_query);
-
-                    //coupons
-                    $coupons_query = tep_db_query("select coupon_id, coupon_name, coupon_description from " . TABLE_COUPONS_DESCRIPTION . " where language_id = '" . (int) $languages_id . "'");
-                    while ($coupons = tep_db_fetch_array($coupons_query)) {
-                        tep_db_query("insert into " . TABLE_COUPONS_DESCRIPTION . " (coupon_id, language_id, coupon_name, coupon_description) values ('" . (int) $coupons['coupon_id'] . "', '" . (int) $insert_id . "', '" . tep_db_input($coupons['coupon_name']) . "', '" . tep_db_input($coupons['coupon_description']) . "')");
-                    }
-                    tep_db_free_result($coupons_query);
-
-                    // create additional products_options_values records
-                    $products_options_values_query = tep_db_query("select products_options_values_id, products_options_values_name from " . TABLE_PRODUCTS_OPTIONS_VALUES . " where language_id = '" . (int) $languages_id . "'");
-                    while ($products_options_values = tep_db_fetch_array($products_options_values_query)) {
-                        tep_db_query("insert into " . TABLE_PRODUCTS_OPTIONS_VALUES . " (products_options_values_id, language_id, products_options_values_name) values ('" . (int) $products_options_values['products_options_values_id'] . "', '" . (int) $insert_id . "', '" . tep_db_input($products_options_values['products_options_values_name']) . "')");
-                    }
-                    tep_db_free_result($products_options_values_query);
-
-                    //property categories
-                    $properties_query = tep_db_query("select categories_id, categories_name, categories_description from " . TABLE_PROPERTIES_CATEGORIES_DESCRIPTION . " where language_id = '" . (int) $languages_id . "'");
-                    while ($row = tep_db_fetch_array($properties_query)) {
-                        tep_db_query("insert into " . TABLE_PROPERTIES_CATEGORIES_DESCRIPTION . " (	categories_id, language_id, categories_name, categories_description ) values ('" . (int) $row['categories_id'] . "', '" . (int) $insert_id . "', '" . tep_db_input($row['categories_name']) . "', '" . tep_db_input($row['categories_description']) . "')");
-                    }
-                    tep_db_free_result($properties_query);
-
-                    //properties
-                    $properties_query = tep_db_query("select properties_id, properties_name, properties_description, properties_image, properties_units_id from " . TABLE_PROPERTIES_DESCRIPTION . " where language_id = '" . (int) $languages_id . "'");
-                    while ($row = tep_db_fetch_array($properties_query)) {
-                        tep_db_query("insert into " . TABLE_PROPERTIES_DESCRIPTION . " (	properties_id, language_id, properties_name, properties_description, properties_image, properties_units_id ) values ('" . (int) $row['properties_id'] . "', '" . (int) $insert_id . "', '" . tep_db_input($row['properties_name']) . "', '" . tep_db_input($row['properties_description']) . "', '" . tep_db_input($row['properties_image']) . "', '" . (int) $row['properties_units_id'] . "')");
-                    }
-                    tep_db_free_result($properties_query);
-
-                    //properties
-                    $properties_query = tep_db_query("select values_id, properties_id, values_text, values_number, values_number_upto, values_alt from " . TABLE_PROPERTIES_VALUES . " where language_id = '" . (int) $languages_id . "'");
-                    while ($row = tep_db_fetch_array($properties_query)) {
-                        tep_db_query("insert into " . TABLE_PROPERTIES_VALUES . " (	values_id, properties_id, language_id, values_text, values_number, values_number_upto, values_alt ) values ('" . (int) $row['values_id'] . "', '" . (int) $row['properties_id'] . "', '" . (int) $insert_id . "', '" . tep_db_input($row['values_text']) . "', '" . $row['values_number'] . "', '" . $row['values_number_upto'] . "', '" . tep_db_input($row['values_alt']) . "')");
-                    }
-                    tep_db_free_result($properties_query);
-
-                    // create additional manufacturers_info records
-                    $information_query = tep_db_query("select * from " . TABLE_INFORMATION . " where languages_id = '" . (int) $languages_id . "'");
-                    while ($row = tep_db_fetch_array($information_query)) {
-                        $row['languages_id'] = (int) $insert_id;
-                        $row['info_title'] = $row['info_title'];
-                        $row['description'] = $row['description'];
-                        $row['page_title'] = $row['page_title'];
-                        $row['meta_title'] = $row['meta_title'];
-                        $row['page'] = $row['page'];
-                        $row['page_type'] = $row['page_type'];
-                        $row['meta_description'] = $row['meta_description'];
-                        $row['meta_key'] = $row['meta_key'];
-                        tep_db_perform(TABLE_INFORMATION, $row);
-                    }
-                    tep_db_free_result($information_query);
-
-                    // create additional manufacturers_info records
-                    $manufacturers_query = tep_db_query("select m.manufacturers_id, mi.manufacturers_url, mi.manufacturers_seo_name from " . TABLE_MANUFACTURERS . " m left join " . TABLE_MANUFACTURERS_INFO . " mi on m.manufacturers_id = mi.manufacturers_id where mi.languages_id = '" . (int) $languages_id . "'");
-                    while ($manufacturers = tep_db_fetch_array($manufacturers_query)) {
-                        tep_db_query("insert into " . TABLE_MANUFACTURERS_INFO . " (manufacturers_id, languages_id, manufacturers_url, manufacturers_seo_name) values ('" . $manufacturers['manufacturers_id'] . "', '" . (int) $insert_id . "', '" . tep_db_input($manufacturers['manufacturers_url']) . "', '" . tep_db_input($manufacturers['manufacturers_seo_name']) . "')");
-                    }
-                    tep_db_free_result($manufacturers_query);
-
-                    // create additional orders_status records
-                    $orders_status_query = tep_db_query("select orders_status_id, orders_status_groups_id, orders_status_name, orders_status_template, automated from " . TABLE_ORDERS_STATUS . " where language_id = '" . (int) $languages_id . "'");
-                    while ($orders_status = tep_db_fetch_array($orders_status_query)) {
-                        tep_db_query("insert into " . TABLE_ORDERS_STATUS . " (orders_status_id, language_id, orders_status_name, orders_status_groups_id, orders_status_template, automated) values ('" . (int) $orders_status['orders_status_id'] . "', '" . (int) $insert_id . "', '" . tep_db_input($orders_status['orders_status_name']) . "', '" . (int) $orders_status['orders_status_groups_id'] . "', '" . tep_db_input($orders_status['orders_status_template']) . "', '" . (int) $orders_status['automated'] . "')");
-                    }
-                    tep_db_free_result($orders_status_query);
-                    // create additional statuses
-                    $status_query = tep_db_query("select orders_status_groups_id, orders_status_groups_name, orders_status_groups_color from " . TABLE_ORDERS_STATUS_GROUPS . " where language_id = '" . (int) $languages_id . "'");
-                    while ($status = tep_db_fetch_array($status_query)) {
-                        tep_db_query("insert into " . TABLE_ORDERS_STATUS_GROUPS . " (orders_status_groups_id, language_id, orders_status_groups_name, orders_status_groups_color) values ('" . (int) $status['orders_status_groups_id'] . "', '" . (int) $insert_id . "', '" . tep_db_input($status['orders_status_groups_name']) . "', '" . tep_db_input($status['orders_status_groups_color']) . "')");
-                    }
-                    tep_db_free_result($status_query);
-
-                    $data_query = tep_db_query("select * from " . TABLE_PRODUCTS_STOCK_INDICATION_TEXT . " where language_id = '" . (int) $languages_id . "'");
-                    while ($data = tep_db_fetch_array($data_query)) {
-                        $data['language_id'] = (int) $insert_id;
-                        tep_db_perform(TABLE_PRODUCTS_STOCK_INDICATION_TEXT, $data);
-                    }
-                    tep_db_free_result($data_query);
-
-                    $data_query = tep_db_query("select * from " . TABLE_PRODUCTS_STOCK_DELIVERY_TERMS_TEXT . " where language_id = '" . (int) $languages_id . "'");
-                    while ($data = tep_db_fetch_array($data_query)) {
-                        $data['language_id'] = (int) $insert_id;
-                        tep_db_perform(TABLE_PRODUCTS_STOCK_DELIVERY_TERMS_TEXT, $data);
-                    }
-                    tep_db_free_result($data_query);
-
-                    $data_query = tep_db_query("select * from " . TABLE_PRODUCTS_XSELL_TYPE . " where language_id = '" . (int) $languages_id . "'");
-                    while ($data = tep_db_fetch_array($data_query)) {
-                        $data['language_id'] = (int) $insert_id;
-                        tep_db_perform(TABLE_PRODUCTS_XSELL_TYPE, $data);
-                    }
-                    tep_db_free_result($data_query);
-
-                    // create additional countries records
-                    $countries_query = tep_db_query("select * from " . TABLE_COUNTRIES . " where language_id = '" . (int) $languages_id . "'");
-                    while ($countries = tep_db_fetch_array($countries_query)) {
-                        //tep_db_query("insert into " . TABLE_COUNTRIES . "(countries_id, countries_name, countries_iso_code_2, countries_iso_code_3, address_format_id, language_id) values ('" .$countries['countries_id'] ."', '" .tep_db_input($countries['countries_name']) ."', '" .$countries['countries_iso_code_2'] ."', '" .$countries['countries_iso_code_3'] ."', '" .$countries['address_format_id'] ."', '" .(int)$insert_id  ."')");
-                        $countries['language_id'] = (int) $insert_id;
-                        $countries['countries_name'] = $countries['countries_name'];
-                        tep_db_perform(TABLE_COUNTRIES, $countries);
-                    }
-                    tep_db_free_result($countries_query);
-
-                    //date formats
-                    $formats_query = tep_db_query("select configuration_key, configuration_value from " . TABLE_LANGUAGES_FORMATS . " where language_id = '" . (int) $languages_id . "'");
-                    while ($formats = tep_db_fetch_array($formats_query)) {
-                        tep_db_query("insert into " . TABLE_LANGUAGES_FORMATS . " (	configuration_key, configuration_value, language_id) values ('" . tep_db_input($formats['configuration_key']) . "', '" . tep_db_input($formats['configuration_value']) . "', '" . (int) $insert_id . "')");
-                    }
-                    tep_db_free_result($formats_query);
-
-                    //banners
-                    $banners_query = tep_db_query("select banners_id, platform_id, banners_title, banners_url, banners_image, banners_html_text from " . TABLE_BANNERS_LANGUAGES . " where language_id = '" . (int) $languages_id . "'");
-                    while ($banners = tep_db_fetch_array($banners_query)) {
-                        tep_db_query("insert into " . TABLE_BANNERS_LANGUAGES . " (	banners_id, platform_id, banners_title, banners_url, banners_image, banners_html_text, language_id) values ('" . (int) $banners['banners_id'] . "', '" . (int) $banners['platform_id'] . "', '" . tep_db_input($banners['banners_title']) . "', '" . tep_db_input($banners['banners_url']) . "', '" . tep_db_input($banners['banners_image']) . "', '" . tep_db_input($banners['banners_html_text']) . "', '" . (int) $insert_id . "')");
-                    }
-                    tep_db_free_result($banners_query);
-
-                    //design settings
-                    $settings_query = tep_db_query("select box_id, setting_name, setting_value from " . TABLE_DESIGN_BOXES_SETTINGS . " where language_id = '" . (int) $languages_id . "'");
-                    while ($settings = tep_db_fetch_array($settings_query)) {
-                        tep_db_query("insert into " . TABLE_DESIGN_BOXES_SETTINGS . " (	box_id, setting_name, setting_value, language_id ) values ('" . (int) $settings['box_id'] . "', '" . tep_db_input($settings['setting_name']) . "', '" . tep_db_input($settings['setting_value']) . "', '" . (int) $insert_id . "')");
-                    }
-                    $settings_query = tep_db_query("select box_id, setting_name, setting_value from " . TABLE_DESIGN_BOXES_SETTINGS_TMP . " where language_id = '" . (int) $languages_id . "'");
-                    while ($settings = tep_db_fetch_array($settings_query)) {
-                        tep_db_query("insert into " . TABLE_DESIGN_BOXES_SETTINGS_TMP . " (	box_id, setting_name, setting_value, language_id ) values ('" . (int) $settings['box_id'] . "', '" . tep_db_input($settings['setting_name']) . "', '" . tep_db_input($settings['setting_value']) . "', '" . (int) $insert_id . "')");
-                    }
-
-                    //email templates
-                    $templates_query = tep_db_query("select email_templates_id, platform_id, affiliate_id, email_templates_subject, email_templates_body from " . TABLE_EMAIL_TEMPLATES_TEXTS . " where language_id = '" . (int) $languages_id . "' and affiliate_id = 0");
-                    while ($templates = tep_db_fetch_array($templates_query)) {
-                        tep_db_query("insert into " . TABLE_EMAIL_TEMPLATES_TEXTS . " (	email_templates_id, platform_id, language_id, affiliate_id, email_templates_subject, email_templates_body ) values ('" . (int) $templates['email_templates_id'] . "', '" . (int) $templates['platform_id'] . "','" . (int) $insert_id . "', 0, '" . tep_db_input($templates['email_templates_subject']) . "', '" . tep_db_input($templates['email_templates_body']) . "')");
-                    }
-                    tep_db_free_result($templates_query);
-
-                    //menu titles
-                    $titles_query = tep_db_query("select item_id, title, link from " . TABLE_MENU_TITLES . " where language_id = '" . (int) $languages_id . "'");
-                    while ($titles = tep_db_fetch_array($titles_query)) {
-                        tep_db_query("insert into " . TABLE_MENU_TITLES . " (	language_id, item_id, title, link ) values ('" . (int) $insert_id . "', '" . (int) $titles['item_id'] . "', '" . tep_db_input($titles['title']) . "', '" . tep_db_input($titles['link']) . "')");
-                    }
-                    tep_db_free_result($titles_query);
-
-                    //product images
-                    $pimages_query = tep_db_query("select products_images_id, image_title, image_alt, orig_file_name, hash_file_name, file_name, alt_file_name from " . TABLE_PRODUCTS_IMAGES_DESCRIPTION . " where language_id = '" . (int) $languages_id . "'");
-                    while ($pimages = tep_db_fetch_array($pimages_query)) {
-                        tep_db_query("insert into " . TABLE_PRODUCTS_IMAGES_DESCRIPTION . " (	products_images_id, language_id, image_title, image_alt, orig_file_name, hash_file_name, file_name, alt_file_name ) values ('" . (int) $pimages['products_images_id'] . "', '" . (int) $insert_id . "', '" . tep_db_input($pimages['image_title']) . "', '" . tep_db_input($pimages['image_alt']) . "', '" . tep_db_input($pimages['orig_file_name']) . "', '" . tep_db_input($pimages['hash_file_name']) . "', '" . tep_db_input($pimages['file_name']) . "', '" . tep_db_input($pimages['alt_file_name']) . "')");
-                    }
-                    tep_db_free_result($pimages_query);
-                    //translations
-                    $translation_query = tep_db_query("select translation_key, translation_entity, translation_value, hash from " . TABLE_TRANSLATION . " where language_id = '" . (int) $languages_id . "'");
-                    while ($trans = tep_db_fetch_array($translation_query)) {
-                        tep_db_query("insert into " . TABLE_TRANSLATION . " (	language_id, translation_key, translation_entity, translation_value, hash ) values ( '" . (int) $insert_id . "', '" . tep_db_input($trans['translation_key']) . "', '" . tep_db_input($trans['translation_entity']) . "', '" . tep_db_input($trans['translation_value']) . "', '" . tep_db_input($trans['hash']) . "')");
-                    }
-                    tep_db_free_result($translation_query);
-//----------------------------
-                                        
                                     }
+                                    $languages = \common\helpers\Language::get_languages(true);
                                 }
+                                // update or create from default language
+                                \common\helpers\Language::copyLanguage((int) \common\helpers\Language::get_default_language_id(), (int) $insert_id);
                             }
                             $oldData = [];
                             foreach ((array)$distribution->files as $file) {
@@ -886,7 +713,15 @@ class InstallController extends Sceleton {
     
     private function checkFileDst($rules, $zipFile, $pathP, $echo = false, $force = 0)
     {
+        $path = Yii::getAlias('@site_root') . DIRECTORY_SEPARATOR;
         $checked = true;
+        $forceBackup = false;
+        if ($force == 1) {
+            $zipForce = new \ZipArchive();
+            if ($zipForce->open($path . 'uploads' . DIRECTORY_SEPARATOR . 'backups' . DIRECTORY_SEPARATOR . 'force.'.$zipFile, \ZipArchive::CREATE) === true) {
+                $forceBackup = true;
+            }
+        }
         foreach ((array) $rules as $src) {
             switch ($src->action) {
                 case 'add':
@@ -922,6 +757,9 @@ class InstallController extends Sceleton {
                         if ($echo) echo "<font color='red'>" . TEXT_FILE . " " . $dst . " " . TEXT_CHECKSUM_ERROR . ".</font><br>\n";
                         $this->deployLog[] = "<font color='red'>" . TEXT_FILE . " " . $dst . " " . TEXT_CHECKSUM_ERROR . ".</font><br>\n";
                         $checked = false;
+                        if ($forceBackup) {
+                            $zipForce->addFile($pathP . DIRECTORY_SEPARATOR . $dst, $dst);
+                        }
                     } else {
                         if ($echo) echo "<font color='green'>" . TEXT_FILE . " " . $dst . " " . TEXT_CHECKSUM_PASSED . ".</font><br>\n";
                         $this->deployLog[] = "<font color='green'>" . TEXT_FILE . " " . $dst . " " . TEXT_CHECKSUM_PASSED . ".</font><br>\n";
@@ -930,10 +768,13 @@ class InstallController extends Sceleton {
             }
         }
         if ($force == 1) {
+            if ($forceBackup) {
+                $zipForce->close();
+            }
+            unset($zipForce);
             $checked = true;
         }
         if ($checked) {
-            $path = Yii::getAlias('@site_root') . DIRECTORY_SEPARATOR;
             $zip = new \ZipArchive();
             if ($zip->open($path . 'uploads' . DIRECTORY_SEPARATOR . 'backups' . DIRECTORY_SEPARATOR . $zipFile, \ZipArchive::CREATE) === true) {// $zipFile must contain path to new backup file
                 foreach ($rules as $src) {
@@ -1147,7 +988,7 @@ class InstallController extends Sceleton {
                     }
                 }
                 $module->install($selected_platform_id);
-                if (method_exists($module, 'save_config') && is_array($exportSettings['keys'] ?? null)) {
+                if (method_exists($module, 'save_config') && is_array($exportSettings['keys']??null)) {
                     $module->save_config($selected_platform_id, $exportSettings['keys']);
                     if (method_exists($module, 'set_extra_params') && isset($exportSettings['extra_params'])) {
                         $module->set_extra_params($selected_platform_id, $exportSettings['extra_params']);
@@ -1315,7 +1156,7 @@ class InstallController extends Sceleton {
         
         $storageUrl = \Yii::$app->params['appStorage.url'];
         $storageKey = $this->getStorageKey();
-        $secKeyGlobal = md5(\Yii::$app->db->dsn);
+        $secKeyGlobal = md5(\Yii::$app->db->dsn . (defined('INSTALLED_MICROTIME') ? INSTALLED_MICROTIME : ''));
         if (!isset(\Yii::$app->params['secKey.global']) OR (\Yii::$app->params['secKey.global'] != $secKeyGlobal)) {
             $message = (defined('MESSAGE_KEY_DOMAIN_WANING')
                 ? constant('MESSAGE_KEY_DOMAIN_WANING')
@@ -1451,7 +1292,7 @@ class InstallController extends Sceleton {
         $items = [];
         
         global $login_id;
-        $secKeyGlobal = md5(\Yii::$app->db->dsn);
+        $secKeyGlobal = md5(\Yii::$app->db->dsn . (defined('INSTALLED_MICROTIME') ? INSTALLED_MICROTIME : ''));
         $storageUrl = \Yii::$app->params['appStorage.url'];
         $storageKey = $this->getStorageKey();
         if (!isset(\Yii::$app->params['secKey.global']) OR (\Yii::$app->params['secKey.global'] != $secKeyGlobal)) {
@@ -2365,7 +2206,7 @@ class InstallController extends Sceleton {
         $updates = [];
         $version = (defined('MIGRATIONS_DB_REVISION') ? MIGRATIONS_DB_REVISION : '');
         
-        $secKeyGlobal = md5(\Yii::$app->db->dsn);
+        $secKeyGlobal = md5(\Yii::$app->db->dsn . (defined('INSTALLED_MICROTIME') ? INSTALLED_MICROTIME : ''));
         $storageUrl = \Yii::$app->params['appStorage.url'];
         $storageKey = $this->getStorageKey();
         if (!isset(\Yii::$app->params['secKey.global']) OR (\Yii::$app->params['secKey.global'] != $secKeyGlobal)) {
@@ -2464,7 +2305,7 @@ class InstallController extends Sceleton {
         
         $version = (defined('MIGRATIONS_DB_REVISION') ? MIGRATIONS_DB_REVISION : '');
         
-        $secKeyGlobal = md5(\Yii::$app->db->dsn);
+        $secKeyGlobal = md5(\Yii::$app->db->dsn . (defined('INSTALLED_MICROTIME') ? INSTALLED_MICROTIME : ''));
         $storageUrl = \Yii::$app->params['appStorage.url'];
         $storageKey = $this->getStorageKey();
         if (!isset(\Yii::$app->params['secKey.global']) OR (\Yii::$app->params['secKey.global'] != $secKeyGlobal)) {

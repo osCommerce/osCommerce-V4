@@ -1546,7 +1546,12 @@ class Style
                 $mediaSizesQuery = tep_db_query("select id, setting_value from " . TABLE_THEMES_SETTINGS . " where theme_name = '" . tep_db_input($theme_name) . "' and setting_group = 'extend' and setting_name = 'media_query'");
                 while ($mediaSize = tep_db_fetch_array($mediaSizesQuery)) {
                     $arr2 = explode('w', $mediaSize['setting_value']);
-                    $mediaSizes[(int)$arr2[1]] = $mediaSize['id'];
+                    if (isset($arr2[0]) && $arr2[0]) {
+                        $mediaSizes[(int)($arr2[0] . '0')] = $mediaSize['id'];
+                    }
+                    if (isset($arr2[1]) && $arr2[1]) {
+                        $mediaSizes[(int)$arr2[1]] = $mediaSize['id'];
+                    }
                 }
                 krsort($mediaSizes);
                 foreach ($mediaSizes as $media) {
@@ -1554,13 +1559,13 @@ class Style
                     $query = tep_db_fetch_array(tep_db_query("select setting_value from " . TABLE_THEMES_SETTINGS . " where id = '" . $media . "'"));
                     $arr2 = explode('w', $query['setting_value']);
                     $media = '';
-                    if ($arr2[0]){
+                    if (isset($arr2[0]) && $arr2[0]){
                         $media .= '(min-width:' . $arr2[0] . 'px)';
                     }
-                    if ($arr2[0] && $arr2[1]){
+                    if (isset($arr2[0]) && $arr2[0] && isset($arr2[1]) && $arr2[1]){
                         $media .= ' and ';
                     }
-                    if ($arr2[1]){
+                    if (isset($arr2[1]) && $arr2[1]){
                         $media .= '(max-width:' . $arr2[1] . 'px)';
                     }
                     $cssArr['visibility'] = $cssArr['visibility'] . self::getCssMedia($arr, $media, $tab, $displacement);
@@ -1702,7 +1707,10 @@ class Style
         if (isset($attributes['p_width'])) {
             $style .= $displacement . 'width:' . ($attributes['p_width'] - $attributes['padding-left'] - $attributes['padding-right'] - $attributes['border-left-width'] - $attributes['border-right-width']) . 'px;' . $br;
         }
-        $to_pdf = (int)Yii::$app->request->get('to_pdf', 0);
+        $to_pdf = 0;
+        if (method_exists(Yii::$app->request, 'get')) {
+            $to_pdf = (int)Yii::$app->request->get('to_pdf', 0);
+        }
         if (isset($attributes['font-family']) && !$to_pdf){
             if (Yii::$app->controller->action->id == 'get-css' || stripos($attributes['font-family'], "'") !== false || stripos($attributes['font-family'], '"') !== false) {
                 $style .= $displacement . 'font-family:' . $attributes['font-family'] . '' . (isset($importantArr['font-family']) ? $importantArr['font-family'] : '') . ';' . $br;

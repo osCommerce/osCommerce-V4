@@ -209,7 +209,7 @@ class ListingSql
       //$listing_where .= " and plc.platform_id is not null ";
     }
 
-    if (USE_MARKET_PRICES == 'True' || CUSTOMERS_GROUPS_ENABLE == 'True') {
+    if (USE_MARKET_PRICES == 'True' || \common\helpers\Extensions::isCustomerGroupsAllowed()) {
       $listing_left_join .= " left join " . TABLE_PRODUCTS_PRICES . " pp on p.products_id = pp.products_id and pp.groups_id = '" . (int)$customer_groups_id . "' and pp.currencies_id = '" . (USE_MARKET_PRICES == 'True' ? (int)$currency_id : '0') . "' ";
       $listing_where .= " and if(pp.products_group_price is null, 1, pp.products_group_price != -1 ) ";
     }
@@ -226,7 +226,7 @@ class ListingSql
 
     switch ($filename) {
     case 'catalog/sales': // show specials
-      if (USE_MARKET_PRICES == 'True' || CUSTOMERS_GROUPS_ENABLE == 'True') {
+      if (USE_MARKET_PRICES == 'True' || \common\helpers\Extensions::isCustomerGroupsAllowed()) {
         $listing_left_join .= " left join " . TABLE_SPECIALS_PRICES . " sp on s.specials_id = sp.specials_id and sp.groups_id = '" . (int)$customer_groups_id . "' and sp.currencies_id = '" . (USE_MARKET_PRICES == 'True' ? (int)$currency_id : '0'). "' ";
         $listing_where .= " and if(sp.specials_new_products_price is NULL, 1, sp.specials_new_products_price != -1 ) and s.status = 1 ";
       } else {
@@ -376,7 +376,7 @@ class ListingSql
           }
 
         } else {
-          if (USE_MARKET_PRICES == 'True' || CUSTOMERS_GROUPS_ENABLE == 'True') {
+          if (USE_MARKET_PRICES == 'True' || \common\helpers\Extensions::isCustomerGroupsAllowed()) {
             $query = tep_db_query("select p.products_id, p.products_tax_class_id, p.products_price from " . TABLE_PRODUCTS . " p {$products_join} left join " . TABLE_PRODUCTS_PRICES . " pp on p.products_id = pp.products_id and pp.groups_id = '" . (int)$customer_groups_id . "' and pp.currencies_id = '" . (USE_MARKET_PRICES == 'True' ? $currency_id : '0') . "' where " . \common\helpers\Product::getState() . \common\helpers\Product::get_sql_product_restrictions(array('p', 'pd', 's', 'sp', 'pp')) . " and if(pp.products_group_price is null, 1, pp.products_group_price != -1 ) group by p.products_id");
           } else {
             $query = tep_db_query("select p.products_id, p.products_tax_class_id, p.products_price from " . TABLE_PRODUCTS . " p {$products_join} where " . \common\helpers\Product::getState() . \common\helpers\Product::get_sql_product_restrictions(array('p', 'pd', 's', 'sp', 'pp')) . " group by p.products_id");
