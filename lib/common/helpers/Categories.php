@@ -374,7 +374,7 @@ class Categories {
                 if ($force_products_status) {
                     tep_db_query("update " . TABLE_PRODUCTS . " set products_status = IFNULL(previous_status, '1'), previous_status = NULL where products_id = " . $data['products_id']);
                 }else{
-                    tep_db_query("update " . TABLE_PRODUCTS . " set products_status = IFNULL(previous_status, '1'), previous_status = NULL where products_id = " . $data['products_id']." AND previous_status NOT IS NULL");
+                    tep_db_query("update " . TABLE_PRODUCTS . " set products_status = IFNULL(previous_status, '1'), previous_status = NULL where products_id = " . $data['products_id']." AND previous_status IS NOT NULL");
                 }
             }
             $tree = self::get_category_tree($category_id);
@@ -385,7 +385,7 @@ class Categories {
                     if ($force_products_status){
                         tep_db_query("update " . TABLE_PRODUCTS . " set  products_status = IFNULL(previous_status, '1'), previous_status = NULL where products_id = " . $data['products_id']);
                     }else{
-                        tep_db_query("update " . TABLE_PRODUCTS . " set  products_status = IFNULL(previous_status, '1'), previous_status = NULL where products_id = " . $data['products_id']." AND previous_status NOT IS NULL");
+                        tep_db_query("update " . TABLE_PRODUCTS . " set  products_status = IFNULL(previous_status, '1'), previous_status = NULL where products_id = " . $data['products_id']." AND previous_status IS NOT NULL");
                     }
                 }
             }
