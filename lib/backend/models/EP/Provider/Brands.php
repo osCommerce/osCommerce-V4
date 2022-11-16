@@ -92,7 +92,7 @@ class Brands extends ProviderAbstract implements ImportInterface, ExportInterfac
                     "SELECT DISTINCT p.manufacturers_id ".
                     "FROM ".TABLE_PRODUCTS." p ".
                     "  INNER JOIN ".TABLE_PRODUCTS_TO_CATEGORIES." p2c ON p2c.products_id=p.products_id AND p2c.categories_id IN('".implode("','",$categories)."') ".
-                    "WHERE (p.manufacturers_id NOT IS NULL OR p.manufacturers_id!=0) "
+                    "WHERE (p.manufacturers_id IS NOT NULL OR p.manufacturers_id!=0) "
                 );
                 if ( tep_db_num_rows($get_categories_brands_r)>0 ) {
                     $brand_ids = [];
