@@ -89,7 +89,7 @@ class Menu extends Widget
         }
         // init product counts
         if ((!Info::themeSetting('show_empty_categories') || $this->settings[0]['show_count_products'])
-            && !empty($categories_all) && !isset($categories_all[[sizeof($categories_all) - 1]]['products'] )) {
+            && !empty($categories_all) && !(is_array($categories_all) && isset(reset($categories_all)['products'] )) ) {
             $counts = null;
             unset($this->settings[0]['show_count_products']);
             //$counts = \common\components\CategoriesCache::getProductCountCache()::getCount(array_keys($categories_all), $platformCurrentId, $customer_groups_id);
