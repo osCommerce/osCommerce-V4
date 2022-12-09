@@ -2188,7 +2188,7 @@ class Images {
 
         $path = \Yii::getAlias('@webroot') . DIRECTORY_SEPARATOR . DIR_WS_IMAGES;
         if (defined("DIR_WS_HTTP_ADMIN_CATALOG")) {
-            $path = str_replace(DIR_WS_HTTP_ADMIN_CATALOG, '', $path);
+            $path = str_replace('/'.trim(DIR_WS_HTTP_ADMIN_CATALOG,'/').'/', '/', $path);
         }
         $pathDestination = $path;
         if (!$defaultImagePath) {

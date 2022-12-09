@@ -69,7 +69,7 @@ class IndexController extends Sceleton {
             ? constant('MESSAGE_SEC_KEY_GLOBAL')
             : 'Warning: Security keys were generated for a different security store key! Update required. Security store key for this domain is [%1$s]. Please update \'secKey.global\' key value in [lib/common/config/params-local.php] and flush OPcache in "Settings" -> "Cache control".'
         );
-        $secKeyGlobal = md5(\Yii::$app->db->dsn);
+        $secKeyGlobal = md5(\Yii::$app->db->dsn . (defined('INSTALLED_MICROTIME') ? INSTALLED_MICROTIME : ''));
         if (!isset(\Yii::$app->params['secKey.global']) OR (\Yii::$app->params['secKey.global'] != $secKeyGlobal)) {
             $messageSystemStatusCheck .= (sprintf($message, $secKeyGlobal) . "\n");
         }

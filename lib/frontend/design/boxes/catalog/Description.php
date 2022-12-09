@@ -45,6 +45,7 @@ class Description extends Widget
       $description = \common\helpers\Manufacturers::getManufacturerDescription($manufacturers_id, $languages_id);
     }
     $description = \common\classes\TlUrl::replaceUrl($description);
+      $description = \frontend\design\Info::widgetToContent($description);
     
     return IncludeTpl::widget(['file' => 'boxes/catalog/description.tpl', 'params' => ['description' => $description]]);
   }

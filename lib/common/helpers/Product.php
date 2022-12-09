@@ -305,9 +305,35 @@ class Product {
             $categories_join .= self::sqlCategoriesToPlatform();
         }
 
-        $category_query = tep_db_query("select p2c.categories_id from " . TABLE_PRODUCTS . " p, " . TABLE_PRODUCTS_TO_CATEGORIES . " p2c {$categories_join}, " . TABLE_CATEGORIES . " c where p.products_id = '" . (int) $products_id . "' " . self::getState(true) . self::get_sql_product_restrictions(array('p', 'pd', 's', 'sp', 'pp')) . " and p.products_id = p2c.products_id and c.categories_id=p2c.categories_id and c.categories_status=1 limit 1");
-        if (tep_db_num_rows($category_query)) {
-            $category = tep_db_fetch_array($category_query);
+        $linked_categories = Yii::$app->getDb()
+            ->createCommand(
+                "select p2c.categories_id ".
+                "from " . TABLE_PRODUCTS . " p, " .
+                TABLE_PRODUCTS_TO_CATEGORIES . " p2c {$categories_join}, " . TABLE_CATEGORIES . " c ".
+                "where p.products_id = '" . (int) $products_id . "' " .
+                self::getState(true) . self::get_sql_product_restrictions(array('p', 'pd', 's', 'sp', 'pp')) .
+                " and p.products_id = p2c.products_id and c.categories_id=p2c.categories_id and c.categories_status=1"
+            )
+            ->queryAll();
+
+        $category = false;
+        if (count($linked_categories) >= 1) {
+            $category = $linked_categories[0];
+            if (count($linked_categories) > 1 && strpos(Yii::$app->id,'frontend')!==false) {
+                if (Yii::$app->has('request') && Yii::$app->request instanceof \yii\web\Request) {
+                    $ref_path = \parse_url(trim(Yii::$app->request->getReferrer()), PHP_URL_PATH);
+                    foreach ($linked_categories as $check_category) {
+                        $_link = Yii::$app->getUrlManager()->createAbsoluteUrl(['catalog/index', 'cPath' => $check_category['categories_id']]);
+                        if (\parse_url($_link, PHP_URL_PATH) == $ref_path) {
+                            $category = $check_category;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        if ($category) {
 
             $categories = array();
             \common\helpers\Categories::get_parent_categories($categories, $category['categories_id']);
@@ -584,7 +610,7 @@ class Product {
                 }
             }
         }
-        $stock = $stock_values['products_quantity'] + $stock_values['suppliers_stock_quantity'] + $customers_temporary_stock_quantity - self::get_customers_limit_stock_quantity($products_id);
+        $stock = ($stock_values['products_quantity']??0) + ($stock_values['suppliers_stock_quantity']??0) + $customers_temporary_stock_quantity - self::get_customers_limit_stock_quantity($products_id);
         if ($stock < 0) {
             $stock = 0;
         }
@@ -594,12 +620,12 @@ class Product {
     public static function get_customers_limit_stock_quantity($products_id) {
         $products_id = \common\helpers\Inventory::get_prid($products_id);
         $product_values = static::getProductColumns((int) $products_id, ['stock_limit', 'manufacturers_id']);
-        if ($product_values['stock_limit'] > -1) {
+        if (($product_values['stock_limit']??null) > -1) {
             return $product_values['stock_limit'];
         }
         $stockLevelLimit = 0;
         //check brand
-        if ($product_values['manufacturers_id'] > 0) {
+        if (($product_values['manufacturers_id']??null) > 0) {
             $manufacturer_query = tep_db_query("select stock_limit from " . TABLE_MANUFACTURERS . " where manufacturers_id = '" . (int) $product_values['manufacturers_id'] . "'");
             $manufacturer_values = tep_db_fetch_array($manufacturer_query);
             if ($manufacturer_values['stock_limit'] > -1) {
@@ -1002,10 +1028,6 @@ class Product {
         tep_db_query("delete from " . TABLE_PRODUCTS_PRICES . " where products_id = '" . (int) $product_id . "'");
         tep_db_query("delete from " . TABLE_PRODUCTS_COMMENTS . " where products_id = '" . $product_id . "'");
 
-        if (\common\helpers\Acl::checkExtensionAllowed('ProductBundles')) {
-            tep_db_query("delete from " . TABLE_SETS_PRODUCTS . " where sets_id = '" . (int) $product_id . "'");
-        }
-
         if ($ext = \common\helpers\Acl::checkExtensionAllowed('EventSystem', 'allowed')) {
             $ext::programme()->exec('deleteProgramme', [$product_id]);
         }
@@ -1057,7 +1079,6 @@ class Product {
         tep_db_query("TRUNCATE " . TABLE_PRODUCTS_ATTRIBUTES_PRICES);
         tep_db_query("TRUNCATE " . TABLE_PRODUCTS_PRICES);
         tep_db_query("TRUNCATE " . TABLE_PROPERTIES_TO_PRODUCTS);
-        tep_db_query("TRUNCATE " . TABLE_SETS_PRODUCTS);
         tep_db_query("TRUNCATE " . TABLE_INVENTORY);
         tep_db_query("TRUNCATE " . TABLE_INVENTORY_PRICES);
         tep_db_query("TRUNCATE " . TABLE_PRODUCTS_UPSELL);
@@ -3100,7 +3121,7 @@ class Product {
 
                 // }} reset to default
 
-                $productRecord->save();
+                $productRecord->save(false);
             } catch (\Exception $exc) {
                 $return = false;
             }
@@ -3254,7 +3275,7 @@ class Product {
     public static function getVirtualItemQuantity($uProductId = 0, $realQuantity = 0)
     {
         if ($ext = \common\helpers\Acl::checkExtensionAllowed('OrderQuantityStep', 'allowed')) {
-            return $ext::getVirtualItemQuantity($uProductId, $realQuantity);
+            $realQuantity = $ext::getVirtualItemQuantity($uProductId, $realQuantity);
         }
         return $realQuantity;
     }

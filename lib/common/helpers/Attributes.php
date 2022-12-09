@@ -12,6 +12,8 @@
 
 namespace common\helpers;
 
+use backend\models\EP\Tools;
+
 class Attributes {
 
     public static function has_product_attributes($products_id, $simple = false) {

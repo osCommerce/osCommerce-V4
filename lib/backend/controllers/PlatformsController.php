@@ -1733,6 +1733,7 @@ class PlatformsController extends Sceleton {
         $configuration_query = tep_db_query($_query);
         while ($configuration = tep_db_fetch_array($configuration_query)) {
 
+            $cfgValue = null;
             if (tep_not_null($configuration['use_function'])) {
                 $use_function = $configuration['use_function'];
                 if (preg_match('/->/', $use_function)) {
@@ -2247,9 +2248,9 @@ class PlatformsController extends Sceleton {
             'theme_name' => $theme['theme_name'],
             'setting_group' => 'hide',
             'setting_name' => 'theme_image',
-        ])->setting_value;
-        if ($themeImage) {
-            $theme['theme_image'] = $themeImage;
+        ]);
+        if ($themeImage && $themeImage->setting_value) {
+            $theme['theme_image'] = $themeImage->setting_value;
         }
 
         if (isset($theme['id'])) {
@@ -2530,6 +2531,7 @@ class PlatformsController extends Sceleton {
             }
         }
         if ($item_id){
+            $languages_id = $languages_id ?? null;
             $address_query = tep_db_query("select ab.*, if (LENGTH(ab.entry_state), ab.entry_state, z.zone_name) as entry_state, c.countries_name  from " . TABLE_PLATFORMS_ADDRESS_BOOK . " ab left join " . TABLE_COUNTRIES . " c on ab.entry_country_id=c.countries_id  and c.language_id = '" . (int)$languages_id . "' left join " . TABLE_ZONES . " z on z.zone_country_id=c.countries_id and ab.entry_zone_id=z.zone_id where platform_id = '" . (int) $item_id . "' ");
             $d = tep_db_fetch_array($address_query);
         } else {

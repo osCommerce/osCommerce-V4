@@ -1222,3 +1222,57 @@ $(function(){
     })
   })
 })
+
+/**
+ * @param array list of objects {name, value}, value
+ * @param jquery object $destination, add name form list item to input ($destination)
+ * @param string defaultValue list item name or call to action text
+ * @return jquery object
+ */
+function htmlDropdown(list, $destination, defaultValue = false) {
+  const $dropdown = $('<div class="html-dropdown-dropdown"></div>');
+  const $htmlDropdown = $('<div class="html-dropdown"></div>');
+  const $selectedItem = $('<div class="selected-item"></div>');
+  const value = $destination.val();
+  let empty = true;
+  $htmlDropdown.append($selectedItem).append($dropdown);
+  list.forEach(function(item){
+    const $item = $(`<div class="item">${item.value}</div>`);
+    $item.on('click', function(){
+      $destination.val(item.name).trigger('change');
+      $('.active', $dropdown).removeClass('active');
+      $(this).addClass('active');
+      $selectedItem.html(item.value)
+    });
+    $dropdown.append($item)
+    if (value == item.name) {
+      $selectedItem.html(item.value)
+      $item.addClass('active');
+      empty = false;
+    } else if (!value && defaultValue == item.name) {
+      $selectedItem.html(item.value)
+      $item.addClass('active');
+      $destination.val(item.name).trigger('change');
+      empty = false;
+    }
+  });
+
+  if (empty && defaultValue) {
+    $destination.val('').trigger('change');
+    $selectedItem.html(defaultValue)
+  }
+
+  $selectedItem.on('click', function(){
+    const top = $selectedItem.offset().top + $selectedItem.outerHeight();
+    const left = $selectedItem.offset().left;
+    $('body').append($dropdown);
+    $dropdown.css({top, left});
+    setTimeout(function(){
+      $('body').one('click', function(){
+        setTimeout(() => $htmlDropdown.append($dropdown), 100)
+      })
+    }, 0)
+  })
+
+  return $htmlDropdown
+}

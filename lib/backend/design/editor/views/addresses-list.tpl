@@ -64,7 +64,7 @@
                     if ($('input[name="ship_as_bill"]').prop('checked')){
                         order.copyAddress({ data: { address_prefix: 'shipping_address', address_box:'shipping-address-box' } }, $('#tab_contact'), '');
                     }
-                    if ( event.target.name && event.target.name.match(/(postcode|state|country|city)/) ) {
+                    if ( event.target.name && event.target.name.match(/({implode('|',\common\services\OrderManager::getRecalculateShippingFields())})/) ) {
                         order.dataChanged($('#checkoutForm'), 'recalculation', [{ 'name':'checked_model', 'value':'{$model->formName()}' }]);
                     }
                 })

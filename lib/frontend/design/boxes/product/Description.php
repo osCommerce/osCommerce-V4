@@ -67,8 +67,11 @@ class Description extends Widget
         if (!$product['products_description']) {
             return '';
         }
+        $description = $product['products_description'];
+        $description = \common\classes\TlUrl::replaceUrl($description);
+        $description = \frontend\design\Info::widgetToContent($description);
 
-        return IncludeTpl::widget(['file' => 'boxes/product/description.tpl', 'params' => ['description' => $product['products_description']]]);
+        return IncludeTpl::widget(['file' => 'boxes/product/description.tpl', 'params' => ['description' => $description]]);
 
     }
 }

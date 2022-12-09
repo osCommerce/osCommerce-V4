@@ -81,7 +81,7 @@ if (defined('WL_ENABLED') && WL_ENABLED === true) {
 
 // set application wide parameters
 if (!file_exists('../lib/common/extensions/VatOnOrder/VatOnOrder.php')) {
-    define('ACCOUNT_COMPANY', 'disabled');
+    //define('ACCOUNT_COMPANY', 'disabled');
     define('ACCOUNT_COMPANY_VAT', 'disabled');
     define('ACCOUNT_CUSTOMS_NUMBER', 'disabled');
 }

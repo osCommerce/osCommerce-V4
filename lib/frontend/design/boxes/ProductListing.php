@@ -312,6 +312,8 @@ class ProductListing extends Widget
             return $cache[$name];
         }
 
+        defined('THEME_NAME') or define('THEME_NAME', 'theme-1');
+
         static $themeName = THEME_NAME;
         if (substr($name, 0, 6) != 'block-') {
             $themeName = THEME_NAME;

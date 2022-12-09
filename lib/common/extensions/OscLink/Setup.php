@@ -91,14 +91,19 @@ class Setup extends \common\classes\modules\SetupExtensions {
     {
         return [
             [
-                'parent' => 'BOX_MODULES_CONNECTORS',
-                'sort_order' => '5',
-                'box_type' => '0',
-                'acl_check' => 'OscLink,allowed',
-                'config_check' => '',
-                'path' => 'extensions?module=OscLink',
-                'title' => 'BOX_MODULES_CONNECTORS_OSCLINK',
-                'filename' => '',
+                'parent' => 'BOX_HEADING_MODULES',
+                'removeIfExists' => false,
+                'sort_order' => '50',
+                'box_type' => '1',
+                'title' => 'BOX_MODULES_CONNECTORS',
+                'child' => [
+                    [
+                        'sort_order' => '5',
+                        'acl_check' => 'OscLink,allowed',
+                        'path' => 'extensions?module=OscLink',
+                        'title' => 'BOX_MODULES_CONNECTORS_OSCLINK',
+                    ],
+                ]
             ],
         ];
     }

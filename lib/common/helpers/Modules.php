@@ -270,82 +270,9 @@ class Modules {
         $row->save(false);
     }
 
-    /**
-     * @param $code - extension classname
-     * @return null|string null - success, string - error message
-     */
     public static function installExtSafe($code)
     {
-        try {
-            self::installExt($code);
-            return;
-        } catch (\Exception $e) {
-            \Yii::error( sprintf("%s: %s\n%s", __FUNCTION__, $e->getMessage(), $e->getTraceAsString() ));
-            return $e->getMessage();
-        }
-    }
-
-    public static function installExt($code)
-    {
-        $ext = \common\helpers\Acl::checkExtension($code, 'allowed');
-        if (!$ext) throw new \Exception("Extension $code not found");
-
-        if (\common\helpers\Acl::checkExtensionAllowed($code)) throw new \Exception("Extension $code already installed");
-
-        $obj = new $ext;
-        $obj->install(0);
-
-        $obj->enable_module(0, true);
-    }
-
-    /**
-     * @param $code - extension classname
-     * @param bool $forceIfUninstalled set true to call remove method even if extension is already uninstalled
-     * @param array|null $options uninstall options ['userConfirmedDropDatatables', 'userConfirmedDeleteAcl']
-     * @return null|string null - success, string - error message
-     */
-    public static function uninstallExt($code, $forceIfUninstalled = false, $options = null)
-    {
-        $ext = \common\helpers\Acl::checkExtensionAllowed($code);
-        if (!$ext) {
-            if ($forceIfUninstalled) {
-                $ext = \common\helpers\Acl::checkExtension($code, 'enabled');
-                if (!$ext) {
-                    throw new \Exception("Extenstion $code is not exist on the disk");
-                }
-            } else {
-                throw new \Exception("Extenstion $code is not installed");
-            }
-        }
-        $obj = new $ext;
-        if (is_array($options)) {
-            foreach ($options as $option) {
-                if (!property_exists($obj, $options)) {
-                    throw new \Exception("Property $option is not exists in extenstion $code");
-                }
-                $obj->$options = true;
-            }
-        }
-        $obj->remove(0);
-
-        $obj->enable_module(0, false);
-    }
-
-    /**
-     * @param $code - extension classname
-     * @param bool $forceIfUninstalled set true to call remove method even if extension is already uninstalled
-     * @param array|null $options uninstall options
-     * @return null|string null - success, string - error message
-     */
-    public static function uninstallExtSafe($code, $forceIfUninstalled = false, $options = null)
-    {
-        try {
-            self::uninstallExt($code, $forceIfUninstalled, $options);
-            return;
-        } catch (\Exception $e) {
-            \Yii::error( sprintf("%s: %s\n%s", __FUNCTION__, $e->getMessage(), $e->getTraceAsString() ));
-            return $e->getMessage();
-        }
+        return \common\helpers\Extensions::installSafe($code);
     }
 
     public static function getInfoLinkForExtension($module)

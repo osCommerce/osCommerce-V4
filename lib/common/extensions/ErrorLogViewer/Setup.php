@@ -13,7 +13,8 @@
 
 namespace common\extensions\ErrorLogViewer;
 
-class Setup extends \common\classes\modules\SetupExtensions {
+class Setup extends \common\classes\modules\SetupExtensions
+{
 
     public static function getDescription()
     {
@@ -37,8 +38,8 @@ class Setup extends \common\classes\modules\SetupExtensions {
     public static function getTranslationArray()
     {
         return [
-                'admin/main' => [
-                    'BOX_ERROR_LOG_VIEWER' => 'Error Log Viewer',
+            'admin/main' => [
+                'BOX_ERROR_LOG_VIEWER' => 'Error Log Viewer',
 //                    'IMAGE_CANCEL' => 'Cancel',
 //                    'IMAGE_DOWNLOAD' => 'Download',
 //                    'IMAGE_DELETE' => 'Delete',
@@ -47,49 +48,53 @@ class Setup extends \common\classes\modules\SetupExtensions {
 //                    'TEXT_SEARCH_BY' => 'Search by',
 //                    'TEXT_DELETE_SELECTED' => 'Delete selected',
 //                    'TEXT_DATE' => 'Date',
-                ],
-                'extensions/error-log-viewer' => [
-                    'EXT_ELV_HEADING_TITLE' => 'Error Log Viewer',
+            ],
+            'extensions/error-log-viewer' => [
+                'EXT_ELV_HEADING_TITLE' => 'Error Log Viewer',
 
-                    'EXT_ELV_TABLE_FILENAME' => 'File',
-                    'EXT_ELV_TABLE_FILESIZE' => 'Size',
-                    'EXT_ELV_TABLE_LAST_MODIFIED' => 'Last Modified',
+                'EXT_ELV_TABLE_FILENAME' => 'File',
+                'EXT_ELV_TABLE_FILESIZE' => 'Size',
+                'EXT_ELV_TABLE_LAST_MODIFIED' => 'Last Modified',
 
-                    'EXT_ELV_TEXT_CLEAR_ALL' => 'Delete all logs',
-                    'EXT_ELV_TEXT_BACKEND' => 'Backend',
-                    'EXT_ELV_TEXT_FRONTEND' => 'Frontend',
-                    'EXT_ELV_TEXT_CONSOLE' => 'Console',
-                    'EXT_ELV_TEXT_SOURCE' => 'Log source',
-                    'EXT_ELV_TEXT_LOCATION' => 'File location',
-                    'EXT_ELV_TEXT_FILENAME' => 'Log file',
-                    'EXT_ELV_TEXT_MODIFIED' => 'Last modified',
-                    'EXT_ELV_TEXT_INFO' => 'Log Info',
-                    'EXT_ELV_TEXT_VIEW_AS_TEXT' => 'View as text',
-                    'EXT_ELV_TEXT_DOWNLOAD_ALL_LOGS' => 'Download all logs (zip)',
-                    'EXT_ELV_TEXT_IP' => 'IP',
-                    'EXT_ELV_TEXT_ERROR_LEVEL' => 'Level',
-                    'EXT_ELV_TEXT_CATEGORY' => 'Category',
-                    'EXT_ELV_TEXT_LOG_POSITION_DATE' => 'Position & date',
+                'EXT_ELV_TEXT_CLEAR_ALL' => 'Delete all logs',
+                'EXT_ELV_TEXT_BACKEND' => 'Backend',
+                'EXT_ELV_TEXT_FRONTEND' => 'Frontend',
+                'EXT_ELV_TEXT_CONSOLE' => 'Console',
+                'EXT_ELV_TEXT_SOURCE' => 'Log source',
+                'EXT_ELV_TEXT_LOCATION' => 'File location',
+                'EXT_ELV_TEXT_FILENAME' => 'Log file',
+                'EXT_ELV_TEXT_MODIFIED' => 'Last modified',
+                'EXT_ELV_TEXT_INFO' => 'Log Info',
+                'EXT_ELV_TEXT_VIEW_AS_TEXT' => 'View as text',
+                'EXT_ELV_TEXT_DOWNLOAD_ALL_LOGS' => 'Download all logs (zip)',
+                'EXT_ELV_TEXT_IP' => 'IP',
+                'EXT_ELV_TEXT_ERROR_LEVEL' => 'Level',
+                'EXT_ELV_TEXT_CATEGORY' => 'Category',
+                'EXT_ELV_TEXT_LOG_POSITION_DATE' => 'Position & date',
 
-                    'EXT_ELV_DELETE_INTRO' => 'Are you sure you want to delete file \"%s\"?',
-                    'EXT_ELV_DELETE_TITLE' => 'Delete file?',
+                'EXT_ELV_DELETE_INTRO' => 'Are you sure you want to delete file \"%s\"?',
+                'EXT_ELV_DELETE_TITLE' => 'Delete file?',
 
-                    'EXT_ELV_DELETE_SELECTED_INTRO' => 'Are you sure you want to delete %s log file(s)?',
-                    'EXT_ELV_DELETE_SELECTED_TITLE' => 'Delete selected Logs?',
+                'EXT_ELV_DELETE_SELECTED_INTRO' => 'Are you sure you want to delete %s log file(s)?',
+                'EXT_ELV_DELETE_SELECTED_TITLE' => 'Delete selected Logs?',
 
-                    'EXT_ELV_DELETE_ALL_INTRO' => 'Are you sure you want to delete all files?',
-                    'EXT_ELV_DELETE_ALL_TITLE' => 'Delete all logs?',
+                'EXT_ELV_DELETE_ALL_INTRO' => 'Are you sure you want to delete all files?',
+                'EXT_ELV_DELETE_ALL_TITLE' => 'Delete all logs?',
 
-                    'EXT_ELV_ERR_SOURCE' => '<span color="#FF0000">ERROR!<br>Incorrect source</span>',
-                    'EXT_ELV_ERR_FILE' => '<span color="#FF0000">ERROR!<br>Incorrect filename or file not exists!</span>',
-                    'EXT_ELV_ERR_REQUEST' => 'Request error!',
-                ],
+                'EXT_ELV_ERR_SOURCE' => '<span color="#FF0000">ERROR!<br>Incorrect source</span>',
+                'EXT_ELV_ERR_FILE' => '<span color="#FF0000">ERROR!<br>Incorrect filename or file not exists!</span>',
+                'EXT_ELV_ERR_NO_FILE_TO_DOWNLOAD' => 'No logs to download',
+                'EXT_ELV_ERR_CREATE_ZIP' => 'Failure to create zip file. Error: <strong>%s</strong>',
+                'EXT_ELV_ERR_CREATE_TMP' => 'Can not create temporary folder',
+                'EXT_ELV_ERR_DELETE_OLD_ZIP' => 'Failure to remove old zip file(s). Error: <strong>%s</strong>',
+                'EXT_ELV_ERR_REQUEST' => 'Request error!',
+            ],
         ];
     }
 
     public static function getAclArray()
     {
-        return ['default' => ['TEXT_SETTINGS','BOX_HEADING_TOOLS', 'BOX_ERROR_LOG_VIEWER']];
+        return ['default' => ['TEXT_SETTINGS', 'BOX_HEADING_TOOLS', 'BOX_ERROR_LOG_VIEWER']];
     }
 
     public static function getVersionHistory()
@@ -98,6 +103,4 @@ class Setup extends \common\classes\modules\SetupExtensions {
             '1.0.0' => 'changed as AppStore Extensions',
         ];
     }
-
-
 }

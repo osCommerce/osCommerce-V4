@@ -77,6 +77,14 @@ class Mail {
             'PRODUCTS_ORDERED_REVIEW' => '',
             'STORE_OWNER' => '',
         ];
+        foreach (['email_templates_subject', 'email_templates_body'] as $key_index) {
+            if (preg_match_all('/##([A-Z_0-9]+)##/', $data[$key_index], $other_keys)) {
+                foreach ($other_keys[1] as $other_key) {
+                    if (!isset($params[$other_key])) $params[$other_key] = '';
+                }
+            }
+        }
+
         if (\frontend\design\Info::isTotallyAdmin()) {
             $params['STORE_URL'] = rtrim(tep_catalog_href_link('/', '', 'SSL', false),'/').'/';
         } else {
@@ -425,7 +433,7 @@ class Mail {
             $HOST = $_tmp_site_url['scheme'] . '://' . $_tmp_site_url['host'];
             $PATH = rtrim(substr($_tmp_site_url['path'], 0, strpos($_tmp_site_url['path'], 'link')), '/');
             $email_text = preg_replace('/(<img[^>]+src=)"\/([^"]+)"/i', '$1"' . $HOST . '/$2"', $email_text);
-            $email_text = preg_replace('/(<img[^>]+src=)"(?![a-z]{3,5}:\/\/)([^"]+)"/i', '$1"' . $HOST . $PATH . '/$2"', $email_text);
+            $email_text = preg_replace('/(<img[^>]+src=)"(?![a-z]{3,5}:)([^"]+)"/i', '$1"' . $HOST . $PATH . '/$2"', $email_text);
             //VL generally [a-z]{3,5} could be replaced either with https? (images by http(s) protocol in emails) or [a-z][a-z0-9\-+.]+ (by any protocol)
             $has_tag_p = (preg_match("/<p>/", $email_text) ? true : false);
             if ($has_tag_p) {

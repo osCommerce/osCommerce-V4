@@ -2,7 +2,7 @@
     {foreach $order->products as $product}
         <div class="pos-products" style="width: 100%">
             <div class="name" style="width: 100%">
-                <span class="qty">{$product['qty']}</span><span class="multiply"> x </span><span class="price-total" style="float: right; font-weight: bold">{$currencies->format($currencies->calculate_price_in_order($order->info, $product.final_price, $product.tax, $product.qty), true, $order->info['currency'], $order->info['currency_value'])}</span><!-- comment --><span class="name">{$product['name']}</span>{*$product.model*}
+                <span class="qty">{\common\helpers\Product::getVirtualItemQuantity($product['id'], $product['qty'])}</span><span class="multiply"> x </span><span class="price-total" style="float: right; font-weight: bold">{$currencies->format($currencies->calculate_price_in_order($order->info, $product.final_price, $product.tax, $product.qty), true, $order->info['currency'], $order->info['currency_value'])}</span><!-- comment --><span class="name">{$product['name']}</span>{*$product.model*}
                 <div class="options"><br>
                   {if is_array($product.attributes) && $product.attributes|@sizeof > 0}
                     {foreach $product.attributes as $attribut}

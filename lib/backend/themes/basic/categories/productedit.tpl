@@ -199,11 +199,6 @@
     {if $TabAccess->tabView('TAB_PROPERTIES')}
             <li><a href="#tab_1_11" data-toggle="tab" title="{$smarty.const.TAB_PROPERTIES}"><span>{$smarty.const.TAB_PROPERTIES}</span></a></li>
     {/if}
-<!-- {*
-    {if \common\helpers\Acl::checkExtensionAllowed('ProductBundles') && $TabAccess->tabView('TAB_BUNDLES')}
-            <li><a href="#tab_1_12" data-toggle="tab"><span>{$smarty.const.TAB_BUNDLES}</span></a></li>
-    {/if}
-*} -->
     {if \common\helpers\Acl::checkExtensionAllowed('ObsoleteProducts', 'allowed') && $TabAccess->tabView('TAB_OBSOLETE_PRODUCTS')}
             <li><a href="#tab_obsolete_products" data-toggle="tab"><span>{$smarty.const.TAB_OBSOLETE_PRODUCTS}</span></a></li>
     {/if}
@@ -430,17 +425,6 @@
               {include 'productedit/properties.tpl'}
             </div>
     {/if}
-<!-- {*
-    {if \common\helpers\Acl::checkExtensionAllowed('ProductBundles') && $TabAccess->tabView('TAB_BUNDLES')}
-            <div class="tab-pane" id="tab_1_12">
-              {if \common\helpers\Acl::checkExtensionAllowed('ProductBundles', 'allowed')}
-                {\common\extensions\ProductBundles\ProductBundles::productBlock($pInfo)}
-              {else}   
-                {include 'productedit/bundles.tpl'}
-              {/if}
-            </div>
-    {/if}
-*} -->
     {if \common\helpers\Acl::checkExtensionAllowed('ObsoleteProducts', 'allowed') && $TabAccess->tabView('TAB_OBSOLETE_PRODUCTS') }
         <div class="tab-pane" id="tab_obsolete_products">
             {\common\extensions\ObsoleteProducts\ObsoleteProducts::productBlock($pInfo)}

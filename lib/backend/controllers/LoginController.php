@@ -23,12 +23,25 @@ class LoginController extends Controller {
 
     function __construct($id, $module = null) {
         if ( defined('STRICT_ACCESS_STATUS') && STRICT_ACCESS_STATUS=='True' ) {
+            $allowed = false;
             $clientIp = \common\helpers\System::get_ip_address();
             $ipWhiteList = preg_split('/[,;\s]/', (defined('STRICT_ACCESS_ALLOWED_IP') ? STRICT_ACCESS_ALLOWED_IP : ''), -1, PREG_SPLIT_NO_EMPTY);
             $ipWhiteList = array_map('trim', $ipWhiteList);
-            if (!in_array($clientIp, $ipWhiteList)) {
+            foreach ($ipWhiteList as $white_ip){
+                if ( strpos($white_ip,'/')!==false ){
+                    if (\yii\helpers\IpHelper::inRange($clientIp, $white_ip)){
+                        $allowed = true;
+                    }
+                } else {
+                    if ($clientIp == $white_ip) {
+                        $allowed = true;
+                    }
+                }
+            }
+
+            if (!$allowed) {
                 header('HTTP/1.0 403 Forbidden');
-                echo (defined('TEXT_PAGE_ACCESS_FORBIDDEN') ? TEXT_PAGE_ACCESS_FORBIDDEN : 'Access Denied');
+                echo (defined('TEXT_PAGE_ACCESS_FORBIDDEN') ? TEXT_PAGE_ACCESS_FORBIDDEN : 'Access Denied') . ' ' . $clientIp;
                 die();
             }
         }

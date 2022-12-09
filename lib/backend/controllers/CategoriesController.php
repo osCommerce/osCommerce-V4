@@ -1295,7 +1295,7 @@ class CategoriesController extends Sceleton {
                 //$categories_query_numrows++;
             }
         }
-        if (tep_not_null($products_query_raw))
+        if (tep_not_null($products_query_raw ?? null))
             $_session->set('products_query_raw', $products_query_raw);
         $response = [
             'draw' => $draw,
@@ -5093,7 +5093,7 @@ class CategoriesController extends Sceleton {
         if (isset($this->view->preview_link) && count($this->view->preview_link) > 1) {
             $this->topButtons[] = '<a href="#choose-frontend" class="btn btn-primary btn-choose-frontend">' . TEXT_PREVIEW_ON_SITE . '</a>';
         } else {
-            $this->topButtons[] = '<a href="' . $this->view->preview_link[0]['link'] . '" target="_blank" class="btn btn-primary">' . TEXT_PREVIEW_ON_SITE . '</a>';
+            $this->topButtons[] = '<a href="' . ($this->view->preview_link[0]['link']??null) . '" target="_blank" class="btn btn-primary">' . TEXT_PREVIEW_ON_SITE . '</a>';
         }
 
 

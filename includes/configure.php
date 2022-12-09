@@ -2,10 +2,10 @@
 /**
  * This file is part of osCommerce ecommerce platform.
  * osCommerce the ecommerce
- * 
+ *
  * @link https://www.oscommerce.com
  * @copyright Copyright (c) 2000-2022 osCommerce LTD
- * 
+ *
  * Released under the GNU General Public License
  * For the full copyright and license information, please view the LICENSE.TXT file that was distributed with this source code.
  */
@@ -34,7 +34,7 @@ defined('STORE_SESSIONS') or define('STORE_SESSIONS', 'mysql');
                   ));
       define('AdditionalPlatforms_EXTENSION_STATUS', is_array($arr) ? $arr['configuration_value'] ?? null : null );
   }
- 
+
   if (file_exists('lib/common/extensions/AdditionalPlatforms/AdditionalPlatforms.php') && AdditionalPlatforms_EXTENSION_STATUS == 'True') {
     if ( !class_exists('\common\extensions\AdditionalPlatforms\AdditionalPlatforms') ) {
       include_once('lib/common/classes/modules/Module.php');
@@ -58,6 +58,25 @@ defined('STORE_SESSIONS') or define('STORE_SESSIONS', 'mysql');
           "LIMIT 1"
       ));
   }
+
+    // CONSOLE APPLICATION DEFAULT PLATFORM LOAD
+    // TO ENABLE - PASS '-dP' KEY
+    if (!isset($platform['platform_id'])
+        AND isset($_SERVER['argv']) AND is_array($_SERVER['argv'])
+        AND isset($_SERVER['argv'][0]) AND (strtolower($_SERVER['argv'][0]) == 'yii.php')
+        AND (in_array('-dP', $_SERVER['argv']))
+    ) {
+        $platform = tep_db_fetch_array(tep_db_query(
+            "select p.*, ".
+            " IF(pu.url IS NULL,0,1) AS _platform_cdn_server, ".
+            " IF(LENGTH(p.platform_url_secure)>0,p.platform_url_secure,p.platform_url) AS _platform_url_secure ".
+            "from platforms p ".
+            " left join platforms_url pu ON pu.platform_id=p.platform_id AND pu.url!=IF(LENGTH(p.platform_url_secure)>0,p.platform_url_secure,p.platform_url) AND pu.status=1 ".
+            "where p.is_default = 1 ".
+            "LIMIT 1"
+        ));
+    }
+    // EOF CONSOLE APPLICATION DEFAULT PLATFORM LOAD
 
   if (isset($platform['platform_id']) && $platform['platform_id'] > 0) {
       if ($platform['is_marketplace'] == 1) {
@@ -150,7 +169,7 @@ defined('STORE_SESSIONS') or define('STORE_SESSIONS', 'mysql');
     if (isset($platform['default_language']) && !empty($platform['default_language'])) {
         define('DEFAULT_LANGUAGE', $platform['default_language']);
     }
-    
+
     define('PLATFORM_NEED_LOGIN', $platform['need_login']);
 
     define('STORE_NAME', $platform['platform_name']);
@@ -217,7 +236,7 @@ defined('STORE_SESSIONS') or define('STORE_SESSIONS', 'mysql');
   }
 
   defined('AFFILIATE_ID') or define('AFFILIATE_ID', 0);
-  
+
   define('DIR_WS_HTTP_ADMIN_CATALOG', 'admin/');
   define('DIR_WS_IMAGES', 'images/');
   define('DIR_WS_ICONS', DIR_WS_IMAGES . 'icons/');

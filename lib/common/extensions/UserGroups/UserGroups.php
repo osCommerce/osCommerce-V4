@@ -403,8 +403,8 @@ class UserGroups extends \common\classes\modules\ModuleExtensions {
         $groups_name = tep_db_prepare_input($_POST['groups_name']);
         $groups_discount = tep_db_prepare_input($_POST['groups_discount']);
         $apply_groups_discount_to_specials = isset($_POST['apply_groups_discount_to_specials']) ? 1 : 0;
-        $groups_is_reseller = tep_db_prepare_input($_POST['groups_is_reseller']);
-        $new_approve = tep_db_prepare_input($_POST['new_approve']);
+        $groups_is_reseller = tep_db_prepare_input($_POST['groups_is_reseller'] ?? null);
+        $new_approve = tep_db_prepare_input($_POST['new_approve'] ?? null);
         $bonusPointsCurrencyRate = (float)\Yii::$app->request->post('bonus_points_currency_rate', 0.0);
         $groups_default = $_POST['default'] ?? null;
         $groups_use_more_discount = $_POST['groups_use_more_discount'] ?? null;

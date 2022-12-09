@@ -73,7 +73,7 @@ class ExtraConfig extends \yii\base\Widget {
         $ccpActive = false;
         $sellerBoardingDetails = [];
 
-        if (is_array($tmp)) {
+        if (is_array($tmp ?? null)) {
             foreach (['errors', 'warnings', 'info'] as $group) {
                 if (!empty($tmp[$group])) {
                     $sellerBoardingDetails[$group] = $tmp[$group];

@@ -86,7 +86,7 @@ class CatalogPagesService
         if ($catalogPage->status) {
             return true;
         }
-        $this->catalogPagesRepository->edit($catalogPage, ['status' => CatalogPages::STATUS_ACTIVE]);
+        return $this->catalogPagesRepository->edit($catalogPage, ['status' => CatalogPages::STATUS_ACTIVE]);
     }
 
     /**
@@ -103,7 +103,7 @@ class CatalogPagesService
         if (!$catalogPage->status) {
             return true;
         }
-        $this->catalogPagesRepository->edit($catalogPage, ['status' => CatalogPages::STATUS_DISABLE]);
+        return $this->catalogPagesRepository->edit($catalogPage, ['status' => CatalogPages::STATUS_DISABLE]);
     }
 
     /**
@@ -235,7 +235,7 @@ class CatalogPagesService
      */
     public function slugify(string $string): string
     {
-        $string = transliterator_transliterate("Any-Latin; NFD; [:Nonspacing Mark:] Remove; NFC; [:Punctuation:] Remove; Lower();", $string);
+        $string = \transliterator_transliterate("Any-Latin; NFD; [:Nonspacing Mark:] Remove; NFC; [:Punctuation:] Remove; Lower();", $string);
         $string = preg_replace('/[-\s]+/', '-', $string);
         return trim($string, '-');
     }
@@ -314,7 +314,7 @@ class CatalogPagesService
      * @return int
      * @throws \Exception
      */
-    public function saveByCatalogPageForm(int $id = 0, CatalogsPageContainerForm $catalogPageForm, int $languageId): int
+    public function saveByCatalogPageForm(int $id, CatalogsPageContainerForm $catalogPageForm, int $languageId): int
     {
         $this->transaction->wrap(function () use (&$id, $catalogPageForm, $languageId) {
             $created_at = null;

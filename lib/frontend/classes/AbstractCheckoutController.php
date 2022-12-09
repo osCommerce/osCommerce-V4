@@ -353,6 +353,8 @@ abstract class AbstractCheckoutController extends \frontend\controllers\Sceleton
                         'postcode' => $sAddress->postcode,
                         'zone' => $sAddress->state,
                         'city' => $sAddress->city,
+                        'suburb' => $sAddress->suburb,
+                        'street_address' => $sAddress->street_address,
                         'company_vat' => $sAddress->company_vat,
                         'company_vat_date' => $sAddress->company_vat_date,
                         'company_vat_status' => $sAddress->company_vat_status

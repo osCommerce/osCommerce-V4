@@ -9,8 +9,10 @@
                 <thead>
                     <tr class="dataTableHeadingRow">
                         <th class="dataTableHeadingContent" colspan="3"><i class="btn-order-products-sort icon-sort js-sort-order-products hide" aria-hidden="true" data-selector=".table-process tbody" data-server-action="{Yii::$app->urlManager->createUrl(['orders/sort-products', 'order_id' => $order->order_id])}"></i>{$smarty.const.TABLE_HEADING_PRODUCTS}</th>
+                        {if !($order instanceof \common\classes\TmpOrder)}
                         <th class="dataTableHeadingContent">{$smarty.const.TABLE_HEADING_STATUS}</th>
                         <th class="dataTableHeadingContent">{$smarty.const.TEXT_STOCK}</th>
+                        {/if}
                         <th class="dataTableHeadingContent location">{$smarty.const.BOX_HEADING_LOCATION}</th>                        
                         <th class="dataTableHeadingContent tax">{$smarty.const.TABLE_HEADING_TAX}</th>
                         <th class="dataTableHeadingContent price" align="center"><span>{$smarty.const.TEXT_PRICE}</span><span>{$smarty.const.TEXT_TOTAL}</span></th>

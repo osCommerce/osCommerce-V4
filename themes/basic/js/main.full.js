@@ -433,7 +433,7 @@ $.fn.quantity = function(options){
                 }
                 return true;
             });
-            _this.on('change', function(e){
+            _this.on('keyup', function(e){
                 var new_value = _this.val().replace(((virtual_item_qty > 1) ?/[^0-9\.]/g : /[^0-9]/g), '');
 
                 delay(function(){

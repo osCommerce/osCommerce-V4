@@ -118,3 +118,74 @@
     max-width: 150px;
     word-break: break-all;
 }
+.order-product-image {
+    text-align: center;
+    vertical-align: middle !important;
+    width: 150px;
+}
+.order-product-image img {
+    height: 90px;
+    width: 150px;
+    object-fit: contain;
+    object-position: 50% 50%;
+}
+@media(max-width: 1660px){
+    .order-product-image {
+        width: 120px;
+    }
+    .order-product-image img {
+        width: 120px;
+    }
+}
+@media(max-width: 1500px){
+    .order-product-image {
+        width: 100px;
+    }
+    .order-product-image img {
+        width: 100px;
+    }
+}
+
+.product-table-price{
+    width: 100%;
+}
+.product-table-price td{
+    border: none!important;
+    text-align: center;
+    padding: 0!important;
+    line-height: 1.2!important;
+}
+.product-table-price .price-right{text-align: right; padding-right: 9px!important;}
+.product-table-price .price-left{text-align: left; padding-left: 9px!important; padding-right: 0!important;}
+.product-table-price td span{
+    color: var(--tiny-color);
+}
+.product-table-price .brace-ico {
+    font-size: 42px;
+    font-style: normal;
+    font-weight: 300;
+    line-height: 0;
+    position: relative;
+    top: -2px;
+}
+.product-table-price .multiply-ico {
+    position: relative;
+    top: -1px
+}
+.product-table-price .product-table-price-qty {
+    vertical-align: middle!important;
+    white-space: nowrap;
+    padding-bottom: 8px !important;
+}
+.product-table-price-qty b, .product-table-price-qty span {
+    display: inline-block;
+    vertical-align: middle;
+}
+.product-table-price .vat-info-title {
+    font-size: 12px;
+    text-align: center;
+}
+.product-table-price .vat-info-title.vat-inc {
+    padding-top: 10px !important;
+}
+

@@ -25,7 +25,7 @@ class CatalogsPageContainerForm extends Model {
     public $languagesRepository;
     public $catalogPagesService;
 
-    public function __construct(int $id = 0,int $platformId,int $parentId,int $languageId,LanguagesRepository $languagesRepository, CatalogPagesService $catalogPagesService, array $config = [])
+    public function __construct(int $id,int $platformId,int $parentId,int $languageId,LanguagesRepository $languagesRepository, CatalogPagesService $catalogPagesService, array $config = [])
     {
         parent::__construct($config);
         $this->languagesRepository = $languagesRepository;
@@ -95,7 +95,7 @@ class CatalogsPageContainerForm extends Model {
         parent::load($data, $formName);
 	    $success = true;
 	    $success = $success & $this->catalogPageForm->load($data,'CatalogsPageForm');
-	    $this->catalogPageForm->status =  (int)Yii::$app->request->post('CatalogsPageForm')['status'];
+	    $this->catalogPageForm->status =  (int)(Yii::$app->request->post('CatalogsPageForm')['status']??null);
 	    $success = $success & Model::loadMultiple($this->catalogPageDescriptionForm, $data, 'CatalogsPageDescriptionForm');
 
 	    $this->assignInformationForm = [];

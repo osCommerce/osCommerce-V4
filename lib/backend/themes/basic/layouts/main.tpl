@@ -15,7 +15,7 @@
     <title>{$this->title}</title>
 
     <!--=== CSS ===-->
-{$version = 8}
+{$version = 11}
     <!-- Bootstrap -->
     <link href="{$app->request->baseUrl}/css/bootstrap.min.css?{$version}" rel="stylesheet" type="text/css" />
     <link href="{$app->request->baseUrl}/css/jquery.filedrop.css?{$version}" rel="stylesheet" type="text/css" />
@@ -402,6 +402,9 @@
                     {/if}
 
                 </li>
+                {if (defined('YII_ENV') && YII_ENV === 'dev')}
+                    <li><a href="{$app->urlManager->createUrl(['cache_control/'])}">{$smarty.const.BOX_HEADING_CACHE_CONTROL}</a></li>
+                {/if}
                 {include file='./notify.tpl'}
             </ul>
         </div>

@@ -413,6 +413,13 @@ abstract class OrderShadowAbstract implements OrderInterface {
         return $cancelled;
     }
 
+    private static function isPricesWithTax()
+    {
+        // right function is Tax::displayTaxable() but old code still used DISPLAY_PRICE_WITH_TAX without checking taxable widget
+        // so DISPLAY_PRICE_WITH_TAX here to correct taxable price if widget is turned off and DISPLAY_PRICE_WITH_TAX == true
+        return DISPLAY_PRICE_WITH_TAX == 'true' || \common\helpers\Tax::displayTaxable();
+    }
+
     public function prepareOrderInfoTotals() {
 
         if (!$this->products) {
@@ -431,7 +438,9 @@ abstract class OrderShadowAbstract implements OrderInterface {
 
             for ($index = 0; $index < count($this->products); $index++) {
                 $cancelledQty = $this->getCancelledQty($this->products[$index]);
-                $_price = $this->products[$index]['final_price'];
+                // double rounding compensation (1st to 6 digits) in $currencies->calculate_price()
+                // fix error when $this->info['subtotal'] was not eq to $this->info['subtotal_exc_tax']
+                $_price = round($this->products[$index]['final_price'], 6);
                 $_tax = $this->products[$index]['tax'];
                 $_qty = $this->products[$index]['qty'] - $cancelledQty;
                 $shown_price = $currencies->calculate_price($_price, $_tax, $_qty);
@@ -457,7 +466,7 @@ abstract class OrderShadowAbstract implements OrderInterface {
 
                 $products_tax = abs($this->products[$index]['tax']);
                 $products_tax_description = $this->products[$index]['tax_description'];
-                if (DISPLAY_PRICE_WITH_TAX == 'true') {
+                if (self::isPricesWithTax()) {
                     if ($_tax>0) {
                         $this->info['tax'] += \common\helpers\Tax::roundTax($shown_price - ($shown_price / (($products_tax < 10) ? "1.0" . str_replace('.', '', $products_tax) : "1." . str_replace('.', '', $products_tax))));
                         if (isset($this->info['tax_groups']["$products_tax_description"])) {
@@ -488,13 +497,14 @@ abstract class OrderShadowAbstract implements OrderInterface {
               }
               } */
 
-            if (PRICE_WITH_BACK_TAX == 'True') {
+            /*if (PRICE_WITH_BACK_TAX == 'True') {
                 $this->info['total'] = $this->info['subtotal'] + $this->info['shipping_cost'];
-            } elseif (DISPLAY_PRICE_WITH_TAX == 'true') {
+            } elseif (self::isPricesWithTax()) {
                 $this->info['total'] = $this->info['subtotal'] + $this->info['shipping_cost'];
             } else {
                 $this->info['total'] = $this->info['subtotal'] + $this->info['tax'] + $this->info['shipping_cost'];
-            }
+            }*/
+            $this->info['total'] = $this->info['total_inc_tax'];
         }
     }
     /**

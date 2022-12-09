@@ -30,5 +30,34 @@ class TmpOrders extends ActiveRecord
     {
         return $this->hasOne(Customers::className(), ['customers_id' => 'customers_id']);
     }
+
+
+    /**
+     * one-to-many
+     * @return array
+     */
+    public function getOrdersTotals()
+    {
+        return $this->hasMany(TmpOrdersTotal::className(), ['orders_id' => 'orders_id'])->orderby('sort_order');
+    }
+
+    /**
+     * one-to-many
+     * @return ActiveQuery
+     */
+    public function getOrdersStatusHistory()
+    {
+        return $this->hasMany(TmpOrdersStatusHistory::className(), ['orders_id' => 'orders_id']);
+    }
+
+        /**
+     * one-to-many
+     * @return array
+     */
+    public function getOrdersProducts()
+    {
+        return $this->hasMany(TmpOrdersProducts::className(), ['orders_id' => 'orders_id']);
+    }
+
     
 }

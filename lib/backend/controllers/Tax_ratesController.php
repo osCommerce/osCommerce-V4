@@ -167,6 +167,9 @@ class Tax_ratesController extends Sceleton  {
                 if (!empty($trInfo->company_number)) {
                     echo '<div class="row_or"><div>' . ENTRY_BUSINESS . '</div><div>' . $trInfo->company_number . '</div></div>';
                 }
+                if (!empty($trInfo->company_address)) {
+                    echo '<div class="row_or"><div>' . CATEGORY_ADDRESS . '</div><div>' . $trInfo->company_address . '</div></div>';
+                }
 				echo '</div>';
 			echo '<div class="btn-toolbar btn-toolbar-order">';
 			echo '<button class="btn btn-edit btn-no-margin" onclick="taxEdit('.$tax_rates_id.')">' . IMAGE_EDIT . '</button><button class="btn btn-delete" onclick="taxDelete('.$tax_rates_id.')">' . IMAGE_DELETE . '</button>' . $nsBlock;
@@ -201,6 +204,7 @@ class Tax_ratesController extends Sceleton  {
 		echo '<div class="main_row"><div class="main_title">' . TEXT_MAX_ORDER_TOTAL . '</div><div class="main_value">' . tep_draw_input_field('max_total', $trInfo->max_total ?? null, 'class="form-control"') . '</div></div>';
 		echo '<div class="main_row"><div class="main_title">' . TEXT_COMPANY . '</div><div class="main_value">' . tep_draw_input_field('company_name', $trInfo->company_name ?? null, 'class="form-control"') . '</div></div>';
 		echo '<div class="main_row"><div class="main_title">' . ENTRY_BUSINESS . '</div><div class="main_value">' . tep_draw_input_field('company_number', $trInfo->company_number ?? null, 'class="form-control"') . '</div></div>';
+		echo '<div class="main_row"><div class="main_title">' . CATEGORY_ADDRESS . '</div><div class="main_value">' . tep_draw_textarea_field('company_address', 'soft', 50, 3, $trInfo->company_address?? null, 'class="form-control"') . '</div></div>';
 		echo '<div class="btn-toolbar btn-toolbar-order">';
 		echo '<input type="button" value="' . IMAGE_UPDATE . '" class="btn btn-no-margin" onclick="taxSave('.($trInfo->tax_rates_id?$trInfo->tax_rates_id:0).')"><input type="button" value="' . IMAGE_CANCEL . '" class="btn btn-cancel" onclick="resetStatement()">';
 		echo '</div>';
@@ -222,6 +226,7 @@ class Tax_ratesController extends Sceleton  {
         $maxTotal = \Yii::$app->request->post('max_total', '');
         $company_number = \Yii::$app->request->post('company_number', '');
         $company_name = \Yii::$app->request->post('company_name', '');
+        $company_address = \Yii::$app->request->post('company_address', '');
         if (!is_numeric($maxTotal)) {
             $maxTotal = 'null';
         }
@@ -238,12 +243,12 @@ class Tax_ratesController extends Sceleton  {
 
         if($tax_rates_id == 0){
 
-          tep_db_query("insert into " . TABLE_TAX_RATES . " (tax_zone_id, tax_class_id, tax_rate, tax_description, tax_priority, date_added, min_total, max_total, company_number, company_name) values ('" . (int)$tax_zone_id . "', '" . (int)$tax_class_id . "', '" . tep_db_input($tax_rate) . "', '" . tep_db_input($tax_description) . "', '" . tep_db_input($tax_priority) . "', now(), '" . $minTotal . "', " . $maxTotal . ", '" . tep_db_input($company_number) . "', '" . tep_db_input($company_name) . "')");
+          tep_db_query("insert into " . TABLE_TAX_RATES . " (tax_zone_id, tax_class_id, tax_rate, tax_description, tax_priority, date_added, min_total, max_total, company_number, company_name, company_address) values ('" . (int)$tax_zone_id . "', '" . (int)$tax_class_id . "', '" . tep_db_input($tax_rate) . "', '" . tep_db_input($tax_description) . "', '" . tep_db_input($tax_priority) . "', now(), '" . $minTotal . "', " . $maxTotal . ", '" . tep_db_input($company_number) . "', '" . tep_db_input($company_name) . "', '" . tep_db_input($company_address) . "')");
 
           $action		 = 'added';
         } else {
 
-          tep_db_query("update " . TABLE_TAX_RATES . " set tax_rates_id = '" . (int)$tax_rates_id . "', tax_zone_id = '" . (int)$tax_zone_id . "', tax_class_id = '" . (int)$tax_class_id . "', tax_rate = '" . tep_db_input($tax_rate) . "', tax_description = '" . tep_db_input($tax_description) . "', tax_priority = '" . tep_db_input($tax_priority) . "', last_modified = now(), min_total={$minTotal}, max_total={$maxTotal}, company_number='" . tep_db_input($company_number) . "', company_name='" . tep_db_input($company_name) . "' where tax_rates_id = '" . (int)$tax_rates_id . "'");
+          tep_db_query("update " . TABLE_TAX_RATES . " set tax_rates_id = '" . (int)$tax_rates_id . "', tax_zone_id = '" . (int)$tax_zone_id . "', tax_class_id = '" . (int)$tax_class_id . "', tax_rate = '" . tep_db_input($tax_rate) . "', tax_description = '" . tep_db_input($tax_description) . "', tax_priority = '" . tep_db_input($tax_priority) . "', last_modified = now(), min_total={$minTotal}, max_total={$maxTotal}, company_number='" . tep_db_input($company_number) . "', company_name='" . tep_db_input($company_name) . "' , company_address='" . tep_db_input($company_address) . "' where tax_rates_id = '" . (int)$tax_rates_id . "'");
 
           $action		 = 'updated';
         }

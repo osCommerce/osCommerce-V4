@@ -1053,7 +1053,7 @@ and "capabilities[name==SEND_MONEY].limits" is anything but undefinited
             $platform_config = new \common\classes\platform_config($platformId);
             $ret = $platform_config->const_value('MODULE_PAYMENT_PAYPAL_PARTNER_TRANSACTION_METHOD', 'sale');
         }
-        return strtolower(MODULE_PAYMENT_PAYPAL_PARTNER_TRANSACTION_METHOD);
+        return strtolower($ret);
     }
 
 

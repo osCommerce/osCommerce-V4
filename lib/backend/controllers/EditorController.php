@@ -217,6 +217,11 @@ class EditorController extends Sceleton {
         }
         $platform_config->constant_up();
         defined('PLATFORM_ID') or define('PLATFORM_ID', $platform_id);
+
+        $theme_id = \common\models\PlatformsToThemes::findOne(['platform_id' => $platform_id])->theme_id;
+        $theme_name = \common\models\Themes::findOne(['id' => $theme_id])->theme_name;
+
+        defined('THEME_NAME') or define('THEME_NAME', $theme_name);
     }
 
     public function actionCartWorker() {//ajax action
@@ -1713,8 +1718,8 @@ class EditorController extends Sceleton {
                             $qtyColumn .= tep_draw_hidden_field('uprid', $product['id']);
                             //$responseItem[] = $qtyColumn;
 
-                            $nameColumn = '<table class="table no-border"><tr><td width="25%">';
-                            $nameColumn .= '<div style="width:150px">'.\common\classes\Images::getImage($product['id'],'Small') . '</div>';
+                            $nameColumn = '<table class="table no-border"><tr><td width="25%" class="order-product-image">';
+                            $nameColumn .= '<div>'.\common\classes\Images::getImage($product['id'],'Small') . '</div>';
                             $nameColumn .= '</td><td style="text-align:left;vertical-align:middle;">';
                             if (false) {//$isEditInGrid
                                 $nameColumn .= \yii\helpers\Html::input('text', "name", $product['name'],['class' => 'form-control name']);

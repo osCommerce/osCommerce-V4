@@ -32,6 +32,15 @@
                 <acl_check></acl_check>
                 <config_check></config_check>
                 <box_type>0</box_type>
+                <path>tmp-orders</path>
+                <title>BOX_CUSTOMERS_TMP_ORDERS</title>
+                <filename></filename>
+            </item>
+            <item>
+                <sort_order>2</sort_order>
+                <acl_check></acl_check>
+                <config_check></config_check>
+                <box_type>0</box_type>
                 <path>customers?status=n</path>
                 <title>BOX_CUSTOMERS_CUSTOMERS_INACTIVE</title>
                 <filename></filename>
@@ -287,15 +296,6 @@
                 <box_type>0</box_type>
                 <path>featured</path>
                 <title>BOX_CATALOG_FEATURED</title>
-                <filename></filename>
-            </item>
-            <item>
-                <sort_order>12</sort_order>
-                <acl_check>Newsletters,allowed</acl_check>
-                <config_check></config_check>
-                <box_type>0</box_type>
-                <path>newsletters</path>
-                <title>BOX_NEWSLETTERS</title>
                 <filename></filename>
             </item>
         </child>

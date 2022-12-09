@@ -75,11 +75,22 @@ class Migration extends \yii\db\Migration {
      * @param string|array $primary     info for primary key:
      *                                  string -> comma separated string of columns that the primary key will consist of. The index name will be $table_name + '_pk'
      *                                  array  -> the key is a name of primary key, the value is comma separated string of columns
+     *                                  Samples:
+     *                                      'products_id,platforms_id'
+     *                                      ['products_id', 'platforms_id']
+     *                                      [ 'primary_key' => 'products_id, platforms_id']
+     *                                      [ 'primary_key' => ['products_id', 'platforms_id']]
      * @param string|array $indexes     info for foreign key
      *                                  string -> comma separated string of columns that the foreign key will consist of. The index name will be generated automatically
      *                                  array  -> each item
      *                                            string -> comma separated string of columns that the foreign key will consist of. The index name will be generated automatically
-     *                                            array  -> the key is a name of primary key, the value is comma separated string of columns 
+     *                                            array  -> the key is a name of primary key (prefix 'unique:' allowed), the value is comma separated string of columns
+     *                                  Samples:
+     *                                      'products_id,platforms_id'
+     *                                      ['products_id,platforms_id', 'products_id,customers_id']
+     *                                      [ 'unique:products_platforms' => 'products_id,platforms_id', 'products_customers' => 'products_id,customers_id']
+     *                                      [ 'unique:products_platforms' => ['products_id', 'platforms_id'], 'products_customers' => 'products_id,customers_id']
+     *
      * @return boolean True if table did not exist and has just been created.
      */
     public function createTableIfNotExists(string $table_name, array $struct, /* array|string */ $primary = null, /* array|string */ $indexes = null) {
@@ -95,9 +106,18 @@ class Migration extends \yii\db\Migration {
                     $columns = $primary;
                 }
 
-                if (is_array($primary))
-                    foreach ($primary as $index_name => $columns)
-                        break;
+                if (is_array($primary)) {
+                    switch (count($primary)) {
+                        case 0: break;
+                        case 1: // key as index_name
+                            foreach ($primary as $index_name => $columns)
+                                break;
+                        default: // array of columns
+                            $index_name = $table_name . '_pk';
+                            $columns = $primary;
+                            break;
+                    }
+                }
 
                 if (!is_null($index_name))
                     $this->addPrimaryKey($index_name, $table_name, $columns);
@@ -846,25 +866,31 @@ class Migration extends \yii\db\Migration {
      */
     public function installExt(string $code)
     {
-        $res = \common\helpers\Modules::installExtSafe($code);
+        $res = \common\helpers\Extensions::installSafe($code);
         if (!is_null($res)) {
             echo "Error while installing $code: $res\n";
+        } else {
+            echo "Extension $code was installed successfully\n";
         }
     }
 
     public function uninstallExt(string $code)
     {
-        $res = \common\helpers\Modules::uninstallExtSafe($code);
+        $res = \common\helpers\Extensions::uninstallSafe($code);
         if (!is_null($res)) {
             echo "Error while uninstalling $code: $res\n";
+        } else {
+            echo "Extension $code was uninstalled successfully\n";
         }
     }
 
     public function reinstallExtTranslation(string $code)
     {
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed($code)) {
+        if ($ext = \common\helpers\Extensions::isAllowed($code)) {
             $ext::reinstallTranslation($this);
-            echo "Translation was reinstalled for extension $code\n";
+            echo "Translations were reinstalled for extension $code\n";
+        } else {
+            echo "Translations were not reinstalled for extension $code: it is not enabled";
         }
     }
 

@@ -13,8 +13,8 @@ Basic Provisions:
    Backend controllers - folder 'backend/controllers'
    Backend views - folder 'backend/views'
    Hooks - folder 'hooks'
-   
-   
+
+
 Extension Generator
 ===================
 
@@ -73,14 +73,14 @@ To manage install/uninstall process create Setup.php file with class:
 
 It will be automatically used for:
 - get extension description and version
-- install/uninstall extention 
+- install/uninstall extention
 - install/uninstall extention migrations
 - install/uninstall/init translation
 - install/uninstall/check extension acl
 - install/uninstall widgets
 - check if extention requred other extentions
 
-Its required and optional methods you can see in \common\classes\modules\SetupExtensions.php 
+Its required and optional methods you can see in \common\classes\modules\SetupExtensions.php
 Below is additional info by install/uninstall topics:
 
 *** Widgets ***
@@ -159,6 +159,7 @@ In addition a list of available values page_name and page_area:
 'orders/after-delete', '' // helpers/order.php
 'Order', 'save_order/before'
 'Order', 'save_order/after'
+'Order', 'notify_customer'
 'order-manager/check-free-shipping', ''
 'shopping-cart/reset', ''
 'shopping-cart/add-cart', ''
@@ -170,10 +171,12 @@ In addition a list of available values page_name and page_area:
 'checkout/index', ''
 'checkout/process', ''
 'checkout/after-process', ''
+'checkout/success', ''
 'init-factory/init', ''
 'cart-factory/work', ''
 'cart-factory/work/end', ''
 'console-tools/logs-cleanup', ''
 'product_props/init_workers', ''
+'account/order_history_info', 'order-product' // smarty tpl
 </HOOKS>
 

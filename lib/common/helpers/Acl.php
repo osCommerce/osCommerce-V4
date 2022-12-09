@@ -390,7 +390,7 @@ class Acl
             $parts = explode('\\', $class);
             $class = $parts[sizeof($parts)-1];
         }
-        return  defined($class . '_EXTENSION_STATUS') ? $ext : false;
+        return \common\helpers\Extensions::isEnabled($class) ? $ext : false;
     }
 
     public static function checkExtensionAllowed($class, $method = 'allowed', $own_method = false){

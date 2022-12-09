@@ -839,16 +839,30 @@ class ProductsQuery {
               break;
             case 'gso':
             case 'mark':
-                if ($field=='mark' && $this->params['currentCategory'] && $this->getCurrentCategoryId() > 0  && !$this->params['hasSubcategories']) {
-                  if ($this->params['limit']<1000) {
-                    $useIndex = ' USE INDEX (categories_id)';
-                  } else {
-                    $useIndex = '';
-                  }
-                  $this->query->innerJoin('{{%products_to_categories}} ' . $useIndex, '({{%products_to_categories}}.products_id=p.products_id) ')
-                    ->andWhere(['{{%products_to_categories}}.categories_id' => $this->getCurrentCategoryId()])
-                    ->addOrderBy('{{%products_to_categories}}.sort_order, {{%products_to_categories}}.products_id desc')
-                    ->addSelect('{{%products_to_categories}}.sort_order, {{%products_to_categories}}.products_id ');
+                if ($field=='mark' && $this->params['currentCategory'] && $this->getCurrentCategoryId() > 0) {
+                    if ($this->params['limit'] < 1000) {
+                        $useIndex = ' USE INDEX (categories_id)';
+                    } else {
+                        $useIndex = '';
+                    }
+                    if ($this->params['hasSubcategories']) {
+                        $all_sub_categories = [(int)$this->getCurrentCategoryId()];
+                        \common\helpers\Categories::get_subcategories($all_sub_categories, $all_sub_categories[0]);
+
+                        $this->query->innerJoin('{{%products_to_categories}} ' . $useIndex, '({{%products_to_categories}}.products_id=p.products_id) ')
+                            ->innerJoin('{{%categories}} ', '({{%products_to_categories}}.categories_id={{%categories}}.categories_id) ')
+                            //->andWhere(['{{%products_to_categories}}.categories_id' => $this->getCurrentCategoryId()])
+                            ->distinct()
+                            ->andWhere(['IN', '{{%products_to_categories}}.categories_id', $all_sub_categories])
+                            //->addOrderBy('{{%products_to_categories}}.sort_order, {{%products_to_categories}}.products_id desc')
+                            ->addOrderBy('{{%categories}}.categories_left, {{%products_to_categories}}.sort_order, {{%products_to_categories}}.products_id desc')
+                            ->addSelect('{{%products_to_categories}}.sort_order, {{%products_to_categories}}.products_id ');
+                    } else {
+                        $this->query->innerJoin('{{%products_to_categories}} ' . $useIndex, '({{%products_to_categories}}.products_id=p.products_id) ')
+                            ->andWhere(['{{%products_to_categories}}.categories_id' => $this->getCurrentCategoryId()])
+                            ->addOrderBy('{{%products_to_categories}}.sort_order, {{%products_to_categories}}.products_id desc')
+                            ->addSelect('{{%products_to_categories}}.sort_order, {{%products_to_categories}}.products_id ');
+                    }
                 } else {
                   //$this->query->joinWith('listingGlobalSort', false, 'inner join')
                   $this->query->joinWith('listingGlobalSort')

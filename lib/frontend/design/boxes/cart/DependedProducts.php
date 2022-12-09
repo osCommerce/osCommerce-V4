@@ -98,7 +98,7 @@ class DependedProducts extends Widget
 
             if (\common\helpers\Acl::checkExtensionAllowed('Promotions')) {
                 foreach ($products as $idx => $_product) {
-                    $promoPrice = \common\extensions\Promotions\models\PromotionPrice::getInstance($_product['products_id']);
+                    $promoPrice = \common\extensions\Promotions\models\Product\PromotionPrice::getInstance($_product['products_id']);
                     $price = $promoPrice->getPosiblePromotionPrice();
                     if ($price !== false){
                         $price_with_tax = $currencies->calculate_price($price, \common\helpers\Tax::get_tax_rate($_product['products_tax_class_id']), 1);

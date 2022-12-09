@@ -14,6 +14,8 @@ namespace OscLink;
 
 use \common\helpers\Assert;
 use common\extensions\OscLink\models\Configuration;
+use common\extensions\OscLink\models\Entity;
+use common\extensions\OscLink\models\Mapping;
 
 class Importer implements \OscLink\XML\ImportTuningInterface 
 {
@@ -65,7 +67,7 @@ class Importer implements \OscLink\XML\ImportTuningInterface
         \OscLink\Logger::get()->log(\OscLink\Helper::getIdentAR($updateObject). (!$isNewRecord? ' was added' : ' was updated'));
 
         if ($updateObject instanceof \common\models\Products) {
-            \Yii::$app->getDb()->createCommand()->upsert(\common\models\PlatformsProducts::tablename(), ['platform_id' => $this->platform_id, 'products_id' => $updateObject->products_id], false)->execute();
+            \Yii::$app->db->createCommand()->upsert(\common\models\PlatformsProducts::tablename(), ['platform_id' => $this->platform_id, 'products_id' => $updateObject->products_id], false)->execute();
         }
         if ($updateObject instanceof \common\models\Categories) {
             $pc = \common\models\PlatformsCategories::findOne(['categories_id' => $updateObject->categories_id, 'platform_id' => $this->platform_id]);
@@ -138,23 +140,29 @@ class Importer implements \OscLink\XML\ImportTuningInterface
 
             $this->batch_count = self::BATCH_COUNT[$feed] ?? 50;
 
-            \OscLink\XML\IOCore::get(); // init Yii::$container
-
             $imported_sum = [];
             \OscLink\Progress::Percent(0);
             \OscLink\Progress::Log("Start import for $feed_name... Expecting: $this->count_all");
+
+            $structure = \OscLink\XML\IOCore::getExportStructure($feed);
+            $mirrorIds = self::isFeedUseMirrorIds($feed);
+            \OscLink\Logger::print($mirrorIds ? "The same ids for $feed" : "Mapping ids for $feed");
+            \OscLink\XML\IOCore::get()->setTablenamesWithMirrorIds($mirrorIds ? $feed : []);
+
             for ($this->batch_offset=$offset_start; $this->batch_offset < $this->count_all; $this->batch_offset += $this->batch_count) {
                 $this->count_in_batch = 0;
                 $fn = $this->downloader->getFeed($feed, $this->batch_offset, $this->batch_count);
 
                 $project = new \OscLink\XML\Project($fn);
-
-                $structure = \OscLink\XML\IOCore::getExportStructure($feed);
                 $project->setStructure($structure, $this);
+
                 $imported = $project->import();
                 \OscLink\Helper::sumCols($imported_sum, $imported);
             }
             $this->finishedImport();
+            if ($mirrorIds) {
+                self::updateAutoIncValue($feed);
+            }
             \OscLink\Progress::Log("Finished import for $feed_name! ". \OscLink\Helper::formatArr("Entities downloaded: $this->count_all, added: {new}, updated: {updated}, skipped: {skipped}, error: {error}", $imported_sum) );
             if ($imported_sum['skipped'] > 0 || $imported_sum['error'] > 0) {
                 \OscLink\Progress::showLogFile();
@@ -190,6 +198,36 @@ class Importer implements \OscLink\XML\ImportTuningInterface
         }
         \OscLink\Progress::Done(true);
         return $error_sum;
+    }
+
+    /**
+     * Returns true if main feed table does not contains records except imported ones
+     * @param string $feed feed name
+     * @return bool
+     */
+    public static function isFeedUseMirrorIds($feed)
+    {
+        if (in_array($feed, ['products', 'orders', 'customers', 'categories'])) {
+            $primaryCol = "${feed}_id";
+            $entityName = "$feed.$primaryCol";
+            $entityId = Entity::findOne(['project_id' => 1, 'entity_name' => $entityName]);
+            if (empty($entityId)) {
+                return (new \yii\db\Query())->from($feed)->count() == 0;
+            } else {
+                return (new \yii\db\Query())->from("$feed.f")
+                    ->leftJoin(Mapping::tableName().' m', "m.internal_id = f.$primaryCol AND entity_id => :entityId", ['enitityId' => $entityId])
+                    ->where('m.internal_id IS NULL')
+                    ->count() == 0;
+            }
+        }
+        return false;
+    }
+
+    public static function updateAutoIncValue($feed)
+    {
+        $primaryCol = "${feed}_id";
+        $maxId = (new \yii\db\Query())->from($feed)->max($primaryCol);
+        \Yii::$app->db->createCommand()->executeResetSequence($feed, round($maxId, -2) + 1000);
     }
 
 }

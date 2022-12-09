@@ -22,6 +22,9 @@ class Groups
     {
         $path = DIR_FS_CATALOG . implode(DIRECTORY_SEPARATOR, ['lib', 'backend', 'design', 'groups']);
 
+        FileHelper::createDirectory($path);
+        chmod($path, 0755);
+
         $files = [];
         $filesPath = FileHelper::findFiles($path);
         if (is_array($filesPath)) {

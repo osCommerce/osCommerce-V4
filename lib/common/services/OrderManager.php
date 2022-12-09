@@ -462,13 +462,18 @@ class OrderManager {
         ];
     }
 
-    //$shipping = string value shippingCode_shippingMethod
+    /**
+     * if shipping is required and $shippping has correct format then set or reset "shipping" in the manager itself
+     * @param string $shipping value shippingCode_shippingMethod
+     */
     public function setSelectedShipping($shipping) {
         if ($this->isShippingNeeded() && (strpos($shipping, '_') !== false)) {
             list($module, $method) = explode('_', $shipping);
             $free_shipping = $this->checkFreeShipping();
             if ($free_shipping && $shipping == 'free_free') {
                 $quote = $this->getShippingCollection()->quote('free', 'free', $this->getModulesVisibility());
+            } elseif (!$free_shipping && $shipping == 'free_free') {
+                $quote[0]['error'] = true;
             } else {
                 $quote = $this->getShippingCollection()->quote($method, $module, $this->getModulesVisibility());
             }
@@ -483,6 +488,8 @@ class OrderManager {
                 } else {
                     $this->remove('shipping');
                 }
+            } else {
+                $this->remove('shipping');
             }
         }
     }
@@ -791,6 +798,9 @@ class OrderManager {
             $estimate = $this->get('estimate' . $postfix);
             $_country_info = \common\helpers\Country::get_countries($estimate['country_id'], true, '', substr($postfix, 1));
             $address = [
+                'street_address' => $estimate['street_address'],
+                'suburb' => $estimate['suburb'],
+                'city' => $estimate['city'],
                 'postcode' => $estimate['postcode'],
                 'zone_id' => (isset($estimate['zone']) && !empty($estimate['zone']) ? (is_int($estimate['zone']) ? $estimate['zone'] : \common\helpers\Zones::get_zone_id($estimate['country_id'], $estimate['zone'])) : 0),
                 'country_id' => $estimate['country_id'],
@@ -803,6 +813,9 @@ class OrderManager {
         } else {
             $_country_info = \common\helpers\Country::get_countries($this->getTaxCountry(), true);
             $address = [
+                'street_address' => '',
+                'suburb' => '',
+                'city' => '',
                 'postcode' => '',
                 'zone_id' => $this->getTaxZone(),
                 'country_id' => $this->getTaxCountry(),
@@ -814,6 +827,15 @@ class OrderManager {
         $_country_info['iso_code_3'] = $_country_info['countries_iso_code_3'];
         $address['country'] = $_country_info;
         return $address;
+    }
+
+    public static function getRecalculateShippingFields()
+    {
+        $trigger_fields = preg_split('/,\s?/',TRIGGER_RECALCULATE_FIELDS, -1, PREG_SPLIT_NO_EMPTY);
+        if ( count($trigger_fields)==0 ) {
+            $trigger_fields[] = 'country';
+        }
+        return $trigger_fields;
     }
 
     private $deliveryAddressChanged = false;

@@ -1,16 +1,16 @@
 <?php
 
 /**
-* This file is part of osCommerce ecommerce platform.
+ * This file is part of osCommerce ecommerce platform.
  * osCommerce the ecommerce
-* @author Dmitry Kodinets
-* @email dkodynets@holbi.co.uk
-* @link https://www.holbi.co.uk
-* @copyright Copyright (c) 2000-2022 osCommerce LTD
-*
-* Released under the GNU General Public License
-* For the full copyright and license information, please view the LICENSE.TXT file that was distributed with this source code.
-*/
+ * @author Dmitry Kodinets
+ * @email dkodynets@holbi.co.uk
+ * @link https://www.holbi.co.uk
+ * @copyright Copyright (c) 2000-2022 osCommerce LTD
+ *
+ * Released under the GNU General Public License
+ * For the full copyright and license information, please view the LICENSE.TXT file that was distributed with this source code.
+ */
 
 namespace common\extensions\ErrorLogViewer;
 
@@ -18,6 +18,25 @@ use Yii;
 
 class ErrorLogViewer extends \common\classes\modules\ModuleExtensions
 {
+    private $zipPath;
+    private $zipFileName;
+    private $path;
+
+    public function __construct()
+    {
+        parent::__construct();
+        $this->zipPath = Yii::getAlias('@ext-error-log-viewer', false).DIRECTORY_SEPARATOR."tmp";
+        $this->path = DIRECTORY_SEPARATOR."runtime".DIRECTORY_SEPARATOR."logs";
+    }
+
+    private static function sourceList()
+    {
+        return [
+            'frontend',
+            'backend',
+            'console'
+        ];
+    }
 
     public static function getFile($sourceFile)
     {
@@ -28,11 +47,9 @@ class ErrorLogViewer extends \common\classes\modules\ModuleExtensions
         $source = trim($tmp[0]);
         $fileName = trim($tmp[1]);
 
-
-
         $file = new \stdClass();
         $file->error = false;
-        if(!in_array($source, array('frontend', 'backend', 'console')))
+        if(!in_array($source, self::sourceList()))
         {
             $file->error = true;
             $file->errorMessage = EXT_ELV_ERR_SOURCE;
@@ -76,8 +93,7 @@ class ErrorLogViewer extends \common\classes\modules\ModuleExtensions
 
     public static function deleteAll()
     {
-        $sourceList = array('backend', 'frontend', 'console');
-        foreach ($sourceList as $source)
+        foreach (self::sourceList() as $source)
         {
             $path = \Yii::getAlias('@'.$source).DIRECTORY_SEPARATOR."runtime".DIRECTORY_SEPARATOR."logs";
             if(is_dir($path))
@@ -119,5 +135,63 @@ class ErrorLogViewer extends \common\classes\modules\ModuleExtensions
         }
 
         return $bytes;
+    }
+
+    public function Zipping()
+    {
+        $this->zipFileName = 'logs_'.Yii::$app->session->get('login_id', 0).'_'.time().'.zip';
+        if(!is_dir($this->zipPath)){
+            if(!@mkdir($this->zipPath)){
+                return ['status' => 'error', 'description' => EXT_ELV_ERR_CREATE_TMP];
+            }
+        }
+        try {
+            $zip = new \ZipArchive();
+            if($err = $zip->open($this->zipPath . DIRECTORY_SEPARATOR . $this->zipFileName, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true)
+            {
+                return ['status' => 'error', 'description' => $err];
+            }
+            foreach (self::sourceList() as $source)
+            {
+                if(!file_exists(Yii::getAlias('@'.$source).$this->path) && !is_dir(Yii::getAlias('@'.$source).$this->path)) continue;
+                $files = new \RecursiveIteratorIterator(
+                    new \RecursiveDirectoryIterator(realpath(Yii::getAlias('@'.$source).$this->path)),
+                    \RecursiveIteratorIterator::LEAVES_ONLY
+                );
+
+                foreach ($files as $name => $file) {
+                    if (!$file->isDir()) {
+                        $filePath = $file->getRealPath();
+                        $relativePath = $source.DIRECTORY_SEPARATOR.$file->getFilename();
+                        $zip->addFile($filePath, $relativePath);
+                    }
+                }
+            }
+            if(!$zip->close()){
+                return ['status' => 'error', 'description' => "Check permission on dir: ".$this->zipPath];
+            }
+            return ['status' => 'ok', 'description' => $this->zipPath.DIRECTORY_SEPARATOR.$this->zipFileName];
+
+        } catch (\Exception $ex)
+        {
+            return ['status' => 'error', 'description' => $ex->getMessage()];
+        }
+    }
+
+    public function DeleteOldZip()
+    {
+        if(file_exists($this->zipPath) && is_dir($this->zipPath)) {
+            try{
+                foreach (scandir($this->zipPath) as $file) {
+                    if (!is_file($this->zipPath . DIRECTORY_SEPARATOR . $file)) continue;
+                    if ((time() - filemtime($this->zipPath . DIRECTORY_SEPARATOR . $file)) > 86400) unlink($this->zipPath . DIRECTORY_SEPARATOR . $file);
+                }
+                return true;
+            }catch (\Exception $ex)
+            {
+                return $ex->getMessage();
+            }
+        }
+        return true;
     }
 }

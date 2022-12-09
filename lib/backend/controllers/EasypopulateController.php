@@ -826,7 +826,7 @@ class EasypopulateController extends Sceleton
             list($feedFormat,$containerFormat) = explode('-',$format,2);
         }elseif ( $format=='ZIP' ) {
             $containerFormat = 'ZIP';
-        }elseif ( in_array($format,['CSV','XML','XML_orders_new']) ) {
+        }elseif ( in_array($format,['CSV','XML','XLSX', 'XML_orders_new']) ) {
             $containerFormat = $format;
         }
 

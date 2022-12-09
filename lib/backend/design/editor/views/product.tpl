@@ -134,7 +134,7 @@
                             <span class="label_ed-or-pr">{$smarty.const.ENTRY_INVOICE_QTY}:</span>
                                 <div class="qty-box plus_td">
                                     <span class="pr_minus"></span>
-                                        {Html::textInput('product_info[][qty]', (int)$product['quantity'], ['class' => 'qty form-control new-product', 'data-max'=>'', 'data-min'=>'', 'data-step'=>'' ])}
+                                        {Html::textInput('product_info[][qty]', $product['quantity_virtual'], ['class' => 'qty form-control new-product', 'data-max'=>'', 'data-min'=>'', 'data-step'=>max((int)$product['order_quantity_step'], 1), 'data-value-real'=> $product['quantity']])}
                                     <span class='pr_plus'></span>
                                     <div class="ed-or-pr-stock"><span>{$smarty.const.TEXT_STOCK_QTY}</span><span class="valid1"></span><br><span class="valid"></span></div>
                                 </div>

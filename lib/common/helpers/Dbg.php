@@ -15,6 +15,19 @@ use Yii;
 class Dbg
 {
 
+    private static function export($var)
+    {
+        if (is_object($var)) {
+            try {
+                return var_export($var, true);
+            } catch (\Exception $e) {
+                return \yii\helpers\VarDumper::export($var);
+            }
+        } else {
+            return \yii\helpers\VarDumper::export($var);
+        }
+    }
+
     public static function log($msg)
     {
         \Yii::info($msg, 'dbg/log');
@@ -22,7 +35,7 @@ class Dbg
 
     public static function logVar($var, $msg = 'var')
     {
-        self::log($msg . '=' . \yii\helpers\VarDumper::export($var));
+        self::log($msg . '=' . self::export($var));
     }
 
     public static function logQuery($var, $msg = 'query')
@@ -43,7 +56,7 @@ class Dbg
 
     public static function echoVar($var, $msg = 'var')
     {
-        self::echo($msg . '=' . \yii\helpers\VarDumper::export($var));
+        self::echo($msg . '=' . self::export($var));
         self::logVar($var, $msg);
     }
 
@@ -68,7 +81,7 @@ class Dbg
 
     public static function saveVar($var, $fn = 'var')
     {
-        $content = \yii\helpers\VarDumper::export($var);
+        $content = self::export($var);
         self::saveText($content, $fn, '.vardump');
     }
 
@@ -85,7 +98,17 @@ class Dbg
             \Yii::warning('Error in file_put_contents: '  . error_get_last(), 'debug/save');
         }
     }
-    
+
+    public static function logStack($msg = 'Stack')
+    {
+        self::logVar(self::getStack(), $msg);
+    }
+
+    public static function echoStack($msg = 'Stack')
+    {
+        self::echoVar(self::getStack(), $msg);
+    }
+
     public static function getStack()
     {
         ob_start();

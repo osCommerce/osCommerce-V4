@@ -16,7 +16,7 @@
                         </div>			   
                     {/foreach}
                 {/if}
-        <div class="widget box box-wrapp-blue filter-wrapp">
+        <div class="widget box box-wrapp-blue filter-wrapp" id="translation-filters">
           <div class="widget-header filter-title">
             <h4>{$smarty.const.TEXT_FILTER}</h4>
             <div class="toolbar no-padding">

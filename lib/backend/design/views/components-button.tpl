@@ -1,6 +1,13 @@
 <div class="" id="button-{$editor}">
-        <a href="{$url}" class="btn links-popup">Add component key</a>
-        <a href="{$url2}" class="btn links-popup">Add component html</a>
+        {if in_array('banner', $buttons)}
+                <a href="{$content_widget_url}" class="btn links-popup">{$smarty.const.ADD_BANNER}</a>
+        {/if}
+        {if in_array('component', $buttons)}
+                <a href="{$url}" class="btn links-popup">{$smarty.const.ADD_COMPONENT_KEY}</a>
+        {/if}
+        {if in_array('component-html', $buttons)}
+                <a href="{$url2}" class="btn links-popup">{$smarty.const.ADD_COMPONENT_HTML}</a>
+        {/if}
 </div>
 
 <script>
@@ -9,8 +16,8 @@
         var linksPopup = $('.links-popup', button);
 
         linksPopup.popUp({
-            box: "<div class='popup-box-wrap'><div class='around-pop-up'></div><div class='popup-box'><div class='popup-heading cat-head'>{$smarty.const.TEXT_PAGE_LINKS}</div><div class='pop-up-close'></div><div class='pop-up-content'><div class='preloader'></div></div></div></div>",
-            one_popup: false
+                one_popup: false,
+                box_class: 'content-widget-popup'
         });
         linksPopup.on('click', function(){
             $('.popup-heading').text($(this).text());

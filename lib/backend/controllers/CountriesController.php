@@ -283,7 +283,8 @@ class CountriesController extends Sceleton  {
         $dialling_prefix = preg_replace('/[^0-9\|]/', '', $dialling_prefix);
         $match = [];
         if (!preg_match('/^(\d+)\|(\d+)$/', $dialling_prefix, $match)) {
-            $dialling_prefix = '';
+            //$dialling_prefix = '';
+            $dialling_prefix = '+' . $dialling_prefix;
         } else {
             $match[2] = (int)$match[2];
             if (($match[2] < 9) OR ($match[2] > 20)) {

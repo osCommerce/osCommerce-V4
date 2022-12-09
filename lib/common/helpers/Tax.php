@@ -606,7 +606,7 @@ class Tax {
 
             $defaultAddress = \Yii::$app->get('platform')->getConfig($platform_id)->getPlatformAddress();
 
-            $ret = $defaultAddress['entry_company']??'';
+            $ret = $defaultAddress['company']??'';
         }
         return $ret;
     }
@@ -622,7 +622,7 @@ class Tax {
             }
 
             $data = \Yii::$app->get('platform')->getConfig($platform_id)->getPlatformAddress();
-            $ret = \common\helpers\Address::address_format(\common\helpers\Address::get_address_format_id($data['country_id']), $data, 1, '', '<br>');
+            $ret = \common\helpers\Address::address_format(\common\helpers\Address::get_address_format_id($data['country_id']), $data, 1, '', "\n");
             
         }
         return $ret;

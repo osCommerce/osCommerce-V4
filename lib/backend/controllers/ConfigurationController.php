@@ -321,7 +321,7 @@ class ConfigurationController extends Sceleton {
             }
         }
         if (!\common\helpers\Acl::checkExtensionAllowed('VatOnOrder', 'allowed')) {
-            $search_condition .= " and configuration_key NOT IN ('ACCOUNT_COMPANY', 'ACCOUNT_COMPANY_VAT_ID') ";
+            $search_condition .= " and configuration_key NOT IN ('ACCOUNT_COMPANY_VAT_ID') "; // 'ACCOUNT_COMPANY'
         }
         if (!\common\helpers\Acl::checkExtensionAllowed('UserGroups', 'allowed')) {
             $search_condition .= " and configuration_key NOT IN ('DEFAULT_USER_GROUP', 'DEFAULT_USER_LOGIN_GROUP', 'ENABLE_CUSTOMER_GROUP_CHOOSE') ";

@@ -499,6 +499,7 @@ getOrder = function(options){
                                 }
                             }
                         }
+                        qty = (qty / setting.virtual_item_qty).toFixed(2);
                     }
                     $(input).trigger('check_quantity', [qty]);
                 }
@@ -511,7 +512,10 @@ getOrder = function(options){
                     let qty = setting.value_real;
                     let qty_original = parseInt(qty, 10);
                     qty = (parseInt(qty, 10) - setting.step);
-                    if ((qty > setting.min) && (setting.virtual_item_qty > 1) && (setting.virtual_item_step.length > 0)) {
+                    if (qty < setting.min) {
+                        qty = setting.min;
+                    }
+                    if ((qty >= setting.min) && (setting.virtual_item_qty > 1) && (setting.virtual_item_step.length > 0)) {
                         let qty_step = (qty % setting.virtual_item_qty);
                         let qty_index = $.inArray(qty_step, setting.virtual_item_step);
                         if ((qty_step != 0) && (qty_index < 0)) {
@@ -527,9 +531,7 @@ getOrder = function(options){
                                 }
                             }
                         }
-                    }
-                    if (qty < setting.min) {
-                        qty = setting.min;
+                        qty = (qty / setting.virtual_item_qty).toFixed(2);
                     }
                     $(input).trigger('check_quantity', [qty]);
                 }
@@ -538,6 +540,13 @@ getOrder = function(options){
             $('body ' + parent_class).off('check_quantity').on('check_quantity', 'input.qty', function(event, new_value, direct_change) {
                 var setting = getVirtualItemSetting(this);
                 var base_qty = 0;
+                var virtual_item_qty = 1;
+                if (setting.virtual_item_qty) {
+                    virtual_item_qty = setting.virtual_item_qty;
+                }
+                if ((setting.virtual_item_qty > 1) && (setting.virtual_item_step.length > 0)) {
+                    new_value *= virtual_item_qty;
+                }
                 var old_value = setting.value_real;
                 var qty = ((new_value === 0) ? new_value : parseInt(new_value || old_value, 10));
                 if (isNaN(qty)) {

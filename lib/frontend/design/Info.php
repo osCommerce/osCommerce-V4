@@ -19,6 +19,7 @@ use backend\design\Style;
 use yii\helpers\VarDumper;
 use yii\helpers\ArrayHelper;
 use common\helpers\Html;
+use frontend\design\Block;
 
 class Info
 {
@@ -1811,7 +1812,7 @@ class Info
         return false && is_dir(DIR_FS_CATALOG . '_blog');
     }
 
-    public static function createJs(){
+    public static function createJs($ajax = false){
 
         $theme_name = THEME_NAME;
 
@@ -1821,16 +1822,18 @@ class Info
         }
 
         $filePath = DIR_FS_CATALOG . 'themes/' . $theme_name . '/cache/js/';
-        $jsFile = Yii::$app->controller->id . '_' . Yii::$app->controller->action->id . $page_name . '.js';
+        $jsFile = Yii::$app->controller->id . '_' . Yii::$app->controller->action->id . $page_name . ($ajax ? '-ajax' : '') . '.js';
 
         if (is_file($filePath . $jsFile) && !self::isAdmin() && @$_SERVER['HTTP_CACHE_CONTROL'] != 'no-cache' && !self::themeSetting('dev_mode')) {
             return '';
         }
 
         $js = '';
-        $js .= IncludeTpl::widget(['file' => 'js/libraries/redux.min.js', 'params' => []]);
+        if (!$ajax) {
+            $js .= IncludeTpl::widget(['file' => 'js/libraries/redux.min.js', 'params' => []]);
 
-        $js .= "\n\n" . 'var reducers={};' . "\n\n";
+            $js .= "\n\n" . 'var reducers={};' . "\n\n";
+        }
 
         foreach (self::$includeJsFiles as $file) {
             $fileCode = IncludeTpl::widget(['file' => 'js/' . $file . '.js', 'params' => []]);
@@ -1869,9 +1872,11 @@ class Info
             }
         }
 
-        $js .= IncludeTpl::widget(['file' => 'js/main.js', 'params' => []]);
+        if (!$ajax) {
+            $js .= IncludeTpl::widget(['file' => 'js/main.js', 'params' => []]);
 
-        $js .= "\n\n" . 'tl(tlSize.init);tl_action(tl_js);' . "\n\n";
+            $js .= "\n\n" . 'tl(tlSize.init);tl_action(tl_js);' . "\n\n";
+        }
 
         if (!self::themeSetting('dev_mode')) {
             $minifier = new \MatthiasMullie\Minify\JS();
@@ -1933,12 +1938,12 @@ class Info
         }
     }
 
-    public static function jsFilePath(){
+    public static function jsFilePath($suffix = ''){
         $page_name = '';
         if (Yii::$app->controller->view->page_name) {
             $page_name = '_' . design::pageName(Yii::$app->controller->view->page_name);
         }
-        $filePath = self::themeFile('/cache/js/' . Yii::$app->controller->id . '_' . Yii::$app->controller->action->id . $page_name . '.js');
+        $filePath = self::themeFile('/cache/js/' . Yii::$app->controller->id . '_' . Yii::$app->controller->action->id . $page_name . ($suffix ? '-' : '') . $suffix . '.js');
 
         if (self::themeSetting('dev_mode')) {
             $filePath .= date("U");
@@ -1979,6 +1984,46 @@ class Info
 
     public static function setScriptCss($css){
         self::$scriptCss .= $css;
+    }
+
+    public static function widgetToContent($content)
+    {
+
+        $arr = explode('<widget ', $content);
+        $html = '';
+
+        foreach ($arr as $item){
+            if(stripos($item, '</widget>') === false) {
+                $html .= $item;
+                continue;
+            }
+
+            $split = explode('</widget>', $item);
+
+            preg_match_all("/ ([a-zA-Z0-9_\-]+)=\"([^\"]+)\"/", ' ' . $split[0], $matches, PREG_SET_ORDER);
+
+            $name = '';
+            $settings = [];
+            foreach ($matches as $match) {
+                if ($match[1] == 'name') {
+                    $name = $match[2];
+                } elseif ($match[1] == 'settings') {
+                    $settings[0] = (array)json_decode( str_replace('\'', '"', $matches[2]));
+                } else {
+                    $settings[0][$match[1]] = $match[2];
+                }
+            }
+
+            Block::addToWidgetsList($name);
+
+            $widget_name = 'frontend\design\boxes\\' . $name;
+            $html .= '<div class="' . Block::nameToClass($name) . '">' . $widget_name::widget(['settings' => $settings]) . '</div>';
+
+            $html .= $split[1];
+
+        }
+
+        return $html;
     }
 }
 

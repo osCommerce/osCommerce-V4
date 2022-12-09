@@ -31,6 +31,9 @@
                 {else}
                     {$order_product_array.order_product_name}
                 {/if}
+                {foreach \common\helpers\Hooks::getList('account/order_history_info', 'order-product') as $filename}
+                    {include file=$filename}
+                {/foreach}
                 {if ($ext = \common\helpers\Acl::checkExtensionAllowed('ProductAssets', 'allowed'))}
                     <div class="orderProductAsset">{$ext::renderOrderProductAsset($order_product_array['orders_products_id'], true)}</div>
                 {/if}

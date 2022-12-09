@@ -21,6 +21,7 @@ class ComponentsButton extends Widget
     public $editor;
     public $platform_id;
     public $languages_id;
+    public $buttons = ['banner', 'component', 'component-html'];
 
     public function init()
     {
@@ -35,6 +36,13 @@ class ComponentsButton extends Widget
         $lang_id = $this->languages_id ? $this->languages_id : $languages_id;
 
         return $this->render('components-button.tpl', [
+            'content_widget_url' => \Yii::$app->urlManager->createUrl([
+                'design/content-widget',
+                'name'=>'Banner',
+                'editor_id' => $this->editor,
+                'languages_id' => $languages_id,
+                'platform_id' => $platform_id
+            ]),
             'url' => \Yii::$app->urlManager->createUrl([
                 'information_manager/component-keys',
                 'name'=>'components',
@@ -53,7 +61,8 @@ class ComponentsButton extends Widget
             'editor' => $this->editor,
             'platform_id' => $platform_id,
             'languages_id' => $this->languages_id ? $this->languages_id : $lang_id,
-            'action' => 'information_manager/page-links'
+            'action' => 'information_manager/page-links',
+            'buttons' => $this->buttons
         ]);
     }
 }

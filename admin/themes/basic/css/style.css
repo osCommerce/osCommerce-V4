@@ -2876,9 +2876,6 @@ div.product-header.thumb{
     padding-left: 60px;
     padding-right: 0;
 }
-.w-line-row-2.w-line-row-22 .edp-line.edp-line-pd-left{
-    padding-left: 55px;
-}
 .oreder-edit-box-2 .bundle_item{
     border-top: 1px solid #e5e5e5;
     margin-top: 15px;
@@ -3217,14 +3214,6 @@ ul.sortable li label {
 .wrapper-row-status:hover .row-status-hide-box {display: block;}
 .row-status-hide-box {display: none; position: absolute; top: -18px; left: 93%; background: #fff; -webkit-border-radius: 4px; -moz-border-radius: 4px; border-radius: 4px; padding: 17px 8px; width: 155px; -webkit-box-shadow: 0px 0px 10px 0px rgba(50, 50, 50, 0.5); -moz-box-shadow: 0px 0px 10px 0px rgba(50, 50, 50, 0.5); box-shadow: 0px 0px 10px 0px rgba(50, 50, 50, 0.5); z-index: 20;}
 .row-status-hide-box .row-status.hide {display: block!important;}
-.product-table-price{width: 81%;}
-.product-table-price td{border: none!important; text-align: center; padding: 0!important;}
-.product-table-price td span{color: #ccc; position: relative;}
-.product-table-price td span i{font-size: 42px; font-style: normal; font-weight: 300; line-height: 0; position: absolute; right: -23px; top: 4px;}
-.product-table-price .product-table-price-qty{vertical-align: middle!important; padding: 0 10px 0 0!important;}
-.product-table-price .price-right{text-align: right; padding-right: 9px!important;}
-.product-table-price .price-left{text-align: left; padding-left: 9px!important; padding-right: 0!important;}
-.product-table-price-qty b, .product-table-price-qty span{display: inline-block; vertical-align: middle;}
 .table-process th.dataTableHeadingContent.location{width: 15%;}
 .table-process th.dataTableHeadingContent.price{text-align: center!important; width: 20%;}
 .table-process th.dataTableHeadingContent.tax{width: 5%;}

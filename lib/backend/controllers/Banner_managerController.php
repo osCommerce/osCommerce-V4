@@ -12,6 +12,7 @@
 
 namespace backend\controllers;
 
+use common\models\Banners;
 use common\models\BannersGroupsImages;
 use Yii;
 use yii\helpers\Html;
@@ -853,12 +854,19 @@ class Banner_managerController extends Sceleton
         $uniqueElements = [];
         $cInfo = new \objectInfo($banner);
         $groups_array = array();
-        $groups_query = tep_db_query("select distinct banners_group from " . TABLE_BANNERS_NEW . " order by banners_group");
-        while ($groups = tep_db_fetch_array($groups_query)) {
-            if ($uniqueElements[$groups['banners_group']] ?? null) continue;
-            $groups_array[] = array('id' => $groups['banners_group'], 'text' => $groups['banners_group']);
-            $uniqueElements[$groups['banners_group']] = $groups['banners_group'];
+
+        $bannerGroups = Banners::find()
+            ->alias('b')
+            ->select(['b.banners_group'])->distinct()
+            ->join('inner join', BannersLanguages::tableName() . ' bl', 'b.banners_id = bl.banners_id')
+            ->orderBy('b.banners_group')
+            ->asArray()->all();
+        foreach ($bannerGroups as $group) {
+            if ($uniqueElements[$group['banners_group']] ?? null) continue;
+            $groups_array[] = array('id' => $group['banners_group'], 'text' => $group['banners_group']);
+            $uniqueElements[$group['banners_group']] = $group['banners_group'];
         }
+
         $banner_type[0] = array('id' => 'banner', 'text' => 'banner');
         $banner_type[1] = array('id' => 'carousel', 'text' => 'carousel');
         $banner_type[2] = array('id' => 'slider', 'text' => 'slider');
@@ -1680,5 +1688,32 @@ class Banner_managerController extends Sceleton
 
         }
 
+    }
+
+    public function actionGroupBanners ()
+    {
+        $languageId = \Yii::$app->settings->get('languages_id');
+        $bannersGroup = \Yii::$app->request->get('banners_group');
+
+        $banners = Banners::find()
+            ->alias('b')
+            ->select(['b.*'])
+            ->addSelect(['bl.banners_title'])
+            ->join('inner join', BannersLanguages::tableName() . ' bl', 'b.banners_id = bl.banners_id and bl.language_id = '. $languageId)
+            ->andWhere('b.banners_group = "' . $bannersGroup . '"')
+            ->orderBy('bl.banners_title')
+            ->asArray()->all();
+
+        $responseList = [];
+        foreach ($banners as $banner) {
+            $responseList[] = [
+                'url' => \Yii::$app->urlManager->createUrl(['banner_manager/banneredit', 'banners_id' => $banner['banners_id']]),
+                'banners_id' => $banner['banners_id'],
+                'image' => $this->actionGetimage($banner['banners_id']),
+                'banners_title' => $banner['banners_title'],
+            ];
+        }
+
+        echo json_encode($responseList);
     }
 }

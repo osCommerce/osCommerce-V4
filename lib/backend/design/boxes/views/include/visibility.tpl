@@ -5,7 +5,7 @@
   </div>
 
   <div class="row">
-    <div class="col-md-6">
+    <div class="col-md-6 visibility-pages">
 
       <p><label><input type="checkbox" name="setting[0][visibility_home]"{if !$settings[0].visibility_home} checked{/if}/> {$smarty.const.TEXT_HOME}</label></p>
       <p><label><input type="checkbox" name="setting[0][visibility_product]"{if !$settings[0].visibility_product} checked{/if}/> {$smarty.const.TEXT_PRODUCT}</label></p>
@@ -62,11 +62,11 @@
       defaultChecked();
 
       $('.btn-check').on('click', function(){
-        $('.visibility input').prop('checked', 'true');
+        $('.visibility-pages input').prop('checked', 'true').trigger('change');
         defaultChecked()
       });
       $('.btn-uncheck').on('click', function(){
-        $('.visibility input').prop('checked', 0);
+        $('.visibility-pages input').prop('checked', 0).trigger('change');
         defaultChecked()
       })
 

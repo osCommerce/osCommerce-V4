@@ -70,6 +70,10 @@ class AttributeMapper
 
         if ( !$this->isLocalProject ) {
 
+            if (in_array($ref->table, IOCore::get()->getTablenamesWithMirrorIds()) && $ref instanceof IOMap) {
+                return $ref->externalId;
+            }
+
             $entityId = $this->getEntityId($ref);
 
             if ($entityId) {

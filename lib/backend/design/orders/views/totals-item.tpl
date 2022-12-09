@@ -24,7 +24,7 @@
     {/foreach}
     <div>
     {if $parent}
-        <pre>{$smarty.const.TEXT_CREATED_BY} {$parent->getShortName()}: {$parent->model->orders_id}</pre>
+        <pre>{$smarty.const.TEXT_CREATED_BY} {$parent->getShortName()}:{if $parent->getShortName()=='TmpOrder'}<a href='{$app->urlManager->createUrl(['tmp-orders/process-order', 'orders_id' => $parent->model->orders_id])}' target="_blank">{$parent->model->orders_id}</a>{else}{$parent->model->orders_id}{/if}</pre>
     {/if}
     </div>
 </div>

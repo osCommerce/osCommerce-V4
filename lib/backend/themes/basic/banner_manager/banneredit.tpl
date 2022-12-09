@@ -121,7 +121,7 @@
 <label class="radio-inline">
     <input type="radio" name="{$mItem['banner_display_name']}" value="4"
             {if $mItem['banner_display'] == '4'} checked{/if} data-id="{$mKey}" class="banner-display">
-    Video
+    {$smarty.const.TEXT_VIDEO}
 </label>
                                                 
                                             </td>
@@ -139,6 +139,7 @@
                                                     <option value="6"{if $mItem['text_position'] == '6'} selected{/if}>{$smarty.const.TEXT_BOTTOM_LEFT}</option>
                                                     <option value="7"{if $mItem['text_position'] == '7'} selected{/if}>{$smarty.const.TEXT_BOTTOM_CENTER}</option>
                                                     <option value="8"{if $mItem['text_position'] == '8'} selected{/if}>{$smarty.const.TEXT_BOTTOM_RIGHT}</option>
+                                                    <option value="9"{if $mItem['text_position'] == '9'} selected{/if}>{$smarty.const.TEXT_UNDER_IMAGE}</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -164,6 +165,15 @@
                                         'delete' => $mItem['delete']
                                     ])}
                                                 </div>
+
+                                                {*<div class="upload-box upload-box-wrap"
+                                                     data-name="{$mItem['name']}"
+                                                     data-value="{$mItem['value']}"
+                                                     data-upload="{$mItem['upload']}"
+                                                     data-delete="{$mItem['delete']}"
+                                                     data-width="1200"
+                                                     data-height="400">
+                                                </div>*}
                                             </td>
                                         </tr>
                                         <tr class="banner-video-{$mKey}"{if $mItem['banner_display'] != '4'} style="display: none"{/if}>
@@ -344,8 +354,11 @@
             }, 'json')
         }
     })
-</script>
 
+    $(function(){
+        $('.upload-box-wrap').fileManager()
+    })
+</script>
 <script type="text/javascript" src="{$app->view->theme->baseUrl}/js/banner-editor.js"></script>
 <script>
     bannerEditor.bannerEdit({

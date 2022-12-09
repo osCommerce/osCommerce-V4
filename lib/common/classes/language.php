@@ -311,6 +311,9 @@ class language {
         Request $request,
         string $request_type): void
     {
+        if (\Yii::$app->request->isPost) {
+            return;
+        }
         if(defined('ALLOW_LOCALE_REDIRECT') && in_array(ALLOW_LOCALE_REDIRECT, ['Ip', 'Browser'], true)) {
             if (ALLOW_LOCALE_REDIRECT === 'Browser') {
                 $countryCode = $lng->language['code'];

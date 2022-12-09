@@ -399,8 +399,11 @@ function getProduct(url, products_id, is_pack, is_modified, holder){
                     }
 
                     $('.product-attributes select', holder).addClass('form-control');
-
-                    $('.valid1', holder).html(info.product_qty_virtual);
+                    if (info.hasOwnProperty('virtual_item_qty') && info.virtual_item_qty > 1) {
+                        $('.valid1', holder).html(" " + (info.product_qty/info.virtual_item_qty).toFixed(2) + " (" +  info.product_qty + ")");
+                    } else {
+                        $('.valid1', holder).html(info.product_qty);
+                    }
 
                     product.stockInfo.max = info.product_qty;
                     $('.qty', holder).attr('data-max', info.product_qty);
@@ -461,7 +464,11 @@ function getProduct(url, products_id, is_pack, is_modified, holder){
                         if ($('.qty', holder).val().length == 0 ){
                             $('.qty', holder).val(info.order_quantity_minimal);
                         }
-                        if (parseInt($('.qty', holder).val()) < parseInt(info.order_quantity_minimal) && !multi_qty)
+                        var rQty = $('.qty', holder).val();
+                        if (info.hasOwnProperty('virtual_item_qty') && info.virtual_item_qty > 1) {
+                            rQty *= parseInt(info.virtual_item_qty);
+                        }
+                        if (parseInt(rQty) < parseInt(info.order_quantity_minimal) && !multi_qty)
                             $('.qty', holder).val(info.order_quantity_minimal);
 
                         if (multi_qty){
@@ -489,6 +496,7 @@ function getProduct(url, products_id, is_pack, is_modified, holder){
                                 $.each(product.stockInfo.virtual_item_step, function(index) {
                                     product.stockInfo.virtual_item_step[index] = parseInt(this, 10);
                                 });
+                                $('.qty', holder).attr('data-value-real', parseFloat($('.qty', holder).val()) * parseFloat(product.stockInfo.virtual_item_qty));
                                 $('.qty', holder).attr('data-virtual-item-qty', product.stockInfo.virtual_item_qty);
                                 $('.qty', holder).attr('data-virtual-item-step', JSON.stringify(product.stockInfo.virtual_item_step));
                             }

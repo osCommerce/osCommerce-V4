@@ -238,7 +238,7 @@ class BackupController extends Sceleton {
         $backupHtml .= '<br>' . '<textarea name="comments"></textarea>';
         
         $connection = Yii::$app->getDb();
-        $tables = $connection->createCommand('SHOW OPEN TABLES FROM ' . DB_DATABASE . ';')->queryAll();
+        $tables = $connection->createCommand('SHOW OPEN TABLES FROM `' . DB_DATABASE . '`;')->queryAll();
         usort($tables, function($a, $b) { return strcmp($a["Table"], $b["Table"]); });
       
         $backupHtml .= '<br><br>' . tep_draw_checkbox_field('all_tables', 'yes', true, '', 'onchange="selectTables(this);"') . ' ' . ' All tables';

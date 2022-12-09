@@ -273,6 +273,7 @@ class Bundles {
             }
             $bundle_sets['stock_indicator'] = $stock_indicator_public;
 
+            $stock_indicator['id'] = $stock_indicator['id'] ?? null;
             if ($stock_indicator['id'] > 0 && !$stock_indicator['is_hidden']) {
               $stock_indicators_ids[] = $stock_indicator['id'];
               $stock_indicators_array[$stock_indicator['id']][] = $stock_indicator_public;

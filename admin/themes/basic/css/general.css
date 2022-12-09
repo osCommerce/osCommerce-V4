@@ -507,3 +507,76 @@
 .modal {
     z-index: 10000;
 }
+
+.html-dropdown {
+    position: relative;
+}
+.html-dropdown-dropdown {
+    position: absolute;
+    left: 0;
+    top: 100%;
+    background: var(--background-color);
+    border: 1px solid var(--border-color-midle);
+    z-index: 100000;
+    min-width: 300px;
+    max-height: 300px;
+    overflow: auto;
+}
+.html-dropdown .html-dropdown-dropdown {
+    display: none;
+}
+.html-dropdown-dropdown .item {
+    padding: 5px 10px 5px 30px;
+    position: relative;
+    cursor: default;
+}
+.html-dropdown-dropdown .item.active:before {
+    content: '\f00c';
+    position: absolute;
+    left: 5px;
+    top: calc(50% - 10px);
+    height: 20px;
+    line-height: 20px;
+    font-size: 16px;
+    font-family: FontAwesome;
+}
+.html-dropdown-dropdown .item:hover {
+    background: var(--background-color-1);
+}
+.html-dropdown .selected-item {
+    padding: 5px 30px 5px 10px;
+    position: relative;
+    background: var(--background-color);
+    border: 1px solid var(--border-color-midle);
+    cursor: default;
+}
+.html-dropdown .selected-item:before {
+    content: '\f107';
+    position: absolute;
+    right: 5px;
+    top: calc(50% - 10px);
+    height: 20px;
+    line-height: 20px;
+    font-size: 20px;
+    font-family: FontAwesome;
+}
+
+.html-dropdown .ban-holder,
+.html-dropdown-dropdown .ban-holder {
+    display: flex;
+    align-items: center;
+}
+.html-dropdown .ban-holder .img,
+.html-dropdown-dropdown .ban-holder .img {
+    margin-right: 10px;
+}
+.html-dropdown .ban-holder img,
+.html-dropdown-dropdown .ban-holder img {
+    width: 100px;
+    height: 50px;
+    object-fit: cover;
+}
+
+.content-widget-popup {
+    width: 650px !important;
+}

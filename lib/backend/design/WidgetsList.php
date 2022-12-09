@@ -507,7 +507,7 @@ class WidgetsList
         if (\common\helpers\Acl::checkExtensionAllowed('Trustpilot', 'allowed')) {
             $client = new \common\extensions\Trustpilot\Trustpilot();
             if ($client->anyAPIKeyExists()){
-                $widgets[] = array('name' => 'TrustPilotReviews', 'title' => TEXT_TRUSTPILOT_REVIEWS, 'description' => '', 'type' => 'general', 'class' => 'content');
+                $widgets[] = array('name' => 'TrustPilotReviews', 'title' => EXT_TRUSTPILOT_TRUSTPILOT_REVIEWS, 'description' => '', 'type' => 'general', 'class' => 'content');
             }
         }
         $widgets[] = array('name' => 'ImageMap', 'title' => IMAGE_MAP, 'description' => '', 'type' => 'general', 'class' => '');

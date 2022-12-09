@@ -138,6 +138,9 @@ class paypal_partner extends lib\PaypalMiddleWare {
 
     function __construct() {
         parent::__construct();
+        if (defined('PRICE_WITH_BACK_TAX') && PRICE_WITH_BACK_TAX == 'True') {
+            $this->sendExVat = false; //can't update products on adress update (patch order)
+        }
         $configs = [
           'log.LogEnabled' => true,
           'log.FileName' => \Yii::getAlias('@frontend') . DIRECTORY_SEPARATOR . 'runtime' . DIRECTORY_SEPARATOR . 'logs' . DIRECTORY_SEPARATOR . 'pp.log',
@@ -184,16 +187,37 @@ class paypal_partner extends lib\PaypalMiddleWare {
     function update_status() {
 
         if (($this->enabled == true) && defined('MODULE_PAYMENT_PAYPAL_PARTNER_ZONE') && ((int) MODULE_PAYMENT_PAYPAL_PARTNER_ZONE > 0)) {
-            $check_flag = false;
-            $check_query = tep_db_query("select zone_id from " . TABLE_ZONES_TO_GEO_ZONES . " where geo_zone_id = '" . MODULE_PAYMENT_PAYPAL_PARTNER_ZONE . "' and zone_country_id = '" . $this->delivery['country']['id'] . "' order by zone_id");
-            while ($check = tep_db_fetch_array($check_query)) {
-                if ($check['zone_id'] < 1) {
-                    $check_flag = true;
-                    break;
-                } elseif ($check['zone_id'] == $this->delivery['zone_id']) {
-                    $check_flag = true;
-                    break;
+            $get = \Yii::$app->request->get();
+            //callback could change address.
+            //check it here
+            if (\Yii::$app->controller->id == 'callback' && \Yii::$app->controller->action->id == 'webhooks' && $get['action'] == 'patchOrder') {
+                try {
+                    $tmp = file_get_contents("php://input");
+                    $request = json_decode($tmp, true, 512, JSON_INVALID_UTF8_SUBSTITUTE);
+                } catch (\Exception $e) {
+                   \Yii::warning(" pppPatchOrderEmptyData #### " .print_r($e->getMessage(), true), 'TLDEBUG');
                 }
+                if (!empty($request['shipping_address'])) {
+                    $country = \common\helpers\Country::get_country_info_by_iso($request['shipping_address']['country_code']);
+                    //$this->manager->set('estimate_ship', ['country_id' => $country['id'], 'postcode' => $request['shipping_address']['postal_code'], 'zone' => $request['shipping_address']['state']]);
+                    if (is_array($country)) {
+                        $zone = \common\helpers\Zones::lookupZone($country['id'], $request['shipping_address']['state']);
+                        $zone_id = empty($zone['zone_id'])?0:$zone['zone_id'];
+                        
+                        $check_query = tep_db_query("select zone_id from " . TABLE_ZONES_TO_GEO_ZONES . " where geo_zone_id = '" . MODULE_PAYMENT_PAYPAL_PARTNER_ZONE . "' and zone_country_id = '" . $country['id'] . "' order by zone_id");
+                        while ($check = tep_db_fetch_array($check_query)) {
+                            if ($check['zone_id'] < 1) {
+                                $check_flag = true;
+                                break;
+                            } elseif ($check['zone_id'] == $zone_id) {
+                                $check_flag = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+            } else {
+                $check_flag = parent::checkStatusByShipping(MODULE_PAYMENT_PAYPAL_PARTNER_ZONE);
             }
 
             if ($check_flag == false) {
@@ -939,13 +963,35 @@ EOD;
         $totalPayPal = 0;
         // ex VAT prices and tax to avoid items patch (export orders) - not working via JS :(.
         foreach ($order->products as $product) {
+
+            if ($this->sendExVat) {
+                $_val = $product['final_price'];
+                if (defined('PRICE_WITH_BACK_TAX') && PRICE_WITH_BACK_TAX == 'True' && $product['tax']>0) {
+                    $_val = \common\helpers\Tax::reduce_tax_always($product['final_price'], $product['tax']);
+                }
+            } else {
+                $_val = \common\helpers\Tax::add_tax($product['final_price'], $product['tax']);
+            }
+            $val = $this->formatRaw($_val);
+            $qty = $product['qty'];
+            $virtual_qty = '';
+            $tmpQty = \common\helpers\Product::getVirtualItemQuantityValue($product['id']);
+            if ($tmpQty>1) {
+                if ($qty/$tmpQty == round($qty/$tmpQty)) {
+                    $qty = round($qty/$tmpQty);
+                    $val = $this->formatRaw($_val*$tmpQty);
+                } else {
+                    $virtual_qty = '/' . ($tmpQty) . ' ';
+                }
+            }
+
             $items[] = [
-              'name' => $product['name'],
+              'name' => $virtual_qty . $product['name'],
               'unit_amount' => [
                 'currency_code' => $currency,
-                'value' => ($this->sendExVat ? $this->formatRaw($product['final_price']):$this->formatRaw(\common\helpers\Tax::add_tax($product['final_price'], $product['tax']))),
+                'value' => $val,
               ],
-              'quantity' => $product['qty'],
+              'quantity' => $qty,
             ];
         }
         $shipping = [];
@@ -970,9 +1016,9 @@ EOD;
             ],
           ]
         ];
-        if ($this->sendExVat) {
+        //if ($this->sendExVat) {
             $details['items'] = $items;
-        }
+        //}
         
         if (!empty($shipping)) {
             $details['totals']['shipping'] = $shipping;
@@ -1001,7 +1047,9 @@ EOD;
         }
 
         $tax = $this->formatRaw($tax);
-        $totalPayPal += $tax;
+        if ($this->sendExVat) {
+            $totalPayPal += $tax;
+        }
 
         foreach ($items as $item) {
             $details['totals']['item_total']['value'] += $this->formatRaw($item['unit_amount']['value'] * $item['quantity'], $currency, 1); //already multiplied currency value
@@ -1052,7 +1100,7 @@ EOD;
             ];
         }
         
-        if ($tax > 0) {
+        if ($this->sendExVat && $tax > 0) {
             $details['totals']['tax_total'] = [
               'currency_code' => $currency,
               'value' => $tax,
@@ -1088,6 +1136,9 @@ EOD;
         }
 
         $request->body = $this->ppBuildOrderDetails($order, $data);
+        if ($this->debug) {
+            \Yii::warning(" #### " .print_r($request->body, true), 'TLDEBUG' . $this->code);
+        }
 
         try {
             return $this->getHttpClient()->execute($request);
@@ -2023,8 +2074,11 @@ EOD;
                 if (!empty($order->info['currency'])) {
                     $currency_code = $order->info['currency'];
                 }
-                //$oldSubtotal = $this->formatRaw($order->info['subtotal_inc_tax']);
-
+/*                $oldSubtotal = empty($request['amount']['breakdown']['item_total']['value'])?
+                    $this->formatRaw($order->info['subtotal_inc_tax']) :
+                    $request['amount']['breakdown']['item_total']['value']
+                    ;
+*/
 
                 $estimateShippingChanged = true;
                 if (!empty($request['shipping_address'])) {
@@ -2124,6 +2178,9 @@ EOD;
                             'path' => '/purchase_units/@reference_id==\'default\'/shipping/options',
                             'value' => $options
                         ];
+                    } elseif ($this->manager->isShippingNeeded()) {
+                        //shipping is needed but not available
+                        return [];
                     }
                 }
                 /* PP docs is shit
@@ -2165,7 +2222,7 @@ EOD;
                     //$resp = [$resp[0]];
                     $resp = $data;
                     //$estimateShippingChanged = false;
-                } */
+                } /* products change */
 
                 if ($this->debug ) {
                     \Yii::warning("patchOrder resp " . print_r($resp, true), 'TLDEBUG');
@@ -2239,14 +2296,34 @@ EOD;
         if ($this->manager->isShippingNeeded()) {
             foreach ($this->manager->getShippingQuotesByChoice() as $shipping_quote_item ) {
                 if (empty($shipping_quote_item['error'])) {
+
                     foreach ($shipping_quote_item['methods'] as $shipping_quote_item_method) {
+                        $label = html_entity_decode(strip_tags($shipping_quote_item['module'] . ' '. $shipping_quote_item_method['title']));
+                        $mxl = 128;
+                        if (strlen($label) > $mxl) {
+                            $label = substr($label, 0, $mxl-3) . '...';
+                        }
+                        if ($this->sendExVat) {
+                            if (defined('PRICE_WITH_BACK_TAX') && PRICE_WITH_BACK_TAX == 'True') {
+                                if ($shipping_quote_item['tax']>0) {
+                                   $_val = $shipping_quote_item_method['cost_ex']?? \common\helpers\Tax::reduce_tax_always($shipping_quote_item_method['cost'], $shipping_quote_item['tax']);
+                                } else {
+                                   $_val = $shipping_quote_item_method['cost'];
+                                }
+                                $cost = $currencies->display_price_clear($_val, 0 , 1);
+                            } else {
+                                $cost = $currencies->display_price_clear($shipping_quote_item_method['cost'], 0 , 1);
+                            }
+                        } else {
+                            $cost = $currencies->display_price_clear($shipping_quote_item_method['cost'], $shipping_quote_item['tax'], 1);
+                        }
                         $row = ['id' => $shipping_quote_item_method['code'],
-                                'label' => html_entity_decode(strip_tags($shipping_quote_item['module'] . ' '. $shipping_quote_item_method['title'])),
+                                'label' => $label,
                                 'type' => ($shipping_quote_item['id'] != 'collect'? "SHIPPING" :"PICKUP"),
                                 'selected' => $shipping_quote_item_method['selected']? true : false,
                                 'amount' => [
                                   'value' =>  $this->formatRaw(
-                                      $currencies->display_price_clear($shipping_quote_item_method['cost'], ($this->sendExVat ? 0 : $shipping_quote_item['tax']), 1)
+                                      $cost
                                       , $currency_code, 1
                                           ),
                                   'currency_code' => $currency_code

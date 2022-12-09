@@ -95,12 +95,13 @@ class ModuleExtensions extends Module {
             $arr = self::getTranslationArray();
             if (!is_array($arr)) $arr = [];
         }
-        if (!empty($entity)) {
-            return isset($arr[$entity][$key]) ? $arr[$entity][$key] : $key;
-        }
-        foreach ($arr as $translations) {
-            if (isset($translations[$key])) {
-                return $translations[$key];
+        if (!empty($entity) && isset($arr[$entity][$key])) {
+            return $arr[$entity][$key];
+        } else {
+            foreach ($arr as $translations) {
+                if (isset($translations[$key])) {
+                    return $translations[$key];
+                }
             }
         }
         if ($default == '##key##') return $key;
@@ -213,7 +214,7 @@ class ModuleExtensions extends Module {
             if ($setup = static::checkSetup('remove')) {
                 $setup::remove($platform_id, $migrate, $this->userConfirmedDropDatatables);
             }
-            static::removeTranslationArray($platform_id, $migrate);
+            static::removeTranslationArray($platform_id, $migrate, $this->userConfirmedDeleteAcl);
             if ($this->userConfirmedDropDatatables && ($setup = static::checkSetup('getDropDatabasesArray'))) {
                 $migrate->dropTables($setup::getDropDatabasesArray());
                 \common\helpers\Modules::changeModule($this->code, 'remove_drop');
@@ -309,7 +310,13 @@ class ModuleExtensions extends Module {
 
     public static function enabled() {
         $class = (new \ReflectionClass(get_called_class()))->getShortName();
-        return defined($class . '_EXTENSION_STATUS') && constant($class . '_EXTENSION_STATUS') == 'True';
+        if (class_exists('\common\helpers\Extensions')) {
+            return \common\helpers\Extensions::isEnabled($class);
+        } else {
+            // issue: system update && uninstall && resetMenu
+            // but can't remove because of include platforms into application_top
+            return defined($class . '_EXTENSION_STATUS') && constant($class . '_EXTENSION_STATUS') == 'True';
+        }
     }
 
     public static function getMetaTagKeys($meta_tags) {
@@ -397,22 +404,24 @@ class ModuleExtensions extends Module {
         if (is_array($translationArray) && count($translationArray) > 0) {
             foreach($translationArray as $entity => $keysArray) {
                 if (static::isProcessTranslationPair($entity, $keysArray, 'install')) {
-                    unset($keysArray['__config__']);
-                    $migrate->addTranslation($entity, $keysArray);
+                    $withoutMagicKeys = array_filter($keysArray, function($key) { return is_string($key) && substr($key, 0, 2) != '__'; }, ARRAY_FILTER_USE_KEY);
+                    $migrate->addTranslation($entity, $withoutMagicKeys);
                 }
             }
         }
     }
 
-    protected static function removeTranslationArray($platform_id, $migrate)
+    protected static function removeTranslationArray($platform_id, $migrate, bool $fullDel = false)
     {
         $translationArray = static::getTranslationArray();
         if (is_array($translationArray) && count($translationArray) > 0) {
             foreach($translationArray as $entity => $keysArray) {
                 if (static::isProcessTranslationPair($entity, $keysArray, 'remove_entity')) {
                     $migrate->removeTranslation($entity);
-                } elseif (static::isProcessTranslationPair($entity, $keysArray, 'remove_keys_only')) {
-                    $migrate->removeTranslation($entity, $keysArray);
+                } elseif (static::isProcessTranslationPair($entity, $keysArray, 'remove_keys')) {
+                    $migrate->removeTranslation($entity, array_keys($keysArray));
+                } elseif ($fullDel && static::isProcessTranslationPair($entity, $keysArray, 'remove_keys_if_acl_removing')) {
+                    $migrate->removeTranslation($entity, array_keys($keysArray));
                 }
             }
         }
@@ -450,15 +459,36 @@ class ModuleExtensions extends Module {
         static::initTranslationArray($from);
     }
 
-    private const TRANLATION_KEYS_DEF_OPERATIONS = [
-        false   => ['install', 'init_always', 'init_controller', 'init_beforeaction', 'init_widget', 'init_directcall'], // main keys (won't be removed by default because still present in menu and acl)
-        true    => ['install', 'remove_entity', 'init_always', 'init_controller', 'init_beforeaction', 'init_widget', 'init_directcall'] // extension keys
+    private const TRANSLATION_KEYS_DEF_OPERATIONS = [
+        'main'         => ['install', 'remove_keys_if_acl_removing'], // 'main' and 'admin/main' keys
+        'extension'    => ['install', 'remove_entity', 'init_always', 'init_controller', 'init_beforeaction', 'init_widget', 'init_directcall'], // extension keys
+        'external'     => ['install', 'init_always', 'init_controller', 'init_beforeaction', 'init_widget', 'init_directcall'],
+        'other'        => ['install', 'remove_keys', 'init_always', 'init_controller', 'init_beforeaction', 'init_widget', 'init_directcall'],
     ];
     private static function isProcessTranslationPair($key, $value, $operation)
     {
-        $config = $value['__config__'] ?? ['default'];
-        $isPrivateKey = str_starts_with($key, 'extensions/');
-        return  in_array($operation, $config) || (in_array('default', $config) && in_array($operation, self::TRANLATION_KEYS_DEF_OPERATIONS[$isPrivateKey]));
+        $config = $value['__config__'] ?? self::getDefault($key, $value);
+        return in_array($operation, $config);
+    }
+
+    private static function getDefault($key, $value)
+    {
+        if (isset($value['__config_as__'])) {
+            if (is_string($value['__config_as__']) && isset(self::TRANSLATION_KEYS_DEF_OPERATIONS[$value['__config_as__']])) {
+                return self::TRANSLATION_KEYS_DEF_OPERATIONS[$value['__config_as__']];
+            } else {
+                \Yii::warning('Wrong __config_as__ value: '. var_export($value['__config_as__'], true));
+            }
+        }
+        if (in_array($key, ['main', 'admin/main'])) {
+            return self::TRANSLATION_KEYS_DEF_OPERATIONS['main'];
+        } elseif (\common\helpers\Php8::str_start_with($key, 'extensions/')) {
+            return self::TRANSLATION_KEYS_DEF_OPERATIONS['extension'];
+        } elseif (isset($value['__external__']) && !\common\helpers\Extensions::isUninstalled($value['__external__']['extension'])) {
+            return self::TRANSLATION_KEYS_DEF_OPERATIONS['external'];
+        } else {
+            return self::TRANSLATION_KEYS_DEF_OPERATIONS['other'];
+        }
     }
 
     /**
@@ -466,7 +496,7 @@ class ModuleExtensions extends Module {
      */
     public static function reinstallTranslation($migrate)
     {
-        static::removeTranslationArray(null, $migrate);
+        static::removeTranslationArray(null, $migrate, true);
         static::installTranslationArray(null, $migrate);
     }
 

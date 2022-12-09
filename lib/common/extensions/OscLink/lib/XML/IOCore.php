@@ -14,6 +14,8 @@ namespace OscLink\XML;
 
 
 use yii\base\InvalidParamException;
+use yii\helpers\FileHelper;
+use \common\helpers\Assert;
 
 class IOCore
 {
@@ -27,6 +29,8 @@ class IOCore
 
     private $locations = array();
     private $attachmentModes = array();
+
+    private $tablenamesWithMirrorIds = [];
 
     private function __construct()
     {
@@ -260,4 +264,48 @@ class IOCore
         }
     }
 
+    public function download($sourceFile, $physicalFile, $prefix = '')
+    {
+        $prefix = empty($prefix)? '': $prefix . ': ';
+        $dir = dirname($physicalFile);
+        try {
+            if ( !is_dir($dir) ) {
+                FileHelper::createDirectory($dir, 0777);
+            }
+            Assert::assert(
+                @copy($sourceFile, $physicalFile),
+                "Could not download file '$sourceFile': " . (error_get_last()['message'] ?? 'unknown reason')
+            );
+
+            if (!@chmod($physicalFile, 0666)) {
+                \OscLink\Logger::print($prefix . 'warning: failed chmod: ' . (error_get_last()['message'] ?? 'unknown reason'));
+            }
+            return true;
+        } catch (\Exception $e) {
+            \OscLink\Logger::print($prefix . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * @param $tablenames string|array like 'products,orders' or ['products,orders']
+     * @return void
+     */
+    public function setTablenamesWithMirrorIds($tablenames)
+    {
+        if (is_string($tablenames)) {
+            \common\helpers\Assert::assert( strpos($tablenames, ' ') === false, 'Spaces are not allowed');
+            $this->tablenamesWithMirrorIds = explode(',', $tablenames);
+        } elseif (is_array($tablenames)) {
+            $this->tablenamesWithMirrorIds = $tablenames;
+        }
+    }
+
+    /**
+     * @return array
+     */
+    public function getTablenamesWithMirrorIds()
+    {
+        return $this->tablenamesWithMirrorIds;
+    }
 }

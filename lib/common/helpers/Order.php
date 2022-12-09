@@ -94,6 +94,23 @@ class Order
 
     }
 
+    public static function remove_tmp_order($order_id) {
+        // 2do TABLE_PRODUCTS . " set products_ordered = products_ordered -
+        $t_o = \common\models\TmpOrders::findOne((int) $order_id);
+        if (!empty($t_o->child_id)) {
+            return false;
+        }
+
+        tep_db_query("delete from tmp_orders where orders_id = '" . (int) $order_id . "'");
+        tep_db_query("delete from tmp_orders_products where orders_id = '" . (int) $order_id . "'");
+        tep_db_query("delete from tmp_orders_products_attributes where orders_id = '" . (int) $order_id . "'");
+        tep_db_query("delete from tmp_orders_products_download where orders_id = '" . (int) $order_id . "'");
+        tep_db_query("delete from tmp_orders_history where orders_id = '" . (int) $order_id . "'");
+        tep_db_query("delete from tmp_orders_status_history where orders_id = '" . (int) $order_id . "'");
+        tep_db_query("delete from tmp_orders_total where orders_id = '" . (int) $order_id . "'");
+
+    }
+
     public static function get_order_status_name($order_status_id, $language_id = '') {
         global $languages_id;
 

@@ -16,7 +16,22 @@
         return false;
     }
     function runQuery(force) {
-        $('#updates_box').html('<iframe src="{Yii::$app->urlManager->createUrl('install/update-now')}?force='+force+'" style="width:100%;min-height:400px;border:0px;"></iframe>');
+        var dst_file_ignore = [];
+        var selected_count = 0;
+        if (force == 1) {
+            $('#iframe').contents().find('input:checkbox:checked.dst_file_ignore').each(function(j, cb) {
+                var aaa = $(cb).val();
+                if (typeof(aaa) != 'undefined') {
+                    selected_count++;
+                    dst_file_ignore[selected_count] = aaa;
+                }
+            });
+            $.post("{Yii::$app->urlManager->createUrl('install/save-ignore-list')}", { "dst_file_ignore" : dst_file_ignore } , function(data) {
+                $('#updates_box').html('<iframe id="iframe" src="{Yii::$app->urlManager->createUrl('install/update-now')}?force='+force+'" style="width:100%;min-height:400px;border:0px;"></iframe>');
+             },'json');
+        } else {
+            $('#updates_box').html('<iframe id="iframe" src="{Yii::$app->urlManager->createUrl('install/update-now')}?force='+force+'" style="width:100%;min-height:400px;border:0px;"></iframe>');
+        }
         return false;
     }
     function checkActualStatus() {

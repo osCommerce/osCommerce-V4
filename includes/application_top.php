@@ -126,7 +126,7 @@ if (defined('WL_ENABLED') && WL_ENABLED === true) {
   require(DIR_WS_INCLUDES . 'database_tables.php');
 
 if (!file_exists('lib/common/extensions/VatOnOrder/VatOnOrder.php')) {
-    define('ACCOUNT_COMPANY', 'disabled');
+    //define('ACCOUNT_COMPANY', 'disabled');
     define('ACCOUNT_COMPANY_VAT_ID', 'disabled');
     define('ACCOUNT_CUSTOMS_NUMBER', 'disabled');
 }

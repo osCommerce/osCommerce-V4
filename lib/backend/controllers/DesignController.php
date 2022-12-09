@@ -3141,6 +3141,10 @@ class DesignController extends Sceleton {
             return \backend\design\Groups::$action();
         }
 
+        if (!Yii::$app->request->post('id')) {
+            return '';
+        }
+
         $this->layout = false;
         $group = DesignBoxesGroups::find()->where(['id' => Yii::$app->request->post('id')])->asArray()->one();
 
@@ -3188,5 +3192,34 @@ class DesignController extends Sceleton {
             \backend\design\Groups::synchronize();
         }
         echo json_encode($response);
+    }
+
+    public function actionContentWidget()
+    {
+        $params = tep_db_prepare_input(Yii::$app->request->get());
+        $id = 0;
+        $settings = [];
+        $widgetParams = ['main_content' => true];
+        $content = '';
+
+        if (is_file(Yii::getAlias('@app') . DIRECTORY_SEPARATOR . 'design' . DIRECTORY_SEPARATOR . 'boxes' . DIRECTORY_SEPARATOR . str_replace('\\', DIRECTORY_SEPARATOR, $params['name']) . '.php')){
+            $widgetName = 'backend\design\boxes\\' .str_replace('\\\\', '\\', $params['name']);
+            $content = $widgetName::widget(['id' => $id, 'params' => $widgetParams, 'settings' => $settings]);
+        } elseif($ext = \common\helpers\Acl::checkExtension($params['name'], 'showTabSettings', true)){
+            $widgetName = 'backend\design\boxes\Def';
+            $settings['tabs'] = ['class'=> $ext, 'method' => 'showTabSettings'];
+            $content = $widgetName::widget(['id' => $id, 'params' => $widgetParams, 'settings' => $settings]);
+        } elseif($ext = \common\helpers\Acl::checkExtension($params['name'], 'showSettings', true)){
+            $widgetName = 'backend\design\boxes\Def';
+            $settings['class'] = $ext;
+            $settings['method'] = 'showSettings';
+            $content = $widgetName::widget(['id' => $id, 'params' => $widgetParams, 'settings' => $settings]);
+        }
+        $this->layout = false;
+
+        return $this->render('content-widget.tpl', [
+            'content' => $content,
+            'widgetName' => $params['name']
+        ]);
     }
 }

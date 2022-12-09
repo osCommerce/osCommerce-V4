@@ -1488,6 +1488,10 @@ abstract class OrderAbstract extends OrderShadowAbstract{
 
         $email_params['ORDER_COMMENTS'] = tep_db_output($this->info['comments']);
 
+        foreach (\common\helpers\Hooks::getList('Order', 'notify_customer') as $filename) {
+            include($filename);
+        }
+
         $emailDesignTemplate = '';
         if ($this->info['order_status'] && $this->info['platform_id']) {
             $emailDesignTemplate = \common\models\OrdersStatusToDesignTemplate::findOne([
@@ -1589,6 +1593,13 @@ abstract class OrderAbstract extends OrderShadowAbstract{
 
             $email_params['ORDER_COMMENTS'] = str_replace(array("\r\n", "\n", "\r"), '<br>', $notify_comments);
 
+            $email_params['AMOUNT_REFUNDED'] = '';
+            if (!empty($this->info['total_refund_inc_tax']) && $this->info['total_refund_inc_tax']>0.01) {
+                $tmp = ArrayHelper::map($this->totals, 'class', 'text_inc_tax');
+                if (!empty($tmp['ot_refund'])) {
+                    $email_params['AMOUNT_REFUNDED'] = sprintf(AMOUNT_REFUNDED, $tmp['ot_refund']);
+                }
+            }
             list($email_subject, $email_text) = \common\helpers\Mail::get_parsed_email_template($emailTemplate, $email_params, $languages_id, $platform_id, -1, $emailDesignTemplate);
 
             $attachment = false;

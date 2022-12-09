@@ -94,7 +94,14 @@
   define('TABLE_PROPERTIES', 'properties');
   define('TABLE_PROPERTIES_DESCRIPTION', 'properties_description');
   define('TABLE_PROPERTIES_TO_PRODUCTS', 'properties_to_products');
-  define('TABLE_GROUPS', DB_DATABASE.'.groups');
+
+  // groups is a reserved word in MySQL since 8.0.2
+  // Solutions:
+  // 1) define('TABLE_GROUPS', DB_DATABASE.'.groups');
+  //    but generates error if DB_DATABASE contains a hyphen
+  // 2) define('TABLE_GROUPS', '`groups`');
+  //    no side effects found so far
+  define('TABLE_GROUPS', '`groups`');
 //  define('TABLE_PRODUCTS_GROUPS_PRICES', 'products_groups_prices');
 //  define('TABLE_PRODUCTS_ATTRIBUTES_GROUPS_PRICES', 'products_attributes_groups_prices');
 //  define('TABLE_SPECIALS_GROUPS_PRICES', 'specials_groups_prices');

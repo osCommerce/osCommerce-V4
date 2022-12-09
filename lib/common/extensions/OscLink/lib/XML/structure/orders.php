@@ -25,8 +25,12 @@ return array(
                 'language_id' => ['class'=>'IOLanguageMap'],
             ],
             'beforeImportSave' => function($model, $data){
-                if ( !\OscLink\XML\IOCore::get()->isLocalProject() && $data->data['orders_id']->externalId ) {
-                    $model->external_orders_id = $data->data['orders_id']->externalId;
+                if (!\OscLink\XML\IOCore::get()->isLocalProject()) {
+                    if (isset($data->data['orders_id']->externalId)) {
+                        $model->external_orders_id = $data->data['orders_id']->externalId;
+                    } elseif (isset($data->data['orders_id']->internalId)) {
+                        $model->external_orders_id = $data->data['orders_id']->internalId;
+                    }
                 }
             },
             'withRelated' => array(

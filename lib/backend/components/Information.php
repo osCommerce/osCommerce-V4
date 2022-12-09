@@ -423,6 +423,7 @@ class Information {
 
     public static function templateSave($info_id, $pageTemplates, $pageStyle)
     {
+        if ( !is_array($pageTemplates) ) $pageTemplates = array();
         foreach ($pageTemplates as $id => $template) {
             $informations = \common\models\Information::find()->where([
                     'information_id' => $info_id,
@@ -436,6 +437,7 @@ class Information {
             }
         }
 
+        if ( !is_array($pageStyle) ) $pageStyle = array();
         foreach ($pageStyle as $id => $style) {
             $pageStyles = \common\models\PageStyles::findOne([
                 'type' => 'info',

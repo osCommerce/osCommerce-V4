@@ -68,20 +68,16 @@ class Menu extends Widget
         static $categories_all = array();
         $categories_join = '';
         if (!$categories_all){
-            $productsInCategoryJoin = " left join " . \common\models\CategoriesCache::tableName() . " cc on cc.categories_id = c.categories_id ";
             if ( Platform::activeId() ) {
                 $categories_join .= " inner join " . TABLE_PLATFORMS_CATEGORIES . " plc on c.categories_id = plc.categories_id  and plc.platform_id = '" . $platformCurrentId . "' ";
-                $productsInCategoryJoin .= " and cc.platform_id = '" . $platformCurrentId . "'";
             }
             if ($ext = \common\helpers\Acl::checkExtensionAllowed('UserGroupsRestrictions', 'isAllowed')) {
                 $categories_join .= $ext::sqlCategoriesWhere();
-                $productsInCategoryJoin .= " and cc.groups_id = '" . $customer_groups_id . "'";
             }
             $cats = Yii::$app->db->createCommand("
-                select c.categories_id, c.parent_id, cd.categories_name, cc.products
+                select c.categories_id, c.parent_id, cd.categories_name
                 from " . \common\models\Categories::tableName() . " c 
                   {$categories_join}
-                  {$productsInCategoryJoin}
                   left join " . \common\models\CategoriesDescription::tableName() . " cd on cd.categories_id = c.categories_id and cd.language_id = " . (int)$languages_id . "
                 where c.categories_status = 1 and cd.affiliate_id = 0
                 order by c.sort_order, cd.categories_name
@@ -89,6 +85,18 @@ class Menu extends Widget
             foreach ($cats as $row) {
                 $categories_all[$row['categories_id']] = $row;
             }
+            unset($cats);
+        }
+        // init product counts
+        if ((!Info::themeSetting('show_empty_categories') || $this->settings[0]['show_count_products'])
+            && !empty($categories_all) && !isset($categories_all[[sizeof($categories_all) - 1]]['products'] )) {
+            $counts = null;
+            unset($this->settings[0]['show_count_products']);
+            //$counts = \common\components\CategoriesCache::getProductCountCache()::getCount(array_keys($categories_all), $platformCurrentId, $customer_groups_id);
+            foreach ($categories_all as $catId => $row) {
+                $categories_all[$catId]['products'] = $counts[$catId] ?? 1;
+            }
+            unset($counts);
         }
 
 
@@ -204,7 +212,7 @@ class Menu extends Widget
                 if ($row['sub_categories']){
                     $sab_categories[] = $row['id'];
                 }
-                $row['count'] = $categories_all[$row['link_id']]['products'];
+                $row['count'] = $categories_all[$row['link_id']]['products'] ?? 0;
 
                 $row['link'] = tep_href_link('catalog', 'cPath=' . $row['link_id']);
 

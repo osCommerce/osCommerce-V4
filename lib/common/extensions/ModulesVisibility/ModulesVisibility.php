@@ -149,7 +149,7 @@ class ModulesVisibility extends \common\classes\modules\ModuleExtensions {
                 $checked = 1;
             }
             $visibility_area = tep_db_fetch_array($visibility_area_query);
-            $visibility_area['visibility_vat'] = ['visibility_vat'] ?? null;
+            $visibility_area['visibility_vat'] = $visibility_area['visibility_vat'] ?? null;
             $visibility_area['show_line'] = $visibility_area['show_line'] ?? null;
             $response .= '<tr class="hover-dark"><td>';
             $response .= '<label>';

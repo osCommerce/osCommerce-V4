@@ -160,18 +160,7 @@ class IOAttachment extends Complex
             } else {
                 $physicalFile = IOCore::get()->getLocalLocation($this->location.'/'.$this->value);
 
-                if ( !is_dir(dirname($physicalFile)) ) {
-                    try {
-                        FileHelper::createDirectory(dirname($physicalFile), 0777);
-                        @copy($sourceFile, $physicalFile);
-                        @chmod($physicalFile, 0666);
-                    }catch (\Exception $ex){
-
-                    }
-                }else{
-                    @copy($sourceFile, $physicalFile);
-                    @chmod($physicalFile, 0666);
-                }
+                IOCore::get()->download($sourceFile, $physicalFile);
             }
         }
 

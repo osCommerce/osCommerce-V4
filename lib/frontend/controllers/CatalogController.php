@@ -132,8 +132,13 @@ class CatalogController extends Sceleton
           $category_p = $category_parent['total'];
         }
 
+        if (!empty($noFiltersTo)) {
+            $page_name = $noFiltersTo;
+        } else {
+            $page_name = \frontend\design\Categories::pageName($current_category_id, $category_p);
+        }
 
-        $search_results = Info::widgetSettings('Listing', 'items_on_page');
+        $search_results = Info::widgetSettings('Listing', 'items_on_page', $page_name);
         if (!$search_results) $search_results = SEARCH_RESULTS_1;
 
         $view = array();
@@ -158,12 +163,6 @@ class CatalogController extends Sceleton
 
         if ( !Yii::$app->request->isAjax ) {
             $_SESSION['lastCategoryUrl'] = Yii::$app->urlManager->createUrl(array_merge(['catalog'], Yii::$app->request->get()));
-        }
-
-        if (!empty($noFiltersTo)) {
-          $page_name = $noFiltersTo;
-        } else {
-          $page_name = \frontend\design\Categories::pageName($current_category_id, $category_p);
         }
 
         $this->view->page_name = $page_name;
@@ -494,6 +493,7 @@ class CatalogController extends Sceleton
         $attributes = tep_db_prepare_input(Yii::$app->request->get('id', array()));
         $type = Yii::$app->request->get('type', 'product');
         $boxId = Yii::$app->request->get('boxId', $boxId);
+        $attrText = Yii::$app->request->get('attr_text');
         $options_prefix = '';
         if (empty($products_id)) {
           return false;
@@ -615,7 +615,7 @@ class CatalogController extends Sceleton
                 } elseif ($type == 'listing'){
                     $details['product_attributes'] = \frontend\design\IncludeTpl::widget(['file' => 'boxes/listing-product/attributes.tpl', 'params' => ['attributes' => $details['attributes_array'], 'isAjax' => true, 'products_id' => $products_id, 'options_prefix' => $options_prefix, 'settings' => $settings[0]??[]]]);
                 } else {
-                    $details['product_attributes'] = \frontend\design\IncludeTpl::widget(['file' => 'boxes/product/attributes.tpl', 'params' => ['attributes' => $details['attributes_array'], 'isAjax' => true, 'settings' => $settings[0]??[], 'boxId' => $boxId??'']]);
+                    $details['product_attributes'] = \frontend\design\IncludeTpl::widget(['file' => 'boxes/product/attributes.tpl', 'params' => ['attributes' => $details['attributes_array'], 'isAjax' => true, 'settings' => $settings[0]??[], 'boxId' => $boxId??'', 'attrText' => $attrText]]);
                 }
                 $details['product_name'] = $product['products_name'];
                 if ($ext = \common\helpers\Acl::checkExtensionAllowed('FlexiFi', 'allowed')) {
@@ -627,7 +627,7 @@ class CatalogController extends Sceleton
             }
         } else {
             if (count($details['attributes_array']) > 0) {
-                return IncludeTpl::widget(['file' => 'boxes/product/attributes.tpl', 'params' => ['attributes' => $details['attributes_array'], 'isAjax' => false, 'product' => $product, 'settings' => $settings[0]??[], 'boxId' => $boxId??'']]);
+                return IncludeTpl::widget(['file' => 'boxes/product/attributes.tpl', 'params' => ['attributes' => $details['attributes_array'], 'isAjax' => false, 'product' => $product, 'settings' => $settings[0]??[], 'boxId' => $boxId??'', 'attrText' => $attrText]]);
             } else {
                 return '';
             }
@@ -907,7 +907,6 @@ class CatalogController extends Sceleton
           'get' => \Yii::$app->request->get(),
           'page' => 'sales'
         ]);
-
         $cnt = $q->getCount();
         \Yii::$app->set('productsFilterQuery', $q);
 

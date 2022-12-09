@@ -451,7 +451,7 @@ if (typeof onDrawCallbackEvent==='function') {
 			});
 
 //			$.fn.dataTable.defaults.aLengthMenu = [[5, 10, 25, 50, -1], [5, 10, 25, 50]];
-      $.fn.dataTable.defaults.aLengthMenu = [[5, 10, 25, 50, -1], [5, 10, 25, 50, "All"]];
+      $.fn.dataTable.defaults.aLengthMenu = [[5, 10, 25, 50, 100, 500, 1000, -1], [5, 10, 25, 50, 100, 500, 1000, "All"]];
 
 			// Initialize default datatables
 			$('.datatable').each(function () {

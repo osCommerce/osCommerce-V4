@@ -38,11 +38,14 @@ body {
 
     --heading-color: #424242;
     --main-color: #424242;
+    --tiny-color: #cccccc;
 
+    --background-color: #fff;
     --background-color-1: #f7f5ff;
     --background-color-2: #ece9f9;
     --background-color-3: #e8e1ff;
     --background-color-4: #eeeeee;
+    --background-search-key: #ffff00;
 
     --link-color: #0077e4;
     --primary-color: #7b5bb9;

@@ -15,5 +15,11 @@
     {/foreach}
   })
 </script>
+{Info::createJs(true)}
+<script>
+  {Info::addLayoutData()}
+  Object.assign(entryData, JSON.parse('{addslashes(json_encode(Info::$jsGlobalData))}'));
+</script>
+<script type="text/javascript" src="{Info::jsFilePath('ajax')}" {$this->async}></script>
 {$this->endBody()}
 {$this->endPage(true)}

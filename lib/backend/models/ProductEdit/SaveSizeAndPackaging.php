@@ -50,6 +50,13 @@ class SaveSizeAndPackaging
                     copy($tmp_name, $new_name);
                     @unlink($tmp_name);
                     $sql_data_array['products_file'] = tep_db_prepare_input($products_file_name);
+
+                    if ($this->product->products_id) {
+                        \common\helpers\Download::updateOrderedFile(
+                            $this->product->products_id,
+                            $sql_data_array['products_file']
+                        );
+                    }
                 }
                 //$products_file_name = Yii::$app->request->post('products_file');
                 //if (tep_not_null($products_file_name) && ($products_file_name != 'none')) {

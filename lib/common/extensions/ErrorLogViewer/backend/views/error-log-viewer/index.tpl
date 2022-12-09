@@ -2,6 +2,14 @@
     <div class="row order-box-list order-sc-text">
         <div class="col-md-12">
             <div class="widget-content">
+                {if Yii::$app->session->hasFlash('ELV')}
+                    <div class="alert alert-warning alert-dismissible show" role="alert">
+                        {Yii::$app->session->getFlash('ELV')}
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true"><strong>&times;</strong></span>
+                        </button>
+                    </div>
+                {/if}
                 <div class="btn-wr after btn-wr-top disable-btn data-table-top-left">
                     <div>
                         <div>

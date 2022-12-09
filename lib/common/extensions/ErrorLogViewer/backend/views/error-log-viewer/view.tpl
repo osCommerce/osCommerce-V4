@@ -42,18 +42,9 @@
                     url: 'error-log-viewer/advanced-list?file={$file}',
                     type: 'GET',
                 },
+                order: [[1, 'desc']],
                 columnDefs: [
-                    { 'orderData':[0], 'targets': [1] },
-                    {
-                        orderable: false,
-                        targets: 0,
-                    },
-                    {
-                        sType: "numeric",
-                        targets: [ 0 ],
-                        visible: false,
-                        searchable: false,
-                    },
+                    
                 ],
             });
             table.columns(0).visible(false);
@@ -88,7 +79,6 @@
                         alert("{$smarty.const.EXT_ELV_ERR_REQUEST}");
                     }
                 },"html");
-
 
             });
 

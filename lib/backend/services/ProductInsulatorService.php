@@ -159,11 +159,11 @@ class ProductInsulatorService {
         if ($this->result) {
             $currencies = Yii::$container->get('currencies');
             $this->result['product_info'] = [];
-            if ($this->result['attributes_box']) { //
+            if (!empty($this->result['attributes_box'])) { //
                 $this->result['product_info']['html_attributes'] = $this->result['attributes_box']['product_attributes_html'];
                 //$this->result['product_info']['attributes_array'] = $this->result['attributes_box']['attributes_array'] ?? $this->result['attributes_box']['inventory_array'];
                 $this->result['product_info']['product_qty'] = $this->result['attributes_box']['data']['product_qty'];
-                $this->result['product_info']['product_qty_virtual'] = \common\helpers\Product::getVirtualItemQuantity($this->result['attributes_box']['data']['current_uprid'], $this->result['attributes_box']['data']['product_qty']);
+                $this->result['product_info']['product_qty_virtual'] = \common\helpers\Product::getVirtualItemQuantity($this->result['attributes_box']['data']['current_uprid'], $this->data['qty']);// $this->data['qty'];//
                 $this->result['product_info']['product_valid'] = $this->result['attributes_box']['data']['product_valid'];
                 $this->result['product_info']['product_unit_price'] = $this->result['attributes_box']['data']['product_unit_price'];
                 $this->result['product_info']['special_unit_price'] = (float) $this->result['attributes_box']['data']['special_unit_price'];

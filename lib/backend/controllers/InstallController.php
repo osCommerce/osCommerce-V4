@@ -31,6 +31,9 @@ class InstallController extends Sceleton {
     private $doHooks;
     private $doMenu;
     
+    private $show_ignore_field = false;
+    private $dst_file_ignore = [];
+    
     function __construct($id,$module=null) {
         \common\helpers\Translation::init('admin/install');
 
@@ -695,6 +698,100 @@ class InstallController extends Sceleton {
                                 \common\models\Configuration::updateAll(['configuration_value' => (string) $distribution->version], ['configuration_key'=> 'MIGRATIONS_DB_REVISION']);
                             }
                             break;
+                        case 'configuration':
+                            $oldData = [];
+                            $zip->open($path . 'uploads' . DIRECTORY_SEPARATOR . $filename);
+                            foreach ((array)$distribution->files as $file) {
+                                $CsvString = $zip->getFromName($file);
+                                
+                                $bom = substr($CsvString, 0, 2);
+                                if ($bom === chr(0xff).chr(0xfe) || $bom === chr(0xfe).chr(0xff)) {
+                                    $encoding = 'UTF-16';
+                                } else {
+                                    $encoding = mb_detect_encoding($CsvString, 'auto', true);
+                                }
+                                if ($encoding) {
+                                    $CsvString = iconv($encoding, "UTF-8", $CsvString);
+                                } else {
+                                    $CsvString = iconv('CP850', "UTF-8", $CsvString);
+                                }
+                                $Data = str_getcsv($CsvString, "\n");
+                                $uploadedKeys = false;
+                                foreach($Data as &$data) {
+                                    $data = str_getcsv($data, "\t");
+                                    if ($uploadedKeys === false) {
+                                        $uploadedKeys = array_flip($data);
+                                        continue;
+                                    }
+                                    // Key Group Operation Value
+                                    if (
+                                            isset($data[$uploadedKeys['Key']]) && !empty($data[$uploadedKeys['Key']]) &&
+                                            isset($data[$uploadedKeys['Operation']]) && !empty($data[$uploadedKeys['Operation']])
+                                        ) {
+                                        switch($data[$uploadedKeys['Operation']]) {
+                                                    case 'add':
+                                                        $conf = \common\models\Configuration::find()->where(['configuration_key' => (string) $data[$uploadedKeys['Key']]])->one();
+                                                        if ($conf instanceof \common\models\Configuration) {
+                                                            $oldData[] = [
+                                                                'action' => 'update',
+                                                                'configuration_key' => $conf->configuration_key,
+                                                                'configuration_value' => $conf->configuration_value,
+                                                                'configuration_group_id' => $conf->configuration_group_id,
+                                                            ];
+                                                        } else {
+                                                            $oldData[] = [
+                                                                'action' => 'delete',
+                                                                'configuration_key' => (string) $data[$uploadedKeys['Key']],
+                                                            ];
+                                                            $conf = new \common\models\Configuration();
+                                                            $conf->loadDefaultValues();
+                                                            $conf->configuration_key = (string) $data[$uploadedKeys['Key']];
+                                                        }
+                                                        $conf->configuration_value = (string) $data[$uploadedKeys['Value']];
+                                                        $conf->configuration_group_id = (string) $data[$uploadedKeys['Group']];
+                                                        $conf->save(false);
+                                                        break;
+                                                    case 'delete':
+                                                        $conf = \common\models\Configuration::find()->where(['configuration_key' => (string) $data[$uploadedKeys['Key']]])->one();
+                                                        if ($conf instanceof \common\models\Configuration) {
+                                                            $oldData[] = [
+                                                                'action' => 'add',
+                                                                'configuration_title' => $conf->configuration_title,
+                                                                'configuration_key' => $conf->configuration_key,
+                                                                'configuration_value' => $conf->configuration_value,
+                                                                'configuration_description' => $conf->configuration_description,
+                                                                'configuration_group_id' => $conf->configuration_group_id,
+                                                                'sort_order' => $conf->sort_order,
+                                                                'last_modified' => $conf->last_modified,
+                                                                'date_added' => $conf->date_added,
+                                                                'use_function' => $conf->use_function,
+                                                                'set_function' => $conf->set_function,
+                                                            ];
+                                                            $conf->delete();
+                                                        }
+                                                        break;
+                                                    case 'modify':
+                                                        $conf = \common\models\Configuration::find()->where(['configuration_key' => (string) $data[$uploadedKeys['Key']]])->one();
+                                                        if ($conf instanceof \common\models\Configuration) {
+                                                            $oldData[] = [
+                                                                'action' => 'update',
+                                                                'configuration_key' => $conf->configuration_key,
+                                                                'configuration_value' => $conf->configuration_value,
+                                                                'configuration_group_id' => $conf->configuration_group_id,
+                                                            ];
+                                                            $conf->configuration_value = (string) $data[$uploadedKeys['Value']];
+                                                            $conf->configuration_group_id = (string) $data[$uploadedKeys['Group']];
+                                                            $conf->save(false);
+                                                        }
+                                                        break;
+                                                }
+                                    }
+                                }
+                            }
+                            $this->doInstallRecord($filename, (string)$distribution->type, (string)($distribution->class ?? ''), (string)$distribution->version, $oldData);
+                            $this->doSystem = true;
+                            $zip->close();
+                            break;
                         default:
                             $status = false;
                             break;
@@ -754,7 +851,7 @@ class InstallController extends Sceleton {
                  } else {
                     $oldItemCrc = crc32(file_get_contents($pathP . DIRECTORY_SEPARATOR . $dst));
                     if ($src->crc32 != $oldItemCrc) {
-                        if ($echo) echo "<font color='red'>" . TEXT_FILE . " " . $dst . " " . TEXT_CHECKSUM_ERROR . ".</font><br>\n";
+                        if ($echo) echo "<font color='red'>" . TEXT_FILE . " " . $dst . " " . TEXT_CHECKSUM_ERROR . ".</font>".($this->show_ignore_field ? '<label><input type="checkbox" name="dst_file_ignore[]" class="dst_file_ignore" value="'.$dst.'">Ignore</label>' : '')."<br>\n";
                         $this->deployLog[] = "<font color='red'>" . TEXT_FILE . " " . $dst . " " . TEXT_CHECKSUM_ERROR . ".</font><br>\n";
                         $checked = false;
                         if ($forceBackup) {
@@ -821,7 +918,11 @@ class InstallController extends Sceleton {
         $zip = new \ZipArchive();
         if ($zip->open($path . 'uploads' . DIRECTORY_SEPARATOR . $zipFile) === true) {
             foreach ($rules as $src) {
-                $dst = str_replace('|', DIRECTORY_SEPARATOR, $src->path);
+                $dst = str_replace('|', '/', $src->path); // don't use DIRECTORY_SEPARATOR here
+                if (in_array($dst, $this->dst_file_ignore)) {
+                    if ($echo) echo "<font color='red'>$dst ignored.</font><br>\n";
+                    continue;
+                }
                 switch ($src->action) {
                     case 'add':
                         if ($src->type == 'dir') {
@@ -831,7 +932,10 @@ class InstallController extends Sceleton {
                             }
                         }
                         if ($src->type == 'file') {
-                            $zip->extractTo($pathP, $dst);
+                            if (!$zip->extractTo($pathP, $dst)) {
+                                $errorMsg = sprintf('Error extracting %s: %s', $dst, $zip->getStatusString() );
+                                throw new \Exception($errorMsg);
+                            }
                             if ($echo) echo "<font color='blue'>" . TEXT_FILE . " $dst " . TEXT_ADDED . ".</font><br>\n";
                         }
                         break;
@@ -1069,7 +1173,7 @@ class InstallController extends Sceleton {
         $record->date_added = date('Y-m-d H:i:s');
         $record->archive_type = $type;
         $record->archive_class = $class;
-        list($major, $minor, $patch) = explode('.', $version);
+        list($major, $minor, $patch) = array_pad( explode('.', $version), 3, '0');
         $record->archive_version = intval($major) + intval($minor)/100 + intval($patch)/10000;
         return $record->save(false);
     }
@@ -1171,7 +1275,7 @@ class InstallController extends Sceleton {
             $messages[] = sprintf($message, $storageUrl . 'account?return', $secKeyGlobal);
         } else {
             if ($request = curl_init()) {
-                curl_setopt($request, CURLOPT_URL, $storageUrl . 'app-api-server/');
+                curl_setopt($request, CURLOPT_URL, $storageUrl . 'app-api-server');
             
                 // for testing
                 curl_setopt($request, CURLOPT_SSL_VERIFYPEER, false);
@@ -1186,7 +1290,7 @@ class InstallController extends Sceleton {
                     'Authorization: Bearer ' . $storageKey . ':' . $secKeyGlobal
                 ));
 
-                curl_exec($request);
+                $return = curl_exec($request);
                 $response = curl_getinfo($request);
                 curl_close($request);
                 
@@ -1216,7 +1320,7 @@ class InstallController extends Sceleton {
             if (\common\helpers\System::isDevelopment()) {
                 $context = stream_context_create(['ssl' => ['verify_peer' => false, 'verify_peer_name' => false, 'allow_self_signed' => true]]);
             }
-            $response = file_get_contents($storageUrl . 'app-api-types.json', false, $context);
+            $response = @file_get_contents($storageUrl . 'app-api-types.json', false, $context);
             $result = json_decode($response, true);
         }
         if (isset($result['types'])) {
@@ -1689,6 +1793,7 @@ class InstallController extends Sceleton {
                         case 'totals':
                         case 'label':
                         case 'samples':
+                        case 'configuration':
                             $canDeploy = true;
                             if ($deployed) {
                                 $canRevert = true;
@@ -1790,6 +1895,8 @@ class InstallController extends Sceleton {
         $path = Yii::getAlias('@site_root') . DIRECTORY_SEPARATOR;
         $filename = Yii::$app->request->post('name','');
         
+        ob_start();
+        
         $zip = new \ZipArchive();
         if ($zip->open($path . 'uploads' . DIRECTORY_SEPARATOR . $filename) === true) {
             $json = $zip->getFromName('distribution.json');
@@ -1815,7 +1922,7 @@ class InstallController extends Sceleton {
                                 }
                                 $this->doUninstallClass($class, 0, $prevVer);
                             }
-                            $this->revertFileDst($oldData, $filename, $pathP);
+                            $this->revertFileDst($oldData, $filename, $pathP, true);
                             
                             $record->delete();
                             $this->doSystem = true;
@@ -1903,7 +2010,7 @@ class InstallController extends Sceleton {
                                     $this->doRecalcModuleSort('delete', $class, $distribution->type, $_platform['platform_id']);
                                 }
                             }
-                            $this->revertFileDst($oldData, $filename, $pathP);
+                            $this->revertFileDst($oldData, $filename, $pathP, true);
                             $record->delete();
                             $this->doSystem = true;
                             $status = 'success';
@@ -1949,7 +2056,7 @@ class InstallController extends Sceleton {
                         $record = \common\models\Installer::find()->where(['filename' => $filename])->one();
                         if ($record instanceof \common\models\Installer) {
                             $oldData = unserialize($record->data);
-                            $this->revertFileDst($oldData, $filename, $path);
+                            $this->revertFileDst($oldData, $filename, $path, true);
                             $record->delete();
                             $this->doMigrations = true;
                             $this->doSystem = true;
@@ -1961,6 +2068,55 @@ class InstallController extends Sceleton {
                             \common\models\Configuration::updateAll(['configuration_value' => (string) $distribution->require->version], ['configuration_key'=> 'MIGRATIONS_DB_REVISION']);
                         }
                         break;
+                    case 'configuration':
+                        $record = \common\models\Installer::find()->where(['filename' => $filename])->one();
+                        if ($record instanceof \common\models\Installer) {
+                            $oldData = unserialize($record->data);
+                            if (is_array($oldData)) {
+                                foreach ($oldData as $old) {
+                                    switch ($old['action']) {
+                                        case 'add':
+                                            $conf = \common\models\Configuration::find()->where(['configuration_key' => $old['configuration_key']])->one();
+                                            if (!($conf instanceof \common\models\Configuration)) {
+                                                $conf = new \common\models\Configuration();
+                                                $conf->loadDefaultValues();
+                                                $conf->configuration_title = $old['configuration_title'];
+                                                $conf->configuration_key = $old['configuration_key'];
+                                                $conf->configuration_value = $old['configuration_value'];
+                                                $conf->configuration_description = $old['configuration_description'];
+                                                $conf->configuration_group_id = $old['configuration_group_id'];
+                                                $conf->sort_order = $old['sort_order'];
+                                                $conf->last_modified = $old['last_modified'];
+                                                $conf->date_added = $old['date_added'];
+                                                $conf->use_function = $old['use_function'];
+                                                $conf->set_function = $old['set_function'];
+                                                $conf->save(false);
+                                            }
+                                            break;
+                                        case 'update':
+                                            $conf = \common\models\Configuration::find()->where(['configuration_key' => $old['configuration_key']])->one();
+                                            if ($conf instanceof \common\models\Configuration) {
+                                                $conf->configuration_value = $old['configuration_value'];
+                                                $conf->configuration_group_id = $old['configuration_group_id'];
+                                                $conf->save(false);
+                                            }
+                                            break;
+                                        case 'delete':
+                                            $conf = \common\models\Configuration::find()->where(['configuration_key' => $old['configuration_key']])->one();
+                                            if ($conf instanceof \common\models\Configuration) {
+                                                $conf->delete();
+                                            }
+                                            break;
+                                        default:
+                                            break;
+                                    }
+                                }
+                            }
+                            $record->delete();
+                            $this->doSystem = true;
+                            $status = 'success';
+                        }
+                        break;
                     default:
                         $status = 'fail';
                         break;
@@ -1969,10 +2125,11 @@ class InstallController extends Sceleton {
             }
             $zip->close();
         }
+        $output = ob_get_clean();
         if ($status == 'success') {
-            Yii::$app->response->data = ['status'=>'ok', 'text' => "File $filename reverted."];
+            Yii::$app->response->data = ['status'=>'ok', 'text' => $output . "<br>File $filename reverted."];
         } else {
-            Yii::$app->response->data = ['status'=>'error', 'text' => "Can't revert file $filename."];
+            Yii::$app->response->data = ['status'=>'error', 'text' => $output . "<br>Can't revert file $filename."];
         }
     }
     
@@ -2290,12 +2447,41 @@ class InstallController extends Sceleton {
         flush();
     }
     
+    public function actionSaveIgnoreList()
+    {
+        \common\models\InstallIgnoreList::deleteAll();
+        $dst_file_ignore = Yii::$app->request->post('dst_file_ignore');
+        if (is_array($dst_file_ignore)) {
+            foreach($dst_file_ignore as $index => $value) {
+                if (!empty($value)) {
+                    $file = new \common\models\InstallIgnoreList();
+                    $file->id = $index;
+                    $file->path = $value;
+                    $file->save(false);
+                }
+            }
+        }
+        \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+        return ['status' => 'ok'];
+    }
+    
     public function actionUpdateNow() 
     {
         @set_time_limit(0);
         @ignore_user_abort(true);
         
         $force = (int) Yii::$app->request->get('force');
+        
+        if ($force) {
+            $this->dst_file_ignore = [];
+            foreach (\common\models\InstallIgnoreList::find()->asArray()->all() as $file) {
+                $this->dst_file_ignore[] = $file['path'];
+            }
+        } else {
+            $this->show_ignore_field = true;
+        }
+        \common\models\InstallIgnoreList::deleteAll();
+        
         
         $this->layout = false;
         
@@ -2377,7 +2563,7 @@ class InstallController extends Sceleton {
                         } else {
                             $this->sendEcho("<font color='red'>". $filename . " " . TEXT_PACK_ABORTED.".</font><br>\n");
                             $version = '';
-                            echo TEXT_USE . ' <a class="btn" href="javascript:void(0)" onclick="return parent.runQuery(1);">' . TEXT_FORCE_UPDATE . '</a>. ' . TEXT_FORCE_UPDATE_INTRO . '.<br>';
+                            echo TEXT_USE . ' <a style="font-size: 30px;" class="btn" href="javascript:void(0)" onclick="return parent.runQuery(1);">' . TEXT_FORCE_UPDATE . '</a>. ' . TEXT_FORCE_UPDATE_INTRO . '.<br>';
                         }
                         
                     } else {

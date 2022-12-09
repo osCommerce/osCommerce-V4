@@ -25,7 +25,7 @@
 <br>
 
 <div id="elv_modal" class="modal fade bd-modal-lg" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-dialog modal-lg" role="document" style="width: 80vw">
         <div class="modal-content">
             <div class="modal-header">
                 <span class="modal-title" style="font-size: large;">{$log->file}</span>

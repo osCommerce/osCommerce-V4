@@ -2107,12 +2107,13 @@ class AccountController extends Sceleton
 
     public function actions()
     {
-        return [
-            'auth' => [
-                'class' => 'yii\authclient\AuthAction',
-                'successCallback' => [$this, 'onAuthSuccess'],
-            ],
+        $actions = parent::actions();
+        if ( !is_array($actions) ) $actions = [];
+        $actions['auth'] = [
+            'class' => 'yii\authclient\AuthAction',
+            'successCallback' => [$this, 'onAuthSuccess'],
         ];
+        return $actions;
     }
 
     public function actionAuth(){

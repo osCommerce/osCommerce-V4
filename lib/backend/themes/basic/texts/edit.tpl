@@ -25,66 +25,72 @@
             </div>
           </div>		
 		  <div class="widget-content after">
-		  <form id="filterForm" name="filterForm" action="{Url::to(['texts/edit-search'])}" method="post">			
-					<div class="filter_row filter_disable" style="float:right;">
-						<div class="f_td_group1 f_td_group-pr">
-						<input type="checkbox" name="sensitive" value="1" {if $app->controller->view->filters->sensitive}checked{/if} title="{$smarty.const.TEXT_SENSITIVE}" class="sens-input uniform"/>
-					  </div>
-					</div>				
+		  <form id="filterForm" name="filterForm" action="{Url::to(['texts/edit-search'])}" method="post">
 				<div class="column-block filter-box filters-text">
-				
-				  <div class="filter_block after">
-					<div class="filter_left">
-					  <div class="filter_row row_with_label">
-						<label>{$smarty.const.TEXT_SEARCH_BY}</label>
-						<select class="form-control" name="by" onChange="defBy(this.value);">
-							{foreach $app->controller->view->filters->by as $Item}
-								<option {$Item['selected']} value="{$Item['value']}">{$Item['name']}</option>
-							{/foreach}
-						</select>
-					  </div>
-					</div>
-					<div class="filter_right">
-					  <div class="filter_row filter_disable">
-						<div class="f_td_group f_td_group-pr">
-						<input type="text" name="search" value="{$app->controller->view->filters->search}" class="form-control search-input"/>
-					  </div>
-					</div>				
-				  </div>		  
-				</div>
-				<div class="filter_block after">
-					  <div class="filter_row row_with_label">
-						<label>{$smarty.const.TEXT_BY_LANGUAGE}</label>
-						<div class="filter_checkboxes">
-							{foreach $languages as $sl}
-								<div style="padding-right: 5px;">
-								  <input type="checkbox" name="sl[]" class="search_l uniform" value="{$sl['id']}" {if $sl['searchable_language'] == 1}checked{/if}>
-								  <span>{$sl['name']}</span>
-								</div>
-							{/foreach}
-						</div>
-					  </div>				
-				</div>
-				<div class="filter_block after">
-            <div class="">
-                    <label>
-                    {Html::checkbox('skip_admin', $app->controller->view->filters->skip_admin, ['class' => 'not-admin'])}
-                    {$smarty.const.TEXT_SKIP_ADMIN}
-                    </label>
-                </div>
-            <div class="">
-                    <label>
-                    {Html::checkbox('untranslated', $app->controller->view->filters->untranslated, ['class' => 'not-translated'])}
-                    {$smarty.const.TEXT_UNTRANSLATED_ONLY}
-                    </label>
-                </div>
-            <div class="">
-                    <label>
-                    {Html::checkbox('unverified', $app->controller->view->filters->unverified, ['class' => 'not-verified'])}
-                    {$smarty.const.TEXT_UNVERIFIED_ONLY}
-                    </label>
-                </div>
-				</div>
+
+                    <div class="filter_block after">
+                        <div class="filter_left">
+                            <div class="filter_row row_with_label">
+                                <label>{$smarty.const.TEXT_SEARCH_BY}</label>
+                                <select class="form-control" name="by" onChange="defBy(this.value);">
+                                    {foreach $app->controller->view->filters->by as $Item}
+                                        <option {$Item['selected']} value="{$Item['value']}">{$Item['name']}</option>
+                                    {/foreach}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="filter_right">
+                            <div class="filter_row filter_disable">
+                                <div class="f_td_group f_td_group-pr">
+                                    <input type="text" name="search" value="{$app->controller->view->filters->search}" class="form-control search-input"/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-6 after">
+                            <div class="filter_row row_with_label">
+                                <label>{$smarty.const.TEXT_BY_LANGUAGE}</label>
+                                <div class="filter_checkboxes">
+                                    {foreach $languages as $sl}
+                                        <div style="padding-right: 5px;">
+                                            <input type="checkbox" name="sl[]" class="search_l uniform" value="{$sl['id']}" {if $sl['searchable_language'] == 1}checked{/if}>
+                                            <span>{$sl['name']}</span>
+                                        </div>
+                                    {/foreach}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xs-6 after">
+                            <div class="">
+                                <label class="f_td_group1 f_td_group-pr">
+                                    <input type="checkbox" name="sensitive" value="1" {if $app->controller->view->filters->sensitive}checked{/if} title="{$smarty.const.TEXT_SENSITIVE}" class="sens-input uniform"/>
+                                    {$smarty.const.TEXT_SENSITIVE}
+                                </label>
+                            </div>
+                            <div class="">
+                                <label>
+                                    {Html::checkbox('skip_admin', $app->controller->view->filters->skip_admin, ['class' => 'not-admin'])}
+                                    {$smarty.const.TEXT_SKIP_ADMIN}
+                                </label>
+                            </div>
+                            <div class="">
+                                <label>
+                                    {Html::checkbox('untranslated', $app->controller->view->filters->untranslated, ['class' => 'not-translated'])}
+                                    {$smarty.const.TEXT_UNTRANSLATED_ONLY}
+                                </label>
+                            </div>
+                            <div class="">
+                                <label>
+                                    {Html::checkbox('unverified', $app->controller->view->filters->unverified, ['class' => 'not-verified'])}
+                                    {$smarty.const.TEXT_UNVERIFIED_ONLY}
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+
+
 				  <div class="filters_buttons">
 					<a href="javascript:void(0)" onclick="return resetFilter();" class="btn">{$smarty.const.TEXT_RESET}</a>
 					<button class="btn btn-primary">{$smarty.const.TEXT_SEARCH}</button>
@@ -101,7 +107,7 @@
 <div class="box-wrap">
 {if !$empty}
     <div class="cedit-top redit-top after ">
-        <div style="float: left;">
+        <div style="float: left;" class="m-r-4">
             <div class="status-left" >
                 <input type="checkbox" name="replace_key" value="on" class="check_bot_switch_on_off" />
                 <span>{$smarty.const.TEXT_REPLACE_KEY}</span>
@@ -115,9 +121,9 @@
         </div>		
     </div>  
 {/if}	
-    <div class="create-or-wrap after create-cus-wrap">
+    <div class="create-or-wrap after create-cus-wrap w-or-prev-next w-prod-page">
 	{if !$empty}
-        <div class="widget box box-no-shadow" style="margin-bottom: 0;">
+        <div class="widget box box-no-shadow " style="margin-bottom: 0; position: static">
           {if $prev_url neq ''}
           <a href="{$prev_url}" class="btn-next-prev-or btn-prev-or" title="{$smarty.const.TEXT_GO_PREV_ORDER}"></a>
           {else}

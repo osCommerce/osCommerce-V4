@@ -900,4 +900,39 @@ abstract class Module{
         }
     }
 
+/**
+ * use in your module's update_status()
+ * @param type $zone_id
+ * @return bool true - ok false - switch off
+ */
+    protected function checkStatusByBilling($zone_id) {
+        return $this->checkStatusZoneAddress($zone_id, 'billing');
+    }
+
+/**
+ * use in your module's update_status()
+ * @param type $zone_id
+ * @return bool true - ok false - switch off
+ */
+    protected function checkStatusByShipping($zone_id) {
+        return $this->checkStatusZoneAddress($zone_id, 'delivery');
+    }
+
+    private function checkStatusZoneAddress($zone_id, $which = 'shipping') {
+        $check_flag = false;
+        $check_query = tep_db_query("select zone_id from " . TABLE_ZONES_TO_GEO_ZONES . " where geo_zone_id = '" . $zone_id . "' and zone_country_id = '" . ($this->$which['country']['id']??0) . "' order by zone_id");
+        while ($check = tep_db_fetch_array($check_query)) {
+            if ($check['zone_id'] < 1) { // zone_id == 0  => all zones
+                $check_flag = true;
+                break;
+            } elseif ($check['zone_id'] == ($this->$which['zone_id']??0)) {
+                $check_flag = true;
+                break;
+            }
+        }
+
+        return $check_flag;
+
+    }
+
 }

@@ -22,6 +22,6 @@
     {/if}
 {else}
     <span class="pr_minus {if $product['quantity'] eq '1'}disable{/if}"></span>
-    <input name="update_products[{$product['id']}][qty]" size='2' value="{$product['quantity']}"  data-max="{$max}" {$min} {$step} class='form-control qty'>
+    <input name="update_products[{$product['id']}][qty]" size='2' value="{$product['quantity_virtual']}" data-value-real="{$product['quantity']}" data-max="{$max}" {$min} {$step} class='form-control qty'>
     <span class='pr_plus'></span>
 {/if}

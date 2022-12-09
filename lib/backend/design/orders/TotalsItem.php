@@ -32,7 +32,9 @@ class TotalsItem extends Widget {
             $pData = \common\extensions\CollectionPoints\models\CollectionPoints::findOne($this->order->info['pointto']);
         }
 
-        $parent = $this->order->getParent();
+        $parent = false;
+        if ($this->order && method_exists($this->order, 'getParent'))
+            $parent = $this->order->getParent();
 
         $totalItem = 0;
         foreach ($this->order->products as $opRecord) {

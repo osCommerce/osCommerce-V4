@@ -5,6 +5,7 @@
 {\frontend\design\Info::addBoxToCss('info')}
 {\frontend\design\Info::addBoxToCss('select-suggest')}
 {\frontend\design\Info::addBoxToCss('autocomplete')}
+{\frontend\design\Info::addBoxToCss('preloader')}
 
 <script type="text/javascript" src="{Info::themeFile('/js/checkout.js')}"></script>
 <script type="text/javascript">
@@ -100,8 +101,17 @@
         var prevent_submit_checkout_button = $('.w-checkout-continue-btn');
 //double click
         prevent_submit_checkout_form && prevent_submit_checkout_form.submit(function(){
+            var $hidePage = $('<div class="hide-page" style="align-items: center;background-color: rgba(255, 255, 255, 0.7);height:100%; justify-content: center; left:0; position: fixed; top:0; width:100%; z-index: 100000; display:flex;"><div class="preloader"></div></div>')
+            var $fakeInput = $('<div class="fake-input" style="height:0; overflow: hidden;"><input type="text"></div>')
+            $('body').append($hidePage);
+            $('.main-content').append($fakeInput);
+            $('input', $fakeInput).focus()
             $('.w-checkout-continue-btn button[type=submit]').prop('disabled', true);
-            setTimeout(function(){ $('.w-checkout-continue-btn button[type=submit]').prop('disabled', false); }, 7000);
+            setTimeout(function(){
+                $('.w-checkout-continue-btn button[type=submit]').prop('disabled', false);
+                $hidePage.remove()
+                $fakeInput.remove()
+            }, 7000);
         });
 
 //ajax in progress

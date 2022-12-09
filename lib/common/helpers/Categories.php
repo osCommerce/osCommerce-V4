@@ -919,7 +919,7 @@ class Categories {
 
           $get_categories_r = tep_db_query(
             "SELECT CONCAT('c',c.categories_id) as `key`, cd.categories_name as title, ".
-            " IF(pc.categories_id IS NULL, 0, 1) AS selected ".
+            " IF(pc.categories_id IS NULL, 0, 1) AS selected, c.categories_image as image ".
             "FROM " . TABLE_CATEGORIES_DESCRIPTION . " cd, " . TABLE_CATEGORIES . " c ".
             ($innerCategory? "inner": "left") . " join ".TABLE_PLATFORMS_CATEGORIES." pc on pc.categories_id=c.categories_id and pc.platform_id='".$platform_id."' ".
             "WHERE cd.categories_id=c.categories_id and cd.language_id='" . $languages_id . "' AND cd.affiliate_id=0 and c.parent_id='" . (int)$category_id . "' ".
@@ -927,15 +927,16 @@ class Categories {
             "order by c.sort_order, cd.categories_name"
           );
           while ($_categories = tep_db_fetch_array($get_categories_r)) {
-              //$_categories['parent'] = (int)$category_id;
+              $_categories['parent'] = (int)$category_id;
               $_categories['folder'] = true;
               $_categories['lazy'] = true;
               $_categories['selected'] = $category_selected_state && !!$_categories['selected'];
+              $_categories['image'] = is_file(DIR_FS_CATALOG_IMAGES . $_categories['image']) ? $_categories['image'] : '';
               $tree_init_data[] = $_categories;
           }
           $get_products_r = tep_db_query(
             "SELECT concat('p',p.products_id,'_',p2c.categories_id) AS `key`, ".ProductNameDecorator::instance()->listingQueryExpression('pd','pd1')." as title, p.products_id, ".
-            " IF(pp.products_id IS NULL, 0, 1) AS selected ".
+            " IF(pp.products_id IS NULL, 0, 1) AS selected, p.products_model as model ".
             "from ".TABLE_PRODUCTS_DESCRIPTION." pd left join " . TABLE_PRODUCTS_DESCRIPTION . " pd1 on pd1.products_id=pd.products_id and pd1.platform_id = '".($platform_id?$platform_id:intval(\common\classes\platform::defaultId()))."' and pd1.language_id = '".$languages_id."', ".TABLE_PRODUCTS_TO_CATEGORIES." p2c, ".TABLE_PRODUCTS." p ".
             ($inner ? "inner " : "left ") . " join ".TABLE_PLATFORMS_PRODUCTS." pp on pp.products_id=p.products_id and pp.platform_id='".$platform_id."' ".
             "WHERE pd.products_id=p.products_id and pd.language_id='".$languages_id."' and pd.platform_id='".\common\classes\platform::defaultId()."' and p2c.products_id=p.products_id and p2c.categories_id='".(int)$category_id."' ".
@@ -1318,6 +1319,7 @@ class Categories {
 
     public static function createCategoriesCache($categoryIds = null)
     {
+        return true;
         if (!is_array($categoryIds)) {
             $categories = \common\models\Categories::find()->select('categories_id')->asArray()->all();
         } else {

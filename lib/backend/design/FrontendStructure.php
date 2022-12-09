@@ -868,7 +868,7 @@ class FrontendStructure
         }
 
         foreach (\common\helpers\Acl::getExtensionPages() as $page){
-            $groupName = design::pageName($page['group']);
+            $groupName = design::pageName($page['group']??null);
             self::$pages[$page['name']] = [
                 'action' => $page['action'],
                 'name' => $page['name'],

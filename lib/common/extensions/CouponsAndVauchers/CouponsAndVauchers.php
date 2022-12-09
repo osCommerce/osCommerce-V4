@@ -147,8 +147,7 @@ class CouponsAndVauchers extends \common\classes\modules\ModuleExtensions
         if (!self::allowed()) {
             return '';
         }
-
-        $post = Yii::$app->request->post();
+        $post = $_POST; // not Yii::$app->request->post() because of manual settings of $_POST[] for apply_coupon link
 
         $manager = \common\services\OrderManager::loadManager();
         if ( strpos(Yii::$app->controller->id, 'quote')===0 ) {

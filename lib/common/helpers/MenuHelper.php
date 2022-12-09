@@ -207,7 +207,7 @@ class MenuHelper {
         $object->box_type = (int)($item['box_type'] ?? null);
         $object->acl_check = (string)($item['acl_check'] ?? null);
         $object->config_check = (string)($item['config_check'] ?? null);
-        $object->path = (string)$item['path'];
+        $object->path = (string)($item['path'] ?? null); // maybe null if box_type=1
         $object->title = (string)$item['title'];
         $object->filename = (string)($item['filename'] ?? null);
         $object->save(false);

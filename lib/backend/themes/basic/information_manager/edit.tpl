@@ -106,7 +106,7 @@
                             </tr>
 
 							<tr>
-                                <td class="label_name">&nbsp;</td>
+                                <td class="label_name">{$smarty.const.ADD_TO_DESCRIPTION}:</td>
                                 <td class="label_value">
 
                                     {\backend\design\ComponentsButton::widget(['editor' => $mItem['editor_id'], 'platform_id' => $page_data['platform_id'], 'languages_id' => $mItem['languages_id']])}

@@ -397,7 +397,7 @@ class BaseFileHelper
         if (is_link($dir)) {
             static::unlink($dir);
         } else {
-            rmdir($dir);
+            @rmdir($dir);
         }
     }
 
@@ -414,11 +414,11 @@ class BaseFileHelper
         $isWindows = DIRECTORY_SEPARATOR === '\\';
 
         if (!$isWindows) {
-            return unlink($path);
+            return @unlink($path);
         }
 
         if (is_link($path) && is_dir($path)) {
-            return rmdir($path);
+            return @rmdir($path);
         }
 
         try {

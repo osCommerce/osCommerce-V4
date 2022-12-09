@@ -76,6 +76,18 @@ class RelatedSerialize /*extends \yii\base\Component*/
         return $data->skipped;
     }
 
+    // get data considering renamed
+    private static function getPropertyData($propertyName, $data, $processConfigure)
+    {
+        if (isset($processConfigure['properties'][$propertyName]['renamed'])) {
+            if (!isset($data->data[$processConfigure['properties'][$propertyName]['renamed']])) {
+                \OscLink\Logger::printf('Column %s must be renamed to %s but it is not found', $propertyName, $processConfigure['properties'][$propertyName]['renamed']);
+            }
+            return $data->data[$processConfigure['properties'][$propertyName]['renamed']] ?? null;
+        } else {
+            return $data->data[$propertyName] ?? null;
+        }
+    }
 
     public function importModel($processModel, $data, $processConfigure, $parentObject=null)
     {
@@ -100,7 +112,7 @@ class RelatedSerialize /*extends \yii\base\Component*/
                         //$ableConfig = is_array($processConfigure) && isset($processConfigure['properties'][$property]);
                         $data->data[$property]->table = $processConfigure['properties'][$property]['table'] ?? $processModel::tableName();
                         $data->data[$property]->attribute = $processConfigure['properties'][$property]['attribute'] ?? $property;
-                        $lookupByPk[$property] = $data->data[$property]->toImportModel();
+                        $lookupByPk[$property] = self::getPropertyData($property, $data, $processConfigure)->toImportModel();
                         if ($data->data[$property] instanceof IOLanguageMap && empty($lookupByPk[$property])) {
                             $data->skipped = true;
                             $data->skipReasons[] = 'The language ' . $data->data[$property]->language . ' does not exists (attribute=' . $data->data[$property]->attribute . ')';
@@ -169,7 +181,7 @@ class RelatedSerialize /*extends \yii\base\Component*/
             }
             if ($data->data[$property] instanceof IOOrderStatus && empty($propertyValue)) {
                 $data->skipped = true;
-                $data->skipReasons[] = 'The order status "' . $data->data[$property]->name . '" will be skipped for order #' . $data->data['orders_id']->externalId . ' customer name: '. $data->data['customers_name'];
+                $data->skipReasons[] = 'The order status "' . $data->data[$property]->name . '" will be skipped for order #' . ($data->data['orders_id']->internalId ?? null);
                 break;
             }
 
@@ -203,8 +215,8 @@ class RelatedSerialize /*extends \yii\base\Component*/
 
         // {{ pass new AutoInc id to mapping
         foreach ($tableSchema->primaryKey as $name) {
-            if ($tableSchema->columns[$name]->autoIncrement && isset($data->data[$name])) {
-                $propertyValue = $data->data[$name];
+            if ($tableSchema->columns[$name]->autoIncrement) {
+                $propertyValue = self::getPropertyData($name, $data, $processConfigure);
                 if (is_object($propertyValue) && $propertyValue instanceof IOMap) {
                     $propertyValue->afterImportModel($updateObject->{$name});
                 }

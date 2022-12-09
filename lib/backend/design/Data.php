@@ -102,6 +102,7 @@ class Data
         'TEXT_THEMES_FOLDER',
         'TEXT_GENERAL_FOLDER',
         'TEXT_ALL_FILES',
+        'TEXT_POOR_QUALITY',
     ];
 
     public static function getJsonData(){

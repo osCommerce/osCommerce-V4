@@ -459,30 +459,7 @@ var App = function() {
 	}
 
 	var handleWidgets = function() {
-		$('.widget .toolbar .widget-collapse').click(function() {
-			var widget         = $(this).closest(".widget");
-			var widget_content = widget.children(".widget-content");
-			var widget_chart   = widget.children(".widget-chart");
-			var divider        = widget.children(".divider");
-
-			if (widget.hasClass('widget-closed')) {
-				// Open Widget
-				$(this).children('i').removeClass('icon-angle-up').addClass('icon-angle-down');
-				widget_content.slideDown(200, function() {
-					widget.removeClass('widget-closed');
-				});
-				widget_chart.slideDown(200);
-				divider.slideDown(200);
-			} else {
-				// Close Widget
-				$(this).children('i').removeClass('icon-angle-down').addClass('icon-angle-up');
-				widget_content.slideUp(200, function() {
-					widget.addClass('widget-closed');
-				});
-				widget_chart.slideUp(200);
-				divider.slideUp(200);
-			}
-		});
+		$('.widget .toolbar .widget-collapse').openCloseWidget();
                 $('.widget .toolbar .widget-collapse1').click(function() {
 			var widget         = $(this).parents(".widget");
 			var widget_content = widget.children(".widget-content1");

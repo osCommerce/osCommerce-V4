@@ -183,7 +183,7 @@
 
                 fields.on('change', { address_prefix: '{$type}_address', address_box:'{$type}-addresses' } , function(event){
                     checkout.copy_address(event);
-                    if ( event.target.name && event.target.name.match(/(postcode|state|country|city)/) ) {
+                    if ( event.target.name && event.target.name.match(/({implode('|',\common\services\OrderManager::getRecalculateShippingFields())})/) ) {
                         checkout.data_changed('recalculation', [{ 'name':'checked_model', 'value':'{$model->formName()}' }]);
                     }
                 })

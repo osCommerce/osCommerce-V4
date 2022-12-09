@@ -23,7 +23,8 @@ class m221020_154504_company_name_per_tax_rate extends Migration
     public function safeUp()
     {
         $this->addColumnIfMissing('tax_rates', 'company_name', $this->string(1024)->notNull()->defaultValue(''));
-        $this->db->createCommand("update tax_rates set company_name='MIKO Direct to Consumer' where company_name='' and company_number<>''")->execute();
+        $this->db->createCommand("update tax_rates set company_name='Exertis Supply Chain Services Sp.zoo' where company_name='' and company_number<>'' and tax_description LIKE '%poland%'")->execute();
+        $this->db->createCommand("update tax_rates set company_name='Exertis Supply Chain Services' where company_name='' and company_number<>''")->execute();
 
     }
 

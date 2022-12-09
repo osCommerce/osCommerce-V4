@@ -5,7 +5,9 @@
     </div>
     <div class="widget-content">
         {$manager->render('StatusTable',  ['manager' => $manager, 'order' => $order])}
+        {if !($order instanceof \common\classes\TmpOrder)}
         {$manager->render('PaymentActions',  ['manager' => $manager, 'order' => $order])}
         {$manager->render('StatusComments',  ['manager' => $manager, 'order' => $order])}
+        {/if}
     </div>
 </div>

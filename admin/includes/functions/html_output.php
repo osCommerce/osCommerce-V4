@@ -13,6 +13,9 @@
 ////
 // The HTML href link wrapper function
   function tep_href_link($page = '', $parameters = '', $connection = 'NONSSL') {
+    if (!in_array($connection, ['SSL', 'NONSSL'])) {
+      $connection = (getenv('HTTPS') == 'on') ? 'SSL' : 'NONSSL';
+    }
     if ($connection == 'NONSSL') {
       $link = HTTP_SERVER . DIR_WS_ADMIN;
     } elseif ($connection == 'SSL') {
@@ -38,6 +41,9 @@
   }
 
   function tep_catalog_href_link($page = '', $parameters = '', $connection = 'NONSSL', $platform_id ='') {
+    if (!in_array($connection, ['SSL', 'NONSSL'])) {
+      $connection = (getenv('HTTPS') == 'on') ? 'SSL' : 'NONSSL';
+    }
     if ( class_exists('Yii',false) && !Yii::$app->get('platform')->config($platform_id)->isCatalogBaseUrlWithId() ) {
       $link = Yii::$app->get('platform')->config($platform_id)->getCatalogBaseUrl( $connection == 'SSL' );
     }else

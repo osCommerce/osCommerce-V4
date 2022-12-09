@@ -3,7 +3,7 @@
 {use class="yii\helpers\Url"}
 {use class="\backend\design\editor\Formatter"}
 <tr class="dataTableRow {$rowClass}" data-opid="{$product['orders_products_id']}" data-sortKey="{$product['orders_products_id']}">
-    <td class="dataTableContent table-image-td" valign="top" align="center">
+    <td class="dataTableContent table-image-td order-product-image" valign="top" align="center">
         <div class="table-image-cell">{Html::a($image, $image_url, ['class' => 'fancybox'])}</div>
     </td>
     <td class="dataTableContent  qty-price" valign="top">{Product::getVirtualItemQuantity($product['id'], $product['qty'])}</td>
@@ -20,6 +20,7 @@
         {$manager->render('Asset', ['manager' => $manager, 'asset' => $asset])}
         {$manager->render('ProductAssets', ['manager' => $manager, 'product' => $product])}
     </td>
+    {if !($order instanceof \common\classes\TmpOrder)}
     <td class="dataTableContent" valign="top">
         <div class="small-margin-bottom">{TEXT_AUTOMATED}: <span id="products-status-{$product['orders_products_id']}" style="color:{$color}">{$status}</span></div>
         {TEXT_MANUAL}: <a href="{Yii::$app->urlManager->createUrl(['orders/products-status-history', 'opID' => $product['orders_products_id']])}" class="right-link"><i class="icon-pencil"></i></a>
@@ -96,26 +97,56 @@
         {/foreach}
     {/if}
     </td>
+    {/if}
     <td class="dataTableContent" valign="top">{$location}</td>
     <td class="dataTableContent" valign="top">{\common\helpers\Tax::display_tax_value($product['tax'])}%</td>
     <td class="dataTableContent price" valign="top">
 
-        <table class="product-table-price" cellspacing="0" cellpadding="0" border="0" width="100%">
+        <table class="product-table-price">
             <tr>
                 <td></td>
-                <td colspan="2" align="center">{TEXT_EXC_VAT}</td>
+                <td colspan="2" class="vat-info-title vat-exc">{TEXT_EXC_VAT}</td>
             </tr>
             <tr>
-                <td rowspan="3" class="product-table-price-qty"><b>{Product::getVirtualItemQuantity($product['id'], $product['qty'])}</b> <span>x <i>{ </i></span></td><td class="price-right"><b>{Formatter::priceEx((\common\helpers\Product::getVirtualItemQuantityValue($product['id']) * $product['final_price']), $product['tax'], 1, $currency, $currency_value)}</b>
-        {if $product['promo_id'] && \common\helpers\Acl::checkExtensionAllowed('Promotions')}<div class="info-hint"><div class="info-hint-box info-hint-box-left"><div class="info-hint-mustache"></div>{\common\extensions\Promotions\models\PromotionService::getPromoLinkAdmin($product['promo_id'])}</div></div>{/if}
-        {if $product['discount_description']}<div class="info-hint"><div class="info-hint-box info-hint-box-left"><div class="info-hint-mustache"></div>{\common\helpers\Specials::getLinkAdmin($product['specials_id'], $product['discount_description'])}</div></div>{/if}
-                </td><td class="price-left"><b>{Formatter::priceEx($product['final_price'], $product['tax'], $product['qty'], $currency, $currency_value)}</b></td>
+                <td rowspan="3" class="product-table-price-qty">
+                    <b>{Product::getVirtualItemQuantity($product['id'], $product['qty'])}</b>
+                    <span class="multiply-ico">x </span>
+                    <span class="brace-ico">{ </span>
+                </td>
+                <td class="price-right">
+                    <b>{Formatter::priceEx((\common\helpers\Product::getVirtualItemQuantityValue($product['id']) * $product['final_price']), $product['tax'], 1, $currency, $currency_value)}</b>
+
+                    {if $product['promo_id'] && \common\helpers\Acl::checkExtensionAllowed('Promotions')}
+                        <div class="info-hint">
+                            <div class="info-hint-box info-hint-box-left">
+                                <div class="info-hint-mustache"></div>
+                                {\common\extensions\Promotions\models\PromotionService::getPromoLinkAdmin($product['promo_id'])}
+                            </div>
+                        </div>
+                    {/if}
+                    {if $product['discount_description']}
+                        <div class="info-hint">
+                            <div class="info-hint-box info-hint-box-left">
+                                <div class="info-hint-mustache"></div>
+                                {\common\helpers\Specials::getLinkAdmin($product['specials_id'], $product['discount_description'])}
+                            </div>
+                        </div>
+                    {/if}
+                </td>
+                <td class="price-left">
+                    <b>{Formatter::priceEx($product['final_price'], $product['tax'], $product['qty'], $currency, $currency_value)}</b>
+                </td>
             </tr>
             <tr>
-                <td colspan="2" align="center" style="padding-top: 15px!important">{TEXT_INC_VAT}</td>
+                <td colspan="2" class="vat-info-title vat-inc">{TEXT_INC_VAT}</td>
             </tr>
             <tr>
-                <td class="price-right"><b>{Formatter::price((\common\helpers\Product::getVirtualItemQuantityValue($product['id']) * $product['final_price']), $product['tax'], 1, $currency, $currency_value)}</b></td><td class="price-left"><b>{Formatter::price($product['final_price'], $product['tax'], $product['qty'], $currency, $currency_value)}</b></td>
+                <td class="price-right">
+                    <b>{Formatter::price((\common\helpers\Product::getVirtualItemQuantityValue($product['id']) * $product['final_price']), $product['tax'], 1, $currency, $currency_value)}</b>
+                </td>
+                <td class="price-left">
+                    <b>{Formatter::price($product['final_price'], $product['tax'], $product['qty'], $currency, $currency_value)}</b>
+                </td>
             </tr>
         </table>
 

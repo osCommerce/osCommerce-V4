@@ -44,6 +44,7 @@ class TmpOrder extends \common\classes\extended\OrderAbstract {
         }
         
         $order->info = $this->info;
+        $order->info['order_number'] = '';
         $order->totals = $this->totals;
         $order->products = $this->products;
         $order->customer = $this->customer;
@@ -59,6 +60,8 @@ class TmpOrder extends \common\classes\extended\OrderAbstract {
         
         $insert_id = $order->save_order();
         $order->save_details();
+        $order->info['order_number'] = $insert_id;
+        $order->info['orders_id'] = $insert_id;
         $order->save_products();
         
         $tModel->child_id = $insert_id;
@@ -82,7 +85,7 @@ class TmpOrder extends \common\classes\extended\OrderAbstract {
     }
     
     public function getStatusHistoryARModel(){
-        
+        return \common\models\TmpOrdersStatusHistory::find()->orderBy('date_added, orders_status_history_id');
     }
     
     public function getHistoryARModel(){

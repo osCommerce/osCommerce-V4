@@ -41,7 +41,7 @@ class Translation
                     ->where(['translation_entity' => $entity, 'language_id' => (int)$language_id])
                     ->asArray()
                     ->all();
-        },0, new \yii\caching\TagDependency(['tags'=>['translation', 'translate_'.str_replace('/','.',$entity)]]));
+        },0, new \yii\caching\TagDependency(['tags'=>['translation', self::getTagNameForEntity($entity)]]));
         /*
         $translations = [];
         $translation_query = tep_db_query("select translation_key, translation_value from " . TABLE_TRANSLATION . " where translation_entity = '" . tep_db_input($entity) . "' and language_id = '" . (int)$language_id . "'");
@@ -351,6 +351,17 @@ class Translation
     {
         \yii\caching\TagDependency::invalidate(\Yii::$app->getCache(),'translation');
     }
+
+    public static function resetCacheEnity($entity)
+    {
+        \yii\caching\TagDependency::invalidate(\Yii::$app->getCache(),self::getTagNameForEntity($entity));
+    }
+
+    private static function getTagNameForEntity($entity)
+    {
+        return 'translate_'.str_replace('/','.',$entity);
+    }
+
 
     public static function forceConst($constNames, $entity)
     {

@@ -19,22 +19,19 @@ use Yii;
 
 class ErrorLogViewerController extends \common\classes\modules\SceletonExtensionsBackend
 {
-    private $path;
-    private $zipPath;
-    private $zipFileName;
 
     public function __construct($id, $module = null, $config = [])
     {
-        $this->zipPath = Yii::getAlias('@ext-error-log-viewer').DIRECTORY_SEPARATOR."tmp";
-        $this->zipFileName = 'logs_'.Yii::$app->session->get('login_id', 0).'_'.time().'.zip';
-        $this->path = DIRECTORY_SEPARATOR."runtime".DIRECTORY_SEPARATOR."logs";
-        $this->DeleteOldZip();
         parent::__construct($id, $module, $config);
+        if((new ErrorLogViewer())->DeleteOldZip() !== true)
+        {
+            \Yii::$app->session->setFlash('ELV', sprintf(EXT_ELV_ERR_DELETE_OLD_ZIP, (new ErrorLogViewer())->DeleteOldZip()));
+        }
     }
 
     public function actionIndex()
     {
-        $languages_id = \Yii::$app->settings->get('languages_id');
+        $languages_id = Yii::$app->settings->get('languages_id');
         $this->topButtons[] = '<button onclick="deleteAllLog()" class="btn btn-primary"><i class="icon-trash"></i>' . EXT_ELV_TEXT_CLEAR_ALL . '</button>';
         $this->topButtons[] = '<a href="'.Yii::$app->urlManager->createUrl('error-log-viewer/download').'" class="btn btn-primary"><i class="icon-download"></i>' . EXT_ELV_TEXT_DOWNLOAD_ALL_LOGS . '</a>';
 
@@ -100,10 +97,8 @@ class ErrorLogViewerController extends \common\classes\modules\SceletonExtension
 
     public function actionList()
     {
-
         $type = strtolower(Yii::$app->request->get('by', 'backend'));
 
-        $draw = Yii::$app->request->post('draw');
         if(ErrorLogViewer::getFiles($type))
         {
             foreach (ErrorLogViewer::getFiles($type) as $file)
@@ -126,7 +121,6 @@ class ErrorLogViewerController extends \common\classes\modules\SceletonExtension
 
         \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
         return $response;
-
     }
 
     public function actionDeleteAll()
@@ -177,8 +171,6 @@ class ErrorLogViewerController extends \common\classes\modules\SceletonExtension
         $id = \Yii::$app->request->post('id', false);
         $file = \Yii::$app->request->post('file', false);
 
-
-
         $reader = new LogReader($file);
         $tmp = explode('/', $file);
         $headers = $reader->getHeaders();
@@ -228,10 +220,6 @@ class ErrorLogViewerController extends \common\classes\modules\SceletonExtension
                 'title' => EXT_ELV_TEXT_CATEGORY,
                 'not_important' => 0
             ),
-//            array(
-//                'title' => ICON_ERROR,
-//                'not_important' => 0
-//            ),
         );
 
         return $this->render('view', ['file' => $file]);
@@ -251,7 +239,6 @@ class ErrorLogViewerController extends \common\classes\modules\SceletonExtension
                 $header[2],
                 $header[5],
                 $header[6],
-//                $header[7],
             );
         }
         $response = array('data' => array_reverse($list));
@@ -262,10 +249,21 @@ class ErrorLogViewerController extends \common\classes\modules\SceletonExtension
 
     public function actionDownload()
     {
-        $this->Zipping();
-        Yii::$app->response->sendFile($this->zipPath.DIRECTORY_SEPARATOR.$this->zipFileName)->on(\yii\web\Response::EVENT_AFTER_SEND, function($event) {
-            unlink($event->data);
-        }, $this->zipPath.DIRECTORY_SEPARATOR.$this->zipFileName);
+        $zip = (new ErrorLogViewer())->Zipping();
+        if($zip['status'] == "ok")
+        {
+            if (file_exists($zip['description'])) {
+                \Yii::$app->response->sendFile($zip['description'])->on(\yii\web\Response::EVENT_AFTER_SEND, function ($event) {
+                    unlink($event->data);
+                }, $zip['description']);
+            }else{
+                \Yii::$app->session->setFlash('ELV', EXT_ELV_ERR_NO_FILE_TO_DOWNLOAD);
+                return $this->redirect(\Yii::$app->urlManager->createUrl(['error-log-viewer']));
+            }
+        }else{
+            \Yii::$app->session->setFlash('ELV', sprintf(EXT_ELV_ERR_CREATE_ZIP, $zip['description']));
+            return $this->redirect(\Yii::$app->urlManager->createUrl(['error-log-viewer']));
+        }
     }
 
     public function actionViewAsText()
@@ -281,53 +279,5 @@ class ErrorLogViewerController extends \common\classes\modules\SceletonExtension
         }
         Yii::$app->response->content = $content;
     }
-
-
-
-
-    private function Zipping()
-    {
-
-
-        $sourceList = array('backend', 'frontend', 'console');
-
-        try {
-            if(!is_dir($this->zipPath)) mkdir($this->zipPath, 0777, true);
-            $zip = new \ZipArchive();
-            if($zip->open($this->zipPath . DIRECTORY_SEPARATOR . $this->zipFileName, \ZipArchive::CREATE | \ZipArchive::OVERWRITE)!== true) exit("cannot create ".$this->zipFileName);
-            foreach ($sourceList as $source)
-            {
-                $files = new \RecursiveIteratorIterator(
-                    new \RecursiveDirectoryIterator(realpath(Yii::getAlias('@'.$source).$this->path)),
-                    \RecursiveIteratorIterator::LEAVES_ONLY
-                );
-                foreach ($files as $name => $file) {
-                    if (!$file->isDir()) {
-                        $filePath = $file->getRealPath();
-                        $relativePath = $source.DIRECTORY_SEPARATOR.$file->getFilename();
-                        $zip->addFile($filePath, $relativePath);
-                    }
-                }
-            }
-            $zip->close();
-        } catch (\Exception $ex)
-        {
-            Yii::warning($ex->getMessage() . " " . $ex->getTraceAsString(), 'extensions/ErrorLogViewer');
-        }
-    }
-
-    private function DeleteOldZip()
-    {
-        if(is_dir($this->zipPath))
-        {
-            foreach(scandir($this->zipPath) as $file)
-            {
-                if(!is_file($this->zipPath.DIRECTORY_SEPARATOR.$file)) continue;
-                if((time()-filemtime($this->zipPath.DIRECTORY_SEPARATOR.$file)) > 86400) unlink($this->zipPath.DIRECTORY_SEPARATOR.$file);
-            }
-        }
-    }
-
-
 
 }

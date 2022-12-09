@@ -1010,7 +1010,7 @@ class ModulesController extends Sceleton
                                 $module->add_platform_key($platformId, $key, $value);
                             }
                             $html .= '<div class="after modules-line"><div class="modules-label"><b>' . $value['title'] . '</b><div class="modules-description">' . $value['description'] . '</div></div>';
-                            $html .= $this->buildKeyHtml($class, $key, $value['set_function'], $platformValue, $languages_id);
+                            $html .= $this->buildKeyHtml($class, $key, $value['set_function']??null, $platformValue, $languages_id);
                             $html .= '</div><br>';
                         }
                         $html = substr($html, 0, strrpos($html, '<br>'));
@@ -1069,8 +1069,11 @@ class ModulesController extends Sceleton
                     ->asArray()
                     ->one();
         $platformName = $pRow['platform_name'] ?? '';
-        
-        $this->navigation[] = array('link' => Yii::$app->urlManager->createUrl('modules/index'), 'title' => $mInfo->title . ' - ' . $platformName);
+        $title = $mInfo->title;
+        if ($this->module_type!='extensions' && !empty($platformName)) {
+            $title .= ' - ' . $platformName;
+        }
+        $this->navigation[] = array('link' => Yii::$app->urlManager->createUrl('modules/index'), 'title' => $title );
         $this->view->extra_params = $this->view->extra_params ?? null;
         return $this->render('edit.tpl', [
             'mainKey' => $keys,

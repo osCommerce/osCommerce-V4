@@ -52,6 +52,10 @@ class ItemsOnPage extends Widget
       $view[] = $searchResults * 4;
       $view[] = $searchResults * 8;
 
+      if ($_SESSION['max_items'] && !in_array($_SESSION['max_items'], $view)) {
+          unset($_SESSION['max_items']);
+      }
+
       Info::sortingId();
       return IncludeTpl::widget([
         'file' => 'boxes/catalog/items-on-page.tpl',

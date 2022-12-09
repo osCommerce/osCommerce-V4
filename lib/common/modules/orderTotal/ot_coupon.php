@@ -389,6 +389,12 @@ class ot_coupon extends ModuleTotal {
                     $get_result['coupon_minimum_order'] *= $currencies->get_market_price_rate($get_result['coupon_currency'], DEFAULT_CURRENCY);
                     if ($get_result['coupon_type'] == 'S') {
                         $od_amount = $order->info['shipping_cost_exc_tax'];
+                        if ($get_result['restrict_to_products'] || $get_result['restrict_to_categories']) {
+                            $od_amount = 0;
+                            if (is_array($this->validProducts) && count($this->validProducts) > 0) {
+                                $od_amount = $order->info['shipping_cost_exc_tax'];
+                            }
+                        }
                         $result['method'] = 'free_shipping';
                     } else {
 
@@ -493,6 +499,16 @@ class ot_coupon extends ModuleTotal {
                             $shippingTaxDiscountSumm = \common\helpers\Tax::calculate_tax($shippingDiscount, $shipping_tax);
                         }
                         if ($shipping_tax_calculated && $shippingTaxDiscountSumm > 0) {
+                            if (isset($order->info['tax_groups'][$shipping_tax_desc])) {
+                                $order->info['tax_groups'][$shipping_tax_desc] = $order->info['tax_groups'][$shipping_tax_desc] - $shippingTaxDiscountSumm;
+                            }
+                            $this->tax_info['tax'] -= $shippingTaxDiscountSumm;
+                            $taxDiscountSumm += $shippingTaxDiscountSumm;
+                        }
+                    } elseif ($get_result['coupon_type'] == 'S' && is_array($this->validProducts) && count($this->validProducts) > 0) {
+                        $shippingDiscount = $order->info['shipping_cost_exc_tax'];
+                        $shippingTaxDiscountSumm = \common\helpers\Tax::calculate_tax($shippingDiscount, $shipping_tax);
+                        if ($shippingTaxDiscountSumm > 0) {
                             if (isset($order->info['tax_groups'][$shipping_tax_desc])) {
                                 $order->info['tax_groups'][$shipping_tax_desc] = $order->info['tax_groups'][$shipping_tax_desc] - $shippingTaxDiscountSumm;
                             }

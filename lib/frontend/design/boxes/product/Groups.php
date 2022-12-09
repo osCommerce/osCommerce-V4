@@ -81,6 +81,7 @@ class Groups extends Widget {
         unset($products_all);
 
         $pids = array_keys($products_array);
+        if ( !is_array($limit_products) ) $limit_products = [];
         if ( count($limit_products)>0 ) {
             $pids = array_intersect($pids, $limit_products);
         }

@@ -3,10 +3,10 @@
 /**
  * This file is part of osCommerce ecommerce platform.
  * osCommerce the ecommerce
- * 
+ *
  * @link https://www.oscommerce.com
  * @copyright Copyright (c) 2000-2022 osCommerce LTD
- * 
+ *
  * Released under the GNU General Public License
  * For the full copyright and license information, please view the LICENSE.TXT file that was distributed with this source code.
  */
@@ -31,7 +31,7 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
     private $orderRepository;
 
     public function actionIndex() {
-        
+
         global $wish_list, $breadcrumb;
         global $session_started, $cart;
 
@@ -48,7 +48,7 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
         if ($cart->count_contents() < 1 || $cart->hasBlockedProducts()) {
             tep_redirect(tep_href_link(FILENAME_SHOPPING_CART));
         }
-        
+
         if (defined('MAX_ORDER_PRICE') && MAX_ORDER_PRICE > 0) {
             if ($cart->show_total() > (int)MAX_ORDER_PRICE) {
                 $messageStack->add_session(ERROR_AMOUNT_TOO_LARGE, 'shopping_cart', 'error');
@@ -61,12 +61,12 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
         $this->manager->remove("credit_covers");
 
         $cart->order_id = 0;
-        
+
         if (Yii::$app->request->get('guest')){
             $this->manager->set('guest', true);
             $this->manager->remove('account');
         }
-        
+
         if (Yii::$app->request->get('account')){
             $this->manager->set('account', true);
             $this->manager->remove('guest');
@@ -92,7 +92,7 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
         foreach (\common\helpers\Hooks::getList('checkout/index', '') as $filename) {
             include($filename);
         }
-        
+
         if (Yii::$app->request->isPost) {
 
             if ($ext = \common\helpers\Acl::checkExtensionAllowed('Neighbour', 'allowed')) {
@@ -107,7 +107,7 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
                     }
                 }
             }
-            
+
             if ($ext = \common\helpers\Acl::checkExtensionAllowed('DeliveryOptions', 'allowed')) {
                 $ext::saveDetails($this->manager);
             }
@@ -175,7 +175,7 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
                 $this->manager->setPayment($_GET['payment_error']);
             }
         }
-        
+
         $this->manager->getShippingQuotesByChoice();
 
         $order->prepareOrderInfo();
@@ -391,7 +391,7 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
             tep_redirect(tep_href_link(FILENAME_SHOPPING_CART));
         }
 
-// avoid hack attempts during the checkout procedure by checking the internal cartID        
+// avoid hack attempts during the checkout procedure by checking the internal cartID
         if ($cart->cartID !== $this->manager->get('cartID')) {
             tep_redirect(tep_href_link(FILENAME_CHECKOUT_SHIPPING, 'cartChanged', 'SSL'));
         }
@@ -574,7 +574,7 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
         } else {
             \common\components\google\widgets\GoogleTagmanger::setEvent('orderStep3');
         }
-        
+
         $render_data = [
             'shipping_address_link' => tep_href_link('checkout/index#shipping_address'),
             'billing_address_link' => tep_href_link('checkout/index#billing_address'),
@@ -675,6 +675,10 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
 
         \common\components\google\widgets\GoogleTagmanger::setEvent('orderSuccess');
 
+        foreach (\common\helpers\Hooks::getList('checkout/success', '') as $filename) {
+            include($filename);
+        }
+
         if (defined('AUTO_LOGOFF_GUEST_ON_SUCCESS') && AUTO_LOGOFF_GUEST_ON_SUCCESS=='True' && !\Yii::$app->user->isGuest) {
             $customer = \Yii::$app->user->getIdentity();
             if ($customer->opc_temp_account == 1) {
@@ -738,7 +742,7 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
 
         $payment_modules = $this->manager->getPaymentCollection();
         $withoutPayment = count($payment_modules->getEnabledModules()) ? false : true;
-        
+
         if (!$withoutPayment){
             if ((tep_not_null(MODULE_PAYMENT_INSTALLED)) && (!$this->manager->has('payment'))) {
                 tep_redirect(tep_href_link(FILENAME_CHECKOUT_PAYMENT, '', 'SSL'));
@@ -777,7 +781,7 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
 /** @var \common\classes\Order $order */
         $order = $this->manager->createOrderInstance('\common\classes\Order');
         $this->manager->checkoutOrderWithAddresses();
-        
+
         if ($this->manager->isShippingNeeded() && !$this->manager->checkShippingIsValid()) {
             tep_redirect(tep_href_link(FILENAME_CHECKOUT_SHIPPING, 'error_message=' . urlencode(ERROR_NO_SHIPPING_METHOD), 'SSL'));
         }
@@ -805,7 +809,7 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
 
         $this->manager->totalProcess();
 
-// load the before_process function from the payment modules        
+// load the before_process function from the payment modules
 
         if (!$withoutPayment) {
             $payment_modules->before_process();
@@ -826,7 +830,7 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
         if ($ext = \common\helpers\Acl::checkExtensionAllowed('DeliveryOptions', 'allowed')) {
             $ext::toOrder($order, $this->manager);
         }
-        
+
         if (!$withoutPayment) {
             $this->manager->getTotalCollection()->apply_credit(); //ICW ADDED FOR CREDIT CLASS SYSTEM
         }
@@ -843,7 +847,7 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
         if (!$withoutPayment) {
             $payment_modules->after_process();
         }
-        
+
         $payment_modules->trackCredits();
 
         $this->manager->clearAfterProcess();
@@ -981,7 +985,7 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
         } else {
             $this->manager->setModulesVisibility(['shop_order']);
         }
-            
+
         Yii::configure($this->manager, [
             'combineShippings' => !(($ext = \common\helpers\Extensions::isAllowed('CollectionPoints')) && $ext::isSeparateShipping()),
         ]);
@@ -1533,7 +1537,7 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
         if ($orderModel->stock_updated && defined('STOCK_LIMITED') && STOCK_LIMITED == 'true') {
             \common\helpers\Order::restock($order_id);
         }
-        
+
         $cart = new \common\classes\shopping_cart($order_id);
         if (\common\helpers\Acl::checkExtensionAllowed('MultiCart', 'allowed')){
             $key = \common\extensions\MultiCart\MultiCart::getCurrentCartKey();

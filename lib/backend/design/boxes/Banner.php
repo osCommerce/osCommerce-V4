@@ -12,6 +12,8 @@
 
 namespace backend\design\boxes;
 
+use common\models\Banners;
+use common\models\BannersLanguages;
 use Yii;
 use yii\base\Widget;
 
@@ -29,12 +31,12 @@ class Banner extends Widget
 
   public function run()
   {
-		global $languages_id, $language;
-		$banners = array();
-    $sql = tep_db_query("select distinct banners_group from " . TABLE_BANNERS_NEW . " nb where 1/* and nb.status = '1'*/ ");
-    while ($row=tep_db_fetch_array($sql)){
-      $banners[] = $row;
-    }
+      $banners = Banners::find()
+          ->alias('b')
+          ->select(['b.banners_group'])->distinct()
+          ->join('inner join', BannersLanguages::tableName() . ' bl', 'b.banners_id = bl.banners_id')
+          ->orderBy('b.banners_group')
+          ->asArray()->all();
 
     /* support old versions */
     $this->settings[0]['banners_group'] = $this->settings[0]['banners_group'] ?? null;
@@ -55,12 +57,24 @@ class Banner extends Widget
     }
     /* /support old versions */
 
-    return $this->render('banner.tpl', [
-      'id' => $this->id,
-      'params'=> $this->params,
-      'banners' => $banners,
-      'settings' => $this->settings,
-      'visibility' => $this->visibility,
-    ]);
+      $content = $this->render('banner.tpl', [
+          'id' => $this->id,
+          'params'=> $this->params,
+          'banners' => $banners,
+          'settings' => $this->settings,
+          'visibility' => $this->visibility,
+      ]);
+
+      if ($this->params && $this->params['main_content']) {
+          return $content;
+      }
+
+      return $this->render('settings.tpl', [
+          'content' => $content,
+          'id' => $this->id,
+          'params'=> $this->params,
+          'settings' => $this->settings,
+          'visibility' => $this->visibility,
+      ]);
   }
 }

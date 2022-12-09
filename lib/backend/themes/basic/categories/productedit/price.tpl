@@ -420,16 +420,12 @@ if !\common\helpers\Extensions::isCustomerGroupsAllowed() || substr($idSuffix, -
   </div>
 {/if}
 {if !$hideSuppliersPart && $pInfo->parent_products_id==0}
-{if \common\helpers\Acl::rule(['TABLE_HEADING_PRODUCTS', 'IMAGE_EDIT', 'TAB_BUNDLES'])}
+{if \common\helpers\Acl::checkExtensionAllowed('ProductBundles', 'allowed') && \common\helpers\Acl::rule(['TABLE_HEADING_PRODUCTS', 'IMAGE_EDIT', 'TAB_BUNDLES'])}
   <div class="cbox-right is-bundle">
     <div class="widget box box-no-shadow" style="margin-bottom: 0;">
       <div class="widget-header"><h4>{$smarty.const.TAB_BUNDLES}</h4></div>
       <div class="widget-content" id="bundles-placeholder">
-        {if \common\helpers\Acl::checkExtensionAllowed('ProductBundles', 'allowed')}
           {\common\extensions\ProductBundles\ProductBundles::productBlock($pInfo)}
-        {else}   
-          {include 'productedit/bundles.tpl'}
-        {/if}
       </div>
     </div>
   </div>

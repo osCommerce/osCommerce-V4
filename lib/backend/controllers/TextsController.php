@@ -235,8 +235,6 @@ class TextsController extends Sceleton {
           $search .= " and t1.checked=0 ";
         }
 
-        
-        $current_page_number = ($start / $length) + 1;
         $responseList = [];
 
         if (isset($_GET['order'][0]['column']) && $_GET['order'][0]['dir']) {
@@ -305,8 +303,7 @@ class TextsController extends Sceleton {
         $orders_status_query = tep_db_query($orders_status_query_raw);
         $query_numrows = tep_db_num_rows($orders_status_query);
 
-        $offset = $start - $query_numrows;
-        $orders_status_query_raw .= " limit " . max($offset, 0) . ", " . $length;
+        $orders_status_query_raw .= " limit " . $start . ", " . $length;
         
         $orders_status_query = tep_db_query($orders_status_query_raw);
 

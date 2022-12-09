@@ -84,6 +84,14 @@ return [
                 'inventories' => [
                     'xmlCollection' => 'Inventories>Inventory',
                 ],
+                'productImagesList' => [
+                    'xmlCollection' => 'ImagesList>Image',
+                    'properties' => [
+                        //'products_images_id' => ['renamed' => 'id', 'class'=>'IOPK'],
+                        //'id' => ['class'=>'IOPK', 'table'=>'products_images', 'attribute'=>'products_images_id'],
+                        //'image' => ['class'=>'IOAttachment', 'location'=>'@images']
+                    ],
+                ],
 /*
                 'productImagesList' => [
                     'xmlCollection' => 'ImagesList>Image',
@@ -192,6 +200,7 @@ return [
             'afterImport' => function($model, $data) {
                     if (isset($data->data['products_id']) && is_object($data->data['products_id'])) {
                         $products_id = $data->data['products_id']->toImportModel();
+                        $logPrefix = sprintf('products(%s)', $products_id);
 
                         $groups = array();
                         if ($ext = \common\helpers\Acl::checkExtension('UserGroups', 'getGroupsArray')) {
@@ -336,6 +345,7 @@ return [
                             $tmp_name = $images_path . $orig_file;
 
                             if (!empty($orig_file) && !is_file($tmp_name)) {
+                                \OscLink\Logger::printf("products(%s): image missed %s", $product['products_id'], $orig_file);
                                 file_put_contents($images_path . 'products/missing_img.txt', 'pid:' . $product['products_id'] . ":{$orig_file}\n", FILE_APPEND);
                             }
 
@@ -365,6 +375,7 @@ return [
                                 }
 
                                 if (!empty($orig_file) && !is_file($tmp_name)) {
+                                    \OscLink\Logger::printf("products(%s): image missed %s", $product['products_id'], $orig_file);
                                     file_put_contents($images_path . 'products/missing_img.txt', 'pid:' . $product['products_id'] . ":{$orig_file}\n", FILE_APPEND);
                                 }
 
@@ -389,9 +400,42 @@ return [
                                     }
                                 }
                             }
+                            // load products_images
+                            if ($localProduct && isset($data->data['productImagesList']->data) && is_array($data->data['productImagesList']->data) ) {
+                                $sort_order = 8;
+                                foreach($data->data['productImagesList']->data as $obj) {
+                                    if (isset($obj->data['image']) && is_object($obj->data['image']) && $obj->data['image'] instanceof \OscLink\XML\IOAttachment) {
+                                        $url = $obj->data['image']->url;
+                                        $originalFile = $obj->data['image']->value;
+                                        $description = $obj->data['htmlcontent'];
+                                        $localFile = \OscLink\XML\IOCore::get()->getLocalLocation('@images/'.$originalFile);
+                                        $successDownload = \OscLink\XML\IOCore::get()->download($url, $localFile, $logPrefix);
+                                        if ($successDownload) {
+                                            $productImport['images'][] = [
+                                                'default_image' => 0,
+                                                'image_status' => 1,
+                                                'sort_order' => $sort_order++,
+                                                'image_description' => [
+                                                    '00' => [
+                                                        'image_source_url' => $localFile,
+                                                        'orig_file_name' => pathinfo($originalFile, PATHINFO_BASENAME),
+                                                        'image_title' => $description ?? (string) $product_name,
+                                                    ]
+                                                ]
+                                            ];
+                                            \OscLink\Logger::printf('%s: additional products_image(%s) was added', $logPrefix, $originalFile);
+                                        }
+                                    }
+                                }
+                            }
+
                             if ($localProduct) {
                                 $localProduct->importArray($productImport);
-                                $localProduct->save(false);
+                                try {
+                                    $localProduct->save(false);
+                                } catch (\Exception $e) {
+                                    \OscLink\Logger::printf('%s: Error while saving ER model: %s', $logPrefix, $e->getMessage());
+                                }
                             }
                         }
                     }

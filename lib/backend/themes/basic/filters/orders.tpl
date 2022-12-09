@@ -56,10 +56,12 @@
             <label>{$smarty.const.TEXT_STATUS}</label>
             {Html::dropDownList('status[]', $app->controller->view->filters->status_selected, $app->controller->view->filters->status, ['class' => 'form-control', 'multiple' => 'multiple', 'data-role' => 'multiselect', 'id' => 'orderStatuses'])}
         </div>
+        {if empty($tmpOrderController)}
         <div class="wl-td">
             <label>{$smarty.const.TEXT_STOCK_DEFICIT_QUANTITY}</label>
             {Html::checkbox('deficit_only', $app->controller->view->filters->deficit_only, ['class' => 'form-control-small'])}
         </div>
+        {/if}
         <div class="tl_filters_title tl_filters_title_border">{$smarty.const.TEXT_ORDER_PLACED}</div>
         <div class="wl-td w-tdc">
              <label class="radio_label"><input type="radio" name="date" value="presel" id="presel" {if $app->controller->view->filters->presel}checked{/if} /> {$smarty.const.TEXT_PRE_SELECTED}</label>
@@ -91,6 +93,7 @@
            <input name="delivery_state" value="{$app->controller->view->filters->delivery_state}" id="selectState" type="text" class="form-control" placeholder="{$smarty.const.TEXT_TYPE_COUNTY}" {if $app->controller->view->filters->delivery_country == ''}disabled{/if} />
         </div>
         {/if}
+        {if !empty($app->controller->view->filters->fCoupons)}
         <div class="tl_filters_title tl_filters_title_border">{$smarty.const.TEXT_USED_COUPON}</div>
         <div class="wl-td w-tdc">
             <label class="radio_label">
@@ -98,6 +101,7 @@
             </label>
             {Html::dropDownList('fc_id[]', $app->controller->view->filters->fc_id, $app->controller->view->filters->fCoupons, ['class' => 'form-control', 'multiple' => 'multiple', 'data-role' => 'multiselect'])}
         </div>
+        {/if}
     </div>
     <div class="item_filter item_filter_4">
         <div class="tl_filters_title {*tl_filters_title_border*}">{$smarty.const.TEXT_PAYMENT_SHIPPING}</div>
@@ -113,8 +117,8 @@
         <div class="wl-tdr wl-td-from " style="padding-bottom:10px;">
            <table cellspacing="0" cellpadding="0" width="100%">
              <tr>
-               <td><label class="radio_label"><input type="checkbox" id="fpFrom" {if isset($app->controller->view->filters->fpFrom) && $app->controller->view->filters->fpFrom}checked{/if} /><span> {$smarty.const.TEXT_FROM}</span></label><input name="fp_from" value="{if isset($app->controller->view->filters->fp_from)}{$app->controller->view->filters->fp_from}{/if}" id="fpFromSumm" type="text" class="form-control-small form-control"  {if !(isset($app->controller->view->filters->fpFrom) && $app->controller->view->filters->fpFrom)}disabled{/if} /></td>
-               <td><label class="radio_label"><input type="checkbox" id="fpTo" {if isset($app->controller->view->filters->fpTo) && $app->controller->view->filters->fpTo}checked{/if} /><span> {$smarty.const.TEXT_TO}</span></label><input name="fp_to" value="{if isset($app->controller->view->filters->fp_to)}{$app->controller->view->filters->fp_to}{/if}" id="fpToSumm" type="text" class="form-control-small form-control"  {if !(isset($app->controller->view->filters->fpTo) && $app->controller->view->filters->fpTo)}disabled{/if} /></td>
+               <td><label class="radio_label"><input type="checkbox" class="_uniform" id="fpFrom" {if isset($app->controller->view->filters->fpFrom) && $app->controller->view->filters->fpFrom}checked{/if} /><span> {$smarty.const.TEXT_FROM}</span></label><input name="fp_from" value="{if isset($app->controller->view->filters->fp_from)}{$app->controller->view->filters->fp_from}{/if}" id="fpFromSumm" type="text" class="form-control-small form-control"  {if !(isset($app->controller->view->filters->fpFrom) && $app->controller->view->filters->fpFrom)}disabled{/if} /></td>
+               <td><label class="radio_label"><input type="checkbox" class="_uniform" id="fpTo" {if isset($app->controller->view->filters->fpTo) && $app->controller->view->filters->fpTo}checked{/if} /><span> {$smarty.const.TEXT_TO}</span></label><input name="fp_to" value="{if isset($app->controller->view->filters->fp_to)}{$app->controller->view->filters->fp_to}{/if}" id="fpToSumm" type="text" class="form-control-small form-control"  {if !(isset($app->controller->view->filters->fpTo) && $app->controller->view->filters->fpTo)}disabled{/if} /></td>
              </tr>
            </table>
         </div>

@@ -240,17 +240,21 @@ class CustomerRegistration extends Model {
     }
 
     public function requiredOnCreate($attribute, $params) {
-        switch ($attribute) {
-            case 'erp_customer_id':
-                if (in_array(ACCOUNT_ERP_CUSTOMER_ID, $this->getRequired()) && empty($this->$attribute)) {
-                    $this->addError($attribute, 'Invalid ERP Id');
-                }
-                break;
-            case 'erp_customer_code':
-                if (in_array(ACCOUNT_ERP_CUSTOMER_CODE, $this->getRequired()) && empty($this->$attribute)) {
-                    $this->addError($attribute, 'Invalid ERP Code');
-                }
-                break;
+
+        if($ext = \common\helpers\Acl::checkExtensionAllowed('CustomerCode')) {
+            /* @var \common\extensions\CustomerCode */
+            switch ($attribute) {
+                case 'erp_customer_id':
+                    if (in_array(\common\helpers\PlatformConfig::getVal('EXT_CUSTOMER_CODE_ERP_ID'), $this->getRequired()) && empty($this->$attribute)) {
+                        $this->addError($attribute, 'Invalid ERP Id');
+                    }
+                    break;
+                case 'erp_customer_code':
+                    if (in_array(\common\helpers\PlatformConfig::getVal('EXT_CUSTOMER_CODE_ERP_CODE'), $this->getRequired()) && empty($this->$attribute)) {
+                        $this->addError($attribute, 'Invalid ERP Code');
+                    }
+                    break;
+            }
         }
     }
 
@@ -757,12 +761,17 @@ class CustomerRegistration extends Model {
                     $fields[] = 'dobTmp';
                 }
                 $fields[] = 'status';
-                if (defined('ACCOUNT_ERP_CUSTOMER_ID') && in_array(ACCOUNT_ERP_CUSTOMER_ID, ['required', 'required_register', 'visible', 'visible_register'])) {
-                    $fields[] = 'erp_customer_id';
+
+                if($ext = \common\helpers\Acl::checkExtensionAllowed('CustomerCode')) {
+                    /* @var \common\extensions\CustomerCode */
+                    if ($ext::isEnabledErpId()) {
+                        $fields[] = 'erp_customer_id';
+                    }
+                    if ($ext::isEnabledErpCode()) {
+                        $fields[] = 'erp_customer_code';
+                    }
                 }
-                if (defined('ACCOUNT_ERP_CUSTOMER_CODE') && in_array(ACCOUNT_ERP_CUSTOMER_CODE, ['required', 'required_register', 'visible', 'visible_register'])) {
-                    $fields[] = 'erp_customer_code';
-                }
+
                 $fields[] = 'dob';
                 $fields[] = 'dobTmp';
                 $fields[] = 'platform_id';
@@ -800,12 +809,18 @@ class CustomerRegistration extends Model {
                 if ($this->useExtending) {
                     $fields[] = 'status';
                     $fields[] = 'group';
-                    if (defined('ACCOUNT_ERP_CUSTOMER_ID') && in_array(ACCOUNT_ERP_CUSTOMER_ID, ['required', 'required_register', 'visible', 'visible_register'])) {
-                        $fields[] = 'erp_customer_id';
+                    if(\common\helpers\Acl::checkExtensionAllowed('CustomerCode')) {
+                        if($ext = \common\helpers\Acl::checkExtensionAllowed('CustomerCode')) {
+                            /* @var \common\extensions\CustomerCode */
+                            if ($ext::isEnabledErpId()) {
+                                $fields[] = 'erp_customer_id';
+                            }
+                            if ($ext::isEnabledErpCode()) {
+                                $fields[] = 'erp_customer_code';
+                            }
+                        }
                     }
-                    if (defined('ACCOUNT_ERP_CUSTOMER_CODE') && in_array(ACCOUNT_ERP_CUSTOMER_CODE, ['required', 'required_register', 'visible', 'visible_register'])) {
-                        $fields[] = 'erp_customer_code';
-                    }
+                    
                     $fields[] = 'platform_id';
                     $fields[] = 'language_id';
                     $fields[] = 'admin_id';

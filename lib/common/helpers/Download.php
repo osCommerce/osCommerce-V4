@@ -13,6 +13,8 @@
 
 namespace common\helpers;
 
+use common\models\OrdersProductsDownload;
+
 class Download {
 
     /**
@@ -57,6 +59,17 @@ class Download {
             @rmdir($dir . $subdir);
         }
         closedir($h1);
+    }
+
+    public static function updateOrderedFile($product_id, $new_filename)
+    {
+        \Yii::$app->getDb()->createCommand(
+            "UPDATE " . \common\models\OrdersProductsDownload::tableName() . " opd " .
+            "INNER JOIN " . \common\models\OrdersProducts::tableName() . " op ON opd.orders_id=op.orders_id AND opd.orders_products_id=op.orders_products_id " .
+            "SET opd.orders_products_filename=:new_filename " .
+            "WHERE op.products_id=:product_id",
+            [':product_id' => (int)$product_id, ':new_filename' => (string)$new_filename]
+        )->execute();
     }
 
 }

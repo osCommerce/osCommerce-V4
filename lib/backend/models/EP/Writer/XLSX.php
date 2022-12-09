@@ -65,7 +65,7 @@ class XLSX extends BaseObject implements WriterInterface
 
         $row = 1;
         if (!empty($this->descriptions['top'])) {
-          $sheet->mergeCells('A1:' . chr(ord('A')+sizeof($headers)-1) . '1');
+          $sheet->mergeCells('A1:' . \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(sizeof($headers)) . '1');
           $sheet->setCellValueByColumnAndRow(1, $row, $this->descriptions['top']);
           $linesCnt = count(explode("\n", $this->descriptions['top']));
           if ($linesCnt>1) {
@@ -79,7 +79,7 @@ class XLSX extends BaseObject implements WriterInterface
         }
         for ($i = 0, $l = sizeof($headers); $i < $l; $i++) {
             $sheet->setCellValueByColumnAndRow($i + 1, $row, $headers[$i]);
-            $sheet->getColumnDimension(chr(ord('A')+$i))->setAutoSize(true);
+            $sheet->getColumnDimension(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($i+1))->setAutoSize(true);
         }
         $styleArray = [
                 'font' => [
@@ -104,8 +104,10 @@ class XLSX extends BaseObject implements WriterInterface
                     ],
                 ],*/
             ];
-        $sheet->getStyle('A' . $row . ':' . chr(ord('A')+sizeof($headers)-1) . $row)->applyFromArray($styleArray);
-
+        $sheet->getStyle('A' . $row . ':' . \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(sizeof($headers)) . $row)->applyFromArray($styleArray);
+        $sheet->getStyle('A:' . \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(sizeof($headers)))
+            ->getNumberFormat()
+            ->setFormatCode(\PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_TEXT);
         $this->row_counter++;
         $this->_first_write = false;
     }
@@ -146,7 +148,12 @@ class XLSX extends BaseObject implements WriterInterface
          */
         foreach (array_keys($this->columns) as $idx=>$columnName) {
             if ( isset($writeData[$columnName]) ) {
-                $sheet->setCellValueByColumnAndRow($idx + 1, ($this->row_counter + 1), $writeData[$columnName]);
+                if ( true ) {
+                    $sheet->getCellByColumnAndRow($idx + 1, ($this->row_counter + 1))
+                        ->setValueExplicit($writeData[$columnName], \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+                }else {
+                    $sheet->setCellValueByColumnAndRow($idx + 1, ($this->row_counter + 1), $writeData[$columnName]);
+                }
             }else{
                 $sheet->setCellValueByColumnAndRow($idx + 1, ($this->row_counter + 1), '');
             }

@@ -128,4 +128,8 @@ class Php8 {
         }
     }
 
+    public static function str_start_with($haystack, $needle)
+    {
+        return (string)$needle !== '' && strncmp($haystack, $needle, strlen($needle)) === 0;
+    }
 }

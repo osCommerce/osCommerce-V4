@@ -59,6 +59,11 @@ class Banner extends Widget
             $this->settings[0]['banners_group'] = $this->params['banners_group'];
         }
 
+        $andWhere = '';
+        if ($this->settings[0]['ban_id']) {
+            $andWhere = ' and bl.banners_id = ' . $this->settings[0]['ban_id'] . ' ';
+        }
+
         $use_phys_platform = true;
         if ($ext = \common\helpers\Acl::checkExtensionAllowed('AdditionalPlatforms', 'allowed')){
             if ($ext::checkSattelite()){
@@ -67,6 +72,7 @@ class Banner extends Widget
                         " nb2p, " . TABLE_BANNERS_NEW . " nb, " . TABLE_BANNERS_LANGUAGES .
                         " bl where bl.banners_id = nb.banners_id AND bl.language_id='" . $languages_id . "' AND nb2p.banners_id=nb.banners_id "
                         . "AND nb2p.platform_id='" . $s_platform_id . "'  and nb.banners_group = '" . $this->settings[0]['banners_group'] . "' "
+                        . $andWhere
                         ." and (nb.expires_date is null or nb.expires_date >= now()) and (nb.date_scheduled is null or nb.date_scheduled <= now()) "
                         . "AND (bl.banners_html_text!='' OR bl.banners_image!='' OR bl.banners_url)
                          order by " . ($this->settings[0]['banners_type'] == 'random' ? " RAND() LIMIT 1" : " nb.sort_order"));
@@ -79,8 +85,9 @@ class Banner extends Widget
         if ($use_phys_platform){
             $sql = tep_db_query("select * from " . TABLE_BANNERS_TO_PLATFORM . " nb2p, " . TABLE_BANNERS_NEW . " nb, " . TABLE_BANNERS_LANGUAGES .
                     " bl where bl.banners_id = nb.banners_id AND bl.language_id='" . $languages_id . "' AND nb2p.banners_id=nb.banners_id AND"
-                    . " nb2p.platform_id='" . $_platform_id . "'  and nb.banners_group = '" . $this->settings[0]['banners_group'] . "' AND"
-                    ." (nb.expires_date is null or nb.expires_date >= now()) and (nb.date_scheduled is null or nb.date_scheduled <= now()) and "
+                    . " nb2p.platform_id='" . $_platform_id . "'  and nb.banners_group = '" . $this->settings[0]['banners_group'] . "' "
+                    . $andWhere
+                    ." AND (nb.expires_date is null or nb.expires_date >= now()) and (nb.date_scheduled is null or nb.date_scheduled <= now()) and "
                     . "(bl.banners_html_text!='' OR bl.banners_image!='' OR bl.banners_url) order by " . ($this->settings[0]['banners_type'] == 'random' ? " RAND() LIMIT 1" : " nb.sort_order"));
         }
         if (@$this->settings[0]['banners_type'] == 'random') {
@@ -111,7 +118,6 @@ class Banner extends Widget
                 $bannerGroupSettings[$group['image_width']] = $group;
             }
         }
-
         while ($row = tep_db_fetch_array($sql)) {
             $row['is_banners_image_valid'] = (!empty($row['banners_image']) && is_file(Images::getFSCatalogImagesPath().$row['banners_image']));
 
@@ -165,12 +171,26 @@ class Banner extends Widget
 
         if (count($banners) == 0) return '';
 
-        return IncludeTpl::widget(['file' => 'boxes/banner.tpl', 'params' => [
+        $settings = array_merge(self::$defaultSettings, $this->settings[0]);
+        $template = '';
+        if ($this->settings[0]['template']) {
+            $template = '-' . $this->settings[0]['template'];
+
+            Info::addBoxToCss('slick');
+            if ($this->id) {
+                Info::addJsData(['widgets' => [ $this->id => [
+                    'settings' => $settings,
+                    'colInRowCarousel' => $this->settings['colInRowCarousel']
+                ]]]);
+            }
+        }
+
+        return IncludeTpl::widget(['file' => 'boxes/banner' . (string)$template . '.tpl', 'params' => [
             'id' => $this->id,
             'banners' => $banners,
             'banner_type' => $this->settings[0]['banners_type'],
             'banner_speed' => $banner_speed,
-            'settings' => array_merge(self::$defaultSettings, $this->settings[0])
+            'settings' => $settings
         ]]);
     }
 
@@ -336,6 +356,8 @@ class Banner extends Widget
                 return 'bottom-center';
             case '8':
                 return 'bottom-right';
+            case '9':
+                return 'bottom-text';
         }
         return '';
     }

@@ -197,3 +197,18 @@ input[name=delivery_date]{width:50%;}
 .product-details .wb-or-prod label {
   width:100%;	
 }
+.order-product-image {
+  padding: 0 !important;
+  text-align: center;
+  vertical-align: middle !important;
+  width: 150px;
+}
+.order-product-image img {
+  height: 90px;
+  width: 150px;
+  object-fit: contain;
+  object-position: 50% 50%;
+}
+table.table table.table {
+  margin-bottom: 0 !important;
+}

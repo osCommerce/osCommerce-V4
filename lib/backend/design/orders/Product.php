@@ -146,6 +146,7 @@ class Product extends Widget {
         return $this->render('product',[
             'rowClass' => $rowClass,
             'manager' => $this->manager,
+            'order' => $this->order,
             'opsmArray' => $opsmArray,
             'product' => $this->product,
             'image' => Images::getImage($this->product['id'], 'Small'),

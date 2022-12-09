@@ -20,7 +20,7 @@
             </div>
         </div>
     </div>
-            
+
     <div class="create-or-wrap after create-cus-wrap">
         <div class="widget box box-no-shadow" style="margin-bottom: 0;">
             <div class="widget-header widget-header-review">
@@ -34,7 +34,7 @@
                 </div>
                 {/foreach}
             </div>
-        </div>        
+        </div>
     </div>
 </div>
 <input type="hidden" name="to_main" value="1">
@@ -80,6 +80,14 @@ $(document).ready(function() {
     }).focus(function () {
       $(this).autocomplete("search");
     });
+
+    $('input[name="translation_key"]').on('change', function(){
+        let val = $(this).val();
+        val = val.toUpperCase();
+        val = val.replaceAll(/[^ \w]/g, '');
+        val = val.replaceAll(/[ ]+/g, '_');
+        $(this).val(val)
+    })
 });
 </script>
 </div>

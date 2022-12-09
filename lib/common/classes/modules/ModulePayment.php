@@ -256,6 +256,108 @@ abstract class ModulePayment extends Module {
     return $ret;
   }
 
+/**
+ * part of checkout /process between before and after process for order which save usual order and call after_process in before_process method.
+ */
+    protected function no_process($order) {
+
+        // process
+        foreach (\common\helpers\Hooks::getList('checkout/process', '') as $filename) {
+            include($filename);
+        }
+        // TODO: move
+        if ($ext = \common\helpers\Acl::checkExtensionAllowed('DeliveryOptions', 'allowed')) {
+            $ext::toOrder($order, $this->manager);
+        }
+
+        $this->manager->getTotalCollection()->apply_credit(); //ICW ADDED FOR CREDIT CLASS SYSTEM
+
+        foreach ($order->products as $i => $product) {
+            $uuid = $this->before_subscription($i);
+            if ($uuid != false) {
+                $info = $this->get_subscription_info($uuid);
+                $subscription_id = $order->save_subscription(0, $order->order_id, $i, $uuid, $info);
+            }
+        }
+        $cart->order_id = $order->order_id;
+
+    }
+/**
+ * part of checkout /process after after_process for order which save usual order and call after_process in before_process method.
+ * redirect to success page
+ */
+    protected function no_process_after($order) {
+
+        $this->trackCredits();
+        $this->manager->clearAfterProcess();
+
+        foreach (\common\helpers\Hooks::getList('checkout/after-process', '') as $filename) {
+            include($filename);
+        }
+        tep_redirect(tep_href_link(FILENAME_CHECKOUT_SUCCESS, 'order_id=' . $order->order_id, 'SSL'));
+    }
+    
+    protected function getOrderClassBeforePayment($config_key) {
+        if (defined($config_key) && in_array(constant($config_key), ['TmpOrder', 'Order']) ) {
+            $orderClass = constant($config_key);
+        } else {
+            ///default
+            $orderClass = 'TmpOrder';
+            //$orderClass = 'Order';
+        }
+        return $orderClass;
+    }
+
+    /**
+     *
+     * @return string (<order id> or 'tmp<order id>-e<order id expected>'
+     */
+    public function saveOrderBySettings() {
+        $orderClass = $this->orderTypeBeforePayment();
+        if ($orderClass != 'TmpOrder') {
+            $order = $this->manager->getOrderInstance();
+            $order->info['order_status'] = $this->getDefaultOrderStatusId();
+        }
+        $ret = $this->saveOrder($orderClass);
+        if (!empty($ret) && $orderClass == 'TmpOrder') {
+            $ret = 'tmp' . $ret . '-e' . $this->estimateOrderId();
+        }
+        return $ret;
+    }
+
+
+/**
+ * get order id from order payment table (by transactions id)
+ * order is created by web hoook/ipn - it could take some time to save it - during this time the orders payment record has only transaction id and nothing else.
+ * @return int|null|false null - no transaction, false - no order
+ */
+    protected function getOrderByTransactionId($id) {
+        $ret = null;
+        try {
+            for ($i = 0; $i < 12; $i++) {
+                $transaction = \common\models\OrdersPayment::findOne(['orders_payment_module' => $this->code, 'orders_payment_transaction_id' => $id]);
+
+                if (!empty($transaction) ) {
+                    if (!empty($transaction->orders_payment_order_id)) {
+                        $ret = $transaction->orders_payment_order_id;
+                        break;
+                    } else {
+                        $ret = false;
+                    }
+                }
+                sleep(10); // not processed yet
+            }
+        } catch (\Exception $e) {
+            \Yii::warning(" #### " . print_r($e, true), $this->code . 'TLDEBUG');
+        }
+
+        if (!$ret) {
+            \Yii::warning(" transactionId " . print_r($id, true), $this->code . 'TLDEBUG-prbl-duplicate-order');
+        }
+
+        return $ret;
+    }
+    
   /**
    * submit request using Curl and returns header/data
    * @param string $url

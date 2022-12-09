@@ -846,6 +846,45 @@ EOD;
       return $string;
     }
 
+    protected static function variantsCheckoutRecalculateFields()
+    {
+        return [
+            'street_address' => ENTRY_STREET_ADDRESS,
+            'suburb' => ENTRY_SUBURB,
+            'city' => ENTRY_CITY,
+            'postcode' => ENTRY_POST_CODE,
+            'state' => ENTRY_STATE,
+            'country' => ENTRY_COUNTRY,
+        ];
+    }
+
+    public static function setCheckoutRecalculateFields()
+    {
+        $keys = func_get_args();
+        eval('list($value, $key) = array(' . $keys[0] . ');');
+        $value = preg_split('/,\s?/',strval($value),-1, PREG_SPLIT_NO_EMPTY);
+
+        $name = (($key) ? 'configuration[' . $key . ']' : 'configuration_value');
+
+        return '<div>'.\common\helpers\Html::checkboxList($name,
+                $value,
+                static::variantsCheckoutRecalculateFields(),
+                ['separator'=>"<br />\n", 'class'=>'js-checkout-fields text-left']
+            ).'</div>'.
+            \common\helpers\Html::hiddenInput($name.'[]','country').
+            '<script>$(document).ready(function(){ $(\'.js-checkout-fields input[value="country"]\').attr(\'disabled\', \'disabled\') })</script>';
+    }
+
+    public static function getCheckoutRecalculateFields($value)
+    {
+        $values = preg_split('/,\s?/',strval($value),-1, PREG_SPLIT_NO_EMPTY);
+        $variants = static::variantsCheckoutRecalculateFields();
+        foreach ($values as $idx=>$value){
+            if ( isset($variants[$value]) ) $values[$idx] = $variants[$value];
+        }
+        return implode(', ',$values);
+    }
+
     public static function variantsBackendProductName()
     {
         return [
