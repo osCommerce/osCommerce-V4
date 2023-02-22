@@ -80,6 +80,29 @@ class ModuleExtensions extends Module {
         return parent::getVersion();
     }
 
+    /**
+     * @return null|false|object (stdClass)
+     * object - since v4.09 + AppShop application created after v4.09
+     */
+    public static function getDistribObj()
+    {
+        $fn = static::getExtDir() . '/distribution.json';
+        if (file_exists($fn) && ($text = file_get_contents($fn))) {
+            return json_decode($text);
+        }
+    }
+
+    /**
+     * @return void|null|string - string is application revision
+     */
+    public static function getRevision()
+    {
+        $distribObj = self::getDistribObj();
+        if (is_object($distribObj)) {
+            return $distribObj->revision ?? null;
+        }
+    }
+
     protected static function getTranslationArray()
     {
         if ($setup = static::checkSetup('getTranslationArray')) {
@@ -214,7 +237,6 @@ class ModuleExtensions extends Module {
             if ($setup = static::checkSetup('remove')) {
                 $setup::remove($platform_id, $migrate, $this->userConfirmedDropDatatables);
             }
-            static::removeTranslationArray($platform_id, $migrate, $this->userConfirmedDeleteAcl);
             if ($this->userConfirmedDropDatatables && ($setup = static::checkSetup('getDropDatabasesArray'))) {
                 $migrate->dropTables($setup::getDropDatabasesArray());
                 \common\helpers\Modules::changeModule($this->code, 'remove_drop');
@@ -223,6 +245,7 @@ class ModuleExtensions extends Module {
                 self::dropAcl($platform_id, $migrate);
             }
             \common\helpers\MenuHelper::removeAdminMenuItems(static::getAdminMenu());
+            static::removeTranslationArray($platform_id, $migrate, $this->userConfirmedDeleteAcl); // after remove menu
 
             \common\helpers\Hooks::unresisterHooks($this->code);
             return parent::remove($platform_id);
@@ -320,7 +343,11 @@ class ModuleExtensions extends Module {
     }
 
     public static function getMetaTagKeys($meta_tags) {
-        return $meta_tags;
+        if (($setup = static::checkSetup('getMetaTagKeys')) && self::allowed()) {
+            return $setup::getMetaTagKeys($meta_tags);
+        } else {
+            return $meta_tags;
+        }
     }
 
     /**
@@ -345,7 +372,7 @@ class ModuleExtensions extends Module {
         return [];
     }
 
-    private function appendAcl($platform_id, $migrate) {
+    private function appendAcl($platform_id, \common\classes\Migration $migrate) {
         if ($setup = static::checkSetup('getAclArray')) {
             $aclArray = $setup::getAclArray();
             if (is_array($aclArray) && count($aclArray) > 0) {
@@ -411,6 +438,12 @@ class ModuleExtensions extends Module {
         }
     }
 
+    /**
+     * @param $platform_id int 0
+     * @param $migrate \common\classes\Migration
+     * @param bool $fullDel
+     * @return void
+     */
     protected static function removeTranslationArray($platform_id, $migrate, bool $fullDel = false)
     {
         $translationArray = static::getTranslationArray();
@@ -419,9 +452,21 @@ class ModuleExtensions extends Module {
                 if (static::isProcessTranslationPair($entity, $keysArray, 'remove_entity')) {
                     $migrate->removeTranslation($entity);
                 } elseif (static::isProcessTranslationPair($entity, $keysArray, 'remove_keys')) {
-                    $migrate->removeTranslation($entity, array_keys($keysArray));
+                    $keys = array_keys($keysArray);
+                    if (!empty($keys)) { // don't remove entity for empty array
+                        $migrate->removeTranslation($entity, $keys);
+                    }
                 } elseif ($fullDel && static::isProcessTranslationPair($entity, $keysArray, 'remove_keys_if_acl_removing')) {
-                    $migrate->removeTranslation($entity, array_keys($keysArray));
+                    $keys = array_keys($keysArray);
+                    if (!empty($keys)) { // don't remove entity for empty array
+                        if ($entity = 'admin/main') {
+                            $usedKeys = \common\models\AdminBoxes::find()->where(['title' => $keys])->select('title')->column();
+                            if (!empty($usedKeys)) {
+                                $keys = array_diff($keys, $usedKeys);
+                            }
+                        }
+                        $migrate->removeTranslation($entity, $keys);
+                    }
                 }
             }
         }
@@ -510,10 +555,17 @@ class ModuleExtensions extends Module {
         if (\common\helpers\System::isDevelopment()) {
             $migrate = new \common\classes\Migration();
             $migrate->compact = true;
-            reinstallTranslation($migrate);
+            static::reinstallTranslation($migrate);
             echo "translation reinstalled<br>";
         }
     }
+
+    public static function getExtDir()
+    {
+        $ref = new \ReflectionClass(get_called_class());
+        return \Yii::getAlias('@common/extensions/' . $ref->getShortName());
+    }
+
 
     private static function getViewFile($view)
     {

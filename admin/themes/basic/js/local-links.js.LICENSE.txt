@@ -1,0 +1,1 @@
+/*! License information is available at admin/themes/basic/js/LICENSES.txt */

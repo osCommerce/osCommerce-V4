@@ -49,6 +49,10 @@ return [
                 ],
 */
             ],
+            'beforeDelete' => function($model, $id) {
+                \common\helpers\Categories::remove_category($id);
+                return 'deleted';
+            },
             'beforeImportSave' => function($model, $data){
                 if ( $model instanceof \common\models\Categories && !$data->skipped) {
                     if (empty($model->categories_seo_page_name)) {

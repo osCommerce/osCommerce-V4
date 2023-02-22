@@ -141,13 +141,6 @@ class Meta_tagsController extends Sceleton {
           'HEAD_TITLE_TAG_GIFT_CARD', 'HEAD_KEY_TAG_GIFT_CARD', 'HEAD_DESC_TAG_GIFT_CARD', 'HEAD_H1_TAG_GIFT_CARD', 'HEAD_H2_TAG_GIFT_CARD', 'HEAD_H3_TAG_GIFT_CARD',
         ),
       ),
-      'CATEGORY_WEDDING_REGISTRY_TAGS' => array(
-        'tab_title' => CATEGORY_WEDDING_REGISTRY_TAGS,
-        'id' => 'wedding_registry_tags',
-        'input_key' => array(
-          'HEAD_TITLE_TAG_WEDDING_REGISTRY', 'HEAD_KEY_TAG_WEDDING_REGISTRY', 'HEAD_DESC_TAG_WEDDING_REGISTRY', 'HEAD_H1_TAG_WEDDING_REGISTRY', 'HEAD_H2_TAG_WEDDING_REGISTRY', 'HEAD_H3_TAG_WEDDING_REGISTRY',
-        ),
-      ),
       'CATEGORY_FREE_SAMPLES_TAGS' => array(
         'tab_title' => CATEGORY_FREE_SAMPLES_TAGS,
         'id' => 'free_samples_tags',

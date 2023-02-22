@@ -1,14 +1,15 @@
 {use class="common\helpers\Acl"}
 <div class="summary-wrapper">
 
-    <div class="summary-title">{$smarty.const.TEXT_SALES_SUMMARY}
+    <div class="summary-title">
+    <span class="summaryTitleLine">{$smarty.const.TEXT_SALES_SUMMARY}</span>
         <form action="{$app->urlManager->createUrl('orders/process-order')}" method="get"
-              class="go-to-order">{$smarty.const.TEXT_GO_TO_ORDER} <input type="text" class="form-control"
+              class="go-to-order"><span class="form-line-title">{$smarty.const.TEXT_GO_TO_ORDER} </span><input type="text" class="form-control"
                                                                           name="orders_id"/>
             <button type="submit" class="btn btn-primary">{$smarty.const.TEXT_GO}</button>
         </form>
         <div class="go-to-order form-inline">
-            {$smarty.const.TEXT_GO_TO_PRODUCT}
+            <span class="form-line-title">{$smarty.const.TEXT_GO_TO_PRODUCT}</span>
             {\common\helpers\Html::beginForm( \Yii::$app->urlManager->createUrl('categories'), 'get', ['class' => 'form-inline form-group'])}
             {\common\helpers\Html::hiddenInput('autoEdit', 1)}
             <div class="box-head-search">

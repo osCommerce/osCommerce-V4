@@ -21,4 +21,7 @@ class BannersAsset extends AssetBundle
     public $css = [
         'css/banners.css',
     ];
+    public $js = [
+        'js/local-links.js',
+    ];
 }

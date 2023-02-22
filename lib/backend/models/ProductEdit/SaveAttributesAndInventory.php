@@ -207,7 +207,8 @@ class SaveAttributesAndInventory
                 }
             }
 
-            if (\common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed') && !$without_inventory) {
+            /* @var \common\extensions\Inventory\Inventory $inventoryExt */
+            if (($inventoryExt = \common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed')) && !$without_inventory) {
                 /// no direct attributes info
                 // inventorypriceprefix_0{33}171{34}174[19][0], products_group_price_0{33}171{34}174[19][0] qty_discount_status0{33}171{34}174[19][0] discount_price_0{33}171{34}174[15][0][10]
                 ksort($options);
@@ -226,14 +227,17 @@ class SaveAttributesAndInventory
                 foreach ($inventory_options as $tmp) {
                     $post_uprid = $old_products_id . $tmp;
                     $db_uprid = $products_id . $tmp;
-                    if (Yii::$app->request->post('inventoryexistent_' . $post_uprid) === null && Yii::$app->request->post('inventorymodel_' . $post_uprid) === null) {
+                    if (Yii::$app->request->post('inventoryexistent_' . $post_uprid) === null && Yii::$app->request->post('inventorystock_delivery_terms_' . $post_uprid) === null) {
                         // If inventory data is not set - skip it
                         $check_inventory = \common\models\Inventory::findOne(['products_id' => $db_uprid]);
                         if (is_object($check_inventory)) {
                             $all_inventory_ids_array[] = $check_inventory->inventory_id;
                             $all_inventory_uprids_array[] = $db_uprid;
+                            continue;
                         }
-                        continue;
+                        if (!method_exists($inventoryExt, 'optionGenerateInventoryPartly') || $inventoryExt::optionGenerateInventoryPartly()) {
+                            continue;
+                        }
                     }
                     $arr = [];
                     preg_match_all('/\}(\d+)/', $post_uprid, $arr);
@@ -253,10 +257,10 @@ class SaveAttributesAndInventory
                         'non_existent' => tep_db_prepare_input($non_existent),
                     ];
 
-                    if (!is_null($_POST['inventorystock_indication_' . $post_uprid])) {
+                    if (!is_null(\Yii::$app->request->post('inventorystock_indication_' . $post_uprid))) {
                         $sql_data_array['stock_indication_id'] = intval($_POST['inventorystock_indication_' . $post_uprid]);
                     }
-                    if (!is_null($_POST['inventorystock_delivery_terms_' . $post_uprid])) {
+                    if (!is_null(\Yii::$app->request->post('inventorystock_delivery_terms_' . $post_uprid))) {
                         $sql_data_array['stock_delivery_terms_id'] = intval($_POST['inventorystock_delivery_terms_' . $post_uprid]);
                     }
 

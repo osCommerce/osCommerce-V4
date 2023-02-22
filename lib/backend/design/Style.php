@@ -30,6 +30,9 @@ class Style
             $arr = [
                 'hover' => 1,
                 'display' => 1,
+                'padding' => 1,
+                'border' => 1,
+                'size' => 1,
             ];
         }
 

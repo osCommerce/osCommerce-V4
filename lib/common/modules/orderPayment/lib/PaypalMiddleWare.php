@@ -23,6 +23,9 @@ require ('paypal.php');
 
 abstract class PaypalMiddleWare extends ModulePayment implements TransactionalInterface, TransactionSearchInterface {//
 
+    const REST_SANDBOX_ENDPOINT = "https://api-m.sandbox.paypal.com";
+    const REST_LIVE_ENDPOINT = "https://api.paypal.com";
+
   abstract protected function _isReady();
 
   abstract protected function _getClientId();
@@ -31,7 +34,7 @@ abstract class PaypalMiddleWare extends ModulePayment implements TransactionalIn
 
   abstract protected function _getIntent();
 
-  abstract public function getMode();
+  abstract public static function getMode();
 
   /**
    * from v1 API - used for webhooks and search

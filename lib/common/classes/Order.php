@@ -75,6 +75,7 @@ class Order extends extended\OrderAbstract implements extended\TransactionsInter
             }
         }
         $this->saveTrackingNumbers();
+        \common\models\TrackingNumbersExport::deleteAll(['tracking_numbers_id' => $tracking_number_id]);
     }
 
     public function addTrackingNumber($trackingNumber)

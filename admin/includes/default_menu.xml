@@ -924,15 +924,6 @@
                 <filename></filename>
             </item>
             <item>
-                <sort_order>6</sort_order>
-                <acl_check></acl_check>
-                <config_check></config_check>
-                <box_type>0</box_type>
-                <path>cron_manager</path>
-                <title>BOX_HEADING_CRON_MANAGER</title>
-                <filename></filename>
-            </item>
-            <item>
                 <sort_order>7</sort_order>
                 <acl_check></acl_check>
                 <config_check></config_check>

@@ -219,11 +219,20 @@ abstract class AbstractCheckoutController extends \frontend\controllers\Sceleton
                     $this->manager->changeCustomerAddressSelection($type, $value);
                     if ($type == 'shipping') {
                         $this->manager->set('shipping', false);
+                    } else {
+                        $this->manager->set('payment', false);
                     }
                 }
                 $this->manager->getShippingQuotesByChoice();
+                if ($type == 'shipping') {
                 $this->manager->checkoutOrder();
+                } else {
+                    $this->manager->checkoutOrderWithAddresses();
+                }
                 $data = $this->manager->render('ShippingByChoice', ['manager' => $this->manager], 'json');
+                $data['payments'] = $this->manager->render('PaymentMethod', ['manager' => $this->manager], 'json');
+                $data['shipping'] = $this->manager->render('Shipping', ['manager' => $this->manager], 'json');
+                $data['order_totals'] = $this->manager->render('Totals', ['manager' => $this->manager], 'json');
                 break;
             case 'edit_address':
                 $type = tep_db_prepare_input(Yii::$app->request->get('type'));

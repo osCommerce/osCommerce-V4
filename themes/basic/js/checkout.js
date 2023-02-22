@@ -1,3 +1,29 @@
+function checkout_payment_changed(){
+    var cObject = {
+
+        after_payment_changed_callbacks: [], // array of callbacks which will be called on (radio) "payment" change (payment block is replaced by several ajax calls here)
+        get: function(  ) {
+            return this.after_payment_changed_callbacks;
+        },
+
+        set: function( addCallback ){
+            var add = true;
+            addCallback = addCallback.replace(/^window\./g, '');
+            for (let existing of this.after_payment_changed_callbacks) {
+                if (addCallback == existing) {
+                    add = false;
+                    break;
+                };
+            }
+            if (add) {
+                this.after_payment_changed_callbacks.push(addCallback);
+            }
+        },
+    }
+    return cObject;
+};
+var checkout_payment_changed = new checkout_payment_changed();
+
 function checkout($url){
     var cObject = {
         shipping_choice: function(_choice, $holder){

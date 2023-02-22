@@ -1,22 +1,39 @@
-
-<table width="100%" class="banners-table">
+<div class="row">
 {foreach $sizeImages as $img}
-    <tr>
-        <td class="label_name">
-            {$smarty.const.IMAGE_WIDTH}: <span class="label-image-width">{$img.image_width}</span><br>
-            {$smarty.const.RECOMMENDED_IMAGE_HEIGHT}: <span class="label-image-height">{$img.image_height}</span>
-        </td>
-        <td class="label_value">
-            <div class="upload-box">
-            {\backend\design\Image::widget([
-            'name' => 'group_image['|cat:$language_id|cat:']['|cat:$img.image_width|cat:']',
-            'value' => $img.image,
-            'upload' => 'group_image_upload['|cat:$language_id|cat:']['|cat:$img.image_width|cat:']',
-            'delete' => 'group_image_delete['|cat:$language_id|cat:']['|cat:$img.image_width|cat:']',
-                'path' => 'images/banners'
-            ])}
-            </div>
-        </td>
-    </tr>
+    <div class="col-md-6 m-b-4">
+
+        <span class="image-size">
+            <span class="label-image-width">{$smarty.const.IMAGE_VIDEO_WIDTH}:</span>
+            <span class="image-width">{$img.image_width}</span>.
+            {if $img.image_height}
+                <span class="label-image-height">{$smarty.const.RECOMMENDED_IMAGE_HEIGHT}:</span>
+                <span class="image-height">{$img.image_height}</span>.
+            {/if}
+        </span>
+        <span class="window-size">
+            <span class="parenthesis">(</span>
+            Window width
+            {if $img.width_from} from <span class="width-from">{$img.width_from}</span> {/if}
+            {if $img.width_to} to <span class="width-to">{$img.width_to}</span> {/if}
+            <span class="parenthesis">)</span>
+        </span>
+
+        <div class="upload-box upload-box-wrap"
+             data-name="group_image[{$language_id}][{$img.image_width}]"
+             data-value="{$img.image}"
+             data-upload="group_image_upload[{$language_id}][{$img.image_width}]"
+             data-delete="group_image_delete[{$language_id}][{$img.image_width}]"
+             data-type="{$img.type}"
+             data-accepted-files="image/*,video/*"
+             data-width="{$img.image_width}"
+             data-height="{$img.image_height}"
+             data-position-name="position[{$language_id}][{$img.image_width}]"
+             data-position-value="{$img.position}"
+             data-fit-name="fit[{$language_id}][{$img.image_width}]"
+             data-fit-value="{$img.fit}"
+        >
+            <textarea name="svg[{$language_id}][{$img.image_width}]" hidden>{$img.svg}</textarea>
+        </div>
+    </div>
 {/foreach}
-</table>
+</div>

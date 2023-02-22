@@ -532,6 +532,16 @@ function validateFormElement(event){
         }
     }
     if (error){
+        const $requiredMessage = $(`<div class="required-message-wrap"><div class="required-message">${message}</div></div>`);
+        $requiredMessage.on('mouseenter', function () {
+            if ($(this).hasClass('top-error-mes')) {
+                $(this).animate({'top': ''}, 100);
+                $(this).removeClass('top-error-mes');
+            } else {
+                $(this).animate({'top': - _this[0].offsetHeight - $('> div', this).height()}, 100);
+                $(this).addClass('top-error-mes');
+            }
+        });
         if (_this.attr('type') === 'checkbox'){
             var box = '';
             if (_this.parent().hasClass('bootstrap-switch-container')) {
@@ -540,13 +550,13 @@ function validateFormElement(event){
                 box = _this.parent()
             }
             box.addClass('required-error');
-            box.after('<div class="required-message-wrap"><div class="required-message">' + message + '</div></div>');
+            box.after($requiredMessage);
             box.next().find('.required-message').hide().slideDown(300);
 
         } else if (!_this.hasClass('required-error')) {
 
             _this.addClass('required-error');
-            _this.after('<div class="required-message-wrap"><div class="required-message">' + message + '</div></div>');
+            _this.after($requiredMessage);
             _this.next().find('.required-message').hide().slideDown(300);
         }
 

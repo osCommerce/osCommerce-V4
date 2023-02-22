@@ -57,6 +57,8 @@
 {*
 <script type="text/javascript">
     tl(function(){
-        {Yii::$app->controller->promoActionsObs->renderValidPromoAction('comparing_products')}
+       {if \common\helpers\Acl::checkExtensionAllowed('BonusActions')}
+       {Yii::$app->controller->promoActionsObs->renderValidPromoAction('comparing_products')}
+       {/if}
     });
 </script>*}

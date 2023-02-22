@@ -523,14 +523,6 @@ ul ul .item-handle {
 
 
 
-.widget-settings {
-  width: 700px;
-  box-shadow: 0 0 20px #000;
-  height: auto !important;
-}
-.widget-settings .popup-heading {
-  cursor: pointer;
-}
 div.around-widget-settings {
   background: none;
 }
@@ -2601,66 +2593,6 @@ tr.new-file {
 .page-elements-top .remove:before {
   content: '\f014';
   font-family: FontAwesome;
-}
-
-.drop-list.log-list {
-  padding: 0;
-  border: none;
-}
-.drop-list.log-list li {
-  list-style: none;
-}
-.drop-list.log-list .date {
-  float: right;
-  font-size: 16px;
-  padding-right: 20px;
-  font-weight: normal;
-}
-.drop-list.log-list .details {
-  float: right;
-  font-size: 14px;
-  padding-right: 20px;
-  font-weight: normal;
-}
-.drop-list.log-list .item-handle {
-  padding-left: 20px;
-  padding-right: 20px;
-}
-.drop-list.log-list .item-close {
-  visibility: hidden;
-}
-.drop-list.log-list .has-sub > div > .item-close {
-  visibility: visible;
-}
-.log-list .restore {
-  float: right;
-  margin: 0 40px 0 20px;
-  color: #0077e4;
-  cursor: pointer;
-}
-.log-list .checkbox-item {
-  float: left;
-  margin: -6px 20px -12px -20px;
-  border-right: 1px solid #363636;
-  padding: 5px 6px 8px 8px;
-  width: 36px;
-}
-.log-list .item-handle {
-  font-size: 15px;
-  height: 35px;
-  padding: 5px 10px 5px 57px;
-}
-.log-filter {
-  margin-bottom: 20px;
-}
-.log-filter input {
-  width: 100px;
-  margin-right: 20px;
-  display: inline-block;
-}
-.log-filter label {
-  padding-top: 4px;
-  margin-right: 5px;
 }
 
 .btn-undo:before {

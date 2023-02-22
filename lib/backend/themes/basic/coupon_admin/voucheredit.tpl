@@ -128,7 +128,7 @@
                     {$smarty.const.TEXT_FREE_SHIPPING}
                 </div>
                 <div class="col-md-5">
-                    <input type="checkbox" name="coupon_free_ship" value="1" class="check_on_off" {if $coupon_free_ship} checked{/if}>
+                    <input type="checkbox" name="free_shipping" value="1" class="check_on_off" {if $coupon['free_shipping']} checked{/if}>
                 </div>
             </div>
 
@@ -541,6 +541,15 @@ function backStatement() {
 }
 function saveVoucher(batchParams) {
 	checkSelectedTaxZone();
+    var $visible_currency_selector = $('#save_voucher_form [name="_coupon_currency"]');
+    if ( $visible_currency_selector.length>0 ){
+        var $coupon_amount = $('#save_voucher_form [name="coupon_amount"]');
+        $coupon_amount.val( $coupon_amount.val().replace(/%*$/,'') );
+        if ($visible_currency_selector.val()==='%'){
+            $coupon_amount.val( $coupon_amount.val()+'%' );
+        }
+    }
+
 	if (form_prepared){
         var postData = $('#save_voucher_form').serializeArray();
         if ( batchParams ){
@@ -829,6 +838,7 @@ $(function(){
         $couponAmount.val($_couponAmount.val())
         if ($_couponAmount.val().slice(-1) == '%') {
             $_couponCurrency.val('%')
+            $_couponCurrency.trigger('change');
             $_couponAmount.val($_couponAmount.val().slice(0, $_couponAmount.val().length - 1))
         }
     }

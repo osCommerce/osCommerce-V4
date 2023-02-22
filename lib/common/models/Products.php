@@ -13,7 +13,6 @@
 namespace common\models;
 
 
-use backend\services\GroupsService;
 use common\models\Product\ProductsNotes;
 use common\models\queries\ProductsQuery;
 use yii\db\ColumnSchema;
@@ -153,7 +152,6 @@ use \yii\db\Expression;
  * @property int $stock_control
  * @property int $disable_children_discount
  *
- * @property GroupsProducts[] $groupsProducts
  * @property Groups[] $groups
  */
 class Products extends \yii\db\ActiveRecord
@@ -337,11 +335,6 @@ class Products extends \yii\db\ActiveRecord
             ->viaTable('personal_catalog', ['products_id' => 'products_id']);
     }
 
-    public function getPersonalCatalog()
-    {
-        return $this->hasMany(\common\models\PersonalCatalog::class, ['products_id' => 'products_id']);
-    }
-
     /**
      * one-to-many all languages 1 platform (current)
      * @return \yii\db\ActiveQuery
@@ -407,7 +400,7 @@ class Products extends \yii\db\ActiveRecord
 
       } else {
         return $this->hasOne(ProductsDescription::class, ['products_id' => 'products_id'])
-                ->andWhere(['language_id' => (int)$languages_id, 'platform_id' => $platform_id]);
+                ->andWhere([ProductsDescription::tableName() . '.language_id' => (int)$languages_id, ProductsDescription::tableName() . '.platform_id' => $platform_id]);
       }
     }
 
@@ -800,19 +793,16 @@ class Products extends \yii\db\ActiveRecord
       return $this->hasOne(ProductsPrices::class, ['products_id' => 'products_id'])->where('group1s_id =:groups_id', [':groups_id' => $customer_groups_id])->andWhere('currencies_id = :currencies_id', [':currencies_id' => $currency_id]);
       } */
 
-    /**
-     * @return \yii\db\ActiveQuery
-     */
-    public function getGroupsProducts()
-    {
-        return $this->hasMany(GroupsProducts::class, ['products_id' => 'products_id']);
-    }
+    // public function getGroupsProducts() - removed due extracting extension UsersGroupsRestriction - use this:
+    // if ($model = Acl::checkExtensionTableExist('UserGroupsRestrictions', 'GroupsProducts')) {
+    //    $yourModel->innerJoin($model::tableName() ...)
 
     /**
      * @return \yii\db\ActiveQuery
      */
     public function getGroups()
     {
+        \Yii::warning('Using UserGroupRestrictions table. Not recommended - the table may be not exist in some osCommerce versions');
         return $this->hasMany(Groups::class, ['groups_id' => 'groups_id'])->viaTable('groups_products', ['products_id' => 'products_id']);
     }
 
@@ -983,13 +973,10 @@ class Products extends \yii\db\ActiveRecord
         }
 
         if ( $insert ) {
+            /** @var \common\extensions\UserGroupsRestrictions\UserGroupsRestrictions $ext */
             if ($ext = \common\helpers\Acl::checkExtensionAllowed('UserGroupsRestrictions', 'allowed')) {
-                if ( $ext::select() ){
-                    /** @var GroupsService $groupService */
-                    try {
-                        $groupService = \Yii::createObject(GroupsService::class);
-                        $groupService->addProductToAllGroups($this->products_id);
-                    }catch (\Exception $ex){}
+                if ( $groupService = $ext::getGroupsService() ){
+                    $groupService->addProductToAllGroups($this->products_id);
                 }
             }
         }

@@ -47,6 +47,7 @@ class Account extends Widget
         $this->settings[0]['show_customers_name'] = (isset($this->settings[0]['show_customers_name']) ? $this->settings[0]['show_customers_name'] : 0);
         
         return IncludeTpl::widget(['file' => 'boxes/account.tpl', 'params' => [
+            'id' => $this->id,
             'customerData' => $customer,
             'customerLogged' => !Yii::$app->user->isGuest,
             'isReseller' => $isReseller,

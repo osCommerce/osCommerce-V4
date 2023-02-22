@@ -70,6 +70,8 @@ class Setup extends \common\classes\modules\SetupExtensions {
                 'EXTENSION_OSCLINK_TEXT_ERROR_NOT_FOUND'        => 'OSCommerce bridge does not found',
                 'EXTENSION_OSCLINK_TEXT_ERROR_OLD_VERSION'      => 'Please upgrade your OSCommerce bridge to version %s',
                 'EXTENSION_OSCLINK_TEXT_ERROR_OLD_VER_FOUND'    => 'old version found: %s',
+
+                'EXTENSION_OSCLINK_API_MEASUREMENT' => 'System of measurement into osCommerce 2.x',
         ];
 
     public static function getDescription()
@@ -119,7 +121,7 @@ class Setup extends \common\classes\modules\SetupExtensions {
         foreach (OscLink::FEEDS as $key => $feed) {
             $feed_name = OscLink::FEEDS_NAMES[$key];
             $translation['EXTENSION_OSCLINK_TEXT_ENTITY_' . strtoupper($feed)] = $feed_name;
-            $translation['EXTENSION_OSCLINK_TEXT_DESCRIPTION_' . strtoupper($feed)] = "Download and import $feed_name stucture from OSCommerce.";
+            $translation['EXTENSION_OSCLINK_TEXT_DESCRIPTION_' . strtoupper($feed)] = "Download and import $feed_name structure from OSCommerce.";
         }
 
         return [

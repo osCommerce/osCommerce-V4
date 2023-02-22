@@ -14,22 +14,27 @@
   <a class="btn menu-themes{if $menu == 'themes'} active{/if}" href="{Yii::$app->urlManager->createUrl(['design/themes'])}" title="{$smarty.const.BACK_THEMES_LIST}"></a>
   <a class="btn menu-elements{if $menu == 'elements'} active{/if}" href="{Yii::$app->urlManager->createUrl(['design/elements', 'theme_name' => $theme_name])}">{$smarty.const.EDIT_ELEMENTS}</a>
 
-  {*<a class="btn menu-theme-edit{if $menu == 'theme-edit'} active{/if}" href="{Yii::$app->urlManager->createUrl(['design/theme-edit', 'theme_name' => $theme_name])}">
-    {$smarty.const.TEXT_CUSTOMIZE_THEME_STYLES}
-  </a>*}
-  <a class="btn menu-theme-edit{if $menu == 'groups'} active{/if}" href="{Yii::$app->urlManager->createUrl(['design/groups', 'theme_name' => $theme_name])}">
-    {$smarty.const.TEXT_WIDGET_GROUPS}
-  </a>
+    <a class="btn menu-theme-edit{if $menu == 'theme-edit'} active{/if}" href="{Yii::$app->urlManager->createUrl(['design/theme-edit', 'theme_name' => $theme_name])}">
+      {$smarty.const.TEXT_CUSTOMIZE_THEME_STYLES}
+    </a>
 
-  {if !strpos($theme_name, '-mobile')}
-  <a class="btn menu-backups{if $menu == 'backups'} active{/if}" href="{Yii::$app->urlManager->createUrl(['design/backups', 'theme_name' => $theme_name])}">{$smarty.const.TEXT_BACKUPS}</a>
-  {/if}
+    <a class="btn menu-theme-edit{if $menu == 'groups'} active{/if}" href="{Yii::$app->urlManager->createUrl(['design/groups', 'theme_name' => $theme_name])}">
+      {$smarty.const.TEXT_WIDGET_GROUPS}
+    </a>
+
+    {if !strpos($theme_name, '-mobile')}
+      <a class="btn menu-backups{if $menu == 'backups'} active{/if}" href="{Yii::$app->urlManager->createUrl(['design/backups', 'theme_name' => $theme_name])}">{$smarty.const.TEXT_BACKUPS}</a>
+    {/if}
 
   <a class="btn menu-settings{if $menu == 'settings'} active{/if}" href="{Yii::$app->urlManager->createUrl(['design/settings', 'theme_name' => $theme_name])}">{$smarty.const.THEME_SETTINGS}</a>
-  <a class="btn menu-settings{if $menu == 'styles'} active{/if}" href="{Yii::$app->urlManager->createUrl(['design/styles', 'theme_name' => $theme_name])}">styles</a>
-  <a class="btn menu-settings{if $menu == 'css'} active{/if}" href="{Yii::$app->urlManager->createUrl(['design/css', 'theme_name' => $theme_name])}">css</a>
-  <a class="btn menu-settings{if $menu == 'js'} active{/if}" href="{Yii::$app->urlManager->createUrl(['design/js', 'theme_name' => $theme_name])}">js</a>
-  <a class="btn menu-settings{if $menu == 'log'} active{/if}" href="{Yii::$app->urlManager->createUrl(['design/log', 'theme_name' => $theme_name])}">{$smarty.const.LOG_TEXT}</a>
+
+  {if $designer_mode == 'expert'}
+    <a class="btn menu-settings{if $menu == 'styles'} active{/if}" href="{Yii::$app->urlManager->createUrl(['design/styles', 'theme_name' => $theme_name])}">styles</a>
+    <a class="btn menu-settings{if $menu == 'css'} active{/if}" href="{Yii::$app->urlManager->createUrl(['design/css', 'theme_name' => $theme_name])}">css</a>
+    <a class="btn menu-settings{if $menu == 'js'} active{/if}" href="{Yii::$app->urlManager->createUrl(['design/js', 'theme_name' => $theme_name])}">js</a>
+  {/if}
+
+    <a class="btn menu-settings{if $menu == 'log'} active{/if}" href="{Yii::$app->urlManager->createUrl(['design/log', 'theme_name' => $theme_name])}">{$smarty.const.LOG_TEXT}</a>
 
 
   {if \backend\design\Theme::useMobileTheme($theme_name)}

@@ -120,6 +120,10 @@
   var supplierQueue = new supplierQueueClass();
   let $suppliersIdWithDefValues = [];
 
+  function getControlValue(defValueIsUndefined, value) {
+      return (defValueIsUndefined && !value)? null : value;
+  }
+
   function updateSupplierAt($updatedBlock, $target = null) {
       if ($target != null && !$target.hasClass('js-supplier-product') && !$target.hasClass('js-supplier-recalc')) return;
       supplierId = $updatedBlock.data('supplier-id');
@@ -134,10 +138,10 @@
           manufacturers_id: $('#save_product_form .js-product-manufacturer').val(),
           currencies_id : $('.js-supplier-currency',$updatedBlock).val(),
           PRICE: $('.js-supplier-cost',$updatedBlock).val(),
-          MARGIN: defValueIsUndefined ? null : $('.js-supplier-margin',$updatedBlock).textInputNullableValue(),
-          SURCHARGE: defValueIsUndefined ? null : $('.js-supplier-surcharge',$updatedBlock).textInputNullableValue(),
-          DISCOUNT: defValueIsUndefined ? null : $('.js-supplier-discount',$updatedBlock).textInputNullableValue(),
-          tax_rate: defValueIsUndefined ? null : $('.js-supplier-tax-rate',$updatedBlock).textInputNullableValue(),
+          MARGIN: getControlValue(defValueIsUndefined, $('.js-supplier-margin',$updatedBlock).textInputNullableValue()),
+          SURCHARGE: getControlValue(defValueIsUndefined, $('.js-supplier-surcharge',$updatedBlock).textInputNullableValue()),
+          DISCOUNT: getControlValue(defValueIsUndefined, $('.js-supplier-discount',$updatedBlock).textInputNullableValue()),
+          tax_rate: getControlValue(defValueIsUndefined, $('.js-supplier-tax-rate',$updatedBlock).textInputNullableValue()),
           price_with_tax: $('.js-supplier-tax-rate-flag',$updatedBlock).get(0).checked?1:0
       });
   }

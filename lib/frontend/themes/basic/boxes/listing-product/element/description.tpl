@@ -4,7 +4,7 @@
         {if $product.products_description_short}
             {$description = $product.products_description_short}
         {else}
-            {$description = $product.products_description}
+            {$description = $product.products_description_st}
         {/if}
     {/if}
     {if !(isset($element.settings[0].use_tags) && $element.settings[0].use_tags)}

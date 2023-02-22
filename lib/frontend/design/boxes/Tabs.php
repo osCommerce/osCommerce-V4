@@ -117,14 +117,7 @@ class Tabs extends Widget
 
         } else {
 
-            return "<div class=\"no-block-settings_tab\"></div>
-  <script type=\"text/javascript\">
-  tl('" . Info::themeFile('/js/main.js') . "', function(){
-    setTimeout(function(){
-      $('.no-block-settings_tab').closest('.box-block').find('.edit-box').trigger('click')
-    }, 2000)
-  })
-  </script>";
+            return "";
 
         }
 

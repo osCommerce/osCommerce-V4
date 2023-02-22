@@ -1,93 +1,86 @@
 {use class="\backend\design\Style"}
 {$styleHide = Style::hide($settings.data_class)}
 {$styleShow = Style::show($settings.data_class)}
+{if $settings.designer_mode == 'expert'}
 <div class="tabbable tabbable-custom box-style-tab">
-  <ul class="nav nav-tabs nav-tabs-scroll style-tabs">
+  <ul class="nav nav-tabs style-tabs">
 
     <li class="active"><a href="#main_view" data-toggle="tab">{$smarty.const.BOX_HEADING_MAIN_STYLES}</a></li>
-    {if $styleHide.hover !== 1}
-    <li><a href="#hover" data-toggle="tab">hover</a></li>
-    {/if}
-    {if $styleShow.active == 1}
-      <li><a href="#active" data-toggle="tab">active</a></li>
-    {/if}
-    {if $styleHide.responsive !== 1}
-    {foreach $settings.media_query as $item}
-      <li><a href="#m{$item.id}" data-toggle="tab">{$item.setting_value}</a></li>
-    {/foreach}
-    {/if}
-    {if $styleHide.before !== 1}
-      <li><a href="#before" data-toggle="tab">:before</a></li>
-    {/if}
-    {if $styleHide.after !== 1}
-      <li><a href="#after" data-toggle="tab">:after</a></li>
-    {/if}
+    <li><a href="#responsive" data-toggle="tab">{$smarty.const.RESPONSIVE_DESIGN}</a></li>
+    <li><a href="#pseudo" data-toggle="tab">{$smarty.const.PSEUDO_CLASSES}</a></li>
 
   </ul>
-  <div class="tab-content menu-list style-tabs-content">
-    <div class="tab-pane active" id="main_view" data-id="main_view" data-name="setting[0]" data-visibility="0">
+  <div class="tab-content menu-list  style-tabs-content">
+    <div class="tab-pane active" id="main_view" data-id="main_view" data-name="setting[0]" data-visibility="0"></div>
+    <div class="tab-pane" id="responsive">
 
-      {*<div class="demo-box">AaBbCc 1 2 3 4 5</div>*}
-      {*$id = 'main_view'}
-      {$name = 'setting[0]'}
-      {$value = $settings[0]}
-      {include 'include/style_tab.tpl'*}
+      {$responsive = 1}
+      <div class="tabbable tabbable-custom box-style-tab">
+        <ul class="nav nav-tabs nav-tabs-scroll style-tabs">
 
-    </div>
-    <div class="tab-pane" id="hover" data-id="hover" data-name="visibility[0][1]" data-visibility="1">
+          {if $styleHide.responsive !== 1}
+            {foreach $settings.media_query as $item}
+              <li class="label">{$smarty.const.WINDOW_WIDTH}:</li>
+              <li {if $item@index == 0} class="active" {/if}>
+                <a href="#m{$item.id}" data-toggle="tab">
+                  {$item.title}
+                </a>
+              </li>
+            {/foreach}
+          {/if}
 
-      {*$id = 'hover'}
-      {$name = 'visibility[0][1]'}
-      {$value = $visibility[0][1]}
-      {include 'include/style_tab.tpl'*}
-
-    </div>
-    {if $styleShow.active == 1}
-      <div class="tab-pane" id="active" data-id="active" data-name="visibility[0][2]" data-visibility="2">
-
-        {*$id = 'active'}
-        {$name = 'visibility[0][2]'}
-        {$value = $visibility[0][2]}
-        {include 'include/style_tab.tpl'*}
-
+        </ul>
+        <div class="tab-content menu-list style-tabs-content">
+          {foreach $settings.media_query as $item}
+            <div
+                    class="tab-pane{if $item@index == 0} active{/if}"
+                    id="m{$item.id}"
+                    data-id="{'m'|cat:$item.id}"
+                    data-name="{'visibility[0]['|cat:$item.id|cat:']'}"
+                    data-visibility="{$item.id}">
+            </div>
+          {/foreach}
+        </div>
       </div>
-    {/if}
-    {$responsive = 1}
-    {foreach $settings.media_query as $item}
-    <div
-            class="tab-pane"
-            id="m{$item.id}"
-            data-id="{'m'|cat:$item.id}"
-            data-name="{'visibility[0]['|cat:$item.id|cat:']'}"
-            data-visibility="{$item.id}">
-
-      {*$id = 'm'|cat:$item.id}
-      {$name = 'visibility[0]['|cat:$item.id|cat:']'}
-      {$value = $visibility[0][$item.id]}
-      {include 'include/style_tab.tpl'*}
 
     </div>
-    {/foreach}
-    <div class="tab-pane" id="before" data-id="before" data-name="visibility[0][3]" data-visibility="3">
+    <div class="tab-pane" id="pseudo">
 
-      {*$id = 'before'}
-      {$name = 'visibility[0][3]'}
-      {$value = $visibility[0][3]}
-      {include 'include/style_tab.tpl'*}
+      <div class="tabbable tabbable-custom box-style-tab">
+        <ul class="nav nav-tabs style-tabs">
 
-    </div>
-    <div class="tab-pane" id="after" data-id="after" data-name="visibility[0][4]" data-visibility="4">
+          {if $styleHide.hover !== 1}
+            <li class="active"><a href="#hover" data-toggle="tab">hover</a></li>
+          {/if}
+          {if $styleShow.active == 1}
+            <li><a href="#active" data-toggle="tab">active</a></li>
+          {/if}
+          {if $styleHide.before !== 1}
+            <li><a href="#before" data-toggle="tab">:before</a></li>
+          {/if}
+          {if $styleHide.after !== 1}
+            <li><a href="#after" data-toggle="tab">:after</a></li>
+          {/if}
 
-      {*$id = 'after'}
-      {$name = 'visibility[0][4]'}
-      {$value = $visibility[0][4]}
-      {include 'include/style_tab.tpl'*}
+        </ul>
+        <div class="tab-content menu-list style-tabs-content">
+          <div class="tab-pane active" id="hover" data-id="hover" data-name="visibility[0][1]" data-visibility="1"></div>
+          {if $styleShow.active == 1}
+            <div class="tab-pane" id="active" data-id="active" data-name="visibility[0][2]" data-visibility="2"></div>
+          {/if}
+          <div class="tab-pane" id="before" data-id="before" data-name="visibility[0][3]" data-visibility="3"></div>
+          <div class="tab-pane" id="after" data-id="after" data-name="visibility[0][4]" data-visibility="4"></div>
+        </div>
+      </div>
 
     </div>
   </div>
 </div>
+{else}
+  <div class="main-styles" id="main_view" data-id="main_view" data-name="setting[0]" data-visibility="0"></div>
+{/if}
 
-
+{if $settings.designer_mode == 'expert'}
 
 {if !$settings.data_class}
 <div class="setting-row menu-list">
@@ -103,6 +96,8 @@
     <option value="hidden"{if $settings[0].status == 'hidden'} selected{/if}>{$smarty.const.TEXT_HIDDEN}</option>
   </select>
 </div>
+
+{/if}
 
 {if $settings.theme_name}<input type="hidden" name="theme_name" value="{$settings.theme_name}"/>{/if}
 
@@ -152,10 +147,15 @@
     };
 
     var showStyleTab = function(){
-      var styleTab = $('.style-tabs-content > div:visible');
+
+      {if $settings.designer_mode == 'expert'}
+      var styleTab = $('.style-tabs-content > div[data-id]:visible');
 
       $('.style-tabs-content').trigger('st_remove');
-      $('.style-tabs-content > div > *').remove();
+      $('.style-tabs-content > div[data-id] > *').remove();
+      {else}
+      var styleTab = $('.main-styles');
+      {/if}
 
       var dataId = styleTab.data('id');
       var name = styleTab.data('name');
@@ -179,14 +179,11 @@
           })
         }
 
-
         $('.box-style-tab input, .box-style-tab select').each(changeStyle);//.on('change', changeStyle);
 
         createColorpicker();
 
         $('select.sizing').each(changeDimension).on('change', changeDimension);
-
-
       });
     };
 
@@ -196,7 +193,7 @@
       setTimeout(showStyleTab, 100);
     });
 
-
+    {if $settings.designer_mode == 'expert'}
     var hideStyle = false;
     if ($('#style:hidden').length > 0) {
       $('#style').show();
@@ -209,11 +206,12 @@
         $('#style').css('display', '');
       }
     });
-
-
+    $('.nav-tabs li').on('click', function () {
+      setTimeout(function () {
+        $('.nav-tabs-scroll', boxSave).scrollingTabs('refresh')
+      }, 100)
+    })
+    {/if}
 
   });
-
-
-
 </script>

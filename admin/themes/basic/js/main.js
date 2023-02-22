@@ -223,29 +223,32 @@ $.fn.validate = function(options){
 };
 
 function alertMessage(data, className){
-  $('body').append('<div class="popup-box-wrap"><div class="around-pop-up"></div><div class="popup-box"><div class="pop-up-close"></div><div class="pop-up-content ' + (className ? className : '') + '"></div></div></div>');
+  const $pupUp = $('<div class="popup-box-wrap ' + (className ? className + '-wrap' : '') + '"><div class="around-pop-up"></div><div class="popup-box"><div class="pop-up-close"></div><div class="pop-up-content ' + (className ? className : '') + '"></div></div></div>');
+  $('body').append($pupUp);
 
-  $('.pop-up-content:last').append(data);
+  $('.pop-up-content', $pupUp).append(data);
 
-  var inp =  $('.popup-box:last').find('input:visible:first').focus().get(0);
-  if (inp) {
-    var val = inp.value;
-    inp.value = '';
-    inp.value = val;
+  const $inp =  $('.popup-box', $pupUp).find('input:visible:first').focus().get(0);
+  if ($inp) {
+    const val = $inp.value;
+    $inp.value = '';
+    $inp.value = val;
   }
 
-  var d = ($(window).height() - $('.popup-box').height()) / 2;
+  let d = ($(window).height() - $('.popup-box', $pupUp).height()) / 2;
   if (d < 0) d = 0;
-  $('.popup-box-wrap').css('top', $(window).scrollTop() + d);
+  $pupUp.css('top', $(window).scrollTop() + d);
 
-  $('.pop-up-close, .around-pop-up').click(function(){
-    $('.popup-box-wrap:last').remove();
-    return false
+  $('.pop-up-close, .around-pop-up', $pupUp).click(function(e){
+    e.preventDefault()
+    $pupUp.remove();
   });
-  $('.popup-box').on('click', '.btn-cancel', function(){
-    $('.popup-box-wrap:last').remove();
-    return false
+  $('.popup-box', $pupUp).on('click', '.btn-cancel', function(e){
+    e.preventDefault()
+    $pupUp.remove();
   });
+
+  return $pupUp
 }
 
 
@@ -846,7 +849,7 @@ $(document).ready(function(){
         const $group = $(event.target).parents('.js-main-text-input-nullable');
         const $input = $group.find('input');
         $input.attr('readonly','readonly');
-        $input.val(inputNullableTmpVal);
+        $input.val(inputNullableTmpVal).change();
         $('.js-input-nullable-edit', $group).show();
         $('.js-input-nullable-close', $group).hide();
         $('.js-input-nullable-save', $group).hide();
@@ -864,12 +867,13 @@ $(document).ready(function(){
           if ($input.val()!=='') $input.val('');
           $('.js-input-nullable-default', $group).hide();
         }
+        $input.change();
         $input.trigger('nullable-save');
     });
     $(document).on('click', '.js-main-text-input-nullable .js-input-nullable-undo', function(event){
         const $group = $(event.target).parents('.js-main-text-input-nullable');
         const $input = $group.find('input');
-        $input.val($input.attr('placeholder'));
+        $input.val($input.attr('placeholder')).change();
     });
     $(document).on('click', '.js-main-text-input-nullable .js-input-nullable-undo', function(event){
         var $group = $(event.target).parents('.js-main-text-input-nullable');
@@ -879,12 +883,14 @@ $(document).ready(function(){
         const $group = $(event.target).parents('.js-main-text-input-nullable');
         var $input = $(event.target);
         $('.js-input-nullable-default-val', $group).html($input.attr('placeholder'))
-        if ( $input.val()==='' || (''+$input.val())===(''+$input.attr('placeholder')) ) {
+        setTimeout(function(){
+          if (!$('.js-input-nullable-save:visible', $group).length && ($input.val()==='' || (''+$input.val())===(''+$input.attr('placeholder'))) ) {
             if ($input.val()!=='') $input.val('');
             $('.js-input-nullable-default', $group).hide();
-        }else{
+          }else{
             $('.js-input-nullable-default', $group).show();
-        }
+          }
+        }, 0)
     });
     $(document).on('keydown', '.js-main-text-input-nullable input',function(event){
       const $group = $(event.target).parents('.js-main-text-input-nullable');
@@ -972,6 +978,12 @@ $(document).ready(function(){
 
 
 $.fn.tlSwitch = function(options, parentBlock = '.tab-pane'){
+    const settings = jQuery.extend({
+      onText: window.entryData.tr.SW_ON,
+      offText: window.entryData.tr.SW_OFF,
+      handleWidth: '20px',
+      labelWidth: '24px',
+    }, options);
     return this.each(function() {
         const input = $(this);
         const block = input.closest(parentBlock);
@@ -980,7 +992,7 @@ $.fn.tlSwitch = function(options, parentBlock = '.tab-pane'){
         const activateSwitcher = function () {
             if (!input.hasClass('activated') && (block.length === 0 || block.is(':visible'))) {
                 input.addClass('activated');
-                input.bootstrapSwitch(options);
+                input.bootstrapSwitch(settings);
                 observer.disconnect();
             }
         };
@@ -1237,25 +1249,33 @@ function htmlDropdown(list, $destination, defaultValue = false) {
   let empty = true;
   $htmlDropdown.append($selectedItem).append($dropdown);
   list.forEach(function(item){
-    const $item = $(`<div class="item">${item.value}</div>`);
+    const $item = $(`<div class="item"></div>`).append(itemValue(item.value));
     $item.on('click', function(){
       $destination.val(item.name).trigger('change');
       $('.active', $dropdown).removeClass('active');
       $(this).addClass('active');
-      $selectedItem.html(item.value)
+      $selectedItem.html('').append(itemValue(item.value))
     });
     $dropdown.append($item)
     if (value == item.name) {
-      $selectedItem.html(item.value)
+      $selectedItem.html('').append(itemValue(item.value))
       $item.addClass('active');
       empty = false;
     } else if (!value && defaultValue == item.name) {
-      $selectedItem.html(item.value)
+      $selectedItem.html('').append(itemValue(item.value))
       $item.addClass('active');
       $destination.val(item.name).trigger('change');
       empty = false;
     }
   });
+
+  function itemValue(value){
+    if (typeof value == 'object') {
+      return value.clone(true, true)
+    } else {
+      return value
+    }
+  }
 
   if (empty && defaultValue) {
     $destination.val('').trigger('change');

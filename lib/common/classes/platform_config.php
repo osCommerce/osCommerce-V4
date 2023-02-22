@@ -292,6 +292,10 @@ class platform_config
     return (bool)$this->platform['use_social_login'];
   }
 
+  public function checkNeedLogged(){
+    return (bool)$this->platform['checkout_logged_customer'];
+  }
+
   public function contactUsEmail()
   {
       if (!empty($this->platform['contact_us_email'])){

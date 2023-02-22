@@ -1325,7 +1325,7 @@ class Products extends ProviderAbstract implements ImportInterface, ExportInterf
 
     function assigned_customer_groups()
     {
-        if ( !isset($this->data['assigned_customer_groups']) ) {
+        if ( !isset($this->data['assigned_customer_groups']) && \Yii::$app->db->schema->getTableSchema('groups_products')) {
             $this->data['assigned_customer_groups'] = [];
             $get_assigned_r = tep_db_query("SELECT groups_id FROM groups_products WHERE products_id='".$this->data['products_id']."'");
             if ( tep_db_num_rows($get_assigned_r)>0 ){
@@ -1355,6 +1355,7 @@ class Products extends ProviderAbstract implements ImportInterface, ExportInterf
             $fileValue = 1;
         }
 
+        if (!\Yii::$app->db->schema->getTableSchema('groups_products')) return;
         if ( isset($this->data['assigned_customer_groups'][$groups_id]) ) {
             if (!$fileValue) {
                 tep_db_query("DELETE FROM groups_products WHERE groups_id='".(int)$groups_id."' AND products_id='".(int)$products_id."'");

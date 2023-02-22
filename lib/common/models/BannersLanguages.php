@@ -39,7 +39,7 @@ class BannersLanguages extends \yii\db\ActiveRecord
             //[['banners_id', 'banners_title', 'banners_url', 'banners_image', 'text_position', 'svg'], 'required'],
             [['banners_id', 'platform_id', 'language_id', 'target', 'banner_display', 'text_position'], 'integer'],
             [['banners_html_text', 'svg'], 'string'],
-            [['banners_title', 'banners_image'], 'string', 'max' => 64],
+            [['banners_title', 'banners_image'], 'string', 'max' => 255],
             [['banners_url'], 'string', 'max' => 255]
         ];
     }

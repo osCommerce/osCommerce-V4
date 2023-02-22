@@ -22,6 +22,8 @@
                     <td>{$tableItem['title']}</td>
                 {if $tableItem['cmc_key'] == 'api_platform'}
                     <td>{Html::dropDownList($tableItem['cmc_key'], $tableItem['cmc_value'], $app->controller->view->platformList, ['class' => 'form-control'])}</td>
+                {elseif $tableItem['cmc_key'] == 'api_measurement'}
+                    <td>{Html::dropDownList($tableItem['cmc_key'], $tableItem['cmc_value'], ['english'=>'English','metric'=>'Metric'], ['class' => 'form-control'])}</td>
                 {elseif $tableItem['cmc_key'] == 'api_method'}
                     <td>{Html::dropDownList($tableItem['cmc_key'], $tableItem['cmc_value'], ['bearer'=>'Bearer Token (recommended)','post'=>'POST','get'=>'GET (non secure)'], ['class' => 'form-control'])}</td>
                 {elseif $tableItem['cmc_key'] == 'api_status_map'}

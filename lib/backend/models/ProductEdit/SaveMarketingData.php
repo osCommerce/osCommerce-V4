@@ -189,6 +189,40 @@ class SaveMarketingData
             }
         }
 
+        $xsell_backlink_array = (array)Yii::$app->request->post('xsell_backlink');
+        $xsell_backlink_ref_array = (array)Yii::$app->request->post('xsell_backlink_c');
+        $xsell_types = array_unique(array_merge(array_keys($xsell_backlink_ref_array), array_keys($xsell_backlink_array)));
+
+        foreach ($xsell_types as $xsell_type_id){
+            $old_pids = isset($xsell_backlink_ref_array[$xsell_type_id])?$xsell_backlink_ref_array[$xsell_type_id]:[];
+            $posted_pids = isset($xsell_backlink_array[$xsell_type_id])?$xsell_backlink_array[$xsell_type_id]:[];
+            foreach (array_diff($old_pids,$posted_pids) as $_remove_link_back_id){
+                if ( isset($reverseXsells[$_remove_link_back_id]) ){
+                    $reverseXsell = \common\models\ProductsXsell::find()
+                        ->where(['xsell_type_id'=>$xsell_type_id, 'xsell_id'=>$products_id])
+                        ->andWhere(['products_id'=>$_remove_link_back_id])
+                        ->one();
+                    if ( $reverseXsell ) $reverseXsell->delete();
+                }
+            }
+            foreach (array_diff($posted_pids,$old_pids) as $_new_link_back_id){
+                $check_exist = \common\models\ProductsXsell::find()
+                    ->where(['xsell_type_id'=>$xsell_type_id, 'xsell_id'=>$products_id])
+                    ->andWhere(['products_id'=>$_new_link_back_id])
+                    ->count();
+                if ($check_exist) continue;
+
+                $linkbackXsell = new \common\models\ProductsXsell([
+                    'xsell_type_id' => $xsell_type_id,
+                    'xsell_id' => $products_id,
+                    'products_id' => $_new_link_back_id,
+                    'sort_order' => 1 + (int)\common\models\ProductsXsell::find()->where(['products_id'=>$_new_link_back_id, 'xsell_type_id' => $xsell_type_id])->max('sort_order'),
+                ]);
+                $linkbackXsell->loadDefaultValues();
+                $linkbackXsell->save(false);
+            }
+        }
+
         if ($ext = \common\helpers\Acl::checkExtensionAllowed('UpSell', 'allowed')) {
             $ext::productSave($products_id);
         }

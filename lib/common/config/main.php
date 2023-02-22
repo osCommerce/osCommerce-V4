@@ -26,6 +26,8 @@ return [
         'charset' => 'utf8',
         'enableSchemaCache' => true,
         'schemaCache' => 'cache',
+        'enableLogging' => false,
+        'enableProfiling' => false,
         'attributes' => (
             ( defined('DB_SSL_CERT') && DB_SSL_CERT!='' && is_file(DB_SSL_CERT) )?
                 [
@@ -88,7 +90,7 @@ return [
             'flushInterval' => YII_DEBUG ? 1 : 100,
             'targets' => [
                 [
-                    'class' => 'yii\log\FileTarget',
+                    'class' =>  '\common\classes\TlMainFileLogWriter', //'yii\log\FileTarget',
                     'levels' => ['error', 'warning'],
                     'except' => ['yii\web\HttpException:404', 'sql_error', 'dbg*'],
                 ],

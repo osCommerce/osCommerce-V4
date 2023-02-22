@@ -1903,7 +1903,7 @@ class EasypopulateController extends Sceleton
 
     public function actionEmpty()
     {
-        if ($_POST['products']){
+        if (\Yii::$app->request->post('products')){
           $query = tep_db_query("select * from " . TABLE_CATEGORIES);
           while ($data = tep_db_fetch_array($query)){
             @unlink(DIR_FS_CATALOG_IMAGES . $data['categories_image']);
@@ -2040,7 +2040,7 @@ class EasypopulateController extends Sceleton
 
         }
 
-        if ($_POST['orders'] == 1) {
+        if (\Yii::$app->request->post('orders') == 1) {
             \common\helpers\Order::trunk_orders();
 
             \common\models\OrdersProductsAllocate::deleteAll();
@@ -2065,7 +2065,7 @@ class EasypopulateController extends Sceleton
         }
 
 
-        if ($_POST['customers'] == 1){
+        if (\Yii::$app->request->post('customers') == 1){
             \common\helpers\Customer::trunk_customers();
             
             foreach ([

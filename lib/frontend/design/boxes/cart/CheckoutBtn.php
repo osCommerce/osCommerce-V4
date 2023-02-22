@@ -36,7 +36,9 @@ class CheckoutBtn extends Widget
         }
     global $cart;
 
-    if (!Yii::$app->user->isGuest){
+      $needLogged = \Yii::$app->get('platform')->getConfig(\common\classes\platform::currentId())->checkNeedLogged();
+
+    if (!Yii::$app->user->isGuest || $needLogged){
       $checkout_link = tep_href_link('checkout', '', 'SSL');
     } else {
       $checkout_link = tep_href_link('checkout', 'guest=1', 'SSL');

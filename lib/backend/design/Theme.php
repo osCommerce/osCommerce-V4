@@ -155,51 +155,83 @@ class Theme
         return '';
     }
 
-    public static function exportBlock($id, $name = '')
+    public static function exportBlock($id, $type, $params)
     {
         $fsCatalog = DIR_FS_CATALOG . implode(DIRECTORY_SEPARATOR, ['lib', 'backend', 'design', 'groups']) . DIRECTORY_SEPARATOR;
 
-        $designBoxes = \common\models\DesignBoxesTmp::find()->where(['id' => $id])->asArray()->one();
-        if ($name) {
-            $themeArchive = $name;
+        $theme_name = $params['theme_name'];
+
+        $designBoxes = \common\models\DesignBoxesTmp::find()->where([
+            $type => $id,
+            'theme_name' => $theme_name
+        ])->orderBy('sort_order')->asArray()->all();
+
+        if ($params['block-name']) {
+            $themeArchive = $params['block-name'];
         } else {
-            $themeArchive = $designBoxes['theme_name'] . '_' . $designBoxes['widget_name'] . '_' . $id;
+            $themeArchive = $theme_name . '_' . ($id == 'box' ? $designBoxes[0]['widget_name'] . '_' : '') . $id;
         }
+
         FileHelper::createDirectory($fsCatalog);
         chmod($fsCatalog, 0755);
+
+        $name = $themeArchive;
+        for ($i = 1; $i < 100 && file_exists($fsCatalog . $themeArchive . '.zip'); $i++) {
+            $themeArchive = $name . '-' . $i;
+        }
 
         $zip = new \ZipArchive();
         if ($zip->open($fsCatalog . $themeArchive . '.zip', \ZipArchive::CREATE) !== TRUE) {
             return 'Error';
         }
 
-        $json = json_encode(self::blocksTree($id));
+        $boxes = [];
+        foreach ($designBoxes as $key => $box) {
+            $boxTree = self::blocksTree($box['id']);
+            $boxTree['sort_order'] = $key;
+            $boxes[] =$boxTree;
+        }
+        $json = json_encode($boxes);
         $files = [];
 
         $zip->addFromString ('data.json', $json);
 
         foreach (self::$themeFiles as $file){
-            $path = str_replace('frontend/themes/' . $designBoxes['theme_name'] . '/', '', $file);
-            $path = str_replace('themes/' . $designBoxes['theme_name'] . '/', 'theme/', $path);
+            $path = str_replace('frontend/themes/' . $theme_name . '/', '', $file);
+            $path = str_replace('themes/' . $theme_name . '/', 'theme/', $path);
             $zip->addFile(DIR_FS_CATALOG . $file, $path);
             $files[] = $path;
         }
 
         $zip->addFromString ('files.json', json_encode($files));
 
+        $info = [
+            'name' => $params['block-name'],
+            'name_title' => $params['block-title'],
+            'groupCategory' => $params['group-categories'],
+            'comment' => $params['comment'],
+        ];
+        $zip->addFromString ('info.json', json_encode($info));
+
+        if ($params['image']) {
+            $zip->addFromString ('screenshot.png', base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $params['image'])));
+        }
+
         $zip->close();
         $themeArchive .= '.zip';
 
-        header('Cache-Control: none');
-        header('Pragma: none');
-        header('Content-type: application/x-octet-stream');
-        header('Content-disposition: attachment; filename=' . $themeArchive);
-
-        readfile($fsCatalog . $themeArchive);
-        //unlink($fsCatalog . $themeArchive);
         \backend\design\Groups::synchronize();
 
-        return '';
+        if ($params['save-to-groups']) {
+            $message = sprintf(SAVED_TO_GROUPS, $params['block-name']);
+        } else {
+            $message = sprintf(COMMON_CREATED, $params['block-name']);
+        }
+
+        return json_encode([
+            'text' => $message,
+            'filename' => $themeArchive
+        ]);
     }
 
     public static function import($themeName, $archiveFilename)
@@ -302,13 +334,29 @@ class Theme
         }
 
 
-        $arr = json_decode(file_get_contents($pathTmp . DIRECTORY_SEPARATOR . 'data.json'), true);
-        if (!is_array($arr)){
+        $boxesArr = json_decode(file_get_contents($pathTmp . DIRECTORY_SEPARATOR . 'data.json'), true);
+        if (!is_array($boxesArr)){
             return 'Error: data.json';
         }
 
+        $boxIdArr = [];
+        if ($boxesArr['microtime']) {
+            $boxIdArr[] = Theme::blocksTreeImport($boxesArr, $params['theme_name'], $params['block_name'], $params['sort_order']);
+        } else {
+            foreach ($boxesArr as $arr) {
+                $sortOrder = $params['sort_order'] + $arr['sort_order'];
+                $blockBoxes = DesignBoxesTmp::find()->where([
+                    'block_name' => $params['block_name'],
+                    'theme_name' => $params['theme_name'],
+                ])->andWhere(['>=', 'sort_order', $sortOrder])->all();
+                foreach ($blockBoxes as $box) {
+                    $box->sort_order = $box->sort_order + 1;
+                    $box->save();
+                }
+                $boxIdArr[] = Theme::blocksTreeImport($arr, $params['theme_name'], $params['block_name'], $sortOrder);
+            }
+        }
 
-        $boxId = Theme::blocksTreeImport($arr, $params['theme_name'], $params['block_name'], $params['sort_order']);
 
         if (is_file($pathTmp . DIRECTORY_SEPARATOR . 'files.json')) {
             $files = json_decode(file_get_contents($pathTmp . DIRECTORY_SEPARATOR . 'files.json'), true);
@@ -339,7 +387,7 @@ class Theme
         }
         FileHelper::removeDirectory($pathTmp);
 
-        return [$arr, $boxId];
+        return [$boxesArr, $boxIdArr];
     }
 
     public static function getPlatformIds($themeName)
@@ -627,7 +675,7 @@ class Theme
     public static function getCssByClass($class, $themeName)
     {
         static $response = [];
-        if (!$response[$themeName]) {
+        if (!isset($response[$themeName])) {
             $response[$themeName] = [];
         }
 
@@ -1016,6 +1064,9 @@ where dbs.box_id = '" . (int)$id . "'
         //the order is important (empty settings first)
         tep_db_query("delete from " . TABLE_DESIGN_BOXES . " where theme_name = '" . tep_db_input($theme_name) . "'");
 
+        tep_db_query("DELETE db FROM " . TABLE_DESIGN_BOXES . " db INNER JOIN " . TABLE_DESIGN_BOXES_TMP . " dbt ON dbt.id=db.id WHERE dbt.theme_name='" . tep_db_input($theme_name) . "';");
+        tep_db_query("DELETE db FROM " . TABLE_DESIGN_BOXES_SETTINGS . " db INNER JOIN " . TABLE_DESIGN_BOXES_SETTINGS_TMP . " dbt ON dbt.id=db.id WHERE dbt.theme_name='" . tep_db_input($theme_name) . "';");
+
         tep_db_query("INSERT INTO " . TABLE_DESIGN_BOXES . " SELECT * FROM " . TABLE_DESIGN_BOXES_TMP . " WHERE theme_name = '" . tep_db_input($theme_name) . "'");
         tep_db_query("INSERT INTO " . TABLE_DESIGN_BOXES_SETTINGS . " SELECT * FROM " . TABLE_DESIGN_BOXES_SETTINGS_TMP . " WHERE theme_name = '" . tep_db_input($theme_name) . "'");
 
@@ -1196,7 +1247,7 @@ where dbs.box_id = '" . (int)$id . "'
             $visibilityArray = explode(',', $item['visibility']);
             $newVisibilityArray = [];
             foreach ($visibilityArray as $v) {
-                if ($visibilityStyleArray[$v]) {
+                if ($visibilityStyleArray[$v] ?? null) {
                     $newVisibilityArray[] = $visibilityStyleArray[$v];
                 } else {
                     $newVisibilityArray[] = $v;
@@ -1465,6 +1516,7 @@ where dbs.box_id = '" . (int)$id . "'
             ['size' => 144, 'name' => 'apple-icon-144x144.png'],
             ['size' => 152, 'name' => 'apple-icon-152x152.png'],
             ['size' => 180, 'name' => 'apple-icon-180x180.png'],
+            ['size' => 512, 'name' => 'apple-icon-512x512.png'],
             ['size' => 192, 'name' => 'android-icon-192x192.png'],
             ['size' => 32, 'name' => 'favicon-32x32.png'],
             ['size' => 96, 'name' => 'favicon-96x96.png'],
@@ -1477,6 +1529,7 @@ where dbs.box_id = '" . (int)$id . "'
             ['size' => 96, 'name' => 'android-icon-96x96.png'],
             ['size' => 144, 'name' => 'android-icon-144x144.png'],
             ['size' => 192, 'name' => 'android-icon-192x192.png'],
+            ['size' => 512, 'name' => 'android-icon-512x512.png'],
         ];
 
         foreach ($icons as $icon){

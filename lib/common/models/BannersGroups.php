@@ -30,7 +30,6 @@ class BannersGroups extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['width_from', 'width_to', 'image_width', 'image_height'], 'integer'],
             [['banners_group'], 'string', 'max' => 255],
         ];
     }
@@ -43,10 +42,6 @@ class BannersGroups extends \yii\db\ActiveRecord
         return [
             'id' => 'ID',
             'banners_group' => 'Banners Group',
-            'width_from' => 'Width From',
-            'width_to' => 'Width To',
-            'image_width' => 'Image Width',
-            'image_height' => 'Image height',
         ];
     }
 }

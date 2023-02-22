@@ -17,13 +17,14 @@ use yii\web\AssetBundle;
 class DesignAsset extends AssetBundle
 {
     public $basePath = '@webroot';
-    public $baseUrl = '@web/themes/basic/js';
+    public $baseUrl = '@web/themes/basic';
     public $css = [
+        'css/design.css',
     ];
     public $js = [
-      'jquery-ui.min.js',
-      'libs/jquery.hotkeys.js',
-      'jquery.edit-blocks.js',
-      'jquery.edit-theme.js',
+      'js/jquery-ui.min.js',
+      'js/libs/jquery.hotkeys.js',
+      //'jquery.edit-blocks.js',
+      'js/jquery.edit-theme.js',
     ];
 }

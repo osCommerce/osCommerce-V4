@@ -38,9 +38,7 @@ use yii\db\ActiveRecord;
  * @property string $superdiscount_summ
  * @property float $bonus_points_currency_rate
  *
- * @property GroupsCategories[] $groupsCategories
  * @property Categories[] $categories
- * @property GroupsProducts[] $groupsProducts
  * @property Products[] $products
  */
 class Groups extends ActiveRecord
@@ -115,35 +113,30 @@ class Groups extends ActiveRecord
         return $this->hasMany(GroupsDiscounts::class, ['groups_id' => 'groups_id'])->where('check_supersum = 0')->orderBy('groups_discounts_amount');
     }
 
-    /**
-     * @return \yii\db\ActiveQuery
-     */
-    public function getGroupsCategories()
-    {
-        return $this->hasMany(GroupsCategories::class, ['groups_id' => 'groups_id']);
-    }
+    // removed due extracting extension UsersGroupsRestriction
+    // use UsersGroupsRestriction::joinGroupsCategories instead
+    //public function getGroupsCategories()
+    //    return $this->hasMany(GroupsCategories::class, ['groups_id' => 'groups_id']);
 
     /**
      * @return \yii\db\ActiveQuery
      */
     public function getCategories()
     {
+        \Yii::warning('Using UserGroupRestrictions table. Not recommended - the table may be not exist in some osCommerce versions');
         return $this->hasMany(Categories::class, ['categories_id' => 'categories_id'])->viaTable('groups_categories', ['groups_id' => 'groups_id']);
     }
 
-    /**
-     * @return \yii\db\ActiveQuery
-     */
-    public function getGroupsProducts()
-    {
-        return $this->hasMany(GroupsProducts::class, ['groups_id' => 'groups_id']);
-    }
+    //public function getGroupsProducts() - removed due extracting extension UsersGroupsRestriction - use this
+    // if ($model = Acl::checkExtensionTableExist('UserGroupsRestrictions', 'GroupsProducts')) {
+    //    $yourModel->innerJoin($model::tableName() ...)
 
     /**
      * @return \yii\db\ActiveQuery
      */
     public function getProducts()
     {
+        \Yii::warning('Using UserGroupRestrictions table. Not recommended - the table may be not exist in some osCommerce versions');
         return $this->hasMany(Products::class, ['products_id' => 'products_id'])->viaTable('groups_products', ['groups_id' => 'groups_id']);
     }
 }

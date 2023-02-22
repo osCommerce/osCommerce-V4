@@ -362,11 +362,23 @@ class PriceFormula {
                             break;
                         }
                     }
+                } else {
+                    self::logAutoUpdateProduct($productId, "Error: extension SupplierPriority is needed to use '" . SUPPLIER_PRICE_SELECTION . "'");
                 }
             }
         }
 
         return ['product_price' => $product_price, 'selected_supplier_id' => $selected_supplier_id ?? null, 'calculatedPrice' => $calculatedPrice ?? null];
+    }
+
+    private static function addAutoUpdateWhere($productQuery)
+    {
+        if (SUPPLIER_UPDATE_PRICE_MODE == 'Auto') {
+            $productQuery->andWhere(['OR', ['IS', 'supplier_price_manual', new \yii\db\Expression('NULL')], ['supplier_price_manual' => 0]]);
+        } else {
+            $productQuery->andWhere(['supplier_price_manual' => 0]);
+        }
+        return $productQuery;
     }
 
     /**
@@ -379,31 +391,35 @@ class PriceFormula {
         $productQuery = \common\models\Products::find()
             ->select(['products_price', 'products_id', 'supplier_price_manual', 'products_price_full'])
             ->where(['products_id' => (int)$productId, 'products_id_price' => (int)$productId]);
-        if (SUPPLIER_UPDATE_PRICE_MODE == 'Auto') {
-            $productQuery->andWhere(['OR', ['IS', 'supplier_price_manual', new \yii\db\Expression('NULL')], ['supplier_price_manual' => 0]]);
-        } else {
-            $productQuery->andWhere(['OR', ['IS NOT', 'supplier_price_manual', new \yii\db\Expression('NULL')], ['supplier_price_manual' => 0]]);
+        return self::addAutoUpdateWhere($productQuery)->one();
+    }
+
+    private static function logAutoUpdate($msg, $echoForConsole = true)
+    {
+        \Yii::info($msg,'suppliers/auto-update-price');
+        if (\common\helpers\System::isConsole() && $echoForConsole) {
+            echo $msg . "\n";
         }
-
-        return $productQuery->one();
     }
 
-    private static function logAutoUpdate($productId, $msg)
+    private static function logAutoUpdateProduct($productId, $msg)
     {
-        \Yii::info("Autoupdate price for product #{$productId}: #{$msg}",'suppliers/auto-update-price');
+        self::logAutoUpdate("Autoupdate price for product #{$productId}: #{$msg}", false);
     }
 
-    public static function applyDb($productId)
+    public static function applyDb($productId, $checkAutoField = true)
     {
-        $productModel = self::getProductModelForAutoUpdate($productId);
-        if (empty($productModel)) {
-            self::logAutoUpdate($productId, 'Canceled - product does not meet auto the update conditions');
-            return;
+        if ($checkAutoField) {
+            $productModel = self::getProductModelForAutoUpdate($productId);
+            if (empty($productModel)) {
+                self::logAutoUpdateProduct($productId, 'Canceled - product does not meet auto the update conditions');
+                return;
+            }
         }
 
         extract( self::autoSelectSupplier($productId) );
         if ( $product_price === false ) {
-            self::logAutoUpdate($productId, 'Canceled - supplier price is empty' );
+            self::logAutoUpdateProduct($productId, 'Canceled - supplier price is empty' );
             return;
         }
 
@@ -412,7 +428,7 @@ class PriceFormula {
             $log_string .= "Applied {$calculatedPrice['label']} ".\json_encode($calculatedPrice['applyParams']);
             $log_string .= " DATA=".\json_encode($calculatedPrice);
         }
-        self::logAutoUpdate($productId, $log_string );
+        self::logAutoUpdateProduct($productId, $log_string );
         $currencyId = (int) ((USE_MARKET_PRICES == 'True' ? \common\helpers\currencies::getCurrencyId(DEFAULT_CURRENCY) : 0));
 
         if (strpos($productId, '{') !== false) {
@@ -448,6 +464,7 @@ class PriceFormula {
         "products_id='" . (int)$productId . "' AND groups_id=0 AND currencies_id='" . $currencyId . "' AND products_group_price!=-1"
             );
             $productModel->products_price = $product_price;
+            $productModel->auto_price_modified = (new \DateTime())->format(\DateTime::ATOM);
             $productModel->save(false);
 
             /* @var $extP \common\extensions\ProductPriceIndex\ProductPriceIndex */
@@ -456,6 +473,28 @@ class PriceFormula {
                 $extP::reindex((int)$productId);
             }
         }
+        return true;
+    }
+
+    public static function batchProductAutoCalcPriceBySupplier($LIMIT_RECORDS = 1000, $LIMIT_TIME = 3000)
+    {
+        self::logAutoUpdate('Batch update started for ' . (int)$LIMIT_RECORDS . ' products' );
+        $productQuery = \common\models\Products::find()->alias('p')
+            ->select('products_id')
+            ->where("auto_price_modified IS NULL OR auto_price_modified < COALESCE(last_xml_import, '1000-01-01 00:00:00') OR auto_price_modified < COALESCE(products_last_modified, '1000-01-01 00:00:00')")
+            ->limit($LIMIT_RECORDS);
+        $startTime = microtime(true);
+        $count = $updated = 0;
+        foreach(self::addAutoUpdateWhere($productQuery)->column() as $pid) {
+            $updated += self::applyDb($pid, false) ? 1 : 0;
+            $count++;
+            if ((microtime(true) - $startTime) > $LIMIT_TIME) {
+                self::logAutoUpdate('Batch update is interrupted due time limit');
+                break;
+            }
+        }
+        $elapsedTime = microtime(true) - $startTime;
+        self::logAutoUpdate("Batch update finished. Products reviewed: $count updated: $updated. Elapsed time: $elapsedTime");
     }
 
     public static function getSupplierRulesCollection($supplierId)

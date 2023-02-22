@@ -36,6 +36,8 @@
               <option value="carousel"{if $settings[0].view_as == 'carousel'} selected{/if}>{$smarty.const.TEXT_CAROUSEL}</option>
             </select>
           </div>
+
+          {if $settings.designer_mode}
           <div class="visibility">
             <div class="setting-row"><strong>{$smarty.const.TEXT_INCLUDE_EMPTY_ALL}</strong></div>
             <input name="product_types[0]" type="hidden" value="0">{*array index is used as bit mask*}
@@ -59,6 +61,7 @@
               <option value="h4"{if $settings[0].product_names_teg == 'h4'} selected{/if}>h4</option>
             </select>
           </div>
+          {/if}
 
           <div class="setting-row">
             <label for="">{$smarty.const.HIDE_PARENTS_IF_EMPTY}</label>
@@ -75,38 +78,7 @@
 
           {include 'include/ajax.tpl'}
 
-
-          <div class="tabbable tabbable-custom">
-            <ul class="nav nav-tabs">
-
-              <li class="active"><a href="#list" data-toggle="tab">{$smarty.const.TEXT_MAIN}</a></li>
-              {foreach $settings.media_query as $item}
-                <li><a href="#list{$item.id}" data-toggle="tab">{$item.setting_value}</a></li>
-              {/foreach}
-
-            </ul>
-            <div class="tab-content">
-              <div class="tab-pane active menu-list" id="list">
-
-                <div class="setting-row">
-                  <label for="">{$smarty.const.TEXT_COLUMNS_IN_ROW}</label>
-                  <input type="text" name="setting[0][col_in_row]" class="form-control" value="{$settings[0].col_in_row}"/>
-                </div>
-
-              </div>
-              {foreach $settings.media_query as $item}
-                <div class="tab-pane menu-list" id="list{$item.id}">
-
-                  <div class="setting-row">
-                    <label for="">{$smarty.const.TEXT_COLUMNS_IN_ROW}</label>
-                    <input type="text" name="visibility[0][{$item.id}][col_in_row]" class="form-control" value="{$visibility[0][{$item.id}].col_in_row}"/>
-                  </div>
-
-                </div>
-              {/foreach}
-
-            </div>
-          </div>
+          {include 'include/col_in_row.tpl'}
 
         </div>
         <div class="tab-pane" id="product">
@@ -132,3 +104,6 @@
     <span class="btn btn-cancel">{$smarty.const.IMAGE_CANCEL}</span>
   </div>
 </form>
+<script type="text/javascript">
+  $('.nav-tabs-scroll-2').scrollingTabs()
+</script>

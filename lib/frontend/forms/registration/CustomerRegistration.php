@@ -103,6 +103,11 @@ class CustomerRegistration extends Model {
                 }else{
                     $this->captha_enabled = false;
                 }
+            } else {
+                $this->captcha_widget = \yii\captcha\Captcha::widget([
+                        'model' => $this,
+                        'attribute' => 'captcha'
+                ]);
             }
         }
         parent::__construct($config);
@@ -609,6 +614,12 @@ class CustomerRegistration extends Model {
             case static::SCENARIO_REGISTER :
                 $fields[] = 'password';
                 $fields[] = 'confirmation';
+                if ($this->captha_enabled == 'captha') {
+                    $fields[] = 'captcha';
+                }
+                if ($this->captha_enabled == 'recaptha') {
+                    $fields[] = 'captcha_response';
+                }
                 $fields[] = 'group';
                 if (in_array(ACCOUNT_EMAIL, ['required_register', 'visible_register'])) {
                     $fields[] = 'email_address';

@@ -147,6 +147,68 @@ class Merchant extends PayPalResourceModel {
 		return !isset($query[$parameter_name]) ? null : $query[$parameter_name];
 	}
 
+    public static function getCustomerToken($authCode, $sharedId, $nonce, $partnerId, $mode)
+    {
+
+        if ($mode=='Live') {
+            $config = [
+                    //baseUrl' => \common\modules\orderPayment\paypal_partner::REST_LIVE_ENDPOINT
+                ];
+            $baseurl = \common\modules\orderPayment\paypal_partner::REST_LIVE_ENDPOINT;
+        } else {
+            $config = [
+                    //'baseUrl' => \common\modules\orderPayment\paypal_partner::REST_SANDBOX_ENDPOINT
+                ];
+            $baseurl = \common\modules\orderPayment\paypal_partner::REST_SANDBOX_ENDPOINT;
+        }
+
+        $client = new \yii\httpclient\Client($config);
+
+        $request = $client->createRequest()
+            ->setMethod('POST')
+            //->setFormat(Client::FORMAT_JSON)
+            ->setUrl("$baseurl/v1/oauth2/token")
+            //->setUrl("/v1/oauth2/token")
+            ->setHeaders(['Content-Type' => 'application/x-www-form-urlencoded',
+                'Authorization' => 'Basic ' . base64_encode($sharedId . ":")])
+            ->setData(['grant_type'=>'authorization_code',
+                        'code'=> $authCode,
+                        'code_verifier'=>$nonce]);
+
+        $response = $request->send();
+        if ($response->isOk) {
+            $json = $response->getContent();
+            if (!is_array($json)) {
+                $json = json_decode($json, true);
+            }
+            if (!empty($json['access_token'])) {
+                $request = $client->createRequest()
+                    ->setMethod('GET')
+                    ->setFormat(\yii\httpclient\Client::FORMAT_JSON)
+                    ->setUrl("$baseurl/v1/customer/partners/{$partnerId}/merchant-integrations/credentials/")
+                    ->setHeaders([
+                                  'Content-Type' => 'application/json',
+                                  'Authorization' => 'Bearer ' . $json['access_token']
+                    ])
+                    ->setData([]);
+
+                $response = $request->send();
+                if ($response->isOk) {
+                    $json = $response->getContent();
+                    if (!is_array($json)) {
+                        $json = json_decode($json, true);
+                        return $json;
+                    }
+                }
+
+            }
+
+        } else {
+            \Yii::warning("\$authCode $authCode, \$sharedId $sharedId, \$nonce $nonce, \$partnerId $partnerId, \$mode  $mode  token #### " .print_r($response, true), 'TLDEBUG');
+        }
+        return [];
+    }
+   
     public static function checkStatus($partnerId, $merchantId, $apiContext = null, $restCall = null)
     {
         ArgumentValidator::validate($partnerId, 'partnerId');

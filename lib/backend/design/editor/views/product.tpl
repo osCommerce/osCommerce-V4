@@ -110,7 +110,7 @@
                                     <span class="label_ed-or-pr">{$smarty.const.PACK_QTY}: ({$product['product_details']['product']['pack_unit']} items)</span>
                                     <div class="qty-box plus_td">
                                         <span class="pr_minus"></span>
-                                            {Html::textInput('product_info[][qty_][1]', $product['packs'], ['class' => 'qty_pack form-control new-product', 'data-type'=>'pack_unit', 'data-max'=>'', 'data-min'=>'', 'data-step'=>''])}
+                                            {Html::textInput('product_info[][qty_][1]', $product['packs'], ['class' => 'qty qty_pack form-control new-product', 'data-type'=>'pack_unit', 'data-max'=>'', 'data-min'=>'', 'data-step'=>''])}
                                         <span class='pr_plus'></span>                                        
                                     </div>
                                 {/if}
@@ -124,7 +124,7 @@
                                     </span>
                                     <div class="qty-box plus_td">
                                         <span class="pr_minus"></span>
-                                            {Html::textInput('product_info[][qty_][2]', $product['packagings'], ['class' => 'qty_packaging form-control new-product', 'data-type'=>'packaging', 'data-max'=>'', 'data-min'=>'', 'data-step'=>''])}                                            
+                                            {Html::textInput('product_info[][qty_][2]', $product['packagings'], ['class' => 'qty qty_packaging form-control new-product', 'data-type'=>'packaging', 'data-max'=>'', 'data-min'=>'', 'data-step'=>''])}                                            
                                         <span class='pr_plus'></span>
                                     </div>
                                 {/if}

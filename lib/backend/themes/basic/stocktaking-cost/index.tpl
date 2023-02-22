@@ -137,7 +137,9 @@
 				   
 			</div>
         </div>
+		<div class="sh-scloll">Table scrolled</div>
 		<div class="col-md-12">
+		
         <table class="table table-striped table-bordered table-hover table-responsive table-checkable table-selectable js-table-sortable datatable table-no-search" verticalHeight="true" checkable_list="0" data_ajax="stocktaking-cost/list">
           <thead class="widget-fixed">
           <tr>

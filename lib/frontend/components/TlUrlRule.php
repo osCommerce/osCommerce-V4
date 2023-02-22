@@ -582,6 +582,11 @@ class TlUrlRule extends UrlRule
             return ['info/custom', ['action' => $custom['setting_value'] ]];
           }
 
+          foreach (\common\helpers\Hooks::getList('url-rule/parse-request') as $filename) {
+            $result = include($filename);
+            if ($result && is_array($result)) return $result;
+          }
+
           /* @var $ext \common\extensions\SeoRedirects\SeoRedirects*/
           if ($ext = \common\helpers\Acl::checkExtensionAllowed('SeoRedirects', 'allowed')) {
             $ext::checkRedirect($seo_path);
@@ -589,12 +594,6 @@ class TlUrlRule extends UrlRule
           /* @var $ext \common\extensions\SeoRedirectsNamed\SeoRedirectsNamed*/
           if ($ext = \common\helpers\Acl::checkExtensionAllowed('SeoRedirectsNamed', 'allowed')) {
             $ext::checkRedirect($seo_path);
-          }
-          if ($ext = \common\helpers\Acl::checkExtensionAllowed('SupportSystem', 'allowed')) {
-            $response = $ext::checkUrl($seo_path);
-            if ($response !== false && is_array($response) ){
-                return $response;
-            }
           }
 
           if ($ext = \common\helpers\Acl::checkExtensionAllowed('DeliveryLocation', 'allowed')) {

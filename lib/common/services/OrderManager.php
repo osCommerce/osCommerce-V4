@@ -798,10 +798,10 @@ class OrderManager {
             $estimate = $this->get('estimate' . $postfix);
             $_country_info = \common\helpers\Country::get_countries($estimate['country_id'], true, '', substr($postfix, 1));
             $address = [
-                'street_address' => $estimate['street_address'],
-                'suburb' => $estimate['suburb'],
-                'city' => $estimate['city'],
-                'postcode' => $estimate['postcode'],
+                'street_address' => $estimate['street_address']??'',
+                'suburb' => $estimate['suburb']??'',
+                'city' => $estimate['city']??'',
+                'postcode' => $estimate['postcode']??'',
                 'zone_id' => (isset($estimate['zone']) && !empty($estimate['zone']) ? (is_int($estimate['zone']) ? $estimate['zone'] : \common\helpers\Zones::get_zone_id($estimate['country_id'], $estimate['zone'])) : 0),
                 'country_id' => $estimate['country_id'],
             ];

@@ -46,14 +46,16 @@ class Installer extends \common\classes\Migration {
                 'three_ds_settings' => $this->string(4096)->notNull()->defaultValue(''),
                 'boarding_json' => $this->text()->notNull()->defaultValue(''),
                 'boarding_date' => $this->date()->notNull()->defaultValue('0000-00-00'),
+                'status' => $this->integer(11)->notNull()->defaultValue(0),
               
             ], 'engine=InnoDB');
         }
     }
     
-    public function remove(){
+    public function remove($platform_id){
         $this->compact = true;
         if ($this->isTableExists('paypal_seller_info')){
+            models\SellerInfo::deleteAll(['platform_id' => $platform_id]);
             //2do? at least check if removed on all platforms $this->dropTable('paypal_seller_info');
         }
     }

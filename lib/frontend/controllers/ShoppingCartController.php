@@ -128,11 +128,13 @@ class ShoppingCartController extends Sceleton {
                     $estimate = $this->manager->get('estimate_ship');
                     if ($estimate['country_id'] != $post['country_id']){
                         $this->manager->set('estimate_ship', ['country_id' => $post['country_id'], 'postcode' => $post['post_code']]);
+                        $this->manager->set('estimate_bill', ['country_id' => $post['country_id'], 'postcode' => $post['post_code']]);
                         $post['shipping'] = null;
                         $this->manager->set('shipping', false);
                     }
                 } else {
                     $this->manager->set('estimate_ship', ['country_id' => $post['country_id'], 'postcode' => $post['post_code']]);
+                    $this->manager->set('estimate_bill', ['country_id' => $post['country_id'], 'postcode' => $post['post_code']]);
                 }
             } 
             if ($post['shipping']??null){

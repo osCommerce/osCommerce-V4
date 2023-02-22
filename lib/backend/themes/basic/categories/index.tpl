@@ -49,15 +49,22 @@
 
             <div class="filter_categories {if $isMultiPlatforms}filter_categories_1{/if}">
               <div class="filter_block after">
-                <div class="filter_left">
-                  <div class="filter_row row_with_label">
-                    <label>{$smarty.const.TEXT_SEARCH_BY}</label>
-                    <select class="form-control" name="by">
-                        {foreach $app->controller->view->filters->by as $Item}
-                            <option {$Item['selected']} value="{$Item['value']}">{$Item['name']}</option>
-                        {/foreach}
-                    </select>
+                  <div class="filter_left">
+                        <div class="filter_row row_with_label">
+                            <label>{$smarty.const.TEXT_SEARCH_BY}</label>
+                            <select class="form-control" name="by">
+                                {foreach $app->controller->view->filters->by as $Item}
+                                    <option {$Item['selected']} value="{$Item['value']}">{$Item['name']}</option>
+                                {/foreach}
+                            </select>
+                      </div>
+                   </div>
+                <div class="filter_right">
+                    <div class="filter_row filter_disable">
+                    <input type="text" name="search" value="{$app->controller->view->filters->search}" class="form-control" />
                   </div>
+                </div>
+                <div class="filter_left">                  
                   <div class="filter_row row_with_label">
                     <label>{$smarty.const.TEXT_BRAND}</label>
                     <div class="f_td f_td_group brands">
@@ -86,9 +93,7 @@
                   </div>
                 </div>
                 <div class="filter_right">
-                  <div class="filter_row filter_disable">
-                    <input type="text" name="search" value="{$app->controller->view->filters->search}" class="form-control" />
-                  </div>
+                  
                   <div class="filter_row supllier_filter">
                     <label>{$smarty.const.TEXT_SUPPLIER}</label>
                     <div class="f_td f_td_group suppliers">

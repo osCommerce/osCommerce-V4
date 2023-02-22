@@ -1,3 +1,19 @@
+<div class="designer-mode">
+    <label class="">{$smarty.const.EDIT_MODE}:</label>
+    <div>
+        <input type="radio" name="designer_mode" value=""{if !$designer_mode} checked{/if}/>
+        <span>{$smarty.const.BASIC_MODE}</span>
+    </div>
+    <div>
+        <input type="radio" name="designer_mode" value="advanced"{if $designer_mode == 'advanced'} checked{/if}/>
+        <span>{$smarty.const.ADVANCED_MODE}</span>
+    </div>
+    <div>
+        <input type="radio" name="designer_mode" value="expert"{if $designer_mode == 'expert'} checked{/if}/>
+        <span>{$smarty.const.EXPERT_MODE}</span>
+    </div>
+</div>
+
 <div class="theme-list" data-group_id="{$group_id}">
     {foreach $themes as $item}
         {if $item.theme_name}
@@ -44,7 +60,7 @@
                     <span class="info-ico"></span>
                     <span class="img-ico"></span>
                 </div>
-                <div class="title">
+                <div class="title{if $item.platforms} has-platforms{/if}">
                     <div class="title-holder">{$item.title}</div>
                     <form class="title-edit-input">
                         <input type="text" value="{$item.title}" class="form-control"/>
@@ -53,6 +69,14 @@
                     <div class="title-cancel" title="{$smarty.const.IMAGE_CANCEL}"></div>
                     <div class="btn title-apply">{$smarty.const.IMAGE_APPLY}</div>
                     <div class="title-preloader"></div>
+                </div>
+                <div class="platforms">
+                    {foreach $item.platforms as $platform}
+                        <div class="platform">
+                            <div class="platform-title">{$platform.platform_name}</div>
+                            <a href="{if $platform.ssl_enabled == '0'}http://{else}https://{/if}{$platform.platform_url}" target="_blank">{$platform.platform_url}</a>
+                        </div>
+                    {/foreach}
                 </div>
                 <div class="buttons">
                     <a href="{Yii::$app->urlManager->createUrl(['design/backups', 'theme_name' => $item.theme_name])}"
@@ -108,6 +132,7 @@
                     <div class="btn title-apply">{$smarty.const.IMAGE_APPLY}</div>
                     <div class="title-preloader"></div>
                 </div>
+                <div class="platforms"></div>
                 <div class="buttons">
                     <a href="{$item.link}" class="btn btn-primary btn-open">{$smarty.const.TEXT_OPEN}</a>
                 </div>
@@ -245,6 +270,85 @@ $(function () {
                 $('.upload-preview-image img', $theme).attr('src', '{DIR_WS_CATALOG}themes/basic/img/screenshot.png');
             }
         }, 'json')
+    }
+
+    let designerMode = $('.designer-mode input:checked').val();
+    switchDesignerMode(designerMode);
+    $('.designer-mode input').tlSwitch({
+        onSwitchChange: function(e, status){
+            if (designerMode == e.target.value) {
+                return null;
+            }
+
+            let message = '';
+            switch (e.target.value) {
+                case 'advanced':
+                    message = '{$smarty.const.ARE_YOU_SURE_MODE_ADVANCED}';
+                    break;
+                case 'expert':
+                    message = '{$smarty.const.ARE_YOU_SURE_MODE_EXPERT}';
+                    break;
+                default:
+                    message = '{$smarty.const.ARE_YOU_SURE_MODE_BASIC}';
+            }
+
+            bootbox.dialog({
+                message: message,
+                title: '{$smarty.const.MODE_SWITCH_WARNING}',
+                className: 'edit-banner-popup',
+                buttons: {
+                    main: {
+                        label: "{$smarty.const.IMAGE_CANCEL}",
+                        className: "btn",
+                        callback: function() {
+                            $(`.designer-mode input[value="${ designerMode }"]`).trigger('click')
+                        }
+                    },
+                    success: {
+                        label: "{$smarty.const.IMAGE_SAVE}",
+                        className: "btn btn-primary",
+                        callback: function() {
+                            designerMode = e.target.value;
+                            switchDesignerMode(designerMode, true)
+                        }
+                    }
+                }
+            });
+        }
+    })
+
+    function switchDesignerMode(mode, save = false){
+        /*switch (mode) {
+            case 'advanced':
+                $('.create-group').show();
+                $('.btn-add-theme').hide();
+                $('.btn-import-theme').show();
+                $('.btn-backups').show();
+                $('.btn-move').show();
+                $('.btn-copy-t').show();
+                $('.remove-theme').show();
+                break;
+            case 'expert':
+                $('.create-group').show();
+                $('.btn-add-theme').show();
+                $('.btn-import-theme').show();
+                $('.btn-backups').show();
+                $('.btn-move').show();
+                $('.btn-copy-t').show();
+                $('.remove-theme').show();
+                break;
+            default:
+                $('.create-group').hide();
+                $('.btn-add-theme').hide();
+                $('.btn-import-theme').hide();
+                $('.btn-backups').hide();
+                $('.btn-move').hide();
+                $('.btn-copy-t').hide();
+                $('.remove-theme').hide();
+        }*/
+        if (save) {
+            $.post('design/save-admin-data', { designer_mode: mode})
+        }
     }
 })
 </script>

@@ -301,7 +301,9 @@ $(".products_groups_image").image_uploads();
         while ($data = tep_db_fetch_array($query)) {
             $groupProducts[] = [
                 'products_id' => $data['products_id'],
+                'id' => $data['products_id'],
                 'products_name' => $data['products_name'],
+                'name' => $data['products_name'],
                 'products_model' => $data['products_model'],
                 'image' => \common\classes\Images::getImage($data['products_id'], 'Small'),
                 'price' => $currencies->format(\common\helpers\Product::get_products_price($data['products_id'])),

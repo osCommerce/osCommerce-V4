@@ -1,3 +1,5 @@
+{use class="\common\helpers\Html"}
+{use class="\common\helpers\Date"}
 <div id="trackingNumber">
     <form name="savetrack" method="post" onSubmit="return saveTracking();">
         <input type="hidden" name="orders_id" value="{$orders_id}">
@@ -22,6 +24,26 @@
         </div>
     {/if}
     </div>
+    {if $sync && !empty($sync['transactions'])}
+        <input type="hidden" name='platform_id' value='{$platform_id}' />
+        <div class="sync" style="padding:0px 20px 10px">
+            {if !$sync['added']}
+                <div class="widget-content">
+                    <span class="intro">{$smarty.const.TEXT_TRACKING_ADD_TO_PAYMENT_GATEWAY}</span><br/>
+                {foreach $sync['transactions'] as $s}
+                    <span>{Html::checkbox('sync_to_payment['|cat:$s['id']|cat:']', false, ['value' => $s['id']])}
+                        <label for="syncToPayment_{$s['id']}_">{$s['payment']} {sprintf($smarty.const.TEXT_TRACKING_TRANSACTION, $s['transaction'], Date::date_short($s['paid_on']))}</label>
+                    </span>
+                {/foreach}
+                </div>
+
+            {else}
+                {foreach $sync['transactions'] as $s}
+                <span title="{Date::datetime_short($s['date_added'])}">{sprintf($smarty.const.TEXT_TRACKING_ADD_DETAILS, sprintf($smarty.const.TEXT_TRACKING_TRANSACTION, $s['payment'], $s['transaction']), Date::date_short($s['date_added']))}</span>
+                {/foreach}
+            {/if}
+        </div>
+    {/if}
     {if is_array($orders_products) && count($orders_products) > 0}
         <table border="0" class="table table-bordered" style="width:95%" align="center" cellspacing="0" cellpadding="2">
             <thead>

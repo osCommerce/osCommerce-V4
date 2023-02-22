@@ -72,7 +72,7 @@ class AccountController extends Sceleton
     {
         $languages_id = \Yii::$app->settings->get('languages_id');
         global $breadcrumb;
-        global $cart, $wish_list;
+        global $cart;
 
         \common\helpers\Translation::init('account/history');
         $messageStack = \Yii::$container->get('message_stack');
@@ -116,8 +116,6 @@ class AccountController extends Sceleton
         $topAcc['customer_points'] = $customer->customers_bonus_points;
         $topAcc['has_customer_points_history'] = $customer->hasBonusHistory($customer_id);
         $orders = $cOrders->orderBy('o.orders_id desc')->all();
-
-        $products_wishlist = $wish_list->get_products();
 
         $regular_offers_value = 0;
 
@@ -173,7 +171,6 @@ class AccountController extends Sceleton
                 'params' => [
                     'mainData' => $topAcc,
                     'customer' => $customer,
-                    'wishlist' => $products_wishlist,
                     'regular_offers' => $regular_offers_value
                 ]
             ]);
@@ -249,13 +246,13 @@ class AccountController extends Sceleton
         }
       /*wishlist*/
 
-      for ($i=0, $n=sizeof($products_wishlist); $i<$n; $i++) {
-        $products_wishlist[$i]['image'] = Images::getImageUrl($products_wishlist[$i]['id'], 'Small');
-        $products_wishlist[$i]['link'] = tep_href_link(FILENAME_PRODUCT_INFO, 'products_id=' . $products_wishlist[$i]['id']);
-        $products_wishlist[$i]['final_price_formatted'] = $currencies->display_price($products_wishlist[$i]['final_price'], \common\helpers\Tax::get_tax_rate($products_wishlist[$i]['tax_class_id']));
-        $products_wishlist[$i]['remove_link'] = tep_href_link(FILENAME_WISHLIST,'products_id=' . $products_wishlist[$i]['id'].'&action=remove_wishlist','SSL');
-        $products_wishlist[$i]['move_in_cart'] = tep_href_link(FILENAME_WISHLIST,'products_id=' . $products_wishlist[$i]['id'].'&action=wishlist_move_to_cart','SSL');
-      }
+//      for ($i=0, $n=sizeof($products_wishlist); $i<$n; $i++) {
+//        $products_wishlist[$i]['image'] = Images::getImageUrl($products_wishlist[$i]['id'], 'Small');
+//        $products_wishlist[$i]['link'] = tep_href_link(FILENAME_PRODUCT_INFO, 'products_id=' . $products_wishlist[$i]['id']);
+//        $products_wishlist[$i]['final_price_formatted'] = $currencies->display_price($products_wishlist[$i]['final_price'], \common\helpers\Tax::get_tax_rate($products_wishlist[$i]['tax_class_id']));
+//        $products_wishlist[$i]['remove_link'] = tep_href_link(FILENAME_WISHLIST,'products_id=' . $products_wishlist[$i]['id'].'&action=remove_wishlist','SSL');
+//        $products_wishlist[$i]['move_in_cart'] = tep_href_link(FILENAME_WISHLIST,'products_id=' . $products_wishlist[$i]['id'].'&action=wishlist_move_to_cart','SSL');
+//      }
       /*wishlist*/
       /*subscription*/
         $subscriptions = [];
@@ -287,7 +284,7 @@ class AccountController extends Sceleton
         $account_links['address_book_edit'] = tep_href_link('account/address-book-process', 'edit=' . $customer_default_address_id, 'SSL');
         $account_links['address_book'] = tep_href_link('account/address-book', '', 'SSL');
         $account_links['account_password'] = tep_href_link(FILENAME_ACCOUNT_PASSWORD, '', 'SSL');
-        $account_links['wishlist'] = tep_href_link(FILENAME_WISHLIST, '','SSL');
+        $account_links['wishlist'] = ''; // remove? was: tep_href_link(FILENAME_WISHLIST, '','SSL');
         $account_links['account_logoff'] = tep_href_link(FILENAME_LOGOFF, '');
         $account_links['account_history'] = tep_href_link('account/history', '', 'SSL');
         $account_links['account_newsletters'] = tep_href_link(FILENAME_ACCOUNT_NEWSLETTERS, '', 'SSL');
@@ -306,7 +303,7 @@ class AccountController extends Sceleton
             'priamry_address' => $priamry_address,
             'account_reviews' => $account_reviews,
             'account_reviews_more_link' => $account_reviews_more_link,
-            'products_wishlist' => $products_wishlist,
+            'products_wishlist' => [],
             'showBonusPart' => $showBonusPart,
             'regular_offers' => $regular_offers_value,
         ]);
@@ -324,7 +321,6 @@ class AccountController extends Sceleton
     public function actionLogin()
     {
         global $cart, $navigation;
-        global $wish_list;
 
         if (!Yii::$app->user->isGuest){
             tep_redirect(tep_href_link('account/index', '', 'SSL'));
@@ -442,7 +438,6 @@ class AccountController extends Sceleton
 
     public function actionCreate() {
         global $cart, $navigation;
-        global $wish_list;
 
         if (!Yii::$app->user->isGuest){
             tep_redirect(tep_href_link('account/index', '', 'SSL'));
@@ -555,7 +550,7 @@ class AccountController extends Sceleton
     public function actionLogoff()
     {
         $this->accountRedirect('Logoff');
-      global $breadcrumb, $cart, $wish_list;
+      global $breadcrumb, $cart;
 
       if (!Yii::$app->user->isGuest){
         \Yii::$app->settings->clear();
@@ -564,7 +559,10 @@ class AccountController extends Sceleton
 
         //$customer_groups_id = DEFAULT_USER_GROUP;
         $cart->reset();
-        $wish_list->reset();
+
+        foreach (\common\helpers\Hooks::getList('customers/logoff') as $filename) {
+              include($filename);
+        }
 
         if ($ext = \common\helpers\Acl::checkExtensionAllowed('Quotations', 'allowed')) {
             $ext::resetCart();
@@ -649,14 +647,12 @@ class AccountController extends Sceleton
             \Yii::$app->settings->set('locale', $lng->language['locale']);
             \Yii::$app->settings->set('languages_id', $languages_id);
 
-            global $cart, $wish_list, $multi_cart, $quote, $sample;
+            global $cart, $multi_cart, $quote, $sample;
             unset($multi_cart);
             unset($quote);
             unset($sample);
             $cart = new \common\classes\shopping_cart();
-            $wish_list = new \common\classes\whish_list();
             Yii::$app->getSession()->set('cart',$cart);
-            Yii::$app->getSession()->set('wish_list',$wish_list);
 
             if( $ext = \common\helpers\Acl::checkExtensionAllowed( 'MultiCart', 'allowed' ) ) {
                 if ($ext::allowed()){
@@ -1615,62 +1611,6 @@ class AccountController extends Sceleton
       // }} */
     }
 
-    public function actionWishlist()
-    {
-      global $breadcrumb, $wish_list, $navigation;
-
-      $this->checkIsGuest();
-
-      $messageStack = \Yii::$container->get('message_stack');
-      $currencies = Yii::$container->get('currencies');
-
-      $message_wish_list = '';
-      if ( $messageStack->size('wishlist')>0 ){
-        $message_wish_list = $messageStack->output('wishlist');
-      }
-
-      $products = $wish_list->get_products();
-      for ($i=0, $n=sizeof($products); $i<$n; $i++) {
-        $products[$i]['image'] = Images::getImageUrl($products[$i]['id'], 'Small');
-        $products[$i]['link'] = tep_href_link(FILENAME_PRODUCT_INFO, 'products_id=' . $products[$i]['id']);
-        $products[$i]['final_price_formatted'] = $currencies->display_price($products[$i]['final_price'], \common\helpers\Tax::get_tax_rate($products[$i]['tax_class_id']));
-        $products[$i]['remove_link'] = tep_href_link(FILENAME_WISHLIST,'products_id=' . $products[$i]['id'].'&action=remove_wishlist','SSL');
-        $products[$i]['move_in_cart'] = tep_href_link(FILENAME_WISHLIST,'products_id=' . $products[$i]['id'].'&action=wishlist_move_to_cart','SSL');
-
-        $products[$i]['oos'] = false;
-        if (STOCK_ALLOW_CHECKOUT != 'true' && !(\common\helpers\Product::get_products_stock($products[$i]['id']) > 0)) {
-          $products[$i]['oos'] = true;
-        }
-      }
-
-      $breadcrumb->add(TEXT_MY_ACCOUNT, tep_href_link(FILENAME_ACCOUNT, '', 'SSL'));
-      $breadcrumb->add(NAVBAR_TITLE, tep_href_link(FILENAME_WISHLIST, '', 'SSL'));
-
-      if (Yii::$app->request->isAjax){
-        return $this->render('wishlist_popup.tpl', [
-                'message_wish_list' => $message_wish_list,
-                'link_back_href' => tep_href_link(FILENAME_ACCOUNT,'','NONSSL'),
-                'products' => $products,
-        ]);
-      } else {
-          $check = \common\models\DesignBoxes::find()
-              ->select(['id'])
-              ->andWhere(['block_name' => 'wishlist-cart', 'theme_name' => THEME_NAME])
-              ->one();
-
-          if ($check['id'] || Info::isAdmin()) {
-              return $this->render('wishlist-2.tpl', [
-              ]);
-          }
-
-          return $this->render('wishlist.tpl', [
-              'message_wish_list' => $message_wish_list,
-              'link_back_href' => tep_href_link(FILENAME_ACCOUNT,'','NONSSL'),
-              'products' => $products,
-          ]);
-      }
-    }
-
     public function actionOrderBarcode()
     {
         $oID = intval(Yii::$app->request->get('oID'));
@@ -2335,7 +2275,6 @@ class AccountController extends Sceleton
 
     public function actionRecreate() {
         global $cart;
-        global $wish_list;
 
         \common\helpers\Translation::init('js');
         \common\helpers\Translation::init('account/login');
@@ -2587,6 +2526,7 @@ class AccountController extends Sceleton
     }
     public function actionMoveBonusPointsToAmount()
     {
+        if (!\common\helpers\Acl::checkExtensionAllowed('BonusActions')) return '';
         $result = true;
         try {
             $transferPoints = (int)\Yii::$app->request->post('bonus', 0);

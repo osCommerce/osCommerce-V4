@@ -2,347 +2,312 @@
 {\backend\assets\BDTPAsset::register($this)|void}
 {use class="backend\assets\BannersAsset"}
 {BannersAsset::register($this)|void}
-<div id="banner_management_edit">
-    <form id="save_banner_form" name="new_banner" action="{$app->urlManager->createUrl('banner_manager/submit')}" onSubmit="return saveBanner();">
-        <div class="popupCategory">
-            <div class="tabbable tabbable-custom">
-                <ul class="nav nav-tabs top_tabs_ul">
-                    {if $isMultiPlatforms }
-                        <li class="{if !$banners_id} active {/if}heigh_col2"><a href="#tab_platform" data-toggle="tab"><span>{$smarty.const.TEXT_COMMON_PLATFORM_TAB}</span></a></li>
-                                {/if}
-                    <li class="{if $isMultiPlatforms && !$banners_id} {else}active{/if}"><a href="#tab_3" data-toggle="tab"><span>{$smarty.const.TEXT_MAIN_DETAILS}</span></a></li>
-                    <li><a href="#tab_2" data-toggle="tab"><span>{$smarty.const.TEXT_NAME_DESCRIPTION}</span></a></li>            
-                </ul>
-                <div class="tab-content">
-                    {if $isMultiPlatforms }
-                        <div class="tab-pane topTabPane tabbable-custom{if $isMultiPlatforms && !$banners_id} active {/if}" id="tab_platform">
-                            <div class="filter_pad">
-                                <table class="table tabl-res table-striped table-hover table-responsive table-bordered table-switch-on-off double-grid">
-                                    <thead>
-                                        <tr>
-                                            <th>{$smarty.const.TABLE_HEAD_PLATFORM_NAME}</th>
-                                            <th>{$smarty.const.TABLE_HEAD_PLATFORM_BANNER_ASSIGN}</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {foreach $platforms as $platform}
-                                            <tr>
-                                                <td>{$platform['text']}</td>
-                                                <td>{$banners_data['platform_statuses'][$platform['id']]}</td>
-                                            </tr>
-                                        {/foreach}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    {/if}
-                    <div class="tab-pane topTabPane tabbable-custom-b {if $isMultiPlatforms && !$banners_id} {else}active{/if}" id="tab_3">
-                        <table cellspacing="0" cellpadding="0">
-                            <tr>
-                                <td class="label_name" valign="top" style="width: 180px">{$smarty.const.TEXT_BANNERS_GROUP}</td>
-                                <td class="label_value"><div class="ban_group_div">{$banners_data['banners_group']}<a href="{Yii::$app->urlManager->createUrl(['banner_manager/newgroup'])}" class="popup btn">{$smarty.const.TEXT_ADD_NEW_BANNER}</a></div></td>
-                            </tr>
-                            {if not $isMultiPlatforms }
+
+{\backend\design\Data::addJsData(['tr' => \common\helpers\Translation::translationsForJs([
+    'IMAGE_FIT', 'IMAGE_FIT_COVER', 'IMAGE_FIT_FILL', 'IMAGE_FIT_CONTAIN', 'IMAGE_FIT_NONE', 'IMAGE_FIT_SCALE_DOWN',
+    'IMAGE_POSITION', 'TEXT_MIDDLE_CENTER', 'TEXT_TOP_LEFT', 'TEXT_TOP_CENTER', 'TEXT_TOP_RIGHT', 'TEXT_MIDDLE_LEFT',
+    'TEXT_MIDDLE_RIGHT', 'TEXT_BOTTOM_LEFT', 'TEXT_BOTTOM_CENTER', 'TEXT_BOTTOM_RIGHT'
+], false)])}
+
+<form id="save_banner_form" name="new_banner" action="{$app->urlManager->createUrl('banner_manager/submit')}">
+    <div class="tabbable tabbable-custom">
+        <ul class="nav nav-tabs">
+            {if $isMultiPlatforms }
+                <li>
+                    <a href="#platform" data-toggle="tab">{$smarty.const.TEXT_COMMON_PLATFORM_TAB}</a>
+                </li>
+            {/if}
+            <li class="active">
+                <a href="#main" data-toggle="tab">{$smarty.const.TEXT_MAIN_DETAILS}</a>
+            </li>
+            <li>
+                <a href="#settings" data-toggle="tab">{$smarty.const.TEXT_SETTINGS}</a>
+            </li>
+        </ul>
+        <div class="tab-content">
+
+            {if $isMultiPlatforms }
+                <div class="tab-pane" id="platform">
+                    <div class="filter_pad">
+                        <table class="table tabl-res table-striped table-hover table-responsive table-bordered table-switch-on-off double-grid platform_statuses">
+                            <thead>
                                 <tr>
-                                    <td valign="top" class="label_name">{$smarty.const.TEXT_BANNER_STATUS}</td>
-                                    <td class="label_value">{$banners_data['status']}</td>
+                                    <th>{$smarty.const.TABLE_HEAD_PLATFORM_NAME}</th>
+                                    <th>{$smarty.const.TABLE_HEAD_PLATFORM_BANNER_ASSIGN}</th>
                                 </tr>
-                            {/if}
-                            <tr>
-                                <td class="label_name">{$smarty.const.TEXT_BANNER_SORT_ORDER}</td>
-                                <td class="label_value">{$banners_data['sort_order']}</td>
-                            </tr>
-                            <tr>
-                                <td valign="top" class="label_name">{$smarty.const.TEXT_BANNERS_SCHEDULED_AT}</td>
-                                <td class="label_value">{$banners_data['date_scheduled']}</td>
-                            </tr>
-                            <tr>
-                                <td valign="top" class="label_name">{$smarty.const.TEXT_BANNERS_EXPIRES_ON}</td>
-                                <td class="label_value">{$banners_data['expires_date']}</td>
-                            </tr>
-                            <tr>
-                                <td valign="top" class="label_name">{$smarty.const.TEXT_REL_NOFOLLOW}</td>
-                                <td class="label_value">{$banners_data['nofollow']}</td>
-                            </tr>
+                            </thead>
+                            <tbody>
+                                {foreach $platforms as $platform}
+                                    <tr>
+                                        <td>{$platform['text']}</td>
+                                        <td>{$banners_data['platform_statuses'][$platform['id']]}</td>
+                                    </tr>
+                                {/foreach}
+                            </tbody>
                         </table>
                     </div>
-                    <div class="tab-pane topTabPane tabbable-custom" id="tab_2">
-                        {if count($languages) > 1}                                    
-                            <ul class="nav nav-tabs under_tabs_ul">
-                                {foreach $languages as $lKey => $lItem}
-                                    <li{if $lKey == 0} class="active"{/if}><a href="#tab_{$lItem['code']}" data-toggle="tab" data-id="{$lItem['id']}">{$lItem['logo']}<span>{$lItem['name']}</span></a></li>
-                                            {/foreach}
-                            </ul>
-                        {/if}
-                        <div class="tab-content {if count($languages) < 2}tab-content-no-lang{/if}">
-                            {foreach $banners_data.lang  as $mKey => $mItem}
-                                <div class="tab-pane{if $mKey == 0} active{/if}" id="tab_{$mItem['code']}">
-                                    <table cellspacing="0" cellpadding="0" width="100%" class="banners-table">
-                                        <tr>
-                                            <td class="label_name">{$smarty.const.TEXT_BANNERS_TITLE}</td>
-                                            <td class="label_value">{$mItem['banners_title']}</td>
-                                        </tr>
-                                        <tr>
-                                            <td class="label_name">{$smarty.const.TEXT_BANNERS_URL}</td>
-                                            <td class="label_value">{$mItem['banners_url']}</td>
-                                        </tr>
-                                        <tr>
-                                            <td class="label_name"></td>
-                                            <td class="label_value">{\backend\design\LocalLinksButtons::widget(['editor' => '', 'field' => $mItem['bannerUrl'], 'platform_id' => $page_data['platform_id'], 'languages_id' => $mItem['languages_id']])}</td>
-                                        </tr>
-                                        <tr>
-                                            <td class="label_name">{$smarty.const.TEXT_TARGET}</td>
-                                            <td class="label_value">{$mItem['target']}</td>
-                                        </tr>
-                                        <tr>
-                                            <td class="label_name">{$smarty.const.TEXT_BANNERS_TYPE}</td>
-                                            <td class="label_value">
-                                                
-<label class="radio-inline">
-    <input type="radio" name="{$mItem['banner_display_name']}" value="0"
-           {if $mItem['banner_display'] == '0'} checked{/if} data-id="{$mKey}" class="banner-display">
-    {$smarty.const.TEXT_BANNER_IMAGE}
-</label>
-<label class="radio-inline">
-    <input type="radio" name="{$mItem['banner_display_name']}" value="1"
-           {if $mItem['banner_display'] == '1'} checked{/if} data-id="{$mKey}" class="banner-display">
-    {$smarty.const.TEXT_BANNER_TEXT}
-</label>
-<label class="radio-inline">
-    <input type="radio" name="{$mItem['banner_display_name']}" value="2"
-            {if $mItem['banner_display'] == '2'} checked{/if} data-id="{$mKey}" class="banner-display">
-    {$smarty.const.TEXT_AND_IMAGE}
-</label>
-<label class="radio-inline">
-    <input type="radio" name="{$mItem['banner_display_name']}" value="3"
-           {if $mItem['banner_display'] == '3'} checked{/if} data-id="{$mKey}" class="banner-display">
-    SVG
-</label>
-<label class="radio-inline">
-    <input type="radio" name="{$mItem['banner_display_name']}" value="4"
-            {if $mItem['banner_display'] == '4'} checked{/if} data-id="{$mKey}" class="banner-display">
-    {$smarty.const.TEXT_VIDEO}
-</label>
-                                                
-                                            </td>
-                                        </tr>
-                                        <tr class="banner-pos-{$mKey}"{if $mItem['banner_display'] != '2' || $mItem['banner_display'] == '3'} style="display: none"{/if}>
-                                            <td valign="top" class="label_name">{$smarty.const.TEXT_POSITION}</td>
-                                            <td class="label_value">
-                                                <select name="{$mItem['text_position_name']}" class="form-control" style="width: 200px;">
-                                                    <option value="0"{if $mItem['text_position'] == '0'} selected{/if}>{$smarty.const.TEXT_TOP_LEFT}</option>
-                                                    <option value="1"{if $mItem['text_position'] == '1'} selected{/if}>{$smarty.const.TEXT_TOP_CENTER}</option>
-                                                    <option value="2"{if $mItem['text_position'] == '2'} selected{/if}>{$smarty.const.TEXT_TOP_RIGHT}</option>
-                                                    <option value="3"{if $mItem['text_position'] == '3'} selected{/if}>{$smarty.const.TEXT_MIDDLE_LEFT}</option>
-                                                    <option value="4"{if $mItem['text_position'] == '4'} selected{/if}>{$smarty.const.TEXT_MIDDLE_CENTER}</option>
-                                                    <option value="5"{if $mItem['text_position'] == '5'} selected{/if}>{$smarty.const.TEXT_MIDDLE_RIGHT}</option>
-                                                    <option value="6"{if $mItem['text_position'] == '6'} selected{/if}>{$smarty.const.TEXT_BOTTOM_LEFT}</option>
-                                                    <option value="7"{if $mItem['text_position'] == '7'} selected{/if}>{$smarty.const.TEXT_BOTTOM_CENTER}</option>
-                                                    <option value="8"{if $mItem['text_position'] == '8'} selected{/if}>{$smarty.const.TEXT_BOTTOM_RIGHT}</option>
-                                                    <option value="9"{if $mItem['text_position'] == '9'} selected{/if}>{$smarty.const.TEXT_UNDER_IMAGE}</option>
-                                                </select>
-                                            </td>
-                                        </tr>
-                                        <tr class="banner-svg-{$mKey}"{if $mItem['banner_display'] != '3'} style="display: none"{/if}>
-                                            <td valign="top" class="label_name">SVG</td>
-                                            <td class="label_value">
+                </div>
+            {else}
+                {$banners_data['platform_statuses']}
+            {/if}
 
-<div class="">{$mItem['svg']}</div>
-<div class=""><span data-href="{$mItem['svg_url']}" class="btn btn-edit-svg">{$smarty.const.IMAGE_EDIT} SVG</span></div>
+            <div class="tab-pane active" id="main">
+                {if count($languages) > 1}
+                    <ul class="nav nav-tabs under_tabs_ul">
+                        {foreach $languages as $lKey => $lItem}
+                            <li{if $lKey == 0} class="active"{/if}><a href="#tab_{$lItem['code']}" data-toggle="tab" data-id="{$lItem['id']}">{$lItem['logo']}<span>{$lItem['name']}</span></a></li>
+                        {/foreach}
+                    </ul>
+                {/if}
+                <div class="tab-content {if count($languages) < 2}tab-content-no-lang{/if}">
+                    {foreach $banners_data.lang  as $mKey => $mItem}
+                        <div class="tab-pane{if $mKey == 0} active{/if}" id="tab_{$mItem['code']}">
 
+                            <div class="row">
+                                <div class="col-md-6 m-b-2">
 
+                                    <div class="title-row">
+                                        <label>{$smarty.const.TEXT_BANNERS_TITLE}<span class="colon">:</span></label>
+                                        {$mItem['banners_title']}
+                                    </div>
 
-                                            </td>
-                                        </tr>
-                                        <tr class="banner-image-{$mKey}"{if $mItem['banner_display'] == '1' || $mItem['banner_display'] == '3' || $mItem['banner_display'] == '4'} style="display: none"{/if}>
-                                            <td class="label_name" valign="top">{$smarty.const.TEXT_BANNERS_IMAGE}</td>
-                                            <td class="label_value">
-                                                <div class="upload-box">
-                                    {\backend\design\Image::widget([
-                                        'name' => $mItem['name'],
-                                        'value' => $mItem['value'],
-                                        'upload' => $mItem['upload'],
-                                        'delete' => $mItem['delete']
-                                    ])}
+                                </div>
+                                <div class="col-md-6">
+
+                                    <div class="link-row">
+                                        <label>{$smarty.const.TEXT_BANNERS_URL}<span class="colon">:</span></label>
+                                        <div class="link-holder">
+                                            <div class="link-input-cell">
+                                                <span class="local-links-button"
+                                                      data-field="{$mItem['bannerUrl']}"
+                                                      data-languages_id="{$mItem['language_id']}"
+                                                      data-platform_id="{$page_data['platform_id']}"
+                                                      title="Choose local links">
+                                                    <i class="icon-catalog"></i>
+                                                </span>
+                                                {$mItem['banners_url']}
+                                            </div>
+                                            <div>
+                                                {$mItem['target']} <label>{$smarty.const.OPEN_LINK_IN_NEW_TAB}</label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                            <div class="row m-b-4 main-image-row">
+                                <div class="col-md-6">
+
+                                    <div class="m-b-2 main-image">
+                                        <h4>Main image/video</h4>
+                                        <div class="upload-box upload-box-wrap"
+                                             data-name="{$mItem['name']}"
+                                             data-value="{$mItem['value']}"
+                                             data-upload="{$mItem['upload']}"
+                                             data-delete="{$mItem['delete']}"
+                                             data-type="{$mItem['type']}"
+                                             data-acceptedFiles="image/*,video/*"
+                                                {*data-width="1200"
+                                                data-height="400"*}>
+                                        </div>
+                                    </div>
+
+                                </div>
+                                <div class="col-md-6">
+
+                                    <div class="row align-items-center">
+                                        <label class="col-xs-5"><h4>{$smarty.const.TEXT_TEXT}</h4></label>
+                                        <div class="col-xs-7">
+                                            <div class="row align-items-center">
+                                                <label class="col-xs-6 align-right">{$smarty.const.TEXT_POSITION}<span class="colon">:</span></label>
+                                                <div class="col-xs-6">
+                                                    <select name="{$mItem['text_position_name']}" class="form-control">
+                                                        <option value="0"{if $mItem['text_position'] == '0'} selected{/if}>{$smarty.const.TEXT_TOP_LEFT}</option>
+                                                        <option value="1"{if $mItem['text_position'] == '1'} selected{/if}>{$smarty.const.TEXT_TOP_CENTER}</option>
+                                                        <option value="2"{if $mItem['text_position'] == '2'} selected{/if}>{$smarty.const.TEXT_TOP_RIGHT}</option>
+                                                        <option value="3"{if $mItem['text_position'] == '3'} selected{/if}>{$smarty.const.TEXT_MIDDLE_LEFT}</option>
+                                                        <option value="4"{if $mItem['text_position'] == '4'} selected{/if}>{$smarty.const.TEXT_MIDDLE_CENTER}</option>
+                                                        <option value="5"{if $mItem['text_position'] == '5'} selected{/if}>{$smarty.const.TEXT_MIDDLE_RIGHT}</option>
+                                                        <option value="6"{if $mItem['text_position'] == '6'} selected{/if}>{$smarty.const.TEXT_BOTTOM_LEFT}</option>
+                                                        <option value="7"{if $mItem['text_position'] == '7'} selected{/if}>{$smarty.const.TEXT_BOTTOM_CENTER}</option>
+                                                        <option value="8"{if $mItem['text_position'] == '8'} selected{/if}>{$smarty.const.TEXT_BOTTOM_RIGHT}</option>
+                                                        <option value="9"{if $mItem['text_position'] == '9'} selected{/if}>{$smarty.const.TEXT_UNDER_IMAGE}</option>
+                                                    </select>
                                                 </div>
+                                            </div>
+                                        </div>
+                                    </div>
 
-                                                {*<div class="upload-box upload-box-wrap"
-                                                     data-name="{$mItem['name']}"
-                                                     data-value="{$mItem['value']}"
-                                                     data-upload="{$mItem['upload']}"
-                                                     data-delete="{$mItem['delete']}"
-                                                     data-width="1200"
-                                                     data-height="400">
-                                                </div>*}
-                                            </td>
-                                        </tr>
-                                        <tr class="banner-video-{$mKey}"{if $mItem['banner_display'] != '4'} style="display: none"{/if}>
-                                            <td class="label_name" valign="top">Video</td>
-                                            <td class="label_value">
-                                                <div class="upload-box">
-                                                    {\backend\design\Image::widget([
-                                                    'name' => $mItem['name_video'],
-                                                    'value' => $mItem['value_video'],
-                                                    'upload' => $mItem['upload_video'],
-                                                    'delete' => $mItem['delete_video'],
-                                                    'type' => 'video'
-                                                    ])}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <tr class="banner-text-{$mKey}"{if $mItem['banner_display'] == '0' || $mItem['banner_display'] == '3' || $mItem['banner_display'] == '4'} style="display: none"{/if}>
-                                            <td valign="top" class="label_name">{$smarty.const.TEXT_BANNERS_HTML_TEXT}</td>
-                                            <td class="label_value">{$mItem['banners_html_text']}</td>
-                                        </tr>
-                                    </table>
-                                    <div class="banner-groups-images lang-{$mItem['language_id']}" data-language_id="{$mItem['language_id']}"></div>
-                                    <div class="banner-groups-svg lang-{$mItem['language_id']}" data-language_id="{$mItem['language_id']}"></div>
-                                </div>        
-                            {/foreach} 
+                                    {$mItem['banners_html_text']}
+
+                                </div>
+                            </div>
+
+
+                            <div class="banner-groups-images lang-{$mItem['language_id']}" data-language_id="{$mItem['language_id']}"></div>
+
                         </div>
-                    </div>
+                    {/foreach}
                 </div>
             </div>
-            <div class="btn-bar edit-btn-bar">
-                <div class="btn-left"><a href="javascript:void(0)" class="btn btn-cancel-foot" onclick="return backStatement()">{$smarty.const.IMAGE_CANCEL}</a></div>
-                <div class="btn-right"><button class="btn btn-confirm">{$smarty.const.IMAGE_SAVE}</button></div>
+
+            <div class="tab-pane" id="settings">
+
+                <div class="row align-items-center m-b-2">
+                    <label class="col-xs-3 align-right">{$smarty.const.TEXT_BANNERS_GROUP}</label>
+                    <div class="col-xs-4 col-lg-3">{$banners_data['banners_group']}</div>
+                    <div class="col-xs-3">
+                        <span href="{Yii::$app->urlManager->createUrl(['banner_manager/newgroup'])}" class="btn btn-add-group">
+                            {$smarty.const.TEXT_ADD_NEW_BANNER}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="group-settings"></div>
+
+                <div class="row align-items-center m-b-2">
+                    <label class="col-xs-3 align-right">{$smarty.const.TEXT_BANNER_STATUS}</label>
+                    <div class="col-xs-4">{$banners_data['status']}</div>
+                </div>
+
+                <div class="row align-items-center m-b-2">
+                    <label class="col-xs-3 align-right">{$smarty.const.TEXT_BANNER_SORT_ORDER}</label>
+                    <div class="col-xs-3 col-lg-2">{$banners_data['sort_order']}</div>
+                </div>
+
+                <div class="row align-items-center m-b-2">
+                    <label class="col-xs-3 align-right">{$smarty.const.TEXT_BANNERS_SCHEDULED_AT}</label>
+                    <div class="col-xs-3 col-lg-2">{$banners_data['date_scheduled']}</div>
+                </div>
+
+                <div class="row align-items-center m-b-2">
+                    <label class="col-xs-3 align-right">{$smarty.const.TEXT_BANNERS_EXPIRES_ON}</label>
+                    <div class="col-xs-3 col-lg-2">{$banners_data['expires_date']}</div>
+                </div>
+
+                <div class="row align-items-center m-b-2">
+                    <label class="col-xs-3 align-right">{$smarty.const.TEXT_REL_NOFOLLOW}</label>
+                    <div class="col-xs-3 col-lg-2">{$banners_data['nofollow']}</div>
+                </div>
+
             </div>
         </div>
-        {tep_draw_hidden_field( 'banners_id', $banners_id )}
-    </form>
-</div>
-<script type="text/javascript">
-    function closePopup() {
-        $('.popup-box:last').trigger('popup.close');
-        $('.popup-box-wrap:last').remove();
-        return false;
-    }
+    </div>
 
-    function saveBanner() {
-        $.post("{$app->urlManager->createUrl('banner_manager/submit')}", $('#save_banner_form').serialize(), function (data, status) {
-            if (status == "success") {
-                $('#banner_management_edit').html(data);
-            } else {
-                alert("Request error.");
-            }
-        }, "html");
+    <div class="btn-bar edit-btn-bar">
+        <div class="btn-left">
+            <a href="{$backUrl}" class="btn btn-cancel-foot">{$smarty.const.IMAGE_CANCEL}</a>
+        </div>
+        <div class="btn-right">
+            <button class="btn btn-confirm">{$smarty.const.IMAGE_SAVE}</button>
+        </div>
+    </div>
+    {tep_draw_hidden_field( 'banners_id', $banners_id )}
+</form>
 
-        return false;
-    }
-    function saveGroupnew() {
-        var new_banners_group = $("#bannerpopup input[name='new_ban_group_popup']").val();
-        $('select[name="banners_group"]').append($('<option>', {
-            value: new_banners_group,
-            text: new_banners_group
-        }));
-        $('select[name="banners_group"] option').removeAttr('selected');
-        $('select[name="banners_group"] option[value="' + new_banners_group + '"]').attr('selected', 'selected');
-        closePopup();
-        return false;
-    }
-    function backStatement() {
-        window.history.back();
-        return false;
-    }
-    
-    (function($){ $(function(){
-        $('.banner-display').on('change', function(){
-            if ($(this).val() == '0') {
-                $('.banner-text-'+$(this).data('id')).hide();
-                $('.banner-image-'+$(this).data('id')).show();
-                $('.banner-pos-'+$(this).data('id')).hide();
-                $('.banner-svg-'+$(this).data('id')).hide();
-                $('.banner-video-'+$(this).data('id')).hide();
-                $('.banner-groups-images').show()
-                $('.banner-groups-svg').hide()
+<script>
+    $(function () {
+        $('.local-links-button').localLinks();
+
+        $('#save_banner_form').on('submit', saveBanner);
+        $('.top-buttons .btn-confirm').off('click').on('click', () => $('#save_banner_form').trigger('submit'));
+
+        $('.ck-editor').each(function(){
+            CKEDITOR.replace(this, {
+                height: '200px',
+            })
+        });
+    })
+
+    function saveBanner(e) {
+        e.preventDefault();
+
+        if (typeof(CKEDITOR) == 'object'){
+            for ( instance in CKEDITOR.instances ) {
+                CKEDITOR.instances[instance].updateElement();
             }
-            if ($(this).val() == '1') {
-                $('.banner-text-'+$(this).data('id')).show();
-                $('.banner-image-'+$(this).data('id')).hide();
-                $('.banner-pos-'+$(this).data('id')).hide();
-                $('.banner-svg-'+$(this).data('id')).hide();
-                $('.banner-video-'+$(this).data('id')).hide();
-                $('.banner-groups-images').hide()
-                $('.banner-groups-svg').hide()
-            }
-            if ($(this).val() == '2') {
-                $('.banner-text-'+$(this).data('id')).show();
-                $('.banner-image-'+$(this).data('id')).show();
-                $('.banner-pos-'+$(this).data('id')).show();
-                $('.banner-svg-'+$(this).data('id')).hide();
-                $('.banner-video-'+$(this).data('id')).hide();
-                $('.banner-groups-images').show()
-                $('.banner-groups-svg').hide()
-            }
-            if ($(this).val() == '3') {
-                $('.banner-text-'+$(this).data('id')).hide();
-                $('.banner-image-'+$(this).data('id')).hide();
-                $('.banner-pos-'+$(this).data('id')).hide();
-                $('.banner-svg-'+$(this).data('id')).show();
-                $('.banner-video-'+$(this).data('id')).hide();
-                $('.banner-groups-images').hide()
-                $('.banner-groups-svg').show()
-            }
-            if ($(this).val() == '4') {
-                $('.banner-text-'+$(this).data('id')).hide();
-                $('.banner-image-'+$(this).data('id')).hide();
-                $('.banner-pos-'+$(this).data('id')).hide();
-                $('.banner-svg-'+$(this).data('id')).hide();
-                $('.banner-video-'+$(this).data('id')).show();
-                $('.banner-groups-images').hide()
-                $('.banner-groups-svg').hide()
+        }
+
+        if (!$('select[name="group_id"]').val()) {
+            $('a[href="#settings"]').trigger('click');
+            alertMessage('{$smarty.const.CHOOSE_BANNER_GROUP}', 'alert-message');
+            return null;
+        }
+
+        if ($('.platform_statuses input[type="checkbox"]').length && !$('.platform_statuses input:checked').length) {
+            $('a[href="#platform"]').trigger('click');
+            alertMessage('Please choose Sales Channel', 'alert-message');
+            return null;
+        }
+
+        let bannerTitle = false;
+        $('.banner-title').each(function () {
+            if ($(this).val()) {
+                bannerTitle = true;
             }
         });
-        var type = $('.banner-display:checked').val();
-        if (type == '0' || type == '2') {
-            $('.banner-groups-images').show()
-        }
-        if (type == '1' || type == '3' || type == '4') {
-            $('.banner-groups-images').hide()
-        }
-        if (type == '3') {
-            $('.banner-groups-svg').show()
-        } else {
-            $('.banner-groups-svg').hide()
+        if (!bannerTitle) {
+            $('a[href="#main"]').trigger('click');
+            alertMessage('{$smarty.const.ENTER_BANNER_TITLE}', 'alert-message');
+            return null;
         }
 
-    });})(jQuery);
+        $.post("{$app->urlManager->createUrl(['banner_manager/submit', 'platform_id' => $platform_id, 'group_id' => $group_id, 'row_id' => $row_id])}", $('#save_banner_form').serializeArray(), function (data, status) {
+            if (status != "success") {
+                alertMessage("Request error.", 'alert-message');
+                return
+            }
+            if (data.error) {
+                alertMessage(data.error, 'alert-message');
+                return
+            }
+            if (data.text) {
+                const $alert = alertMessage(data.text, 'alert-message');
+                setTimeout(() => $alert.remove(), 1000)
+            }
+            $('body').trigger('saved-banner')
+            {if !$popup}
+            if (data.html) {
+                $('.content-container').html(data.html);
+                if (location.hash) {
+                    $(`.nav a[href="${ location.hash }"]`).click();
+                }
+            }
+            {/if}
+        }, "json");
+
+        return false;
+    }
     
-    $(document).ready(function () {
-        //===== Date Pickers  =====//
-        /*$(".datepicker").datepicker({
+    $(function () {
+        $(".datepicker").datepicker({
             changeMonth: true,
             changeYear: true,
             showOtherMonths: true,
             autoSize: false,
             dateFormat: '{$smarty.const.DATE_FORMAT_DATEPICKER}'
-        });*/
-        $('.datepicker').datetimepicker({
-            format: 'DD MMM YYYY h:mm A'
         });
 
-        $(".check_on_off").tlSwitch(
-                {
-                    onText: "{$smarty.const.SW_ON}",
-                    offText: "{$smarty.const.SW_OFF}",
-                    handleWidth: '20px',
-                    labelWidth: '24px'
-                }
-        );
-
-        $('.popup').popUp({
-            box: "<div class='popup-box-wrap'><div class='around-pop-up'></div><div class='popup-box'><div class='popup-heading cat-head'>{$smarty.const.TEXT_BANNER_NEW_GROUP}</div><div class='pop-up-content'><div class='preloader'></div></div></div></div>"
+        $(".check_on_off").tlSwitch({
+            onText: "{$smarty.const.SW_ON}",
+            offText: "{$smarty.const.SW_OFF}",
+            handleWidth: '20px',
+            labelWidth: '24px'
         });
 
 
-        $('.ban_group_div select').on('click', groupsSizes);
+        $('select[name="group_id"]')
+            .on('change', groupsSizes)
+            .on('change', groupSettings);
         groupsSizes();
+        groupSettings();
 
         function groupsSizes(){
-            let currentGroup = $('.ban_group_div select').val();
+            let currentGroup = $('select[name="group_id"]').val();
 
             $.get('banner_manager/banner-group-images', {
-                banners_group: currentGroup,
+                group_id: currentGroup,
                 banners_id: '{$banners_id}',
             }, function (data) {
                 $('.banner-groups-images').each(function(){
@@ -351,11 +316,143 @@
                 $('.banner-groups-svg').each(function(){
                     $(this).html(data[$(this).data('language_id')].svg)
                 })
+                $('.banner-groups-images .upload-box-wrap').fileManager()
             }, 'json')
         }
-    })
 
-    $(function(){
+        function groupSettings() {
+            const group_id = $('select[name="group_id"]').val();
+            const $groupSettings = $('.group-settings');
+
+            $.get('banner_manager/banner-group-settings', {
+                group_id,
+            }, function (data) {
+                if (!data.length) {
+                    $groupSettings.html(`
+                    <div class="row m-b-2">
+                        <label class="col-xs-3 align-right">{$smarty.const.GROUP_RESOLUTIONS}</label>
+                        <div class="col-xs-4 col-lg-3">
+                            {$smarty.const.NO_RESOLUTIONS}
+                        </div>
+                        <div class="col-xs-4"><span class="btn btn-edit-group">{$smarty.const.EDIT_GROUP}</span></div>
+                    </div>
+                `);
+                    return
+                }
+                $groupSettings.html(`
+                    <div class="row m-b-2">
+                        <label class="col-xs-3 align-right">{$smarty.const.GROUP_RESOLUTIONS}</label>
+                        <div class="col-xs-4 col-lg-3">
+                            <table class="group-resolutions" width="100%">
+                                <tr>
+                                    <td><label>{$smarty.const.WINDOW_WIDTH}</label></td>
+                                    <td><label>{$smarty.const.IMAGE_VIDEO_SIZES}</label></td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-xs-4"><span class="btn btn-edit-group">{$smarty.const.EDIT_GROUP}</span></div>
+                    </div>
+                `);
+
+                const groupResolutions = $('.group-resolutions', $groupSettings)
+
+                data.forEach(function(size){
+                    groupResolutions.append(`
+                        <tr>
+                            <td>form ${ size.width_from }${ (size.width_to && size.width_to !== '0' ? ' to ' + size.width_to  : '') }</td>
+                            <td>${ size.image_width } &#215; ${ (size.image_height && size.image_height !== '0' ? size.image_height : 'X') }</td>
+                        </tr>
+                    `)
+                })
+            }, 'json')
+        }
+
+        $('.btn-add-group').on('click', function () {
+            $.get('banner_manager/banner-groups-edit', function (response) {
+                const $popup = alertMessage(`
+                    <div class="popup-heading">{$smarty.const.NEW_GROUP}</div>
+                    <div class="popup-content">
+                        ${ response}
+                    </div>
+                    <div class="popup-buttons">
+                        <span type="submit" class="btn btn-primary btn-save">{$smarty.const.IMAGE_SAVE}</span>
+                        <span class="btn btn-cancel">{$smarty.const.IMAGE_CANCEL}</span>
+                    </div>
+                `, 'popup-groups');
+
+                $('.field-select-group', $popup).remove();
+                $('.field-new-group', $popup).attr('name', 'name').show();
+                $('.btn-bar:last', $popup).remove();
+
+                $('.btn-cancel', $popup).on('click', () => $popup.remove());
+
+                const $form = $('.banner-group-form', $popup);
+                $form.on('submit', saveGroup)
+                $('.btn-save', $popup).on('click', saveGroup);
+
+                function saveGroup() {
+                    const data = $form.serializeArray();
+                    data.push({ name: 'new_group', value: 1 });
+                    $.post('banner_manager/banner-groups-save', data, function(response){
+                        if (response.error) {
+                            alertMessage(response.error, 'alert-message')
+                            return '';
+                        }
+                        const val = $('.field-new-group', $popup).val();
+                        $('select[name="group_id"]')
+                            .append(`<option value="${ val }">${ val }</option>`)
+                            .val(val)
+                            .trigger('change');
+
+                        $popup.remove()
+                    }, 'json')
+                }
+
+            })
+        })
+
+        $('.group-settings').on('click', '.btn-edit-group', function () {
+            const group_id = $('select[name="group_id"]').val();
+            $.get('banner_manager/banner-groups-edit', { group_id },  function (response) {
+                const $popup = alertMessage(`
+                    <div class="popup-heading">Edit group "${ name }"</div>
+                    <div class="popup-content">
+                        ${ response}
+                    </div>
+                    <div class="popup-buttons">
+                        <span type="submit" class="btn btn-primary btn-save">{$smarty.const.IMAGE_SAVE}</span>
+                        <span class="btn btn-cancel">{$smarty.const.IMAGE_CANCEL}</span>
+                    </div>
+                `, 'popup-groups');
+
+                const $form = $('.banner-group-form', $popup);
+
+                $form.append(`<input name="name" type="hidden" value="${ name }">`);
+
+                $('.row', $popup).remove();
+                $('.btn-bar:last', $popup).remove();
+
+                $('.btn-cancel', $popup).on('click', () => $popup.remove());
+
+                $form.on('submit', saveGroup);
+                $('.btn-save', $popup).on('click', saveGroup);
+
+                function saveGroup() {
+                    const data = $form.serializeArray();
+                    data.push({ name: 'group_id', value: name});
+
+                    $.post('banner_manager/banner-groups-save', data, function(response){
+                        if (response.error) {
+                            alertMessage(response.error, 'alert-message')
+                            return '';
+                        }
+                        $('select[name="group_id"]').trigger('change')
+                        $popup.remove()
+                    }, 'json')
+                }
+            })
+        })
+
         $('.upload-box-wrap').fileManager()
     })
 </script>

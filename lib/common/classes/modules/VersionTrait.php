@@ -34,16 +34,12 @@ trait VersionTrait {
     {
         $default = '0.0.1';
         $arr = static::getVersionHistory();
-        if (!empty($arr)) {
-            if (!function_exists('array_key_first')) { // PHP < 7.3
-                foreach($arr as $key => $unused) {
-                    return \common\classes\modules\ModuleVer::parseCommonFormat($key, $default);
-                }
-            } else {
-                return array_key_first($arr);
-            }
-        }
-        return \common\classes\modules\ModuleVer::parseCommonFormat($default);
+        return empty($arr)? $default : \common\helpers\Php8::array_key_first($arr);
+    }
+
+    public static function getVersionObj(): \common\classes\modules\ModuleVer
+    {
+        return \common\classes\modules\ModuleVer::parseCommonFormat(static::getVersion());
     }
 
 }

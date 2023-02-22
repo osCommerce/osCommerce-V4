@@ -380,7 +380,7 @@ abstract class OrderAbstract extends OrderShadowAbstract{
                 foreach($tax_rates as $array_tax_class_id ) {
                     if ($array_tax_class_id['rate'] == $this->products[$index]['tax']) {
                         $tax_class_id = $array_tax_class_id['tax_class_id'];
-                        $selected_tax = \common\helpers\Tax::get_tax_description($tax_class_id, $this->delivery['country_id'], $this->delivery['zone_id']);
+                        $selected_tax = \common\helpers\Tax::get_tax_description($tax_class_id, $this->delivery['country_id'] ?? null, $this->delivery['zone_id'] ?? null);
                         $this->products[$index]['tax_description'] = $selected_tax;
                         break;
                     }
@@ -777,12 +777,12 @@ abstract class OrderAbstract extends OrderShadowAbstract{
             }
         }
 
+        // deprecated: pageArea is used only for .tpl files. Use the 'order/before-save' hook
         foreach (\common\helpers\Hooks::getList('Order', 'save_order/before') as $filename) {
             include($filename);
         }
-        
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('DelayedDespatch', 'allowed')) {
-            $ext::toOrder($sql_data_array, $this->manager);
+        foreach (\common\helpers\Hooks::getList('order/before-save') as $filename) {
+            include($filename);
         }
 
         if (tep_session_is_registered('platform_code')) {
@@ -819,15 +819,11 @@ abstract class OrderAbstract extends OrderShadowAbstract{
           $this->info['invoice_number'] = $model->invoice_number;
         }
 
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('Neighbour', 'allowed')) {
-            $ext::toOrder($this->order_id, $this->manager);
-        }
-        
-        if ( \common\helpers\Acl::checkExtensionAllowed('FraudAddress','allowed') ) {
-            \common\extensions\FraudAddress\FraudAddress::afterOrderSave($this);
-        }
-        
+        // deprecated: pageArea is used only for .tpl files. Use the 'order/after-save' hook
         foreach (\common\helpers\Hooks::getList('Order', 'save_order/after') as $filename) {
+            include($filename);
+        }
+        foreach (\common\helpers\Hooks::getList('order/after-save') as $filename) {
             include($filename);
         }
 
@@ -1488,7 +1484,11 @@ abstract class OrderAbstract extends OrderShadowAbstract{
 
         $email_params['ORDER_COMMENTS'] = tep_db_output($this->info['comments']);
 
+        // deprecated: pageArea is used only for .tpl files. Use the 'order/notify_customer' hook
         foreach (\common\helpers\Hooks::getList('Order', 'notify_customer') as $filename) {
+            include($filename);
+        }
+        foreach (\common\helpers\Hooks::getList('order/notify_customer') as $filename) {
             include($filename);
         }
 
@@ -1923,8 +1923,10 @@ abstract class OrderAbstract extends OrderShadowAbstract{
         $currencies = \Yii::$container->get('currencies');
         foreach ($this->products as $i => $product) {
             $products_ordered_attributes = '';
-            foreach ($product['attributes'] as $attribute){
-                $products_ordered_attributes .= "\n\t" . htmlspecialchars($attribute['option']) . ': ' . htmlspecialchars($attribute['value']);
+            if (!empty($product['attributes']) && is_array($product['attributes'])) {
+                foreach ($product['attributes'] as $attribute){
+                    $products_ordered_attributes .= "\n\t" . htmlspecialchars($attribute['option']) . ': ' . htmlspecialchars($attribute['value']);
+                }
             }
             $hidePrice = ($this->table_prefix == 'quote_' && strtolower(\common\helpers\PlatformConfig::getVal('SHOW_PRICE_FOR_QUOTE_PRODUCT', 'false')) != 'true') ||
                 (defined('GROUPS_IS_SHOW_PRICE') && GROUPS_IS_SHOW_PRICE ==false);

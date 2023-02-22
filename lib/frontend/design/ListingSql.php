@@ -15,7 +15,6 @@ namespace frontend\design;
 use Yii;
 use common\classes\platform;
 use common\extensions\UserGroupsRestrictions\UserGroupsRestrictions;
-use common\models\CustomersWishlist;
 use yii\helpers\ArrayHelper;
 use common\helpers\Affiliate;
 

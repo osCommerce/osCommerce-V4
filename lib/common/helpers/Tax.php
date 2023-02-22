@@ -35,11 +35,11 @@ class Tax {
         }
 */
         if (defined('PRICE_WITH_BACK_TAX') && PRICE_WITH_BACK_TAX == 'True') {
-            return round($price, 6);
+            return round(self::roundPriceExc($price), 6);
         } elseif ((DISPLAY_PRICE_WITH_TAX == 'true') && ($tax > 0)) {
-            return round($price + self::roundTax(self::calculate_tax($price, $tax)), 6); //$currencies->currencies[$currency]['decimal_places'];
+            return round(self::roundPriceExc($price) + self::roundTax(self::calculate_tax($price, $tax)), 6); //$currencies->currencies[$currency]['decimal_places'];
         } else {
-            return round($price, 6); //$currencies->currencies[$currency]['decimal_places'];
+            return round(self::roundPriceExc($price), 6); //$currencies->currencies[$currency]['decimal_places'];
         }
     }
 
@@ -56,7 +56,7 @@ class Tax {
             $currency = DEFAULT_CURRENCY;
         }
 */
-        return round($price + self::roundTax(self::calculate_tax($price, $tax)), 6); //$currencies->currencies[$currency]['decimal_places'];
+        return round(self::roundPriceExc($price) + self::roundTax(self::calculate_tax($price, $tax)), 6); //$currencies->currencies[$currency]['decimal_places'];
     }
     
     public static function reduce_tax_always($price, $tax) {
@@ -495,21 +495,36 @@ class Tax {
         return $rates;
     }
 
+    public static function roundPriceExc($price) {
+        $ret = $price;
+        if (defined('PRODUCTS_PRICE_EXC_ROUND') && PRODUCTS_PRICE_EXC_ROUND == 'True') {
+            try {
+                $currency = \Yii::$app->settings->get('currency');
+                $currencies = \Yii::$container->get('currencies');
+                if ($currency && !empty($currencies->currencies[$currency])) {
+                    $ret = round($price, $currencies->currencies[$currency]['decimal_places']);
+                }
+            } catch (\Exception $e) {
+                \Yii::warning($e->getMessage() . ' ' . $e->getTraceAsString());
+            }
+        }
+        return $ret;
+    }
 
     public static function roundTax($price) {
-      $ret = $price;
-      if (defined('TAX_ROUND_PER_ROW') && TAX_ROUND_PER_ROW=='True') {
-        try {
-          $currency = \Yii::$app->settings->get('currency');
-          $currencies = \Yii::$container->get('currencies');
-          if ($currency && !empty($currencies->currencies[$currency])) {
-            $ret = round($price, $currencies->currencies[$currency]['decimal_places']);
-          }
-        } catch (\Exception $e) {
-          \Yii::warning($e->getMessage() . ' ' . $e->getTraceAsString());
+        $ret = $price;
+        if (defined('TAX_ROUND_PER_ROW') && TAX_ROUND_PER_ROW == 'True') {
+            try {
+                $currency = \Yii::$app->settings->get('currency');
+                $currencies = \Yii::$container->get('currencies');
+                if ($currency && !empty($currencies->currencies[$currency])) {
+                    $ret = round($price, $currencies->currencies[$currency]['decimal_places']);
+                }
+            } catch (\Exception $e) {
+                \Yii::warning($e->getMessage() . ' ' . $e->getTraceAsString());
+            }
         }
-      }
-      return $ret;
+        return $ret;
     }
 
     public static function displayTaxable() {

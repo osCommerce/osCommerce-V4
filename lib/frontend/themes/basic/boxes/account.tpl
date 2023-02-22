@@ -50,14 +50,15 @@
   tl(function(){
       var focus = false;
 {if isset($settings[0].link_or_dropdown) && $settings[0].link_or_dropdown}
-      var account_dropdown = $('.account-dropdown-js');
-      $('.my-acc-link').on('click', function(){
+      const $box = $('#box-{$id}');
+      var account_dropdown = $('.account-dropdown-js', $box);
+      $('.my-acc-link', $box).on('click', function(){
           $(this).toggleClass('active');
 		  return false;
       });
 	  $(window).on('click', function(){
-		if(!$('.account-top').is(':hover')){
-			$('.my-acc-link').removeClass('active');
+		if(!$('.account-top', $box).is(':hover')){
+			$('.my-acc-link', $box).removeClass('active');
 		}
 	  })
       $('input', account_dropdown).on('focus', function(){

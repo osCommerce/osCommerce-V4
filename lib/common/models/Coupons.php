@@ -13,6 +13,7 @@ use common\models\queries\CouponsQuery;
  *
  * @property int $coupon_id
  * @property string $coupon_type
+ * @property int $free_shipping
  * @property string $coupon_code
  * @property string $coupon_amount
  * @property string $coupon_currency
@@ -60,7 +61,7 @@ class Coupons extends ActiveRecord
             [['coupon_code'], 'required'],
             [['coupon_amount', 'coupon_minimum_order'], 'number'],
             [['coupon_start_date', 'coupon_expire_date', 'date_created', 'date_modified'], 'safe'],
-            [['uses_per_coupon', 'uses_per_user', 'uses_per_shipping', 'coupon_for_recovery_email', 'pos_only', 'tax_class_id', 'flag_with_tax', 'spend_partly'], 'integer'],
+            [['uses_per_coupon', 'uses_per_user', 'uses_per_shipping', 'coupon_for_recovery_email', 'pos_only', 'tax_class_id', 'flag_with_tax', 'spend_partly', 'free_shipping'], 'integer'],
             [['restrict_to_customers'], 'string'],
             [['coupon_type', 'coupon_active'], 'string', 'max' => 1],
             [['coupon_code'], 'string', 'max' => 32],
@@ -105,12 +106,18 @@ class Coupons extends ActiveRecord
 	    $coupon_amount = '';
 	    if ($this->coupon_type == 'P') {
 		    $coupon_amount =  number_format($this->coupon_amount, 2) . '%';
-	    } elseif ($this->coupon_type == 'S') {
-		    $coupon_amount =  TEXT_FREE_SHIPPING;
-	    } else {
+	    } elseif($this->coupon_amount>0) {
 		    $coupon_amount =  $currencies->format($this->coupon_amount, false, $this->coupon_currency);
 	    }
-	    $this->full_name = ($this->description->coupon_name ?? null) . '  -  ' . $coupon_amount;
+        if ($this->free_shipping){
+            if ( !empty($coupon_amount) ){
+                $coupon_amount .= ' + '.TEXT_FREE_SHIPPING;
+            }else{
+                $coupon_amount = TEXT_FREE_SHIPPING;
+            }
+        }
+
+        $this->full_name = ($this->description->coupon_name ?? null) . '  -  ' . $coupon_amount;
     }
 
     public function getDescription(){

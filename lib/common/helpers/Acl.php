@@ -403,11 +403,16 @@ class Acl
     }
 
     /**
-     * string $relativeModelName 'models\Collections' or just 'Collections'
+     * @param string $class className of extension
+     * @param string $relativeModelName 'models\Collections' or just 'Collections'
+     * @param string|null $allowedFunc
+     * @return \yii\db\ActiveRecord|null
      */
-    public static function checkExtensionTableExist($class, $relativeModelName)
+    public static function checkExtensionTableExist($class, $relativeModelName, $allowedFunc = 'allowed')
     {
+        /** @var \common\classes\modules\ModuleExtensions $ext */
         if ($ext = self::checkExtension($class, 'enabled')) {
+            if (!empty($allowedFunc) && !(method_exists($ext, $allowedFunc) && call_user_func([$ext, $allowedFunc]))) return null;
             $reflection_class = new \ReflectionClass($ext);
             $namespace = $reflection_class->getNamespaceName();
             $modelClass = $namespace . "\\$relativeModelName";
@@ -442,7 +447,7 @@ class Acl
         $extensioins = new \DirectoryIterator(Yii::$aliases['@common'] . '/extensions/');
         foreach($extensioins as $ext){
             $class = $ext->getFilename();
-            if ($_w = self::checkExtension($class, 'getPages')){
+            if (($_w = self::checkExtension($class, 'getPages')) && $_w::allowed()){
                 $_pages = $_w::getPages();
                 if (is_array($_pages) && count($_pages)){
                     foreach($_pages as $wd){
@@ -645,7 +650,7 @@ class Acl
     * run extension widget
     */
     public static function runExtensionWidget($widgeName, $widgetArray){
-        if ($ext_widget = self::checkExtension($widgeName, 'run', true)){
+        if (($ext_widget = self::checkExtension($widgeName, 'run', true)) && (!method_exists($ext_widget, 'allowed') || $ext_widget::allowed())){
             $widgetArray = array_merge($widgetArray, ['name' => $widgeName]);
             return $ext_widget::widget($widgetArray);
         } else {

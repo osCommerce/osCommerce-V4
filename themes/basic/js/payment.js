@@ -11,10 +11,18 @@ window.paymentCollection = {
         var code = pc.getCurrentPayment();
         if (pc.needConfirmation){
             //var checkoutReady = new Promise(function(resolve, reject){
-                $.post({
+                $.ajax({
+                  type: "POST",
                   url: pc.form.action,
                   data: $(pc.form).serialize(),
                   dataType: "json",
+                  complete: function(jqXHR) {
+                    var contentType = jqXHR.getResponseHeader("Content-Type");
+                    if (jqXHR.status === 200 && contentType.toLowerCase().indexOf("text/html") >= 0) {
+                        //seems there were redirect on checkout validation
+                        window.location.reload();
+                    }
+                  },
                   success: function(d) {
                     //d = $.parseJSON(d);
                     if (d.formCheck && d.formCheck == 'OK' ) {
@@ -23,7 +31,7 @@ window.paymentCollection = {
                           $('[name=csrf-token]').val(d._csrf);
                       }
             //          resolve(code);
-                      if (pc.hasCallback(code)) { window[pc.callbacks[code]].apply(this);}
+                      if (pc.hasCallback(code)) { window[pc.callbacks[pc.getCallbackCode(code)]].apply(this);}
                     } else {
                       if (d.message.length > 0 || d.payment_error.length > 0) {
                         //setTimeout(function(){
@@ -46,16 +54,30 @@ window.paymentCollection = {
             //})
             //checkoutReady.then(function(code){ if (pc.hasCallback(code)) { window[pc.callbacks[code]].apply(this); } }).catch(function(){ })
         } else {
-            if (pc.hasCallback(code)) { window[pc.callbacks[code]].apply(this); }
+            if (pc.hasCallback(code)) { window[pc.callbacks[pc.getCallbackCode(code)]].apply(this); }
         }
         
     },
     getCurrentPayment:function(){
         return $('input[name=payment]:checked', this.form).val()||$('input[name=payment]:hidden', this.form).val();
     },
+    getCallbackCode:function(code){
+        var _code = (code ? code : this.getCurrentPayment());
+        if (this.callbacks.hasOwnProperty(_code)) {
+            return _code;
+        }
+        if (_code.lastIndexOf('_') && this.callbacks.hasOwnProperty(_code.substring(0, _code.lastIndexOf('_')))){
+            _code = _code.substring(0, _code.lastIndexOf('_'));
+        }
+        return _code;
+    },
     hasCallback:function(code){
         var _code = (code ? code : this.getCurrentPayment());
-        return this.callbacks.hasOwnProperty(_code);
+        var ret = this.callbacks.hasOwnProperty(_code);
+        if (!ret && _code.lastIndexOf('_')){
+            ret = this.callbacks.hasOwnProperty(_code.substring(0, _code.lastIndexOf('_')));
+        }
+        return ret;
     },
     needConfirmation:true,
     setNeedConfirmation:function(value){

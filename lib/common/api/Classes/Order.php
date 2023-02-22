@@ -25,6 +25,8 @@ class Order
     public $orders_transactions;
     public $orders_payment;
     public $trackingNumberRecordArray;
+    // settings
+    public $deleteStatusHistorybeforeCreation = false;
 
     public function set($orderArray = array())
     {
@@ -253,6 +255,10 @@ class Order
         }
 
         if (is_array($this->orders_status_history)) {
+            $renewFull = $this->deleteStatusHistorybeforeCreation && $isCreate == true && $orders_id > 0;
+            if ($renewFull) {
+                \common\models\OrdersStatusHistory::deleteAll(['orders_id' => $orders_id]);
+            }
             foreach ($this->orders_status_history as $item) {
                 if ($orders_id > 0) {
                     $orders_status_history = \common\models\OrdersStatusHistory::find()
@@ -260,12 +266,17 @@ class Order
                     if ($isCreate == true) {
                         if (!($orders_status_history instanceof \common\models\OrdersStatusHistory)) {
                             $item['orders_id'] = $orders->orders_id;
-                            $orders_status_history = new \common\models\OrdersStatusHistory();
-                            $orders_status_history->setAttributes($item, false);
-                            $orders_status_history = \common\models\OrdersStatusHistory::findOne($orders_status_history->toArray());
-                            if (!($orders_status_history instanceof \common\models\OrdersStatusHistory)) {
+                            if ($renewFull) {
                                 $orders_status_history = new \common\models\OrdersStatusHistory();
                                 $orders_status_history->loadDefaultValues();
+                            } else {
+                                $orders_status_history = new \common\models\OrdersStatusHistory();
+                                $orders_status_history->setAttributes($item, false);
+                                $orders_status_history = \common\models\OrdersStatusHistory::findOne($orders_status_history->toArray());
+                                if (!($orders_status_history instanceof \common\models\OrdersStatusHistory)) {
+                                    $orders_status_history = new \common\models\OrdersStatusHistory();
+                                    $orders_status_history->loadDefaultValues();
+                                }
                             }
                         }
                         $orders_status_history->detachBehavior('date_added');

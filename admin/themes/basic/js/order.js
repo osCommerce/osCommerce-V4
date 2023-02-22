@@ -537,7 +537,7 @@ getOrder = function(options){
                 }
             });
 
-            $('body ' + parent_class).off('check_quantity').on('check_quantity', 'input.qty', function(event, new_value, direct_change) {
+            $('body ' + parent_class).off('check_quantity').on('check_quantity', 'input.qty, input.unit_qty, input.pack_qty, input.packaging_qty', function(event, new_value, direct_change) {
                 var setting = getVirtualItemSetting(this);
                 var base_qty = 0;
                 var virtual_item_qty = 1;
@@ -552,7 +552,7 @@ getOrder = function(options){
                 if (isNaN(qty)) {
                     return;
                 }
-                var result_quantity = Math.max(setting.min, qty, 1);
+                var result_quantity = Math.max(setting.min, qty, 0);
                 if (setting.min > setting.step) {
                     base_qty = setting.min;
                 }
@@ -853,7 +853,7 @@ function getVirtualItemSetting(element) {
     if (setting.virtual_item_step.length == 0) {
         setting.virtual_item_step = [1];
     }
-    if (setting.min < setting.virtual_item_step[0]) {
+    if (setting.min > 0 && setting.min < setting.virtual_item_step[0]) {
         setting.min = setting.virtual_item_step[0];
     }
     if (setting.max < setting.min) {

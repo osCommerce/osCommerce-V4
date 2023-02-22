@@ -113,7 +113,7 @@ class Gv_sentController extends Sceleton {
             $orderBy = "et.date_sent desc";
         }
 
-        $gv_query_raw = "select et.unique_id, c.coupon_amount, c.coupon_currency, c.coupon_code, c.coupon_id, c.coupon_type, et.sent_firstname, et.sent_lastname, et.customer_id_sent, et.emailed_to, et.date_sent, c.coupon_id from " . TABLE_COUPONS . " c, " . TABLE_COUPON_EMAIL_TRACK . " et $search_condition ORDER by $orderBy ";
+        $gv_query_raw = "select et.unique_id, c.coupon_amount, c.coupon_currency, c.coupon_code, c.coupon_id, c.coupon_type, c.free_shipping, et.sent_firstname, et.sent_lastname, et.customer_id_sent, et.emailed_to, et.date_sent, c.coupon_id from " . TABLE_COUPONS . " c, " . TABLE_COUPON_EMAIL_TRACK . " et $search_condition ORDER by $orderBy ";
         
         $current_page_number = ( $start / $length ) + 1;
         $_split = new \splitPageResults($current_page_number, $length, $gv_query_raw, $query_numrows, 'unique_id');
@@ -123,12 +123,17 @@ class Gv_sentController extends Sceleton {
             $coupon_amount = '';
             if ($gv_list['coupon_type'] == 'P') {
                 $coupon_amount =  number_format($gv_list['coupon_amount'], 2) . '%';
-            } elseif ($gv_list['coupon_type'] == 'S') {
-                $coupon_amount =  TEXT_FREE_SHIPPING;
-            } else {
+            } elseif($gv_list['coupon_amount']>0) {
                 $coupon_amount =  $currencies->format($gv_list['coupon_amount'], false, $gv_list['coupon_currency']);
             }
-              
+            if ($gv_list['free_shipping']){
+                if ( !empty($coupon_amount) ){
+                    $coupon_amount .= ' + '.TEXT_FREE_SHIPPING;
+                }else{
+                    $coupon_amount = TEXT_FREE_SHIPPING;
+                }
+            }
+
             $responseList[] = array(
                 $gv_list['sent_firstname'] . ' ' . $gv_list['sent_lastname'] .
                 '<input class="cell_identify" type="hidden" value="' . $gv_list['unique_id'] . '">',

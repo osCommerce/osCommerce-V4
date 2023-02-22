@@ -312,7 +312,16 @@ class Order
         tep_db_query("TRUNCATE " . $prefix . TABLE_ORDERS_PRODUCTS_DOWNLOAD);
         tep_db_query("TRUNCATE " . $prefix . TABLE_ORDERS_STATUS_HISTORY);
         tep_db_query("TRUNCATE " . $prefix . TABLE_ORDERS_TOTAL);
-        if (empty($prefix)) \common\models\OrdersSplinters::deleteAll();
+        if (empty($prefix)) {
+            $schemaCheck = \Yii::$app->get('db')->schema->getTableSchema('admin_shopping_carts');
+            if ($schemaCheck) {
+                tep_db_query("TRUNCATE TABLE admin_shopping_carts");
+            }
+            \common\models\OrdersSplinters::deleteAll();
+        }
+        foreach (\common\helpers\Hooks::getList('orders/after-trunk') as $filename) {
+            include($filename);
+        }
     }
 
     public static function parse_tracking_number($tracking_number) {

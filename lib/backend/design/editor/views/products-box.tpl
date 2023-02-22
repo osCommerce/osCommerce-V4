@@ -30,68 +30,6 @@
                 </div>
             </div>
 
-
-            {if !$searchsuggest and false}
-                   <div class="attr-box oreder-edit-tree-box oreder-edit-box-1">
-                    <div class="widget widget-attr-box box box-no-shadow" style="margin-bottom: 0;">
-                        <div class="widget-header">
-                            <h4>{$smarty.const.TEXT_PRODUCTS}</h4>
-                            <div class="box-head-serch after search_product">
-                                <input type="text" name="search" value="" id="search_text" class="form-control" autocomplete="off" placeholder="{$smarty.const.TEXT_TYPE_CHOOSE_PRODUCT}">
-                                <button onclick="return clearTree()"></button>
-                            </div>
-                        </div>
-                        <div class="widget-content">
-                            <div id="tree" data-tree-server="{\Yii::$app->urlManager->createUrl($tree_server_url)}" data-data-save="{$tree_server_save_url}" class="oreder-edit-tree">
-                                <ul>
-                                  {foreach $category_tree_array as $tree_item }
-                                      <li class="{if $tree_item.lazy}lazy {/if}{if $tree_item.folder}folder {/if}{if $tree_item.selected}selected {/if}" id="{$tree_item.key}" tooltip="123" data-products_id="{$tree_item.products_id}" data-name="{$tree_item.name}"><span>{$tree_item.title}</span></li>
-                                  {/foreach}
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="attr-box attr-box-2">
-                    <span class="btn btn-primary" onclick="treeProduct()"></span>
-                </div>
-                <div class="attr-box attr-box-3 oreder-edit-box-2">
-                    <div class="product_holder">
-                        <div class="widget box box-no-shadow">
-                            <div class="widget-content after">
-                                {$smarty.const.TEXT_PRODUCT_NOT_SELECTED}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            {*else*}
-            <div class="attr-box attr-box-3">
-                <table width="100%">
-                  <tr>
-                    <td>
-                     <table border='0' cellpadding=2 cellspacing=0 width="100%">
-                      <tr>
-                        <td class="label_name">
-                          {$smarty.const.HEADING_TITLE_SEARCH_PRODUCTS}
-                        </td>
-                        <td class="label_value" colspan=2>
-                            <div class="f_td_group prods-wrap auto-wrapp"  style="width:100%;">
-                                <div class="search_product"><input type="text" name="search" value="" id="search_text" class="form-control" autocomplete="off" placeholder="{$smarty.const.TEXT_TYPE_CHOOSE_PRODUCT}"></div>
-                            </div>
-                        </td>
-                      </tr>
-                     </table>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                        <div class="product_holder" style="display:none;">
-                    </div>
-                    </td>
-                  </tr>
-                </table>
-             </div>
-            {/if}
         </div>
         {tep_draw_hidden_field('action', 'add_product')}
 		<div class="noti-btn three-btn">

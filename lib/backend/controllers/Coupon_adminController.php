@@ -339,10 +339,15 @@ class Coupon_adminController extends Sceleton {
       $coupon_amount = '';
       if ($coupon['coupon_type'] == 'P') {
         $coupon_amount = number_format($coupon['coupon_amount'], 2) . '%';
-      } elseif ($coupon['coupon_type'] == 'S') {
-        $coupon_amount = TEXT_FREE_SHIPPING;
-      } else {
+      } elseif($coupon['coupon_amount']>0) {
         $coupon_amount = $currencies->format($coupon['coupon_amount'], false, $coupon['coupon_currency']);
+      }
+      if ($coupon['free_shipping']){
+          if ( !empty($coupon_amount) ){
+              $coupon_amount .= ' + '.TEXT_FREE_SHIPPING;
+          }else{
+              $coupon_amount = TEXT_FREE_SHIPPING;
+          }
       }
       $row[] = $coupon_amount;
 
@@ -475,13 +480,11 @@ class Coupon_adminController extends Sceleton {
       if ($coupon['coupon_type'] == 'P') {
         $coupon['coupon_amount'] = number_format($coupon['coupon_amount'], 2) . '%';
       }
-      if (isset($coupon['coupon_type']) && $coupon['coupon_type'] == 'S') {
-        $coupon_free_ship = true;
-      }
     } else {
       $coupon = [
         'coupon_amount' => '',
         'coupon_currency' => DEFAULT_CURRENCY,
+        'free_shipping' => 0,
         'coupon_minimum_order' => '',
         'coupon_code' => '',
         'coupon_for_recovery_email' => 0,
@@ -583,7 +586,6 @@ class Coupon_adminController extends Sceleton {
           'languages' => $languages,
           'coupon_name' => $coupon_name,
           'coupon_desc' => $coupon_desc,
-          'coupon_free_ship' => $coupon_free_ship,
           'coupon_for_recovery_email' => $coupon['coupon_for_recovery_email'],
           'pos_only' => $coupon['pos_only'],
           'spend_partly' => $coupon['spend_partly'],
@@ -643,15 +645,12 @@ class Coupon_adminController extends Sceleton {
       $coupon_type = 'P';
     }
 
-    if (\Yii::$app->request->post('coupon_free_ship')) {
-      $coupon_type = 'S';
-    }
-
     $sql_data_array = array('coupon_code' => $coupon_code,
       'check_platforms' => $check_platforms,
       'coupon_amount' => tep_db_prepare_input(\Yii::$app->request->post('coupon_amount')),
       'coupon_currency' => tep_db_prepare_input(\Yii::$app->request->post('coupon_currency')),
       'coupon_type' => $coupon_type,
+      'free_shipping' => \Yii::$app->request->post('free_shipping', 0)?1:0,
       'uses_per_coupon' => tep_db_prepare_input(\Yii::$app->request->post('uses_per_coupon')),
       'uses_per_user' => tep_db_prepare_input(\Yii::$app->request->post('uses_per_user')),
       'single_per_order' => (int)Yii::$app->request->post('single_per_order', 0),

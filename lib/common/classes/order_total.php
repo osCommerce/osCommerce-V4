@@ -92,7 +92,10 @@ class order_total extends modules\ModuleCollection {
                 $processinModules = $this->overwriteModules($reProcess);
                 $reProcessOn = true;
             }
+
+            $processing_order = array_flip(array_keys($processinModules));
             foreach($processinModules as $module){
+                $module->setProcessingOrder($processing_order);
                 if ($this->manager->hasCart() && $this->manager->getCart()->existHiddenModule($module->code))  continue;//shoul work only for manual edited modules
                 if ($module->getVisibily($module->manager->getPlatformId(), $module->manager->getModulesVisibility())){
                     $replacing_value = $this->getCustomValue($module);

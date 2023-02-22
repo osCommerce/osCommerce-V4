@@ -15,6 +15,7 @@ namespace backend\design;
 
 use backend\controllers\DesignController;
 use backend\design\Style;
+use backend\models\Admin;
 use common\models\DesignBoxesSettingsTmp;
 use common\models\DesignBoxesTmp;
 use common\models\ThemesSettings;
@@ -35,6 +36,9 @@ class Steps
 
     if ($change_active) tep_db_perform(TABLE_THEMES_STEPS, array('active' => '0'), 'update', "active = '1' and theme_name='" . tep_db_input($theme_name) . "'");
 
+    $admin = new Admin;
+    $data['designer_mode'] = $admin->getAdditionalData('designer_mode');
+
     global $_SESSION;
     $sql_data_array = array(
       'parent_id' => $before['steps_id'] ?? 0,
@@ -44,6 +48,7 @@ class Steps
       'date_added' => 'now()',
       'active' => $change_active ? '1' : '',
       'admin_id' => ($_SESSION && $_SESSION['login_id'] ? $_SESSION['login_id'] : 0),
+      'mode' => ($data['designer_mode'] ? $data['designer_mode'] : 'basic'),
     );
     tep_db_perform(TABLE_THEMES_STEPS, $sql_data_array);
   }
@@ -408,7 +413,7 @@ class Steps
         if (!isset($data['box_settings']) || !is_array($data['box_settings'])) {
             return '';
         }
-        $boxId = DesignBoxesTmp::findOne(['microtime' => $data['microtime'], 'theme_name' => $themeName])->id;
+        $boxId = DesignBoxesTmp::findOne(['microtime' => $data['microtime'], 'theme_name' => $themeName])->id ?? null;
         if (!$boxId) {
             return '';
         }
@@ -568,13 +573,26 @@ class Steps
 
     public static function importBlock($data)
     {
-        $newBox = DesignBoxesTmp::findOne(['id' => $data['id']]);
-        $data['microtime'] = $newBox->microtime;
-        $data['siblings'] = DesignBoxesTmp::find()->where([
-            'block_name' => $newBox->block_name,
-            'theme_name' => $data['theme_name'],
-        ])->asArray()->all();
-        $data['block_name'] = self::blockNameToStep($newBox->block_name, $data['theme_name']);
+        $content = [];
+        $microtime = [];
+        $block_name = [];
+        if (is_array($data['idArr'])) {
+            foreach ($data['idArr'] as $id) {
+                $content[] = Theme::blocksTree($id);
+
+                $newBox = DesignBoxesTmp::findOne(['id' => $id]);
+                $microtime[] = $newBox->microtime;
+                $block_name[] = self::blockNameToStep($newBox->block_name, $data['theme_name']);
+
+                $data['siblings'] = DesignBoxesTmp::find()->where([
+                    'block_name' => $newBox->block_name,
+                    'theme_name' => $data['theme_name'],
+                ])->asArray()->all();
+            }
+        }
+        $data['content'] = $content;
+        $data['microtime'] = $microtime;
+        $data['block_name'] = $block_name;
 
         self::stepSave('importBlock', $data, $data['theme_name']);
     }
@@ -583,20 +601,32 @@ class Steps
     {
         $data = $step['data'];
 
-        $box = DesignBoxesTmp::findOne([
-            'microtime' => $data['content']['microtime'],
-            'theme_name' => $step['theme_name'],
-        ]);
+        if ($data['content']['microtime']) {
+            $content = [$data['content']];
+        } else {
+            $content = $data['content'];
+        }
 
-        DesignBoxesSettingsTmp::deleteAll([
-            'microtime' => $data['content']['microtime'],
-            'theme_name' => $step['theme_name'],
-        ]);
+        foreach ($content as $key => $block) {
+            $box = DesignBoxesTmp::findOne([
+                'microtime' => $block['microtime'],
+                'theme_name' => $step['theme_name'],
+            ]);
 
-        DesignController::deleteBlock($box->id);
+            DesignBoxesSettingsTmp::deleteAll([
+                'microtime' => $block['microtime'],
+                'theme_name' => $step['theme_name'],
+            ]);
+            if ($key == 0 && $data['id_old']) {
+                $box->id = $data['id_old'];
+                $box->widget_name = 'Import';
+                $box->save();
+            } else {
+                $box->delete();
+            }
 
-        $box->widget_name = 'Import';
-        $box->save();
+            DesignController::deleteBlock($box->id);
+        }
     }
 
     public static function importBlockRedo($step)
@@ -604,8 +634,16 @@ class Steps
         $data = $step['data'];
         $themeName = $step['theme_name'];
 
-        $blockName = self::blockNameToDb($data['block_name'], $themeName);
-        Theme::blocksTreeImport($data['content'], $themeName, $blockName, $data['content']['sort_order'], false, false);
+        $blockName = 'error';
+        if (is_array($data['microtime'])) {
+            foreach ($data['microtime'] as $key => $item) {
+                $blockName = self::blockNameToDb($data['block_name'][$key], $themeName);
+                Theme::blocksTreeImport($data['content'][$key], $themeName, $blockName, $data['content'][$key]['sort_order'], false, false);
+            }
+        } else {
+            $blockName = self::blockNameToDb($data['block_name'], $themeName);
+            Theme::blocksTreeImport($data['content'], $themeName, $blockName, $data['content']['sort_order'], false, false);
+        }
 
         $siblings = DesignBoxesTmp::find()->where([
             'block_name' => $blockName,
@@ -1242,7 +1280,7 @@ class Steps
             $limit = ' limit 500';
         }
 
-        $query = tep_db_query("select steps_id, parent_id, event, date_added, admin_id from " . TABLE_THEMES_STEPS . " where theme_name='" . tep_db_input($theme_name) . "'" . $filter . " order by date_added desc " . $limit);
+        $query = tep_db_query("select steps_id, parent_id, event, date_added, admin_id, mode from " . TABLE_THEMES_STEPS . " where theme_name='" . tep_db_input($theme_name) . "'" . $filter . " order by date_added desc " . $limit);
 
         $current = $active['steps_id'];
         $count = 0;
@@ -1251,12 +1289,22 @@ class Steps
                 $current = $item['steps_id'];
                 $count++;
             }
+
+            $mode = '';
+            if ($item['mode']) {
+                switch ($item['mode']) {
+                    case 'advanced': $mode = EDIT_MODE . ': <b>' . ADVANCED_MODE . '</b>'; break;
+                    case 'expert': $mode = EDIT_MODE . ': <b>' . EXPERT_MODE . '</b>'; break;
+                    default: $mode = EDIT_MODE . ': <b>' . BASIC_MODE . '</b>';
+                }
+            }
             $log[$item['steps_id']] = [
                 'steps_id' => $item['steps_id'],
                 'parent_id' => $item['parent_id'],
                 'event' => $item['event'],
                 'date_added' => $item['date_added'],
                 'admin_id' => $item['admin_id'],
+                'mode' => $mode,
             ];
         }
 
@@ -1324,6 +1372,14 @@ class Steps
         $data = json_decode($details['data'], true);
 
         $details['admin'] = $admin['admin_firstname'] . ' ' . $admin['admin_lastname'];
+
+        if (isset($data['designer_mode'])) {
+            switch ($data['designer_mode']) {
+                case 'advanced': $details['designer_mode'] = ADVANCED_MODE; break;
+                case 'expert': $details['designer_mode'] = EXPERT_MODE; break;
+                default: $details['designer_mode'] = BASIC_MODE;
+            }
+        }
 
         if ($details['event'] == 'boxAdd') {
             $details['widget_name'] = $data['widget_name'];

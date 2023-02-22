@@ -99,6 +99,20 @@ class Dbg
         }
     }
 
+    public static function loadText($fn, $ext)
+    {
+        $res = file_get_contents(Yii::getAlias('@app/runtime/logs/') . $fn . $ext);
+        if (false === $res) {
+            \Yii::warning('Error in file_get_contents: '  . (error_get_last()['message']??'Unknown'), 'debug/save');
+        }
+        return $res;
+    }
+    public static function loadJson($fn, $associative = null)
+    {
+        $txt = self::loadText($fn, '.json');
+        return json_decode($txt, $associative);
+    }
+
     public static function logStack($msg = 'Stack')
     {
         self::logVar(self::getStack(), $msg);

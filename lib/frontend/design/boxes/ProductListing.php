@@ -66,7 +66,6 @@ class ProductListing extends Widget
 
         Info::includeExtensionJsFile('Quotations/js/productListing');
         Info::includeExtensionJsFile('Samples/js/productListing');
-        Info::includeExtensionJsFile('PersonalCatalog/js/productListing');
         Info::addBoxToCss('quantity');
         Info::addBoxToCss('slick');
 
@@ -75,7 +74,6 @@ class ProductListing extends Widget
 
     public function run()
     {
-        global $wish_list;
         $productList = [];
 
         self::$listType = design::pageName(Info::listType($this->settings[0]));

@@ -30,6 +30,7 @@ class BannersGroupsImages extends \yii\db\ActiveRecord
         return [
             [['banners_id', 'image_width', 'language_id'], 'integer'],
             [['image'], 'string', 'max' => 255],
+            [['fit', 'position'], 'string', 'max' => 32],
         ];
     }
 
@@ -44,6 +45,8 @@ class BannersGroupsImages extends \yii\db\ActiveRecord
             'language_id' => 'Language ID',
             'image_width' => 'Image Width',
             'image' => 'Image',
+            'fit' => 'fit',
+            'position' => 'position',
         ];
     }
 }

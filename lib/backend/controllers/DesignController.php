@@ -14,10 +14,12 @@ namespace backend\controllers;
 
 use backend\design\Data;
 use backend\design\Groups;
+use backend\models\Admin;
 use common\models\DesignBoxes;
 use common\models\DesignBoxesGroups;
 use common\models\DesignBoxesSettingsTmp;
 use common\models\DesignBoxesTmp;
+use common\models\Platforms;
 use frontend\design\Info;
 use Yii;
 use yii\helpers\ArrayHelper;
@@ -40,12 +42,22 @@ use yii\helpers\Html;
 class DesignController extends Sceleton {
 
     public $acl = ['BOX_HEADING_DESIGN_CONTROLS', 'BOX_HEADING_THEMES'];
+    public $designerMode = '';
+    public $designerModeTitle = '';
 
     function __construct($id,$module=null) {
         \common\helpers\Translation::init('admin/design');
 
         if (Yii::$app->request->get('theme_name') == \common\classes\design::pageName(BACKEND_THEME_NAME)) {
             \common\helpers\Acl::checkAccess(['BOX_HEADING_DESIGN_CONTROLS', 'BOX_HEADING_THEMES', 'BOX_BACKEND_THEME_EDIT']);
+        }
+
+        $admin = new Admin;
+        $this->designerMode = $admin->getAdditionalData('designer_mode');
+        switch ($this->designerMode) {
+            case 'advanced': $this->designerModeTitle = EDIT_MODE . ': ' . ADVANCED_MODE; break;
+            case 'expert': $this->designerModeTitle = EDIT_MODE . ': ' . EXPERT_MODE; break;
+            default: $this->designerModeTitle = EDIT_MODE . ': ' . BASIC_MODE;
         }
 
         return parent::__construct($id,$module);
@@ -89,12 +101,12 @@ class DesignController extends Sceleton {
     {
         $groupId = $request = Yii::$app->request->get('group_id', 0);
 
-        $this->topButtons[] = '<a href="' . Yii::$app->urlManager->createUrl(['design/theme-add', 'group_id' => $groupId]) . '" class="btn btn-primary">' . TEXT_ADD_THEME . '</a>';
-        $this->topButtons[] = '<a href="' . Yii::$app->urlManager->createUrl(['design/theme-import', 'group_id' => $groupId]) . '" class="btn btn-primary">Import theme</a>';
+        $this->topButtons[] = '<a href="' . Yii::$app->urlManager->createUrl(['design/theme-add', 'group_id' => $groupId]) . '" class="btn btn-primary btn-add-theme">' . TEXT_ADD_THEME . '</a>';
+        $this->topButtons[] = '<a href="' . Yii::$app->urlManager->createUrl(['design/theme-import', 'group_id' => $groupId]) . '" class="btn btn-primary btn-import-theme">' . IMPORT_THEME . '</a>';
         if ($groupId) {
-            $this->topButtons[] = '<a href="' . Yii::$app->urlManager->createUrl('design/themes') . '" class="btn">Back to root</a>';
+            $this->topButtons[] = '<a href="' . Yii::$app->urlManager->createUrl('design/themes') . '" class="btn">' . BACK_TO_ROOT . '</a>';
         } else {
-            $this->topButtons[] = '<a href="' . Yii::$app->urlManager->createUrl('design/add-group') . '" class="btn create-group">Add theme group</a>';
+            $this->topButtons[] = '<a href="' . Yii::$app->urlManager->createUrl('design/add-group') . '" class="btn create-group">' . ADD_THEME_GROUP . '</a>';
         }
 
         $this->selectedMenu = array('design_controls', 'design/themes');
@@ -111,12 +123,20 @@ class DesignController extends Sceleton {
             if ($themeImage) {
                 $themes[$key]['theme_image'] = $themeImage;
             }
+
+            $themes[$key]['platforms'] = \common\models\PlatformsToThemes::find()->alias('p2t')
+                ->select(['p.platform_name', 'p.ssl_enabled', 'p.platform_url'])
+                ->leftJoin(Platforms::tableName() . ' p', 'p.platform_id = p2t.platform_id')
+                ->where(['p2t.theme_id' => $theme['id']])
+                ->asArray()->all();
+
         }
 
         if ($groupId) {
             return $this->render('themes.tpl', [
                 'themes' => $themes,
                 'group_id' => $groupId,
+                'designer_mode' => $this->designerMode,
             ]);
         }
 
@@ -135,7 +155,15 @@ class DesignController extends Sceleton {
         return $this->render('themes.tpl', [
             'themes' => $themes,
             'group_id' => 0,
+            'designer_mode' => $this->designerMode,
         ]);
+    }
+
+    public function actionSaveAdminData()
+    {
+        $post = Yii::$app->request->post();
+        $admin = new Admin;
+        $admin->saveAdditionalData($post);
     }
 
     public function actionThemeAdd()
@@ -262,6 +290,8 @@ class DesignController extends Sceleton {
 
     $this->topButtons[] = '<span class="redo-buttons"></span>';
 
+    $this->topButtons[] = '<span class="mode-title">' . $this->designerModeTitle . '</span>';
+
     $this->selectedMenu = array('design_controls', 'design/themes');
     $this->navigation[] = array('link' => Yii::$app->urlManager->createUrl('design/elements'), 'title' => BOX_HEADING_MAIN_STYLES . ' "' . Theme::getThemeTitle($params['theme_name']) . '"');
     $this->view->headingTitle = BOX_HEADING_MAIN_STYLES . ' "' . Theme::getThemeTitle($params['theme_name']) . '"';
@@ -275,7 +305,8 @@ class DesignController extends Sceleton {
       'clear_url' => ($params['theme_name'] ? true : false),
       'css' => $css['setting_value'] ?? null,
       'javascript' => $javascript['setting_value'] ?? null,
-      'language_code' => $language_code
+      'language_code' => $language_code,
+        'designer_mode' => $this->designerMode,
     ]);
   }
 
@@ -288,6 +319,8 @@ class DesignController extends Sceleton {
 
         $this->topButtons[] = '<span class="btn btn-confirm btn-save-css btn-elements ">' . IMAGE_SAVE . '</span><span class="redo-buttons"></span>';
 
+        $this->topButtons[] = '<span class="mode-title">' . $this->designerModeTitle . '</span>';
+
         Style::changeCssAttributes($params['theme_name']);
 
         $style = Style::getCss($params['theme_name']);
@@ -298,17 +331,9 @@ class DesignController extends Sceleton {
         }
 
         $setting = tep_db_fetch_array(tep_db_query("select setting_value from " . TABLE_THEMES_SETTINGS . " where setting_name = 'development_mode' and setting_group = 'hide' and theme_name = '" . tep_db_input($params['theme_name']) . "'"));
-        $cookies = Yii::$app->request->cookies;
         $css_status = 0;
         if ($setting['setting_value'] ?? null) {
             $css_status = 1;
-
-            if (!$cookies->getValue('css_status')) {
-                $cookies->add(new \yii\web\Cookie([
-                    'name' => 'css_status',
-                    'value' => 1,
-                ]));
-            }
         }
 
 
@@ -317,7 +342,8 @@ class DesignController extends Sceleton {
             'theme_name' => ($params['theme_name'] ? $params['theme_name'] : 'theme-1'),
             'css' => $style,
             'css_status' => $css_status,
-            'widgets_list' => Style::getCssWidgetsList($params['theme_name'])
+            'widgets_list' => Style::getCssWidgetsList($params['theme_name']),
+            'designer_mode' => $this->designerMode,
         ]);
     }
 
@@ -351,12 +377,15 @@ class DesignController extends Sceleton {
 
     $this->topButtons[] = '<span class="btn btn-confirm btn-save-javascript btn-elements ">' . IMAGE_SAVE . '</span>';
 
+      $this->topButtons[] = '<span class="mode-title">' . $this->designerModeTitle . '</span>';
+
     $javascript = tep_db_fetch_array(tep_db_query("select setting_value from " . TABLE_THEMES_SETTINGS . " where theme_name = '" . tep_db_input($params['theme_name']) . "' and setting_group = 'javascript' and setting_name = 'javascript'"));
 
     return $this->render('js.tpl', [
       'menu' => 'js',
       'theme_name' => ($params['theme_name'] ? $params['theme_name'] : 'theme-1'),
       'javascript' => $javascript['setting_value'] ?? null,
+        'designer_mode' => $this->designerMode,
     ]);
   }
 
@@ -433,7 +462,11 @@ class DesignController extends Sceleton {
         $this->topButtons[] = '<span class="btn btn-preview-2 btn-primary">' . IMAGE_PREVIEW_POPUP . '</span>';
         $this->topButtons[] = '<span class="btn btn-preview btn-primary" title="Alt + P">' . IMAGE_PREVIEW . '</span>';
         $this->topButtons[] = '<span class="btn btn-edit btn-primary" style="display: none" title="Alt + P">' . IMAGE_EDIT . '</span>';
-        $this->topButtons[] = '<span class="redo-buttons"></span>';
+        if ($this->designerMode) {
+            $this->topButtons[] = '<span class="redo-buttons"></span>';
+        }
+
+        $this->topButtons[] = '<span class="mode-title">' . $this->designerModeTitle . '</span>';
 
         $this->selectedMenu = array('design_controls', 'design/themes');
         $this->navigation[] = array('link' => Yii::$app->urlManager->createUrl('design/elements'), 'title' => BOX_HEADING_ELEMENTS . ' "' . Theme::getThemeTitle($params['theme_name']) . '"');
@@ -446,7 +479,6 @@ class DesignController extends Sceleton {
                 'IMAGE_CANCEL' => IMAGE_CANCEL,
                 'TEXT_REMOVE' => TEXT_REMOVE,
                 'TEXT_PAGES' => TEXT_PAGES,
-                'TEXT_REMOVE' => TEXT_REMOVE,
                 'TEXT_EDIT_SETTINGS' => TEXT_EDIT_SETTINGS,
                 'TEXT_COPY_PAGE' => TEXT_COPY_PAGE,
                 'TEXT_ADD_PAGE' => TEXT_ADD_PAGE,
@@ -462,6 +494,15 @@ class DesignController extends Sceleton {
                 'TEXT_WIDGETS' => TEXT_WIDGETS,
                 'TEXT_EXPORT' => TEXT_EXPORT,
                 'TEXT_NAME_THIS_BLOCK' => TEXT_NAME_THIS_BLOCK,
+                'SAVE_TO_WIDGET_GROUPS' => SAVE_TO_WIDGET_GROUPS,
+                'WIDGET_GROUP_CATEGORY' => WIDGET_GROUP_CATEGORY,
+                'NO_CATEGORIZED' => NO_CATEGORIZED,
+                'DOWNLOAD_ON_MY_COMPUTER' => DOWNLOAD_ON_MY_COMPUTER,
+                'TEXT_COMMENTS' => TEXT_COMMENTS,
+                'EDIT_WIDGETS' => EDIT_WIDGETS,
+                'EDIT_TEXTS' => EDIT_TEXTS,
+                'ICON_WARNING' => ICON_WARNING,
+                'DATA_FROM_NETWORK_CHANGED' => DATA_FROM_NETWORK_CHANGED,
             ],
             'pages' => FrontendStructure::getPages(),
             'groups' => FrontendStructure::getPageGroups(),
@@ -469,6 +510,7 @@ class DesignController extends Sceleton {
             'platformSelect' => FrontendStructure::getThemePlatforms(),
             'theme_name' => ($params['theme_name'] ? $params['theme_name'] : 'theme-1'),
             'theme_title' => Theme::getThemeTitle($params['theme_name']),
+            'designer_mode' => $this->designerMode,
         ]);
 
         return $this->render('elements.tpl', [
@@ -477,6 +519,7 @@ class DesignController extends Sceleton {
             'link_cancel' => Yii::$app->urlManager->createUrl(['design/elements-cancel']),
             'theme_name' => ($params['theme_name'] ? $params['theme_name'] : 'theme-1'),
             'landing' => \frontend\design\Info::themeSetting('landing', 'hide', $params['theme_name']) ? 1 : 0,
+            'designer_mode' => $this->designerMode,
         ]);
     }
 
@@ -566,14 +609,12 @@ class DesignController extends Sceleton {
       'id' => $id
     ]);
 
-    $this->actionBackupAuto($params['theme_name']);
-
     tep_db_query("delete from " . TABLE_DESIGN_BOXES_TMP . " where id = '" . (int)$id . "'");
     tep_db_query("delete from " . TABLE_DESIGN_BOXES_SETTINGS_TMP . " where box_id = '" . (int)$id . "'");
 
     self::deleteBlock($id);
 
-      $this->actionBackupAuto($params['theme_name'], json_encode(''));
+      $this->actionBackupAuto($params['theme_name'], json_encode(['text' => 'removed']));
   }
 
   public function actionWidgetsList()
@@ -590,13 +631,17 @@ class DesignController extends Sceleton {
     {
         $params = tep_db_prepare_input(Yii::$app->request->post());
 
+        $params['sort_order'] = DesignBoxesTmp::find()->where([
+                'block_name' => $params['block'],
+                'theme_name' => $params['theme_name']
+            ])->max('sort_order') + 1;
+
         if (substr($params['box'], 0, 6) == 'group-') {
 
             $id = substr($params['box'], 6);
             $file = \common\models\DesignBoxesGroups::findOne($id)->file;
             $path = DIR_FS_CATALOG . implode(DIRECTORY_SEPARATOR, ['lib', 'backend', 'design', 'groups']);
 
-            $params['sort_order'] = DesignBoxesTmp::find()->where(['block_name' => $params['block']])->max('sort_order') + 1;
             $params['block_name'] = $params['block'];
 
             $importBlock = Theme::importBlock($path . DIRECTORY_SEPARATOR . $file, $params);
@@ -606,24 +651,19 @@ class DesignController extends Sceleton {
                 return $importBlock;
             }
 
-            $arr = Theme::blocksTree($boxId);
-
             $data = [
-                'content' => $arr,
-                'id' => $boxId,
+                'idArr' => $boxId,
                 'theme_name' => $params['theme_name'],
             ];
             Steps::importBlock($data);
 
         } else {
             $designBoxes = new DesignBoxesTmp();
-            $designBoxes->setAttributes([
-                'microtime' => microtime(true),
-                'theme_name' => $params['theme_name'],
-                'block_name' => $params['block'],
-                'widget_name' => $params['box'],
-                'sort_order' => $params['order'],
-            ]);
+            $designBoxes->microtime = microtime(true);
+            $designBoxes->theme_name = $params['theme_name'];
+            $designBoxes->block_name = $params['block'];
+            $designBoxes->widget_name = $params['box'];
+            $designBoxes->sort_order = $params['sort_order'];
             $designBoxes->save();
             $designBoxes->refresh();
 
@@ -654,11 +694,8 @@ class DesignController extends Sceleton {
                 return $importBlock;
             }
 
-            $arr = Theme::blocksTree($boxId);
-
             $data = [
-                'content' => $arr,
-                'id' => $boxId,
+                'idArr' => $boxId,
                 'theme_name' => $params['theme_name'],
             ];
             Steps::importBlock($data);
@@ -688,12 +725,13 @@ class DesignController extends Sceleton {
 
                 $designBoxesSibling = DesignBoxesTmp::findOne(['id' => $id, 'theme_name' => $params['theme_name']]);
 
-                $sort_arr[$designBoxesSibling['microtime']] = $i;
-                $sort_arr_old[$designBoxesSibling['microtime']] = $designBoxesSibling->sort_order;
+                if ($designBoxesSibling){
+                    $sort_arr[$designBoxesSibling->microtime] = $i;
+                    $sort_arr_old[$designBoxesSibling->microtime] = $designBoxesSibling->sort_order;
 
-                $designBoxesSibling->sort_order = $i;
-                $designBoxesSibling->save();
-
+                    $designBoxesSibling->sort_order = $i;
+                    $designBoxesSibling->save();
+                }
                 $i++;
             }
             Steps::boxAdd($designBoxes->getAttributes() + ['sort_arr' => $sort_arr, 'sort_arr_old' => $sort_arr_old]);
@@ -909,15 +947,20 @@ class DesignController extends Sceleton {
 
     $settings = array();
     $items_query = tep_db_query("select id, widget_name, widget_params, theme_name from " . TABLE_DESIGN_BOXES_TMP . " where id = '" . (int)$id . "'");
-    $widget_params = '';
+    $widget_params = [];
     if ($item = tep_db_fetch_array($items_query)) {
       $widget_params = $item['widget_params'];
 
       $media_query = array();
       $media_query_arr = tep_db_query("select * from " . TABLE_THEMES_SETTINGS . " where theme_name = '" . tep_db_input($item['theme_name']) . "' and setting_name = 'media_query'");
       while ($item1 = tep_db_fetch_array($media_query_arr)){
+          $width = explode('w', $item1['setting_value']);
+          $item1['title'] = ($width[0] ? $width[0] : '0') . ' - ' . ($width[1] ? $width[1] : '<span style="font-size: 1.8em; line-height: 0">&#8734;</span>');
         $media_query[] = $item1;
       }
+        usort($media_query, function($a, $b){
+            return ((int)str_replace('w', '', $a['setting_value']) < (int)str_replace('w', '', $b['setting_value'])) ? -1 : 1;
+        });
       $settings['media_query'] = $media_query;
       $settings['theme_name'] = $item['theme_name'];
     }
@@ -945,6 +988,7 @@ class DesignController extends Sceleton {
     $settings['font_added'] = $font_added;
     $settings['theme_name'] = $item['theme_name'];
 
+      $settings['designer_mode'] = $this->designerMode;
 
     if (is_file(Yii::getAlias('@app') . DIRECTORY_SEPARATOR . 'design' . DIRECTORY_SEPARATOR . 'boxes' . DIRECTORY_SEPARATOR . str_replace('\\', DIRECTORY_SEPARATOR, $params['name']) . '.php')){
       $widget_name = 'backend\design\boxes\\' .str_replace('\\\\', '\\', $params['name']);
@@ -1086,7 +1130,7 @@ class DesignController extends Sceleton {
             }
         }
 
-        if (is_array($params['setting'])) {
+        if (isset($params['setting']) && is_array($params['setting'])) {
             foreach ($params['setting'] as $language => $set) {
 
                 if (strlen($set['video_upload'] ?? null) > 3) unset($set['video']);
@@ -1352,6 +1396,8 @@ class DesignController extends Sceleton {
 
     $this->topButtons[] = '<a href="' . Yii::$app->urlManager->createUrl(['design/backup-add', 'theme_name' => $params['theme_name']]) . '" class="create_item">' . NEW_NEW_BACKUP . '</a>';
 
+      $this->topButtons[] = '<span class="mode-title">' . $this->designerModeTitle . '</span>';
+
     $this->view->headingTitle = TEXT_BACKUPS;
 
       \backend\design\Data::addJsData([
@@ -1369,6 +1415,7 @@ class DesignController extends Sceleton {
       'menu' => 'backups',
       'theme_name' => $params['theme_name'],
       'messages' => [],
+        'designer_mode' => $this->designerMode,
     ]);
   }
 
@@ -1608,11 +1655,40 @@ class DesignController extends Sceleton {
     public function actionExportBlock()
     {
         $params = Yii::$app->request->get();
-        $id = intval(substr($params['id'], 4));
-        if ($id) {
-            return \backend\design\Theme::exportBlock($id, $params['block_name']);
+        if (!$params['id']) {
+            $params = Yii::$app->request->post();
         }
-        return 'Error';
+        if (!$params['id']) {
+            return json_encode(['error' => 'Error']);
+        }
+
+        if (substr($params['id'], 0, 4) == 'box-') {
+            $id = intval(substr($params['id'], 4));
+            $type = 'id';
+        } else {
+            $type = 'block_name';
+            $id = $params['id'];
+        }
+        return \backend\design\Theme::exportBlock($id, $type, $params);
+    }
+
+    public function actionDownloadBlock()
+    {
+        $filename = Yii::$app->request->get('filename');
+
+        $fsCatalog = DIR_FS_CATALOG . implode(DIRECTORY_SEPARATOR, ['lib', 'backend', 'design', 'groups']) . DIRECTORY_SEPARATOR;
+
+        header('Cache-Control: none');
+        header('Pragma: none');
+        header('Content-type: application/x-octet-stream');
+        header('Content-disposition: attachment; filename=' . $filename);
+        readfile($fsCatalog . $filename);
+
+        if (Yii::$app->request->get('delete')) {
+            unlink($fsCatalog . $filename);
+        }
+
+        return json_encode(['']);
     }
 
     public function actionImport()
@@ -1638,7 +1714,7 @@ class DesignController extends Sceleton {
 
         $importBlock = Theme::importBlock($_FILES['file']['tmp_name'], $params);
         if (is_array($importBlock)) {
-            [$arr, $boxId] = $importBlock;
+            [$_arr, $boxId] = $importBlock;
         } else {
             return $importBlock;
         }
@@ -1646,12 +1722,9 @@ class DesignController extends Sceleton {
         DesignBoxesTmp::deleteAll(['id' => (int)$params['box_id']]);
         DesignBoxesSettingsTmp::deleteAll(['box_id' => (int)$params['box_id']]);
 
-        $arr = Theme::blocksTree($boxId);
-
         $data = [
-            'content' => $arr,
             'id_old' => $params['box_id'],
-            'id' => $boxId,
+            'idArr' => $boxId,
             'theme_name' => $params['theme_name'],
         ];
         Steps::importBlock($data);
@@ -1716,6 +1789,8 @@ class DesignController extends Sceleton {
     $this->selectedMenu = array('design_controls', 'design/themes');
 
     $this->topButtons[] = '<span class="redo-buttons"></span>';
+
+      $this->topButtons[] = '<span class="mode-title">' . $this->designerModeTitle . '</span>';
 
     if (count($post) > 0){
 
@@ -1856,7 +1931,8 @@ class DesignController extends Sceleton {
           'setting' => $styles,
           'theme_name' => $params['theme_name'],
           'action' => Yii::$app->urlManager->createUrl(['design/settings', 'theme_name' => $params['theme_name']]),
-          'is_mobile' => strpos($_GET['theme_name'], '-mobile') ? true : false
+          'is_mobile' => strpos($_GET['theme_name'], '-mobile') ? true : false,
+          'designer_mode' => $this->designerMode,
       ]));
   }
 
@@ -1936,6 +2012,8 @@ class DesignController extends Sceleton {
         $get['to'] = $get['to'] ?? null;
         $this->topButtons[] = '<span class="redo-buttons"></span>';
 
+        $this->topButtons[] = '<span class="mode-title">' . $this->designerModeTitle . '</span>';
+
         $this->selectedMenu = array('design_controls', 'design/themes');
         $this->view->headingTitle = LOG_TEXT . ' "' . Theme::getThemeTitle($get['theme_name']) . '"';
         $this->navigation[] = array('link' => Yii::$app->urlManager->createUrl('design/settings'), 'title' => 'Log "' . Theme::getThemeTitle($get['theme_name']) . '"');
@@ -1964,7 +2042,8 @@ class DesignController extends Sceleton {
             'from' => $get['from'],
             'to' => $get['to'],
             'apple_update' => count($updates) > 0 ? false : true,
-            'update_buttons' => \backend\components\Information::showHidePage()
+            'update_buttons' => \backend\components\Information::showHidePage(),
+            'designer_mode' => $this->designerMode,
         ]);
     }
 
@@ -2069,10 +2148,12 @@ class DesignController extends Sceleton {
   {
     $get = tep_db_prepare_input(Yii::$app->request->get());
 
-      $this->topButtons[] = '<span class="redo-buttons"></span>';
+      /*$this->topButtons[] = '<span class="redo-buttons"></span>';*/
 
-    $this->topButtons[] = '<span data-href="' . Yii::$app->urlManager->createUrl(['design/theme-save', 'theme_name' => $get['theme_name']]) . '" class="btn btn-confirm btn-save-boxes btn-elements">'.IMAGE_SAVE.'</span> <span class="redo-buttons"></span>';
+    /*$this->topButtons[] = '<span data-href="' . Yii::$app->urlManager->createUrl(['design/theme-save', 'theme_name' => $get['theme_name']]) . '" class="btn btn-confirm btn-save-boxes btn-elements">'.IMAGE_SAVE.'</span> <span class="redo-buttons"></span>';*/
 
+
+      $this->topButtons[] = '<span class="mode-title">' . $this->designerModeTitle . '</span>';
     $this->selectedMenu = array('design_controls', 'design/themes');
     $this->navigation[] = array('link' => Yii::$app->urlManager->createUrl('design/elements'), 'title' => BOX_HEADING_MAIN_STYLES . ' "' . Theme::getThemeTitle($get['theme_name']) . '"');
     $this->view->headingTitle = BOX_HEADING_MAIN_STYLES . ' "' . Theme::getThemeTitle($get['theme_name']) . '"';
@@ -2219,6 +2300,7 @@ class DesignController extends Sceleton {
         'borderColors' => $borderColors,
         'fontFamily' => $fontFamily,
         'fontAdded' => $fontAdded,
+        'designer_mode' => $this->designerMode,
     ]);
   }
 
@@ -2498,12 +2580,6 @@ class DesignController extends Sceleton {
             ]);
         }
 
-        $cookies = Yii::$app->response->cookies;
-        $cookies->add(new \yii\web\Cookie([
-            'name' => 'css_status',
-            'value' => $get['status'],
-        ]));
-
         return 'ok';
 
     }
@@ -2553,6 +2629,8 @@ class DesignController extends Sceleton {
             'responsive_settings' => json_decode($get['responsive_settings'], true),
             'block_view' => $get['block_view'],
             'font_added' => $font_added,
+            'designer_mode' => $this->designerMode,
+            'styleHide' => ($get['data_class'] ? Style::hide($get['data_class']) : []),
         ]);
 
     }
@@ -2566,7 +2644,8 @@ class DesignController extends Sceleton {
 
         return $this->render('choose-view.tpl', [
             'theme_name' => $get['theme_name'],
-            'theme_name_mobile' => $get['theme_name'] . '-mobile'
+            'theme_name_mobile' => $get['theme_name'] . '-mobile',
+            'designer_mode' => $this->designerMode,
         ]);
     }
 
@@ -2843,7 +2922,8 @@ class DesignController extends Sceleton {
 
         return $this->render('webp.tpl', [
             'imagewebp' => function_exists('imagewebp'),
-            'buttonSettings' => $buttonSettings
+            'buttonSettings' => $buttonSettings,
+            'designer_mode' => $this->designerMode,
         ]);
     }
 
@@ -3079,13 +3159,16 @@ class DesignController extends Sceleton {
         $this->selectedMenu = array('design_controls', 'design/themes');
         $this->navigation[] = array('link' => Yii::$app->urlManager->createUrl('design/groups'), 'title' => BOX_HEADING_THEMES);
         $this->view->headingTitle = BOX_HEADING_THEMES;
-        $this->topButtons[] = '<span class="btn btn-primary btn-add-group">Add</a>';
+        $this->topButtons[] = '<span class="btn btn-primary btn-add-group">Add</span>';
+
+        $this->topButtons[] = '<span class="mode-title">' . $this->designerModeTitle . '</span>';
 
         \backend\design\Groups::synchronize();
 
         return $this->render('groups.tpl', [
             'menu' => 'groups',
-            'theme_name' => Yii::$app->request->get('theme_name')
+            'theme_name' => Yii::$app->request->get('theme_name'),
+            'designer_mode' => $this->designerMode,
         ]);
     }
 
@@ -3157,6 +3240,7 @@ class DesignController extends Sceleton {
         return $this->render('group-action.tpl', [
             'group' => $group,
             'pageTypes' => Html::dropDownList('page_type', $group['page_type'], $pageTypes, ['class' => 'form-control']),
+            'designer_mode' => $this->designerMode,
         ]);
     }
 

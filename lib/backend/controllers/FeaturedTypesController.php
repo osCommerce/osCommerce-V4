@@ -37,7 +37,7 @@ class FeaturedTypesController extends Sceleton  {
             ),
         );
 
-        $messages = $_SESSION['messages'];
+        $messages = Yii::$app->session->get('messages');
         unset($_SESSION['messages']);
         return $this->render('index', array('messages' => $messages));
     }
@@ -60,7 +60,7 @@ class FeaturedTypesController extends Sceleton  {
             $featuredTypes->andWhere("featured_type_name like '%" . $keywords . "%'");
         }
         $orderBy = "featured_type_name";
-        if ($order[0]['column'] === 0 && $order[0]['dir']) {
+        if (($order[0]['column']??null) === 0 && ($order[0]['dir']??null)) {
             $orderBy = "featured_type_name " . tep_db_prepare_input($order[0]['dir']);
         }
         $featuredTypes->orderBy($orderBy);

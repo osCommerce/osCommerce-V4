@@ -285,6 +285,30 @@ class Cache_controlController extends Sceleton  {
             }
         }
         
+        if (Yii::$app->request->post('do_migrations') == 1) {
+            $oldApp = \Yii::$app;
+            new \yii\console\Application([
+                'id' => 'Command runner',
+                'basePath' => '@site_root',
+                'components' => [
+                    'db' => $oldApp->db,
+                    'cache' => [
+                        'class' => 'yii\caching\FileCache',
+                        'cachePath' => '@frontend/runtime/cache'
+                    ],
+                ],
+            ]);
+            \Yii::$app->runAction('migrate/up', ['migrationPath' => '@console/migrations/', 'interactive' => false]);
+            \Yii::$app = $oldApp;
+            $message = 'Migrations applied';
+            ?>
+            <div class="pop-mess-cont pop-mess-cont-<?= $messageType?>">
+                <?= $message?>
+            </div>
+
+            <?php
+        }
+        
         ob_end_flush();
         
     }

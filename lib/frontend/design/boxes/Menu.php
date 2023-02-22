@@ -99,6 +99,10 @@ class Menu extends Widget
             unset($counts);
         }
 
+        $andWere = '';
+        if ($ext = \common\helpers\Acl::checkExtensionAllowed('UserGroups', 'allowed')) {
+            $andWere .= " and (user_groups like '%#" . $customer_groups_id . "#%' or user_groups like '%#0#%')";
+        }
 
         $infoPagePublicStatusIds = \common\helpers\PageStatus::getIds('public', 'information');
         $is_menu = false;
@@ -109,7 +113,7 @@ class Menu extends Widget
             from " . TABLE_MENUS . " m
               inner join " . TABLE_MENU_ITEMS . " i on i.menu_id = m.id and i.platform_id='".$platformCurrentId."'
               left join " . TABLE_MENU_TITLES . " t on t.item_id = i.id and t.language_id = " . (int)$languages_id . "
-              left join " . TABLE_CATEGORIES_DESCRIPTION . " cd on cd.language_id =" . (int)$languages_id . " and cd.categories_id=i.link_id and i.link_type='categories'
+              left join " . TABLE_CATEGORIES_DESCRIPTION . " cd on cd.language_id =" . (int)$languages_id . " and cd.categories_id=i.link_id and i.link_type='categories' " . $andWere . "
             where
               m.menu_name = '" . $this->settings[0]['params'] . "'
             order by i.sort_order

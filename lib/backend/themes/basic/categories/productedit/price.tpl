@@ -18,10 +18,10 @@
     <div class="widget-content price-and-cost-content">
         
       <div class="tax-cl row align-items-center" style="max-width: 500px">
-          <div class="col-xs-3">
+          <div class="col-xs-12">
               <label>{$smarty.const.TEXT_PRODUCTS_TAX_CLASS}</label>
           </div>
-          <div class="col-xs-9">
+          <div class="col-xs-12">
               {Html::dropDownList('products_tax_class_id', $pInfo->products_tax_class_id, $app->controller->view->tax_classes, ['onchange'=>'updateGrossVisible(); $(\'.js-inventory-tax-class[disabled]\').val($(this).val());',  'class'=>'form-control', 'disabled' => !empty($hideSuppliersPart)  ])}
               {if \Yii::$app->controller->action->id=='specialedit'}
                   {Html::hiddenInput('specials_id', $pInfo->specials_id|default:null)}
@@ -302,7 +302,7 @@ if !\common\helpers\Extensions::isCustomerGroupsAllowed() || substr($idSuffix, -
 {if \common\helpers\Acl::checkExtensionAllowed('DeliveryOptions', 'allowed')}
         <div class="our-pr-line after our-pr-line-check-box dfullcheck">
           <div>
-            <label>{$smarty.const.TEXT_ALLOW_DELIVERY_OPTIONS}</label>
+            <label>{$smarty.const.EXT_DELIVERY_OPTIONS_TEXT_ALLOW_DELIVERY_OPTIONS}</label>
               <input type="checkbox" value="1"  id="delivery_option{$idSuffix}" name="delivery_option{$fieldSuffix|escape}" class="check_delivery_option" {if {$data['delivery_option'] > 0}} checked="checked" {/if} />
           </div>
         </div>

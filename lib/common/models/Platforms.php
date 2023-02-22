@@ -47,6 +47,7 @@ use yii\db\ActiveRecord;
  * @property string $platform_code
  * @property int $need_login
  * @property int $use_social_login
+ * @property int $checkout_logged_customer
  */
 class Platforms extends ActiveRecord {
 

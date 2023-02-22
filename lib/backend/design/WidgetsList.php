@@ -91,7 +91,6 @@ class WidgetsList
         $widgets[] = array('name' => 'product\Stock', 'title' => TEXT_STOCK_INDICATION, 'description' => '', 'type' => 'product', 'class' => 'stock');
         $widgets[] = array('name' => 'product\Buttons', 'title' => TEXT_BUY_BUTTON, 'description' => '', 'type' => 'product', 'class' => 'buttons');
         //$widgets[] = array('name' => 'product\WishlistButton', 'title' => TEXT_WISHLIST_BUTTON, 'description' => '', 'type' => 'product', 'class' => 'buttons');
-        $widgets[] = array('name' => 'product\PersonalCatalogButton', 'title' => TEXT_PERSONAL_CATALOG, 'description' => '', 'type' => 'product', 'class' => 'buttons');
         $widgets[] = array('name' => 'product\Description', 'title' => TEXT_PRODUCTS_DESCRIPTION, 'description' => '', 'type' => 'product', 'class' => 'description');
         $widgets[] = array('name' => 'product\DescriptionShort', 'title' => TEXT_PRODUCTS_DESCRIPTION_SHORT, 'description' => '', 'type' => 'product', 'class' => 'description');
         $widgets[] = array('name' => 'product\Reviews', 'title' => TEXT_PRODUCTS_REVIEWS, 'description' => '', 'type' => 'product', 'class' => 'reviews');
@@ -525,11 +524,11 @@ class WidgetsList
         //$widgets[] = array('name' => 'Wristband', 'title' => 'wristband', 'description' => '', 'type' => 'general');
 
         //Committed because not stylized
-        $widgets[] = array('name' => 'CatalogPages\CategoryPagesList', 'title' => TEXT_WIDGET_CATEGORY_PAGE, 'description' => TEXT_WIDGET_CATEGORY_PAGE, 'type' => 'index', 'class' => 'delivery-location-products');
-        $widgets[] = array('name' => 'CatalogPages\CategoryPagesLastList', 'title' => TEXT_WIDGET_CATEGORY_PAGE_LAST_LIST, 'description' => TEXT_WIDGET_CATEGORY_PAGE_LAST_LIST, 'type' => 'index', 'class' => 'delivery-location-products');
-        $widgets[] = array('name' => 'CatalogPages\CategoryPagesLastListByCatalog', 'title' => TEXT_WIDGET_CATEGORY_PAGE_LAST_LIST_BY_CATALOG, 'description' => TEXT_WIDGET_CATEGORY_PAGE_LAST_LIST_BY_CATALOG, 'type' => 'index', 'class' => 'delivery-location-products');
-        $widgets[] = array('name' => 'CatalogPages\CategoryPagesLastListBlock', 'title' => TEXT_WIDGET_CATEGORY_PAGE_LAST_LIST_BLOCK, 'description' => TEXT_WIDGET_CATEGORY_PAGE_LAST_LIST_BLOCK, 'type' => 'index', 'class' => 'delivery-location-products');
-        $widgets[] = array('name' => 'CatalogPages\CategoryPagesLastListByCatalogBlock', 'title' => TEXT_WIDGET_CATEGORY_PAGE_LAST_LIST_BY_CATALOG_BLOCK, 'description' => TEXT_WIDGET_CATEGORY_PAGE_LAST_LIST_BY_CATALOG_BLOCK, 'type' => 'index', 'class' => 'delivery-location-products');
+        $widgets[] = array('name' => 'CatalogPages\CategoryPagesList', 'title' => TEXT_WIDGET_CATEGORY_PAGE, 'description' => TEXT_WIDGET_CATEGORY_PAGE, 'type' => 'general', 'class' => 'delivery-location-products');
+        $widgets[] = array('name' => 'CatalogPages\CategoryPagesLastList', 'title' => TEXT_WIDGET_CATEGORY_PAGE_LAST_LIST, 'description' => TEXT_WIDGET_CATEGORY_PAGE_LAST_LIST, 'type' => 'general', 'class' => 'delivery-location-products');
+        $widgets[] = array('name' => 'CatalogPages\CategoryPagesLastListByCatalog', 'title' => TEXT_WIDGET_CATEGORY_PAGE_LAST_LIST_BY_CATALOG, 'description' => TEXT_WIDGET_CATEGORY_PAGE_LAST_LIST_BY_CATALOG, 'type' => 'general', 'class' => 'delivery-location-products');
+        $widgets[] = array('name' => 'CatalogPages\CategoryPagesLastListBlock', 'title' => TEXT_WIDGET_CATEGORY_PAGE_LAST_LIST_BLOCK, 'description' => TEXT_WIDGET_CATEGORY_PAGE_LAST_LIST_BLOCK, 'type' => 'general', 'class' => 'delivery-location-products');
+        $widgets[] = array('name' => 'CatalogPages\CategoryPagesLastListByCatalogBlock', 'title' => TEXT_WIDGET_CATEGORY_PAGE_LAST_LIST_BY_CATALOG_BLOCK, 'description' => TEXT_WIDGET_CATEGORY_PAGE_LAST_LIST_BY_CATALOG_BLOCK, 'type' => 'general', 'class' => 'delivery-location-products');
 
         return $widgets;
     }
@@ -592,7 +591,6 @@ class WidgetsList
         $widgets[] = array('name' => 'account\OrderDownload', 'title' => IMAGE_DOWNLOAD, 'description' => '', 'type' => 'account', 'class' => '');
         $widgets[] = array('name' => 'account\OrderCancelAndReorder', 'title' => CANCEL_AND_REORDER_BUTTON, 'description' => '', 'type' => 'account', 'class' => '');
         //$widgets[] = array('name' => 'account\Wishlist', 'title' => TEXT_WISHLIST, 'description' => '', 'type' => 'account', 'class' => '');
-        $widgets[] = array('name' => 'account\PersonalCatalog', 'title' => TEXT_PERSONAL_CATALOG, 'description' => '', 'type' => 'account', 'class' => '');
         $widgets[] = array('name' => 'account\Reviews', 'title' => BOX_CATALOG_REVIEWS, 'description' => '', 'type' => 'account', 'class' => '');
         $widgets[] = array('name' => 'account\OrderHeading', 'title' => TEXT_ORDER_HEADING, 'description' => '', 'type' => 'account', 'class' => '');
         $widgets[] = array('name' => 'account\OrderTracking', 'title' => TEXT_ORDER_TRACKING, 'description' => '', 'type' => 'account', 'class' => '');
@@ -719,7 +717,6 @@ class WidgetsList
         $widgets[] = array('name' => 'productListing\qtyInput', 'title' => TEXT_QUANTITY_INPUT, 'description' => '', 'type' => 'productListing', 'class' => '');
         $widgets[] = array('name' => 'productListing\viewButton', 'title' => TEXT_VIEW_BUTTON, 'description' => '', 'type' => 'productListing', 'class' => '');
         //$widgets[] = array('name' => 'productListing\wishlistButton', 'title' => TEXT_WISHLIST_BUTTON, 'description' => '', 'type' => 'productListing', 'class' => '');
-        $widgets[] = array('name' => 'productListing\personalCatalog', 'title' => TEXT_PERSONAL_CATALOG, 'description' => '', 'type' => 'productListing', 'class' => '');
         $widgets[] = array('name' => 'productListing\compare', 'title' => TEXT_COMPARE, 'description' => '', 'type' => 'productListing', 'class' => '');
         $widgets[] = array('name' => 'productListing\attributes', 'title' => TEXT_ATTRIBUTES, 'description' => '', 'type' => 'productListing', 'class' => '');
         $widgets[] = array('name' => 'productListing\paypalButton', 'title' => TEXT_PAYPAL_BUTTON, 'description' => '', 'type' => 'productListing', 'class' => '');

@@ -40,18 +40,18 @@
         <div class="main">
             <table class="order-info orders-table table-list">
                 <tr class="headings">
-                    <th class="orders-id">{$smarty.const.TEXT_ORDER_NUMBER}</th>
+                    <th class="orders-id">{$smarty.const.TEXT_ORDER_NUMBER_NEW}</th>
                     <th class="date">{$smarty.const.TEXT_ORDER_DATE}</th>
                     <th class="shipped-to">{$smarty.const.TEXT_ORDER_SHIPPED_TO}</th>
                     <th class="products td-alignright">{$smarty.const.TEXT_ORDER_PRODUCTS}</th>
-                    <th class="total td-alignright">{$smarty.const.TEXT_ORDER_TOTAL}</th>
+                    <th class="total td-alignright">{$smarty.const.TEXT_ORDER_HISTORY_TOTAL}</th>
                     <th class="status">{$smarty.const.TEXT_ORDER_STATUS}</th>
                     <th class="links"></th>
                 </tr>
                 {foreach $history_array as $hisarray}
                     <tr class="item {if $hisarray.pay_link}moduleRowDue{/if}">
                         <td class="orders-id">
-                            <span class="hidden">{$smarty.const.TEXT_ORDER_NUMBER}</span>
+                            <span class="hidden">{$smarty.const.TEXT_ORDER_NUMBER_NEW}</span>
                             {if !empty($hisarray.order_number)}
                               <span class="order-number">{$hisarray.order_number}<br></span>
                             {else}
@@ -101,7 +101,7 @@
 
                 if ( typeof alertMessage !== 'function' ) return;
                 $('a[data-js-confirm]').on('click', function () {
-                    alertMessage('<p>'+$(this).attr('data-js-confirm')+'</p><div><a class="btn" href="'+$(this).attr('href')+'">{$smarty.const.IMAGE_BUTTON_CONTINUE}</a></div>');
+                    alertMessage('<p>'+$(this).attr('data-js-confirm')+'</p><div><a class="btn" href="'+$(this).attr('href')+'">{$smarty.const.IMAGE_BUTTON_CONTINUE|escape:javascript}</a></div>');
                     return false;
                 });
 

@@ -318,6 +318,10 @@ class Categories {
             tep_db_query("delete from " . TABLE_FILTERS . " WHERE categories_id='" . (int)$category_id . "'");
         }
 
+        foreach (\common\helpers\Hooks::getList('categories/after-delete') as $filename) {
+            include($filename);
+        }
+
         if ($reset_cache && USE_CACHE == 'true') {
             \common\helpers\System::reset_cache_block('categories');
             \common\helpers\System::reset_cache_block('also_purchased');
@@ -331,6 +335,10 @@ class Categories {
         tep_db_query("TRUNCATE " . TABLE_PRODUCTS_TO_CATEGORIES);
         tep_db_query("TRUNCATE " . TABLE_PLATFORMS_CATEGORIES);
         tep_db_query("DELETE FROM " . TABLE_FILTERS." WHERE categories_id>0");
+
+        foreach (\common\helpers\Hooks::getList('categories/after-trunk') as $filename) {
+            include($filename);
+        }
 
         if (USE_CACHE == 'true') {
             \common\helpers\System::reset_cache_block('categories');

@@ -68,7 +68,6 @@
 
         $('input.qty-inp').not('inited').on('check_quantity keyup', function(e, param){
           var $qtyInp = $(this);
-            $(window).trigger('changedQty', $qtyInp.val());
           $qtyInp.addClass('inited');
           /// either form on list, or div.item or cart_quantity form
           var $form = $(document.forms['cart_quantity']);
@@ -178,6 +177,11 @@
 {/if}
 <script>
     tl(function(){
+        $('input.qty-inp').not('inited2').on('check_quantity keyup', function(e, param) {
+            var $qtyInp = $(this);
+            setTimeout(() => $(window).trigger('changedQty', $qtyInp.val()), 0)
+            $qtyInp.addClass('inited2');
+        })
         $('input.qty-inp').on('qty_max', function(e, qty, max){
             //see  themes/basic/js/main.full.js (+) - bigger disabled (and should) when qty == max but message shouldn't be shown
             if (qty > max) {

@@ -14,6 +14,7 @@ namespace backend\design\boxes;
 
 use common\models\Banners;
 use common\models\BannersLanguages;
+use common\models\BannersGroups;
 use Yii;
 use yii\base\Widget;
 
@@ -26,22 +27,26 @@ class Banner extends Widget
 
   public function init()
   {
+      \common\helpers\Translation::init('admin/banner_manager');
     parent::init();
   }
 
   public function run()
   {
-      $banners = Banners::find()
-          ->alias('b')
-          ->select(['b.banners_group'])->distinct()
-          ->join('inner join', BannersLanguages::tableName() . ' bl', 'b.banners_id = bl.banners_id')
-          ->orderBy('b.banners_group')
+      $bannersGroups = BannersGroups::find()
+          ->orderBy('banners_group')
           ->asArray()->all();
+
+      foreach ($bannersGroups as $key => $bannersGroup) {
+          $bannersGroups[$key]['count'] = Banners::find()
+              ->where(['group_id' => $bannersGroup['id']/*, 'status' => 1*/])->count();
+      }
 
     /* support old versions */
     $this->settings[0]['banners_group'] = $this->settings[0]['banners_group'] ?? null;
     $this->settings[0]['banners_type'] = $this->settings[0]['banners_type'] ?? null;
     if (!$this->settings[0]['banners_group'] && $this->params) $this->settings[0]['banners_group'] = $this->params;
+
     if (!$this->settings[0]['banners_type']) {
       $type_sql_query = tep_db_query("select nb.banner_type from " . TABLE_BANNERS_TO_PLATFORM . " nb2p, " . TABLE_BANNERS_NEW . " nb where nb.banners_group = '" . $this->settings[0]['banners_group'] . "' AND nb2p.banners_id=nb.banners_id AND nb2p.platform_id='" . \common\classes\platform::currentId() . "' limit 1");
       if (tep_db_num_rows($type_sql_query) > 0) {
@@ -57,12 +62,16 @@ class Banner extends Widget
     }
     /* /support old versions */
 
+      $microtime = \common\models\DesignBoxesTmp::findOne($this->id)->microtime;
+      $microtime = substr($microtime, 0, strripos($microtime, '.'));
+
       $content = $this->render('banner.tpl', [
           'id' => $this->id,
           'params'=> $this->params,
-          'banners' => $banners,
+          'bannersGroups' => $bannersGroups,
           'settings' => $this->settings,
           'visibility' => $this->visibility,
+          'microtime' => $microtime,
       ]);
 
       if ($this->params && $this->params['main_content']) {

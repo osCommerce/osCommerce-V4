@@ -103,6 +103,10 @@ class MenusController extends Sceleton {
 //echo "<pre>" . print_r($categories, 1). "</pre>"; die;
         $brands = \common\helpers\MenuHelper::getBrandsList();
 
+        $groups = [];
+        if ($ext = \common\helpers\Acl::checkExtensionAllowed('UserGroups', 'allowed')) {
+            $groups = $ext::getGroupsArray();
+        }
 
         $sql = tep_db_query("select mi.*, if(i.info_title='', i.page_title, ifnull(i.info_title,'')) as name, ifnull(mt.title, '') as shown "
             . " from " . TABLE_MENU_ITEMS ." mi left join " . TABLE_INFORMATION . " i on i.information_id=mi.link_id and i.visible='1' and i.languages_id =" . (int)$languages_id . " and i.platform_id='" . (int)$selected_platform_id . "' and i.affiliate_id=0 left join " . TABLE_MENU_TITLES . " mt on mt.item_id=mi.id and mt.language_id = " . (int)$languages_id
@@ -111,6 +115,15 @@ class MenusController extends Sceleton {
         $new_brands = array();
         $menu = array();
         while($row=tep_db_fetch_array($sql)){
+
+            if ($ext = \common\helpers\Acl::checkExtensionAllowed('UserGroups', 'allowed')) {
+                $menuGroups = [];
+                $groupsArr = explode(',', $row['user_groups']);
+                foreach ($groupsArr as $group) {
+                    $menuGroups[] = trim($group, '#');
+                }
+                $row['groups'] = $menuGroups;
+            }
 
             $row['name'] = 'item #' . $row['id'];
 
@@ -169,13 +182,17 @@ class MenusController extends Sceleton {
                     else $current = $row['link_id'];
                     foreach ($new_categories as $item){
                         if ($item['parent_id'] == $current){
-                            $menu[] = array(
-                              'parent_id' => $row['id'],
-                              'link_type' => 'categories',
-                              'name' => $item['categories_name'],
-                              'link_id' => $item['categories_id'],
-                              'new_category' => $item['categories_id'],
+                            $menuItem = array(
+                                'parent_id' => $row['id'],
+                                'link_type' => 'categories',
+                                'name' => $item['categories_name'],
+                                'link_id' => $item['categories_id'],
+                                'new_category' => $item['categories_id'],
                             );
+                            if ($ext = \common\helpers\Acl::checkExtensionAllowed('UserGroups', 'allowed')) {
+                                $menuItem['groups'] = [0];
+                            }
+                            $menu[] = $menuItem;
                         }
                     }
                 }
@@ -380,6 +397,7 @@ class MenusController extends Sceleton {
           'action_url_save_menu' => Yii::$app->urlManager->createUrl(['menus/save','platform_id'=>$selected_platform_id]),
           'customFilters' => $customFilters,
           'source_platform_id' => $sourcePlatform,
+          'groups' => $groups,
         ]);
     }
 
@@ -498,6 +516,10 @@ class MenusController extends Sceleton {
                 'sort_order' => $order,
                 'theme_page_id' => (int)$custom_page,
               );
+
+                if (\common\helpers\Acl::checkExtensionAllowed('UserGroups', 'allowed')) {
+                    $sql_data_array['user_groups'] = tep_db_prepare_input($item['user_groups']);
+                }
               
               if (isset($item['id'])) {
                 tep_db_perform(TABLE_MENU_ITEMS, $sql_data_array, 'update', "id = '" . (int)$item['id'] . "'");

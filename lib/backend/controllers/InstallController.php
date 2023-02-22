@@ -318,10 +318,36 @@ class InstallController extends Sceleton {
                 $distribution = json_decode($json);
                 $status = true;
                 if (isset($distribution->require->version)) {
-                    $version = (defined('MIGRATIONS_DB_REVISION') ? MIGRATIONS_DB_REVISION : '');
-                    if ($version != $distribution->require->version) {
-                        $status = false;
+                    $conf = \common\models\Configuration::find()->where(['configuration_key' => 'MIGRATIONS_DB_REVISION'])->one();
+                    if ($conf instanceof \common\models\Configuration) {
+                        $version = $conf->configuration_value;
+                    } else {
+                        $version = '';
                     }
+                    $versionApplicable = $distribution->require->version_applicable ?? 'equal';
+                    switch ($versionApplicable) {
+                        case 'equal':
+                            if ($version != $distribution->require->version) {
+                                $status = false;
+                                $this->deployLog[] = 'Version required ' . $distribution->require->version;
+                            }                                      
+                            break;
+                        case 'greater-equal':
+                            if (intval($version) < intval($distribution->require->version)) {
+                                $status = false;
+                                $this->deployLog[] = 'Version must be greater or equal to ' . $distribution->require->version;
+                            }
+                            break;
+                        case 'less-equal':
+                            if (intval($version) > intval($distribution->require->version)) {
+                                $status = false;
+                                $this->deployLog[] = 'Version must be less or equal to ' . $distribution->require->version;
+                            }
+                            break;
+                        default:
+                            break;
+                    }
+                    
                 }
                 if (isset($distribution->require->modules) && is_array($distribution->require->modules)) {
                     foreach ($distribution->require->modules as $subfile) {
@@ -329,6 +355,30 @@ class InstallController extends Sceleton {
                         if ( !($record instanceof \common\models\Installer) ) {
                             $status = $status && $this->installFileWithDependencies($subfile, $settings, $echo);
                         }
+                    }
+                }
+                if (isset($distribution->require->classes) && is_array($distribution->require->classes)) {
+                    foreach ($distribution->require->classes as $classversion) {
+                        $recordQuery = \common\models\Installer::find()->where(['archive_class' => $classversion->name]);
+                        $cv = '';
+                        if (isset($classversion->min)) {
+                            list($major, $minor, $patch) = array_pad( explode('.', (string)$classversion->min), 3, 0);
+                            $archive_version = intval($major) + intval($minor)/100 + intval($patch)/10000;
+                            $recordQuery->andWhere(['>=', 'archive_version', $archive_version]);
+                            $cv .= ', v.' . $classversion->min . ' or greater';
+                        }
+                        if (isset($classversion->max)) {
+                            list($major, $minor, $patch) = array_pad( explode('.', (string)$classversion->max), 3, 0);
+                            $archive_version = intval($major) + intval($minor)/100 + intval($patch)/10000;
+                            $recordQuery->andWhere(['<=', 'archive_version', $archive_version]);
+                            $cv .= ', v.' . $classversion->max . ' or less';
+                        }
+                        $record = $recordQuery->one();
+                        if (!($record instanceof \common\models\Installer)) {
+                            $this->deployLog[] = 'Class '.$classversion->name.$cv.' must be installed';
+                            $status = false;
+                        }
+                        unset($record);
                     }
                 }
                 if ($status) {
@@ -508,7 +558,7 @@ class InstallController extends Sceleton {
                                 } else {
                                     $CsvString = iconv('CP850', "UTF-8", $CsvString);
                                 }
-                                $Data = str_getcsv($CsvString, "\r\n");
+                                $Data = str_getcsv($CsvString, "\n");
                                 $uploadedKeys = false;
                                 foreach($Data as &$data) {
                                     $data = str_getcsv($data, "\t");
@@ -684,8 +734,9 @@ class InstallController extends Sceleton {
                                 $status = false;
                             }
                             break;
+                        case 'system':
                         case 'update':// System update
-                            $status = $this->checkFileDst($distribution->src, $filename, $path, $echo, $force);
+                            $status = $this->checkFileDst($distribution->src, $filename, $path, ($force ? false : $echo), $force);
                             if ($status) {
                                 $this->runFileDst($distribution->src, $filename, $path, $echo);
                                 $this->doInstallRecord($filename, (string)$distribution->type, (string)($distribution->class ?? ''), (string)$distribution->version, $distribution->src);
@@ -695,7 +746,9 @@ class InstallController extends Sceleton {
                                 //$this->doTheme = true;
                                 $this->doHooks = true;
                                 $this->doMenu = true;
-                                \common\models\Configuration::updateAll(['configuration_value' => (string) $distribution->version], ['configuration_key'=> 'MIGRATIONS_DB_REVISION']);
+                                if ($distribution->type == 'update') {
+                                    \common\models\Configuration::updateAll(['configuration_value' => (string) $distribution->version], ['configuration_key'=> 'MIGRATIONS_DB_REVISION']);
+                                }
                             }
                             break;
                         case 'configuration':
@@ -1297,9 +1350,9 @@ class InstallController extends Sceleton {
                 if ($response['http_code'] != 200 ) {
                     $message = (defined('MESSAGE_KEY_DOMAIN_ERROR')
                         ? constant('MESSAGE_KEY_DOMAIN_ERROR')
-                        : 'Error: Your \'storage\' key is wrong. Please login at <a target="_blank" href="%1$s">application shop</a> with your credentials and copy it from there.'
+                        : 'Error: Your \'storage\' key is wrong. Please login at <a target="_blank" href="%1$s">application shop</a> with your credentials and copy it from there. You \'secutiry store key\' for this shop is [%2$s].'
                     );
-                    $messages[] = sprintf($message, $storageUrl . 'account?return');
+                    $messages[] = sprintf($message, $storageUrl . 'account?return', $secKeyGlobal);
                 }
             }
         }
@@ -1726,27 +1779,75 @@ class InstallController extends Sceleton {
                                     . '<br>'
                                     . '</div></div>';
                             if (isset($distribution->require->version)) {
-                                if ($version == $distribution->require->version) {
-                                    $req .= '<p style="color:green">Version: ' . \yii\helpers\Html::encode($distribution->require->version) . '</p>';
-                                } else {
-                                    $req .= '<p style="color:red">Version: ' . \yii\helpers\Html::encode($distribution->require->version) . '</p>';
-                                    $canDeploy = false;
+                                $versionApplicable = $distribution->require->version_applicable ?? 'equal';
+                                switch ($versionApplicable) {
+                                    case 'equal':
+                                        if ($version == $distribution->require->version) {
+                                            $req .= '<p style="color:green">Version: ' . \yii\helpers\Html::encode($distribution->require->version) . '</p>';
+                                        } else {
+                                            $req .= '<p style="color:red">Version: ' . \yii\helpers\Html::encode($distribution->require->version) . '</p>';
+                                            $canDeploy = false;
+                                        }                                        
+                                        break;
+                                    case 'greater-equal':
+                                        if (intval($version) >= intval($distribution->require->version)) {
+                                            $req .= '<p style="color:green">Version: ' . \yii\helpers\Html::encode($distribution->require->version) . ' or greater</p>';
+                                        } else {
+                                            $req .= '<p style="color:red">Version: ' . \yii\helpers\Html::encode($distribution->require->version) . ' or greater</p>';
+                                            $canDeploy = false;
+                                        }
+                                        break;
+                                    case 'less-equal':
+                                        if (intval($version) <= intval($distribution->require->version)) {
+                                            $req .= '<p style="color:green">Version: ' . \yii\helpers\Html::encode($distribution->require->version) . ' or less</p>';
+                                        } else {
+                                            $req .= '<p style="color:red">Version: ' . \yii\helpers\Html::encode($distribution->require->version) . ' or less</p>';
+                                            $canDeploy = false;
+                                        }
+                                        break;
+                                    default:
+                                        break;
                                 }
                                 
                             }
-                            if (isset($distribution->require->modules)) {
-                                if (isset($distribution->require->modules) && is_array($distribution->require->modules)) {
-                                    foreach ($distribution->require->modules as $subfile) {
-                                        $record = \common\models\Installer::find()->where(['filename' => $subfile])->one();
-                                        if ($record instanceof \common\models\Installer) {
-                                            $req .= '<p style="color:green">'.$subfile.'</p>';
-                                        } elseif (is_file($path . $subfile)) {
-                                            $req .= '<p style="color:yellow">'.$subfile.'</p>';
-                                        } else {
-                                            $req .= '<p style="color:red">'.$subfile.'</p>';
-                                            $canDeploy = false;
-                                        }
+                            if (isset($distribution->require->modules) && is_array($distribution->require->modules)) {
+                                foreach ($distribution->require->modules as $subfile) {
+                                    $record = \common\models\Installer::find()->where(['filename' => $subfile])->one();
+                                    if ($record instanceof \common\models\Installer) {
+                                        $req .= '<p style="color:green">'.$subfile.'</p>';
+                                    } elseif (is_file($path . $subfile)) {
+                                        $req .= '<p style="color:yellow">'.$subfile.'</p>';
+                                    } else {
+                                        $req .= '<p style="color:red">'.$subfile.'</p>';
+                                        $canDeploy = false;
                                     }
+                                    unset($record);
+                                }
+                            }
+                            if (isset($distribution->require->classes) && is_array($distribution->require->classes)) {
+                                foreach ($distribution->require->classes as $classversion) {
+                                    $recordQuery = \common\models\Installer::find()->where(['archive_class' => $classversion->name]);
+                                    $cv = '';
+                                    if (isset($classversion->min)) {
+                                        list($major, $minor, $patch) = array_pad( explode('.', (string)$classversion->min), 3, 0);
+                                        $archive_version = intval($major) + intval($minor)/100 + intval($patch)/10000;
+                                        $recordQuery->andWhere(['>=', 'archive_version', $archive_version]);
+                                        $cv .= ', v.' . $classversion->min . ' or greater';
+                                    }
+                                    if (isset($classversion->max)) {
+                                        list($major, $minor, $patch) = array_pad( explode('.', (string)$classversion->max), 3, 0);
+                                        $archive_version = intval($major) + intval($minor)/100 + intval($patch)/10000;
+                                        $recordQuery->andWhere(['<=', 'archive_version', $archive_version]);
+                                        $cv .= ', v.' . $classversion->max . ' or less';
+                                    }
+                                    $record = $recordQuery->one();
+                                    if ($record instanceof \common\models\Installer) {
+                                        $req .= '<p style="color:green">'.$classversion->name.$cv.'</p>';
+                                    } else {
+                                        $req .= '<p style="color:red">'.$classversion->name.$cv.'</p>';
+                                        $canDeploy = false;
+                                    }
+                                    unset($record);
                                 }
                             }
                             if (isset($distribution->require->platform) && (string)$distribution->require->platform == 'True') {
@@ -1794,14 +1895,15 @@ class InstallController extends Sceleton {
                         case 'label':
                         case 'samples':
                         case 'configuration':
-                            $canDeploy = true;
+                        case 'system':
+//                            $canDeploy = true;
                             if ($deployed) {
                                 $canRevert = true;
                                 $canDelete = false;
                             }
                             break;
                         case 'update':
-                            $canDeploy = true;
+//                            $canDeploy = true;
                             if ($deployed) {
                                 if ((string)$distribution->version == MIGRATIONS_DB_REVISION) {
                                     $canRevert = true;
@@ -2052,6 +2154,7 @@ class InstallController extends Sceleton {
                             $status = 'success';
                         }
                         break;
+                    case 'system':
                     case 'update':// System update
                         $record = \common\models\Installer::find()->where(['filename' => $filename])->one();
                         if ($record instanceof \common\models\Installer) {
@@ -2065,7 +2168,9 @@ class InstallController extends Sceleton {
                             $this->doHooks = true;
                             $this->doMenu = true;
                             $status = 'success';
-                            \common\models\Configuration::updateAll(['configuration_value' => (string) $distribution->require->version], ['configuration_key'=> 'MIGRATIONS_DB_REVISION']);
+                            if ($distribution->type == 'update') {
+                                \common\models\Configuration::updateAll(['configuration_value' => (string) $distribution->require->version], ['configuration_key'=> 'MIGRATIONS_DB_REVISION']);
+                            }
                         }
                         break;
                     case 'configuration':
@@ -2407,8 +2512,12 @@ class InstallController extends Sceleton {
                 ->where(['archive_type' => 'update'])
                 ->count();
         
+        $installed = (defined('INSTALLED_DATE') ? INSTALLED_DATE : '');
+        $updated = (defined('UPDATED_DATE') ? UPDATED_DATE : '');
+        
         return $this->render('update-list', [
-            'version' => PROJECT_VERSION_MAJOR. '.' . PROJECT_VERSION_MINOR . '.' . $version,
+            'installed' => $installed,
+            'version' => PROJECT_VERSION_MAJOR. '.' . PROJECT_VERSION_MINOR . '.' . $version . (!empty($updated) ? ' updated at ' . $updated : ''),
             'updates' => $updates,
             'updatesCount' => $updatesCount,
         ]);
@@ -2480,8 +2589,12 @@ class InstallController extends Sceleton {
         } else {
             $this->show_ignore_field = true;
         }
-        \common\models\InstallIgnoreList::deleteAll();
-        
+        try {
+            \common\models\InstallIgnoreList::deleteAll();
+        } catch (\Exception $exc) {
+            //echo $exc->getTraceAsString();
+        }
+
         
         $this->layout = false;
         
@@ -2489,7 +2602,12 @@ class InstallController extends Sceleton {
         header('Content-Transfer-Encoding: utf-8');
         header('Pragma: no-cache');
         
-        $version = (defined('MIGRATIONS_DB_REVISION') ? MIGRATIONS_DB_REVISION : '');
+        $conf = \common\models\Configuration::find()->where(['configuration_key' => 'MIGRATIONS_DB_REVISION'])->one();
+        if ($conf instanceof \common\models\Configuration) {
+            $version = $conf->configuration_value;
+        } else {
+            $version = '';
+        }
         
         $secKeyGlobal = md5(\Yii::$app->db->dsn . (defined('INSTALLED_MICROTIME') ? INSTALLED_MICROTIME : ''));
         $storageUrl = \Yii::$app->params['appStorage.url'];
@@ -2530,7 +2648,7 @@ class InstallController extends Sceleton {
                     $response = curl_getinfo($request);
                     curl_close($request);
 
-                    $version = '';
+                    //$version = '';
                     if ($response['http_code'] == 200 && isset($result['content'])) {
                         $path = Yii::getAlias('@site_root');
                         $filename = $result['filename'] ?? '';
@@ -2546,6 +2664,7 @@ class InstallController extends Sceleton {
                         }
                         
                         $status = $this->installFileWithDependencies($filename, ['force' => $force], true);
+                        $force = 0;
                         ob_flush();
                         flush();
                         if ($status) {
@@ -2557,8 +2676,25 @@ class InstallController extends Sceleton {
                                 $distribution = json_decode($json);
                                 $version = (string) $distribution->version;
                                 $zip->close();
+                            } else {
+                                $version = '';
                             }
+                            $updatedDate = \common\models\Configuration::find()->where(['configuration_key'=> 'UPDATED_DATE'])->one();
+                            if ($updatedDate instanceof \common\models\Configuration) {
+                                $updatedDate->last_modified = date('Y-m-d H:i:s');
+                            } else {
+                                $updatedDate = new \common\models\Configuration();
+                                $updatedDate->loadDefaultValues();
+                                $updatedDate->configuration_title = 'Date of last update';
+                                $updatedDate->configuration_key = 'UPDATED_DATE';
+                                $updatedDate->date_added = date('Y-m-d H:i:s');
+                            }
+                            $updatedDate->configuration_value = date('Y-m-d H:i:s');
+                            $updatedDate->save(false);
                             $needReCache = true;
+                            $this->runSystemReCache(true);
+                            ob_flush();
+                            flush();
                             //@unlink($path . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . $filename);
                         } else {
                             $this->sendEcho("<font color='red'>". $filename . " " . TEXT_PACK_ABORTED.".</font><br>\n");
@@ -2568,12 +2704,12 @@ class InstallController extends Sceleton {
                         
                     } else {
                         $this->sendEcho(TEXT_NO_UPDATES . "<br>\n");
+                        $version = '';
                     }
                 }
             }
         
             if ($needReCache) {
-                $this->runSystemReCache(true);
                 ob_flush();
                 flush();
                 $this->sendEcho(TEXT_UPDATE_FINISH . ".<br>\n");

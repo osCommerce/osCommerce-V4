@@ -64,6 +64,7 @@ $(document).ready(function() {
     $('#ActionsTable,#ActionAllTable').find('a.btn-execute').unbind('click').bind('click', function() {
         if (confirm('{$smarty.const.EXTENSION_OSCLINK_TEXT_EXECUTE_CONFIRM|replace:'\'':'\\\''}')) {
             progressSubmit($(this).parent('td')[0], "{Yii::$app->urlManager->createUrl('extensions?module=OscLink&action=adminActionExecute')}" );
+            doProgressUpdate({ 'progress': 0, 'text': 'preparing... (it may take a few minutes if your webserver caches the data sending)' });
             return true;
         }
         return false;

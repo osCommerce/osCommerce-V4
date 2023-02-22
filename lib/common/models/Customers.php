@@ -15,7 +15,6 @@ namespace common\models;
 use common\models\queries\CustomersQuery;
 use Yii;
 use yii\db\ActiveRecord;
-use common\models\PersonalCatalog;
 use common\models\Orders;
 use yii\db\ColumnSchema;
 use yii\db\Query;
@@ -128,12 +127,6 @@ class Customers extends ActiveRecord
         return $this->hasMany(\common\models\Products::className(), ['products_id' => 'products_id'])
                     ->viaTable('personal_catalog', ['customers_id' => 'customers_id']);
     }
-
-    public function getPersonalCatalog()
-    {
-        return $this->hasMany(PersonalCatalog::className(), ['customers_id' => 'customers_id']);
-    }
-
 
     public function getAddressBooks(){
         return $this->hasMany(AddressBook::className(), ['customers_id' => 'customers_id'])->joinWith('country');
@@ -394,7 +387,6 @@ class Customers extends ActiveRecord
         CustomersEmails::deleteAll(['customers_id' => $this->customers_id]);
         CustomersInfo::deleteAll(['customers_info_id' => $this->customers_id]);
         CustomersPhones::deleteAll(['customers_id' => $this->customers_id]);
-        CustomersWishlist::deleteAll(['customers_id' => $this->customers_id]);
         return parent::beforeDelete();
     }
 

@@ -52,6 +52,10 @@ return [
                 ],
             ],
         ],
+        'errorHandler' => [
+            'errorAction' => 'index/error',
+            'class' => '\common\classes\TlErrorHandler',
+        ],
     ],
     'controllerMap' => [
         'migrate' => [

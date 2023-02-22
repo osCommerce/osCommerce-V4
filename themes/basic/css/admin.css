@@ -532,6 +532,7 @@
   left: -1px;
 }
 .edit-blocks .box:hover > .menu-widget,
+.edit-blocks .block:hover > .menu-widget,
 .edit-blocks .box-block:hover > .menu-widget {
   display: block;
   white-space: nowrap;
@@ -557,6 +558,7 @@
 }
 .edit-blocks .box {
   min-height: 30px;
+  min-width: 20px;
 }
 .edit-blocks .box-block.no-over {
   border: 2px dashed #eee !important;
@@ -571,6 +573,9 @@
 }
 
 
+.edit-blocks .block:hover {
+  border: 2px solid #0062c0;
+}
 .edit-blocks .box:hover {
   border: 1px solid #0062c0;
 }

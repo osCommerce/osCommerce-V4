@@ -2,15 +2,14 @@
 
 {$id = rand()}
 <div class="discount-box ot_coupon ot_gv" id="b-{$id}">
-    <div class="title">{$smarty.const.TEXT_PROMO_CODE}:</div>
-    <div class="text"></div>
+    <div class="title">{$smarty.const.TEXT_PROMO_CODE}</div>
     {if !$popup}
         {if $message_discount_coupon}
             {$message_discount_coupon}
         {/if}
     {/if}
     <div class="inp">
-        <input type="text" class="gv_redeem_code" name="gv_redeem_code" value="{$gv_redeem_code}" autocomplete="off" placeholder="{$smarty.const.TEXT_DISCOUNT_COUPON_APPLY_INFO}"/>
+        <input type="text" class="gv_redeem_code" name="gv_redeem_code" value="{$gv_redeem_code}" autocomplete="off" />
         <span class="btn-remove"></span>
         <button type="submit" class="btn">{$smarty.const.TEXT_APPLY}</button>
     </div>
@@ -47,6 +46,10 @@
 
             box.closest('form').trigger('cart-change');
         });
+		
+		$('.title').click(function(){
+			$(this).toggleClass('active opened');
+		});
 
         inputChange();
         gv_redeem_code.on('change keyup', inputChange);

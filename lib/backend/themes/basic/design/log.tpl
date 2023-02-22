@@ -1,13 +1,14 @@
-
+{use class="backend\assets\DesignAsset"}
+{DesignAsset::register($this)|void}
 {include 'menu.tpl'}
 <div class="drop-list log-list">
 
   <div class="log-filter">
-    <label>From</label>
+    <label>{$smarty.const.TEXT_FROM}</label>
     <input id="from_date" type="text" value="{$from}" name="from" class="datepicker form-control">
-    <label>To</label>
+    <label>{$smarty.const.TEXT_TO}</label>
     <input id="to_date" type="text" value="{$to}" autocomplete="off" name="to" class="datepicker form-control">
-    <span class="btn btn-apple">Apply</span>
+    <span class="btn btn-apple">{$smarty.const.TEXT_APPLY}</span>
   </div>
 
 {function name=menuTree}
@@ -25,10 +26,12 @@
               &nbsp;
             {/if}
           </div>
-          <div class="item-close closed" style="display: block;"></div>
+          <div class="item-close closed" style="display: block"></div>
           {*<div class="restore" data-id="{$item.steps_id}">{$smarty.const.IMAGE_RESTORE}</div>*}
           <div class="date">{$item.date_added}</div>
-          <a href="{Yii::$app->urlManager->createUrl(['design/log-details', 'id' => $item.steps_id])}" class="details">Details</a>
+          <a href="{Yii::$app->urlManager->createUrl(['design/log-details', 'id' => $item.steps_id])}" class="details">{$smarty.const.IMAGE_DETAILS}</a>
+
+          <span class="design-mode">{$item.mode}</span>
 
           <span class="no-link"><span title="{$admins[$item.admin_id].admin_email_address}">{$admins[$item.admin_id].admin_firstname} {$admins[$item.admin_id].admin_lastname}</span> {$item.text}</span>
 
@@ -49,14 +52,10 @@
 <ul>
 {call menuTree parent=0}
 </ul>
-{if $update_buttons}
-  <div class="">
-    {if $apple_update}
-      <span class="btn btn-apply-update">Apply Migration</span>
-    {/if}
-      <span class="btn btn-create-update">Create Migration</span>
+  <div class="migration-buttons">
+      <span class="btn btn-apply-update">{$smarty.const.APPLY_MIGRATION}</span>
+      <span class="btn btn-create-update">{$smarty.const.CREATE_MIGRATION}</span>
   </div>
-{/if}
 </div>
 <script type="text/javascript">
   (function($){
@@ -190,6 +189,12 @@
           }
         })
       })
+
+
+
+      if (!$('.drop-list.log-list .has-sub').length){
+        $('.drop-list.log-list .item-close').hide();
+      }
     })
   })(jQuery)
 </script>

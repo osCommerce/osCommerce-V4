@@ -107,8 +107,6 @@
 //  define('TABLE_SPECIALS_GROUPS_PRICES', 'specials_groups_prices');
   define('TABLE_SEARCH_ENGINES', 'search_engines');
   define('TABLE_SEARCH_WORDS', 'search_words'); 
-  define('TABLE_WISHLIST', 'customers_wishlist');
-  define('TABLE_WISHLIST_ATTRIBUTES', 'customers_wishlist_attributes');
   define('TABLE_META_TAGS','meta_tags');
 
   define('TABLE_SETS_PRODUCTS', 'sets_products');

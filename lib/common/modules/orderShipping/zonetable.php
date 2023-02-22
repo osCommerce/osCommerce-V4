@@ -247,7 +247,7 @@ class zonetable extends ModuleShipping {
         $this->quotes = array('id' => $this->code,
             'module' => '<span class = "ship-title">' . $this->title . '</span><span class="shippingExtNote"><span>' . MODULE_SHIPPING_ZONE_TABLE_NOTE_TEXT . '</span></span>',
             'methods' => $methods,
-            'tax' => \common\helpers\Tax::get_tax_rate(MODULE_SHIPPING_ZONE_TABLE_TAX_CLASS, $this->delivery['country']['id'], $this->delivery['zone_id'])
+            'tax' => \common\helpers\Tax::get_tax_rate(MODULE_SHIPPING_ZONE_TABLE_TAX_CLASS, $this->delivery['country']['id'] ?? null, $this->delivery['zone_id'] ?? null)
         );
 
         if (sizeof($this->quotes['methods']) == 0) {
@@ -310,7 +310,7 @@ class zonetable extends ModuleShipping {
         $postcode = str_replace(' ', '', $this->delivery['postcode']);
         if ( strlen($postcode)>10 ) $postcode = substr($postcode, 0, 10);
 
-        $check_query = tep_db_query("select count(*) as total from " . TABLE_ZONES_TO_SHIP_ZONES . " gz where gz.platform_id='" . $platform_id . "' and (gz.zone_country_id = '" . $this->delivery['country']['id'] . "' or gz.zone_country_id=0 ) and (gz.zone_id = '" . $this->delivery['zone_id'] . "' or gz.zone_id = 0 ) and if(gz.start_postcode<>'',gz.start_postcode<='" . tep_db_input($postcode) . "',1) and if(gz.stop_postcode<>'',gz.stop_postcode >= '" . tep_db_input($postcode) . "',1) and if(gz.city<>'',gz.city = '" . tep_db_input($this->delivery['city'] ?? null) . "',1) order by gz.start_postcode desc");
+        $check_query = tep_db_query("select count(*) as total from " . TABLE_ZONES_TO_SHIP_ZONES . " gz where gz.platform_id='" . $platform_id . "' and (gz.zone_country_id = '" . ($this->delivery['country']['id'] ?? null) . "' or gz.zone_country_id=0 ) and (gz.zone_id = '" . ($this->delivery['zone_id'] ?? null) . "' or gz.zone_id = 0 ) and if(gz.start_postcode<>'',gz.start_postcode<='" . tep_db_input($postcode) . "',1) and if(gz.stop_postcode<>'',gz.stop_postcode >= '" . tep_db_input($postcode) . "',1) and if(gz.city<>'',gz.city = '" . tep_db_input($this->delivery['city'] ?? null) . "',1) order by gz.start_postcode desc");
         $check = tep_db_fetch_array($check_query);
 
         if ($check['total'] == 0) {

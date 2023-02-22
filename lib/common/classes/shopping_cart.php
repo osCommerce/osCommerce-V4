@@ -19,6 +19,7 @@ use common\models\CustomersBasketAttributes;
 use common\helpers\Inventory as InventoryHelper;
 use common\helpers\Session;
 
+#[\AllowDynamicProperties]
 class shopping_cart {
 
     /**

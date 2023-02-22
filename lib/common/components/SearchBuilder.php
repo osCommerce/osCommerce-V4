@@ -88,16 +88,14 @@ class SearchBuilder {
     
     public function parseKeywords(string $keywords) {
       $this->_parsedKeywords = [];
-      $ext = \common\helpers\Acl::checkExtensionAllowed('PlainProductsDescription', 'allowed');
-      if ($ext && $ext::isEnabled()) {
+      $keywords = trim(strtolower($keywords));
+      $keywords = preg_replace(array('/[\(\)\'`]/', '/"/'), array(' ', ' " '), $keywords);
+      /* @var $ext \common\extensions\SearchPlus\SearchPlus */
+      if($sp = \common\helpers\Acl::checkExtensionAllowed('SearchPlus')) {
+        $keywords = $sp::replaceKeywords($keywords);
+      }
+      if($ext = \common\helpers\Acl::checkExtensionAllowed('PlainProductsDescription', 'allowed')){
         if (tep_not_null($keywords)) {
-          $keywords = trim(strtolower($keywords));
-          $keywords = preg_replace(array('/[\(\)\'`]/', '/"/'), array(' ', ' " '), $keywords);
-          /* @var $ext \common\extensions\SearchPlus\SearchPlus */
-          $ext = \common\helpers\Acl::checkExtensionAllowed('SearchPlus', 'allowed');
-          if ($ext && $ext::isEnabled()) {
-            $keywords = $ext::replaceKeywords($keywords);
-          }
 
           $pieces = preg_split('/[\s]+/', $keywords,-1,PREG_SPLIT_NO_EMPTY);
 
@@ -126,8 +124,6 @@ class SearchBuilder {
           }
         }
       } else {
-          $keywords = trim(strtolower($keywords));
-          $keywords = preg_replace(array('/[\(\)\'`]/', '/"/'), array(' ', ' " '), $keywords);
           $this->_parsedKeywords[] = trim($keywords);
           $this->prepareRequest($keywords);
       }

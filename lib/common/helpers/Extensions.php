@@ -39,7 +39,7 @@ class Extensions
     {
         if (!isset(self::$cacheEnabled[$code])) {
             $row = \common\models\PlatformsConfiguration::findOne(['configuration_key' => $code . '_EXTENSION_STATUS', 'platform_id' => 0]);
-            if (empty($row)) {
+            if (empty($row) || !class_exists("\\common\\extensions\\$code\\$code")) {
                 self::$cacheEnabled[$code] = 'uninstalled';
             } elseif ($row->configuration_value == 'True') {
                 self::$cacheEnabled[$code] = 'enabled';

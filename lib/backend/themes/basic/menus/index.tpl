@@ -12,6 +12,30 @@
       </div>
   {/if}
 
+    {function groupsBox item=$item}
+      {if $groups|count > 0}
+        <div class="link-setting">
+          <label>{$smarty.const.BOX_CUSTOMERS_GROUPS}</label>
+          <div class="user-groups">
+            <label class="m-r-2">
+              <input type="checkbox" name="group" value="0"
+                     {if is_array($item.groups) && in_array('0', $item.groups)}checked {/if}
+                     class="uniform"/>
+              <span>{$smarty.const.TEXT_ALL}</span>
+            </label>
+          {foreach $groups as $group}
+            <label class="m-r-2">
+              <input type="checkbox" name="group" value="{$group.groups_id}"
+                     {if is_array($item.groups) && in_array($group.groups_id, $item.groups)}checked{/if}
+                     class="uniform"/>
+              <span>{$group.groups_name}</span>
+            </label>
+          {/foreach}
+          </div>
+        </div>
+      {/if}
+    {/function}
+
 
   <div class="select-list connect-list">
 
@@ -83,6 +107,8 @@
                 <input type="text" name="class" class="form-control"/>
               </div>
 
+                {groupsBox}
+
               <div class="item-buttons"><span class="btn btn-primary btn-apply">{$smarty.const.TEXT_APPLY}</span><span class="btn btn-cancel">{$smarty.const.IMAGE_CANCEL}</span></div>
 
             </div>
@@ -126,6 +152,8 @@
                     <input type="text" name="class" class="form-control"/>
                   </div>
 
+                  {groupsBox}
+
                   <div class="link-setting">
                       {$customFilters}
                   </div>
@@ -149,6 +177,8 @@
                 <label for="">{$smarty.const.TEXT_CLASS}</label>
                 <input type="text" name="class" class="form-control"/>
               </div>
+
+                {groupsBox}
 
               <div class="item-buttons"><span class="btn btn-primary btn-apply">{$smarty.const.TEXT_APPLY}</span><span class="btn btn-cancel">{$smarty.const.IMAGE_CANCEL}</span></div>
 
@@ -213,6 +243,8 @@
                     <input type="text" name="class" class="form-control"/>
                   </div>
 
+                    {groupsBox}
+
 
                   <div class="item-buttons"><span class="btn btn-primary btn-apply">{$smarty.const.TEXT_APPLY}</span><span class="btn btn-cancel">{$smarty.const.IMAGE_CANCEL}</span></div>
 
@@ -276,6 +308,8 @@
                       <label for="">{$smarty.const.TEXT_CLASS}</label>
                       <input type="text" name="class" class="form-control"/>
                     </div>
+
+                      {groupsBox}
 
 
                     <div class="item-buttons"><span class="btn btn-primary btn-apply">{$smarty.const.TEXT_APPLY}</span><span class="btn btn-cancel">{$smarty.const.IMAGE_CANCEL}</span></div>
@@ -348,6 +382,8 @@
                   <input type="text" name="class" class="form-control"/>
                 </div>
 
+                  {groupsBox}
+
 
                 <div class="item-buttons"><span class="btn btn-primary btn-apply">{$smarty.const.TEXT_APPLY}</span><span class="btn btn-cancel">{$smarty.const.IMAGE_CANCEL}</span></div>
 
@@ -404,6 +440,8 @@
                       <label for="">{$smarty.const.TEXT_CLASS}</label>
                       <input type="text" name="class" class="form-control"/>
                     </div>
+
+                      {groupsBox}
 
 
                     <div class="item-buttons"><span class="btn btn-primary btn-apply">{$smarty.const.TEXT_APPLY}</span><span class="btn btn-cancel">{$smarty.const.IMAGE_CANCEL}</span></div>
@@ -467,6 +505,8 @@
                     <input type="text" name="class" class="form-control"/>
                   </div>
 
+                    {groupsBox}
+
 
                   <div class="item-buttons"><span class="btn btn-primary btn-apply">{$smarty.const.TEXT_APPLY}</span><span class="btn btn-cancel">{$smarty.const.IMAGE_CANCEL}</span></div>
 
@@ -529,6 +569,8 @@
                       <input type="text" name="class" class="form-control"/>
                     </div>
 
+                      {groupsBox}
+
 
                     <div class="item-buttons"><span class="btn btn-primary btn-apply">{$smarty.const.TEXT_APPLY}</span><span class="btn btn-cancel">{$smarty.const.IMAGE_CANCEL}</span></div>
 
@@ -584,6 +626,8 @@
                       <label for="">{$smarty.const.TEXT_CLASS}</label>
                       <input type="text" name="class" class="form-control"/>
                     </div>
+
+                      {groupsBox}
 
 
                     <div class="item-buttons"><span class="btn btn-primary btn-apply">{$smarty.const.TEXT_APPLY}</span><span class="btn btn-cancel">{$smarty.const.IMAGE_CANCEL}</span></div>
@@ -766,6 +810,8 @@
                     <label for="">{$smarty.const.TEXT_CLASS}</label>
                     <input type="text" name="class" value="{if isset($item.class)}{$item.class}{/if}" class="form-control"/>
                   </div>
+
+                    {groupsBox $item}
                   
                   <div class="link-setting">
                       {if isset($item.customFilters)}{$item.customFilters}{/if}
@@ -1372,7 +1418,7 @@
             custom_page = $('select[name=custom_page]', _this).val();
         }
 
-        list.push({
+        const listItem = {
           id: _this.data('id'),
           type: _this.data('type'),
           type_id: _this.data('type-id'),
@@ -1393,7 +1439,17 @@
             type: _this.parent().parent().data('type'),
             type_id: _this.parent().parent().data('type-id')
           }
-        });
+        }
+
+        {if \common\helpers\Acl::checkExtensionAllowed('UserGroups', 'allowed')}
+          let groups = [];
+          $('> .link-settings .user-groups input:checked', _this).each(function(){
+            groups.push('#' + $(this).val() + '#')
+          })
+          listItem.user_groups = groups.join(',')
+        {/if}
+
+        list.push(listItem);
       });
 
         {if $smarty.const.MENU_DATA_LIKE_ONE_INPUT == 'True'}
@@ -1418,6 +1474,7 @@
           $('.pop-up-content').html('<div class="response">' + d[0] + '</div>');
           $.get($('.select-menu form').attr('action'), { menu: d[1] }, function(d){
             $('.content-container').html(d);
+            $('.content-container .uniform').uniform();
             setTimeout(function(){ $('.popup-box-wrap').remove() }, 500)
           })
         } else if (d == 'Deleted'){
@@ -1425,6 +1482,7 @@
           addQueryString('menu', 0);
           $.get($('.select-menu form').attr('action'), { }, function(d){
             $('.content-container').html(d);
+            $('.content-container .uniform').uniform();
             setTimeout(function(){ $('.popup-box-wrap').remove() }, 500)
           })
         } else {
@@ -1432,6 +1490,7 @@
           addQueryString('menu', $('select', select_menu).val());
           $.get($('.select-menu form').attr('action'), { menu: $('.select-menu select').val() }, function(d){
             $('.content-container').html(d);
+            $('.content-container .uniform').uniform();
             setTimeout(function(){ $('.popup-box-wrap').remove() }, 500)
           })
         }

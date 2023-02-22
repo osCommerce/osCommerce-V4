@@ -21,23 +21,28 @@
             <div class="col-xs-8">
                 <select name="setting[0][banners_group]" id="banners_group" class="form-control">
                     <option value=""></option>
-                    {foreach $banners as $banner}
-                        <option value="{$banner.banners_group}"{if $banner.banners_group == $settings[0].banners_group} selected{/if}>{$banner.banners_group}</option>
+                    {foreach $bannersGroups as $group}
+                        {*if $group.count > 0 && !$settings.designer_mode*}
+                        <option value="{$group.id}"{if $group.banners_group == $settings[0].banners_group || $group.id == $settings[0].banners_group} selected{/if}{if !$group.count} class="empty-group"{/if}>{$group.banners_group} ({$group.count})</option>
+                        {*/if*}
                     {/foreach}
                     <option value="page_setting"{if $settings[0].banners_group == 'page_setting'} selected{/if}>{$smarty.const.TEXT_FROM_PAGE_SETTING}</option>
                 </select>
             </div>
         </div>
 
-        <div class="row single-settings align-items-center m-b-2">
-            <label class="col-xs-4 align-right">{$smarty.const.TEXT_BANNER}:</label>
+        <input type="hidden" name="setting[0][ban_id]" id="banners_id" value="{$settings[0].ban_id}"/>
+        {*<div class="row single-settings m-b-2">
+            <label class="col-xs-4 align-right m-t-1">{$smarty.const.TEXT_BANNER}:</label>
             <div class="col-xs-8">
                 <input type="hidden" name="setting[0][ban_id]" id="banners_id" value="{$settings[0].ban_id}"/>
 
                 <div class="banner-holder"></div>
             </div>
-        </div>
+        </div>*}
 
+        {if $settings.designer_mode == 'expert'}
+        {if $microtime < '1675836928'}
         <div class="row align-items-center m-b-2 template-row">
             <label class="col-xs-4 align-right">{$smarty.const.TEXT_TEMPLATE}:</label>
             <div class="col-xs-8">
@@ -47,11 +52,14 @@
                 </select>
             </div>
         </div>
+        {/if}
+        {/if}
 
     </div>
     <div class="col-xs-4">
 
-        <div class="row align-items-center m-b-2">
+        <div class="row align-items-center m-b-2" style="min-height: 28px">
+            {if $settings.designer_mode == 'expert'}
             <label class="col-xs-7 align-right p-r-0" title='speed optimisation LCP (add &lt;link rel="preload"&gt; in head)'><i class="icon-info-circle"></i> {$smarty.const.TEXT_PRELOAD}:</label>
             <div class="col-xs-5">
                 <select name="setting[0][preload]" class="form-control">
@@ -59,8 +67,15 @@
                     <option value="1"{if $settings[0].preload == '1'} selected{/if}>{$smarty.const.TEXT_YES}</option>
                 </select>
             </div>
+            {/if}
         </div>
 
+        <div class="row align-items-center m-b-2" style="min-height: 28px">
+            <input type="checkbox" class="show-empty-groups"/>
+            <label class="m-l-2">{$smarty.const.SHOW_EMPTY_GROUPS}</label>
+        </div>
+
+        {if $settings.designer_mode == 'expert'}
         <div class="row align-items-center m-b-2">
             <label class="col-xs-7 align-right p-r-0">webp:</label>
             <div class="col-xs-5">
@@ -80,10 +95,11 @@
                 </select>
             </div>
         </div>
-
+        {/if}
     </div>
 </div>
 
+{if $settings.designer_mode}
 <div class="row p-l-2 p-t-2">
     <div class="col-xs-5">
         <div class="row carousel-settings align-items-center m-b-2">
@@ -160,15 +176,18 @@
             </div>
         </div>
     </div>
+
 </div>
 
 
+{if $settings.designer_mode == 'expert'}
 <div class="tabbable tabbable-custom carousel-settings">
     <ul class="nav nav-tabs">
 
         <li class="active"><a href="#list" data-toggle="tab">{$smarty.const.TEXT_MAIN}</a></li>
+        <li class="label">{$smarty.const.WINDOW_WIDTH}:</li>
         {foreach $settings.media_query as $item}
-            <li><a href="#list{$item.id}" data-toggle="tab">{$item.setting_value}</a></li>
+            <li><a href="#list{$item.id}" data-toggle="tab">{$item.title}</a></li>
         {/foreach}
 
     </ul>
@@ -198,10 +217,36 @@
 
     </div>
 </div>
+{else}
 
+<div class="row p-l-2 p-t-2">
+    <div class="col-xs-5">
+        <div class="row carousel-settings align-items-center m-b-2">
+            <label class="col-xs-6 align-right">{$smarty.const.TEXT_COLUMNS_IN_ROW}:</label>
+            <div class="col-xs-5">
+                <input type="number" name="setting[0][col_in_row]" class="form-control" value="{$settings[0].col_in_row}"/>
+            </div>
+        </div>
+    </div>
+</div>
+{/if}
+{/if}
+
+<div class="edit-banner-holder"></div>
 
 <script type="text/javascript">
 (function ($) { $(function () {
+    $('.empty-group').hide();
+    $('.show-empty-groups').tlSwitch({
+        onSwitchChange: function(e, status){
+            if (status) {
+                $('.empty-group').show();
+            } else {
+                $('.empty-group').hide();
+            }
+        }
+    });
+
     $('#banners_type').on('change', function () {
         switch ($(this).val()) {
             case 'carousel':
@@ -221,23 +266,162 @@
     }).trigger('change')
 
     $('#banners_group').on('change', selectBanner)
+    $('#banners_type').on('change', selectBanner)
+    $('body').on('saved-banner', selectBanner)
 
     function selectBanner() {
-        if ($('#banners_type').val() == 'single' && $('#banners_group').val()) {
-            $.get('banner_manager/group-banners', { 'banners_group': $('#banners_group').val() }, function(response){
-                let list = response.map(banner => ({
-                    name: banner.banners_id,
-                    value: `<div class="ban-holder">
-                                <div class="img">${ banner.image}</div>
-                                <div class="text">${ banner.banners_title}</div>
-                            </div>`
-                }));
-                $('.banner-holder').html('').append(htmlDropdown(list, $('#banners_id'), 'Select banner'))
+        const bannerType = $('#banners_type').val();
+        const groupId = $('#banners_group').val();
+        if (groupId) {
+            $.get('banner_manager/group-banners', { 'banners_group': groupId }, function(response){
+
+                const $table = $(`
+                        <table class="table table-bordered">
+                            <tr>
+                                <tr>
+                                    <th>{$smarty.const.TEXT_IMAGE}</th>
+                                    <th>{$smarty.const.BANNER_TITLE}</th>
+                                    ${ bannerType == 'single' && response.length > 1 ? '<th></th>' : ''}
+                                    <th class="platforms-heading">{$smarty.const.ASSIGNED_SALES_CHANNELS}</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                        </table>
+                    `);
+                if (bannerType == 'single' && response.length == 1) {
+                    $('#banners_id').val(response[0].banners_id).trigger('change')
+                }
+                response.forEach(function(banner){
+                    const $item = bannerItem(banner, bannerType == 'single', response.length);
+
+                    $table.append($item)
+                })
+                let groupName = $('#banners_group option:selected').text().replace(/\([0-9]+\)/, '');
+
+                const $newBanner = $(`<div class="m-t-4 m-b-2 align-center"><a href="banner_manager/banneredit?popup=1&group_id=${ groupId }" class="btn btn-primary">{$smarty.const.ADD_BANNER}</a></div>`);
+                $('a', $newBanner).on('click', editBanner)
+
+                $('.edit-banner-holder').html('')
+                    .append(`<h4>{$smarty.const.BANNERS_FROM_GROUP} "${ groupName }"</h4>`)
+                    .append($table)
+                    .append($newBanner)
             }, 'json')
         } else {
-            $('.banner-holder').html('').append(htmlDropdown([], $('#banners_id'), 'Select banner'))
+            $('.edit-banner-holder').html('')
         }
+    }
+
+    function bannerItem(banner, chooseButton, itemsCount){
+        let platforms = '';
+        if (banner.platforms && banner.platforms.length) {
+            banner.platforms.forEach(function (platform) {
+                if (platform.platform_name) {
+                    platforms += `<div>${ platform.platform_name}</div>`
+                }
+            })
+        }
+
+        const $bannersIdInput = $('#banners_id');
+        const bannersId = $bannersIdInput.val();
+        let notChecked = '';
+        if (chooseButton && (bannersId != banner.banners_id || !bannersId)) {
+            notChecked = 'check-disabled';
+        }
+        const $item = $(`
+            <tr class="ban-holder${ banner.status == '0' ? ' banner-disabled' : ''} ${ notChecked }">
+                <td class="img">${ banner.image ? banner.image : '<span class="no-image">Banner without image</span>'}</td>
+                <td class="text">
+                    ${ banner.banners_title ? `<span class="banner-title">${ banner.banners_title }</span>` : '<i class="need-enter-title">You need to enter banner title</i>'}
+                    ${ banner.status == '0' ? '<span class="banner-disabled-text">({$smarty.const.TEXT_DISABLED})</span>' : ''}<br>
+                    <a href="banner_manager/banneredit?popup=1&banners_id=${ banner.banners_id }">{$smarty.const.TEXT_BANNER_EDIT}</a>
+                </td>
+                ${ chooseButton && itemsCount > 1 ? `<td class="btn-choose-cell"><span class="btn btn-primary btn-choose" data-id="${ banner.banners_id }">Choose</span></td>` : ''}
+                <td class="platforms">${ platforms }</td>
+                <td class="delete-banner"><span class="btn-delete-banner" data-id="${ banner.banners_id }"></span></td>
+            </tr>`);
+
+        $('.btn-choose', $item).on('click', function () {
+            $bannersIdInput.val($(this).data('id')).trigger('change');
+            $('.edit-banner-holder .ban-holder').addClass('check-disabled');
+            $(this).closest('.ban-holder').removeClass('check-disabled')
+        });
+
+        $('.btn-delete-banner', $item).on('click', function () {
+            let response = '';
+            if (banner.image) {
+                response += '<div class="image">' + banner.image + '</div>';
+            }
+            if (banner.banners_title) {
+                response += '<div class="title">' + banner.banners_title + '</div>';
+            }
+            response += '<div class="text">{$smarty.const.ARE_YOU_SURE_DELETE_BANNER}</div>';
+            const id = $(this).data('id');
+            bootbox.dialog({
+                message: response,
+                title: "Warning",
+                className: 'delete-banner-popup',
+                buttons: {
+                    main: {
+                        label: "{$smarty.const.IMAGE_CANCEL}",
+                        className: "btn",
+                        callback: function() {
+                        }
+                    },
+                    success: {
+                        label: "{$smarty.const.IMAGE_DELETE}",
+                        className: "btn btn-primary",
+                        callback: function() {
+                            $.post('banner_manager/delete', { bID: [id]}, function () {
+                                selectBanner()
+                            })
+                        }
+                    }
+                }
+            });
+        });
+
+        $('a', $item).on('click', editBanner)
+
+        return $item;
+    }
+
+    function editBanner(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const newBanner = $(this).hasClass('new-banner');
+        $.get($(this).attr('href'), function (response) {
+
+            const dialog = bootbox.dialog({
+                message: response,
+                title: "{$smarty.const.TEXT_BANNER_EDIT}",
+                className: 'edit-banner-popup',
+                buttons: {
+                    main: {
+                        label: "{$smarty.const.IMAGE_CANCEL}",
+                        className: "btn",
+                        callback: function() {
+                            selectBanner()
+                        }
+                    },
+                    success: {
+                        label: "{$smarty.const.IMAGE_SAVE}",
+                        className: "btn btn-primary",
+                        callback: function() {
+                            $('#save_banner_form').trigger('submit');
+                            return false
+                        }
+                    }
+                }
+            });
+
+            $('body').on('saved-banner', function () {
+                dialog.find(".bootbox-close-button").trigger("click");
+            })
+        })
     }
 
 }) })(jQuery);
 </script>
+
+<script type="text/javascript" src="{$app->view->theme->baseUrl}/js/local-links.js?17"></script>
+<link href="{$app->view->theme->baseUrl}/css/banners.css?17" rel="stylesheet" type="text/css" />

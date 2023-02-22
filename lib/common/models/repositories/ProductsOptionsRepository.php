@@ -15,7 +15,7 @@ namespace common\models\repositories;
 use common\models\ProductsOptions;
 
 /**
- * Class GroupsRepository
+ * Class ProductsOptionsRepository
  * @package common\models\repositories
  */
 class ProductsOptionsRepository

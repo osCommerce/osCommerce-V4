@@ -59,12 +59,14 @@
   <style type="text/css">.dataTables_wrapper.no-footer .dataTables_footer{ display:none; }</style>
   <!--===/modules list===-->
 
+{include file="./ppp_js.tpl"}
   <script type="text/javascript">
     var global = '';
     function viewModule(item_id) {
       var attr_check = $('input[name="enabled"]').val();
       $.post("modules/view", {
         'set': '{$set}',
+        'type': '{$type}',
         'platform_id': $('#page_platform_id').val(),
         'enabled': attr_check,
         'module': item_id
@@ -349,120 +351,9 @@
       var event_id = $(obj).find('input.cell_identify').val();
     }
 
-    function checkPPP(platform_id) {
-      {if $smarty.get.set != 'payment'}
-          return false;
-      {/if}
-      var post_data = [];
-      post_data.push({ name: 'platform_id', value: platform_id});
-
-      $.post("{Yii::$app->urlManager->createUrl(['modules/ppp-status', 'set' => 'payment', 'type' => 'online'])}", post_data, function (data, status) {
-        if (status == "success") {
-          if (data.installPPP) {
-            $('#installPPP').show();
-          } else {
-            $('#installPPP').hide();
-          }
-        }
-      }, "json");
-    }
 
     $(document).ready(function () {
-        var PPP_allow = 3;
-        {if !empty($installPPP) }
-            PPP_allow = {$installPPP};
-        {/if}
-      $('#installPPP a').on('click', function (event) {
-        event.preventDefault();
-        bootbox.prompt({
-          title: '{$smarty.const.ADD_PAYPAL_TITLE|escape:javascript}',
-          message: ''
-          + '<div class="form-check"><label class="form-check-label"><input class="form-check-input bootbox-input bootbox-input-checkbox ppp-test-mode" type="checkbox" name="test_mode" value="1">'
-          + '{$smarty.const.PAYPAL_SANDBOX_MODE|escape:javascript}' + '</label></div><br>'
-          + '<div id="ppp_account_links" {if $installPPP && $installPPP < 4 }style="display:none"{/if}>{$smarty.const.MODULE_PAYMENT_PAYPAL_PARTNER_TEXT_DESCRIPTION|escape:javascript}</div>'
-          + '{$smarty.const.PAYPAL_EXISTING_ACCOUNT|escape:javascript}<br><br>'
-          ,
 
-          inputType: 'radio',
-          inputOptions: [
-            {
-              text: '{$smarty.const.PAYPAL_ACCOUNT_OPTIONS_YES|escape:javascript}',
-              value: '1',
-            },
-            {
-              text: '{$smarty.const.PAYPAL_ACCOUNT_OPTIONS_NO_BUSINESS|escape:javascript}',
-              value: '2',
-            },
-            {
-              text: '{$smarty.const.PAYPAL_ACCOUNT_OPTIONS_NO_PERSONAL|escape:javascript}',
-              value: '3',
-            },
-            {
-              text: '{$smarty.const.PAYPAL_ACCOUNT_OPTIONS_OWN_API_ACCESS|escape:javascript}',
-              value: '4',
-            }
-          ],
-          onShow: function (e) {
-            $('.bootbox-radiobutton-list div.form-check.radio').removeClass('radio');
-            $('.ppp-test-mode').on('click', function(){
-                $('.bootbox-radiobutton-list div.form-check input[type="radio"]').attr("disabled", false);
-                if (this.checked) {
-                    //sandbox
-                //1 - sandbox 2 - live 3 - both partner's keys 4 - no partners key
-                    if (PPP_allow != 1 && PPP_allow != 3) {
-                        $('.bootbox-radiobutton-list div.form-check input[type="radio"]:lt(3)').prop("disabled", true);
-                        $('.bootbox-radiobutton-list div.form-check input[type="radio"]:last').prop("checked", true);
-                        $('#ppp_account_links').show();
-                    } else {
-                        $('#ppp_account_links').hide();
-                    }
-                } else {
-                    //live
-                    if (PPP_allow != 2 && PPP_allow != 3) {
-                        $('.bootbox-radiobutton-list div.form-check input[type="radio"]:lt(3)').prop("disabled", true);
-                        $('.bootbox-radiobutton-list div.form-check input[type="radio"]:last').prop("checked", true);
-                        $('#ppp_account_links').show();
-                    } else {
-                        $('#ppp_account_links').hide();
-                    }
-                }
-            });    
-        //.click();
-            if (PPP_allow != 2 && PPP_allow != 3) {
-                $('.bootbox-radiobutton-list div.form-check input[type="radio"]:lt(3)').prop("disabled", true);
-                $('.bootbox-radiobutton-list div.form-check input[type="radio"]:last').prop("checked", true);
-                $('#ppp_account_links').show();
-            } else {
-                $('#ppp_account_links').hide();
-            }
-
-          },
-          callback: function (result) {
-            if (result > 0) {
-              var post_data = [];
-              post_data.push({ name: 'platform_id', value: $('#page_platform_id').val()});
-              post_data.push({ name: 'ppp_next', value: result});
-              post_data.push({ name: 'set', value: '{$set}'});
-              post_data.push({ name: 'test_mode', value: $('input[name="test_mode"]').is(':checked')});
-              //post_data.push({ name:'enabled', value: 'on' });
-              post_data.push({ name: 'module', value: 'paypal_partner'});
-              post_data.push({ name: 'action', value: 'install'});
-
-              $.post("{Yii::$app->urlManager->createUrl('modules/ppp-install')}", post_data, function (data, status) {
-                if (status == "success") {
-                  if (data.redirect) {
-                    window.location.replace(data.redirect);
-                  }
-                  //resetStatement();
-                } else {
-                  alert("Request error.");
-                }
-              }, "json");
-
-            }
-          }
-        })
-      });
 
       $('.js_link_platform_modules_select').on('click', function () {
         var activate_platform_id = $(this).attr('data-platform_id');

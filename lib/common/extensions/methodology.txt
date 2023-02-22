@@ -119,6 +119,7 @@ In addition a list of available values page_name and page_area:
 'customers/customeredit', 'right-column'
 'customers/customeractions', ''
 'customers/register', ''
+'customers/logoff', ''
 'customers/after-auth', ''
 'customers/after-trunk', ''  // helpers/customer.php
 'customers/after-delete', '' // helpers/customer.php
@@ -150,16 +151,24 @@ In addition a list of available values page_name and page_area:
 'categories/categoryedit', 'seo-tab-without-lang' // after languages tabs
 'categories/supplier-price', ''
 'categories/auto-supplier-price', ''
-'product/after-delete', ''  //helpers/products.php
-'product/after-trunk', ''  //helpers/products.php
+'categories/after-delete', '' // helpers/categories
+'categories/after-trunk', ''  // helpers/categories
+'product/after-delete', ''    //helpers/products.php
+'product/after-trunk', ''     //helpers/products.php
 'orders/process-order', ''
 'orders/process-order', 'totals-block'
 'orders/process-order', 'btn-bar-top'
 'orders/process-order', 'btn-bar-bottom'
+'orders/process-order', 'product-name'
 'orders/after-delete', '' // helpers/order.php
-'Order', 'save_order/before'
-'Order', 'save_order/after'
-'Order', 'notify_customer'
+'orders/after-trunk', '' // helpers/order.php
+'order/anonymize', '' // helpers/customer.php
+// deprecated 'Order', 'save_order/before'
+// deprecated 'Order', 'save_order/after'
+// deprecated 'Order', 'notify_customer'
+'order/before-save', ''
+'order/after-save', ''
+'order/notify_customer', ''
 'order-manager/check-free-shipping', ''
 'shopping-cart/reset', ''
 'shopping-cart/add-cart', ''
@@ -175,8 +184,10 @@ In addition a list of available values page_name and page_area:
 'init-factory/init', ''
 'cart-factory/work', ''
 'cart-factory/work/end', ''
+'url-rule/parse-request', ''
 'console-tools/logs-cleanup', ''
 'product_props/init_workers', ''
 'account/order_history_info', 'order-product' // smarty tpl
+'frontend/layouts-main', 'before-body-close'
 </HOOKS>
 

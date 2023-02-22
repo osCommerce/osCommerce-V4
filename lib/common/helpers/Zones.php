@@ -177,6 +177,9 @@ class Zones {
         $key = (int)$country_id.'@'.strval($zone_name);
         if ( !isset($cached[$key]) ) {
             $zone_id_query = tep_db_query("SELECT * FROM " . TABLE_ZONES . " WHERE zone_country_id = '" . (int)$country_id . "' AND zone_name = '" . tep_db_input($zone_name) . "'");
+            if (!tep_db_num_rows($zone_id_query)) {
+                $zone_id_query = tep_db_query("SELECT * FROM " . TABLE_ZONES . " WHERE zone_country_id = '" . (int)$country_id . "' AND zone_code = '" . tep_db_input($zone_name) . "'");
+            }
 
             if (!tep_db_num_rows($zone_id_query)) {
                 $cached[$key] = 0;

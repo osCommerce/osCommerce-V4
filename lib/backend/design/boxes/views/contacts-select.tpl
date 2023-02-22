@@ -212,6 +212,7 @@
               var cursorPosition = window.currentPosition;
 
               input.val(inputValue.substr(0, cursorPosition) + key + inputValue.substr(cursorPosition));
+              input.trigger('change')
 
               $('.popup-box-wrap:last').remove()
           })

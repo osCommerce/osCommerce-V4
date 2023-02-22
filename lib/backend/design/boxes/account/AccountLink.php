@@ -30,7 +30,7 @@ class AccountLink extends Widget
 
     public function run()
     {
-        $activeArr = explode(',', $this->settings[0]['active_link']);
+        $activeArr = explode(',', $this->settings[0]['active_link'] ?? null);
         $settings = tep_db_query("select setting_value from " . TABLE_THEMES_SETTINGS . " where theme_name = '" . $this->settings['theme_name'] . "' and setting_group = 'added_page' and setting_name = 'account'");
         $links = [];
         $activeLinks = [];

@@ -94,6 +94,9 @@
                             <label class="checkbox">
                                 <input name="app_shop_cache"  type="checkbox" class="checkinput" value="1"><span></span> {$smarty.const.TEXT_INSTALL_CACHE}
                             </label>
+                            <label class="checkbox">
+                                <input name="do_migrations"  type="checkbox" class="checkinput" value="1"><span></span> Migrations apply
+                            </label>
                         </div>
                     </div>
 

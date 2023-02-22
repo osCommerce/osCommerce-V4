@@ -353,6 +353,8 @@ class Currencies {
 
             if ($order_info['products_price_qty_round'] ?? null) {
                 return round(\common\helpers\Tax::add_tax_always($products_price, $products_tax), $this->currencies[$order_info['currency']]['decimal_places']) * $quantity;
+            } elseif (defined('PRODUCTS_PRICE_EXC_ROUND') && PRODUCTS_PRICE_EXC_ROUND == 'true') {
+                return round(\common\helpers\Tax::add_tax_always($products_price * $quantity, $products_tax), $this->currencies[$order_info['currency']]['decimal_places']);
             } else {
                 return round(\common\helpers\Tax::add_tax_always($products_price, $products_tax) * $quantity, $this->currencies[$order_info['currency']]['decimal_places']);
             }
@@ -365,9 +367,10 @@ class Currencies {
  * @param float $products_tax 19.5 (usually <100)
  * @param int $quantity default 1
  * @param string $currency
+ * @param bool $add_tax_always default false
  * @return number
  */
-    function calculate_price($products_price, $products_tax, $quantity = 1, $currency = '') {
+    function calculate_price($products_price, $products_tax, $quantity = 1, $currency = '', $add_tax_always = false) {
         if (empty($currency)) {
             $currency = \Yii::$app->settings->get('currency');
         }
@@ -385,17 +388,19 @@ class Currencies {
                 $method = 'add_tax';
             }
         } else
-        if ($products_tax > 0 && \common\helpers\Tax::displayTaxable()){
-          $method = 'add_tax_always';
+        if ($add_tax_always || ($products_tax > 0 && \common\helpers\Tax::displayTaxable())) {
+            $method = 'add_tax_always';
         } else {
-          $method = 'add_tax';
+            $method = 'add_tax';
         }
           
 
         if ( !is_numeric($quantity) ) $quantity = 1;
 
-        if (PRODUCTS_PRICE_QTY_ROUND == 'true') {
+        if (defined('PRODUCTS_PRICE_QTY_ROUND') && PRODUCTS_PRICE_QTY_ROUND == 'true') {
             return round(\common\helpers\Tax::$method($products_price, $products_tax), $this->currencies[$currency]['decimal_places']) * $quantity;
+        } elseif (defined('PRODUCTS_PRICE_EXC_ROUND') && PRODUCTS_PRICE_EXC_ROUND == 'true') {
+            return round(\common\helpers\Tax::$method($products_price * $quantity, $products_tax), $this->currencies[$currency]['decimal_places']);
         } else {
             return round(\common\helpers\Tax::$method($products_price, $products_tax) * $quantity, $this->currencies[$currency]['decimal_places']);
         }

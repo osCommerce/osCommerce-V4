@@ -156,7 +156,7 @@ class Customer  extends \common\models\Customers implements \yii\web\IdentityInt
     }
 
     private function _afterAuth(){
-        global $cart, $wish_list, $quote, $sample;
+        global $cart, $quote, $sample;
 
         if ($this->customers_id){
 
@@ -233,9 +233,6 @@ class Customer  extends \common\models\Customers implements \yii\web\IdentityInt
                 include($filename);
             }
 
-            if (is_object($wish_list) && method_exists($wish_list, 'restore_contents')) {
-                $wish_list->restore_contents();
-            }
         }
     }
 

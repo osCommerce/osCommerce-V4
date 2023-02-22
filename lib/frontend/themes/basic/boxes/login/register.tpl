@@ -240,6 +240,11 @@
                         {Html::activedropDownList($registerModel, 'group', \common\helpers\Group::get_customer_groups_list())}
                     </div>
                 {/if}
+                {if in_array($registerModel->captha_enabled, ['captha', 'recaptha'])}
+                    <div class="captcha-holder">
+                        {$registerModel->captcha_widget}
+                    </div>
+                {/if}
                 <div class="col-full privacy-row">
                     <div class="terms-login">
                         {Html::activeCheckbox($registerModel, 'terms', ['class' => 'terms-conditions', 'value' => '1', 'label' => '', 'checked' => false])}{$smarty.const.TEXT_TERMS_CONDITIONS}

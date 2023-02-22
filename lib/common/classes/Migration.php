@@ -95,55 +95,71 @@ class Migration extends \yii\db\Migration {
      */
     public function createTableIfNotExists(string $table_name, array $struct, /* array|string */ $primary = null, /* array|string */ $indexes = null) {
         if (!$this->isTableExists($table_name)) {
-            $this->createTable($table_name, $struct);
+            try {
+                $this->createTable($table_name, $struct);
 
-            // create primary key 
-            if (!is_null($primary)) {
+                // create primary key
+                if (!is_null($primary)) {
 
-                $index_name = null;
-                if (is_string($primary)) {
-                    $index_name = $table_name . '_pk';
-                    $columns = $primary;
-                }
+                    $index_name = null;
+                    if (is_string($primary)) {
+                        $index_name = $table_name . '_pk';
+                        $columns = $primary;
+                    }
 
-                if (is_array($primary)) {
-                    switch (count($primary)) {
-                        case 0: break;
-                        case 1: // key as index_name
-                            foreach ($primary as $index_name => $columns)
+                    if (is_array($primary)) {
+                        switch (count($primary)) {
+                            case 0:
                                 break;
-                        default: // array of columns
-                            $index_name = $table_name . '_pk';
-                            $columns = $primary;
-                            break;
+                            case 1: // key as index_name
+                                foreach ($primary as $index_name => $columns)
+                                    break;
+                                break;
+                            default: // array of columns
+                                $index_name = $table_name . '_pk';
+                                $columns = $primary;
+                                break;
+                        }
+                    }
+
+                    if (!is_null($index_name))
+                        $this->addPrimaryKey($index_name, $table_name, $columns);
+                }
+
+                // create indexes
+                if (!is_null($indexes)) {
+
+                    if (!is_array($indexes)) {
+                        $indexes = array($indexes);
+                    }
+                    foreach ($indexes as $index_name => $columns) {
+                        $unique = false;
+                        if (is_string($index_name) && strpos($index_name, 'unique:') !== false) {
+                            $unique = true;
+                            $index_name = str_replace('unique:', '', $index_name);
+                        }
+                        if (is_int($index_name) or empty($index_name))
+                            $index_name = str_replace(',', '_', $columns);
+                        $this->createIndex($index_name, $table_name, $columns, $unique);
                     }
                 }
 
-                if (!is_null($index_name))
-                    $this->addPrimaryKey($index_name, $table_name, $columns);
+                return true;
+            } catch (\Throwable $e) {
+                \Yii::warning($e->getMessage() . "\n" . $e->getTraceAsString());
+                $this->dropTableIfExists($table_name);
+                throw $e;
             }
-
-            // create indexes
-            if (!is_null($indexes)) {
-
-                if (!is_array($indexes)) {
-                    $indexes = array($indexes);
-                }
-                foreach ($indexes as $index_name => $columns) {
-                    $unique = false;
-                    if (is_string($index_name) && strpos($index_name, 'unique:') !== false) {
-                        $unique = true;
-                        $index_name = str_replace('unique:', '', $index_name);
-                    }
-                    if (is_int($index_name) or empty($index_name))
-                        $index_name = str_replace(',', '_', $columns);
-                    $this->createIndex($index_name, $table_name, $columns, $unique);
-                }
-            }
-
-            return true;
         }
     }
+
+    public function dropTableIfExists($table)
+    {
+        if ($this->isTableExists($table)) {
+            $this->dropTable($table);
+        }
+    }
+
 
     /**
      * Drops multiple tables.
@@ -155,8 +171,7 @@ class Migration extends \yii\db\Migration {
         }
         if (is_array($tables)) {
             foreach ($tables as $table)
-                if ($this->isTableExists($table))
-                    $this->dropTable($table);
+                $this->dropTableIfExists($table);
         }
     }
 
@@ -202,6 +217,14 @@ class Migration extends \yii\db\Migration {
         }
     }
 
+    public function dropColumnIfExists($table, $column)
+    {
+        if (!$this->isMissingColumn($table, $column)) {
+            $this->dropColumn($table, $column);
+        }
+    }
+
+
     /**
      * @inheritdoc
      */
@@ -246,7 +269,7 @@ class Migration extends \yii\db\Migration {
      * @param string  $entity
      * @param array $keys [$key=>$value], $value = string | array per language ['en' => 'english', 'fr' => 'French']
      */
-    public function addTranslation($entity, $keys) {
+    public function addTranslation($entity, $keys, $replaceExisting = false) {
         static $language_map = false;
         if ($language_map === false) {
             $language_map = \yii\helpers\ArrayHelper::map(
@@ -268,6 +291,9 @@ class Migration extends \yii\db\Migration {
                     } else {
                         $languageValue = reset($value);
                     }
+                    if ($replaceExisting) {
+                        \common\models\Translation::deleteAll(['language_id' => $languageId, 'translation_entity' => $entity, 'translation_key' => $key]);
+                    }
                     $this->db->createCommand(
                             "INSERT IGNORE INTO `translation` " .
                             "  (language_id, translation_key, translation_entity, translation_value, checked, translated, hash) " .
@@ -284,6 +310,9 @@ class Migration extends \yii\db\Migration {
                     )->execute();
                 }
             } else {
+                if ($replaceExisting) {
+                    \common\models\Translation::deleteAll(['language_id' => 1, 'translation_entity' => $entity, 'translation_key' => $key]);
+                }
                 $this->db->createCommand(
                         "INSERT IGNORE INTO `translation` " .
                         "  (language_id, translation_key, translation_entity, translation_value, checked, translated, hash) " .
@@ -320,6 +349,7 @@ class Migration extends \yii\db\Migration {
      */
     public function removeTranslation($entity, $keys = null) {
         if (!empty($keys)) {
+            $this->print("Remove translations for enity $entity\n");
             if (!is_array($keys))
                 $keys = array($keys);
             foreach ($keys as $key) {
@@ -329,7 +359,7 @@ class Migration extends \yii\db\Migration {
                                 ['entity' => $entity, 'translate_key' => $key])
                         ->execute();
             }
-        } else {
+        } elseif (is_null($keys)) {
             $this->db->createCommand("DELETE FROM translation WHERE translation_entity=:entity", ['entity' => $entity])->execute();
         }
 
@@ -704,19 +734,26 @@ class Migration extends \yii\db\Migration {
         //echo '<pre>'; var_dump($ob); echo '</pre>';
     }
 
+    private static function varToStr($str_or_array)
+    {
+        return is_array($str_or_array) ? implode(',', $str_or_array) : $str_or_array;
+    }
 
     public function removeConfigurationKeys($key_or_array)
     {
+        $this->print('Remove configuration keys: '. self::varToStr($key_or_array) . "\n" );
         $this->delete(TABLE_CONFIGURATION, ['configuration_key' => $key_or_array]);
     }
 
     public function removeConfigurationKeysInGroup($group_or_array)
     {
+        $this->print('Remove configuration keys in group: '. self::varToStr($group_or_array) . "\n");
         $this->delete(TABLE_CONFIGURATION, ['configuration_group_id' => $group_or_array]);
     }
 
     public function removePlatformConfigurationKeys($key_or_array, $platform_id = null)
     {
+        $this->print('Remove platform configuration keys: '. self::varToStr($key_or_array) . "\n");
         $conditions['configuration_key'] = $key_or_array;
         if (!is_null($platform_id)) {
             $conditions['platform_id'] = $platform_id;
@@ -726,6 +763,7 @@ class Migration extends \yii\db\Migration {
 
     public function removePlatformConfigurationKeysInGroup($group_or_array, $platform_id = null)
     {
+        $this->print('Remove platform configuration keys in group: '. self::varToStr($group_or_array) . "\n");
         $conditions['configuration_key'] = $group_or_array;
         if (!is_null($platform_id)) {
             $conditions['platform_id'] = $platform_id;
@@ -752,7 +790,7 @@ class Migration extends \yii\db\Migration {
             if (is_file($mainWidgetsPath . '.php') || is_file($extensionsPath . '.php')) {
                 $widgetName = $widget;
             } else {
-                echo "\nError: $extensionsPath don't have php file \n\n";
+                $this->print("\nError: $extensionsPath don't have php file \n\n");
                 return "\"$extensionsPath\" don't have php file";
             }
             if (is_file($mainWidgetsPath . '.zip')) {
@@ -795,13 +833,13 @@ class Migration extends \yii\db\Migration {
             $params['sort_order'] = $max + 1;
 
 
-            if ($widgetLocation) {
+            if ($widgetLocation ?? null) {
                 $importBlock = \backend\design\Theme::importBlock($widgetLocation, $params);
                 if (!is_array($importBlock)) {
-                    echo "\n" . $importBlock . "\n";
+                    $this->print("\n" . $importBlock . "\n");
                     $themeError .= $theme['theme_name'] . ': error in ' . $importBlock . "\n";
                 }
-            } elseif ($widgetName) {
+            } elseif ($widgetName ?? null) {
                 $designBoxes = new \common\models\DesignBoxesTmp();
                 $designBoxes->microtime = microtime(true);
                 $designBoxes->theme_name = $theme['theme_name'];
@@ -835,18 +873,50 @@ class Migration extends \yii\db\Migration {
         }
     }
 
+    /**
+     * @param string $oldName existing name into design_boxes_tmp table. Looks like 'promotions\PromoList'
+     * @param string $newName like 'Promotions\widgets\PromoList'
+     * @return void
+     */
+    public function renameWidget(string $oldName, string $newName)
+    {
+        $count = \common\models\DesignBoxes::updateAll(['widget_name' => $newName], 'widget_name = :old_name', ['old_name' => $oldName]);
+        $this->print(sprintf("Widget renamed from %s to %s into design_boxes: %d records\n", $oldName, $newName, $count));
+        $count = \common\models\DesignBoxesTmp::updateAll(['widget_name' => $newName], 'widget_name = :old_name', ['old_name' => $oldName]);
+        $this->print(sprintf("Widget renamed from %s to %s into design_boxes_tmp: %d records\n", $oldName, $newName, $count));
+        \common\models\DesignBoxesCache::deleteAll();
+    }
+
+    /**
+     * @param string $oldName like '.w-product-promotions'
+     * @param string $newName like '.w-promotions-widgets-promotions'
+     * @return void
+     */
+    public function renameWidgetStyle(string $oldName, string $newName)
+    {
+        $count = \common\models\ThemesStyles::updateAll([
+                'selector' => new \yii\db\Expression("REPLACE(selector, '$oldName', '$newName')"),
+                'accessibility' => $newName,
+            ],
+            "accessibility = :old_name",
+            ['old_name' => $oldName]
+        );
+        $this->print(sprintf("Widget style renamed from %s to %s: %d records\n", $oldName, $newName, $count));
+        \Yii::$app->db->createCommand()->truncateTable(TABLE_THEMES_STYLES_CACHE)->execute();
+    }
+
     public function updateTheme($themeName, $migrationPath)
     {
-        echo "\nMigration for " . $themeName . " theme \n";
+        $this->print("\nMigration for " . $themeName . " theme \n");
         if (!\common\models\DesignBoxes::find(['theme_name' => $themeName])) {
-            echo $themeName . " theme not found \n";
+            $this->print($themeName . " theme not found \n");
             return '';
         }
 
         $filePath = DIR_FS_CATALOG . DIRECTORY_SEPARATOR . trim($migrationPath, DIRECTORY_SEPARATOR);
 
         if (!is_file($filePath)) {
-            echo "Migration file not found: " . $filePath . " \n";
+            $this->print("Migration file not found: " . $filePath . " \n");
         }
 
         $migration = json_decode(file_get_contents($filePath), true);
@@ -854,11 +924,11 @@ class Migration extends \yii\db\Migration {
             \backend\design\Theme::elementsSave($themeName);
             \common\models\DesignBoxesCache::deleteAll(['theme_name' => $themeName]);
             \backend\design\Theme::saveThemeVersion($themeName);
-            echo $result . "\n";
+            $this->print($result . "\n");
             return '';
         }
 
-        echo "Migration not applied \n";
+        $this->print("Migration not applied \n");
     }
 
     /**
@@ -868,9 +938,9 @@ class Migration extends \yii\db\Migration {
     {
         $res = \common\helpers\Extensions::installSafe($code);
         if (!is_null($res)) {
-            echo "Error while installing $code: $res\n";
+            $this->print("Error while installing $code: $res\n");
         } else {
-            echo "Extension $code was installed successfully\n";
+            $this->print("Extension $code was installed successfully\n");
         }
     }
 
@@ -878,9 +948,9 @@ class Migration extends \yii\db\Migration {
     {
         $res = \common\helpers\Extensions::uninstallSafe($code);
         if (!is_null($res)) {
-            echo "Error while uninstalling $code: $res\n";
+            $this->print("Error while uninstalling $code: $res\n");
         } else {
-            echo "Extension $code was uninstalled successfully\n";
+            $this->print("Extension $code was uninstalled successfully\n");
         }
     }
 
@@ -888,9 +958,38 @@ class Migration extends \yii\db\Migration {
     {
         if ($ext = \common\helpers\Extensions::isAllowed($code)) {
             $ext::reinstallTranslation($this);
-            echo "Translations were reinstalled for extension $code\n";
+            $this->print("Translations were reinstalled for extension $code\n");
         } else {
-            echo "Translations were not reinstalled for extension $code: it is not enabled";
+            $this->print("Translations were not reinstalled for extension $code: it is not enabled");
+        }
+    }
+
+    public function isOldProject()
+    {
+        $res = defined('OLD_PROJECT') && OLD_PROJECT == true;
+        if ($res) {
+            $this->print("Changes is not applied due OLD_PROJECT constant\n");
+        }
+        return $res;
+    }
+
+    public function isOldExtension($code)
+    {
+        $res = $this->isOldProject();
+        if (!$res) {
+            $res = (defined("OLD_$code") && constant("OLD_$code") == true) ||
+                (class_exists("\\common\\extensions\\$code\\$code" ) && !class_exists("\\common\\extensions\\$code\\Setup"));
+            if ($res) {
+                $this->print("Changes is not applied due OLD_$code constant\n");
+            }
+        }
+        return  $res;
+    }
+
+    public function print($msg)
+    {
+        if (!$this->compact) {
+            echo $msg;
         }
     }
 

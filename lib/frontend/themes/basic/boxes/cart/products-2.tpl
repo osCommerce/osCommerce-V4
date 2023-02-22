@@ -72,6 +72,7 @@
 			{if isset($product.stock_info) && $product.stock_info}
 			  <div class="{$product.stock_info.text_stock_code}"><span class="{$product.stock_info.stock_code}-icon">&nbsp;</span>{$product.stock_info.stock_indicator_text}</div>
 			{/if}
+                        {if \common\helpers\Acl::checkExtensionAllowed('ApplicationManager', 'allowed')}{\common\extensions\ApplicationManager\ApplicationManager::renderCartProduct($product, $manager)}{/if}
 		  </div>
 			<div class="qty">
 			  {$product.quantity_virtual}

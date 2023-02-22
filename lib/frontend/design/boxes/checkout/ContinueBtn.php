@@ -31,11 +31,11 @@ class ContinueBtn extends Widget
     public function run()
     {
         $initialize_checkout_methods = '';
-        if (defined('EXPRESS_PAYMENTS_AT_CHECKOUT') && EXPRESS_PAYMENTS_AT_CHECKOUT == 'True') {
+        //if (defined('EXPRESS_PAYMENTS_AT_CHECKOUT') && EXPRESS_PAYMENTS_AT_CHECKOUT == 'True') {
             global $cart;
             $payment_modules = \common\services\OrderManager::loadManager($cart)->getPaymentCollection();
             $initialize_checkout_methods = $payment_modules->checkout_initialization_method();
-        }
+        //}
 
         return IncludeTpl::widget(['file' => 'boxes/checkout/continue-btn.tpl', 'params' => [
             'link' => tep_href_link('index'),

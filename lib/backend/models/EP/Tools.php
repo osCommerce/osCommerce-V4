@@ -209,13 +209,10 @@ class Tools
           );
           $this->new_category_added = true;
 
+          /** @var \common\extensions\UserGroupsRestrictions\UserGroupsRestrictions $ext */
           if ($ext = \common\helpers\Acl::checkExtensionAllowed('UserGroupsRestrictions', 'allowed')) {
-              if ( $ext::select() ){
-                  /** @var \backend\services\GroupsService $groupService */
-                  try {
-                      $groupService = \Yii::createObject(\backend\services\GroupsService::class);
-                      $groupService->addCategoryToAllGroups($category_id);
-                  }catch (\Exception $ex){}
+              if ( $groupService = $ext::getGroupsService() ){
+                  $groupService->addCategoryToAllGroups($category_id);
               }
           }
 

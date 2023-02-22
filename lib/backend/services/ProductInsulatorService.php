@@ -323,6 +323,19 @@ class ProductInsulatorService {
         $_uprid = Inventory::get_uprid($this->uprid, $this->data['id'] ?? null);
         $_uprid = Inventory::normalize_id($_uprid);
         $reserved_qty = $cart->get_reserved_quantity($_uprid); //+$_qty;
+        if (is_array($this->data['qty_'] ?? null)) {
+            $packQty = [
+                //'qty' => $_qty,
+                'unit' => (int) $this->data['qty_'][0],
+                'pack_unit' => (int) $this->data['qty_'][1],
+                'packaging' => (int) $this->data['qty_'][2],
+            ];
+            if ($ext = \common\helpers\Acl::checkExtensionAllowed('PackUnits', 'allowed')) {
+                $packQty['qty'] = $_qty = $ext::recalcQauntity(Inventory::get_prid($this->uprid), $packQty);
+            }
+        } else {
+            $packQty = $_qty;
+        }
         if (defined('STOCK_CHECK') && STOCK_CHECK == 'true') {
             $product_qty = \common\helpers\Product::get_products_stock($_uprid);
             $stock_indicator = \common\classes\StockIndication::product_info(array(
@@ -348,16 +361,6 @@ class ProductInsulatorService {
                 return false;
         }
 
-        if (is_array($this->data['qty_'] ?? null)) {
-            $packQty = [
-                'qty' => $_qty,
-                'unit' => (int) $this->data['qty_'][0],
-                'pack_unit' => (int) $this->data['qty_'][1],
-                'packaging' => (int) $this->data['qty_'][2],
-            ];
-        } else {
-            $packQty = $_qty;
-        }
         $added = null;
         if (is_array($this->data['collections'] ?? null) && count($this->data['collections']) > 1) {
             foreach ($this->data['collections'] as $products_id) {

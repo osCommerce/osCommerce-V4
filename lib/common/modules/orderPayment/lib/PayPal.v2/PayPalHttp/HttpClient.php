@@ -87,6 +87,9 @@ class HttpClient
 
 
         $this->logger->info($requestCpy->verb . ' ' . $url);
+        if (!empty($requestCpy->headers['PayPal-Partner-Attribution-Id'])) {
+            $this->logger->info('PayPal-Partner-Attribution-Id: ' . $requestCpy->headers['PayPal-Partner-Attribution-Id']);
+        }
 
         $curl->setOpt(CURLOPT_URL, $url);
         $curl->setOpt(CURLOPT_CUSTOMREQUEST, $requestCpy->verb);

@@ -13,6 +13,7 @@
 
 namespace frontend\controllers;
 
+use common\classes\platform;
 use common\models\repositories\OrderRepository;
 use frontend\design\Info;
 use Yii;
@@ -32,7 +33,7 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
 
     public function actionIndex() {
 
-        global $wish_list, $breadcrumb;
+        global $breadcrumb;
         global $session_started, $cart;
 
         if (GROUPS_DISABLE_CHECKOUT) {
@@ -62,7 +63,9 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
 
         $cart->order_id = 0;
 
-        if (Yii::$app->request->get('guest')){
+        $needLogged = \Yii::$app->get('platform')->getConfig(platform::currentId())->checkNeedLogged();
+
+        if (Yii::$app->request->get('guest') && !$needLogged){
             $this->manager->set('guest', true);
             $this->manager->remove('account');
         }
@@ -108,10 +111,6 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
                 }
             }
 
-            if ($ext = \common\helpers\Acl::checkExtensionAllowed('DeliveryOptions', 'allowed')) {
-                $ext::saveDetails($this->manager);
-            }
-
             if (tep_not_null($_POST['comments'])) {
                 $this->manager->set('comments', tep_db_prepare_input($_POST['comments']));
             }
@@ -149,15 +148,29 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
                         $this->manager->set('one_page_checkout_' . $key, $value);
                     }
                 }
-
-                if (Yii::$app->request->isAjax && $this->manager->getPayment() && $this->manager->getPaymentCollection($this->manager->getPayment())->popUpMode() ) {
-                  Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
-                  $data = [
-                      'payment_error' => '',
-                      'formCheck' => 'OK',
-                      '_csrf' => Yii::$app->request->getCsrfToken(),
-                  ];
-                  return Yii::$app->response->data = $data;
+                
+                /** @var \common\classes\payment $_p_modules*/
+                $_p_modules = $this->manager->getPaymentCollection($this->manager->getPayment());
+                if (Yii::$app->request->isAjax && $this->manager->getPayment() && ($_p_modules->popUpMode() || $_p_modules->directPayment())) {
+                    if ($_p_modules->directPayment()) { //do confirmation validation also (it redirects in case of error)
+                        //$tmp = Yii::$app->runAction(FILENAME_CHECKOUT_CONFIRMATION, ['ajax_check' => 1]);
+                        $tmp = $this->actionConfirmation(1);
+                        if (!empty($tmp['check']) && $tmp['check'] == 'ok'){
+                            $data = [
+                                'payment_error' => '',
+                                'formCheck' => 'OK',
+                                '_csrf' => Yii::$app->request->getCsrfToken(),
+                            ];
+                            return $this->asJson($data);
+                        }
+                    } else {
+                        $data = [
+                            'payment_error' => '',
+                            'formCheck' => 'OK',
+                            '_csrf' => Yii::$app->request->getCsrfToken(),
+                        ];
+                        return $this->asJson($data);
+                    }
 
                 } else {
                   tep_redirect(tep_href_link(FILENAME_CHECKOUT_CONFIRMATION, '', 'SSL'));
@@ -272,7 +285,6 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
 
     public function actionLogin() {
         global $cart;
-        global $wish_list;
 
         \common\helpers\Translation::init('js');
 
@@ -361,7 +373,7 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
         return $this->render('shipping-address.tpl', ['products' => '']);
     }
 
-    public function actionConfirmation() {
+    public function actionConfirmation($ajax_check = false) {
         global $navigation, $cart;
         $customer_groups_id = (int) \Yii::$app->storage->get('customer_groups_id');
 
@@ -372,10 +384,10 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
 
 
         if ($ext = \common\helpers\Acl::checkExtensionAllowed('BusinessToBusiness', 'allowed')) {
-            $ext::checkDisableCheckout($customer_groups_id);
+            $ext::checkDisableCheckout($customer_groups_id); // shit - incorrect extension
         }
         if (\common\helpers\Customer::check_customer_groups($customer_groups_id, 'groups_disable_checkout')) {
-            tep_redirect(tep_href_link(FILENAME_CHECKOUT_SHIPPING, '', 'SSL'));
+            tep_redirect(tep_href_link(FILENAME_CHECKOUT_SHIPPING, '', 'SSL')); //same as b2b, not part of extension
         }
 
         $this->manager->loadCart($cart);
@@ -489,6 +501,14 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
         global $breadcrumb;
         $breadcrumb->add(NAVBAR_TITLE_CHECKOUT);
         $breadcrumb->add(NAVBAR_TITLE);
+
+        if (Yii::$app->request->isAjax && (Yii::$app->request->get('check', false) === 'only' || !empty($ajax_check)) ) {
+            if (!empty($ajax_check)) {
+                return ['check' => 'ok'];
+            } else {
+                return $this->asJson(['check' => 'ok']);
+            }
+        }
 
         \common\components\google\widgets\GoogleTagmanger::setEvent('checkout');
 
@@ -826,10 +846,6 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
         foreach (\common\helpers\Hooks::getList('checkout/process', '') as $filename) {
             include($filename);
         }
-        // TODO: move
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('DeliveryOptions', 'allowed')) {
-            $ext::toOrder($order, $this->manager);
-        }
 
         if (!$withoutPayment) {
             $this->manager->getTotalCollection()->apply_credit(); //ICW ADDED FOR CREDIT CLASS SYSTEM
@@ -1070,7 +1086,7 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
             $_SESSION['amazon_eu_login'] = $login_results;
 
             //save/login customer
-            global $cart, $wish_list;
+            global $cart;
             $messageStack = \Yii::$container->get('message_stack');
             $email = tep_db_prepare_input($login_results['user_profile']['email']);
             $amazon_id = tep_db_prepare_input($login_results['user_profile']['user_id']);

@@ -109,6 +109,8 @@ class ot_coupon extends ModuleTotal {
         $taxDiscountSumm = 0;
 
         foreach ($cc_array as $id => $code) {
+            $this->valid_products = [];
+            $this->validProducts = [];
 
             $order_total = $this->get_order_total($id);
             $result = $this->calculate_credit($order_total, $id, $code);
@@ -337,11 +339,7 @@ class ot_coupon extends ModuleTotal {
                 }
 
                 if ($coupon_result->coupon_type != 'G') {
-                    if ($coupon_result->coupon_type == 'S') {
-                        $coupon_amount = TEXT_FREE_SHIPPING;
-                    } else {
-                        $coupon_amount = TEXT_COUPON_ACCEPTED;
-                    }
+                    $coupon_amount = TEXT_COUPON_ACCEPTED;
 
                     $cart->addCcItem($coupon_result->coupon_code);
 
@@ -387,34 +385,33 @@ class ot_coupon extends ModuleTotal {
                     
                     $result['method'] = 'standard';
                     $get_result['coupon_minimum_order'] *= $currencies->get_market_price_rate($get_result['coupon_currency'], DEFAULT_CURRENCY);
-                    if ($get_result['coupon_type'] == 'S') {
-                        $od_amount = $order->info['shipping_cost_exc_tax'];
-                        if ($get_result['restrict_to_products'] || $get_result['restrict_to_categories']) {
-                            $od_amount = 0;
-                            if (is_array($this->validProducts) && count($this->validProducts) > 0) {
-                                $od_amount = $order->info['shipping_cost_exc_tax'];
+
+                    if ($get_result['coupon_minimum_order'] <= $order_total) {
+
+                        if ($get_result['coupon_type'] != 'P') { // fixed discount  tax specified in coupon
+                            if ($get_result['flag_with_tax']) {
+                                $taxation = $this->getTaxValues($this->tax_class);
+                                $tax_rate = $taxation['tax'];
+                                $c_deduct = \common\helpers\Tax::get_untaxed_value($c_deduct, $tax_rate);
                             }
-                        }
-                        $result['method'] = 'free_shipping';
-                    } else {
-
-                        if ($get_result['coupon_minimum_order'] <= $order_total) {
-
-                            if ($get_result['coupon_type'] != 'P') { // fixed discount  tax specified in coupon
-                                if ($get_result['flag_with_tax']) {
-                                    $taxation = $this->getTaxValues($this->tax_class);
-                                    $tax_rate = $taxation['tax'];
-                                    $c_deduct = \common\helpers\Tax::get_untaxed_value($c_deduct, $tax_rate);
-                                }
-                                $od_amount = $c_deduct;
-                            } else {
+                            $od_amount = $c_deduct;
+                        } else {
+                            if ($get_result['free_shipping']) {
+                                $od_amount = max(0, $order_total-$order->info['shipping_cost_exc_tax']) * $get_result['coupon_amount'] / 100;
+                            }else {
                                 $od_amount = $order_total * $get_result['coupon_amount'] / 100;
                             }
                         }
+
+                        if ( $get_result['free_shipping'] ) {
+                            $od_amount += $order->info['shipping_cost_exc_tax'];
+                        }
                     }
+
                 }
             }
-            if ($od_amount > $order_total && $result['method'] != 'free_shipping') {
+
+            if ($od_amount > $order_total) {
                 $od_amount = $order_total;
             }
         }
@@ -432,7 +429,7 @@ class ot_coupon extends ModuleTotal {
                 $this->tax_class = $get_result['tax_class_id'];
 
                 $shipping_tax_class_id = 0;
-                if ($get_result['uses_per_shipping'] || $get_result['coupon_type'] == 'S') {
+                if ($get_result['uses_per_shipping'] || $get_result['free_shipping']) {
                     $shipping = $this->manager->getShipping();
                     if (is_array($shipping)) {
                         $sModule = $this->manager->getShippingCollection()->get($shipping['module']);
@@ -483,11 +480,15 @@ class ot_coupon extends ModuleTotal {
                         }
                     }
 
-                    if ($get_result['uses_per_shipping']) {
+                    if ($get_result['uses_per_shipping'] || $get_result['free_shipping']) {
                         $shippingTaxDiscountSumm = 0;
                         if ($get_result['coupon_type'] == 'P') {
                             $shipping_tax_calculated = \common\helpers\Tax::calculate_tax($order->info['shipping_cost_exc_tax'], $shipping_tax);
-                            $shippingTaxDiscountSumm = $shipping_tax_calculated / 100 * $get_result['coupon_amount'];
+                            if ($get_result['free_shipping']){
+                                $shippingTaxDiscountSumm = $shipping_tax_calculated;
+                            }else {
+                                $shippingTaxDiscountSumm = $shipping_tax_calculated / 100 * $get_result['coupon_amount'];
+                            }
                         } else { //fixed
                             //calculate discount on shipping: $amount contains shipping and max allowed discount is $od_amount;
                             if ($amount <= $od_amount) {
@@ -526,13 +527,22 @@ class ot_coupon extends ModuleTotal {
 
                                 if (is_array($order->info['tax_groups']))
                                     foreach ($order->info['tax_groups'] as $key => $value) {
-                                        $god_amount = $value / 100 * $get_result['coupon_amount'];
+                                        if ( $get_result['free_shipping'] && $shipping_tax_desc==$key && isset($this->processing_order['ot_shipping']) && $this->processing_order['ot_coupon']>$this->processing_order['ot_shipping'] ) {
+                                            $shipping_tax_calculated = \common\helpers\Tax::calculate_tax($order->info['shipping_cost_exc_tax'], $shipping_tax);
+                                            $god_amount = ($value-$shipping_tax_calculated) / 100 * $get_result['coupon_amount'];
+                                        }else {
+                                            $god_amount = $value / 100 * $get_result['coupon_amount'];
+                                        }
                                         $order->info['tax_groups'][$key] = $order->info['tax_groups'][$key] - $god_amount;
                                         $taxDiscountSumm += $god_amount;
                                     }
-                                if ($get_result['uses_per_shipping']) {
+                                if ($get_result['uses_per_shipping'] || $get_result['free_shipping']) {
                                     $shipping_tax_calculated = \common\helpers\Tax::calculate_tax($order->info['shipping_cost_exc_tax'], $shipping_tax);
-                                    $god_amount = $shipping_tax_calculated / 100 * $get_result['coupon_amount'];
+                                    if ($get_result['free_shipping']){
+                                        $god_amount = $shipping_tax_calculated;
+                                    }else {
+                                        $god_amount = $shipping_tax_calculated / 100 * $get_result['coupon_amount'];
+                                    }
 
                                     if ($shipping_tax_calculated) {
                                         if (isset($order->info['tax_groups'][$shipping_tax_desc]))
@@ -548,17 +558,15 @@ class ot_coupon extends ModuleTotal {
                         $tax_rate = $taxation['tax'];
                         $tax_desc = $taxation['tax_description'];
                         $taxDiscountSumm = \common\helpers\Tax::calculate_tax($od_amount, $tax_rate);
-                        if ($get_result['coupon_type'] != 'S') {
-                            //$taxDiscountSumm = $od_amount / 100  * (100 + $tax_rate) - $od_amount;//$od_amount / (100 + $tax_rate) * $tax_rate;
-                        }
+
                         $shipping_tax_calculated = 0;
-                        if ($get_result['uses_per_shipping'] || $get_result['coupon_type'] == 'S') {
+                        if (0/*$get_result['uses_per_shipping'] || $get_result['free_shipping'] */) {
                             if (DISPLAY_PRICE_WITH_TAX != 'true'){
                                 $shipping_tax_calculated = \common\helpers\Tax::calculate_tax($order->info['shipping_cost'], $shipping_tax);
                             } else {
                                 $shipping_tax_calculated = $order->info['shipping_cost_inc_tax'] - $order->info['shipping_cost_exc_tax'];
                             }
-                            if ($get_result['coupon_type'] == 'S') {
+                            if ($get_result['free_shipping']) {
                                 $taxDiscountSumm = $shipping_tax_calculated;
                             } else {
                                 $taxDiscountSumm = min($taxDiscountSumm, (float) $order->info['tax_groups'][$tax_desc] + $shipping_tax_calculated);
@@ -734,11 +742,16 @@ class ot_coupon extends ModuleTotal {
                     }
                     */
                     $order_total = $total;
+
+                    if (($get_result['uses_per_shipping'] || $get_result['free_shipping']) && empty($this->validProducts) ) {
+                        $get_result['uses_per_shipping'] = 0;
+                        $get_result['free_shipping'] = 0;
+                    }
                 }
             }
         }
 
-        if ($get_result['uses_per_shipping']) {
+        if ($get_result['uses_per_shipping'] || $get_result['free_shipping']) {
             $order_total += $order->info['shipping_cost_exc_tax'];
         }
 

@@ -44,6 +44,8 @@ class Data
         'TEXT_LEFT_CHARACTERS',
         'TEXT_OVERFLOW_CHARACTERS',
         'TEXT_VIEW_SHOP',
+        'SW_ON',
+        'SW_OFF',
     ];
 
     private static $wlList = [
@@ -103,6 +105,8 @@ class Data
         'TEXT_GENERAL_FOLDER',
         'TEXT_ALL_FILES',
         'TEXT_POOR_QUALITY',
+        'OPTION_NONE',
+        'IMAGE_APPLY',
     ];
 
     public static function getJsonData(){

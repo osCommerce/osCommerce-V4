@@ -13,12 +13,44 @@
 
 namespace common\helpers;
 
+use common\models\DesignBoxes;
+use common\models\DesignBoxesSettings;
+use common\models\DesignBoxesSettingsTmp;
+use common\models\DesignBoxesTmp;
+use frontend\design\Info;
+use yii\helpers\ArrayHelper;
+
 class CustomBundles {
 
     public static function getDetails($params) {
         global $languages_id;
 
-        if (!$params['products_id']) return '';
+        if (!$params['box_id']) return '';
+
+        if (Info::isAdmin()) {
+            $designBoxesSettings = DesignBoxesSettingsTmp::find();
+        } else {
+            $designBoxesSettings = DesignBoxesSettings::find();
+        }
+        $boxSettings = $designBoxesSettings->where(['box_id' => $params['box_id']])->asArray()->all();
+        $settings = [];
+        foreach ($boxSettings as $set) {
+            $settings[$set['language_id']][$set['setting_name']] = $set['setting_value'];
+        }
+        if (!$params['products_id']) {
+            return '';
+        }
+
+        $xsell_type_id = 0;
+        if ( isset($settings[0]['xsell_type_id']) ){
+            $xsell_type_id = (int)$settings[0]['xsell_type_id'];
+        }
+        $max = (isset($settings[0]['max_products']) ? $settings[0]['max_products'] : 10);
+
+
+
+
+
         $currencies = \Yii::$container->get('currencies');
         if (!is_array($params['custom_bundles'] ?? null)) $params['custom_bundles'] = array();
 
@@ -29,7 +61,36 @@ class CustomBundles {
         }
 
         if (!$check_configurator['products_pctemplates_id'] && !(count($bundle_products) > 0)) {
-            $listing_sql_array = \frontend\design\ListingSql::get_listing_sql_array('catalog/all-products');
+
+
+
+            $cW = ['exists', \common\models\ProductsXsell::find()->alias('xp')
+                ->andWhere("p.products_id = xp.xsell_id")
+                ->andWhere([
+                    'xp.products_id' => (int)$params['products_id'],
+                    'xp.xsell_type_id' => $xsell_type_id,
+                ])
+                ->andWhere(['not in', 'p.products_id', array_map('intval', $params['custom_bundles'])])
+            ];
+            $q = new \common\components\ProductsQuery([
+                'limit' => (int)$max,
+                'customAndWhere' => $cW,
+                'orderBy' => ['FIELD (products_id, '. (int)$params['products_id'] . ') DESC' => ''],
+            ]);
+
+            $settings['listing_type'] = 'cross-sell-' . $xsell_type_id;
+            $settings['options_prefix'] = 'list';
+
+            $all_products = Info::getListProductsDetails($q->buildQuery()->allIds(), $settings);
+            $custom_bundle_set_products = Info::getListProductsDetails(array_map('intval', $params['custom_bundles']), $settings);
+            $parent_products_id = $params['products_id'];
+            $custom_bundle_full_price = 0;
+
+
+
+
+
+            /*$listing_sql_array = \frontend\design\ListingSql::get_listing_sql_array('catalog/all-products');
 
             $parent_products_id = $params['products_id'];
             $products_query = tep_db_query("select p.products_id, p.order_quantity_minimal, p.order_quantity_max, p.order_quantity_step, p.stock_indication_id,  p.is_virtual, p.products_image, if(length(pd1.products_name), pd1.products_name, pd.products_name) as products_name, if(length(pd1.products_description_short), pd1.products_description_short, pd.products_description_short) as products_description_short, p.products_tax_class_id, p.products_price, p.products_quantity, p.products_model from " . $listing_sql_array['from'] . TABLE_PRODUCTS . " p left join " . TABLE_PRODUCTS_DESCRIPTION . " pd on pd.products_id = p.products_id and pd.language_id = '" . (int) $languages_id . "' and pd.platform_id = '".intval(\common\classes\platform::defaultId())."' left join " . TABLE_PRODUCTS_DESCRIPTION . " pd1 on pd1.products_id = p.products_id and pd1.language_id = '" . (int) $languages_id . "' and pd1.platform_id = '" . intval(\Yii::$app->get('platform')->config()->getPlatformToDescription()) . "' " . $listing_sql_array['left_join'] . " where p.products_id not in ('" . implode("','", array_map('intval', $params['custom_bundles'])) . "') and p.products_id <> '" . (int) $params['products_id'] . "' " . $listing_sql_array['where'] . " order by p.sort_order, products_name limit 10");
@@ -38,7 +99,7 @@ class CustomBundles {
             $custom_bundle_products = array();
             $custom_bundle_full_price = 0;
             $custom_bundle_sets_query = tep_db_query("select p.products_id, p.order_quantity_minimal, p.order_quantity_max, p.order_quantity_step, p.stock_indication_id,  p.is_virtual, p.products_image, if(length(pd1.products_name), pd1.products_name, pd.products_name) as products_name, if(length(pd1.products_description_short), pd1.products_description_short, pd.products_description_short) as products_description_short, p.products_tax_class_id, p.products_price, p.products_quantity, p.products_model from " . $listing_sql_array['from'] . TABLE_PRODUCTS . " p left join " . TABLE_PRODUCTS_DESCRIPTION . " pd on pd.products_id = p.products_id and pd.language_id = '" . (int) $languages_id . "' and pd.platform_id = '".intval(\common\classes\platform::defaultId())."' left join " . TABLE_PRODUCTS_DESCRIPTION . " pd1 on pd1.products_id = p.products_id and pd1.language_id = '" . (int) $languages_id . "' and pd1.platform_id = '" . intval(\Yii::$app->get('platform')->config()->getPlatformToDescription()) . "' " . $listing_sql_array['left_join'] . " where p.products_id in ('" . implode("','", array_map('intval', array_merge([$parent_products_id], $params['custom_bundles']))) . "') " . $listing_sql_array['where'] . " order by p.sort_order, products_name");
-            $custom_bundle_set_products = \frontend\design\Info::getProducts($custom_bundle_sets_query);
+            $custom_bundle_set_products = \frontend\design\Info::getProducts($custom_bundle_sets_query);*/
 
             $all_filled_array = array();
             $stock_indicators_ids = array();
@@ -108,7 +169,7 @@ class CustomBundles {
                                         "order by products_quantity desc " .
                                         "limit 1"
                         ));
-                        if (!$check_inventory['inventory_id'])
+                        if (!$check_inventory['inventory_id'] || !$check_inventory['products_id'])
                             continue;
 
                         $priceInstance = \common\models\Product\Price::getInstance($mask);

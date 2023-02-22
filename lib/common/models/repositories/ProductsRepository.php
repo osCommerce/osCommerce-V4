@@ -415,11 +415,10 @@ class ProductsRepository {
         ->innerJoinWith(['descriptions pd' => function($query) use ($languageId) {
             /** @var ActiveQuery $query */
             return $query->andOnCondition(['language_id' => $languageId]);
-          }], false)
-        ->innerJoinWith(['groupsProducts p2g' => function($query) use ($groupId) {
-        /** @var ActiveQuery $query */
-        return $query->andOnCondition(['p2g.groups_id' => $groupId]);
-      }], false);
+          }], false);
+    if ($model = \common\helpers\Acl::checkExtensionTableExist('UserGroupsRestrictions', 'GroupsProducts')) {
+        $products->innerJoin($model::tableName() . ' p2g', 'p2g.products_id = p.products_id AND p2g.groups_id = :group_id', ['group_id' => $groupId]);
+    }
     if ($active) {
       $products->active();
       //\common\helpers\Product::get_sql_product_restrictions(array('p', 'pd', 's', 'sp', 'pp'))

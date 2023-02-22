@@ -34,6 +34,7 @@ class ErrorLogViewerController extends \common\classes\modules\SceletonExtension
         $languages_id = Yii::$app->settings->get('languages_id');
         $this->topButtons[] = '<button onclick="deleteAllLog()" class="btn btn-primary"><i class="icon-trash"></i>' . EXT_ELV_TEXT_CLEAR_ALL . '</button>';
         $this->topButtons[] = '<a href="'.Yii::$app->urlManager->createUrl('error-log-viewer/download').'" class="btn btn-primary"><i class="icon-download"></i>' . EXT_ELV_TEXT_DOWNLOAD_ALL_LOGS . '</a>';
+        $this->navigation[] = array('link' => Yii::$app->urlManager->createUrl('error-log-viewer/index'), 'title' => EXT_ELV_HEADING_TITLE);
 
         $this->view->headingTitle = EXT_ELV_HEADING_TITLE;
 
@@ -173,26 +174,32 @@ class ErrorLogViewerController extends \common\classes\modules\SceletonExtension
 
         $reader = new LogReader($file);
         $tmp = explode('/', $file);
-        $headers = $reader->getHeaders();
-        if(!array_key_exists($id, $headers)) return false;
+        try {
+            $headers = $reader->getHeaders();
+            if(!array_key_exists($id, $headers)) return false;
 
-        $result = new \stdClass();
-        $result->date = $headers[$id][1];
-        $result->ip = $headers[$id][2];
-        $result->level = $headers[$id][5];
-        $result->category = $headers[$id][6];
-        $result->text = $headers[$id][7];
-        $result->description = $reader->getDetails($id);
-        $result->file = $file;
-        $result->source = $tmp[0];
+            $result = new \stdClass();
+            $result->date = $headers[$id][1];
+            $result->ip = $headers[$id][2];
+            $result->level = $headers[$id][5];
+            $result->category = $headers[$id][6];
+            $result->text = $headers[$id][7];
+            $result->description = $reader->getDetails($id);
+            $result->file = $file;
+            $result->source = $tmp[0];
 
-        return $this->renderPartial('advanced-actions', ['log' => $result]);
+            return $this->renderPartial('advanced-actions', ['log' => $result]);
+        }catch (\Exception $e) // if file content not support
+        {
+            return null;
+        }
+
 
     }
 
     public function actionView()
     {
-
+        $this->topButtons[] = '<button class="btn btn-delete btn-no-margin" onclick="deleteLog()">'.IMAGE_DELETE.'</button>';
         $this->topButtons[] = '<button onclick="viewAsText()" class="btn btn-primary"><i class="icon-file-text-alt"></i>' . EXT_ELV_TEXT_VIEW_AS_TEXT . '</button>';
         $this->view->headingTitle = EXT_ELV_HEADING_TITLE;
 
@@ -220,9 +227,13 @@ class ErrorLogViewerController extends \common\classes\modules\SceletonExtension
                 'title' => EXT_ELV_TEXT_CATEGORY,
                 'not_important' => 0
             ),
+            array(
+                'title' => EXT_ELV_TEXT_ERROR_DESCRIPTION,
+                'not_important' => 0
+            ),
         );
 
-        return $this->render('view', ['file' => $file]);
+        return $this->render('view', ['file' => $file, 'back' => explode('/', $file)[0]]);
     }
 
     public function actionAdvancedList()
@@ -231,17 +242,25 @@ class ErrorLogViewerController extends \common\classes\modules\SceletonExtension
         if(!$file) throw new \Exception("Invalid request");
 
         $logger = new LogReader($file);
+        try {
+            foreach ($logger->getHeaders() as $key => $header) {
+                $list[] = array(
+                    $key,
+                    $header[1] . '<input class="cell_identify" type="hidden" value="' . $key . '">',
+                    $header[2],
+                    $header[5],
+                    $header[6],
+                    $header[7],
+                );
+            }
 
-        foreach($logger->getHeaders() as $key => $header){
-            $list[] = array(
-                $key,
-                $header[1].'<input class="cell_identify" type="hidden" value="'.$key.'">',
-                $header[2],
-                $header[5],
-                $header[6],
-            );
+            $response = array('data' => array_reverse($list));
+        }catch (\Exception $e)
+        {
+            \Yii::$app->session->setFlash('ELV', sprintf('File %s not supported', $file));
+            $response = ['error' => true];
         }
-        $response = array('data' => array_reverse($list));
+
 
         \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
         return $response;

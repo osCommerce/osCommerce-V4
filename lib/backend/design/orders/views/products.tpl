@@ -5,6 +5,8 @@
             {$manager->render('Toolbar')}
         </div>
         <div class="widget-content after widget-content-prod">
+        <div class="sh-scloll">Table scrolled</div>
+        <div class="wtres">
             <table border="0" class="table table-process" width="100%" cellspacing="0" cellpadding="2">
                 <thead>
                     <tr class="dataTableHeadingRow">
@@ -35,6 +37,7 @@
                     {/foreach}
                 </tbody>
             </table>
+        </div>
             <script type="text/javascript">
                 $(document).ready(function () {
                     $("a.js_gv_state_popup").popUp({

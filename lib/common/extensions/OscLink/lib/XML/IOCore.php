@@ -264,7 +264,7 @@ class IOCore
         }
     }
 
-    public function download($sourceFile, $physicalFile, $prefix = '')
+    public function download($sourceFile, &$physicalFile, $prefix = '')
     {
         $prefix = empty($prefix)? '': $prefix . ': ';
         $dir = dirname($physicalFile);
@@ -272,6 +272,10 @@ class IOCore
             if ( !is_dir($dir) ) {
                 FileHelper::createDirectory($dir, 0777);
             }
+            Assert::assertNotEmpty($sourceFile, 'Source file is empty');
+            Assert::assertNotEmpty($physicalFile, 'Destination file is empty');
+            $sourceFile = str_replace(' ', '%20', $sourceFile);
+            $physicalFile = str_replace(' ', '_', $physicalFile);
             Assert::assert(
                 @copy($sourceFile, $physicalFile),
                 "Could not download file '$sourceFile': " . (error_get_last()['message'] ?? 'unknown reason')

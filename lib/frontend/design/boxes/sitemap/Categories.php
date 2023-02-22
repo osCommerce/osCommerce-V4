@@ -30,6 +30,9 @@ class Categories extends Widget {
     public function run()
     {
         $osC_CategoryTree = new \common\classes\osC_CategoryTree;
+        if (!empty($this->settings[0]['show_products'])) {
+            $osC_CategoryTree->withProducts(true);
+        }
         $description = trim($osC_CategoryTree->buildTree());
         if (substr($description,-5)=='</ul>'){
             $description = substr($description,0,-5). '<li><a href="' . Yii::$app->urlManager->createUrl(FILENAME_ADVANCED_SEARCH_RESULT) . '">' . TEXT_ALL_PRODUCTS . '</a></li>' .'</ul>';

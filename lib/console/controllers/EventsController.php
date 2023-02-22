@@ -365,6 +365,7 @@ class EventsController extends Controller {
 
     public function actionBonusPointsToCreditAmount(string $sendEmails = 'not-send-email'): void
     {
+        if (!\common\helpers\Acl::checkExtensionAllowed('BonusActions')) return;
         $send = $sendEmails === 'send-email';
         /** @var $platform_config \common\classes\platform_config */
         $platform_config = \Yii::$app->get('platform')->config();
@@ -461,5 +462,10 @@ class EventsController extends Controller {
     {
         \common\helpers\Acl::checkExtensionAllowed('ReportByEmail', 'doSendAll');
         echo 'Done!';
+    }
+
+    public function actionAutoCalcProductPriceBySupplier()
+    {
+        \common\helpers\PriceFormula::batchProductAutoCalcPriceBySupplier();
     }
 }

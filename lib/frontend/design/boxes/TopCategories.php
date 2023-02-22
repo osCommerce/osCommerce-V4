@@ -33,6 +33,9 @@ class TopCategories extends Widget
         Info::addJsData(['widgets' => [
             $this->id => [ 'lazyLoad' => (isset($this->settings[0]['lazy_load']) ? $this->settings[0]['lazy_load'] : [])]
         ]]);
+        if (ArrayHelper::getValue($this->settings,[0, 'view_as']) == 'carousel') {
+            Info::addBoxToCss('slick');
+        }
     }
 
     public function run()
@@ -103,6 +106,8 @@ class TopCategories extends Widget
                 'categories' => $cats,
                 'themeImages' => DIR_WS_THEME_IMAGES,
                 'lazy_load' => ArrayHelper::getValue($this->settings, [0,'lazy_load']),
+                'settings' => $this->settings,
+                'id' => $this->id,
             ]
         ]);
 

@@ -108,6 +108,7 @@ class Block extends Widget
             $widgetArray['settings'] = $widget['settings'];
             $widgetArray['params']['blockTreeData'] = $widget['children'] ?? null;
             $widgetArray['params']['themeName'] = $this->theme_name;
+            $widgetArray['params']['microtime'] = $widget['microtime'];
             $settings = $widget['settings'];
 
 
@@ -470,6 +471,8 @@ class Block extends Widget
         $htm .= '#box-' . $id . ' .products-listing.cols-' . $val . ' div.item:nth-child(' . $val . 'n+1){clear: both}';
         $htm .= '#box-' . $id . ' .products-listing.cols-1 div.item:nth-child(n){clear:none;width:100%}';
         $htm .= '#box-' . $id . ' .products-listing.cols-1 div.item{clear: both}';
+
+        $htm .= '#box-' . $id . ' .items-list .item{width:' . (floor(10000/$val) / 100) . '%}';
 
         return $htm;
     }

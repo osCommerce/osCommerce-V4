@@ -28,7 +28,7 @@ class Groups extends Widget {
         parent::init();
     }
 
-    public static function prepareParams($products_id, $groupCountLimit=1, $hideNotAvailable=false, $limit_products=[], $hideSingleValueProperty=false)
+    public static function prepareParams($products_id, $groupCountLimit=1, $hideNotAvailable=false, $limit_products=[], $hideSingleValueProperty=true)
     {
         $languages_id = \Yii::$app->settings->get('languages_id');
         $currencies = \Yii::$container->get('currencies');
@@ -112,12 +112,17 @@ class Groups extends Widget {
                 ->addSelect(['values_id' => new \yii\db\Expression("group_concat(distinct pr2p.values_id separator ',')")])
                 ->where('pr.products_groups = 1')
                 ->groupBy('pr.properties_id')
-                ->indexBy('properties_id')
+                //->indexBy('properties_id') // index by PHP later (multisort - breaks index keys)
                 // order was removed to reduce mysql tmp_files. it should not be more that ~20 records, so php sort must be quick
                 //->orderBy('pr.parent_id, pr.sort_order, prd.properties_name')
                 ->asArray()
                 ->all();
+        $props_all = $properties_array;
         ArrayHelper::multisort($props_all, ['parent_id', 'sort_order', 'properties_name']);
+        unset($properties_array);
+        foreach ($props_all as $property) {
+            $properties_array[$property['properties_id']] = $property;
+        }
 
         if (count($properties_array) > 0) {
             $prop_ids = array_keys($properties_array);
@@ -133,7 +138,7 @@ class Groups extends Widget {
                     ->all();
             foreach ($properties_array as $id=>$property) {
                 if ( $hideSingleValueProperty && strpos($property['values_id'],',')===false ) {
-                    unset($props_all[$id]);
+                    unset($properties_array[$id]);
                     continue;
                 }
                 // fix for product with multiple values for same property

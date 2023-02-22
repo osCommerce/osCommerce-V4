@@ -4,7 +4,7 @@
             <div class="item payment_item payment_class_{$i.id}"  {if isset($i.hide_row) && $i.hide_row} style="display: none"{/if}>
                 {if isset($i.methods)}
                     {foreach $i.methods as $m}
-                        <div class="item-radio">
+                        <div class="item-radio item-payment {$m.id}" {if isset($m.hide) && $m.hide} style="display: none"{/if}>
                             <label>
                                 <input type="radio" name="payment" value="{$m.id}"{if isset($i.hide_input) && $i.hide_input} style="display: none"{/if}{if $m.checked} checked{/if}/>
                                 <span>{$m.module}</span>
@@ -38,7 +38,7 @@
                 {/if}
             </div>
         {/foreach}
-    </div>
+
     {if !isset($combine_fields_notes) && isset($i.notes)}
     <div class="payment-notes" id="payment_notes">
         {foreach $manager->getPaymentSelection() as $i}
@@ -53,18 +53,40 @@
     </div>
     {/if}
     <script>
+{use class="frontend\design\Info"}
+        function onPaymentChangeBlockHandler() {
+            for (let ff of checkout_payment_changed.get()) {
+                if (typeof window[ff] === 'function') {
+                    try {
+                        window[ff]();
+                    } catch (e) {
+                        console.log(e);
+                    }
+                } else {
+                    console.log(ff + ' not a function');
+                }
+            }
+        }
         tl([
+            '{Info::themeFile('/js/main.js')}',
         ], function(){
-            $('#payment_method').on('click',function(e){
+            $('#payment_method').off('click').on('click',function(e){
               if ( e.target.tagName.toLowerCase()=='input' && e.target.name=='payment' ) {
                 checkout.data_changed('payment_changed');
-                if (typeof window.toggleSubFields_paypal_partner == 'function'){
-                    try {
-                        window.toggleSubFields_paypal_partner();
-                    } catch (e) { }
-                }
+                onPaymentChangeBlockHandler();
               }
             });
+            //trigger change after list update to hide extra fields on inactive modules
+            try {
+                if ($('#payment_method input[name=payment]:checked').length) {
+                    $('#payment_method input[name=payment]:checked').trigger('change');
+                } else {
+                    $('#payment_method input[name=payment]:first').trigger('change');
+                }
+            } catch ( e ) {
+//console.log( e );
+            }
         })
     </script>
     
+    </div>

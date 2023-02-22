@@ -1026,11 +1026,7 @@ class CustomersController extends Sceleton {
         if (\common\helpers\Acl::rule(['ACL_CUSTORER', 'T_SEND_COUPON'])) {
             echo '<a href="' . \Yii::$app->urlManager->createUrl(['gv_mail/index', 'type' => 'C', 'customer' => $cInfo->customers_email_address, 'only' => $cInfo->customers_id]) . '" class="btn btn-no-margin btn-coup-cus popup">' . T_SEND_COUPON . '</a>';
         }
-        if (\common\helpers\Acl::rule(['ACL_CUSTORER', 'TEXT_MERGE_CUSTOMER'])) {
-            if ($ext = \common\helpers\Acl::checkExtensionAllowed('MergeCustomers', 'allowed')) {
-                $ext::actionCustomeractions($cInfo->customers_id);
-            }
-        }
+
         foreach (\common\helpers\Hooks::getList('customers/customeractions') as $filename) {
             include($filename);
         }
@@ -1312,7 +1308,7 @@ class CustomersController extends Sceleton {
                 }
 
             }
-            
+
             if (\common\helpers\Acl::checkExtensionAllowed('ReportChangesHistory') && isset($logger)) {
                 $afterObject = new \common\api\Classes\Customer();
                 $afterObject->load($cInfo->customers_id);
@@ -1506,7 +1502,24 @@ class CustomersController extends Sceleton {
                 $new_password = $_POST['change_pass'];
             }
             $crypted_password = \common\helpers\Password::encrypt_password($new_password, 'frontend');
+
+            if (\common\helpers\Acl::checkExtensionAllowed('ReportChangesHistory')) {
+                $logger = new \common\extensions\ReportChangesHistory\classes\Logger();
+                $beforeObject = new \common\api\Classes\Customer();
+                $beforeObject->load($customers_id);
+                $logger->setBeforeObject($beforeObject);
+                unset($beforeObject);
+            }
+
             tep_db_query("update " . TABLE_CUSTOMERS . " set customers_password = '" . tep_db_input($crypted_password) . "' where customers_id = '" . (int) $check_customer['customers_id'] . "'");
+
+            if (\common\helpers\Acl::checkExtensionAllowed('ReportChangesHistory') && isset($logger)) {
+                $afterObject = new \common\api\Classes\Customer();
+                $afterObject->load($customers_id);
+                $logger->setAfterObject($afterObject);
+                unset($afterObject);
+                $logger->run();
+            }
 
             $platform_config = Yii::$app->get('platform')->config($check_customer['platform_id']);
 
@@ -2004,7 +2017,10 @@ class CustomersController extends Sceleton {
                 $transferPoints = $customer->customers_bonus_points;
             }
             $transfer = TransferData::create($customer, $bonusPointsCosts, $transferPoints, $notifyBonus, $notifyAmount);
-            $amount = $customersService->bonusPointsToAmount($transfer);
+            $amount = null;
+            if (\common\helpers\Acl::checkExtensionAllowed('BonusActions')) {
+                //$amount = $customersService->bonusPointsToAmount($transfer);
+            }
             $platform_config = \Yii::$app->get('platform')->config($customer->platform_id);
             $STORE_OWNER_EMAIL_ADDRESS = $platform_config->const_value('STORE_OWNER_EMAIL_ADDRESS');
             $STORE_OWNER = $platform_config->const_value('STORE_OWNER');

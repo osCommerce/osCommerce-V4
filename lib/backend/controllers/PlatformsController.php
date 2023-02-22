@@ -122,20 +122,22 @@ class PlatformsController extends Sceleton {
             $platformsQuery->andWhere(['in', 'platform_id', $filter_by_platform]);
         }
 
+        $platformsQuery->orderBy(new \yii\db\Expression('IF(is_default,0,1)'));
+
         if( isset( $_GET['order'][0]['column'] ) && $_GET['order'][0]['dir'] ) {
             switch( $_GET['order'][0]['column'] ) {
                 case 0:
-                    $platformsQuery->orderBy("platform_name " . tep_db_input(tep_db_prepare_input( $_GET['order'][0]['dir'] )));
+                    $platformsQuery->addOrderBy("platform_name " . tep_db_input(tep_db_prepare_input( $_GET['order'][0]['dir'] )));
                     break;
                 case 1:
-                    $platformsQuery->orderBy("sort_order " . tep_db_input(tep_db_prepare_input( $_GET['order'][0]['dir'] )).", platform_id ");
+                    $platformsQuery->addOrderBy("sort_order " . tep_db_input(tep_db_prepare_input( $_GET['order'][0]['dir'] )).", platform_id ");
                     break;
                 default:
-                    $platformsQuery->orderBy("sort_order, platform_name");
+                    $platformsQuery->addOrderBy("sort_order, platform_name");
                     break;
             }
         } else {
-            $platformsQuery->orderBy("sort_order, platform_name");
+            $platformsQuery->addOrderBy("sort_order, platform_name");
         }
 
         $query_show = $platformsQuery->count();
@@ -151,7 +153,7 @@ class PlatformsController extends Sceleton {
                 }
                 Yii::$app->get('platform')->config($platform->platform_id);
 
-                $status = '<input type="checkbox" value="'. $platform->platform_id . '" name="status" class="check_on_off" ' . ((int) $platform->status > 0 ? 'checked="checked"' : '') . '>';
+                $status = '<input type="checkbox" value="'. $platform->platform_id . '" name="status" class="check_on_off" ' . ($platform->is_default?'disabled="disabled" ':'') . ((int) $platform->status > 0 ? 'checked="checked"' : '') . '>';
 
                 $responseList[] = array(
                     '<div class="handle_cat_list'.$statement.'"><span class="handle"><i class="icon-hand-paper-o"></i></span><div class="cat_name cat_name_attr cat_no_folder">' .
@@ -310,7 +312,7 @@ class PlatformsController extends Sceleton {
         }
 
         if ($pInfo->platform_url ?? null) {
-            $this->topButtons[] = '<a href="//' . $pInfo->platform_url . '" class="btn btn-elements" target="_blank">' . IMAGE_PREVIEW . '</a>';
+            $this->topButtons[] = '<a href="//' . $pInfo->platform_url . '" class="btn btn-primary" target="_blank">' . IMAGE_PREVIEW . '</a>';
         }
         $this->topButtons[] = '<button class="btn btn-confirm" form="save_item_form">' . IMAGE_SAVE . '</button>';
 
@@ -462,6 +464,7 @@ class PlatformsController extends Sceleton {
         $platform_url_secure = rtrim($platform_url_secure,'/');
         $platform_prefix = tep_db_prepare_input(Yii::$app->request->post('platform_prefix'));
         $use_social_login = (int) Yii::$app->request->post('use_social_login',0);
+        $checkout_logged_customer = (int) Yii::$app->request->post('checkout_logged_customer',0);
         $platform_please_login = (int) Yii::$app->request->post('platform_please_login',0);
 
         $platform_email_address = tep_db_prepare_input(Yii::$app->request->post('platform_email_address'));
@@ -633,6 +636,7 @@ class PlatformsController extends Sceleton {
                 'platform_prefix' => $platform_prefix,
                 'ssl_enabled' => $ssl_enabled,
                 'use_social_login' => $use_social_login,
+                'checkout_logged_customer' => $checkout_logged_customer,
                 'platform_please_login' => $platform_please_login,
                 'platform_email_address' => $platform_email_address,
                 'platform_email_from' => $platform_email_from,
@@ -670,6 +674,7 @@ class PlatformsController extends Sceleton {
 
             if ( $is_default!==false ) {
                 $sql_data_array['is_default'] = $is_default;
+                $sql_data_array['sort_order'] = 1;
             }
             $platform_updated = false;
             if ($ext = \common\helpers\Acl::checkExtensionAllowed('AdditionalPlatforms', 'allowed')) {
@@ -963,7 +968,40 @@ class PlatformsController extends Sceleton {
             tep_db_query("delete from " . $tbl . " where platform_id = '" . (int)$item_id . "'");
             }
           }
-    
+
+          //find any unassigned categories and products
+          $sales_channel_ids = \common\models\Platforms::getPlatformsByType('physical')
+              ->select(['platform_id'])
+              ->column();
+          if ( count($sales_channel_ids)==1 ) {
+              //$default_sale_channel_id = \common\models\Platforms::find()->where(['is_default' => 1])->select('platform_id')->scalar();
+              $default_sale_channel_id = $sales_channel_ids[0];
+              $orphan_categories = \common\models\Categories::find()->alias('c')
+                  ->join('left join', \common\models\PlatformsCategories::tableName() . ' pc', "pc.categories_id = c.categories_id AND pc.platform_id IN('" . implode("','", $sales_channel_ids) . "')")
+                  ->where(['pc.categories_id' => null])
+                  ->select('c.categories_id')->distinct()->column();
+              foreach ($orphan_categories as $orphan_category_id) {
+                  Yii::$app->getDb()->createCommand()->insert(
+                      \common\models\PlatformsCategories::tableName(),
+                      [
+                          'categories_id' => $orphan_category_id,
+                          'platform_id' => $default_sale_channel_id,
+                      ])->execute();
+              }
+              $orphan_products = \common\models\Products::find()->alias('p')
+                  ->join('left join', \common\models\PlatformsProducts::tableName() . ' pp', "pp.products_id = p.products_id AND pp.platform_id IN('" . implode("','", $sales_channel_ids) . "')")
+                  ->where(['pp.products_id' => null])
+                  ->select('p.products_id')->distinct()->column();
+              foreach ($orphan_products as $orphan_product_id) {
+                  Yii::$app->getDb()->createCommand()->insert(
+                      \common\models\PlatformsProducts::tableName(),
+                      [
+                          'products_id' => $orphan_product_id,
+                          'platform_id' => $default_sale_channel_id,
+                      ])->execute();
+              }
+          }
+
             PlatformsSettings::updateAll(['use_owner_prices' => \common\classes\platform::defaultId()], ['use_owner_prices' => $item_id]);
             PlatformsSettings::updateAll(['use_owner_descriptions' => \common\classes\platform::defaultId()], ['use_owner_descriptions' => $item_id]);
 
@@ -1223,6 +1261,7 @@ class PlatformsController extends Sceleton {
     public function actionAssignBanners()
     {
         $post = Yii::$app->request->post();
+        if (!is_array($post['banners'] ?? null)) return 'done';
 
         foreach ($post['banners'] as $banner) {
             if ($banner['assigned'] == 1) {
@@ -1576,26 +1615,34 @@ class PlatformsController extends Sceleton {
     if ( $moved_id && in_array($moved_id, $ref_array) ) {
       // {{ normalize
       $order_counter = 0;
-      $platforms = Platforms::getPlatformsByType($type)->orderBy("sort_order, platform_name")->all();
+      $platforms = Platforms::getPlatformsByType($type)
+          ->orderBy(new \yii\db\Expression('IF(is_default,0,1)'))
+          ->addOrderBy("sort_order, platform_name")->all();
       if ($platforms){
           foreach($platforms as $platform){
               $order_counter++;
               $platform->sort_order = $order_counter;
               $platform->save();
+              if ($platform->is_default && in_array($platform->platform_id, $ref_array)){
+                  if($default_index = array_search($platform->platform_id, $ref_array)){
+                      unset($ref_array[$default_index]);
+                      array_unshift($ref_array, (int)$platform->platform_id);
+                  }
+              }
           }
       }
       // }} normalize
       $get_current_order_r = tep_db_query(
-        "SELECT platform_id, sort_order ".
+        "SELECT platform_id, is_default, sort_order ".
         "FROM ".TABLE_PLATFORMS." ".
         "WHERE platform_id IN('".implode("','",$ref_array)."') ".
-        "ORDER BY sort_order"
+        "ORDER BY IF(is_default,0,1), sort_order"
       );
       $ref_ids = array();
       $ref_so = array();
       while($_current_order = tep_db_fetch_array($get_current_order_r)){
-        $ref_ids[] = (int)$_current_order['platform_id'];
-        $ref_so[] = (int)$_current_order['sort_order'];
+          $ref_ids[] = (int)$_current_order['platform_id'];
+          $ref_so[] = (int)$_current_order['sort_order'];
       }
 
       foreach( $ref_array as $_idx=>$id ) {

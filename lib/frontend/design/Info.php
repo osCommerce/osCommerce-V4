@@ -306,7 +306,7 @@ class Info
           if (!(isset($settings[0]['show_description']) && $settings[0]['show_description']) && (Info::themeSetting('old_listing') || (isset($settings['itemElements']['description']) && $settings['itemElements']['description']) )) {
             if ($products_arr['products_description']) {
                 $products_arr['products_description'] = \common\classes\TlUrl::replaceUrl($products_arr['products_description']);
-                $products_arr['products_description'] = self::highlightKeywords(strip_tags($products_arr['products_description']));
+                $products_arr['products_description_st'] = self::highlightKeywords(strip_tags($products_arr['products_description']));
             }
             //if ($products_arr['products_description_short'])$products_arr['products_description_short'] = strip_tags($products_arr['products_description_short']);
 
@@ -670,9 +670,8 @@ class Info
             self::addBlockToPageName(str_replace('.s-', '', $pageStyle));
         }
 
-        $cookies = Yii::$app->request->cookies;
         $development_mode = \frontend\design\Info::themeSetting('development_mode', 'hide');
-        if ($cookies->getValue('css_status') == 1 && $development_mode) {
+        if ($development_mode) {
 
             $devPath = DIR_FS_CATALOG . 'themes/' . $theme_name . '/css/';
             if (!is_file($devPath . 'develop.css')) {
@@ -1615,8 +1614,7 @@ class Info
     {
         global $allBoxesOnPage;
 
-        $cookies = Yii::$app->request->cookies;
-        if (!$cookies->getValue('css_status')) {
+        if (!self::themeSetting('development_mode', 'hide')) {
             return '';
         }
 
@@ -2016,8 +2014,10 @@ class Info
 
             Block::addToWidgetsList($name);
 
+            $id = rand(10000000, 11000000);
+
             $widget_name = 'frontend\design\boxes\\' . $name;
-            $html .= '<div class="' . Block::nameToClass($name) . '">' . $widget_name::widget(['settings' => $settings]) . '</div>';
+            $html .= '<div class="' . Block::nameToClass($name) . '" id="box-' . $id . '">' . $widget_name::widget(['settings' => $settings, 'id' => $id]) . '</div>';
 
             $html .= $split[1];
 

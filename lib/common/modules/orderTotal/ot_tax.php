@@ -154,22 +154,6 @@ class ot_tax extends ModuleTotal {
                 'description' => 'Sort order of display.',
                 'sort_order' => '2',
             ),
-            'MODULE_ORDER_TOTAL_TAX_VAT_ID' =>
-            array(
-                'title' => 'Company VAT ID',
-                'value' => 'true',
-                'description' => 'Do you want to exclude tax for users with VAT ID?',
-                'sort_order' => '3',
-                'set_function' => 'tep_cfg_select_option(array(\'true\', \'false\'), ',
-            ),
-            'MODULE_ORDER_TOTAL_TAX_VAT_ID_STRICT' =>
-            array(
-                'title' => 'Strict VAT ID validation',
-                'value' => 'true',
-                'description' => 'Accept only VAT-ID validate via europa.eu web service',
-                'sort_order' => '4',
-                'set_function' => 'tep_cfg_select_option(array(\'true\', \'false\'), ',
-            ),
         );
     }
 

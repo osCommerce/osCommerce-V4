@@ -30,6 +30,9 @@ class GuestBtn extends Widget
 
     public function run()
     {
+        if (\Yii::$app->get('platform')->getConfig(\common\classes\platform::currentId())->checkNeedLogged()) {
+            return '';
+        }
         return IncludeTpl::widget(['file' => 'boxes/checkout/create-btn.tpl', 'params' => [
             'link' => Yii::$app->urlManager->createUrl([Yii::$app->controller->id, 'guest' => 1]),
             'text' => CONTINUE_AS_GUEST

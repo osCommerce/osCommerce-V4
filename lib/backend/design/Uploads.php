@@ -32,7 +32,7 @@ class Uploads
         $path2 .= $item . DIRECTORY_SEPARATOR;
         $path3 .= $item . DIRECTORY_SEPARATOR;
         if (!file_exists($path2)) {
-          mkdir($path2, 0777);
+          mkdir($path2, 0777, true);
           @chmod($path2,0777);
         }
       }

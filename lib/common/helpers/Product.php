@@ -1142,6 +1142,7 @@ class Product {
         $productModel->popularity_bestseller = 0;
         $productModel->sub_product_children_count = 0;
         $productModel->parent_products_id = 0;
+        $productModel->products_file = '';
 
         if (!$productModel->save(false)){
             return false;
@@ -1158,11 +1159,13 @@ class Product {
         $copyModels = [
             '\common\models\ProductsDescription' => 'products_id',
             '\common\models\PlatformsProducts' => 'products_id',
-            '\common\models\GroupsProducts' => 'products_id',
             '\common\models\ProductsPrices' => 'products_id',
         ];
         if (\common\helpers\Acl::checkExtensionAllowed('ProductBundles')) {
             $copyModels['\common\models\SetsProducts'] = 'sets_id';
+        }
+        if (\common\helpers\Acl::checkExtensionAllowed('UserGroupsRestrictions')) {
+            $copyModels['\common\extensions\UserGroupsRestrictions\models\GroupsProducts'] = 'products_id';
         }
         foreach ($copyModels as $copyModelClass=>$copyProductColumn){
             if ( !class_exists($copyModelClass) ) {
@@ -1179,7 +1182,7 @@ class Product {
                 if ( $copyModel instanceof \yii\db\ActiveRecord )
                 {
                     if ( $copyModel instanceof \common\models\ProductsDescription ) {
-                        $__data['products_seo_page_name'] = Seo::makeProductSlug($__data, $productModel);
+                        $__data['products_seo_page_name'] = '';
                     }
                     $copyModel->setAttributes($__data, false);
                     $copyModel->loadDefaultValues(true);
@@ -2101,7 +2104,7 @@ class Product {
         $isStockControl = false;
         if ($platformId === false) {
             foreach (\common\models\Platforms::find()->where(['status' => 1])->asArray(true)->all() as $platformRecord) {
-                $platformArray[] = $platformRecord['platform_id'];
+                $platformArray[] = (int)$platformRecord['platform_id'];
             }
             unset($platformRecord);
         } else {
@@ -2119,7 +2122,7 @@ class Product {
                     $isStockControl = $extScl::updateGetAvailable($uProductId, $platformId);
                 }
             }
-            $platformArray[] = $platformId;
+            $platformArray[] = (int)$platformId;
         }
         $warehouseProductSkipArray = [];
         $productAllocatedSkipArray = [];
@@ -2174,7 +2177,7 @@ class Product {
                 if (isset($productAllocatedSkipArray[$productAllocatedRecord['warehouse_id']][$productAllocatedRecord['suppliers_id']][$productAllocatedRecord['location_id']][$productAllocatedRecord['layers_id']][$productAllocatedRecord['batch_id']][$productAllocatedRecord['orders_products_id']])) {
                     continue;
                 }
-                if ($platformId != $productAllocatedRecord['platform_id']) {
+                if ($isStockControl!==false && !in_array((int)$productAllocatedRecord['platform_id'], $platformArray) /*$platformId != $productAllocatedRecord['platform_id']*/) {
                     continue;
                 }
                 if ($warehouseId !== false AND $warehouseId != $productAllocatedRecord['warehouse_id']) {
@@ -3636,8 +3639,8 @@ class Product {
         } else {
             $priceInstance = \common\models\Product\Price::getInstance($product['products_id']);
 
-            $product['products_price'] = $priceInstance->getInventoryPrice(['qty' => 1]);
-            $product['special_price'] = $priceInstance->getInventorySpecialPrice(['qty' => 1]);
+            $product['products_price'] = $priceInstance->getInventoryPrice(['qty' => $qty]);
+            $product['special_price'] = $priceInstance->getInventorySpecialPrice(['qty' => $qty]);
             // for 1 and q-ty could be different prices. so 1 first
             if (isset($product['special_price']) && $product['special_price'] !== false) {
                 $special_one_clear = $currencies->display_price_clear($product['special_price'], $product['tax_rate'], 1);
@@ -3681,12 +3684,12 @@ class Product {
                     $current = '';
                 }
             }
-
+/*
             if ($qty != 1) {
               $product['products_price'] = $priceInstance->getInventoryPrice(['qty' => $qty]);
               $product['special_price'] = $priceInstance->getInventorySpecialPrice(['qty' => $qty]);
             }
-
+*/
 
             if (isset($product['special_price']) && $product['special_price'] !== false) {
                 $special_value = $product['special_price'];

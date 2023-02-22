@@ -90,6 +90,7 @@ class Password_forgottenController extends Controller {
 
                     if (defined('ADMIN_PASSWORD_FORGOTTEN_MODE') && ADMIN_PASSWORD_FORGOTTEN_MODE == 'invite') {
                         $adminInfo = \common\models\Admin::findOne($check_admin['check_id']);
+                        $email_params['NEW_PASSWORD_SENTENCE'] = '';
                         if ($adminInfo) {
                             $token = $adminInfo->updateToken();
                             \common\helpers\Translation::init('account/password-forgotten');

@@ -74,6 +74,8 @@ class BasicReport {
                 $_summ .= ", sum({$$_module} * o.currency_value) as {$_module}";
                 if ($_module == 'ot_tax') {
                     $_join .= " left join (SELECT o.orders_id, sum(value_inc_tax) AS value_inc_tax FROM " . TABLE_ORDERS_TOTAL . " ot inner join " . TABLE_ORDERS . " o on o.orders_id = ot.orders_id and {$where} where  ot.class='ot_tax' group by o.orders_id) {$_module} ON ({$_module}.orders_id = o.orders_id) ";// if multiple
+                } elseif ($_module == 'ot_coupon') {
+                    $_join .= " left join (SELECT o.orders_id, sum(value_inc_tax) AS value_inc_tax FROM " . TABLE_ORDERS_TOTAL . " ot inner join " . TABLE_ORDERS . " o on o.orders_id = ot.orders_id and {$where} where ot.class = 'ot_coupon' " . (defined('MODULE_ORDER_TOTAL_COUPON_TOTAL') ? " and ot.title != '" . tep_db_input(MODULE_ORDER_TOTAL_COUPON_TOTAL). ":'" : '') . " group by o.orders_id) {$_module} ON ({$_module}.orders_id = o.orders_id) "; // multi-coupon with total discount line dirty hack
                 } else {
                     $_join .= " left join " . TABLE_ORDERS_TOTAL . " {$_module} on o.orders_id = {$_module}.orders_id and {$_module}.class='" . $_module . "' ";
                 }

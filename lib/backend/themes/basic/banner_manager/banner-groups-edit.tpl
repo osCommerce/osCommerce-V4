@@ -3,22 +3,14 @@
 {BannersAsset::register($this)|void}
 
 <form action="" class="banner-group-form">
-<div class="row">
-    <div class="col-md-1"><label for="">{$smarty.const.TABLE_TEXT_NAME}</label></div>
-    <div class="col-md-2">
-        <input type="hidden" name="banners_group" value="{$groupName}"/>
-        <input type="text" name="name_tmp" value="{$groupName}" class="form-control field-new-group" style="display: none"/>
-        <select name="name" id="" class="form-control field-select-group">
-            {foreach $groups as $group}
-                <option value="{$group}" {if $groupName == $group} selected{/if}>{$group}</option>
-            {/foreach}
-        </select>
+    <input type="hidden" name="group_id" value="{$group_id}"/>
+
+    <div class="row align-items-center" style="max-width: 500px">
+        <label class="col-xs-3">{$smarty.const.GROUP_NAME}:</label>
+        <div class="col-xs-6">
+            <input type="text" name="banners_group" value="{$groupName}" class="form-control"/>
+        </div>
     </div>
-    <div class="col-md-1">
-        <span class="btn btn-new-group">{$smarty.const.NEW_GROUP}</span>
-        <span class="btn btn-select-group" style="display: none">{$smarty.const.TEXT_CHOOSE_GROUP}</span>
-    </div>
-</div>
 
 <div class="banner-groups-table">
 
@@ -66,7 +58,7 @@
 
 <div class="btn-bar">
     <div class="btn-left">
-        <a href="{Yii::$app->urlManager->createUrl('banner_manager/banner-groups')}" class="btn">{$smarty.const.IMAGE_BACK}</a>
+        <a href="{Yii::$app->urlManager->createUrl(['banner_manager', 'row_id' => $row_id, 'platform_id' => $platform_id])}" class="btn">{$smarty.const.IMAGE_BACK}</a>
     </div>
     <div class="btn-right">
         <span class="btn btn-confirm">{$smarty.const.IMAGE_SAVE}</span>
@@ -76,13 +68,14 @@
 
 
 
-<script type="text/javascript">
+<script>
 
     $(function () {
-        const $btnNewGroup = $('.btn-new-group');
-        const $btnSelectGroup = $('.btn-select-group');
-        const $fieldNewGroup = $('.field-new-group');
-        const $fieldSelectGroup = $('.field-select-group');
+        const form = $('.banner-group-form');
+        const $btnNewGroup = $('.btn-new-group', form);
+        const $btnSelectGroup = $('.btn-select-group', form);
+        const $fieldNewGroup = $('.field-new-group', form);
+        const $fieldSelectGroup = $('.field-select-group', form);
 
         $btnNewGroup.on('click', function(){
             $btnNewGroup.hide()
@@ -101,24 +94,23 @@
             $fieldNewGroup.attr('name', 'name_tmp')
         })
         $fieldSelectGroup.on('change', function(){
-            if ($('input[name="banners_group"]').val()) {
+            if ($('input[name="banners_group"]', form).val()) {
                 window.location = '{$app->urlManager->createUrl('banner_manager/banner-groups-edit')}?banners_group='
                     + $(this).val()
             }
         })
 
-        let form = $('.banner-group-form');
 
-        $('.btn-confirm, .save-group').on('click', function(){
+        $('.btn-confirm, .save-group', form).on('click', function(){
             $.post('{$app->urlManager->createUrl('banner_manager/banner-groups-save')}', form.serializeArray(), function(d){
-                alertMessage(`<div class="alert-message">${ d}</div>`);
-                if (!$('input[name="banners_group"]').val() || $('input[name="banners_group"]').val() != $('*[name="name"]').val()){
-                    window.location = '{$app->urlManager->createUrl('banner_manager/banner-groups-edit')}?banners_group=' + $('*[name="name"]').val()
+                if (d.error) {
+                    alertMessage(d.text, 'alert-message');
+                    return;
                 }
-                setTimeout(function () {
-                    $('.popup-box-wrap').remove()
-                }, 1000)
-            })
+                const $message = alertMessage(d.text, 'alert-message');
+
+                setTimeout(() => $message.remove(), 1000)
+            }, 'json')
         });
 
         $('.table-bordered tbody', form).on('click', '.btn-delete', function () {

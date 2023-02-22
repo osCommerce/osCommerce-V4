@@ -92,6 +92,32 @@
     grid-row-start: 3;
 }
 
+.stock-block.stock-block-unlimited .available-stock,
+.stock-block.stock-block-unlimited .real-stock-total,
+.stock-block.stock-block-unlimited .ordered-stock-holder,
+.stock-block.stock-block-unlimited .overallocated-quantity,
+.stock-block.stock-block-unlimited .overallocated-quantity-holder,
+.stock-block.stock-block-unlimited .available,
+.stock-block.stock-block-unlimited .deficit-quantity {
+    display: none;
+}
+.stock-block.stock-block-unlimited .edp-qty-update {
+    display: none !important;
+}
+.stock-block.stock-block-unlimited .temporary {
+    grid-column-start: 1;
+}
+.stock-block.stock-block-unlimited .allocated-temporary {
+    grid-column-start: 2;
+}
+.stock-block.stock-block-unlimited .total-allocated {
+    grid-column-start: 3;
+    grid-row-start: 1;
+}
+.stock-block.stock-block-unlimited .buttons {
+    grid-row-end: 1;
+}
+
 .available-stock,
 .temporary,
 .total-allocated,
@@ -555,4 +581,24 @@ div.js-edit-supplier-product-popup-container .col-md-12.bind-text label {
 .pack-units-product .edp-line .btn{
     padding: 3px 5px;
     width: 100%;
+}
+@media(max-width:768px){
+    .stock-block{
+        grid-template-columns: repeat(3, 1fr);
+    }
+    .stock-block .buttons{
+        grid-column-start: 1;
+    grid-row-start: 4;
+    grid-row-end: 5;
+    grid-column-end: 4;
+
+    }
+    .stock-data{
+        flex-wrap:wrap
+    }
+    .stock-data > div{width: 100%}
+    #product-identifiers-box .row{
+        flex-direction:row
+    }
+    .available-stock, .temporary, .total-allocated, .real-stock-total, .available, .ordered-stock, .ordered-stock-holder, .allocated-temporary, .deficit-quantity, .overallocated-quantity, .overallocated-quantity-holder, .links, .buttons{font-size: 11px}
 }

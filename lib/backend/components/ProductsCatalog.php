@@ -13,6 +13,8 @@
 
 namespace backend\components;
 
+use common\classes\Images;
+use common\helpers\Html;
 use Yii;
 use yii\base\Widget;
 use yii\helpers\ArrayHelper;
@@ -304,7 +306,7 @@ class ProductsCatalog extends Widget {
           $languages_id = \Yii::$app->settings->get('languages_id');
 
           $get_categories_r = tep_db_query(
-            "SELECT CONCAT('c',c.categories_id) as `key`, cd.categories_name as title ".
+            "SELECT CONCAT('c',c.categories_id) as `key`, cd.categories_name as title, c.categories_image ".
             "FROM " . TABLE_CATEGORIES_DESCRIPTION . " cd, " . TABLE_CATEGORIES . " c ".
             "WHERE cd.categories_id=c.categories_id and cd.language_id='" . $languages_id . "' AND cd.affiliate_id=0 and c.parent_id='" . (int)$category_id . "' ".
             "order by c.sort_order, cd.categories_name"
@@ -313,11 +315,14 @@ class ProductsCatalog extends Widget {
               //$_categories['parent'] = (int)$category_id;
               $_categories['folder'] = true;
               $_categories['lazy'] = true;
+              if (is_file(Images::getFSCatalogImagesPath() . $_categories['categories_image'])) {
+                  $_categories['image'] = Html::img(Images::getWSCatalogImagesPath() . $_categories['categories_image']);
+              }
               $_categories['selected'] = $category_selected_state && !!ArrayHelper::getValue($_categories, 'selected');
               $tree_init_data[] = $_categories;
           }
           $get_products_r = tep_db_query(
-            "SELECT concat('p',p.products_id,'_',p2c.categories_id) AS `key`, pd.products_name as title, p.products_id, p.products_model ".
+            "SELECT concat('p',p.products_id,'_',p2c.categories_id) AS `key`, pd.products_name as title, pd.products_description, pd.products_description_short, p.products_id, p.products_model ".
             "from ".TABLE_PRODUCTS_DESCRIPTION." pd , ".TABLE_PRODUCTS_TO_CATEGORIES." p2c, ".TABLE_PRODUCTS." p ".
             "WHERE pd.products_id=p.products_id and pd.language_id='".$languages_id."' and pd.platform_id='".\common\classes\platform::defaultId()."' and p2c.products_id=p.products_id and p2c.categories_id='".(int)$category_id."' ".
             "order by p.sort_order, title"
@@ -330,6 +335,20 @@ class ProductsCatalog extends Widget {
                 $_product['selected'] = false;//$category_selected_state && !!$_product['selected'];
                 $_product['price_ex'] = $currencies->display_price($price, 0, 1, false);
                 $_product['image'] = \common\classes\Images::getImage($_product['products_id'], 'Small');
+
+                if ($_product['products_description_short']) {
+                    $description = $_product['products_description_short'];
+                } else {
+                    $description = $_product['products_description'];
+                }
+                if (strlen($description) > 500) {
+                    $description = strip_tags($description);
+                    if (strlen($description) > 500) {
+                        $description = substr($description, 0, 500) . '...';
+                    }
+                }
+                $_product['description'] = $description;
+
                 $thumbnail = \common\classes\Images::getImage($_product['products_id']);
                 if ($thumbnail) {
                     $thumbnail = '<span style="display: none;" class="product-thumbnail">' . $thumbnail . '</span> ';

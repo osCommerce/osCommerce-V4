@@ -321,7 +321,7 @@ class FeaturedController extends Sceleton {
           . (!$featured['status'] ? Html::hiddenInput('featured_st' . $featured['featured_id'], 'dis_module', ['class' => "tr-status-class"]) : '')
       ;
 
-      $row[] = (!isset($featured['featured_type_name'])?'':$featured['featured_type_name']);
+      $row[] = (!isset($featured['featured_type_name'])? ($featured['featured_type_id'] == 0? BOX_CATALOG_FEATURED : ''):$featured['featured_type_name']);
 
       if ($featured['featured_date_added'] > '1980-01-01') {
         $row[] = \common\helpers\Date::date_short($featured['featured_date_added']);

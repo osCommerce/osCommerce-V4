@@ -1187,7 +1187,7 @@ class Product extends AbstractClass
                 ->where(['pi.products_id' => $this->productId, 'pid.language_id' => 0, 'pid.orig_file_name' => $origFilename ])
                 ->asArray()
                 ->one();
-        return $check['products_images_id'];
+        return $check['products_images_id']??null;
     }
 
     private function attachNewImage($newProductsImages)

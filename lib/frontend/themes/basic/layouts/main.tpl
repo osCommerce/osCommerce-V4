@@ -90,7 +90,7 @@
 {GoogleTagmanger::trigger()}
 {GoogleTagmanger::headTag()}
 </head>
-<body class="layout-main {$this->context->id}-{$this->context->action->id} p-{$this->context->id}-{$this->context->action->id} context-{$this->context->id} action-{$this->context->action->id}{if $app->controller->view->page_name} template-{$app->controller->view->page_name}{/if}{Info::getBoxesNames()}">
+<body class="layout-main {$this->context->id}-{$this->context->action->id} p-{$this->context->id}-{$this->context->action->id} context-{$this->context->id} action-{$this->context->action->id}{if $app->controller->view->page_name} template-{$app->controller->view->page_name}{/if}{Info::getBoxesNames()}{if Info::isAdmin()} is-admin{/if}">
 {if !$app->controller->view->no_header_footer}
 {GoogleTagmanger::BodyTag()}
 {$this->beginBody()}
@@ -126,6 +126,9 @@
     $('head').append('<link rel="stylesheet" href="{Info::themeFile("/css/jquery-ui.min.css")}"/>')
   });
 </script>
+{/if}
+{if \common\helpers\Acl::isFrontendTranslation() || Info::isAdmin() && Yii::$app->request->get('texts')}
+    <link rel="stylesheet" href="{Info::themeFile("/css/edit-data.css")}"/>
 {/if}
 {strip}
   <script type="text/javascript">
@@ -221,6 +224,9 @@ tl(function(){
 {/if}
 <link rel="stylesheet" href="{Info::themeFile('/css/style.css')}"/>
 {if $awin = \common\helpers\Acl::checkExtensionAllowed('Awin', 'allowed')}{$awin::getScript()}{/if}
+{foreach \common\helpers\Hooks::getList('frontend/layouts-main', 'before-body-close') as $filename}
+    {include file=$filename}
+{/foreach}
 </body>
 </html>
 {$this->endPage()}

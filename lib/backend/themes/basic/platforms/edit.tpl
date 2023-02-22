@@ -70,28 +70,36 @@
                             </div>
                         </div>
                         {/if}
-                        
-                        <div class="w-line-row w-line-row-1">
-                            <div class="wl-td">
-                                <label>{$smarty.const.ENTRY_PLATFORM_PLEASE_LOGIN}</label>
+
+                        <div class="row align-items-center m-b-2">
+                            <label class="col-xs-5 align-right">{$smarty.const.ENTRY_PLATFORM_PLEASE_LOGIN}</label>
+                            <div class="col-xs-7">
                                 {Html::checkbox('platform_please_login', !!($pInfo->platform_please_login|default:null), ['value'=>'1', 'class' => 'js_check_need_login'])}
                             </div>
                         </div>
-                        
-                        <div class="w-line-row w-line-row-1">
-                            <div class="wl-td">
-                                <label>{$smarty.const.USE_SOCIAL_LOGIN}</label>
+
+                        <div class="row align-items-center m-b-2">
+                            <label class="col-xs-5 align-right">{$smarty.const.CHECKOUT_ONLY_FOR_LOGGED_CUSTOMERS}</label>
+                            <div class="col-xs-7">
+                                {Html::checkbox('checkout_logged_customer', !!($pInfo->checkout_logged_customer|default:null), ['value'=>'1', 'class' => 'js_check_use_social_login'])}
+                            </div>
+                        </div>
+
+                        <div class="row align-items-center m-b-2">
+                            <label class="col-xs-5 align-right">{$smarty.const.USE_SOCIAL_LOGIN}</label>
+                            <div class="col-xs-7">
                                 {Html::checkbox('use_social_login', !!($pInfo->use_social_login|default:null), ['value'=>'1', 'class' => 'js_check_use_social_login'])}
                             </div>
                         </div>
+
                         {if $have_more_then_one_platform}
-                        <div class="w-line-row w-line-row-1 is_default">
-                            <div class="wl-td">
-                                <label>{$smarty.const.ENTRY_IS_DEFAULT_PLATFORM}</label>
-                                {Html::checkbox('is_default', !!($pInfo->is_default|default:null), array_merge(['value'=>'1', 'class' => 'js_check_default_platform'],$checkbox_default_platform_attr))}
-                                {Html::hiddenInput('present_is_default','1')}
+                            <div class="row align-items-center m-b-2">
+                                <label class="col-xs-5 align-right">{$smarty.const.ENTRY_IS_DEFAULT_PLATFORM}</label>
+                                <div class="col-xs-7">
+                                    {Html::checkbox('is_default', !!($pInfo->is_default|default:null), array_merge(['value'=>'1', 'class' => 'js_check_default_platform'],$checkbox_default_platform_attr))}
+                                    {Html::hiddenInput('present_is_default','1')}
+                                </div>
                             </div>
-                        </div>
                         {else}
                             {Html::hiddenInput('is_default','1')}
                             {Html::hiddenInput('present_is_default','1')}

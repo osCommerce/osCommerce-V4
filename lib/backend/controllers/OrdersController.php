@@ -110,13 +110,11 @@ class OrdersController extends Sceleton {
             'not_important' => 1
         );
 
-        if ($ext = \common\helpers\Acl::checkExtension('Neighbour', 'allowed')){
-            if ($ext::allowed()){
-                $this->view->ordersTable[] =  array(
-                  'title' => TABLE_HEADING_NEIGHBOUR,
-                  'not_important' => 0
-                  );
-            }
+        if (\common\helpers\Acl::checkExtensionAllowed('Neighbour')){
+            $this->view->ordersTable[] =  array(
+                'title' => defined(EXT_NEIGHBOUR_TABLE_HEADING) ? EXT_NEIGHBOUR_TABLE_HEADING : TABLE_HEADING_NEIGHBOUR,
+                'not_important' => 0
+            );
         }
 
         $GET = Yii::$app->request->get();
@@ -678,7 +676,11 @@ class OrdersController extends Sceleton {
             while ($handlers = tep_db_fetch_array($handlers_query)) {
                 $handlers_array[] = $handlers['handlers_id'];
             }
-            $orders_query_raw->andWhere(['in', 'hp.handlers_id', $handlers_array]);
+            $orders_query_raw->andWhere([
+                'OR',
+                ['in', 'hp.handlers_id', $handlers_array],
+                ['hp.handlers_id' => NULL]
+            ]);
         }
 
         if (!(\common\helpers\Acl::rule(['BOX_HEADING_CUSTOMERS', 'BOX_CUSTOMERS_ORDERS', 'RULE_ALLOW_WAREHOUSES']))) {
@@ -1253,7 +1255,7 @@ class OrdersController extends Sceleton {
 
     public function actionProcessOrder() {
         global $login_id;
-        define('THEME_NAME', \common\classes\design::pageName(BACKEND_THEME_NAME));
+        defined('THEME_NAME') or define('THEME_NAME', \common\classes\design::pageName(BACKEND_THEME_NAME));
 
         \common\helpers\Translation::init('admin/orders');
 
@@ -1408,7 +1410,10 @@ class OrdersController extends Sceleton {
             ->all();
         $addedPages = ArrayHelper::map($addedPages, 'id', 'setting_value', 'setting_name');
         $addedPages['invoice'] = $addedPages['invoice'] ?? [];
-        $addedPages['invoice'] = []; // remove Ticket button
+        // remove ticket button. define('ENABLE_ORDER_TICKET', 1) to enable
+        if (is_array($addedPages['invoice']) && !defined('ENABLE_ORDER_TICKET') && ($key = array_search('ticket', $addedPages['invoice'])) !== false) {
+            unset($addedPages['invoice'][$key]);
+        }
         $addedPages['packingslip'] = $addedPages['packingslip'] ?? [];
 
         $fraudView = false;
@@ -2421,15 +2426,77 @@ class OrdersController extends Sceleton {
                     $orders_products[$selected_products['orders_products_id']]['qty_max'] += $selected_products['products_quantity'];
                 }
             }
+
+            //draft - 2do extra payment when TN is added to another transaction
+            $paymentTrackingQ = \common\models\TrackingNumbersExport::find()
+                ->andWhere(['tracking_numbers_id' => $tracking_numbers_id])
+                ->joinWith('payments p', false, 'INNER JOIN')
+                ->select([
+                    'date_added', 'status', 'message',
+                    'id' => 'p.orders_payment_id',
+                    'paid_on' => 'orders_payment_transaction_date',
+                    'payment_class' => 'orders_payment_module',
+                    'payment' => 'orders_payment_module_name',
+                    'transaction' => 'orders_payment_transaction_id',
+                ])
+                ->andWhere('status>0')
+                ->orderBy('status desc, orders_payment_module')
+                ;
+            $transactions = $paymentTrackingQ->asArray()->all();
         }
 
         if ($get_tracking['customers_id'] > 0) {
+
+            if (empty($transactions)) {
+                $paymentQ = \common\models\OrdersPayment::find()
+                    ->select([
+                      'id' => 'orders_payment_id',
+                      'paid_on' => 'orders_payment_transaction_date',
+                      'payment_class' => 'orders_payment_module',
+                      'payment' => 'orders_payment_module_name',
+                      'transaction' => 'orders_payment_transaction_id',
+                    ])
+                    ->andWhere(['orders_payment_order_id' => $orders_id])
+                    ;
+                $transactions = $paymentQ->asArray()->all();
+                $skip = $keep = [];
+                foreach ($transactions as $i => $transaction) {
+                    if (in_array($transaction['payment_class'], $keep)) {
+                        continue;
+                    }
+                    if (!in_array($transaction['payment_class'], $skip)) {
+                        $manager = \common\services\OrderManager::loadManager();
+                        /** @var common\classes\Order $order */
+                        $order = $manager->getOrderInstanceWithId('\common\classes\Order', $orders_id);
+                        try { //payment could be switched off
+                            $builder = new \common\classes\modules\ModuleBuilder($manager);
+                            $class = $builder(['class' => "\\common\\modules\\orderPayment\\{$transaction['payment_class']}"]);
+                            if (method_exists($class, 'add_tracking')) {
+                                $keep[] = $transaction['payment_class'];
+                                continue;
+                            }
+                        } catch (\Exception $e) {
+                        }
+                    }
+                    unset($transactions[$i]);
+                }
+            }
+            if (!empty($transactions)) {
+                \common\helpers\Translation::init('payment');
+                $sync['transactions'] = $transactions;
+                $sync['added'] = !empty($transactions[0]['status']);
+            }
+            
+
+
             return $this->renderAjax('tracking-edit', [
                         'orders_id' => (int) $orders_id,
                         'customers_id' => $get_tracking['customers_id'],
                         'tracking_number' => $get_tracking['tracking_number'],
                         'tracking_numbers_id' => $get_tracking['tracking_numbers_id'],
                         'orders_products' => $orders_products,
+                        'platform_id' => $order->info['platform_id'],
+                        'sync' => $sync??null,
             ]);
         } else {
             return false;
@@ -2438,6 +2505,7 @@ class OrdersController extends Sceleton {
 
     function actionTrackingSave() {
         \common\helpers\Translation::init('admin/orders');
+        \common\helpers\Translation::init('payment');
         $orders_id = Yii::$app->request->post('orders_id');
         $tracking_numbers_id = Yii::$app->request->post('tracking_numbers_id');
         $tracking_number = Yii::$app->request->post('tracking_number');
@@ -2495,12 +2563,82 @@ class OrdersController extends Sceleton {
             if ($ext = \common\helpers\Acl::checkExtensionAllowed('Amazon', 'allowed')) {
                 $ext::setUpdateOrder($orders_id);
             }
+
+            $transactions = Yii::$app->request->post('sync_to_payment', []);
+
+            if (!empty($transactions)) {
+                $paymentQ = \common\models\OrdersPayment::find()
+                    ->select([
+                      'id' => 'orders_payment_id',
+                      'paid_on' => 'orders_payment_transaction_date',
+                      'payment_class' => 'orders_payment_module',
+                      'payment' => 'orders_payment_module_name',
+                      'transaction' => 'orders_payment_transaction_id',
+                    ])
+                    ->andWhere(['orders_payment_id' => array_values($transactions)])
+                    ;
+                $transactions = $paymentQ->asArray()->all();
+
+                $keep = [];
+                foreach ($transactions as $i => $transaction) {
+                    if (!isset($keep[$transaction['payment_class']])) {
+                        $manager = \common\services\OrderManager::loadManager();
+                        try { //payment could be switched off
+                            $builder = new \common\classes\modules\ModuleBuilder($manager);
+                            $class = $builder(['class' => "\\common\\modules\\orderPayment\\{$transaction['payment_class']}"]);
+                            if (method_exists($class, 'add_tracking')) {
+                                $keep[$transaction['payment_class']] = $class;
+                            }
+                        } catch (\Exception $e) {
+                        }
+                    }
+                    if (isset($keep[$transaction['payment_class']])) {
+                        if (empty($tracking_numbers_id) && !empty($addTracking)) {
+                            if (empty($addTracking->tracking_numbers_id)) {
+                                $addTracking->refresh();
+                            }
+                            $tracking_numbers_id = $addTracking->tracking_numbers_id;
+                        }
+                        if (!empty($tracking_numbers_id)) {
+                            $keep[$transaction['payment_class']]->add_tracking([
+                              "transaction_id" => $transaction['transaction'],
+                              "tracking_number" => $tracking_number,
+                              "orders_payment_id" => $transaction['id'],
+                              "tracking_numbers_id" => $tracking_numbers_id,
+                              "orders_id" => $orders_id
+                            ]);
+                        }
+                    }
+                }
+            }
+
         }
     }
 
     function actionTrackingDelete() {
         $orders_id = Yii::$app->request->post('orders_id');
         $tracking_numbers_id = Yii::$app->request->post('tracking_numbers_id');
+
+        //payment tracking before deleting TN
+        if ($tracking_numbers_id) {
+            $ptns = \common\models\TrackingNumbersExport::findAll(['tracking_numbers_id' => $tracking_numbers_id]);
+            foreach ($ptns as $ptn) {
+                if (!empty($ptn) && !empty($ptn->classname)) {
+                    $manager = \common\services\OrderManager::loadManager();
+
+                    try { //payment could be switched off
+                        $builder = new \common\classes\modules\ModuleBuilder($manager);
+                        $class = $builder(['class' => "\\common\\modules\\orderPayment\\{$ptn->classname}"]);
+                        if (method_exists($class, 'delete_tracking')) {
+                            $class->delete_tracking($ptn->getAttributes());
+                        }
+                        $ptn->delete();
+                    } catch (\Exception $e) {
+                    }
+                }
+            }
+        }
+
         $order = new \common\classes\Order($orders_id);
         $order->removeTrackingNumber($tracking_numbers_id);
     }

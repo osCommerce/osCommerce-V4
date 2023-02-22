@@ -352,6 +352,7 @@ span.red {
   font-size: 14px;
   text-decoration: none;
 }
+
 .navbar .toggle-sidebar:hover {
   background: rgba(255, 255, 255, 0.05);
 }
@@ -362,6 +363,7 @@ span.red {
   margin-right: 0;
 }
 .navbar .navbar-nav > li > a {
+
   -webkit-border-radius: 0;
   -moz-border-radius: 0;
   border-radius: 0;
@@ -373,7 +375,7 @@ span.red {
 }
 .navbar .nav > li {
   line-height: 28px;
-  border-right: 1px solid rgba(0, 0, 0, 0.2);
+  
 }
 .navbar .nav > li {
   border-left: 1px solid rgba(0, 0, 0, 0.21);
@@ -512,7 +514,9 @@ span.red {
 }
 .navbar .dropdown-toggle i.small {
   font-size: 10px;
+  margin-left: 10px
 }
+ .navbar .user.open .dropdown-toggle i.small{transform:rotate(180deg);display:inline-block};
 .dropdown-menu {
   -webkit-border-radius: 0px;
   -moz-border-radius: 0px;
@@ -667,7 +671,7 @@ span.red {
   bottom: 0;
   background: #6b54bd; /* Old browsers */
   height: 100%;
-  z-index: 70;
+  z-index: 1000;
   /* * * * * * * * * * * *
 	 * Scrollbar
 	 * * * * * * * * * * * */
@@ -3114,6 +3118,14 @@ ul.stats li.light strong {
     background: none;
     text-decoration: none;
 }
+.tabbable-custom .nav-tabs > li.label {
+  padding: 12px 10px 0;
+  border: none;
+  background: none;
+  color: #555;
+  font-size: 14px;
+  font-weight: 600;
+}
 .tabbable-custom .tab-content {
   background-color: #ece9f9;
   border: 1px solid #cacaca;
@@ -3870,7 +3882,7 @@ div.create_item a{color:#fff;}
 span.avatar img{border-radius:34px;height:34px;max-width:none;}
 .navbar .nav > li.user > a{padding: 7px 18px;}
 li.user .dropdown-menu{width:183px;}
-li.user .dropdown-menu:before{display: block;position: absolute;top:-6px;width:10px;height: 10px;content:'';-ms-transform: rotate(45deg);-webkit-transform: rotate(45deg);transform: rotate(45deg);background: #fff;border: solid rgba(0, 0, 0, 0.15);border-width: 1px 0 0 1px;left:50%;margin: 0 0 0 -5px;}
+li.user .dropdown-menu:before{display: block;position: absolute;top:-5px;width:10px;height: 10px;content:'';-ms-transform: rotate(45deg);-webkit-transform: rotate(45deg);transform: rotate(45deg);background: #fff;border: solid rgba(0, 0, 0, 0.15);border-width: 1px 0 0 1px;left:50%;margin: 0 0 0 -5px;}
 li.user .dropdown-menu li{position: relative;z-index: 10;}
 .dropdown-menu>li>a{font-size: 15px;padding: 6px 20px;}
 .account_left, .account_right{float: left;}
@@ -4100,6 +4112,8 @@ th.dataTableHeadingContent{background-color: #dfe0e4!important;color: #424242;fo
   -o-user-select: none;
   user-select: none;
 }
+.headerPhoneLink{color: #fff}
+.headerPhoneLink:hover{color: #eee;text-decoration:none}
 .clickable_element{ cursor: pointer }
 .breadcrumb-additional_info{ }
 .breadcrumb-additional_info.breadcrumb-for-product{ margin: -8px 0 14px 27px;}
@@ -4116,7 +4130,8 @@ th.dataTableHeadingContent{background-color: #dfe0e4!important;color: #424242;fo
   .navbar .navbar-brand{margin: 0 15px 0 0;}
 }
 @media (max-width: 800px){
-  .header_phone, .live_chat{display: none;}
+   .live_chat{display: none;}
+   .header_phone{font-size:0;padding: 12px 0px 14px 10px}
 }
 @media (max-width: 410px){
   .header_menu_right li{padding: 5px 10px;}
@@ -4819,4 +4834,54 @@ ul.admin-notifications-list li{ padding: 5px; list-style: decimal-leading-zero; 
 .assign-banners .theme-banner {
   font-weight: normal;
 }
+.modal-header{background: #9086d5 !important;padding: 12px 15px 12px 25px !important;}
+.modal-header .close, .modal-header .close:hover, .modal-header .close:focus, .modal-header .close:active{color:#fff !important;}
+.modal-title{font-size:22px;color:#fff;}
+.modal-footer{background: #e8e1ff;}
+.modal-footer .btn-cancel{background: #6c757d;color: #fff;border-color: #6c757d;height: 35px;min-width: 100px;}
+.modal-footer .btn:not(.btn-cancel){background: #7952b3;border-color: #7952b3;height: 35px;margin-left: 12px;min-width: 100px;}
+.ppp-setup-intro{color:#424242;font-size:18px;font-weight:700;margin-bottom:10px;}
+.modal-body{padding:20px 25px;}
+.form-check-label input{border:1px solid #9aa4b3;width:20px;height:20px;margin:0 10px 0 0;vertical-align:middle;}
+.modal-body .form-check-label{font-weight:400;margin-bottom:10px;font-size:15px;}
+#ppp_advanced{border-top: 1px solid #d9d9d9;padding: 15px 0 10px;}
+#ppp_advanced a{text-decoration:underline;font-size:16px;}
+.ppp-popup-advanced + br{display:none;}
+.modal-footer{margin-top:0 !important;}
+#paypal_partner_container .col-2, #paypal_partner_container .col-2:last-child > label{display:grid;width:100%;grid-template-columns:320px 1fr;margin-bottom:10px;align-items:center;}
+#paypal_partner_container .col-2:last-child{display:block;}
+#paypal_partner_container .save-note{font-size:14px;}
+.context-modules .btn-bar.edit-btn-bar{padding:12px;}
+.ppp_small_label{display:inline-block;vertical-align:top;}
+.ppp-modal-button{
+    display: inline-block;
+    vertical-align: bottom;
+    margin: 0 0 -7px 30px;
+}
+.form-check-radio .paypal-button-holder { padding: 0 20px; vertical-align: bottom; display: inline-block; position: relative;}
+.form-check-radio .paypal-button-holder.ppp-boarding-widget-wait .ppp-over{position: absolute;width: 101%; height: 101%; top: -2px; left: -2px; opacity: 0.8; z-index: 10; cursor: not-allowed;background-color: white;}
 
+.edit-modules .flag {
+    display: inline-block;
+}
+.edit-modules .flag span{
+    display: inline-block;
+    width: 20px;
+    height: 15px;
+    background-repeat: no-repeat;
+    background-size: auto 12px;
+    vertical-align: bottom;
+}
+.flag .at {background-image: url(../img/flag/at.svg);}
+.flag .au {background-image: url(../img/flag/au.svg);}
+.flag .be {background-image: url(../img/flag/be.svg);}
+.flag .de {background-image: url(../img/flag/de.svg);}
+.flag .fr {background-image: url(../img/flag/fr.svg);}
+.flag .sp {background-image: url(../img/flag/es.svg);}
+.flag .it {background-image: url(../img/flag/it.svg);}
+.flag .nl {background-image: url(../img/flag/nl.svg);}
+.flag .pl {background-image: url(../img/flag/pl.svg);}
+.flag .gb {background-image: url(../img/flag/en.svg);}
+.flag .us {background-image: url(../img/flag/us.svg);}
+.paypal-capabilities {float:right; margin-right: 25px}
+.paypal-capabilities.active:before {color: green; content:"\e013"; margin-right: 1em;}

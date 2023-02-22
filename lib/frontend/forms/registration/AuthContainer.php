@@ -21,19 +21,29 @@ class AuthContainer {
     private $_errors = [];
 
     public function getForms($loadedScenarious) {
+        if (defined("CAPTCHA_ON_CREATE_ACCOUNT") && CAPTCHA_ON_CREATE_ACCOUNT == 'True') {
+            $registrationCaptcha = true;
+        } else {
+            $registrationCaptcha = false;
+        }
+        if (defined("CAPTCHA_ON_CUSTOMER_LOGIN") && CAPTCHA_ON_CUSTOMER_LOGIN == 'True') {
+            $loginCaptcha = true;
+        } else {
+            $loginCaptcha = \common\models\Fraud::verifyAddress();
+        }
         switch ($loadedScenarious ){
             case 'account/create':
                 $cLogin = CustomerRegistration::SCENARIO_LOGIN;
                 $cRegisrt = CustomerRegistration::SCENARIO_REGISTER;
                 $this->_forms = [
-                    'login' => new CustomerRegistration(['scenario' => $cLogin, 'shortName' => $cLogin]),
-                    'registration' => new CustomerRegistration(['scenario' => $cRegisrt, 'shortName' => $cRegisrt]),
+                    'login' => new CustomerRegistration(['scenario' => $cLogin, 'shortName' => $cLogin, 'captha_enabled' => $loginCaptcha]),
+                    'registration' => new CustomerRegistration(['scenario' => $cRegisrt, 'shortName' => $cRegisrt, 'captha_enabled' => $registrationCaptcha]),
                 ];
                 break;
             case 'account/login-box':
                 $cLogin = CustomerRegistration::SCENARIO_LOGIN_TOP;
                 $this->_forms = [
-                    'login' => new CustomerRegistration(['scenario' => $cLogin, 'shortName' => $cLogin]),                    
+                    'login' => new CustomerRegistration(['scenario' => $cLogin, 'shortName' => $cLogin, 'captha_enabled' => $loginCaptcha]),
                 ];
                 break;
             case 'index/auth':
@@ -41,8 +51,8 @@ class AuthContainer {
                 $cRegisrt = CustomerRegistration::SCENARIO_REGISTER;
                 $cEnquire = CustomerRegistration::SCENARIO_ENQUIRE;
                 $this->_forms = [
-                    'login' => new CustomerRegistration(['scenario' => $cLogin, 'shortName' => $cLogin]),
-                    'registration' => new CustomerRegistration(['scenario' => $cRegisrt, 'shortName' => $cRegisrt]),
+                    'login' => new CustomerRegistration(['scenario' => $cLogin, 'shortName' => $cLogin, 'captha_enabled' => $loginCaptcha]),
+                    'registration' => new CustomerRegistration(['scenario' => $cRegisrt, 'shortName' => $cRegisrt, 'captha_enabled' => $registrationCaptcha]),
                     'enquire' => new CustomerRegistration(['scenario' => $cEnquire, 'shortName' => $cEnquire]),
                 ];
                 break;
@@ -51,8 +61,8 @@ class AuthContainer {
                 $cRegisrt = CustomerRegistration::SCENARIO_REGISTER;
                 $cGuest = CustomerRegistration::SCENARIO_GUEST;
                 $this->_forms = [
-                    'login' => new CustomerRegistration(['scenario' => $cLogin, 'shortName' => $cLogin]),
-                    'registration' => new CustomerRegistration(['scenario' => $cRegisrt, 'shortName' => $cRegisrt]),
+                    'login' => new CustomerRegistration(['scenario' => $cLogin, 'shortName' => $cLogin, 'captha_enabled' => $loginCaptcha]),
+                    'registration' => new CustomerRegistration(['scenario' => $cRegisrt, 'shortName' => $cRegisrt, 'captha_enabled' => $registrationCaptcha]),
                     'guest' => new CustomerRegistration(['scenario' => $cGuest, 'shortName' => $cGuest]),
                 ];
                 break;
@@ -62,8 +72,8 @@ class AuthContainer {
                 $cRegisrt = CustomerRegistration::SCENARIO_REGISTER;                
                 $this->_forms = [
                     'fast' => new CustomerRegistration(['scenario' => $cFast, 'shortName' => $cFast]),
-                    'login' => new CustomerRegistration(['scenario' => $cLogin, 'shortName' => $cLogin]),
-                    'registration' => new CustomerRegistration(['scenario' => $cRegisrt, 'shortName' => $cRegisrt]),                    
+                    'login' => new CustomerRegistration(['scenario' => $cLogin, 'shortName' => $cLogin, 'captha_enabled' => $loginCaptcha]),
+                    'registration' => new CustomerRegistration(['scenario' => $cRegisrt, 'shortName' => $cRegisrt, 'captha_enabled' => $registrationCaptcha]),
                 ];
                 break;
         }

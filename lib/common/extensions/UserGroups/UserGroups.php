@@ -382,7 +382,7 @@ class UserGroups extends \common\classes\modules\ModuleExtensions {
         $mInfo = new \objectInfo($groups);
 
         echo '<div class="or_box_head">' . TEXT_HEADING_DELETE_GROUP . '</div>';
-        echo tep_draw_form('groups', FILENAME_GROUPS, 'page=' . $_GET['page'] . '&gID=' . $mInfo->groups_id . '&action=deleteconfirm', 'post', 'id="item_delete" onsubmit="return deleteItem();"');
+        echo tep_draw_form('groups', FILENAME_GROUPS, 'page=' . \Yii::$app->request->get('page') . '&gID=' . $mInfo->groups_id . '&action=deleteconfirm', 'post', 'id="item_delete" onsubmit="return deleteItem();"');
         echo '<div class="row_fields">' . TEXT_DELETE_INTRO . '</div>';
         echo '<div class="row_fields"><b>' . $mInfo->groups_name . '</b></div>';
         echo '<div class="btn-toolbar btn-toolbar-order"><button class="btn btn-delete btn-no-margin">' . IMAGE_DELETE . '</button><input type="button" class="btn btn-cancel" value="' . IMAGE_CANCEL . '" onClick="return cancelStatement()"></div>';

@@ -199,12 +199,14 @@ class InitFactory {
       $currency_id = 0;
     }
 
-    if (is_null($currency) || isset($_GET['currency']) || ( (USE_DEFAULT_LANGUAGE_CURRENCY == 'true') && (LANGUAGE_CURRENCY != $currency) ) ) {
+    // LANGUAGE_CURRENCY is not defined yet
+    $langCurrency = $lng->get_language_formats($languages_id)['LANGUAGE_CURRENCY'] ?? (empty($currency)? 'GBP' : $currency);
+    if (is_null($currency) || isset($_GET['currency']) || ( (USE_DEFAULT_LANGUAGE_CURRENCY == 'true') && ($langCurrency != $currency) ) ) {
       $_maybe_currency = null;
       if (isset($_GET['currency'])){
         $_maybe_currency = $_GET['currency'];
       } elseif (USE_DEFAULT_LANGUAGE_CURRENCY == 'true'){
-        $_maybe_currency = LANGUAGE_CURRENCY;
+        $_maybe_currency = $langCurrency;
       }
       if (!in_array($_maybe_currency, $currencies->platform_currencies) || is_null($_maybe_currency)){
         $currency = $currencies->dp_currency;
@@ -214,7 +216,7 @@ class InitFactory {
       $currency_id = 0;
     }
   
-    if (!$currency_id || isset($_GET['currency']) || ( (USE_DEFAULT_LANGUAGE_CURRENCY == 'true') && (LANGUAGE_CURRENCY != $currency) )) {
+    if (!$currency_id || isset($_GET['currency']) || ( (USE_DEFAULT_LANGUAGE_CURRENCY == 'true') && ($langCurrency != $currency) )) {
       $currency_id = $currencies->currencies[$currency]['id'];
     }
     \Yii::$app->settings->set('currency_id', $currency_id);

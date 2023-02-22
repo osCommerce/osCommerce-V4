@@ -119,7 +119,7 @@ class CatalogController extends Sceleton
 
         if ($manufacturers_id > 0) {
           $category_p = 0;
-          if (defined('ALWAYS_SHOW_FILTERS_ON_BRAND_PAGE') && ALWAYS_SHOW_FILTERS_ON_BRAND_PAGE == 'True') {
+          if (self::showFiltersOnBrandPage()){
             $noFiltersTo = 'products';
           }
         } else {
@@ -206,6 +206,15 @@ class CatalogController extends Sceleton
           'params' => $params,
           'page_name' => $page_name
         ]);
+    }
+
+    private static function showFiltersOnBrandPage()
+    {
+        if($ext = \common\helpers\Acl::checkExtensionAllowed('ProductPropertiesFilters'))
+        {
+            return (method_exists($ext, 'optionShowFiltersOnBrandPage')) ? $ext::optionShowFiltersOnBrandPage() : (defined('ALWAYS_SHOW_FILTERS_ON_BRAND_PAGE') && constant('ALWAYS_SHOW_FILTERS_ON_BRAND_PAGE') == 'True');
+        }
+        return false;
     }
 
     public function actionListProduct()
@@ -1828,7 +1837,8 @@ class CatalogController extends Sceleton
                     'chosenProducts' => $details['custom_bundle_products'],
                     'old' => $details['custom_bundle_full_price'],
                     'price' => $details['custom_bundle_full_price'],
-                    'isAjax' => true
+                    'isAjax' => true,
+                    'id' => $params['box_id']
                 ]
             ]);
             return json_encode($details);
@@ -1840,7 +1850,8 @@ class CatalogController extends Sceleton
                         'chosenProducts' => $details['custom_bundle_products'],
                         'old' => $details['custom_bundle_full_price'],
                         'price' => $details['custom_bundle_full_price'],
-                        'isAjax' => false
+                        'isAjax' => false,
+                        'id' => $params['box_id']
                     ]
                 ]);
             } else {

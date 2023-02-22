@@ -70,6 +70,7 @@ class SitemapController extends Sceleton {
                 $content = '';
             }else {
                 $content = @file_get_contents($index_feed, false, stream_context_create(array(
+                    'ssl' => ['verify_peer' => false, 'verify_peer_name' => false, 'allow_self_signed' => true],
                     'http' => array(
                         'timeout' => 6
                     )

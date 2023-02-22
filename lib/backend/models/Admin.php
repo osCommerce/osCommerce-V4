@@ -51,6 +51,28 @@ class Admin {
         return $_info;
     }
 
+    public function saveAdditionalData($data) {
+        $_info = unserialize($this->info['additional_info'] ?? null);
+        $this->_save('additional_info', serialize(array_merge($_info, $data)));
+    }
+
+    public function getAdditionalData($key) {
+        if (!$this->info['additional_info']) {
+            return '';
+        }
+        $_info = unserialize($this->info['additional_info'] ?? null);
+
+        if (!$_info) {
+            return '';
+        }
+
+        if ($_info[$key]) {
+            return $_info[$key];
+        }
+
+        return '';
+    }
+
     private function _save($field, $data) {
 
         if ($this->info['admin_id']) {

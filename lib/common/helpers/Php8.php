@@ -14,9 +14,9 @@ namespace common\helpers;
 
 class Php8 {
 
-    public static function getConst(string $name)
+    public static function getConst(string $name, string $default = null)
     {
-        return defined($name) ? constant($name) : $name;
+        return defined($name) ? constant($name) : (is_null($default)? $name : $default);
     }
 
 
@@ -130,6 +130,11 @@ class Php8 {
 
     public static function str_start_with($haystack, $needle)
     {
-        return (string)$needle !== '' && strncmp($haystack, $needle, strlen($needle)) === 0;
+        return Php::str_start_with($haystack, $needle);
+    }
+
+    public static function array_key_first($arr)
+    {
+        return Php::array_key_first($arr);
     }
 }

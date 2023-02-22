@@ -1,7 +1,7 @@
 
 <div class="tabbable tabbable-custom box-style-tab">
   <ul class="nav nav-tabs">
-{if $responsive && !$settings.data_class}
+{*if $responsive && !$settings.data_class}
   <li class="active"><a href="#view-{$id}" data-toggle="tab">{$smarty.const.TEXT_VIEW}</a></li>
     {if $styleHide.font !== 1}
       <li><a href="#font-{$id}" data-toggle="tab">{$smarty.const.TEXT_FONT}</a></li>
@@ -10,7 +10,10 @@
     {if $styleHide.font !== 1}
       <li class="active"><a href="#font-{$id}" data-toggle="tab">{$smarty.const.TEXT_FONT}</a></li>
     {/if}
-{/if}
+{/if*}
+    {if $styleHide.font !== 1}
+      <li class="active"><a href="#font-{$id}" data-toggle="tab">{$smarty.const.TEXT_FONT}</a></li>
+    {/if}
     {if $styleHide.background !== 1}
       <li {if $styleHide.font === 1 && $styleHide.background !== 1} class="active"{/if}><a href="#background-{$id}" data-toggle="tab">{$smarty.const.TEXT_BACKGROUND}</a></li>
     {/if}
@@ -20,16 +23,19 @@
     {if $styleHide.border !== 1}
       <li {if $styleHide.font === 1 && $styleHide.background === 1 && $styleHide.padding === 1 && $styleHide.border !== 1} class="active"{/if}><a href="#border-{$id}" data-toggle="tab">{$smarty.const.TEXT_BORDER}</a></li>
     {/if}
+
     {if $styleHide.size !== 1}
       <li {if $styleHide.font === 1 && $styleHide.background === 1 && $styleHide.padding === 1 && $styleHide.border === 1 && $styleHide.size !== 1} class="active"{/if}><a href="#size-{$id}" data-toggle="tab">{$smarty.const.TABLE_HEADING_FILE_SIZE}</a></li>
     {/if}
+    {if $designer_mode}
     {if $styleHide.display !== 1}
       <li {if $styleHide.font === 1 && $styleHide.background === 1 && $styleHide.padding === 1 && $styleHide.border === 1 && $styleHide.size === 1 && $styleHide.display !== 1} class="active"{/if}><a href="#display-{$id}" data-toggle="tab">Display</a></li>
+    {/if}
     {/if}
 
   </ul>
   <div class="tab-content menu-list">
-    {if $responsive && !$settings.data_class}
+    {*{if $responsive && !$settings.data_class}
       <div class="tab-pane active" id="view-{$id}">
         <p><label><input type="checkbox" name="{$name}[display_none]"{if $value.display_none} checked{/if}/> {$smarty.const.TEXT_HIDE_BLOCK}</label></p>
 
@@ -43,9 +49,67 @@
         {/if}
 
       </div>
-    {/if}
-    <div class="tab-pane{if ($responsive != 1 || $settings.data_class) && $styleHide.font !== 1} active{/if}" id="font-{$id}">
+    {/if}*}
+    {*<div class="tab-pane{if ($responsive != 1 || $settings.data_class) && $styleHide.font !== 1} active{/if}" id="font-{$id}">*}
+    <div class="tab-pane{if $styleHide.font !== 1} active{/if}" id="font-{$id}">
 
+      {if !$designer_mode}
+
+        <div class="font-styles">
+          
+          <div class="radio-buttons-icons text-align">
+            <input type="radio" name="{$name}[text-align]" value=""/>
+            <label title="{$smarty.const.TEXT_TEXT_ALIGN} {$smarty.const.TEXT_LEFT}">
+              <input type="radio" name="{$name}[text-align]" value="left" {if $value['text-align'] == 'left'} checked{/if}/>
+              <span{if $value['text-align'] == 'left'} class="active" {/if}><i class="icon-align-left"></i></span>
+            </label>
+            <label title="{$smarty.const.TEXT_TEXT_ALIGN} {$smarty.const.TEXT_RIGHT}">
+              <input type="radio" name="{$name}[text-align]" value="right" {if $value['text-align'] == 'right'} checked{/if}/>
+              <span{if $value['text-align'] == 'right'} class="active" {/if}><i class="icon-align-right"></i></span>
+            </label>
+            <label title="{$smarty.const.TEXT_TEXT_ALIGN} {$smarty.const.TEXT_CENTER}">
+              <input type="radio" name="{$name}[text-align]" value="center" {if $value['text-align'] == 'center'} checked{/if}/>
+              <span{if $value['text-align'] == 'center'} class="active" {/if}><i class="icon-align-center"></i></span>
+            </label>
+            <label title="{$smarty.const.TEXT_TEXT_ALIGN} {$smarty.const.TEXT_JUSTIFY}">
+              <input type="radio" name="{$name}[text-align]" value="justify" {if $value['text-align'] == 'justify'} checked{/if}/>
+              <span{if $value['text-align'] == 'justify'} class="active" {/if}><i class="icon-align-justify"></i></span>
+            </label>
+          </div>
+
+          <div class="radio-buttons-icons font-weight">
+            <input type="radio" name="{$name}[font-weight]" value=""/>
+            <label title="{$smarty.const.TEXT_FONT_WEIGHT} {$smarty.const.TEXT_BOLD}">
+              <input type="radio" name="{$name}[font-weight]" value="700" {if $value['font-weight'] == '700'} checked{/if}/>
+              <span{if $value['font-weight'] == '700'} class="active" {/if}><i class="icon-bold"></i></span>
+            </label>
+          </div>
+
+          <div class="radio-buttons-icons font-style">
+            <input type="radio" name="{$name}[font-style]" value=""/>
+            <label title="{$smarty.const.FONT_STYLE} {$smarty.const.FONT_STYLE_ITALIC}">
+              <input type="radio" name="{$name}[font-style]" value="italic" {if $value['font-style'] == 'italic'} checked{/if}/>
+              <span{if $value['font-style'] == 'italic'} class="active" {/if}><i class="icon-italic"></i></span>
+            </label>
+          </div>
+
+          <div class="radio-buttons-icons text-decoration">
+            <input type="radio" name="{$name}[text-decoration]" value=""/>
+            <label title="{$smarty.const.TEXT_DECORATION} {$smarty.const.TEXT_DECORATION_UNDERLINE}">
+              <input type="radio" name="{$name}[text-decoration]" value="underline" {if $value['text-decoration'] == 'underline'} checked{/if}/>
+              <span{if $value['text-decoration'] == 'underline'} class="active" {/if}><i class="icon-underline"></i></span>
+            </label>
+            <label title="{$smarty.const.TEXT_DECORATION} {$smarty.const.TEXT_DECORATION_LINE_THROUGH}">
+              <input type="radio" name="{$name}[text-decoration]" value="line-through" {if $value['text-decoration'] == 'line-through'} checked{/if}/>
+              <span{if $value['text-decoration'] == 'line-through'} class="active" {/if}><i class="icon-strikethrough"></i></span>
+            </label>
+          </div>
+          
+        </div>
+
+      {/if}
+
+      {if $designer_mode == 'expert'}
         {if $styleHide.display.hTagsInline !== 1 && $name == 'setting[0]'}
           <div class="setting-row">
             <label for="">{$smarty.const.TEXT_H_TAGS_STYLES}</label>
@@ -56,6 +120,7 @@
             </select>
           </div>
         {/if}
+      {/if}
 
       {if $styleHide.font.content !== 1 && ($id == 'before' || $id == 'after')}
         <div class="setting-row">
@@ -118,6 +183,7 @@
       </div>
       {/if}
 
+      {if $designer_mode}
       {if $styleHide.font.font_weight !== 1}
       <div class="setting-row">
         <label for="">{$smarty.const.TEXT_FONT_WEIGHT}</label>
@@ -153,20 +219,24 @@
         </select>
       </div>
       {/if}
-
-      {if $styleHide.font.text_align !== 1}
-      <div class="setting-row">
-        <label for="">{$smarty.const.TEXT_TEXT_ALIGN}</label>
-        <select name="{$name}[text-align]" id="" class="form-control">
-          <option value=""{if $value['text-align'] == ''} selected{/if}></option>
-          <option value="left"{if $value['text-align'] == 'left'} selected{/if}>{$smarty.const.TEXT_LEFT}</option>
-          <option value="right"{if $value['text-align'] == 'right'} selected{/if}>{$smarty.const.TEXT_RIGHT}</option>
-          <option value="center"{if $value['text-align'] == 'center'} selected{/if}>{$smarty.const.TEXT_CENTER}</option>
-          <option value="justify"{if $value['text-align'] == 'justify'} selected{/if}>{$smarty.const.TEXT_JUSTIFY}</option>
-        </select>
-      </div>
       {/if}
 
+      {if $designer_mode}
+        {if $styleHide.font.text_align !== 1}
+          <div class="setting-row">
+            <label for="">{$smarty.const.TEXT_TEXT_ALIGN}</label>
+            <select name="{$name}[text-align]" id="" class="form-control">
+              <option value=""{if $value['text-align'] == ''} selected{/if}></option>
+              <option value="left"{if $value['text-align'] == 'left'} selected{/if}>{$smarty.const.TEXT_LEFT}</option>
+              <option value="right"{if $value['text-align'] == 'right'} selected{/if}>{$smarty.const.TEXT_RIGHT}</option>
+              <option value="center"{if $value['text-align'] == 'center'} selected{/if}>{$smarty.const.TEXT_CENTER}</option>
+              <option value="justify"{if $value['text-align'] == 'justify'} selected{/if}>{$smarty.const.TEXT_JUSTIFY}</option>
+            </select>
+          </div>
+        {/if}
+      {/if}
+
+      {if $designer_mode}
       {if $styleHide.font.text_shadow !== 1}
       <div class="setting-row">
         <label for="">{$smarty.const.TEXT_TEXT_SHADOW}</label>
@@ -216,26 +286,28 @@
         </div>
       </div>
       {/if}
+      {/if}
 
+      {if $designer_mode}
       {if $styleHide.font.vertical_align !== 1}
       <div class="setting-row">
-        <label for="">Vertical align</label>
+        <label for="">{$smarty.const.VERTICAL_ALIGN}</label>
         <select name="{$name}[vertical-align]" id="" class="form-control">
-          <option value=""{if $value['vertical-align'] == ''} selected{/if}>baseline</option>
-          <option value="bottom"{if $value['vertical-align'] == 'bottom'} selected{/if}>bottom</option>
-          <option value="middle"{if $value['vertical-align'] == 'middle'} selected{/if}>middle</option>
-          <option value="sub"{if $value['vertical-align'] == 'sub'} selected{/if}>sub</option>
-          <option value="super"{if $value['vertical-align'] == 'super'} selected{/if}>super</option>
-          <option value="text-bottom"{if $value['vertical-align'] == 'text-bottom'} selected{/if}>text-bottom</option>
-          <option value="text-top"{if $value['vertical-align'] == 'text-top'} selected{/if}>text-top</option>
-          <option value="top"{if $value['vertical-align'] == 'top'} selected{/if}>top</option>
+          <option value=""{if $value['vertical-align'] == ''} selected{/if}>{$smarty.const.VERTICAL_ALIGN_BASELINE}</option>
+          <option value="bottom"{if $value['vertical-align'] == 'bottom'} selected{/if}>{$smarty.const.VERTICAL_ALIGN_BOTTOM}</option>
+          <option value="middle"{if $value['vertical-align'] == 'middle'} selected{/if}>{$smarty.const.VERTICAL_ALIGN_MIDDLE}</option>
+          <option value="sub"{if $value['vertical-align'] == 'sub'} selected{/if}>{$smarty.const.VERTICAL_ALIGN_SUB}</option>
+          <option value="super"{if $value['vertical-align'] == 'super'} selected{/if}>{$smarty.const.VERTICAL_ALIGN_SUPER}</option>
+          <option value="text-bottom"{if $value['vertical-align'] == 'text-bottom'} selected{/if}>{$smarty.const.VERTICAL_ALIGN_TEXT_BOTTOM}</option>
+          <option value="text-top"{if $value['vertical-align'] == 'text-top'} selected{/if}>{$smarty.const.VERTICAL_ALIGN_TEXT_TEXT_TOP}</option>
+          <option value="top"{if $value['vertical-align'] == 'top'} selected{/if}>{$smarty.const.VERTICAL_ALIGN_TEXT_TOP}</option>
         </select>
       </div>
       {/if}
 
       {if $styleHide.font.text_transform !== 1}
       <div class="setting-row">
-        <label for="">Transform</label>
+        <label for="">{$smarty.const.TEXT_TRANSFORM}</label>
         <select name="{$name}[text-transform]" id="" class="form-control">
           <option value=""{if $value['text-transform'] == ''} selected{/if}></option>
           <option value="none"{if $value['text-transform'] == 'none'} selected{/if}>none</option>
@@ -248,50 +320,52 @@
 
       {if $styleHide.font.text_decoration !== 1}
       <div class="setting-row">
-        <label for="">Text decoration</label>
+        <label for="">{$smarty.const.TEXT_DECORATION}</label>
         <select name="{$name}[text-decoration]" id="" class="form-control">
           <option value=""{if $value['text-decoration'] == ''} selected{/if}></option>
-          <option value="none"{if $value['text-decoration'] == 'none'} selected{/if}>none</option>
-          <option value="underline"{if $value['text-decoration'] == 'underline'} selected{/if}>underline</option>
-          <option value="line-through"{if $value['text-decoration'] == 'line-through'} selected{/if}>line through</option>
-          <option value="overline"{if $value['text-decoration'] == 'overline'} selected{/if}>overline</option>
-          <option value="inherit"{if $value['text-decoration'] == 'inherit'} selected{/if}>inherit</option>
+          <option value="none"{if $value['text-decoration'] == 'none'} selected{/if}>{$smarty.const.TEXT_DECORATION_NONE}</option>
+          <option value="underline"{if $value['text-decoration'] == 'underline'} selected{/if}>{$smarty.const.TEXT_DECORATION_UNDERLINE}</option>
+          <option value="line-through"{if $value['text-decoration'] == 'line-through'} selected{/if}>{$smarty.const.TEXT_DECORATION_LINE_THROUGH}</option>
+          <option value="overline"{if $value['text-decoration'] == 'overline'} selected{/if}>{$smarty.const.TEXT_DECORATION_OVERLINE}</option>
+          <option value="inherit"{if $value['text-decoration'] == 'inherit'} selected{/if}>{$smarty.const.TEXT_INHERIT}</option>
         </select>
       </div>
       {/if}
 
       {if $styleHide.font.font_style !== 1}
       <div class="setting-row">
-        <label for="">Font Style</label>
+        <label for="">{$smarty.const.FONT_STYLE}</label>
         <select name="{$name}[font-style]" id="" class="form-control">
           <option value=""{if $value['font-style'] == ''} selected{/if}></option>
-          <option value="normal"{if $value['font-style'] == 'normal'} selected{/if}>normal</option>
-          <option value="italic"{if $value['font-style'] == 'italic'} selected{/if}>italic</option>
+          <option value="normal"{if $value['font-style'] == 'normal'} selected{/if}>{$smarty.const.TEXT_NORMAL}</option>
+          <option value="italic"{if $value['font-style'] == 'italic'} selected{/if}>{$smarty.const.FONT_STYLE_ITALIC}</option>
         </select>
       </div>
       {/if}
+      {/if}
 
+      {if $designer_mode}
       {if $styleHide.font.cursor !== 1}
       <div class="setting-row">
-        <label for="">Cursor</label>
+        <label for="">{$smarty.const.TEXT_CURSOR}</label>
         <select name="{$name}[cursor]" id="" class="form-control cursor" style="cursor: help;">
           <option value=""{if $value.cursor == ''} selected{/if}></option>
-          <option value="default"{if $value.cursor == 'default'} selected{/if}>default</option>
-          <option value="crosshair"{if $value.cursor == 'crosshair'} selected{/if}>crosshair</option>
-          <option value="help"{if $value.cursor == 'help'} selected{/if}>help</option>
-          <option value="move"{if $value.cursor == 'move'} selected{/if}>move</option>
-          <option value="pointer"{if $value.cursor == 'pointer'} selected{/if}>pointer</option>
-          <option value="progress"{if $value.cursor == 'progress'} selected{/if}>progress</option>
-          <option value="text"{if $value.cursor == 'text'} selected{/if}>text</option>
-          <option value="wait"{if $value.cursor == 'wait'} selected{/if}>wait</option>
-          <option value="n-resize"{if $value.cursor == 'n-resize'} selected{/if}>n-resize</option>
-          <option value="ne-resize"{if $value.cursor == 'ne-resize'} selected{/if}>ne-resize</option>
-          <option value="e-resize"{if $value.cursor == 'e-resize'} selected{/if}>e-resize</option>
-          <option value="se-resize"{if $value.cursor == 'se-resize'} selected{/if}>se-resize</option>
-          <option value="s-resize"{if $value.cursor == 's-resize'} selected{/if}>s-resize</option>
-          <option value="sw-resize"{if $value.cursor == 'sw-resize'} selected{/if}>sw-resize</option>
-          <option value="w-resize"{if $value.cursor == 'w-resize'} selected{/if}>w-resize</option>
-          <option value="nw-resize"{if $value.cursor == 'nw-resize'} selected{/if}>nw-resize</option>
+          <option value="default"{if $value.cursor == 'default'} selected{/if}>{$smarty.const.TEXT_DEFAULT}</option>
+          <option value="crosshair"{if $value.cursor == 'crosshair'} selected{/if}>{$smarty.const.CURSOR_CROSSHAIR}</option>
+          <option value="help"{if $value.cursor == 'help'} selected{/if}>{$smarty.const.CURSOR_HELP}</option>
+          <option value="move"{if $value.cursor == 'move'} selected{/if}>{$smarty.const.CURSOR_MOVE}</option>
+          <option value="pointer"{if $value.cursor == 'pointer'} selected{/if}>{$smarty.const.CURSOR_POINTER}</option>
+          <option value="progress"{if $value.cursor == 'progress'} selected{/if}>{$smarty.const.CURSOR_PROGRESS}</option>
+          <option value="text"{if $value.cursor == 'text'} selected{/if}>{$smarty.const.CURSOR_TEXT}</option>
+          <option value="wait"{if $value.cursor == 'wait'} selected{/if}>{$smarty.const.CURSOR_WAIT}</option>
+          <option value="n-resize"{if $value.cursor == 'n-resize'} selected{/if}>n-{$smarty.const.CURSOR_RESIZE}</option>
+          <option value="ne-resize"{if $value.cursor == 'ne-resize'} selected{/if}>ne-{$smarty.const.CURSOR_RESIZE}</option>
+          <option value="e-resize"{if $value.cursor == 'e-resize'} selected{/if}>e-{$smarty.const.CURSOR_RESIZE}</option>
+          <option value="se-resize"{if $value.cursor == 'se-resize'} selected{/if}>se-{$smarty.const.CURSOR_RESIZE}</option>
+          <option value="s-resize"{if $value.cursor == 's-resize'} selected{/if}>s-{$smarty.const.CURSOR_RESIZE}</option>
+          <option value="sw-resize"{if $value.cursor == 'sw-resize'} selected{/if}>sw-{$smarty.const.CURSOR_RESIZE}</option>
+          <option value="w-resize"{if $value.cursor == 'w-resize'} selected{/if}>w-{$smarty.const.CURSOR_RESIZE}</option>
+          <option value="nw-resize"{if $value.cursor == 'nw-resize'} selected{/if}>nw-{$smarty.const.CURSOR_RESIZE}</option>
         </select>
       </div>
         <script type="text/javascript">
@@ -301,6 +375,7 @@
             })
           })
         </script>
+      {/if}
       {/if}
 
 
@@ -366,6 +441,7 @@
       </div>
       {/if}
 
+      {if $designer_mode}
       {if $styleHide.background.background_position !== 1}
       <div class="setting-row">
         <label for="">{$smarty.const.TEXT_BACKGROUND_POSITION}</label>
@@ -408,6 +484,7 @@
           <option value="contain"{if $value['background-size'] == 'contain'} selected{/if}>{$smarty.const.TEXT_WIDTH_HEIGHT_SIZE}</option>
         </select>
       </div>
+      {/if}
       {/if}
 
     </div>
@@ -483,7 +560,7 @@
 
       {if $styleHide.padding.margin_top !== 1}
       <div class="setting-row">
-        <label for="">Margin Top</label>
+        <label for="">{$smarty.const.TEXT_MARGIN_TOP}</label>
         <input type="number" name="{$name}[margin-top]" value="{$value['margin-top']}" class="form-control" />
         <select name="{$name}[margin_top_measure]" class="form-control sizing" data-name="{$name}[margin-top]">
           <option value=""{if $value.margin_top_measure == '' || $value.margin_top_measure == 'px'} selected{/if}>px</option>
@@ -500,7 +577,7 @@
 
       {if $styleHide.padding.margin_left !== 1}
       <div class="setting-row">
-        <label for="">Margin left</label>
+        <label for="">{$smarty.const.TEXT_MARGIN_LEFT}</label>
         <input type="number" name="{$name}[margin-left]" value="{$value['margin-left']}" class="form-control" />
         <select name="{$name}[margin_left_measure]" class="form-control sizing" data-name="{$name}[margin-left]">
           <option value=""{if $value.margin_left_measure == '' || $value.margin_left_measure == 'px'} selected{/if}>px</option>
@@ -518,7 +595,7 @@
 
       {if $styleHide.padding.margin_right !== 1}
       <div class="setting-row">
-        <label for="">Margin right</label>
+        <label for="">{$smarty.const.TEXT_MARGIN_RIGHT}</label>
         <input type="number" name="{$name}[margin-right]" value="{$value['margin-right']}" class="form-control" />
         <select name="{$name}[margin_right_measure]" class="form-control sizing" data-name="{$name}[margin-right]">
           <option value=""{if $value.margin_right_measure == '' || $value.margin_right_measure == 'px'} selected{/if}>px</option>
@@ -536,7 +613,7 @@
 
       {if $styleHide.padding.margin_bottom !== 1}
       <div class="setting-row">
-        <label for="">Margin bottom</label>
+        <label for="">{$smarty.const.TEXT_MARGIN_BOTTOM}</label>
         <input type="number" name="{$name}[margin-bottom]" value="{$value['margin-bottom']}" class="form-control" />
         <select name="{$name}[margin_bottom_measure]" class="form-control sizing" data-name="{$name}[margin-bottom]">
           <option value=""{if $value.margin_bottom_measure == '' || $value.margin_bottom_measure == 'px'} selected{/if}>px</option>
@@ -607,6 +684,7 @@
       </div>
       {/if}
 
+      {if $designer_mode}
       {if $styleHide.border.border_radius !== 1}
       <div class="setting-row">
         <label for="">{$smarty.const.TEXT_BORDER_RADIUS}</label>
@@ -664,7 +742,7 @@
 
       {if $styleHide.border.box_shadow !== 1}
       <div class="setting-row">
-        <label for="">Box shadow</label>
+        <label for="">{$smarty.const.BOX_SHADOW}</label>
         <div class="" style="display: inline-block; width: 69%">
           <input type="number" name="{$name}[box_shadow_left]" value="{$value.box_shadow_left}" class="form-control" placeholder="position left" style="margin-bottom: 5px" />
           <select name="{$name}[box_shadow_left_measure]" class="form-control sizing" data-name="{$name}[box_shadow_left]">
@@ -727,10 +805,12 @@
         </div>
       </div>
       {/if}
+      {/if}
 
     </div>
     <div class="tab-pane{if $styleHide.font === 1 && $styleHide.background === 1 && $styleHide.padding === 1 && $styleHide.border === 1 && $styleHide.size !== 1} active{/if}" id="size-{$id}">
 
+      {if $designer_mode}
       {if $styleHide.size.width !== 1}
       <div class="setting-row">
         <label for="">{$smarty.const.TEXT_WIDTH}</label>
@@ -764,6 +844,7 @@
         </select>
       </div>
       {/if}
+      {/if}
 
       {if $styleHide.size.max_width !== 1}
       <div class="setting-row">
@@ -782,6 +863,7 @@
       </div>
       {/if}
 
+      {if $designer_mode}
       {if $styleHide.size.height !== 1}
       <div class="setting-row">
         <label for="">{$smarty.const.TEXT_HEIGHT}</label>
@@ -797,6 +879,7 @@
           <option value="vmax"{if $value.height_measure == 'vmax'} selected{/if}>vmax</option>
         </select>
       </div>
+      {/if}
       {/if}
 
       {if $styleHide.size.min_height !== 1}
@@ -816,6 +899,7 @@
       </div>
       {/if}
 
+      {if $designer_mode}
       {if $styleHide.size.max_height !== 1}
       <div class="setting-row">
         <label for="">{$smarty.const.TEXT_MAX_HEIGHT}</label>
@@ -831,6 +915,7 @@
           <option value="vmax"{if $value.max_height_measure == 'vmax'} selected{/if}>vmax</option>
         </select>
       </div>
+      {/if}
       {/if}
 
     </div>
@@ -850,7 +935,7 @@
 
       {if $styleHide.display.clear !== 1}
       <div class="setting-row">
-        <label for="">Clear</label>
+        <label for="">{$smarty.const.TEXT_CLEAR}</label>
         <select name="{$name}[clear]" id="" class="form-control">
           <option value=""{if $value.clear == ''} selected{/if}></option>
           <option value="none"{if $value.clear == 'none'} selected{/if}>{$smarty.const.OPTION_NONE}</option>
@@ -979,14 +1064,14 @@
 
       {if $styleHide.size.opacity !== 1}
         <div class="setting-row">
-          <label for="">Opacity</label>
+          <label for="">{$smarty.const.TEXT_OPACITY}</label>
           <input type="text" name="{$name}[opacity]" value="{$value.opacity}" class="form-control" />
         </div>
       {/if}
 
       {if $styleHide.size.rotate !== 1}
         <div class="setting-row">
-          <label for="">Rotate</label>
+          <label for="">{$smarty.const.TEXT_ROTATE}</label>
           <input type="number" name="{$name}[rotate]" value="{$value.rotate}" class="form-control" /><span class="px">deg</span>
         </div>
       {/if}
@@ -996,4 +1081,22 @@
   </div>
 </div>
 
+<script type="text/javascript">
+  $(function(){
 
+    $('.radio-buttons-icons:not(.applied)').each(function(){
+      $(this).addClass('applied');
+      $('span', this).on('click', function(e){
+        const $box = $(this).closest('.radio-buttons-icons');
+        if ($(this).hasClass('active')){
+          e.preventDefault();
+          $box.find('input[value=""]').trigger('click')
+          $box.find('span').removeClass('active')
+        } else {
+          $box.find('span').removeClass('active')
+          $(this).addClass('active')
+        }
+      })
+    })
+  })
+</script>

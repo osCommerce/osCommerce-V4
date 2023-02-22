@@ -87,6 +87,7 @@ class Products extends Widget
               'multiCart' => $multiCart,
               'settings' => $this->settings,
               'groupId' => $groupId,
+              'manager' => $this->params['manager'] ?? null,
             ]]);
         } else {
             return '<div class="empty">' . CART_EMPTY . '</div>';

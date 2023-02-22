@@ -40,7 +40,7 @@
             $(window).trigger('removeBonusPoints')
         });
 		$('.icon').off().on('click', function(){
-            $(this).toggleClass('active');
+            $(this).toggleClass('active opened');
             $('.price-row').toggleClass('active');
         });
     })

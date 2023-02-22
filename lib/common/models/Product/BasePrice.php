@@ -531,6 +531,10 @@ class BasePrice {
                       return $this->special_price['value'];
                     }
 
+                    if (is_array($qty)) {
+                      // Fix Error: Unsupported operand types
+                      $qty = current($qty);
+                    }
                     if (!empty($special['total_qty']) && \common\helpers\Specials::checkSoldOut($special, $qty)) {
                       continue; //remove limit
                       $this->special_price['value'] = false;

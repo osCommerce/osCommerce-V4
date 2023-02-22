@@ -16,7 +16,7 @@
     
     function checkCountryVatState() {
         var selected = $('select[name="country"]').val();
-        if (selected == {$smarty.const.STORE_COUNTRY}) {
+        if (selected == '{$smarty.const.STORE_COUNTRY}') {
             $('.company_vat_box').hide();
         } else {
             $('.company_vat_box').show();
@@ -107,11 +107,17 @@
             $('.main-content').append($fakeInput);
             $('input', $fakeInput).focus()
             $('.w-checkout-continue-btn button[type=submit]').prop('disabled', true);
+            setTimeout(removeDisabled, 7000);
             setTimeout(function(){
+                if ($('.required-error', prevent_submit_checkout_form).length) {
+                    removeDisabled()
+                }
+            }, 100);
+            function removeDisabled() {
                 $('.w-checkout-continue-btn button[type=submit]').prop('disabled', false);
                 $hidePage.remove()
                 $fakeInput.remove()
-            }, 7000);
+            }
         });
 
 //ajax in progress

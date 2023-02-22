@@ -97,6 +97,11 @@ class ModuleVer {
 
     public function toCommonFormat()
     {
+        return sprintf("%u.%u.%u", $this->major, $this->minor, $this->build);
+    }
+
+    public function toCompareFormat()
+    {
         return sprintf("%u.%02u.%02u", $this->major, $this->minor, $this->build);
     }
 
@@ -109,6 +114,6 @@ class ModuleVer {
     {
         $ver1 = self::parse($ver1);
         $ver2 = self::parse($ver2);
-        return version_compare($ver1->toCommonFormat(), $ver2->toCommonFormat());
+        return version_compare($ver1->toCompareFormat(), $ver2->toCompareFormat());
     }
 }

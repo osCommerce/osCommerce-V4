@@ -92,10 +92,6 @@ define('CONTENT_ORDERS_PRINTABLE', 'printorder');
 // Lango added for Featured products: BOF
 define('CONTENT_FEATURED', 'featured');
 // Lango added for Featured products: EOF
-// Lango Added for WishList Mod: BOF
-define('CONTENT_WISHLIST_HELP', 'wishlist_help');
-define('CONTENT_WISHLIST', 'wishlist');
-// Lango Added for WishList Mod: EOF
 // Lango Added for Links Manager Mod: BOF
 define('CONTENT_LINKS', 'links');
 define('CONTENT_LINKS_SUBMIT', 'links_submit');
@@ -229,10 +225,6 @@ define('FILENAME_FEATURED_PRODUCTS', 'catalog/featured-products');
 // Lango Added for ALL_PODS Mod: BOF
 define('FILENAME_POPUP_AFFILIATE_HELP', 'popup_affiliate_help.php');
 // Lango Added for ALL_PRODS Mod: EOF
-// Lango Added for WishList Mod: BOF
-define('FILENAME_WISHLIST_HELP', CONTENT_WISHLIST_HELP . '.php');
-define('FILENAME_WISHLIST', 'account/wishlist');
-// Lango Added for WishList Mod: EOF
 // Lango Added for Links Manager Mod: BOF
 define('FILENAME_LINKS', CONTENT_LINKS . '.php');
 define('FILENAME_LINKS_SUBMIT', CONTENT_LINKS_SUBMIT . '.php');

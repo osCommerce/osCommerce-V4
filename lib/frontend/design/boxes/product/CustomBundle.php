@@ -31,13 +31,23 @@ class CustomBundle extends Widget
     public function run()
     {
         $params = Yii::$app->request->get();
+        $params['box_id'] = $this->id;
 
-        if ($params['products_id'] && Yii::$app->controller instanceof \frontend\controllers\CatalogController ) {
-          $action = Yii::$app->controller->createAction('product-custom-bundle');
-          return $action->runWithParams($params);
-          //return Yii::$app->runAction('catalog/product-custom-bundle', $params);
+        $details = \common\helpers\CustomBundles::getDetails($params);
+
+        if (isset($details['all_products']) && count($details['all_products']) > 0) {
+            return IncludeTpl::widget(['file' => 'boxes/product/custom-bundle.tpl',
+                'params' => [
+                    'products' => $details['all_products'],
+                    'chosenProducts' => $details['custom_bundle_products'],
+                    'old' => $details['custom_bundle_full_price'],
+                    'price' => $details['custom_bundle_full_price'],
+                    'isAjax' => false,
+                    'id' => $this->id
+                ]
+            ]);
         } else {
-          return '';
+            return '';
         }
     }
 }

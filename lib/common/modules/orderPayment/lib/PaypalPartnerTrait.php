@@ -8,20 +8,99 @@ trait PaypalPartnerTrait {
         return PaypalPartner\ExtraConfig::class;
     }
     
-    public function getSeller($platform_id){
-        $partnerId = $this->getPartnerId(); // depends on sandbox/live mode
+    protected function liveConfigurationExists($platform_id){
+        $ret = false;
+        $partnerId = self::PARTNER_MERCHANT_ID;
         $seller = PaypalPartner\models\SellerInfo::find()
-            ->where(['platform_id' => $platform_id, 'partner_id' => $partnerId])
-            //->cache(20, (new \yii\caching\TagDependency(['tags' => 'seller-'. $platform_id . '-' . $partnerId])))
+            ->where(['platform_id' => $platform_id, 'partner_id' => $partnerId, 'status' => 1])
+            ->one();
+        if ($seller){
+            $ret = $seller->is_onboard;// restart boarding?
+        }
+        return $ret;
+    }
+
+    protected function ownSandboxConfigExists($platform_id){
+        $ret = false;
+        $partnerId = self::PARTNER_MERCHANT_SANDBOX_ID;
+        /** @var PaypalPartner\models\SellerInfo  $seller */
+        $seller = PaypalPartner\models\SellerInfo::find()
+            ->where(['platform_id' => $platform_id, 'partner_id' => $partnerId, 'status' => 1])
+            ->one();
+        if ($seller && !empty($seller->own_client_id) && !empty($seller->own_client_secret)){
+            $ret = $seller->own_client_id !== 'Ad1UJlMj9BKThV6rWyktLD5ggqp2uL4iFnFtYIKwAcKULWu3OoaGHw4NO2v8bmx86-6RIcWB_LoSOGsr';
+        }
+        return $ret;
+    }
+
+    public function getSellerById($platform_id, $id){
+        $seller = PaypalPartner\models\SellerInfo::find()
+            ->where(['platform_id' => $platform_id, 'psi_id' => $id])
             ->one();
         if (!$seller){
+            $seller = $this->getSeller($platform_id);
+        }
+        return $seller;
+    }
+
+/**
+ *
+ * @param int $platform_id
+ * @param string $force force mode
+ * @param bool $forceNew
+ * @return \common\modules\orderPayment\lib\PaypalPartner\models\SellerInfo
+ */
+    public function getSeller($platform_id, $force = false, $forceNew = false){
+        $partnerId = $this->getPartnerId($force); // depends on sandbox/live mode
+        $seller = PaypalPartner\models\SellerInfo::find()
+            ->where(['platform_id' => $platform_id, 'partner_id' => $partnerId, 'status' => ($forceNew?-1:1)])
+            //->cache(20, (new \yii\caching\TagDependency(['tags' => 'seller-'. $platform_id . '-' . $partnerId])))
+            ->one();
+        if (!$seller || ($forceNew && $seller->status != -1) ){
             $seller = new PaypalPartner\models\SellerInfo([
               'platform_id' => $platform_id,
               'partner_id' => $partnerId,
               'fee_percent' => static::PARTNER_DEFAULT_FEE,
               'tracking_id' => PaypalPartner\models\SellerInfo::generateTrackingId(),
-              'is_onboard' => 0
+              'is_onboard' => 0,
+              'status' => -1
               ]);
+        }
+        $prefill_platform_address_map = ['entry_company' => 'company',
+            'entry_street_address' => 'street_address',
+            'entry_suburb' => 'suburb',
+            'entry_postcode' => 'postcode',
+            'entry_city' => 'city',
+            'entry_state' => 'state',
+            'entry_country_id' => 'country_id',
+            'entry_zone_id' => 'zone_id'
+          ];
+            
+
+        $__platform = \Yii::$app->get('platform');
+        /** @var \common\classes\platform_config $platformConfig*/
+        $platformConfig = $__platform->config($platform_id);
+        $data = $platformConfig->getPlatformData();
+        $address = $platformConfig->getPlatformAddress();
+
+        if (empty($seller->entry_telephone)) {
+            $seller->entry_telephone = $data['platform_telephone'];
+        }
+        if (empty($seller->entry_firstname) || empty($seller->entry_lastname)) {
+            $tmp = explode(' ', $data['platform_owner'], 2);
+            $seller->entry_firstname = trim($tmp[0]);
+            if (!empty($tmp[1])) {
+                $seller->entry_lastname = trim($tmp[1]);
+            }
+        }
+
+        if (is_array($prefill_platform_address_map) && !empty($address)) {
+            foreach($prefill_platform_address_map as $seller_prop => $address_key) {
+                if (!empty($seller_prop) && !empty($address_key) &&
+                    empty($seller->$seller_prop) && !empty($address[$address_key])) {
+                    $seller->$seller_prop = $address[$address_key];
+                }
+            }
         }
         return $seller;
     }
@@ -77,8 +156,11 @@ trait PaypalPartnerTrait {
         $partner->setTrackingId($seller->tracking_id);
 
         $integration = new PaypalPartner\api\Integration(["integration_method" => "PAYPAL"]);
-        //$integration->setFirstPartyDetails(new PaypalPartner\api\FirstPartyDetails(['seller_nonce' => self::random_str(100)])); //$seller->tracking_id
-        $integration->setThirdPartyDetails(new PaypalPartner\api\ThirdPartyDetails()); //['seller_nonce' => self::random_str(100)]
+        if (self::BOARDING_MODE == 3) {
+            $integration->setThirdPartyDetails(new PaypalPartner\api\ThirdPartyDetails()); //['seller_nonce' => self::random_str(100)]
+        } else {
+            $integration->setFirstPartyDetails(new PaypalPartner\api\FirstPartyDetails(['seller_nonce' => $seller->tracking_id]));  //self::random_str(100)
+        }
 
         $preference = new PaypalPartner\api\Preference();
         $preference->setRestApiIntegration($integration);
@@ -149,11 +231,18 @@ trait PaypalPartnerTrait {
 
         $iOwner->setAddresses($address);
 // not in SDK
-        $iOwner->phones = [(object)[
-          'national_number' => $seller->entry_telephone,
-          'country_code' => substr(trim($country['dialling_prefix'], ' +'), 0, 3)
-        ]];
-        
+        /**/
+        $_pn = trim(preg_replace('/[^0-9]/', '', $seller->entry_telephone), '0');
+        $_cdp = substr(trim($country['dialling_prefix'], ' +'), 0, 3);
+        $sellerPhoneOk = false;
+        if (strlen($_pn)>0 && strlen($_pn)<15 && strlen($_cdp)>0 && strlen($_cdp.$_pn)<16 ) {
+            $sellerPhoneOk = true;
+            $iOwner->phones = [(object)[
+              'national_number' => $_pn,
+              'country_code' => $_cdp
+            ]];
+        }
+        /**/
         $iOwner->setCitizenship($country['countries_iso_code_2']);
         
         $partner->setIndividualOwners($iOwner);
@@ -178,10 +267,10 @@ trait PaypalPartnerTrait {
             'business_name' => $seller->entry_company,
             "type" => "LEGAL_NAME"
           ]];
-          if (!empty($seller->entry_telephone)) {
+          if ($sellerPhoneOk) {
             $bEntity->phones = [(object)[
-              'national_number' => $seller->entry_telephone,
-              'country_code' => substr(trim($country['dialling_prefix'], ' +'), 0, 3)
+              'national_number' => $_pn,
+              'country_code' => $_cdp
             ]];
           }
 
@@ -343,12 +432,14 @@ $bodyReceived = '{"id": "WH-2WR32451HC0233532-67976317FL4543714","create_time": 
           $this->whBoardingRevoked($whDetails);
           break;
         case 'PAYMENT.CAPTURE.COMPLETED':
+        case 'CHECKOUT.ORDER.APPROVED':
           $this->whCaptured($whDetails);
           break;
         case 'PAYMENT.AUTHORIZATION.VOIDED':
         case 'PAYMENT.CAPTURE.DENIED':
         case 'PAYMENT.CAPTURE.REFUNDED':
         case 'PAYMENT.CAPTURE.REVERSED':
+        case 'CHECKOUT.PAYMENT-APPROVAL.REVERSED':
           $this->whCancelled($whDetails);
           break;
         case 'PAYMENT.REFERENCED-PAYOUT-ITEM.COMPLETED':
@@ -393,6 +484,8 @@ $bodyReceived = '{"id": "WH-2WR32451HC0233532-67976317FL4543714","create_time": 
     $tm = $this->manager->getTransactionManager($this);
     if ($this->manager->isInstance() ) {
       $order = $this->manager->getOrderInstance();
+    } elseif (!empty($whDetails->resource->invoice_id)) {
+        $order = $this->manager->getOrderInstanceWithId('\common\classes\Order', $whDetails->resource->invoice_id);
     }
     if (!empty($whDetails->resource)) {
       $res = $whDetails->resource;
@@ -477,42 +570,39 @@ $bodyReceived = '{"id": "WH-2WR32451HC0233532-67976317FL4543714","create_time": 
   }
 
   protected function whCaptured($whDetails, $parent_id = '') {
-    /** @var \common\services\PaymentTransactionManager $tm * /
-    $tm = $this->manager->getTransactionManager($this);
-    $ret = $tm->updatePaymentTransaction($whDetails->resource->id,
-        [
-          'fulljson' => json_encode($whDetails),
-          'status_code' => \common\helpers\OrderPayment::OPYS_SUCCESSFUL,
-          'status' => $whDetails->resource->status,
-          'amount' => $whDetails->resource->amount->value,
-          'comments'  => $whDetails->summary,
-          'date'  => date('Y-m-d H:i:s', strtotime($whDetails->resource->update_time)),
-         // parent_transaction_id orders_id
-        ]);
-    if ($this->manager->isInstance() ) {
-      $order = $this->manager->getOrderInstance();
-    }
-
-    if ($order && $order->info['orders_id']) {
-      $order->update_piad_information(true);
-      $order->save_details();
-      /// order matters
-      if (is_numeric(MODULE_PAYMENT_PAYPAL_PARTNER_TRANSACTIONS_ORDER_STATUS_ID) && ( MODULE_PAYMENT_PAYPAL_PARTNER_TRANSACTIONS_ORDER_STATUS_ID > 0 )) {
-        $history = [];
-        if ($ret)  {
-          $history['comments'] = $whDetails->summary;
-        }
-        \common\helpers\Order::setStatus($order->info['orders_id'], MODULE_PAYMENT_PAYPAL_PARTNER_TRANSACTIONS_ORDER_STATUS_ID, $history);
-
-      }
-    }
-*/
-
-
     /** @var \common\services\PaymentTransactionManager $tm */
     $tm = $this->manager->getTransactionManager($this);
     if ($this->manager->isInstance() ) {
       $order = $this->manager->getOrderInstance();
+    } elseif (!empty($whDetails->resource->invoice_id)) {
+        //tmp or real order id in the transaction details
+        $order_id = $whDetails->resource->invoice_id;
+        \Yii::warning("\$order_id  #### " .print_r($order_id , true), 'TLDEBUG');
+        if (substr($order_id, 0, 3) == 'tmp') {
+            $tmp_order_id = substr($order_id, 3);
+            \Yii::warning("\$tmp_order_id #### " .print_r($tmp_order_id, true), 'TLDEBUG');
+            if ($this->lockTmpOrder($tmp_order_id)) {
+                $tmpOrder = $this->manager->getParentToInstanceWithId('\common\classes\TmpOrder', $tmp_order_id);
+                $orders_id = $tmpOrder->createOrder();
+                $order = $this->manager->getOrderInstanceWithId('\common\classes\Order', $orders_id);
+\Yii::warning("\$order created #### " .print_r($order, true), 'TLDEBUG');
+                $this->no_process($order);
+//comment send 1 email only??
+                $order->notify_customer($order->getProductsHtmlForEmail(),[]);
+                $this->no_process_after($order);
+
+            } else {
+                // already have real order - get its number
+                sleep(5);
+                $orders_id = \common\models\TmpOrders::find()->where(['orders_id' => $tmp_order_id])->andWhere('child_id > 0')
+                        ->select('child_id')
+                        ->scalar();
+                $order = $this->manager->getOrderInstanceWithId('\common\classes\Order', $orders_id);
+\Yii::warning("\$order loaded \$orders_id $orders_id#### " .print_r($order, true), 'TLDEBUG');
+            }
+        } else {
+            $order = $this->manager->getOrderInstanceWithId('\common\classes\Order', $order_id);
+        }
     }
     if (!empty($whDetails->resource)) {
       $res = $whDetails->resource;
@@ -845,7 +935,7 @@ MERCHANT.ONBOARDING.COMPLETED
         $info = $errors = $warnings = [];
         if (!empty($response)) {
             $oAuth = $response->getOauthIntegrations();
-            $scopes = $oAuth[0]->oauth_third_party[0]->scopes;
+            $scopes = $oAuth[0]->oauth_third_party[0]->scopes??'';
 
             if (!$response->getPaymentsReceivable() ) {
                 $errors[] = PAYPAL_PARTNER_SELLER_BOARDED_ERROR_RECEIVABLE;
@@ -853,7 +943,7 @@ MERCHANT.ONBOARDING.COMPLETED
             if (!$response->getPrimaryEmailConfirmed()) {
                 $errors[] = PAYPAL_PARTNER_SELLER_BOARDED_ERROR_EMAIL;
             }
-            if (empty($scopes)) {
+            if (empty($scopes) && $this::BOARDING_MODE == 3) {
                 $errors[] = PAYPAL_PARTNER_SELLER_BOARDED_ERROR_PERMISSIONS;
             }
             
@@ -911,24 +1001,34 @@ and "capabilities[name==SEND_MONEY].limits" is anything but undefinited
                 }
             }
 
-            $_tmp = $this->checkScopes($scopes, true);
+            if (!empty($scopes)) {
+                $_tmp = $this->checkScopes($scopes, true);
+            }
             if (is_array($_tmp) && !empty($_tmp['recommended'])) {
                 $warnings = array_merge($warnings, $_tmp['recommended']);
             }
 
             /// info
-            $info = [
-                'Legal name' => $response->getLegalName(),
-                'Merchant id' => $response->getMerhantId(),
-                'Payments receivable' => $response->getPaymentsReceivable(),
-                'Primary e-mail' => $response->getPrimaryEmail(),
-                'Primary e-mail confirmed' => $response->getPrimaryEmailConfirmed(),
-                'Primary currency' => $response->getPrimaryCurrency() . "<BR />\n"
-                //,'Country' => $response->getCountry()
-            ];
+            $info = [];
+            foreach ([
+                'PAYPAL_PARTNER_LEGAL_NAME' => ['Legal name','getLegalName'],
+                'PAYPAL_PARTNER_SELLER_MERCHANT_ID' => ['Merchant id','getMerhantId'],
+                'PAYPAL_PARTNER_PAYMENTS_RECEIVABLE' => ['Payments receivable','getPaymentsReceivable'],
+                'PAYPAL_PARTNER_PRIMARY_EMAIL' => ['Primary e-mail','getPrimaryEmail'],
+                'PAYPAL_PARTNER_PRIMARY_CURRENCY' => ['Primary currency','getPrimaryCurrency'],
+                //'PAYPAL_PARTNER_' => ['',''],
+              ] as $k => $inf
+            ) {
+                if (!empty($inf)) {
+                    $val = $response->{$inf[1]}();
+                    if ($val!='') {
+                        $info[defined($k)?constant($k):$inf[0]] = $val;
+                    }
+                }
+            }
 
             $products = [];
-            if (!empty($prods) && is_array($prods)) {
+            if (false && !empty($prods) && is_array($prods)) {
                 foreach ( $prods as $prod  ) {
                     $str = "<b>{$prod->name}</b><br />\n"
                         . "Vetting Status: <b>{$prod->vetting_status}</b><br />\n";
@@ -943,10 +1043,20 @@ and "capabilities[name==SEND_MONEY].limits" is anything but undefinited
             $capabilities = [];
             if (!empty($_capabilities) && is_array($_capabilities)) {
                 foreach ( $_capabilities as $_capability ) {
-                    $str = $_capability['name'] . ": <b>" . (($_capability['status']??'') . $_capability['limits']??'') ."</b>";
+                    if (!empty($_capability['status'])) {
+                        $status = '<span class="paypal-capabilities glyphicon ' . strtolower($_capability['status']) . '">' . $_capability['status'] . '</span>';
+                    } else {
+                        $status = $_capability['status']??'';
+                    }
+                    $str =
+                        (defined('PAYPAL_PARTNER_' . strtoupper($_capability['name']) . '_TEXT')?
+                        constant('PAYPAL_PARTNER_' . strtoupper($_capability['name']) . '_TEXT'):
+                        $_capability['name']) . ": " . $status . ($_capability['limits']??'') . "";
                     $capabilities[] = $str;
                 }
-                $info['Capabilities'] = '<small>' . implode("<BR />\n", $capabilities) . "<BR /></small>\n";
+                $info[
+                  defined('PAYPAL_PARTNER_CAPABILITIES')?PAYPAL_PARTNER_CAPABILITIES:'Capabilities'
+                  ] = '<div>' . implode("</div><div>\n", $capabilities) . "</div>\n";
             }
             /// info end
 
@@ -974,8 +1084,16 @@ and "capabilities[name==SEND_MONEY].limits" is anything but undefinited
         return [];
     }
 
-    protected function getPartnerId() {
-        if ($this->getMode() == 'Live') {
+    public static function getPartnerId($force = false) {
+        if (isset($this) && $this instanceof self) {
+            $mode = $this->getMode();
+        } else {
+            $mode = self::getMode();
+        }
+        if (!empty($force)) {
+            $mode = $force;
+        }
+        if ($mode == 'Live') {
             $ret = self::PARTNER_MERCHANT_ID;
         } else {
             $ret = self::PARTNER_MERCHANT_SANDBOX_ID;
@@ -1056,14 +1174,6 @@ and "capabilities[name==SEND_MONEY].limits" is anything but undefinited
         return strtolower($ret);
     }
 
-
-    public static function possibleFundingArray() {
-        return array_merge(
-                ['all' => (defined('TEXT_ALL')?TEXT_ALL:'All')],
-                self::$possibleFundings
-            );
-    }
-
     public static function get3DSSettings($seller) {
         $ret = \common\modules\orderPayment\paypal_partner::$threeDSDefaults;
         if (!empty($seller->three_ds_settings)) {
@@ -1125,8 +1235,6 @@ and "capabilities[name==SEND_MONEY].limits" is anything but undefinited
             $fundings = array_map('trim', explode(',', MODULE_PAYMENT_PAYPAL_PARTNER_BUTTON_FUNDING));
             if (!in_array('', $fundings) && !in_array('all', $fundings) && !(in_array('--none--', $fundings) && count($fundings)==1)) {
                 $enabled = array_values(array_diff($fundings, ['', 'all', '--none--']));
-                $tmp = array_keys(self::$possibleFundings);
-
                 $disabled = array_diff(array_keys(self::$possibleFundings), $enabled);
 
                 if (!empty($enabled)) {
@@ -1173,6 +1281,174 @@ and "capabilities[name==SEND_MONEY].limits" is anything but undefinited
         }
 
         return $ret;
+    }
+
+    public function generateCCToken() {
+
+    }
+
+    public function generateCCCustomerDetails() {
+        $ret = [];
+        $post_data = \Yii::$app->request->post();
+        $billto = $post_data['billing_ab_id']??false;
+        if ($billto) {
+            $tmp = $this->manager->getCustomersAddress($billto, true, true);
+        }
+
+        if (!array($tmp) || empty($tmp['street_address'])) {
+            /** @var \common\classes\Order $order */
+            if (!$this->manager->isInstance()) {
+                $order = $this->manager->createOrderInstance('\common\classes\Order');
+            } else {
+                $order = $this->manager->getOrderInstance();
+            }
+            $tmp = $order->billing??null;
+        }
+
+        if (!array($tmp) || empty($tmp['street_address'])) {
+            $tmp = $this->manager->getBillingAddress();
+        }
+
+        if (!array($tmp) || empty($tmp['street_address']) && !empty($post_data['Billing_address'])) {
+            foreach (['firstname', 'lastname', 'street_address', 'city', 'postcode'] as $k) {
+                if (empty($tmp[$k]) && !empty($post_data['Billing_address'][$k])) {
+                    $tmp[$k] = strip_tags($post_data['Billing_address'][$k]);
+                }
+            }
+            if ($post_data['Billing_address']['country'] != $tmp['country']['id']) {
+                $_country = \common\helpers\Country::get_country_info_by_id($post_data['Billing_address']['country']);
+                if (!empty($_country['iso_code_2'])) {
+                    $tmp['country'] = $_country;
+                }
+            }
+        }
+        
+        if ($tmp['zone_id'] > 0) {
+            if ($tmp['country']['iso_code_2'] == 'US') {
+                $_state = \common\helpers\Zones::get_zone_code($tmp['country']['id'], $tmp['zone_id'], '');
+            } else {
+                $_state = \common\helpers\Zones::get_zone_name($tmp['country']['id'], $tmp['zone_id'], $tmp['state']);
+            }
+            if (!empty($_state)) {
+                $tmp['state'] = $_state;
+            }
+        }
+
+        if (!empty($tmp['firstname']) && !empty($tmp['lastname'])) {
+            $ret['cardholderName'] = substr($tmp['firstname'] . ' ' . $tmp['lastname'], 0, 140);
+        }
+        if (!empty($tmp['street_address']) && !empty($tmp['postcode']) ) {
+            $ret['billingAddress'] = [
+              'streetAddress' => substr($tmp['street_address'], 0, 300),
+              'extendedAddress' => substr($tmp['suburb'], 0, 300),
+              'locality' => substr($tmp['city'], 0, 120),
+              'region' => substr($tmp['state'], 0, 300),
+              'postalCode' => substr($tmp['postcode'], 0, 60),
+              'countryCodeAlpha2' => substr($tmp['country']['countries_iso_code_2']??$tmp['country']['iso_code_2'], 0, 60),//
+            ];
+        }
+        $seller = $this->getSeller($this->manager->getPlatformId());
+        $contingencies = 'SCA_WHEN_REQUIRED';
+        if (!empty($seller->three_ds_settings)) {
+            $tmp = json_decode($seller->three_ds_settings, true);
+            if (!empty($tmp['contingencies'])) {
+                $contingencies = $tmp['contingencies'];
+            }
+        }
+        $ret['contingencies'] = [$contingencies];
+
+        return $ret;
+    }
+
+/**
+ *
+ * @param array $data ["transaction_id" => "8MC585209K746392H"{, "tracking_number" => "443844607820", "carrier" => "FEDEX", "status" => "SHIPPED", 'carrier_name_other'}]
+ * @return obj|array|false
+ */
+    public function addTracking($data) {
+        $request = new \PayPalCheckoutSdk\Shipping\TrackersBatchRequest();
+        if (false && $tmp = self::getAttributionId()) {
+            $request->payPalPartnerAttributionId($tmp);
+        }
+        $trackers = [];
+        if (!empty($data) && is_array($data)) {
+            foreach ($data as $d) {
+                $tmp = ["status" => "SHIPPED", "carrier" => "OTHER"];
+                foreach (['transaction_id', 'tracking_number', 'carrier', 'carrier_name_other', 'status'] as $key) {
+                    if (!empty($d[$key])) {
+                        $tmp[$key] = $d[$key];
+                    }
+                }
+                if (!empty($tmp['transaction_id'])) {
+                    $trackers[] = $tmp;
+                }
+            }
+        }
+        if (empty($trackers)) {
+            return ['error' => 1, 'message' => TEXT_ERROR_TRANSACTIONID_REQUIRED];
+        }
+
+        $request->body = ['trackers' => $trackers];
+        if ($this->debug) {
+            \Yii::warning(" #### " .print_r($request->body, true), 'TLDEBUG' . $this->code);
+        }
+
+        try {
+            return $this->getHttpClient()->execute($request);
+        } catch (\Exception $ex) {
+
+            \Yii::error('body ' . print_r($request->body, true), 'paypal_partner_exception');
+            \Yii::error('message ' . $ex->getMessage(), 'paypal_partner_exception');
+            if ($tmp = $this->parseJsonMessage($ex->getMessage())) {
+                return ['error' => 1, 'message' => $tmp];
+            }
+        }
+        return false;
+    }
+
+/**
+ *
+ * @param string $traker_id
+ * @param array $data ["transaction_id" => "8MC585209K746392H"{, "tracking_number" => "443844607820", "carrier" => "FEDEX", "status" => "CANCELLED", 'carrier_name_other'}]
+ * @return obj|array|false
+ */
+    public function cancelTracking($tracker_id, $data) {
+        $request = new \PayPalCheckoutSdk\Shipping\TrackersPatchRequest($tracker_id);
+        if (false && $tmp = self::getAttributionId()) {
+            $request->payPalPartnerAttributionId($tmp);
+        }
+        $trackers = [];
+        if (!empty($data) && is_array($data)) {
+            $tmp = ["status" => "CANCELLED"];
+            foreach (['transaction_id', 'tracking_number', 'carrier', 'carrier_name_other', 'status'] as $key) {
+                if (!empty($data[$key])) {
+                    $tmp[$key] = $data[$key];
+                }
+            }
+            if (!empty($tmp['transaction_id'])) {
+                $trackers = $tmp;
+            }
+        }
+        if (empty($trackers)) {
+            return ['error' => 1, 'message' => TEXT_ERROR_TRANSACTIONID_REQUIRED];
+        }
+
+        $request->body = $trackers;
+        if ($this->debug) {
+            \Yii::warning(" #### " .print_r($request->body, true), 'TLDEBUG' . $this->code);
+        }
+
+        try {
+            return $this->getHttpClient()->execute($request);
+        } catch (\Exception $ex) {
+
+            \Yii::error('body ' . print_r($request->body, true), 'paypal_partner_exception');
+            \Yii::error('message ' . $ex->getMessage(), 'paypal_partner_exception');
+            if ($tmp = $this->parseJsonMessage($ex->getMessage())) {
+                return ['error' => 1, 'message' => $tmp];
+            }
+        }
+        return false;
     }
 
 

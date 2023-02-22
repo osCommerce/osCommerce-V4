@@ -17,6 +17,7 @@ class PlatformConfig {
 
     public static function getValue($key, $platformId = -1) {
         if (defined($key)) {
+            //?add for better priority && $platformId < 1
             return constant($key);
         } else {
             if ($platformId < 1) {
@@ -30,6 +31,33 @@ class PlatformConfig {
             $platformConfig = $__platform->config($platformId);
             return $platformConfig->const_value($key);
         }
+    }
+
+/**
+ * return country_id from config or constant
+ * @param int $platformId
+ * @return int 
+ */
+    public static function getStoreCountry($platformId = -1) {
+        $address = self::getDefaultAddress($platformId);
+        $country_id = $address['country_id']??0;
+        if (empty($country_id ) && defined('STORE_COUNTRY') && STORE_COUNTRY > 0) {
+            $country_id = STORE_COUNTRY;
+        }
+        return $country_id;
+    }
+    
+    public static function getDefaultAddress($platformId = -1) {
+        if ($platformId < 1) {
+            if ((int) \common\classes\platform::activeId() > 0) {
+                $platformId = (int) \common\classes\platform::activeId();
+            } else {
+                $platformId = (int) \common\classes\platform::defaultId();
+            }
+        }
+        $__platform = \Yii::$app->get('platform');
+        $platformConfig = $__platform->config($platformId);
+        return $platformConfig->getPlatformAddress();
     }
 
     public static function getFieldValue($field, $platformId = -1) {

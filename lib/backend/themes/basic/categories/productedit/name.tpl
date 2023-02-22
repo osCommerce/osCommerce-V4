@@ -286,6 +286,10 @@
            </div>
         </div>
         <div class="edp-line">
+           <label>{$smarty.const.ADD_TO_DESCRIPTION}</label>
+            {\backend\design\ComponentsButton::widget(['editor' => 'txt_products_description_'|cat:$platform_id|cat:'_'|cat:$lItem['id'], 'platform_id' => $platform_id, 'languages_id' => $lItem['id'], 'buttons' => ['banner']])}
+        </div>
+        <div class="edp-line">
           <label>{$smarty.const.TEXT_PRODUCTS_DESCRIPTION}</label>
           <textarea name="pDescription[{$platform_id}][{$lItem['id']}][products_description]" class="form-control ck-editor text-dox-02" id="txt_products_description_{$platform_id}_{$lItem['id']}" wrap="soft" cols="70" rows="15">{if isset($pDescription[$platform_id][$lKey]->products_description)}{$pDescription[$platform_id][$lKey]->products_description}{/if}</textarea>
         </div>

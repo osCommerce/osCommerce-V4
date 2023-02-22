@@ -1,9 +1,7 @@
 {use class="frontend\design\Info"}
 <div id="product-custom-bundle">
 <div class="heading-2">{$smarty.const.BUILD_YOUR_OWN_COMBO}</div>
-{if {$chosenProducts|@count} == 0}
-   <div class="text-no-products">{$smarty.const.TEXT_NO_ONE_PRODUCT}</div>
-{/if}
+
 <div class="chosen-products products-carousel">
   {foreach $chosenProducts as $prod}
     <div class="item" id="item-{$prod.products_id}" data-id="{$prod.products_id}">
@@ -165,10 +163,6 @@
         }
       ]
     });
-	
-	setTimeout(function(){
-       $('#product-custom-bundle .products-carousel').inRow(['.image', 'picture', '.title'], 5)
-    }, 500);
 
   });
 </script>
@@ -180,7 +174,9 @@
   });
 {/if}
   function update_custom_bundle_attributes(theForm) {
-    $.get("{Yii::$app->urlManager->createUrl('catalog/product-custom-bundle')}", $(theForm).serialize(), function(data, status) {
+    let formData = $(theForm).serializeArray();
+    formData.push({ name: 'box_id', value: '{$id}'})
+    $.get("{Yii::$app->urlManager->createUrl('catalog/product-custom-bundle')}", formData, function(data, status) {
       if (status == "success") {
 //        $('#product-price-old').html(data.product_price);
 //        $('#product-price-current').html(data.product_price);

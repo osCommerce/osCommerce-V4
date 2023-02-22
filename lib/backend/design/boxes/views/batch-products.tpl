@@ -94,8 +94,9 @@
             <ul class="nav nav-tabs">
 
               <li class="active"><a href="#list" data-toggle="tab">Main</a></li>
+              <li class="label">{$smarty.const.WINDOW_WIDTH}:</li>
               {foreach $settings.media_query as $item}
-                <li><a href="#list{$item.id}" data-toggle="tab">{$item.setting_value}</a></li>
+                <li><a href="#list{$item.id}" data-toggle="tab">{$item.title}</a></li>
               {/foreach}
 
             </ul>

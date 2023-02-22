@@ -4,11 +4,14 @@
   <input type="hidden" name="theme_name" value="{$theme_name}"/>
 
   <div class="tabbable tabbable-custom tabbable-ep">
+
     <ul class="nav nav-tabs nav-tabs-big {if $isMultiPlatform}tab-radius-ul{/if}">
-      <li class="active"><a href="#main" data-toggle="tab"><span>{$smarty.const.TEXT_MAIN_DETAILS}</span></a></li>
-      <li><a href="#images" data-toggle="tab"><span>{$smarty.const.TAB_IMAGES}</span></a></li>
-      <li><a href="#fonts" data-toggle="tab"><span>{$smarty.const.TEXT_FONTS}</span></a></li>
-      <li><a href="#sizes" data-toggle="tab"><span>{$smarty.const.SIZES_RESPONSIVE_DESIGN}</span></a></li>
+        <li class="active"><a href="#main" data-toggle="tab"><span>{$smarty.const.TEXT_MAIN_DETAILS}</span></a></li>
+        <li><a href="#images" data-toggle="tab"><span>{$smarty.const.TAB_IMAGES}</span></a></li>
+      {if $designer_mode == 'expert'}
+        <li><a href="#fonts" data-toggle="tab"><span>{$smarty.const.TEXT_FONTS}</span></a></li>
+        <li><a href="#sizes" data-toggle="tab"><span>{$smarty.const.SIZES_RESPONSIVE_DESIGN}</span></a></li>
+      {/if}
     </ul>
     <div class="tab-content {if $isMultiPlatform}tab-content1{/if}">
 
@@ -65,6 +68,7 @@
             </select>
           </div>
 
+          {if $designer_mode == 'expert'}
           <div class="setting-row">
             <label for="">{$smarty.const.TEXT_CUSTOMER_ACCOUNT}</label>
             <select name="settings[customer_account]" id="" class="form-control">
@@ -72,6 +76,7 @@
               <option value="new"{if $settings.customer_account == 'new'} selected{/if}>{$smarty.const.TEXT_NEW}</option>
             </select>
           </div>
+          {/if}
           <div class="setting-row">
             <label for="">{$smarty.const.TEXT_PRODUCTS_CAROUSEL}</label>
             <select name="settings[products_carousel]" id="" class="form-control">
@@ -80,6 +85,7 @@
             </select>
           </div>
 
+          {if $designer_mode}
           <div class="setting-row">
             <label for="">{$smarty.const.TEXT_THEME_COLOR}</label>
 
@@ -98,7 +104,9 @@
                 </select>
               </div>
             {/if}
+            {/if}
 
+          {if $designer_mode == 'expert'}
           <div class="setting-row">
             <label for="">Use Service Worker</label>
             <select name="settings[service_worker]" id="" class="form-control">
@@ -123,22 +131,22 @@
           </div>
 
           <div class="setting-row">
-            <label for="">{$smarty.const.TEXT_DEVELOPMENT_MODE}</label>
+            <label for="">Minimize javascript</label>
             <select name="settings[dev_mode]" id="" class="form-control">
-              <option value=""{if $settings.dev_mode == ''} selected{/if}>{$smarty.const.TEXT_NO}</option>
-              <option value="1"{if $settings.dev_mode == '1'} selected{/if}>{$smarty.const.TEXT_YES}</option>
+              <option value=""{if $settings.dev_mode == ''} selected{/if}>{$smarty.const.TEXT_YES}</option>
+              <option value="1"{if $settings.dev_mode == '1'} selected{/if}>{$smarty.const.TEXT_NO}</option>
             </select>
           </div>
 
-          <div class="setting-row">
+          {*<div class="setting-row">
             <label for="">{$smarty.const.TEXT_OLD_LISTING}</label>
             <select name="settings[old_listing]" id="" class="form-control">
               <option value=""{if $settings.old_listing == ''} selected{/if}>{$smarty.const.TEXT_NO}</option>
               <option value="1"{if $settings.old_listing == '1'} selected{/if}>{$smarty.const.TEXT_YES}</option>
             </select>
-          </div>
+          </div>*}
 
-          <div class="setting-row">
+          {*<div class="setting-row">
             <label for="">Css</label>
             <select name="settings[include_css]" id="" class="form-control">
               <option value=""{if $settings.include_css == ''} selected{/if}>Old</option>
@@ -146,7 +154,7 @@
               <option value="2"{if $settings.include_css == '2'} selected{/if}>Style 10.17</option>
               <option value="3"{if $settings.include_css == '3'} selected{/if}>Style 12.17</option>
             </select>
-          </div>
+          </div>*}
 
             {if $is_mobile}
               <div class="setting-row">
@@ -167,10 +175,10 @@
             {/if}
 
 
-          <div class="setting-row">
+          {*<div class="setting-row">
             <a href="{Yii::$app->urlManager->createUrl(['design/apply-styles-file', 'theme_name' => $theme_name])}" class="btn">{$smarty.const.ADD_NEW_DESIGN_ELEMENTS}</a>
-          </div>
-
+          </div>*}
+          {/if}
         </div>
       </div>
 
@@ -349,6 +357,8 @@
             </div>
           </div>
           <div class="col-md-6">
+
+            {if $designer_mode == 'expert'}
             <div class="widget box">
               <div class="widget-header">
                 <h4>Image preloader for lazy loading in base64</h4>
@@ -365,14 +375,16 @@
                   <textarea name="settings[base64_category]" class="form-control">{$settings.base64_category}</textarea>
                 </div>
 
+
                 <div class="setting-row">
                   <label for="">Default image for banner</label>
                   <textarea name="settings[base64_banner]" class="form-control">{$settings.base64_banner}</textarea>
                 </div>
 
-
               </div>
             </div>
+            {/if}
+
           </div>
         </div>
 

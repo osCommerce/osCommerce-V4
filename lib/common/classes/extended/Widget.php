@@ -22,7 +22,7 @@ class Widget extends \yii\base\Widget {
             if (defined('SHOW_EXTENSION_INFO') && SHOW_EXTENSION_INFO == 'True') {
                 $module = \common\helpers\Output::mb_basename(trim(str_replace('Render', '', get_class($this)),'/\\'));
                 if (\common\helpers\Acl::checkExtension($module)) {
-                    $response .= \common\helpers\Modules::getInfoLinkForExtension($module);
+                    $response = \common\helpers\Modules::getInfoLinkForExtension($module) . $response;
                 }
             }
         }

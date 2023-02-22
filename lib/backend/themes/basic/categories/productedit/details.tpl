@@ -14,7 +14,7 @@
     <div class="status-left">
         <span>{$smarty.const.TEXT_MANUAL_STOCK_UNLIMITED}:</span>
         <input type="checkbox" value="1" name="manual_stock_unlimited"
-               class="check_bot_switch_on_off"{if $pInfo->manual_stock_unlimited == 1} checked="checked"{/if} />
+               class=""{if $pInfo->manual_stock_unlimited == 1} checked="checked"{/if} />
     </div>
 {/if}
     <div class="status-left">
@@ -37,7 +37,7 @@
                 <h4>{$smarty.const.TEXT_LABEL_BRAND}</h4>
             </div>
             <div class="widget-content">
-                <div class="edp-line">
+                <div class="edp-line brandLine inlineMobileField">
                     <label>{$smarty.const.TEXT_MANUFACTURERS_NAME}</label>
                     <div class="f_td_group f_td_group-pr">
                         <input id="selectBrand" name="brand" type="text" class="form-control form-control-small"
@@ -812,4 +812,23 @@ console.log('inProgress');
 
 
 }
+
+$(function () {
+    if ($('input[name="manual_stock_unlimited"]').prop('checked')) {
+        $('.stock-block').addClass('stock-block-unlimited')
+    }
+    $('input[name="manual_stock_unlimited"]').tlSwitch({
+        onText: "{$smarty.const.SW_ON}",
+        offText: "{$smarty.const.SW_OFF}",
+        handleWidth: '20px',
+        labelWidth: '24px',
+        onSwitchChange: function(e, status){
+            if (status) {
+                $('.stock-block').addClass('stock-block-unlimited')
+            } else {
+                $('.stock-block').removeClass('stock-block-unlimited')
+            }
+        }
+    });
+})
 </script>

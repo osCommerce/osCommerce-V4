@@ -131,7 +131,7 @@ class Downloader
 
     public function checkVersion()
     {
-        $required_ver = '1.52';  // oscb/compat/configure.php
+        $required_ver = '1.56';  // oscb/compat/configure.php
         $required_msg = sprintf(Php8::getConst('EXTENSION_OSCLINK_TEXT_ERROR_OLD_VERSION'), $required_ver);
         
         // check access and auth

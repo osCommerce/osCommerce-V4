@@ -12,7 +12,6 @@
 
 namespace backend\controllers;
 
-use backend\services\GroupsService;
 use Yii;
 use yii\web\Response;
 

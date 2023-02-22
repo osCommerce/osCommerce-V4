@@ -56,7 +56,7 @@ class SellerInfo extends \yii\db\ActiveRecord
     public function rules(){
         return [
             [['platform_id', 'tracking_id'], 'required'],
-            [[ 'email_address', 'entry_firstname', 'entry_lastname', 'entry_street_address', 'entry_postcode', 'entry_city', 'entry_state', 'entry_country_id', 'is_onboard', 'entry_company', 'partner_id', 'fee_percent', 'entry_telephone', 'fee_editable', 'own_client_id', 'own_client_secret'], 'safe'],
+            [[ 'email_address', 'entry_firstname', 'entry_lastname', 'entry_street_address', 'entry_postcode', 'entry_city', 'entry_state', 'entry_country_id', 'is_onboard', 'entry_company', 'partner_id', 'fee_percent', 'entry_telephone', 'fee_editable', 'own_client_id', 'own_client_secret', 'status'], 'safe'],
             [['entry_suburb', 'entry_zone_id', 'payer_id'], 'safe'],
         ];
     }
@@ -66,9 +66,27 @@ class SellerInfo extends \yii\db\ActiveRecord
     }
     
     public static function generateTrackingId(){
-        return sha1(uniqid());
+        if (function_exists('random_int') && function_exists('mb_strlen')) {
+            $ret = self::random_str(127);
+        } else {
+            $ret = sha1(uniqid());
+        }
+        return $ret;
     }
-    
+
+    private static function random_str(int $length = 64, string $keyspace = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-'): string
+    {
+      if ($length < 1) {
+          throw new \RangeException("Length must be a positive integer");
+      }
+      $pieces = [];
+      $max = mb_strlen($keyspace, '8bit') - 1;
+      for ($i = 0; $i < $length; ++$i) {
+          $pieces []= $keyspace[random_int(0, $max)];
+      }
+      return implode('', $pieces);
+    }
+
     public function isOnBoarded(){
         return !!$this->is_onboard;
     }
@@ -98,5 +116,12 @@ class SellerInfo extends \yii\db\ActiveRecord
     public function beforeDelete() {
         \yii\caching\TagDependency::invalidate(\Yii::$app->cache, 'seller-'. $this->platform_id . '-' . $this->partner_id);
         return parent::beforeDelete();
+    }
+
+    public function beforeSave($insert) {
+        if (empty($this->tracking_id)) {
+            $this->tracking_id = $this->random_str(127);
+        }
+        return parent::beforeSave($insert);
     }
 }

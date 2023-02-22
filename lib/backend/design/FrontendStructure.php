@@ -965,4 +965,15 @@ class FrontendStructure
         self::init();
         return self::$pages;
     }
+
+    public static function getGroupCategories(){
+        $categories = [
+            'header' => ['tile' => 'Header'],
+            'footer' => ['tile' => 'Footer'],
+        ];
+
+        $categories = array_merge($categories, self::getPages());
+
+        return $categories;
+    }
 }

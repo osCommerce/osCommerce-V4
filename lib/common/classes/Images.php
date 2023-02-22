@@ -2,10 +2,10 @@
 /**
  * This file is part of osCommerce ecommerce platform.
  * osCommerce the ecommerce
- * 
+ *
  * @link https://www.oscommerce.com
  * @copyright Copyright (c) 2000-2022 osCommerce LTD
- * 
+ *
  * Released under the GNU General Public License
  * For the full copyright and license information, please view the LICENSE.TXT file that was distributed with this source code.
  */
@@ -42,7 +42,7 @@ class Images {
         }
         return DIR_FS_CATALOG . DIR_WS_IMAGES;
     }
-    
+
     public static function getWSCatalogImagesPath($use_cdn=false) {
         if (defined('DIR_WS_CATALOG_IMAGES')) {
             return DIR_WS_CATALOG_IMAGES;
@@ -69,7 +69,7 @@ class Images {
         }
         return false;
     }
-    
+
     public static function getImageExists($productsId = 0, $typeName = 'Thumbnail', $languageId = 0, $imageId = 0) {
         $imagePath = self::getImage($productsId, $typeName, $languageId, $imageId);
         if (empty($imagePath)) {
@@ -129,7 +129,7 @@ class Images {
         }
 
         $images = [];
-        
+
         $images_query = tep_db_query("select * from " . TABLE_PRODUCTS_IMAGES . " where products_id = '-1'");
         if ($ext = \common\helpers\Acl::checkExtensionAllowed('InventortyImages', 'allowed')) {
             $images_query = $ext::getQuery($productsId);
@@ -142,7 +142,7 @@ class Images {
             $images_query = tep_db_query("select * from " . TABLE_PRODUCTS_IMAGES . " where image_status = 1 and products_id = '" . (int)$productsId  . "' order by default_image DESC, sort_order");
         }
         while ($images_data = tep_db_fetch_array($images_query)) {
-            
+
             $item = [];
 
             foreach( self::getImageTypes() as $image_types ) {
@@ -300,7 +300,7 @@ class Images {
     }
 
     /**
-     * 
+     *
      * @param int $productsId
      * @param string, array $typeName
      * @param int $languageId - if language id set to -1 then find by priority main->1->2->...
@@ -324,14 +324,14 @@ class Images {
         if ( $languageId < 0 ) {
             $languageId = (int)\Yii::$app->settings->get('languages_id');
         }
-        
+
         if ($imageId == 0) {
             $imageId = self::getImageId($productsId);
         }
         if (!$imageId) {
             return $naImage;
         }
-        
+
         $productsId = \common\helpers\Inventory::get_prid($productsId);
 
         $images_description = static::imageDescription((int)$productsId, (int)$imageId, (int)$languageId);
@@ -701,7 +701,7 @@ class Images {
       }
       return $extension;
     }
-    
+
     // (file_exists(DIR_FS_CATALOG_IMAGES . $products['products_image']) ? '<span class="prodImgC">' . \common\helpers\Image::info_image($products['products_image'], $products['products_name'], 50, 50) . '</span>' : '<span class="cubic"></span>')
 
     public function createImages($productsId, $imageId, $hashName, $imageName, $language = '') {
@@ -761,13 +761,14 @@ class Images {
         }
         if (IMAGE_RESIZE == 'ImageMagick') {
             if (is_executable(CONVERT_UTILITY)) {
-                @exec(CONVERT_UTILITY . ' -thumbnail ' . $thumbnail_width . 'x' . $thumbnail_height . ' ' . $image . ' ' . $t_location);
+                @\common\helpers\Php::exec(CONVERT_UTILITY . ' -thumbnail ' . $thumbnail_width . 'x' . $thumbnail_height . ' ' . $image . ' ' . $t_location);
                 @chmod($t_location,0666);
                 return true;
             }
             return false;
         } elseif (IMAGE_RESIZE == 'GD') {
             if (function_exists("gd_info")) {
+
                 $scale = @min($thumbnail_width / $size[0], $thumbnail_height / $size[1]);
                 $x = $size[0] * $scale;
                 $y = $size[1] * $scale;
@@ -843,6 +844,23 @@ class Images {
                     return false;
                 }
 
+                if(function_exists("exif_read_data")){
+                    $exif = exif_read_data($image);
+                    if(!empty($exif['Orientation'])) {
+                        switch($exif['Orientation']) {
+                            case 8:
+                                $im = imagerotate($im,90,0);
+                                break;
+                            case 3:
+                                $im = imagerotate($im,180,0);
+                                break;
+                            case 6:
+                                $im = imagerotate($im,-90,0);
+                                break;
+                        }
+                    }
+                }
+
                 $imPic = 0;
                 if (function_exists('ImageCreateTrueColor'))
                     $imPic = @ImageCreateTrueColor($newWidth, $newHeight);
@@ -870,7 +888,7 @@ class Images {
                 } else {
                     return false;
                 }
-                
+
                 if ($size[2] == 3) {
                     @imagePNG($imPic, $t_location, 9);
                 } else {
@@ -916,7 +934,7 @@ class Images {
       } else {
         $watermarkName = 'watermark30';
       }
-      
+
       $watermarkFilenames = [];
       foreach (self::watermarkPrefix as $prefix) {
           if (isset($watermarkData[$prefix . $watermarkName]) && !empty($watermarkData[$prefix . $watermarkName])) {
@@ -935,14 +953,14 @@ class Images {
     public static function useWaterMark($base_width=0, $base_height=0) {
         $customer_groups_id = (int) \Yii::$app->storage->get('customer_groups_id');
 // {{
-        if (\Yii::$app->request->get('nowatermark') == 1) {
+        if (method_exists(\Yii::$app->request, 'get') AND (\Yii::$app->request->get('nowatermark') == 1)) {
             return false;
         }
 // }}
         if (!defined('PLATFORM_ID')) {
             return false;
         }
-        
+
         if (DEMO_STORE == 'true') {
             return true;
         }
@@ -970,7 +988,7 @@ class Images {
         /*if (CONFIG_IMAGE_WATERMARK != 'true') {
             return false;
         }*/
-        
+
         return true;
     }
 
@@ -1001,7 +1019,7 @@ class Images {
         default :
           return false;
       }
-      
+
       if (is_array($watermark_image)) {
           foreach ($watermark_image as $watermarkPosition => $watermarkImage) {
                 $stamp = @imagecreatefrompng($watermarkImage);
@@ -1068,14 +1086,14 @@ class Images {
         imagedestroy($im);
       }
     }
-    
+
     public static function waterMark($image = '') {
         $image = str_replace("/./", "/", str_replace("//", "/", $image));
         $image = DIR_FS_CATALOG . $image;
         if (!file_exists($image)) {
             return false;
         }
-        
+
         $size = @GetImageSize($image);
 
         $watermark_image = false;
@@ -1083,7 +1101,7 @@ class Images {
           $watermark_image = self::getWatermarkImage(PLATFORM_ID, $size[0]);
         }
         self::applyWatermark($image, $watermark_image,'direct');
-        
+
         die();
     }
 
@@ -2186,7 +2204,7 @@ class Images {
             return $sourceImage;
         }
 
-        $path = \Yii::getAlias('@webroot') . DIRECTORY_SEPARATOR . DIR_WS_IMAGES;
+        $path = \Yii::getAlias('@webroot') . '/' . DIR_WS_IMAGES; // don't use DIRECTORY_SEPARATOR here
         if (defined("DIR_WS_HTTP_ADMIN_CATALOG")) {
             $path = str_replace('/'.trim(DIR_WS_HTTP_ADMIN_CATALOG,'/').'/', '/', $path);
         }
@@ -2201,8 +2219,11 @@ class Images {
 
         \yii\helpers\FileHelper::createDirectory($pathDestination . $destination, 0777);
 
-        if (stripos($sourceImage, DIRECTORY_SEPARATOR) !== false) {
-            $pos = strripos($sourceImage, DIRECTORY_SEPARATOR);
+        if (str_contains($sourceImage, '/')) {
+            $pos = strripos($sourceImage, '/');
+            $fileName = strtolower(substr($sourceImage, $pos+1));
+        } elseif (str_contains($sourceImage, '\\')) {
+            $pos = strripos($sourceImage, '\\');
             $fileName = strtolower(substr($sourceImage, $pos+1));
         } else {
             $fileName = $sourceImage;
@@ -2325,7 +2346,7 @@ class Images {
             }
         }
 
-        $scale = $settings['imgWidth'] / $settings['width'];
+        $scale = $newWidth / $settings['width'];
         $left = $settings['left'];
         $top = $settings['top'];
         $width = $settings['width'];

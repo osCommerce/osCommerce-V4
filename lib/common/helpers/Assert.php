@@ -120,7 +120,7 @@ class Assert {
 
     public static function match($pattern, $value, string $message = null)
     {
-        if (!preg_match($pattern, $subject)) {
+        if (!preg_match($pattern, $value)) {
             $def = sprintf("%s is not match template", self::ident($value));
             static::errorMsg($message, $def);
         }

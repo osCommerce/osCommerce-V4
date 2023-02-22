@@ -39,11 +39,11 @@ class CategoriesRepository {
             ->innerJoinWith(['descriptions pd'=> function($query) use ($languageId) {
                 /** @var ActiveQuery $query */
                 return $query->andOnCondition(['language_id' => $languageId]);
-            }],false)
-            ->innerJoinWith(['groupsCategories c2g'=> function($query) use ($groupId) {
-                /** @var ActiveQuery $query */
-                return $query->andOnCondition(['c2g.groups_id' => $groupId]);
             }],false);
+
+        if ($model = \common\helpers\Acl::checkExtensionTableExist('UserGroupsRestrictions', 'GroupsCategories')) {
+            $categories->innerJoin($model::tableName() . ' c2g', 'c2g.categories_id=c.categories_id AND c2g.groups_id=:groups_id', ['groups_id' => $groupId]);
+        }
         if($active){
             $categories->active();
         }

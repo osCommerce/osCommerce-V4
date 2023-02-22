@@ -24,6 +24,9 @@ class Mail {
         } else {
             $platform_id = \common\classes\platform::validId($platform_id);
         }
+        if (is_array($email_params) && !isset($email_params['NEW_PASSWORD_SENTENCE'])) {
+            $email_params['NEW_PASSWORD_SENTENCE'] = \common\helpers\Php8::getConst('TEXT_NEW_PASSWORD_SENTENCE', 'Your new password is:');
+        }
         $data_query = tep_db_query("select ett.email_templates_subject, ett.email_templates_body, et.email_templates_id from " . TABLE_EMAIL_TEMPLATES . " et, " . TABLE_EMAIL_TEMPLATES_TEXTS . " ett where et.email_templates_id = ett.email_templates_id and et.email_templates_key = '" . tep_db_input($template_key) . "' and ett.language_id = '" . (int) ($language_id > 0 ? $language_id : $languages_id) . "' and ett.affiliate_id = '" . (int) ($aff_id >= 0 ? $aff_id : 0) . "' and et.email_template_type = '" . (EMAIL_USE_HTML != 'true' ? 'plaintext' : 'html') . "' and ett.platform_id = '" . $platform_id . "'");
         $data = tep_db_fetch_array($data_query);
         if ( empty($data['email_templates_subject']) || empty($data['email_templates_body']) ){
@@ -114,16 +117,17 @@ class Mail {
             $patterns = array();
             $replace = array();
             foreach ($params as $k => $v) {
+                $v = addcslashes($v, '\\$');
                 $patterns[] = "(##" . preg_quote($k) . "##)";
                 if ( in_array($k,$escape_params) ){
-                    $replace[] = str_replace('$', '/$/', Html::encode($v));
+                    $replace[] = Html::encode($v);
                 }else{
-                    $replace[] = str_replace('$', '/$/', $v);
+                    $replace[] = $v;
                 }
             }
 
-            $data['email_templates_subject'] = str_replace('/$/', '$', preg_replace($patterns, $replace, $data['email_templates_subject']));
-            $data['email_templates_body'] = str_replace('/$/', '$', preg_replace($patterns, $replace, $data['email_templates_body']));
+            $data['email_templates_subject'] = preg_replace($patterns, $replace, $data['email_templates_subject']);
+            $data['email_templates_body'] = preg_replace($patterns, $replace, $data['email_templates_body']);
         }
 
         return array($data['email_templates_subject'], $data['email_templates_body']);
@@ -463,6 +467,20 @@ class Mail {
         // }} admin bcc
         //add to EmailsHistory
         if ($model = \common\helpers\Acl::checkExtensionTableExist('ReportEmailsHistory', 'EmailsHistory')) {
+
+            if (is_array($email_params)) {
+                foreach (array(
+                    'NEW_PASSWORD',
+                    'PASSWORD_INVALID',
+                    'SECURITY_KEY',
+                ) as $field) {
+                    if (isset($email_params[$field]) AND (trim($email_params[$field]) != '')) {
+                        $email_text = str_replace($email_params[$field], '[HIDDEN]', $email_text);
+                    }
+                }
+                unset($field);
+            }
+
             try {
                 $EmailsHistory = new $model();
                 $EmailsHistory->loadDefaultValues();
@@ -471,13 +489,13 @@ class Mail {
                 $EmailsHistory->from_email_name = $from_email_name;
                 $EmailsHistory->from_email_address = $from_email_address;
                 $EmailsHistory->email_subject = $email_subject;
-                preg_match('/(security)|(password)/i', $email_subject, $matches);
+                /*preg_match('/(security)|(password)/i', $email_subject, $matches);
                 if (count($matches) > 0) {
                     $email_text = 'Hidden';
                 }
                 if (preg_match('/password\s*(is|:)/i', $email_text)) {
                     $email_text = 'Hidden';
-                }
+                }*/
                 $EmailsHistory->email_text = $email_text;
                 $EmailsHistory->headers = (is_array($headers) ? serialize($headers) : $headers);
                 $EmailsHistory->date_sent = date('Y-m-d H:i:s');
@@ -643,6 +661,16 @@ class Mail {
     public static function getEmailContent($pageName, $themeName)
     {
         defined('THEME_NAME') or define('THEME_NAME', $themeName);
+        
+        if (!defined('BASE_URL')) {
+            if (function_exists('tep_catalog_href_link')) {
+                $url = tep_catalog_href_link('');
+            } else {
+                $url = tep_href_link('');
+            }
+            define('BASE_URL', $url);
+        }
+        
         if (empty($pageName)) {
             $pageName = \common\classes\design::pageName('email');
         }

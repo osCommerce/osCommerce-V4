@@ -184,12 +184,13 @@ return [
                         $model->products_seo_page_name = \common\helpers\Seo::makeProductSlug($descriptionData, $model);
                     }
 
+                    $metric = \common\extensions\OscLink\OscLink::getConfigurationArray('api_measurement') == 'metric';
                     // inch, cm
-                    if (empty($model->weight_cm)) {
-                        $model->weight_cm = $model->products_weight;
+                    if (!isset($data->data['weight_cm'])) {
+                        $model->weight_cm = $model->products_weight / ($metric? 1 : 2.20462);
                     }
-                    if (empty($model->weight_in)) {
-                        $model->weight_in = $model->products_weight * 2.20462;
+                    if (!isset($data->data['weight_in'])) {
+                        $model->weight_in = $model->products_weight * ($metric? 2.20462 : 1);
                     }
 
                     // inventory

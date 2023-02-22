@@ -72,7 +72,9 @@ class Category extends AbstractClass
             $this->templateRecordArray = \common\models\CategoriesToTemplate::find()->where(['categories_id' => $categoryId])->asArray(true)->all();
             // EOF TEMPLATE
             // GROUP
-            $this->groupRecordArray = \common\models\GroupsCategories::find()->where(['categories_id' => $categoryId])->asArray(true)->all();
+            if ($model = \common\helpers\Acl::checkExtensionTableExist('UserGroupsRestrictions', 'GroupsCategories')) {
+                $this->groupRecordArray = $model::find()->where(['categories_id' => $categoryId])->asArray(true)->all();
+            }
             // EOF GROUP
             // SUPPLIER DISCOUNT
             $this->supplierDiscountRecordArray = \common\models\SuppliersCatalogDiscount::find()->where(['category_id' => $categoryId])->asArray(true)->all();
@@ -337,45 +339,47 @@ class Category extends AbstractClass
             // EOF TEMPLATE
             // GROUP
             $isRewriteGroup = false;
-            foreach ($this->groupRecordArray as $key => &$groupRecord) {
-                $isSave = false;
-                if ($isRewriteGroup == false) {
-                    $isRewriteGroup = true;
-                    \common\models\GroupsCategories::deleteAll(['categories_id' => $this->categoryId]);
-                }
-                $groupId = (int)(isset($groupRecord['groups_id']) ? $groupRecord['groups_id'] : 0);
-                unset($groupRecord['categories_id']);
-                unset($groupRecord['groups_id']);
-                if ($groupId > 0) {
-                    try {
-                        $groupClass = \common\models\GroupsCategories::find()->where(['categories_id' => $this->categoryId, 'groups_id' => $groupId])->one();
-                        if (!($groupClass instanceof \common\models\GroupsCategories)) {
-                            $groupClass = new \common\models\GroupsCategories();
-                            $groupClass->loadDefaultValues();
-                            $groupClass->categories_id = $this->categoryId;
-                            $groupClass->groups_id = $groupId;
-                        }
-                        $groupClass->setAttributes($groupRecord, false);
-                        if ($groupClass->save(false)) {
-                            $isSave = true;
-                            $groupRecord = $groupClass->toArray();
-                        } else {
-                            $this->messageAdd($groupClass->getErrorSummary(true));
-                        }
-                    } catch (\Exception $exc) {
-                        $this->messageAdd($exc->getMessage());
+            if ($groupCategories = \common\helpers\Acl::checkExtensionTableExist('UserGroupsRestrictions', 'GroupsCategories')) {
+                foreach ($this->groupRecordArray as $key => &$groupRecord) {
+                    $isSave = false;
+                    if ($isRewriteGroup == false) {
+                        $isRewriteGroup = true;
+                        $groupCategories::deleteAll(['categories_id' => $this->categoryId]);
                     }
-                    unset($groupClass);
+                    $groupId = (int)(isset($groupRecord['groups_id']) ? $groupRecord['groups_id'] : 0);
+                    unset($groupRecord['categories_id']);
+                    unset($groupRecord['groups_id']);
+                    if ($groupId > 0) {
+                        try {
+                            $groupClass = $groupCategories::find()->where(['categories_id' => $this->categoryId, 'groups_id' => $groupId])->one();
+                            if (empty($groupClass)) {
+                                $groupClass = new $groupCategories;
+                                $groupClass->loadDefaultValues();
+                                $groupClass->categories_id = $this->categoryId;
+                                $groupClass->groups_id = $groupId;
+                            }
+                            $groupClass->setAttributes($groupRecord, false);
+                            if ($groupClass->save(false)) {
+                                $isSave = true;
+                                $groupRecord = $groupClass->toArray();
+                            } else {
+                                $this->messageAdd($groupClass->getErrorSummary(true));
+                            }
+                        } catch (\Exception $exc) {
+                            $this->messageAdd($exc->getMessage());
+                        }
+                        unset($groupClass);
+                    }
+                    unset($groupId);
+                    if ($isSave != true) {
+                        unset($this->groupRecordArray[$key]);
+                    }
+                    unset($isSave);
                 }
-                unset($groupId);
-                if ($isSave != true) {
-                    unset($this->groupRecordArray[$key]);
-                }
-                unset($isSave);
+                unset($isRewriteGroup);
+                unset($groupRecord);
+                unset($key);
             }
-            unset($isRewriteGroup);
-            unset($groupRecord);
-            unset($key);
             // EOF GROUP
             // SUPPLIER DISCOUNT
             foreach ($this->supplierDiscountRecordArray as $key => &$supplierDiscountRecord) {
@@ -627,6 +631,7 @@ class Category extends AbstractClass
                                             ($categoryDirectory . $imageName),
                                             ($categoryDirectory . $imageType)
                                         );
+                                        $categoryClass->save(false);
                                         \common\classes\Images::createWebp($categoryClass->{'categories_image' . $imageField});
                                         \common\classes\Images::createResizeImages($categoryClass->{'categories_image' . $imageField}, 'Category ' . $imageType);
                                     }
@@ -637,7 +642,9 @@ class Category extends AbstractClass
                             }
                             unset($imageBody);
                             unset($imageSrc);
-                        } catch (\Exception $exc) {}
+                        } catch (\Exception $exc) {
+                            \Yii::warning("Error while import image '$imageSrc' for category($this->categoryId) : " . $exc->getMessage());
+                        }
                     }
                 }
                 unset($categoryDirectory);

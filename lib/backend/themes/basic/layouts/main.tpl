@@ -10,12 +10,12 @@
 
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=1000" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     {Html::csrfMetaTags()}
     <title>{$this->title}</title>
 
     <!--=== CSS ===-->
-{$version = 11}
+{$version = 17}
     <!-- Bootstrap -->
     <link href="{$app->request->baseUrl}/css/bootstrap.min.css?{$version}" rel="stylesheet" type="text/css" />
     <link href="{$app->request->baseUrl}/css/jquery.filedrop.css?{$version}" rel="stylesheet" type="text/css" />
@@ -325,6 +325,11 @@
             <!-- Top Left Menu -->
             {TopLeftMenu::widget()}
             <!-- /Top Left Menu -->
+            {if ((defined('WL_ENABLED') && WL_ENABLED === true) && (defined('WL_COMPANY_PHONE') && WL_COMPANY_PHONE != ''))}
+                <div class="header_phone"><span><i class="icon-phone"></i>{$smarty.const.WL_COMPANY_PHONE}</span></div>
+            {else}
+                <div class="header_phone"><a class="headerPhoneLink" href="tel:{$smarty.const.HEADER_PHONE}"><i class="icon-phone"></i>{$smarty.const.HEADER_PHONE}</a></div>
+            {/if}
 
             {if $ext = \common\helpers\Acl::checkExtensionAllowed('AdminChat', 'allowed')}
                 {$ext::getHtml()}

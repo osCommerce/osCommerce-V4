@@ -19,7 +19,7 @@ use PayPal\Rest\ApiContext;
 
 class Partner extends PayPalResourceModel {
     /**
-     * sets     "products": ["EXPRESS_CHECKOUT" ], "legal_consents": [ { "type": "SHARE_DATA_CONSENT", "granted": true } ]
+     * sets     "products": ["PPCP" ], "legal_consents": [ { "type": "SHARE_DATA_CONSENT", "granted": true } ]
      * @param type $data
      */
     public function __construct($data = null){
@@ -30,8 +30,21 @@ class Partner extends PayPalResourceModel {
         $this->setPartnerConfigOverride(new PartnerConfigOverride());
     }
     
-    public function setProducts(){
-        $this->products = [PartnerConstants::PRODUCT];
+    public function setProducts($data = []){
+        if (empty($data) || !array($data)) {
+            $this->products = [PartnerConstants::PRODUCT];
+        } else {
+            $prods = [];
+            foreach ($data as $p) {
+                if ( in_array($p, [ 'EXPRESS_CHECKOUT', 'PPPLUS', 'WEBSITE_PAYMENT_PRO', 'PPCP'])) {
+                    $prods[] = $p;
+                }
+            }
+            if (empty($prods)) {
+                $prods = [PartnerConstants::PRODUCT];
+            }
+            $this->products = $prods;
+        }
     }
     
     public function setConsents(){

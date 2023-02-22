@@ -428,7 +428,9 @@ function gdprRegularOffersPeriod() {
       onSwitchChange: function (element, arguments) {
         switchStatement(element.target.value, arguments);
         if (arguments){
+            {if \common\helpers\Acl::checkExtensionAllowed('BonusActions')}
             {Yii::$app->controller->promoActionsObs->renderValidPromoAction('signing_newsletter')}
+            {/if}
         }
         return true;
       },

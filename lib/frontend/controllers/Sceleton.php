@@ -55,7 +55,7 @@ class Sceleton extends Controller {
             $ext::checkRoute();
         }
 
-        global $language, $languages_id, $wish_list, $cart;
+        global $cart;
 
         $lng = new \common\classes\language();
         $lng->set_locale();
@@ -67,13 +67,13 @@ class Sceleton extends Controller {
             \common\models\Restriction::verifyAddress();
         }
 
-        $allowedClient = true;
+        $allowedClient = false;
         if ($ext = \common\helpers\Acl::checkExtensionAllowed('Maintenance', 'allowed')) {
             $allowedClient = $ext::allowedClient();
         }
 
         // {{ dev basic auth
-        if ( strpos(\Yii::$app->id,'frontend')!==false && defined('DEVELOPMENT_MODE') && DEVELOPMENT_MODE=='True' && $allowedClient === false) {
+        if ( strpos(\Yii::$app->id,'frontend')!==false && defined('DEVELOPMENT_MODE') && DEVELOPMENT_MODE=='True' && empty($allowedClient)) {
             $requestRoute = $id.'/index';
             if ( is_object($module) && $module instanceof yii\web\Application) {
                 $requestRoute = $module->requestedRoute;
@@ -195,11 +195,6 @@ class Sceleton extends Controller {
             Info::addJsData(['productListings' => ['cart' => ['products' => $cartProducts]]]);
         }
 
-        /*if (!Yii::$app->user->isGuest) {
-            Info::addJsData(['productListings' => [
-                'wishList' => ['products' => $wish_list->getWishList()]
-            ]]);
-        }*/
         Info::addJsData(['account' => [
             'isGuest' => Yii::$app->user->isGuest
         ]]);
@@ -967,6 +962,10 @@ class Sceleton extends Controller {
             $this->getView()->clear();
         }
         $this->view->page_params = (isset($params['params']) ? $params['params'] : []);
+        //paypal fraudnet
+        if (defined('MODULE_PAYMENT_PAYPAL_PARTNER_FRAUDNET_SI') && !empty(MODULE_PAYMENT_PAYPAL_PARTNER_FRAUDNET_SI)) {
+            \common\modules\orderPayment\paypal_partner::fraudnetInit();
+        }
 
         //$headers = Yii::$app->response->headers;
         //$headers->set('X-Frame-Options', 'SAMEORIGIN');

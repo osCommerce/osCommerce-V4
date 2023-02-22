@@ -393,7 +393,7 @@ if ( !$('.table tbody tr').hasClass('selected') ) {
     }
 }
 $('tr td .uniform').click(function() { 
-    if(getTableSelectedCount() > 0){
+    if(typeof getTableSelectedCount === 'function' && getTableSelectedCount() > 0){
         $('.order-box-list .btn-wr').removeClass('disable-btn');
     }else{
         $('.order-box-list .btn-wr').addClass('disable-btn');

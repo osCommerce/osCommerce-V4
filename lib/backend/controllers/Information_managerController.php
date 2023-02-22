@@ -612,6 +612,10 @@ class Information_managerController extends Sceleton  {
         $this->layout = false;
         $pageLinks = \common\classes\TlUrl::pageLinks();
 
+        if (Yii::$app->request->get('json', false)) {
+            return json_encode($pageLinks);
+        }
+
         return $this->render('pagelinks.tpl', [
             'items' => $pageLinks['items'],
             'suggest' => $pageLinks['suggest']

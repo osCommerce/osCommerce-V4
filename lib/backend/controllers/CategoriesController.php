@@ -2744,15 +2744,28 @@ class CategoriesController extends Sceleton {
               }
           }
 
-          $query = tep_db_query("select cpxs.xsell_id, cpxs.xsell_type_id, cpxs.sort_order, ".ProductNameDecorator::instance()->listingQueryExpression('pd','')." AS products_name, p.products_status from  " . TABLE_PRODUCTS_XSELL . " cpxs, " . TABLE_PRODUCTS . " p, " . TABLE_PRODUCTS_DESCRIPTION . " pd where cpxs.xsell_id = p.products_id and cpxs.xsell_id = pd.products_id and pd.language_id = '" . $languages_id . "' and pd.platform_id = '".intval(\common\classes\platform::defaultId())."' and cpxs.products_id = '" . (int) $pInfo->products_id . "' order by cpxs.xsell_type_id, cpxs.sort_order");
+          $query = tep_db_query(
+              "select cpxs.xsell_id, cpxs.xsell_type_id, cpxs.sort_order, ".ProductNameDecorator::instance()->listingQueryExpression('pd','')." AS products_name, p.products_status, xsback.products_id as backlink ".
+              "from  " . TABLE_PRODUCTS_XSELL . " cpxs ".
+              " left join ".TABLE_PRODUCTS_XSELL." xsback ON xsback.products_id=cpxs.xsell_id AND xsback.xsell_id='" . (int) $pInfo->products_id . "' AND xsback.xsell_type_id=cpxs.xsell_type_id ".
+              ", " . TABLE_PRODUCTS . " p, " . TABLE_PRODUCTS_DESCRIPTION . " pd ".
+              "where cpxs.xsell_id = p.products_id and cpxs.xsell_id = pd.products_id and pd.language_id = '" . $languages_id . "' and pd.platform_id = '".intval(\common\classes\platform::defaultId())."' and cpxs.products_id = '" . (int) $pInfo->products_id . "' ".
+              "order by cpxs.xsell_type_id, cpxs.sort_order"
+          );
           while ($data = tep_db_fetch_array($query)) {
               if ( !isset($xsellProducts[$data['xsell_type_id']]) ) continue;
+              if (empty($data['products_name'])) {
+                  $data['products_name'] = \common\helpers\Product::get_products_name($data['xsell_id']);
+              }
               $xsellProducts[$data['xsell_type_id']][] = [
                   'xsell_id' => $data['xsell_id'],
+                  'id' => $data['xsell_id'],
                   'products_name' => $data['products_name'],
+                  'name' => $data['products_name'],
                   'image' => \common\classes\Images::getImage($data['xsell_id'], 'Small'),
                   'price' => $currencies->format(\common\helpers\Product::get_products_price($data['xsell_id'])),
                   'status_class' => ($data['products_status'] == 0 ? 'dis_prod' : ''),
+                  'backlink' => $data['backlink'],
               ];
           }
           $this->view->xsellProducts = $xsellProducts;
@@ -2963,7 +2976,7 @@ class CategoriesController extends Sceleton {
         if (sizeof($navigation->snapshot) > 0) {
             $backUrl = Yii::$app->urlManager->createUrl(array_merge([$navigation->snapshot['page']], $navigation->snapshot['get']));
         } else {
-            $categoryId = \common\models\Products2Categories::findOne(['products_id' => $pInfo->products_id])->categories_id;
+            $categoryId = \common\models\Products2Categories::findOne(['products_id' => $pInfo->products_id])->categories_id ?? null;
             $backUrl = Yii::$app->urlManager->createUrl(['category', 'category_id' => $categoryId]);
         }
 
@@ -3050,16 +3063,19 @@ class CategoriesController extends Sceleton {
             if ($properties_id > 0) {
                 $properties_hiddens .= tep_draw_hidden_field('prop_ids[]', $properties_id);
                 foreach ($values_array[$key] as $values_key =>$values_id) {
-                    if ($values_id > 0) {
+                    $properties_id;
+                    $property = \common\models\Properties::findOne($properties_id);
+                    if ($values_id > 0 || $property->properties_type == 'flag') {
                         $properties_hiddens .= tep_draw_hidden_field('val_ids[' . $properties_id . '][]', $values_id);
                         $properties_hiddens .= tep_draw_hidden_field('val_extra[' . $properties_id . '][]', $extra_values[$key][$values_key] ?? null);
                         $values_ids[$properties_id][] = $values_id;
                         $val_extra[$properties_id][] = $extra_values[$key][$values_key] ?? null;
                     }
+                    unset($property);
                 }
             }
         }
-
+        
         $this->layout = false;
 
         return $this->render('property-values-selected.tpl', [
@@ -4344,7 +4360,7 @@ class CategoriesController extends Sceleton {
                   ->distinct()
                   ->orderBy("p.sort_order ")
                   ->addOrderBy(new Expression(ProductNameDecorator::instance()->listingQueryExpression('pd','')))
-                  ->limit(100)
+                  ->limit(500)
               ;
 
           if (!empty($q)) {
@@ -4354,6 +4370,15 @@ class CategoriesController extends Sceleton {
               ['like', "pd.products_name", tep_db_input($q) ],
               ['like', "pd.products_internal_name", tep_db_input($q) ]
             ]);
+          }
+
+          $filter_by_platform = \common\helpers\Admin::limitedPlatformList();
+          if ( is_array($filter_by_platform) && count($filter_by_platform)>0 ){
+              $pQ->andWhere(['EXISTS', (new \yii\db\Query())
+                  ->from(\common\models\PlatformsProducts::tableName() . ' p2pl')
+                  ->andWhere('p2pl.products_id=p.products_id')
+                  ->andWhere(['IN', 'p2pl.platform_id', $filter_by_platform])
+              ])->distinct();
           }
 
           if ($bundle_skip > 0 ) {
@@ -4415,7 +4440,7 @@ class CategoriesController extends Sceleton {
                 ->distinct()
                 ->orderBy([new \yii\db\Expression('IFNULL(c.categories_left,10000000)'), "p2c.sort_order"=>SORT_ASC])
                 ->addOrderBy(new Expression(ProductNameDecorator::instance()->listingQueryExpression('pd','')))
-                ->limit(100)
+                ->limit(500)
             ;
 
             if (!empty($q)) {
@@ -4432,6 +4457,23 @@ class CategoriesController extends Sceleton {
             if ($bundle_skip > 0 ) {
                 $pQ->andWhere(" p.is_bundle = 0");
             }
+
+            $filter_by_platform = \common\helpers\Admin::limitedPlatformList();
+            if ( is_array($filter_by_platform) && count($filter_by_platform)>0 ){
+                $pQ
+                    ->andWhere(['EXISTS', (new \yii\db\Query())
+                        ->from(\common\models\PlatformsProducts::tableName() . ' p2pl')
+                        ->andWhere('p2pl.products_id=p.products_id')
+                        ->andWhere(['IN', 'p2pl.platform_id', $filter_by_platform])
+                    ])
+                    ->andWhere(['EXISTS', (new \yii\db\Query())
+                        ->from(\common\models\PlatformsCategories::tableName() . ' c2pl')
+                        ->andWhere('c2pl.categories_id=c.categories_id')
+                        ->andWhere(['IN', 'c2pl.platform_id', $filter_by_platform])
+                    ])
+                    ->distinct();
+            }
+
             if ($linked_skip > 0 ) {
                 $pQ->leftJoin("products_linked_parent lp", "lp.product_id=p.products_id ")
                     ->andWhere(" lp.product_id IS NULL");
@@ -4491,6 +4533,9 @@ class CategoriesController extends Sceleton {
         $query = tep_db_query("select p.products_id, p.products_quantity, p.products_model, p.products_status_bundle, ".ProductNameDecorator::instance()->listingQueryExpression('pd','')." AS products_name, p.products_status from " . TABLE_PRODUCTS_DESCRIPTION . " pd," . TABLE_PRODUCTS . " p where language_id = '" . $languages_id . "' and platform_id = '".intval(\common\classes\platform::defaultId())."' and  p.products_id = '" . $products_id . "' and pd.products_id = '" . $products_id . "' limit 1");
         if (tep_db_num_rows($query) > 0) {
           $ret = tep_db_fetch_array($query);
+          if (empty($ret['products_name'])){
+              $ret['products_name'] = \common\helpers\Product::get_products_name($ret['products_id']);
+          }
         } else {
           $ret = array();
         }
@@ -4541,6 +4586,13 @@ class CategoriesController extends Sceleton {
         $data = self::getProductsDetails($products_id);
 
         if (count($data) > 0) {
+            $backlink = 0;
+            if ($parent_products_id = (int) Yii::$app->request->post('parent_products_id')) {
+                $backlink = \common\models\ProductsXsell::find()
+                    ->where(['xsell_type_id' => $xsell_type_id, 'xsell_id' => $parent_products_id, 'products_id' => $data['products_id']])
+                    ->select(['xsell_id'])->scalar();
+            }
+
             $xsellProduct = [
                 'xsell_id' => $data['products_id'],
                 'xsell_type_id' => $xsell_type_id,
@@ -4548,6 +4600,7 @@ class CategoriesController extends Sceleton {
                 'image' => \common\classes\Images::getImage($data['products_id'], 'Small'),
                 'price' => $currencies->format(\common\helpers\Product::get_products_price($data['products_id'])),
                 'status_class' => ($data['products_status'] == 0 ? 'dis_prod' : ''),
+                'backlink' => $backlink,
             ];
 
             return $this->render('product-new-xsell.tpl', [
@@ -4782,7 +4835,7 @@ class CategoriesController extends Sceleton {
             }
         }
 
-        $pSettings = \common\models\CategoriesPlatformSettings::find()->andWhere(['categories_id' => $categories_id])->indexBy('platform_id')->with(['imageMap', 'imageMapTitle'])->asArray()->all();
+        $pSettings = \common\models\CategoriesPlatformSettings::find()->andWhere(['categories_id' => $categories_id])->indexBy('platform_id')->asArray()->all();
         if (!$pSettings) {
           $pSettings = [];
         }
@@ -5115,9 +5168,9 @@ class CategoriesController extends Sceleton {
         }
 
         $bannerGroups[] = '';
-        $banners = \common\models\Banners::find()->select(['banners_group'])->distinct()->asArray()->all();
+        $banners = \common\models\BannersGroups::find()->asArray()->all();
         foreach ($banners as $banner) {
-            $bannerGroups[$banner['banners_group']] = $banner['banners_group'];
+            $bannerGroups[$banner['id']] = $banner['banners_group'];
         }
 
         $xsellProducts = [0=>[]];
@@ -5135,9 +5188,14 @@ class CategoriesController extends Sceleton {
         $query = tep_db_query("select cpxs.xsell_products_id as xsell_id, cpxs.xsell_type_id, cpxs.sort_order, ".ProductNameDecorator::instance()->listingQueryExpression('pd','')." AS products_name, p.products_status from  " . TABLE_CATS_PRODUCTS_XSELL . " cpxs, " . TABLE_PRODUCTS . " p, " . TABLE_PRODUCTS_DESCRIPTION . " pd where cpxs.xsell_products_id = p.products_id and cpxs.xsell_products_id = pd.products_id and pd.language_id = '" . $languages_id . "' and pd.platform_id = '".intval(\common\classes\platform::defaultId())."' and cpxs.categories_id = '" . (int) $categories_id . "' order by cpxs.xsell_type_id, cpxs.sort_order");
         while ($data = tep_db_fetch_array($query)) {
             if ( !isset($xsellProducts[$data['xsell_type_id']]) ) continue;
+            if (empty($data['products_name'])) {
+                $data['products_name'] = \common\helpers\Product::get_products_name($data['xsell_id']);
+            }
             $xsellProducts[$data['xsell_type_id']][] = [
                 'xsell_id' => $data['xsell_id'],
+                'id' => $data['xsell_id'],
                 'products_name' => $data['products_name'],
+                'name' => $data['products_name'],
                 'image' => \common\classes\Images::getImage($data['xsell_id'], 'Small'),
                 'price' => $currencies->format(\common\helpers\Product::get_products_price($data['xsell_id'])),
                 'status_class' => ($data['products_status'] == 0 ? 'dis_prod' : ''),
@@ -5257,13 +5315,10 @@ class CategoriesController extends Sceleton {
             ];
             tep_db_perform(TABLE_CATEGORIES, $sql_data_array);
             $categories_id = tep_db_insert_id();
+            /** @var \common\extensions\UserGroupsRestrictions\UserGroupsRestrictions $ext */
             if ($ext = \common\helpers\Acl::checkExtensionAllowed('UserGroupsRestrictions', 'allowed')) {
-                if ( $ext::select() ){
-                    /** @var \backend\services\GroupsService $groupService */
-                    try {
-                        $groupService = \Yii::createObject(\backend\services\GroupsService::class);
-                        $groupService->addCategoryToAllGroups($categories_id);
-                    }catch (\Exception $ex){}
+                if ( $groupService = $ext::getGroupsService() ){
+                    $groupService->addCategoryToAllGroups($categories_id);
                 }
             }
             Yii::$app->request->setBodyParams(array_merge(Yii::$app->request->getBodyParams(), ['categories_id' => $categories_id, 'popup' => $popup]));
@@ -5304,6 +5359,7 @@ class CategoriesController extends Sceleton {
                 $imgPath = DIR_WS_IMAGES . 'categories' . DIRECTORY_SEPARATOR . $categories_id . DIRECTORY_SEPARATOR;
                 if ($categories_image_loaded != '') {
                     $val = Uploads::move($categories_image_loaded, $imgPath . $imageType, true);
+                    $val = str_replace('\\', '/', $val);
                     $val = str_replace(DIR_WS_IMAGES, '', $val);
                     $sql_data_array['categories_image' . $mod] = $val;
                     Images::createWebp($val, true);
@@ -5761,6 +5817,9 @@ class CategoriesController extends Sceleton {
         $products_string = '';
         $products_query = tep_db_query("select distinct p.products_id, ".ProductNameDecorator::instance()->listingQueryExpression('pd','')." AS products_name, count(sp.sets_id) is_bundle_set from " . TABLE_PRODUCTS . " p left join " . TABLE_SETS_PRODUCTS . " sp on sp.sets_id = p.products_id, " . TABLE_PRODUCTS_DESCRIPTION . " pd where p.products_id = pd.products_id and pd.language_id = '" . (int) $languages_id . "' and pd.platform_id = '".intval(\common\classes\platform::defaultId())."' and (p.products_model like '%" . tep_db_input($q) . "%' or pd.products_name like '%" . tep_db_input($q) . "%') and p.products_id <> '" . (int) $prid . "' group by p.products_id having is_bundle_set = 0 order by p.sort_order, pd.products_name");
         while ($products = tep_db_fetch_array($products_query)) {
+            if (empty($products['products_name'])) {
+                $products['products_name'] = \common\helpers\Product::get_products_name($products['products_id']);
+            }
             $products_string .= '<option id="' . $products['products_id'] . '" value="prod_' . $products['products_id'] . '" style="COLOR:#555555">' . $products['products_name'] . '</option>';
         }
 
@@ -9552,6 +9611,7 @@ order by status desc, sort_order
 
         $post = Yii::$app->request->post();
         $catalog =  new \backend\components\ProductsCatalog();
+        $catalog->settings['add_sku'] = false;
         return $catalog->make($post);
     }
 
@@ -9561,7 +9621,10 @@ order by status desc, sort_order
 
       if (!empty($seacrh)){
         $catalog = new \backend\components\ProductsCatalog();
-        $catalog->post['suggest'] = 1;
+        //$catalog->post['suggest'] = 1;
+        if (!($catalog->post['suggest']??null)) {
+            $catalog->post['suggest'] = Yii::$app->request->get('suggest');
+        }
         return $catalog->search($seacrh);
       }
     }

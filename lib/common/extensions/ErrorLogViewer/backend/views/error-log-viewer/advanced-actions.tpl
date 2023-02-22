@@ -12,11 +12,12 @@
     <div class="row_or">
         <b>{$smarty.const.EXT_ELV_TEXT_CATEGORY}:</b> <span style="color: dimgrey"><i><b>{$log->category}</b></i></span><br>
     </div>
+    <div class="row_or">
+        <b>{$smarty.const.EXT_ELV_TEXT_ERROR_DESCRIPTION}:</b><br>
+        <small><span style="color: dimgrey">{htmlspecialchars($log->text)}</span></small>
+    </div>
     <br>
     <div class="btn-toolbar btn-toolbar-order">
-        <a class="btn btn-no-margin" href="{$app->urlManager->createUrl('error-log-viewer')}?by={$log->source}">{$smarty.const.IMAGE_BACK}</a>
-        <button class="btn btn-delete btn-no-margin" onclick="deleteLog()">{$smarty.const.IMAGE_DELETE}</button>
-{*        <button class="btn btn-no-margin" onclick="viewAsText()"><i class="icon-file-text-alt"></i> {$smarty.const.EXT_ELV_TEXT_VIEW_AS_TEXT}</button>*}
         <button id="btn_modal" class="btn btn-no-margin" data-toggle="modal" data-target="#elv_modal">{$smarty.const.IMAGE_DETAILS}</button>
     </div>
 
@@ -52,37 +53,5 @@
     function viewAsText()
     {
         window.open("{$app->urlManager->createUrl('error-log-viewer/view-as-text')}?file={$log->file}", "_blank");
-    }
-
-    function deleteLog()
-    {
-        var file = "{$log->file}"
-
-        bootbox.dialog({
-            message: "{$smarty.const.EXT_ELV_DELETE_INTRO}".replace('%s', file),
-            title: "{$smarty.const.EXT_ELV_DELETE_TITLE}",
-            buttons: {
-                confirm: {
-                    label: "{$smarty.const.TEXT_YES}",
-                    className: "btn-delete",
-                    callback: function() {
-                        $.post("{$app->urlManager->createUrl('error-log-viewer/logs-delete')}", { 'logs' : file }, function(data, status){
-                            if(status == "success")
-                            {
-                                window.location.href = "{$app->urlManager->createUrl('error-log-viewer')}?by={$log->source}";
-                            }else{
-                                alert("{$smarty.const.EXT_ELV_ERR_REQUEST}");
-                            }
-                        },"html");
-                    }
-                },
-                cancel: {
-                    label: "{$smarty.const.IMAGE_CANCEL}",
-                    className: "btn-cancel",
-                    callback: function() {
-                    }
-                }
-            }
-        });
     }
 </script>

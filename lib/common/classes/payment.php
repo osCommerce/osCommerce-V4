@@ -40,6 +40,9 @@ class payment extends modules\ModuleCollection {
             } elseif ((tep_not_null($module)) && (in_array(substr($module, 0, strpos($module, '_')) . '.php'/* . substr($PHP_SELF, (strrpos($PHP_SELF, '.') + 1))*/, $this->modules))) {
                 $this->selected_module = substr($module, 0, strpos($module, '_'));
                 $include_modules[] = array('class' => substr($module, 0, strpos($module, '_')), 'file' => substr($module, 0, strpos($module, '_')) . '.php'/* . substr($PHP_SELF, (strrpos($PHP_SELF, '.') + 1))*/);
+            } elseif ((tep_not_null($module)) && (in_array(substr($module, 0, strrpos($module, '_')) . '.php'/* . substr($PHP_SELF, (strrpos($PHP_SELF, '.') + 1))*/, $this->modules))) {
+                $this->selected_module = substr($module, 0, strrpos($module, '_'));
+                $include_modules[] = array('class' => substr($module, 0, strrpos($module, '_')), 'file' => substr($module, 0, strrpos($module, '_')) . '.php'/* . substr($PHP_SELF, (strrpos($PHP_SELF, '.') + 1))*/);
             } else {
                 if (defined('MODULE_PAYMENT_FREECHARGER_STATUS') && MODULE_PAYMENT_FREECHARGER_STATUS == 1 && ($cart->show_total() == 0 and $cart->show_weight == 0)) {
                     $this->selected_module = $module;
@@ -170,9 +173,9 @@ EOD;
         return $js;
     }
 
-    public function getEnabledModules() {
-        static $enabled = null;
-        if (is_null($enabled)){
+    public function getEnabledModules($incDisabledByZone = false) {
+        static $cached = [];
+        if (!isset($cached[(int)$incDisabledByZone])){
             /** @var \common\extensions\CustomerModules\CustomerModules $CustomerModules */
             //$CustomerModules = \common\helpers\Acl::checkExtensionAllowed('CustomerModules', 'allowed');
             $enabled = [];
@@ -183,12 +186,13 @@ EOD;
                     $forceCustomer = true;
                   }
                 }*/
-                if (is_object($module) && (/*$forceCustomer || */ ($module->enabled && $module->getVisibily($this->manager->getPlatformId(), $this->manager->getModulesVisibility())))){
+                if (is_object($module) && (/*$forceCustomer || */ (($module->enabled || ($incDisabledByZone && $module->getStatusBeforeUpdate())) && $module->getVisibily($this->manager->getPlatformId(), $this->manager->getModulesVisibility())))){
                     $enabled[$class] = $module;
                 }
             }
+            $cached[(int)$incDisabledByZone] = $enabled;
         }
-        return $enabled;
+        return $cached[(int)$incDisabledByZone];
     }
 
     private $selectionMode = false;
@@ -438,7 +442,7 @@ EOD;
 
         /** @var \common\extensions\CustomerModules\CustomerModules $CustomerModules */
         $CustomerModules = \common\helpers\Acl::checkExtensionAllowed('CustomerModules', 'allowed');
-        foreach($this->getEnabledModules() as $_payment){
+        foreach($this->getEnabledModules(true) as $tmpname => $_payment){
             if (method_exists($_payment, 'checkout_initialization_method')) {
                 $forceCustomer = false;
                 if ($CustomerModules && !\Yii::$app->user->isGuest) {
@@ -446,7 +450,7 @@ EOD;
                         $forceCustomer = true;
                     }
                 }
-                if (is_object($_payment) && ($forceCustomer || ($_payment->enabled && $_payment->getVisibily(\common\classes\platform::currentId(), $visibility)))) {//only enabled
+                if (is_object($_payment) && ($forceCustomer || (($_payment->enabled || $_payment->getStatusBeforeUpdate()) && $_payment->getVisibily(\common\classes\platform::currentId(), $visibility)))) {//only enabled
                     if (!$forceCustomer && !$_payment->getGroupVisibily(\common\classes\platform::currentId(), $groups_id)) {
                         continue;
                     }
@@ -592,6 +596,12 @@ EOD;
     public function popUpMode() {
         if ($this->isPaymentSelected()) {
             return $this->include_modules[$this->selected_module]->popUpMode();
+        }
+    }
+
+    public function directPayment() {
+        if ($this->isPaymentSelected()) {
+            return $this->include_modules[$this->selected_module]->directPayment();
         }
     }
 

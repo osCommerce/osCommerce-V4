@@ -157,14 +157,14 @@ class sage_pay_server extends ModulePayment implements TransactionalInterface, P
     function pre_confirmation_check() {
         $order = $this->manager->getOrderInstance();
         //\Yii::$app->request->post()
-        if (!empty($_POST['ptoken']) && $this->checkToken((int) $this->manager->getCustomerAssigned(), $_POST['ptoken'])) {
+        if (!empty($_POST[$this->code . 'ptoken']) && $this->checkToken((int) $this->manager->getCustomerAssigned(), $_POST[$this->code . 'ptoken'])) {
             //$order->info['use_token'] = isset($_POST['use_token'])?$_POST['use_token']:false;
             //$_SESSION['use_token'] = $_POST['ptoken'];
-            $this->manager->set('ptoken', $_POST['ptoken']);
-        } elseif (!empty($_POST['use_token'])) {
+            $this->manager->set('ptoken', $_POST[$this->code . 'ptoken']);
+        } elseif (!empty($_POST[$this->code . 'use_token'])) {
             //$order->info['use_token'] = isset($_POST['use_token'])?$_POST['use_token']:false;
             //$_SESSION['use_token'] = isset($_POST['use_token'])?$_POST['use_token']:false;
-            $this->manager->set('use_token', $_POST['use_token']);
+            $this->manager->set('use_token', $_POST[$this->code . 'use_token']);
         }
         if (!empty($_POST['set_default_token'])) {
             $this->manager->set('update_default_token', $_POST['set_default_token']);

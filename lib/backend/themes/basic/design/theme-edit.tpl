@@ -4,12 +4,12 @@
 {include 'menu.tpl'}
 
 
-<div class="page-elements">
+<div class="page-elements" style="padding-top: 40px">
 
 
 
 
-  <div class="widget box">
+  {*<div class="widget box">
     <div class="widget-header">
       <h4>Edit styles by selector</h4>
       <div class="toolbar no-padding">
@@ -112,14 +112,14 @@
       </script>
 
     </div>
-  </div>
+  </div>*}
 
-  <div class="widget box">
+  <div class="widget box widget-closed" id="website-style">
     <div class="widget-header">
       <h4>{$smarty.const.TXT_WEBSITE_STYLE}</h4>
       <div class="toolbar no-padding">
         <div class="btn-group">
-          <span class="btn btn-xs widget-collapse"><i class="icon-angle-down"></i></span>
+          <span class="btn btn-xs widget-collapse"><i class="icon-angle-up"></i></span>
         </div>
       </div>
     </div>
@@ -131,12 +131,12 @@
   </div>
 
 
-  <div class="widget box">
+  <div class="widget box box widget-closed" id="typography">
     <div class="widget-header">
       <h4>{$smarty.const.TXT_TYPOGRAPHY}</h4>
       <div class="toolbar no-padding">
         <div class="btn-group">
-          <span class="btn btn-xs widget-collapse"><i class="icon-angle-down"></i></span>
+          <span class="btn btn-xs widget-collapse"><i class="icon-angle-up"></i></span>
         </div>
       </div>
     </div>
@@ -148,12 +148,12 @@
   </div>
 
 
-  <div class="widget box">
+  <div class="widget box box widget-closed" id="buttons">
     <div class="widget-header">
       <h4>{$smarty.const.TEXT_BUTTONS}</h4>
       <div class="toolbar no-padding">
         <div class="btn-group">
-          <span class="btn btn-xs widget-collapse"><i class="icon-angle-down"></i></span>
+          <span class="btn btn-xs widget-collapse"><i class="icon-angle-up"></i></span>
         </div>
       </div>
     </div>
@@ -165,12 +165,12 @@
   </div>
 
 
-  <div class="widget box">
+  <div class="widget box box widget-closed" id="form-elements">
     <div class="widget-header">
       <h4>{$smarty.const.TXT_FORM_ELEMENTS}</h4>
       <div class="toolbar no-padding">
         <div class="btn-group">
-          <span class="btn btn-xs widget-collapse"><i class="icon-angle-down"></i></span>
+          <span class="btn btn-xs widget-collapse"><i class="icon-angle-up"></i></span>
         </div>
       </div>
     </div>
@@ -182,7 +182,7 @@
   </div>
 
 
-  <div class="widget box widget-closed">
+  <div class="widget box widget-closed" id="main-navigation">
     <div class="widget-header">
       <h4>{$smarty.const.TXT_MAIN_NAVIGATION}</h4>
       <div class="toolbar no-padding">
@@ -230,7 +230,7 @@
   </div>
 
 
-  <div class="widget box widget-closed">
+  <div class="widget box widget-closed" id="secondary-navigation">
     <div class="widget-header">
       <h4>{$smarty.const.TXT_SECONDARY_NAVIGATION}</h4>
       <div class="toolbar no-padding">
@@ -261,7 +261,7 @@
   </div>
 
 
-  <div class="widget box widget-closed">
+  <div class="widget box widget-closed" id="tabs">
     <div class="widget-header">
       <h4>{$smarty.const.TEXT_TABS}</h4>
       <div class="toolbar no-padding">
@@ -278,7 +278,7 @@
   </div>
 
 
-  <div class="widget box widget-closed">
+  {*<div class="widget box widget-closed">
     <div class="widget-header">
       <h4>{$smarty.const.TEXT_PRODUCT_LISTING}</h4>
       <div class="toolbar no-padding">
@@ -337,7 +337,7 @@
       </div>
 
     </div>
-  </div>
+  </div>*}
 {*
 
   <div class="widget box widget-closed">

@@ -18,34 +18,48 @@ use common\classes\modules\ModuleStatus;
 use common\classes\modules\ModuleSortOrder;
 use \PayPal;
 
-require ("lib/paypal.v2.php");
+require (__DIR__ . "/lib/paypal.v2.php");
 
 class paypal_partner extends lib\PaypalMiddleWare {
 
     const PARTNER_ATTRIBUTION_ID = 'HOLBIGROUPLTD_SP_OSCOMMERCE';
     const SANDBOX_PARTNER_ATTRIBUTION_ID = 'FLAVORsb-mstny8200048_MP';
     const PARTNER_DEFAULT_FEE = 0; //percent, 0 to be editable in admin
-    const PARTNER_APP_CLIENT_ID = '';
+    const PARTNER_APP_CLIENT_ID = 'AVC9I0Kbo0YkVYIx0LHY91HJKBGosc8-t5PMW-Pzve369xVbcf68_4MUw9cu3BC3zvz9UYqGRnk_u903';
     const PARTNER_APP_CLIENT_SECRET = '';
     /* ppcp */
-    const PARTNER_MERCHANT_ID = '63FGJCZ2BFNJE'; 
+    const PARTNER_MERCHANT_ID = '9TZHDRH8BP3US'; 
     const PARTNER_MERCHANT_SANDBOX_ID = '88LZN7N3UWLF8'; 
-    const PARTNER_APP_SANDBOX_CLIENT_ID = '';
-    const PARTNER_APP_SANDBOX_CLIENT_SECRET = '';
+    const PARTNER_APP_SANDBOX_CLIENT_ID = 'Aax41DjEyTorujP5KPKaGr2J_hnez5hmh7W46Wvs81LWr2un124l2THRnJ7XlZPUiPZgLXzImbc0Zcg7';
+    const PARTNER_APP_SANDBOX_CLIENT_SECRET =  '';
 
     /**/
+    const BOARDING_MODE = 1; //1 or 3 party
 
     use lib\PaypalPartnerTrait;
+    use lib\PaypalPartnerTraitAPM;
+    use lib\PaypalPartnerTraitFraudNet;
 
     var $code, $title, $description, $enabled;
     private $jsIncluded = false;
-    private $debug = false;
+    private $debug = true;
     private $sendExVat = true; //true to send items See comment in patch webhook processing
-    private $pp_commit = 'false'; //string! false - order total could be changed after confirmation.
+    private $requireItemVat = false; //DE pay upon invoice /purchase_units/0/items/0/tax is required for provided payment source.
+    private $pp_commit = 'true'; //string! false - order total could be changed after confirmation. Incomaptible with APMs (is Eligable == false)
+    private $jsLibAdded = false;
     
-    protected $webHooks = [
+    protected $webHooks1party = [
+      'CHECKOUT.ORDER.APPROVED',
+      'CHECKOUT.PAYMENT-APPROVAL.REVERSED'
+      ];
+    protected $webHooks3party = [
       'MERCHANT.ONBOARDING.COMPLETED',
       'MERCHANT.PARTNER-CONSENT.REVOKED',
+      'CUSTOMER.DISPUTE.CREATED',
+      'CUSTOMER.DISPUTE.UPDATED',
+      'CUSTOMER.DISPUTE.RESOLVED'
+      ];
+    protected $webHooks = [
       'PAYMENT.AUTHORIZATION.CREATED',
       'PAYMENT.AUTHORIZATION.VOIDED',
       'PAYMENT.CAPTURE.COMPLETED',
@@ -54,9 +68,6 @@ class paypal_partner extends lib\PaypalMiddleWare {
       'PAYMENT.CAPTURE.REVERSED',
       'PAYMENT.REFERENCED-PAYOUT-ITEM.COMPLETED',
       'PAYMENT.REFERENCED-PAYOUT-ITEM.FAILED',
-      'CUSTOMER.DISPUTE.CREATED',
-      'CUSTOMER.DISPUTE.UPDATED',
-      'CUSTOMER.DISPUTE.RESOLVED'
     ];
     
     protected static $threeDSDefaults = [
@@ -78,23 +89,40 @@ class paypal_partner extends lib\PaypalMiddleWare {
     ];
     
     protected static $possibleFundings = [
-      'card' => 'Credit or debit cards',
-      'credit' => 'PayPal Credit',
-      'paylater' => 'Pay Later'
-      /*,
-      'venmo' => 'Venmo',
-      'bancontact' => 'Bancontact',
-      'blik' => 'BLIK',
-      'eps' => 'eps',
-      'giropay' => 'giropay',
-      'ideal' => 'iDEAL',
-      'mercadopago' => 'Mercado Pago',
-      'mybank' => 'MyBank',
-      'p24' => 'Przelewy24',
-      'sepa' => 'SEPA-Lastschrift',
-      'sofort' => 'Sofort'*/
+      'paypal' => ['default_translation' => 'PayPal', 'apm' => 0, 'countries' => [], 'translation_key' => 'MODULE_PAYMENT_PAYPAL_PARTNER_PAYPAL_TITLE'],
+      'card' => ['default_translation' => 'Credit or debit cards', 'apm' => 0, 'countries' => [], 'translation_key' => 'MODULE_PAYMENT_PAYPAL_PARTNER_CARD_TITLE'],
+      'credit' => ['default_translation' => 'PayPal Credit', 'apm' => 0, 'countries' => [], 'translation_key' => 'MODULE_PAYMENT_PAYPAL_PARTNER_CREDIT_TITLE'],
+      'paylater' => ['default_translation' => 'Pay Later', 'apm' => 0, 'countries' => ['au', 'de', 'fr', 'it', 'sp', 'gb', 'us'], 'translation_key' => 'MODULE_PAYMENT_PAYPAL_PARTNER_PAYLATER_TITLE'],
+      /**/
+      //'venmo' => ['default_translation' => 'Venmo', 'apm' => 1, 'countries' => ['US'], 'translation_key' => 'MODULE_PAYMENT_PAYPAL_PARTNER_VENMO_TITLE'],
+      'pui' => ['default_translation' => 'Pay upon invoice', 'apm' => 1, 'countries' => ['de'], 'translation_key' => 'TEXT_PAY_UPON_INVOICE'],
+      'bancontact' => ['default_translation' => 'Bancontact', 'apm' => 1, 'countries' => ['be'], 'translation_key' => 'MODULE_PAYMENT_PAYPAL_PARTNER_BANCONTACT_TITLE'],
+      'blik' => ['default_translation' => 'BLIK', 'apm' => 1, 'countries' => ['pl'], 'translation_key' => 'MODULE_PAYMENT_PAYPAL_PARTNER_BLIK_TITLE'],
+      'eps' => ['default_translation' => 'EPS', 'apm' => 1, 'countries' => ['at'], 'translation_key' => 'MODULE_PAYMENT_PAYPAL_PARTNER_EPS_TITLE'],
+      'giropay' => ['default_translation' => 'GIROPAY', 'apm' => 1, 'countries' => ['de'], 'translation_key' => 'MODULE_PAYMENT_PAYPAL_PARTNER_GIROPAY_TITLE'],
+      'ideal' => ['default_translation' => 'iDEAL', 'apm' => 1, 'countries' => ['nl'], 'translation_key' => 'MODULE_PAYMENT_PAYPAL_PARTNER_IDEAL_TITLE'],
+      //'mercadopago' => ['default_translation' => 'Mercado Pago', 'apm' => 1, 'countries' => ['br', 'mx'], 'translation_key' => 'MODULE_PAYMENT_PAYPAL_PARTNER_MERCADOPAGO_TITLE'],
+      'mybank' => ['default_translation' => 'MyBank', 'apm' => 1, 'countries' => ['it'], 'translation_key' => 'MODULE_PAYMENT_PAYPAL_PARTNER_MYBANK_TITLE'],
+      'p24' => ['default_translation' => 'Przelewy24', 'apm' => 1, 'countries' => ['pl'], 'translation_key' => 'MODULE_PAYMENT_PAYPAL_PARTNER_P24_TITLE'],
+      'sepa' => ['default_translation' => 'SEPA-Lastschrift', 'apm' => 0, 'countries' => [], 'translation_key' => 'MODULE_PAYMENT_PAYPAL_PARTNER_SEPA_TITLE'],
+      'sofort' => ['default_translation' => 'Sofort', 'apm' => 1, 'countries' => ['at', 'be', 'de', 'sp', 'it', 'nl', 'gb'], 'translation_key' => 'MODULE_PAYMENT_PAYPAL_PARTNER_SOFORT_TITLE'],
+      
+        //'applepay' => 'ApplePay',
+        /*'itau' => 'Itau',
+        'zimpler' => 'Zimpler',
+        'wechatpay' => 'WeChatPay',
+        'payu' => 'PayU',
+        'verkkopankki' => 'Verkkopankki',
+        'trustly' => 'Trustly',
+        'oxxo' => 'Oxxo',
+        'boleto' => 'Boleto',
+        'boletobancario' => 'BoletoBancario',
+        'maxima' => 'Maxima',
+        'multibanco' => 'Multibanco',
+        'satispay' => 'Satispay',
+      /**/
     ];
-    
+
     protected $defaultTranslationArray = [
       'MODULE_PAYMENT_PAYPAL_PARTNER_TEXT_TITLE' => 'PayPal, PayLater, Credit and Debit Cards',
       'MODULE_PAYMENT_PAYPAL_PARTNER_TEXT_PUBLIC_TITLE' => 'PayPal (including PayLater, Credit and Debit Cards)',
@@ -128,6 +156,7 @@ class paypal_partner extends lib\PaypalMiddleWare {
       'PAYPAL_PARTNER_CHECK_DETAILS_AND_BOARDING' => 'Please check/update your details and then process on boarding',
       'PAYPAL_PARTNER_OWN_CLIENT_ID' => 'PayPal API Client ID',
       'PAYPAL_PARTNER_OWN_CLIENT_SECRET' => 'PayPal API Client secret',
+      'PAYPAL_PARTNER_GO_LIVE' => 'PayPal Go Live',
     ];
 
     public function getQuickTranslationKeys() {
@@ -179,14 +208,57 @@ class paypal_partner extends lib\PaypalMiddleWare {
             $this->enabled = false;
         }
 
-        if ($this->enabled === true) {
-            $this->update_status();
+        if ( $this->enabled  && \Yii::$app->id=='app-frontend' && ($this->currentPageButtonsLayout() == 'False' || \Yii::$app->controller->id == 'payer')) {
+            $this->enabled = false;
         }
+
+        if ( in_array(\Yii::$app->controller->id, ['callback', 'checkout', 'payer'])) {
+            $this->pp_commit = 'true';
+        }
+
+
+        if ($this->enabled === true 
+            //&& \Yii::$app->id != 'app-pos'&& \Yii::$app->id != 'app-console'
+            //&& \Yii::$app->controller->id != 'modules'
+            && \Yii::$app->id == 'app-frontend'
+            && \Yii::$app->controller->id != 'callback') {
+            $this->doCheckoutInitializationOnInactive = true;
+            //load JS libraries etc regardless selected address
+            $this->checkout_initialization_method_js();
+
+            $this->update_status();
+            if ($this->enabled !== true) {
+                $this->doCheckoutInitializationOnInactive = true;
+            }
+        }
+    }
+
+    private function currentPageButtonsLayout() {
+        $ret = 'False';
+        if (\Yii::$app->controller->id == 'callback') {
+            $ret = 'True';
+        } elseif (defined('MODULE_PAYMENT_PAYPAL_PARTNER_BUY_IMMEDIATELLY') && \Yii::$app->controller->id == 'catalog') {
+            $ret = MODULE_PAYMENT_PAYPAL_PARTNER_BUY_IMMEDIATELLY;
+        } elseif (defined('MODULE_PAYMENT_PAYPAL_PARTNER_SHOPPING_CART') && \Yii::$app->controller->id == 'shopping-cart') {
+            $ret = MODULE_PAYMENT_PAYPAL_PARTNER_SHOPPING_CART;
+        } elseif (defined('MODULE_PAYMENT_PAYPAL_PARTNER_AT_CHECKOUT_LOGIN') && \Yii::$app->controller->id == 'checkout' && \Yii::$app->controller->action->id == 'login') {
+            $ret = MODULE_PAYMENT_PAYPAL_PARTNER_AT_CHECKOUT_LOGIN;
+        } elseif (defined('MODULE_PAYMENT_PAYPAL_PARTNER_AT_CHECKOUT') &&  
+                    ((\Yii::$app->controller->id == 'checkout' && \Yii::$app->controller->action->id != 'login') ||
+                    (\Yii::$app->controller->id == 'payer') )
+                )
+        {
+            $ret = MODULE_PAYMENT_PAYPAL_PARTNER_AT_CHECKOUT;
+        }
+        if ($ret == 'Fields') {
+            $ret = 'Vertical';
+        }
+        return $ret;
     }
 
     function update_status() {
 
-        if (($this->enabled == true) && defined('MODULE_PAYMENT_PAYPAL_PARTNER_ZONE') && ((int) MODULE_PAYMENT_PAYPAL_PARTNER_ZONE > 0)) {
+        if (defined('MODULE_PAYMENT_PAYPAL_PARTNER_ZONE') && ((int) MODULE_PAYMENT_PAYPAL_PARTNER_ZONE > 0)) {
             $get = \Yii::$app->request->get();
             //callback could change address.
             //check it here
@@ -199,7 +271,6 @@ class paypal_partner extends lib\PaypalMiddleWare {
                 }
                 if (!empty($request['shipping_address'])) {
                     $country = \common\helpers\Country::get_country_info_by_iso($request['shipping_address']['country_code']);
-                    //$this->manager->set('estimate_ship', ['country_id' => $country['id'], 'postcode' => $request['shipping_address']['postal_code'], 'zone' => $request['shipping_address']['state']]);
                     if (is_array($country)) {
                         $zone = \common\helpers\Zones::lookupZone($country['id'], $request['shipping_address']['state']);
                         $zone_id = empty($zone['zone_id'])?0:$zone['zone_id'];
@@ -217,9 +288,14 @@ class paypal_partner extends lib\PaypalMiddleWare {
                     }
                 }
             } else {
-                $check_flag = parent::checkStatusByShipping(MODULE_PAYMENT_PAYPAL_PARTNER_ZONE);
+                $check_flag = parent::checkStatusByZone(MODULE_PAYMENT_PAYPAL_PARTNER_ZONE);
             }
 
+            if ($check_flag && defined('MODULE_PAYMENT_PAYPAL_PARTNER_VIRTUAL_GUEST') && MODULE_PAYMENT_PAYPAL_PARTNER_VIRTUAL_GUEST == 'True'
+                && is_object($this->manager) && !$this->manager->isShippingNeeded() && !$this->manager->getCustomerAssigned()) {
+                $check_flag = false;
+            }
+            
             if ($check_flag == false) {
                 $this->enabled = false;
             }
@@ -251,172 +327,424 @@ class paypal_partner extends lib\PaypalMiddleWare {
 
     public function checkButtonOnProduct($only=false) {
         return (
-            \Yii::$app->controller->id != 'catalog' ||
-            (defined('MODULE_PAYMENT_PAYPAL_PARTNER_BUY_IMMEDIATELLY') && MODULE_PAYMENT_PAYPAL_PARTNER_BUY_IMMEDIATELLY == 'True')) ||
-        (!$only && $this->checkMessageOnProduct());
+                \Yii::$app->controller->id != 'catalog' ||
+                (defined('MODULE_PAYMENT_PAYPAL_PARTNER_BUY_IMMEDIATELLY') && MODULE_PAYMENT_PAYPAL_PARTNER_BUY_IMMEDIATELLY != 'False')
+            ) || (!$only && $this->checkMessageOnProduct());
+    }
+
+    public function checkCheckoutFields() {
+        return (
+                \Yii::$app->id == 'app-frontend' &&
+                \Yii::$app->controller->id != 'catalog' &&
+                defined('MODULE_PAYMENT_PAYPAL_PARTNER_AT_CHECKOUT') && MODULE_PAYMENT_PAYPAL_PARTNER_AT_CHECKOUT == 'Fields'
+            );
     }
 
     protected function checkMessageOnProduct() {
         return defined('MODULE_PAYMENT_PAYPAL_PARTNER_PAY_LATER') && MODULE_PAYMENT_PAYPAL_PARTNER_PAY_LATER == 'True';
     }
 
+    /**
+     * returns required HTML containers for buttons/messages.
+     * @staticvar int $idx on product listing there could be several pay buttons
+     * @param int $index rudiment??
+     * @return string  - HTML - payment buttons container
+     */
     function checkout_initialization_method($index = 0) {
+        $ret = '';
         static $idx = 0;
-        $this->checkout_initialization_method_js($index);
+        //$this->checkout_initialization_method_js($index);
         if ($this->checkButtonOnProduct(true)) {
             $idx++;
-            return '<div class="paypal-button-container" id="paypal-button-container-' . $idx . '"></div>';
+            $ret = '<div class="paypal-button-container" id="paypal-button-container-' . $idx . '"></div>';
         }
+        return $ret ;
+    }
+    private function isCheckout() {
+        return \Yii::$app->controller->id == 'checkout'; //2do order-pay
     }
 
+/**
+ * JS to render PP buttons and messages.
+ * @return string JS
+ */
     public function getJavascript() {
         $locale = \Yii::$app->settings->get('locale');
-        if ($this->manager->has('ppartner_total_check') && \Yii::$app->controller->id == 'checkout') return;
-        if (\Yii::$app->controller->id != 'catalog' || $this->checkButtonOnProduct(true)) {
-            $size = defined('MODULE_PAYMENT_PAYPAL_PARTNER_BUTTON_SIZE') ? MODULE_PAYMENT_PAYPAL_PARTNER_BUTTON_SIZE : 'small';
-            $color = defined('MODULE_PAYMENT_PAYPAL_PARTNER_BUTTON_COLOR') ? MODULE_PAYMENT_PAYPAL_PARTNER_BUTTON_COLOR : 'gold';
-            $shape = defined('MODULE_PAYMENT_PAYPAL_PARTNER_BUTTON_SHAPE') ? MODULE_PAYMENT_PAYPAL_PARTNER_BUTTON_SHAPE : 'pill';
-            $label = defined('MODULE_PAYMENT_PAYPAL_PARTNER_BUTTON_LABEL') ? MODULE_PAYMENT_PAYPAL_PARTNER_BUTTON_LABEL : 'checkout';
-            $layout = defined('MODULE_PAYMENT_PAYPAL_PARTNER_BUTTON_LAYOUT') ? MODULE_PAYMENT_PAYPAL_PARTNER_BUTTON_LAYOUT : 'vertical';
-            $generalError = defined('MODULE_PAYMENT_PAYPAL_PARTNER_GENERAL_ERROR') ? MODULE_PAYMENT_PAYPAL_PARTNER_GENERAL_ERROR : "Can't create order";
-            $generalError = htmlspecialchars($generalError);
-            if (\Yii::$app->controller->id == 'catalog') {
-                $layout = defined('MODULE_PAYMENT_PAYPAL_PARTNER_BUTTON_LAYOUT_PRODUCT') ? MODULE_PAYMENT_PAYPAL_PARTNER_BUTTON_LAYOUT_PRODUCT : 'vertical';
-            }
-            $createUrl = \Yii::$app->urlManager->createAbsoluteUrl(["callback/webhooks.payment.{$this->code}", 'action' => 'createOrder']); //must return OrderId (from paypal)
-            $retrieveUrl = \Yii::$app->urlManager->createAbsoluteUrl(["callback/webhooks.payment.{$this->code}", 'action' => 'retrieveOrder']);
-            $shippingUrl = \Yii::$app->urlManager->createAbsoluteUrl(["callback/webhooks.payment.{$this->code}", 'action' => 'patchOrder']);
-            $currency = \Yii::$app->settings->get('currency');
-            $customersDetails = '';
-            //'frmCheckoutConfirm' : 'frmCheckout'
-            if (!$this->manager->getCustomerAssigned()) {
-                $customersDetails = ",{
-                                    method: 'POST',
-                                    headers: {'Content-Type':'application/x-www-form-urlencoded'}, // this line is important, if this content-type is not set it wont work
-                                    body: $('#frmCheckout').serialize()
-                                }";
-            }
-            return <<<EOD
-            if ($('.paypal-button-container').length>0){
-            //paypal.Buttons({
-            var pppButtonsParams = {
-                locale: '{$locale}',
-                style: {
-                    size: '{$size}',
-                    color: '{$color}',
-                    shape: '{$shape}',
-                    label: '{$label}',
-                    layout: '{$layout}',
-                },
-                createOrder: function (data, actions) {
-                            return fetch('{$createUrl}' {$customersDetails})
-                      .then(function(res) {
-                            return res.json();
-                      }).then(function(data) {
+        if ($this->manager->has('ppartner_total_check') && \Yii::$app->controller->id == 'checkout') return;// returned after paypal to confirm final amount
 
-                            try {
-                                if (data.hasOwnProperty('error') && data.hasOwnProperty('message') ) {
-                                    alertMessage(data.message);
+        if (\Yii::$app->controller->id != 'catalog' || $this->checkButtonOnProduct(true)) {
+//apm + CC
+            if ($this->checkCheckoutFields() && $this->isCheckout()) {
+                $size = defined('MODULE_PAYMENT_PAYPAL_PARTNER_BUTTON_SIZE') ? MODULE_PAYMENT_PAYPAL_PARTNER_BUTTON_SIZE : 'small';
+                $color = defined('MODULE_PAYMENT_PAYPAL_PARTNER_BUTTON_COLOR') ? MODULE_PAYMENT_PAYPAL_PARTNER_BUTTON_COLOR : 'gold';
+                $shape = defined('MODULE_PAYMENT_PAYPAL_PARTNER_BUTTON_SHAPE') ? MODULE_PAYMENT_PAYPAL_PARTNER_BUTTON_SHAPE : 'pill';
+                $label = defined('MODULE_PAYMENT_PAYPAL_PARTNER_BUTTON_LABEL') ? MODULE_PAYMENT_PAYPAL_PARTNER_BUTTON_LABEL : 'checkout';
+                $layout = strtolower($this->currentPageButtonsLayout());
+                $generalError = defined('MODULE_PAYMENT_PAYPAL_PARTNER_GENERAL_ERROR') ? MODULE_PAYMENT_PAYPAL_PARTNER_GENERAL_ERROR : "Can't create order";
+                $generalError = htmlspecialchars($generalError);
+                $createUrl = \Yii::$app->urlManager->createAbsoluteUrl(["callback/webhooks.payment.{$this->code}", 'action' => 'createOrder']); //must return OrderId (from paypal)
+                $retrieveUrl = \Yii::$app->urlManager->createAbsoluteUrl(["callback/webhooks.payment.{$this->code}", 'action' => 'retrieveOrder']);
+                $shippingUrl = \Yii::$app->urlManager->createAbsoluteUrl(["callback/webhooks.payment.{$this->code}", 'action' => 'patchOrder']);
+                $currency = \Yii::$app->settings->get('currency');
+                $customersDetails = '';
+                //$puoi_agreement = '';
+                //if ($this->billing['country']['countries_iso_code_2'] == 'DE') {                }
+                $puoi_agreement = str_replace(["\'", "\n"], ["\\'", ''], MODULE_PAYMENT_PAYPAL_PARTNER_TEXT_UPON_INVOCE);
+
+
+                //'frmCheckoutConfirm' : 'frmCheckout'
+                if (!$this->manager->getCustomerAssigned()) {
+                    $customersDetails = ",{
+                                        method: 'POST',
+                                        headers: {'Content-Type':'application/x-www-form-urlencoded'},
+                                        body: $('#frmCheckout').serialize()
+                                    }";
+                }
+                return <<<EOD
+            if ($('.paypal-button-container').length>0){
+
+                var pppButtonsParams = {
+                    locale: '{$locale}',
+                    style: {
+                        size: '{$size}',
+                        color: '{$color}',
+                        shape: '{$shape}',
+                        label: '{$label}',
+                        layout: '{$layout}',
+                    },
+                    createOrder: function (data, actions) {
+                                return fetch('{$createUrl}' {$customersDetails})
+                          .then(function(res) {
+                                return res.json();
+                          }).then(function(data) {
+
+                                try {
+                                    if (data.hasOwnProperty('error') && data.hasOwnProperty('message') ) {
+                                        alertMessage(data.message);
+                                    }
+                                    //return '';
+                                } catch ( e ) {
+                                  console.log(e);
+                                  return false
                                 }
-                                //return '';
-                            } catch ( e ) {
-                              console.log(e);
-                              return false
+                                return data.id;
+                          });
+                    },
+                    onApprove: function (data, actions) {
+                        $('body').append('<div class="popup-box-wrap"><div class="around-pop-up"></div><div class="preloader"></div></div>');
+                        return fetch('{$retrieveUrl}&id=' + data.orderID, {
+                            method: 'POST'
+                        }).then(function(res) {
+                            return res.json();
+                        }).then(function(res) {
+                            if (!res.ok) {
+                                $('.popup-box-wrap').remove();
+                                alertMessage(res.error);
+                            } else {
+                                window.location.href = res.url;
                             }
-                            return data.id;
-                      });
-                },
-                onApprove: function (data, actions) {
-                    $('body').append('<div class="popup-box-wrap"><div class="around-pop-up"></div><div class="preloader"></div></div>');
-                    return fetch('{$retrieveUrl}&id=' + data.orderID, {
-                        method: 'POST'
-                    }).then(function(res) {
-                        return res.json();
-                    }).then(function(res) {
-                        if (!res.ok) {
-                            $('.popup-box-wrap').remove();
-                            alertMessage(res.error);
-                        } else {
-                            window.location.href = res.url;
+                        });
+                    },
+                    onShippingChange: function(data,actions) {
+                        return fetch('{$shippingUrl}', {
+                                        method: 'POST',
+                                        headers: {
+                                           'Content-Type': 'application/x-www-form-urlencoded',
+                                        },
+                                        body: JSON.stringify(data)
+                                    }).then(function(res) {
+                                        return res.json();
+                                    }).then(function(data) {
+                                        if (data.length == 0) {
+                                          return actions.reject();
+                                        } else if (data.same == 1) {
+                                          return actions.resolve();
+                                        }
+                                        return actions.order.patch(data);
+                                    });
+                    },
+/*product page                    onClick: function(data, actions) {
+                        var pppBtn = $('.paypal-button-container');
+                        if (pppBtn && pppBtn.length>0){
+                            var  that = pppBtn[0];
+                            var theForm = $(that).parents('form');
+                            if (theForm.attr('name') == 'cart_quantity' || theForm.hasClass('form-buy')){
+
+                                var _data = theForm.serializeArray();
+                                _data.push({name: 'popup', value: 'true'});
+                                _data.push({name: 'purchase', value: '{$this->code}'});
+
+                                $.ajax({
+                                    url: theForm.attr('action'),
+                                    data: _data,
+                                    async: false,
+                                    type: theForm.attr('method'),
+                                    success: function(data){
+                                        //just wait for adding product to cart
+                                        }
+                                });
+                            }
+                        }
+                    },/*product page  */
+                    onError: function(err){
+                            if (false && err != '') {
+                                 alert(err);
+                            } else {
+                                 alert("{$generalError}");
+                            }
+                    },
+                    onCancel: function(err){
+
+                    }
+                };
+
+                document.querySelectorAll('.paypal-button-container').forEach(function(selector) {
+                    paypal.getFundingSources().forEach(function(fundingSource) {
+                        var pbParams = pppButtonsParams;
+                        if (fundingSource != 'paypal') {
+                            pbParams.style = {};
+                        }
+                        pbParams.fundingSource =  fundingSource;
+                        var button = paypal.Buttons(pbParams);
+                        if (button.isEligible()) {
+                            var container;
+                            container = document.createElement('span');
+                            container.classList.add('paypal-button-{$this->code}_' + fundingSource);
+                            selector.appendChild(container);
+                            button.render(container);
                         }
                     });
-                },
-                onShippingChange: function(data,actions) {
-//console.log("onShippingChange", data, actions);
-                    return fetch('{$shippingUrl}', {
-                                    method: 'POST',
-                                    headers: {
-                                       'Content-Type': 'application/x-www-form-urlencoded',
-                                    },
-                                    body: JSON.stringify(data)
-                                }).then(function(res) {
-                                    return res.json();
-                                }).then(function(data) {
-                                    if (data.length == 0) {
-                                      return actions.reject();
-                                    } else if (data.same == 1) {
-                                      return actions.resolve();
-                                    } 
-                                    return actions.order.patch(data);
-                                });
-                },
-                onClick: function(data, actions) {
-                    var pppBtn = $('.paypal-button-container');
-                    if (pppBtn && pppBtn.length>0){
-                        var  that = pppBtn[0];
-                    var theForm = $(that).parents('form');
-                    if (theForm.attr('name') == 'cart_quantity' || theForm.hasClass('form-buy')){
-                    /*
-                        //theForm.removeClass('set-popup');
-                        theForm.append('<input type="hidden" name="purchase" value="{$this->code}">').submit();
-                        $(".popup-box:last").trigger("popup.close");$(".popup-box-wrap").remove();
-                    */
-                        var _data = theForm.serializeArray();
-                        _data.push({name: 'popup', value: 'true'});
-                        _data.push({name: 'purchase', value: '{$this->code}'});
+                    if ($('.item-payment.paypal_partner_pui').length>0) {
+                        var container;
+                        container = document.createElement('span');
+                        container.classList.add('paypal-button-{$this->code}_pui');
+                        var agreement = btncontainer = '';
+                        agreement = document.createElement('span');
+                        btncontainer = document.createElement('span');
+                        container.classList.add('paypal-button-{$this->code}-agreement');
+                        agreement.innerHTML = '{$puoi_agreement}';
 
-                        $.ajax({
-                            url: theForm.attr('action'),
-                            data: _data,
-                            async: false,
-                            type: theForm.attr('method'),
-                            success: function(data){
-                                //just wait for adding product to cart
-                                }
-                        });
-                        }
+                        container.appendChild(agreement);
+                        container.appendChild(btncontainer);
+
+                        selector.appendChild(container);
+                        container = btncontainer;
                     }
-                },
-                onError: function(err){
-                        if (false && err != '') {
-                             alert(err);
-                        } else {
-                             alert("{$generalError}");
-                        }
-                },
-                onCancel: function(err){
 
-                }
-            //});
-            };
+                });
+            }
+            $(window).on('checkout_worker_complete', function (event) {
+                var price = 0;
+                try {
+                    price = parseFloat($('.price-row.total.ot_total input.ot_total_clear').val()) || 0;
+                    price = price.toFixed(2);
+                } catch (e) { price = 0; }
 
-            document.querySelectorAll('.paypal-button-container').forEach(function(selector) {
-                paypal.Buttons(pppButtonsParams).render(selector);
+                $('.pp-pay-later-message').attr('data-pp-amount', price);
             });
-        }
-        $(window).on('checkout_worker_complete', function (event) {
-            var price = 0;
-            try {
-                price = parseFloat($('.price-row.total.ot_total input.ot_total_clear').val()) || 0;
-                price = price.toFixed(2);
-            } catch (e) { price = 0; }
 
-            $('.pp-pay-later-message').attr('data-pp-amount', price);
-        });
+function paypalFieldsCallback(){
+
+    if (paymentCollection.form) {
+
+        var bodyData = '';
+        if (paymentCollection.form) {
+            bodyData = $(paymentCollection.form).serialize();
+        }
+        var method = paymentCollection.getCurrentPayment();
+        method = method.substring(method.lastIndexOf('_')+1);
+
+        if (typeof window['{$this->code}_callback_' + method] == 'function'){
+            try {
+                window['{$this->code}_callback_' + method]();
+            } catch (e ) {
+                console.log(e);
+            }
+        }
+
+
+    }
+    return false;
+
+};
+
 EOD;
+/*
+        fetch("$whSaveTmpOrderURL", {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json"
+                    },
+                    body: bodyData
+                }).then(function(result) {
+                    return result.json();
+                })
+                .then(function(data) {
+                    //!payWithCard finish calback
+                    if (!data || !data.clientSecret) {
+                        if (data && data.error) {
+                            showError(data.error);
+                        } else {
+                            showError('$general_error');
+                        }
+                    } else {
+                        payWithCard(paymentCollection.stripes.stripe, paymentCollection.stripes.card, data.clientSecret, data.token);
+                    }
+
+                });*/
+            } else {
+
+                $size = defined('MODULE_PAYMENT_PAYPAL_PARTNER_BUTTON_SIZE') ? MODULE_PAYMENT_PAYPAL_PARTNER_BUTTON_SIZE : 'small';
+                $color = defined('MODULE_PAYMENT_PAYPAL_PARTNER_BUTTON_COLOR') ? MODULE_PAYMENT_PAYPAL_PARTNER_BUTTON_COLOR : 'gold';
+                $shape = defined('MODULE_PAYMENT_PAYPAL_PARTNER_BUTTON_SHAPE') ? MODULE_PAYMENT_PAYPAL_PARTNER_BUTTON_SHAPE : 'pill';
+                $label = defined('MODULE_PAYMENT_PAYPAL_PARTNER_BUTTON_LABEL') ? MODULE_PAYMENT_PAYPAL_PARTNER_BUTTON_LABEL : 'checkout';
+                $layout = strtolower($this->currentPageButtonsLayout());
+                $generalError = defined('MODULE_PAYMENT_PAYPAL_PARTNER_GENERAL_ERROR') ? MODULE_PAYMENT_PAYPAL_PARTNER_GENERAL_ERROR : "Can't create order";
+                $generalError = htmlspecialchars($generalError);
+                $createUrl = \Yii::$app->urlManager->createAbsoluteUrl(["callback/webhooks.payment.{$this->code}", 'action' => 'createOrder']); //must return OrderId (from paypal)
+                $retrieveUrl = \Yii::$app->urlManager->createAbsoluteUrl(["callback/webhooks.payment.{$this->code}", 'action' => 'retrieveOrder']);
+                $shippingUrl = \Yii::$app->urlManager->createAbsoluteUrl(["callback/webhooks.payment.{$this->code}", 'action' => 'patchOrder']);
+                $currency = \Yii::$app->settings->get('currency');
+                $customersDetails = '';
+                //'frmCheckoutConfirm' : 'frmCheckout'
+                if (!$this->manager->getCustomerAssigned()) {
+                    $customersDetails = ",{
+                                        method: 'POST',
+                                        headers: {'Content-Type':'application/x-www-form-urlencoded'},
+                                        body: $('#frmCheckout').serialize()
+                                    }";
+                }
+                return <<<EOD
+                if ($('.paypal-button-container').length>0){
+                //paypal.Buttons({
+                var pppButtonsParams = {
+                    locale: '{$locale}',
+                    style: {
+                        size: '{$size}',
+                        color: '{$color}',
+                        shape: '{$shape}',
+                        label: '{$label}',
+                        layout: '{$layout}',
+                    },
+                    createOrder: function (data, actions) {
+                                return fetch('{$createUrl}' {$customersDetails})
+                          .then(function(res) {
+                                return res.json();
+                          }).then(function(data) {
+
+                                try {
+                                    if (data.hasOwnProperty('error') && data.hasOwnProperty('message') ) {
+                                        alertMessage(data.message);
+                                    }
+                                    //return '';
+                                } catch ( e ) {
+                                  console.log(e);
+                                  return false
+                                }
+                                return data.id;
+                          });
+                    },
+                    onApprove: function (data, actions) {
+                        $('body').append('<div class="popup-box-wrap"><div class="around-pop-up"></div><div class="preloader"></div></div>');
+                        return fetch('{$retrieveUrl}&id=' + data.orderID, {
+                            method: 'POST'
+                        }).then(function(res) {
+                            return res.json();
+                        }).then(function(res) {
+                            if (!res.ok) {
+                                $('.popup-box-wrap').remove();
+                                alertMessage(res.error);
+                            } else {
+                                window.location.href = res.url;
+                            }
+                        });
+                    },
+                    onShippingChange: function(data,actions) {
+    //console.log("onShippingChange", data, actions);
+                        return fetch('{$shippingUrl}', {
+                                        method: 'POST',
+                                        headers: {
+                                           'Content-Type': 'application/x-www-form-urlencoded',
+                                        },
+                                        body: JSON.stringify(data)
+                                    }).then(function(res) {
+                                        return res.json();
+                                    }).then(function(data) {
+                                        if (data.length == 0) {
+                                          return actions.reject();
+                                        } else if (data.same == 1) {
+                                          return actions.resolve();
+                                        }
+                                        return actions.order.patch(data);
+                                    });
+                    },
+                    onClick: function(data, actions) {
+                        var pppBtn = $('.paypal-button-container');
+                        if (pppBtn && pppBtn.length>0){
+                            var  that = pppBtn[0];
+                        var theForm = $(that).parents('form');
+                        if (theForm.attr('name') == 'cart_quantity' || theForm.hasClass('form-buy')){
+                        /*
+                            //theForm.removeClass('set-popup');
+                            theForm.append('<input type="hidden" name="purchase" value="{$this->code}">').submit();
+                            $(".popup-box:last").trigger("popup.close");$(".popup-box-wrap").remove();
+                        */
+                            var _data = theForm.serializeArray();
+                            _data.push({name: 'popup', value: 'true'});
+                            _data.push({name: 'purchase', value: '{$this->code}'});
+
+                            $.ajax({
+                                url: theForm.attr('action'),
+                                data: _data,
+                                async: false,
+                                type: theForm.attr('method'),
+                                success: function(data){
+                                    //just wait for adding product to cart
+                                    }
+                            });
+                            }
+                        }
+                    },
+                    onError: function(err){
+                            if (false && err != '') {
+                                 alert(err);
+                            } else {
+                                 alert("{$generalError}");
+                            }
+                    },
+                    onCancel: function(err){
+
+                    }
+                //});
+                };
+
+                document.querySelectorAll('.paypal-button-container').forEach(function(selector) {
+                    paypal.Buttons(pppButtonsParams).render(selector);
+                });
+            }
+            $(window).on('checkout_worker_complete', function (event) {
+                var price = 0;
+                try {
+                    price = parseFloat($('.price-row.total.ot_total input.ot_total_clear').val()) || 0;
+                    price = price.toFixed(2);
+                } catch (e) { price = 0; }
+
+                $('.pp-pay-later-message').attr('data-pp-amount', price);
+            });
+EOD;
+            }
         }
     }
 
+    public function directPayment() {//to use callback???
+        return ($this->checkCheckoutFields() && $this->isCheckout());
+    }
+
+
+/**
+ * register JS libs and functions in view (added to <head>)
+ * @param int $index rudiment
+ */
     function checkout_initialization_method_js($index = 0) {
         if (empty($this->jsIncluded)) {
             //$clid = MODULE_PAYMENT_PAYPAL_PARTNER_API_APP_CLIENT_ID;
@@ -437,10 +765,13 @@ EOD;
 
                 if (!empty($tmp)) {
                     if (!empty($tmp['disabled'])) {
-                        $df = '&disable-funding=' . $tmp['disabled'];
+                        $_disabled = preg_replace(['/^paypal,/', '/,paypal,/', '/^pui,/', '/,pui,/', '/,pui$/'], ['', ',','', ',',''], $tmp['disabled']);
+                        $df = '&disable-funding=' . $_disabled;
                     }
                     if (!empty($tmp['enabled'])) {
-                        $ef = '&enable-funding=' . $tmp['enabled'];
+                        // paylater option is not shown in test more if paypal in allowed fundings :(
+                        $_enabled = preg_replace(['/^paypal,/', '/,paypal,/', '/^pui,/', '/,pui,/', '/,pui$/'], ['', ',','', ',',''], $tmp['enabled']);
+                        $ef = '&enable-funding=' . $_enabled;
                     }
                 }
                 $_comp = []; $components = '';
@@ -450,7 +781,19 @@ EOD;
                 if ($this->checkButtonOnProduct(true)) {
                     $_comp[] = 'buttons';
                 }
+
+                $clientToken = [];
+                if ($this->checkCheckoutFields() && $this->isCheckout()) {
+                    $_comp = array_merge($_comp, ['buttons', 'payment-fields', 'marks', 'funding-eligibility']);
+                    if ($cToken = $this->generateClientToken()) {
+                        $clientToken = ['data-client-token' => $cToken];
+                        $_comp[] = 'hosted-fields';
+                    }
+                    \Yii::$app->getView()->registerCss('.payment-method .item-radio .inline-block { display: inline-block;vertical-align: middle;padding: 0 5px 0 0;} .payment-method .item-radio .paypal-mark span {overflow: visible;display: inline-block;padding-left: 5px;} .paypal-button-paypal_partner-agreement {text-align: justify; display: inline-block;} .payment-method .payment_class_paypal_partner .item-radio label {display: inline-block; }');
+                }
+
                 if (!empty($_comp)) {
+                    $_comp = array_unique($_comp);
                     $components = '&components=' . implode(',', $_comp);
                 }
                 $commit = '&commit=' . $this->pp_commit;
@@ -469,9 +812,18 @@ EOD;
                     }
                 }
 
-                \Yii::$app->getView()->registerJsFile("https://www.paypal.com/sdk/js?client-id={$clid}{$mid}{$df}{$ef}{$components}{$commit}{$buyerCountry}&intent=" . ($this->_getIntent() == 'authorize' ? "authorize" : "capture") . '&currency=' . $currency . '&locale=' . $locale . (0 && $this->debug ? '&debug=true' : ''), ['position' => \common\components\View::POS_HEAD, 'data-partner-attribution-id' => $this->getAttributionId()]);
+//debug
+/** /
+$df = $ef = '';
+$ef = '&enable-funding=sofort';
+//debug eom */
+
+                \Yii::$app->getView()->registerJsFile("https://www.paypal.com/sdk/js?client-id={$clid}{$mid}{$ef}{$components}{$commit}{$buyerCountry}&intent=" . ($this->_getIntent() == 'authorize' ? "authorize" : "capture") . '&currency=' . $currency . $df .'&locale=' . $locale . (0 && $this->debug ? '&debug=true' : ''), ['position' => \common\components\View::POS_HEAD, 'data-partner-attribution-id' => $this->getAttributionId() ] + $clientToken);
 
                 \Yii::$app->getView()->registerJs($this->getJavascript());
+                //pos_end to wrap with 'tl()'
+                \Yii::$app->getView()->registerJsFile(\frontend\design\Info::themeFile('/js/bootstrap-datepicker.js'), ['position' => \common\components\View::POS_END]);
+                \Yii::$app->getView()->registerCssFile(\frontend\design\Info::themeFile('/css/bootstrap-datepicker.css'));
                 
                 \Yii::$app->getView()->registerJs($this->getJS());
             }
@@ -482,15 +834,41 @@ EOD;
         return false;
     }
 
+    /**
+     * checkout - functions for onChange payment event (depends on current state etc)
+     * @return string JS
+     */
     public function getJS() {
-        if (\Yii::$app->controller->id != 'checkout') return; // not needed on shopping cart and product pages
-        if ($this->manager->has('ppartner_total_check') && \Yii::$app->controller->id == 'checkout') {
-            //change button text
+        if (strpos(\Yii::$app->controller->id, 'checkout') === false) return; // not needed on shopping cart and product pages
+        if ( \Yii::$app->controller->id == 'quote-checkout') // 2do correct according quote checkout settings
+        {
+
+            $quoteCheckout = 1; // in JS also
+            $unCheckedJSString = '';
+        } else {
+
+            $quoteCheckout = 0;
+            $unCheckedJSString = <<<EOD
+                $('#frmCheckout button[type="submit"]').show();
+                $('#frmCheckout button[type="submit"]').prop('disabled', false);
+                $('[data-name^="checkout"] .paypal-button-container').hide();
+                $('.paypal-button-container').parents('.add-buttons').prev('.or-text').hide();
+EOD;
+        }
+
+        if (
+            ($this->manager->has('ppartner_total_check') && \Yii::$app->controller->id == 'checkout') ||
+            $quoteCheckout
+            ) {
+            //final payment confirmation after return from PP
+            //change button text, don't show PP buton(s)
             $btnConfirm = str_replace(['"'], ['\"'], defined('IMAGE_BUTTON_CONTINUE')?constant('IMAGE_BUTTON_CONTINUE'):'Continue');
             $btnPay = str_replace(['"'], ['\"'], defined('TEXT_CONFIRM_AND_PAY')?constant('TEXT_CONFIRM_AND_PAY'):'Pay With Card');
+            $skipQuoteCheckout = !$quoteCheckout;
             return <<<EOD
 window.toggleSubFields_{$this->code} = function () {
-        if ($('input[name=payment][value="{$this->code}"]').is(':checked')){
+        $unCheckedJSString
+        if ({$skipQuoteCheckout} && $('input[name=payment][value="{$this->code}"]').is(':checked')){
             $('#frmCheckout button[type="submit"] .btn-title').html("{$btnConfirm}");
         } else {
             $('#frmCheckout button[type="submit"] .btn-title').html("{$btnPay}");
@@ -500,10 +878,14 @@ window.toggleSubFields_{$this->code} = function () {
     if (typeof tl == 'function'){
         tl(function(){
             window.toggleSubFields_{$this->code}();
+            try {
+                checkout_payment_changed.set('window.toggleSubFields_{$this->code}');
+            }catch (e ) {}
         })
     }
 EOD;
         } else {
+            //usual checkout
             if (defined('EXPRESS_PAYMENTS_HIDE_CHECKOUT') && EXPRESS_PAYMENTS_HIDE_CHECKOUT == 'True') {
                 $checkedJSString = <<<EOD
                     $('#frmCheckout button[type="submit"]').hide();
@@ -531,40 +913,182 @@ EOD;
 EOD;
 
             }
+            $apmsWithFields = array_keys(array_filter($this->getAPMTemplates()));
+            $apmsWithFieldsStr = 'var apmsWithFields = ["' . implode('","', $apmsWithFields) . '"];';
+            $apmsWithoutOwnButton = 'var apmsWithoutOwnButton = ["' . implode('","', $this->apmsWithoutOwnButton()) . '"];';
+            $apmsWithAgreement = 'var apmsWithAgreement = ["' . implode('","', $this->apmsWithAgreement()) . '"];';
 
+            $apmsWithCallbacks = array_keys(array_filter($this->getAPMJSCallbacks()));
+            $apmsWithCallbacksStr = 'var apmsWithCallbacks = ["' . implode('","', $apmsWithCallbacks) . '"];';
+            if ($this->checkCheckoutFields() && $this->isCheckout()) {
+///2do visibility of APM extra fields
+                return <<<EOD
+        //APM show available APMs and render Marks (icons)
+        //By default all APM's radio buttons are hidden and then is displayed according allowed fundingSource
+        window.paypalShowElegableOptions = function () {
+            paypal.getFundingSources().forEach(function(fundingSource) {
 
-        return <<<EOD
-window.toggleSubFields_{$this->code} = function () {
-    if ($('input[name=payment][value="{$this->code}"]').is(':checked')){
-    {$checkedJSString}
-		$('[data-name^="checkout"] .paypal-button-container').removeClass('button-hide');
-		$('#frmCheckout button[type="submit"]').addClass('button-hide');
-    } else {
-    {$unCheckedJSString}
-		$('[data-name^="checkout"] .paypal-button-container').addClass('button-hide');
-		$('#frmCheckout button[type="submit"]').removeClass('button-hide');
-    }
+                var button = paypal.Buttons({
+                  fundingSource: fundingSource
+                });
+                if (button.isEligible()) {
+                    $('.item-radio.item-payment.{$this->code}_' + fundingSource).show();
+                } else {
+//                    console.log('>> fundingSource ' + fundingSource + ' not eligible');
+                }
 
-}
-if (typeof tl == 'function'){
-    tl(function(){
-        window.toggleSubFields_{$this->code}();
-    })
-}
+                var mark = paypal.Marks({
+                    fundingSource: fundingSource,
+                });
+                if (mark.isEligible() && $('.paypal-marks-icon-' + fundingSource).length) {
+                    mark.render('.paypal-marks-icon-' + fundingSource);
+                }
+
+            });
+        }
+        window.toggleSubFields_{$this->code} = function () {
+            {$apmsWithFieldsStr}{$apmsWithCallbacksStr}{$apmsWithoutOwnButton}{$apmsWithAgreement}
+            $('input[name=payment][value^="{$this->code}_"]').not(':checked').each(function() {
+                if ($('.paypal-fields-container.'+$(this).val()).length)
+                    $('.paypal-fields-container.'+$(this).val()).hide();
+                $('.paypal-button-container .paypal-button-'+$(this).val()).hide();
+            });
+            var fundingSource = '';
+            try {
+                fundingSource = $('input[name=payment]:checked').val();
+                if (fundingSource.indexOf('paypal_partner_')<0) {
+                    fundingSource = '';
+                } else {
+                    fundingSource = fundingSource.replace('paypal_partner_', '');
+                }
+            } catch ( e ) {
+            }
+            if (typeof window['paypal_render_subfields_' + fundingSource] == 'function'){
+                try {
+                    window['paypal_render_subfields_' + fundingSource]();
+                } catch (e ) {
+                    console.log(e);
+                }
+            } else {
+//console.log('not a function ' + 'paypal_render_subfields_' + fundingSource);
+            }
+
+            //custom fields - use standard osc checkout button, else - provided by PayPal
+            if ($('input[name=payment][value^="{$this->code}_"]').is(':checked')){
+                if ($('.paypal-fields-container.'+$('input[name=payment]:checked').val()).length) {
+                    $('.paypal-fields-container.'+$('input[name=payment]:checked').val()).show();
+                }
+                //$('.paypal-button-container .paypal-button-'+$('input[name=payment]:checked').val()).show();
+            }
+            //if ($('input[name=payment][value="{$this->code}_paypal"]').is(':checked')){
+            //if (fundingSource != '' && apmsWithCallbacks.indexOf(fundingSource) < 0 ) {
+            if (fundingSource != '' && apmsWithoutOwnButton.indexOf(fundingSource) < 0 ) {
+                {$checkedJSString}
+                $('[data-name^="checkout"] .paypal-button-container').removeClass('button-hide');
+                $('#frmCheckout button[type="submit"]').addClass('button-hide');
+                $('.paypal-button-container .paypal-button-'+$('input[name=payment]:checked').val()).show();
+            } else {
+                {$unCheckedJSString}
+                if (fundingSource != '' && apmsWithAgreement.indexOf(fundingSource) != -1 ) { //has agreement and no button there
+                    $('.paypal-button-container').show();
+                    $('[data-name^="checkout"] .paypal-button-container').removeClass('button-hide');
+                    $('.paypal-button-container .paypal-button-'+$('input[name=payment]:checked').val()).show();
+                } else {
+                    $('[data-name^="checkout"] .paypal-button-container').addClass('button-hide');
+                }
+                $('#frmCheckout button[type="submit"]').removeClass('button-hide');
+            }
+
+        }
+        if (typeof tl == 'function'){
+            tl(function(){
+                try {
+                    paypalShowElegableOptions();
+                    checkout_payment_changed.set('window.toggleSubFields_{$this->code}'); //set callback
+                }catch (e ) {console.log(e ); }
+                window.toggleSubFields_{$this->code}();
+            })
+        }
 EOD;
+            } else {
+
+                return <<<EOD
+        window.toggleSubFields_{$this->code} = function () {
+            if ($('input[name=payment][value="{$this->code}"]').is(':checked')){
+            {$checkedJSString}
+                $('[data-name^="checkout"] .paypal-button-container').removeClass('button-hide');
+                $('#frmCheckout button[type="submit"]').addClass('button-hide');
+            } else {
+            {$unCheckedJSString}
+                $('[data-name^="checkout"] .paypal-button-container').addClass('button-hide');
+                $('#frmCheckout button[type="submit"]').removeClass('button-hide');
+            }
+
+        }
+        if (typeof tl == 'function'){
+            tl(function(){
+                window.toggleSubFields_{$this->code}();
+                try {
+                    checkout_payment_changed.set('window.toggleSubFields_{$this->code}');
+                }catch (e ) {console.log(e ); }
+            })
+        }
+EOD;
+            }
         }
     }
 
     function selection() {
-//        if ($this->manager->has('ppartner_total_check') || in_array('admin', $this->manager->getModulesVisibility())) {
-//        }
-        if (defined('EXPRESS_PAYMENTS_AT_CHECKOUT') && EXPRESS_PAYMENTS_AT_CHECKOUT == 'True') {
-            \Yii::$app->getView()->registerCss('#frmCheckout button[type="submit"]:disabled {opacity:0.5;cursor: not-allowed;}');
-            if (defined('EXPRESS_PAYMENTS_HIDE_CHECKOUT') && EXPRESS_PAYMENTS_HIDE_CHECKOUT == 'True') {
-                \Yii::$app->getView()->registerCss('#frmCheckout button[type="submit"]:disabled,  .w-checkout-continue-btn .or-text:first-of-type {display:none}');
+
+        \Yii::$app->getView()->registerCss('#frmCheckout button[type="submit"]:disabled {opacity:0.5;cursor: not-allowed;}');
+        if (defined('EXPRESS_PAYMENTS_HIDE_CHECKOUT') && EXPRESS_PAYMENTS_HIDE_CHECKOUT == 'True') {
+            \Yii::$app->getView()->registerCss('#frmCheckout button[type="submit"]:disabled,  .w-checkout-continue-btn .or-text:first-of-type {display:none}');
+        }
+
+        if (defined('MODULE_PAYMENT_PAYPAL_PARTNER_AT_CHECKOUT') && MODULE_PAYMENT_PAYPAL_PARTNER_AT_CHECKOUT !== 'False')
+        {
+            if ($this->checkCheckoutFields()) {
+
+                $this->registerCallback("paypalFieldsCallback");// common callback for all APMs, it'll call callback of selected method (if any)
+                
+                $methods = $apms = [];
+                $apms = $this->getAPMTemplates();
+
+                foreach ($apms as $method => $apmTemplate) {
+                    $extra = '';
+                    $_title = self::getFundingTitle($method);
+                    if (!empty($apms)) {
+                        \Yii::$app->getView()->registerJs($this->getAPMJSCallback($method));
+                        $extra .= '<div class="paypal-fields-container paypal-fields-' . $method . ' ' . $this->code . '_' . $method . '" style="display:none">' . $apmTemplate . '</div>';
+                        $tmp = $this->getAPMJS($method);
+                        if (!empty($tmp)) {
+                            $extra .= '<script>' . $tmp . '</script>';
+                        }
+                    }
+                    if ($method=='pui' && empty($apmTemplate)) {
+                        continue;
+                        $_title = defined('TEXT_PAY_UPON_INVOICE')?TEXT_PAY_UPON_INVOICE:'Kauf auf Rechnung';
+                    }
+
+                    $methods[] = [
+                        'id' => $this->code . '_' . $method,
+                        'module' => '<span class="inline-block"><span class="inline-block paypal-marks-icon paypal-marks-icon-' . $method . '"></span><span class="inline-block method">' .  $_title . '</span></span>' . $extra,
+                        'hide' => (!in_array($method, ['paypal', 'pui'])), // show by JS as a lot could be not available for selected country
+                    ];
+                }
+                if (count($methods)) {
+                    $methods[count($methods)-1]['module'] .= '<script>if (typeof window.paypalShowElegableOptions == "function") window.paypalShowElegableOptions();</script>';
+                    return array(
+                        'id' => $this->code,
+                        'module' => $this->public_title,
+                        'methods' => $methods,
+                    );
+                }
+
+            } else {
+                return array('id' => $this->code,
+                             'module' => $this->public_title);
             }
-            return array('id' => $this->code,
-                  'module' => $this->public_title);
         }
         return false;
     }
@@ -601,11 +1125,20 @@ EOD;
             tep_redirect(tep_href_link(FILENAME_SHOPPING_CART, '', 'SSL'));
         }
 
+        /** @var \common\classes\Order $order*/
         $order = $this->manager->getOrderInstance();
 
         $response = $this->getOrder($this->manager->get('partner_order_id'));
-        if ($response && strtoupper($response->result->status) == 'APPROVED') {
 
+        $direct = false;//direct payment from site - save not paid order with "redirected to " status
+        if ($this->manager->has('partner_order_pending')) {
+            $tmp = $this->manager->get('partner_order_pending');
+        }
+        if (!empty($response->result->status) && in_array(strtoupper($response->result->status), ['PENDING_APPROVAL','COMPLETED', 'CREATED']) && $tmp == 'pay_upon_invoice') {
+            $direct = true;
+        }
+
+        if (!empty($response->result->status) && strtoupper($response->result->status) == 'APPROVED') {
             if ($this->formatRaw($order->info['total_inc_tax']) != $response->result->purchase_units[0]->amount->value && !$this->manager->has('ppartner_total_check')) {
 \Yii::warning("pppbeforeprocess total changed ## " .print_r($this->formatRaw($order->info['total_inc_tax']) . '!= '. $response->result->purchase_units[0]->amount->value, true), 'TLDEBUG');
                 $this->manager->set('ppartner_total_check', true);
@@ -626,37 +1159,50 @@ EOD;
                     tep_redirect($this->getCheckoutUrl(['error_message' => PAYPAL_PARTNER_RESTART], self::PAYMENT_PAGE));
                 }
             }
-        } else {
-            //tep_redirect(tep_href_link(FILENAME_SHOPPING_CART, 'error_message=Payment+error', 'SSL'));
+        } elseif (!$direct) {
             tep_redirect($this->getCheckoutUrl(['error_message' => PAYPAL_PARTNER_RESTART], self::PAYMENT_PAGE));
         }
         $_paid = false;
         //ssie save order to get ID
-        if ($this->saveOrderBefore() == 'Order') {
-            $invoiceId = $orderId = $this->saveOrderBySettings();
+        if ($direct || $this->saveOrderBefore() == 'Order') {
+            $invoiceId = $orderId = $this->saveOrderBySettings($direct);
         } else {
             $orderId = $this->estimateOrderId();
             $invoiceId = $orderId . '-e-' . date('ymdHis');
         }
 
+        //updateOrderInvoiceId on PayPal
         if (!empty($orderId) && ($orderId != intval($response->result->purchase_units[0]->invoice_id) || $invoiceId == $orderId) ) {
             try {
                 $this->updateOrderInvoiceId($this->manager->get('partner_order_id'), $invoiceId);
             } catch (\Exception $e) {
-                //not critical - estimated invoice id on PP
+                //if not $direct not critical at all - estimated invoice id on PP Direct - no approval WH
                 \Yii::warning(" #### " .print_r($e->getMessage() . ' ' . $e->getTraceAsString(), true), 'exception_' . $this->code);
             }
         }
 
-        if ($this->_getIntent() == 'authorize') {
-            $response = $this->authorizeOrder($this->manager->get('partner_order_id'));
-            $rv = $response->result->purchase_units[0]->payments->authorizations[0]->id;
-        } else {
-            $response = $this->captureOrder($this->manager->get('partner_order_id'));
-            $rv = $response->result->purchase_units[0]->payments->captures[0]->id;
-            $_paid = true;
+        if ($direct && $orderId) {
+            $this->no_process($order);
+            $order->notify_customer($order->getProductsHtmlForEmail(),[]);
+            $this->no_process_after($order);
+            tep_redirect(tep_href_link(FILENAME_CHECKOUT_SUCCESS, 'order_id=' . $orderId, 'SSL'));
         }
-        if (strtoupper($response->result->status) == "COMPLETED") {
+
+        try {
+
+            if ($this->_getIntent() == 'authorize') {
+                $presponse = $this->authorizeOrder($this->manager->get('partner_order_id'));
+                $rv = $presponse->result->purchase_units[0]->payments->authorizations[0]->id;
+            } else {
+                $presponse = $this->captureOrder($this->manager->get('partner_order_id'));
+                $rv = $presponse->result->purchase_units[0]->payments->captures[0]->id;
+                $_paid = true;
+            }
+        } catch (\Exception $e) {
+            \Yii::warning(" #### " .print_r($e->getMessage() . ' ' . $e->getTraceAsString(), true), 'exception_' . $this->code);
+        }
+
+        if (!empty($presponse->result->status) && strtoupper($presponse->result->status) == "COMPLETED") {
             $this->manager->set('partner_transaction_id', $rv);
             if ($_paid) { //captured - set paid order status w/o delay.
                 $this->order_status = $this->paidOrderStatus();
@@ -676,6 +1222,10 @@ EOD;
                     $order->info['comments'] = '';
 
                     $order->notify_customer($order->getProductsHtmlForEmail(),[]);
+
+                    $this->no_process($order);
+                    $this->no_process_after($order);
+                    /*
                     $this->trackCredits();
                     $this->after_process();
 
@@ -687,7 +1237,7 @@ EOD;
 
                     if ($ext = \common\helpers\Acl::checkExtension('Affiliate', 'CheckSales')) {
                         $ext::CheckSales($order);
-                    }
+                    }*/
 
                     tep_redirect(tep_href_link(FILENAME_CHECKOUT_SUCCESS, 'order_id=' . $order->order_id, 'SSL'));
 
@@ -780,10 +1330,33 @@ EOD;
             'description' => 'Do you want to accept PayPal Checkout payments?',
             'value' => 'True',
             'set_function' => 'tep_cfg_select_option(array(\'True\', \'False\'), '),
-          'MODULE_PAYMENT_PAYPAL_PARTNER_BUY_IMMEDIATELLY' => array('title' => 'Show PayPal button on product',
+          
+          'MODULE_PAYMENT_PAYPAL_PARTNER_VIRTUAL_GUEST' => array('title' => 'Disable PayPal for guest if only virtual products in cart',
+            'description' => 'PayPal does NOT provide billing address. Guest (express) order won\'t have any address',
+            'value' => 'True',
+            'set_function' => 'tep_cfg_select_option(array(\'True\', \'False\'), '),
+
+          'MODULE_PAYMENT_PAYPAL_PARTNER_BUY_IMMEDIATELLY' => array('title' => 'Show PayPal buttons on product',
             'description' => 'Allow to make PayPal purchase from product page',
             'value' => 'False',
-            'set_function' => 'tep_cfg_select_option(array(\'True\', \'False\'), '),
+            'set_function' => 'multiOption(\'dropdown\', array(\'Horizontal\', \'Vertical\', \'False\'), '),
+          'MODULE_PAYMENT_PAYPAL_PARTNER_SHOPPING_CART' => array('title' => 'Show PayPal button(s) on Shopping Cart',
+            'description' => 'Show PayPal buttons on Shopping Cart Page',
+            'value' => 'Vertical',
+            'set_function' => 'multiOption(\'dropdown\', array(\'Horizontal\', \'Vertical\', \'False\'), '),
+
+          'MODULE_PAYMENT_PAYPAL_PARTNER_AT_CHECKOUT_LOGIN' => array('title' => 'Show PayPal button on Checkout Login',
+            'description' => 'Show PayPal buttons on Checkout Login Page',
+            'value' => 'False',
+            'set_function' => 'multiOption(\'dropdown\', array(\'Horizontal\', \'Vertical\', \'False\'), '),
+
+          'MODULE_PAYMENT_PAYPAL_PARTNER_AT_CHECKOUT' => array('title' => 'Show PayPal button on Checkout',
+            'description' => 'Show PayPal buttons on Checkout Page',
+            'value' => 'Vertical',
+            'set_function' => 'multiOption(\'dropdown\', array(\'Horizontal\', \'Vertical\', \'Fields\', \'False\'), '),
+
+
+
           'MODULE_PAYMENT_PAYPAL_PARTNER_PAY_LATER' => array('title' => 'Show PayPal Pay later info',
             'description' => 'Displays Pay Later messaging for available offers. Restrictions apply. See terms and learn more on PayPal <a target=\'blank\' href=\'https://developer.paypal.com/docs/commerce-platforms/admin-panel/\'>PayPal</a>',
             'value' => 'False',
@@ -836,6 +1409,7 @@ EOD;
             'description' => 'Label for Dynamic Button',
             'value' => 'checkout',
             'set_function' => 'multiOption(\'dropdown\', array(\'checkout\', \'pay\', \'buynow\', \'paypal\'), '),
+/** /
           'MODULE_PAYMENT_PAYPAL_PARTNER_BUTTON_LAYOUT' => array('title' => 'Dynamic Button Layout',
             'description' => 'Layout for Dynamic Button',
             'value' => 'vertical',
@@ -844,10 +1418,17 @@ EOD;
             'description' => 'Product Page: Layout for Dynamic Button',
             'value' => 'vertical',
             'set_function' => 'multiOption(\'dropdown\', array(\'horizontal\', \'vertical\'), '),
-          'MODULE_PAYMENT_PAYPAL_PARTNER_BUTTON_FUNDING' => array('title' => 'Enable funding',
-            'description' => 'Enable funding (other possible are disabled)',
+/**/
+          'MODULE_PAYMENT_PAYPAL_PARTNER_BUTTON_FUNDING' => array('title' => 'Enable payment methods',
+            'description' => 'Enable funding payment methods',
             'value' => '',
             'set_function' => 'multiOption(\'checkbox\', \common\modules\orderPayment\paypal_partner::possibleFundingArray(), '),
+
+          /*'MODULE_PAYMENT_PAYPAL_PARTNER_FRAUDNET_SI' => array('title' => 'PayPal Fraudnet Source Identifier',
+            'description' => 'Activate PayPal Fraudnet in case you were explicitly requested by PayPal to do so. PayPal will
+provide you with a "Source Identifier" for every PayPal account used. Do not make up own values.',
+            'value' => ''
+            ),*/
           'MODULE_PAYMENT_PAYPAL_PARTNER_DEBUG_EMAIL' => array('title' => 'Debug E-Mail Address',
             'description' => 'All parameters of an invalid transaction will be sent to this email address.'),
           'MODULE_PAYMENT_PAYPAL_PARTNER_SORT_ORDER' => array('title' => 'Sort order of display',
@@ -864,7 +1445,9 @@ EOD;
 
     public function remove($platform_id) {
         parent::remove($platform_id);
-        $this->getInstaller()->remove();
+        if (\Yii::$app->controller->action->id == 'change') {
+            $this->getInstaller()->remove($platform_id);
+        }
     }
 
     function sendDebugEmail($response = array()) {
@@ -901,11 +1484,22 @@ EOD;
     }
 
 
-    public function getMode() {//admin (default) and requested for boarding platform could be different
+    public static function getMode() {//admin (default) and requested for boarding platform could be different
         $ret = '';
         if (\Yii::$app->request->get('action', false) == 'processOnBoard' &&
             \Yii::$app->request->get('platform_id', 0) > 0) {
             $platform_config = new \common\classes\platform_config(\Yii::$app->request->get('platform_id', 0));
+            $ret = $platform_config->const_value('MODULE_PAYMENT_PAYPAL_PARTNER_TRANSACTION_SERVER', 'Live');
+        } elseif (!defined('MODULE_PAYMENT_PAYPAL_PARTNER_TRANSACTION_SERVER') && \Yii::$app->request->get('platform_id', 0)) {
+            $platform_config = new \common\classes\platform_config(\Yii::$app->request->get('platform_id', 0));
+            $ret = $platform_config->const_value('MODULE_PAYMENT_PAYPAL_PARTNER_TRANSACTION_SERVER', 'Live');
+        } elseif (!defined('MODULE_PAYMENT_PAYPAL_PARTNER_TRANSACTION_SERVER') ) {
+            if (!(isset($this) && $this instanceof self) ){
+                $platform_id = self::getPlatformId();
+            } else {
+                $platform_id = $this->getPlatformId();
+            }
+            $platform_config = new \common\classes\platform_config($platform_id);
             $ret = $platform_config->const_value('MODULE_PAYMENT_PAYPAL_PARTNER_TRANSACTION_SERVER', 'Live');
         } else {
             $ret = MODULE_PAYMENT_PAYPAL_PARTNER_TRANSACTION_SERVER;
@@ -921,7 +1515,7 @@ EOD;
         if (!\Yii::$app->db->getTableSchema('paypal_seller_info', true)) {
             return false;
         }
-        if (in_array(\Yii::$app->request->get('action', false), ['processOnBoard', 'checkOnBoarded', 'deleteSeller'])) {
+        if (in_array(\Yii::$app->request->get('action', false), ['processOnBoard', 'checkOnBoarded', 'sellerDetails', 'deleteSeller'])) {
             return true;
         }
         $platformId = $this->getPlatformId();
@@ -960,7 +1554,8 @@ EOD;
         $currencies = \Yii::$container->get('currencies');
         
         $masterTotal = $this->formatRaw($order->info['total_inc_tax']);
-        $totalPayPal = 0;
+        $totalPayPal = $totalPayPalTax = 0;
+        $ii = 0;
         // ex VAT prices and tax to avoid items patch (export orders) - not working via JS :(.
         foreach ($order->products as $product) {
 
@@ -985,26 +1580,81 @@ EOD;
                 }
             }
 
-            $items[] = [
-              'name' => $virtual_qty . $product['name'],
+            $items[$ii] = [
+              'name' => substr($virtual_qty . $product['name'], 0, 127),
               'unit_amount' => [
                 'currency_code' => $currency,
                 'value' => $val,
               ],
               'quantity' => $qty,
             ];
+
+            if ($this->requireItemVat) {
+                //PayPal /USA aproach could give huge descrepancy in TAX/Total values because of floating math.
+                // on site for EU we need price inc Tax and the same price inc VAT should be for 1 and 10 pcs
+                // it means net priceEach is changed for 1 and 10 products (EU). USA approach don't allow marketing (NN.99) prices.
+                // ex VAT 20% priceEachGross 0.15 NetPriceEach 0.12 VAT 0.03 (USA approach Net 0.12 Tax 0.02 Gross 0.14)
+                // 10 pcs price Gross 1.50 (Net 1.25 Tax 0.25)  USA approach Net 1.20 Tax 0.20 Gross 1.40
+                $_tax = 0;
+                if ($product['tax']>0 && $qty>0) {
+                    if ($this->sendExVat) {
+                        $_eachGross = $val+\common\helpers\Tax::calculate_tax($val, $product['tax']);
+                    } else {
+                        $_eachGross = $val;
+                    }
+                    $_gross = $this->formatRaw($_eachGross * $qty, $currency, 1);
+                    $_nett = $this->formatRaw(\common\helpers\Tax::get_untaxed_value($_gross, $product['tax']), $currency, 1);
+                    $_tax = $this->formatRaw(($_gross - $_nett)/$qty, $currency, 1);
+                    $totalPayPalTax += $this->formatRaw($_tax*$qty, $currency, 1);
+                }
+                $items[$ii]['tax'] = [
+                    'currency_code' => $currency,
+                    'value' => $_tax,
+                ];
+                $items[$ii]['tax_rate'] = round($product['tax'], 2);
+                $items[$ii]['category'] = 'PHYSICAL_GOODS';//DIGITAL_GOODS
+            }
+            $ii++;
         }
         $shipping = [];
         if ($this->manager->isShippingNeeded()) {
-            $shipping = [
-              'currency_code' => $currency,
-              'value' => 
-                $this->formatRaw(
-                    $currencies->display_price_clear($this->sendExVat ? $order->info['shipping_cost_exc_tax'] : $order->info['shipping_cost_inc_tax'], 0, 1)
-                                              , $currency, 1
-                )
-            ];
-            $totalPayPal += $shipping['value'];
+            if (!$this->requireItemVat) { //shipping as total - else as product
+                $shipping = [
+                  'currency_code' => $currency,
+                  'value' =>
+                    $this->formatRaw(
+                        $currencies->display_price_clear($this->sendExVat ? $order->info['shipping_cost_exc_tax'] : $order->info['shipping_cost_inc_tax'], 0, 1)
+                                                  , $currency, 1
+                    )
+                ];
+                $totalPayPal += $shipping['value'];
+            } else {// no shipping tax and Should equal sum of (tax * quantity) across all items for a given purchase_unit (/purchase_units/@reference_id=='default'/amount/breakdown/tax_total/value )
+                $_tax = $this->formatRaw($this->formatRaw(
+                        $currencies->display_price_clear($order->info['shipping_cost_inc_tax'], 0, 1), $currency, 1
+                    ) - $this->formatRaw(
+                        $currencies->display_price_clear($order->info['shipping_cost_exc_tax'], 0, 1), $currency, 1
+                    ), $currency, 1);
+                $items[$ii] = [
+                    'name' => TEXT_SHIPPING,
+                    'unit_amount' => [
+                        'currency_code' => $currency,
+                        'value' => $this->formatRaw(
+                            $currencies->display_price_clear($order->info['shipping_cost_exc_tax'], 0, 1), $currency, 1
+                        )
+                    ],
+                    'quantity' => 1,
+                    'tax' => [
+                        'currency_code' => $currency,
+                        'value' => $_tax,
+                    ]
+                ];
+                $items[$ii]['tax_rate'] = round($_tax/$this->formatRaw(
+                        $currencies->display_price_clear($order->info['shipping_cost_exc_tax'], 0, 1), $currency, 1
+                    ), 2);
+                $items[$ii]['category'] = 'PHYSICAL_GOODS';
+                $ii++;
+                $totalPayPalTax += $_tax;
+            }
         }
 
         $details = [
@@ -1047,6 +1697,9 @@ EOD;
         }
 
         $tax = $this->formatRaw($tax);
+        if ($this->requireItemVat) {
+            $tax = $this->formatRaw($totalPayPalTax, $currency, 1);
+        }
         if ($this->sendExVat) {
             $totalPayPal += $tax;
         }
@@ -1115,6 +1768,7 @@ EOD;
         if ($cart->count_contents() < 1) {
             return false;
         }
+        $post = \Yii::$app->request->post();
 
         $this->manager->remove('estimate_ship');
 
@@ -1134,10 +1788,24 @@ EOD;
         if ($tmp = self::getAttributionId()) {
             $request->payPalPartnerAttributionId($tmp);
         }
+        if (!empty($post['payment']) ) {
+            $this->setAPMSetting($post);
+        }
 
         $request->body = $this->ppBuildOrderDetails($order, $data);
+
+        if (!empty($post['payment']) ) {
+            $this->addAPMDetails($request, $order, $post);
+        }
+//echo "#### <PRE>"  . __FILE__ .':' . __LINE__ . ' ' . print_r($request, true) ."</PRE>"; die;
+
+        if (!empty($request->body['payment_source'])) {
+            $request->headers['PayPal-Request-Id'] = $this->getPayPalOrderAPIRequestId();
+            $request->headers['PayPal-Client-Metadata-Id'] = $this->getFraudNetSessionId();
+        }
+
         if ($this->debug) {
-            \Yii::warning(" #### " .print_r($request->body, true), 'TLDEBUG' . $this->code);
+            \Yii::warning(" #### " .print_r($request, true), 'TLDEBUG' . $this->code);
         }
 
         try {
@@ -1146,6 +1814,9 @@ EOD;
 
             \Yii::error('body ' . print_r($request->body, true), 'paypal_partner_exception');
             \Yii::error('message ' . $ex->getMessage(), 'paypal_partner_exception');
+            if (!empty($request->body['payment_source'])) {
+                $this->resetFraudNetSessionId();
+            }
             if ($tmp = $this->parseJsonMessage($ex->getMessage())) {
                 return ['error' => 1, 'message' => $tmp];
             }
@@ -1180,7 +1851,7 @@ EOD;
     }
 
 /**
- * get PayPal order details by id
+ * get order details from PayPal by id
  * @param string $orderId
  * @return stdClass|false
  */
@@ -1258,7 +1929,6 @@ EOD;
         $applicationContext = [
           'return_url' => tep_href_link("callback/webhooks.payment.{$this->code}", 'action=return', 'SSL', true, false),
           'cancel_url' => tep_href_link("callback/webhooks.payment.{$this->code}", 'action=cancel', 'SSL', true, false),
-          'locale' => str_replace('_', '-', \Yii::$app->settings->get('locale')),
         ];
 
         if (!$this->manager->isShippingNeeded()) {
@@ -1266,10 +1936,27 @@ EOD;
         }
 
         if (true) { //checkout page/logged in customer: all details are available.
-            //$tmp = $order->billing;
-            $tmp = $this->manager->getBillingAddress();
+            if (!empty($order->billing)) {
+                $tmp = $order->billing;
+                if (!empty($tmp['street_address']) && !empty($tmp['postcode']) && !empty($tmp['country']['iso_code_2'])) {
+                } else {
+                    $tmp = $this->manager->getBillingAddress();
+                }
+            } else {
+                $tmp = $this->manager->getBillingAddress();
+            }
+            if ($tmp['zone_id'] > 0) {
+                if ($tmp['country']['iso_code_2'] == 'US') {
+                    $_state = \common\helpers\Zones::get_zone_code($tmp['country']['id'], $tmp['zone_id'], '');
+                } else {
+                    $_state = \common\helpers\Zones::get_zone_name($tmp['country']['id'], $tmp['zone_id'], $tmp['state']);
+                }
+                if (!empty($_state)) {
+                    $tmp['state'] = $_state;
+                }
+            }
             if (!empty($post_data['Billing_address'])) {
-                foreach (['firstname', 'lastname', 'street_address', 'city', 'postcode'] as $k) {
+                foreach (['firstname', 'lastname', 'street_address', 'city', 'postcode', 'suburb'] as $k) {
                     if (empty($tmp[$k]) && !empty($post_data['Billing_address'][$k])) {
                         $tmp[$k] = strip_tags($post_data['Billing_address'][$k]);
                     }
@@ -1280,6 +1967,9 @@ EOD;
                         $tmp['country'] = $_country;
                     }
                 }
+            } elseif (empty($tmp['firstname']) && empty($tmp['lastname'])) {
+                $tmp['firstname'] = $order->customer['firstname']??'';
+                $tmp['lastname'] = $order->customer['lastname']??'';
             }
             $payer = [];
             if (!empty($tmp['firstname']) && !empty($tmp['lastname'])) {
@@ -1294,6 +1984,12 @@ EOD;
                 } elseif (!empty($post_data['checkout']['email_address'])) {
                     $payer['email_address'] = $post_data['checkout']['email_address'];
                 }
+                if (!empty($post_data['checkout']['telephone'])) {
+                    $payer['telephone'] = $post_data['checkout']['telephone'];
+                } elseif (!empty($order->customer['telephone'])) {
+                    $payer['telephone'] = $order->customer['telephone'];
+                }
+                
             }
             if (!empty($tmp['street_address']) && !empty($tmp['postcode']) && !empty($tmp['country']['iso_code_2'])) {
                 $payer['address'] = [//billing
@@ -1331,6 +2027,16 @@ EOD;
             //$applicationContext['shipping_preference'] = 'SET_PROVIDED_ADDRESS';
             //$tmp = $order->delivery;
             $tmp = $this->manager->getDeliveryAddress();
+            if ($tmp['zone_id'] > 0) {
+                if ($tmp['country']['iso_code_2'] == 'US') {
+                    $_state = \common\helpers\Zones::get_zone_code($tmp['country']['id'], $tmp['zone_id'], '');
+                } else {
+                    $_state = \common\helpers\Zones::get_zone_name($tmp['country']['id'], $tmp['zone_id'], $tmp['state']);
+                }
+                if (!empty($_state)) {
+                    $tmp['state'] = $_state;
+                }
+            }
             if (!empty($post_data['Shipping_address'])) {
                 foreach (['firstname', 'lastname', 'street_address', 'city', 'postcode'] as $k) {
                     if (empty($tmp[$k]) && !empty($post_data['Shipping_address'][$k])) {
@@ -1407,10 +2113,14 @@ EOD;
         }
         
         $seller = $this->getSeller(\common\classes\platform::currentId());
-        $purchaseUnits[0]['payee'] =
-            [
-              "email_address" => $seller->email_address
-            ];
+        if (!empty($seller->email_address)) {
+            $purchaseUnits[0]['payee'] =
+                [
+                  "email_address" => $seller->email_address
+                ];
+        }
+        $locale = str_replace('_', '-', \Yii::$app->settings->get('locale'));
+        $applicationContext['locale'] = $locale;
 
         $ret = [
                 "intent" => ($this->_getIntent() == 'authorize' ? "AUTHORIZE" : "CAPTURE"),
@@ -1442,9 +2152,54 @@ EOD;
     public function captureOrder($orderId) {
 
         $request = new \PayPalCheckoutSdk\Orders\OrdersCaptureRequest($orderId);
+        if (self::getFraudnetSI()) {
+            $metaData = $this->getFraudNetSessionId();
+            if (!empty($metaData) ) {
+                $request->payPalClientMetadataId($metaData);
+            }
+        }
 
         try {
             return $this->getHttpClient()->execute($request);
+        } catch (\Exception $ex) {
+            \Yii::error($ex->getMessage(), 'paypal_partner');
+        }
+        return false;
+    }
+
+    public function generateClientToken() {
+        $cid = $this->manager->getCustomerAssigned();
+        //in session for 2 min
+        global $ppp_token_cid, $ppp_token_key, $ppp_token_until;
+        foreach(['ppp_token_cid', 'ppp_token_key', 'ppp_token_until'] as $k) {
+            if (!tep_session_is_registered($k)) {
+                tep_session_register($k);
+            }
+        }
+
+        if (!empty($ppp_token_until) && $ppp_token_until<time()) {
+            $ppp_token_until = false;
+        }
+        //active and the same customer
+        if (!empty($ppp_token_key) && !empty($ppp_token_until) && 
+            (empty($cid) || $cid==$ppp_token_cid)) {
+            return $ppp_token_key;
+        }
+
+        if (empty($cid)) {
+            $cid = substr(sha1(uniqid()), 0, 20);
+        }
+        $request = new \PayPalCheckoutSdk\Core\ClientTokenRequest($cid);
+        try {
+            $res = $this->getHttpClient()->execute($request);
+            if ($res->statusCode == 200 && !empty($res->result->client_token)) {
+                $ppp_token_cid = $cid;
+                $ppp_token_key = $res->result->client_token;
+                $ppp_token_until = time()+120;//$res->result->expires_in
+                return $ppp_token_key;
+            } else {
+                \Yii::error(print_r($res, true), 'paypal_partner');
+            }
         } catch (\Exception $ex) {
             \Yii::error($ex->getMessage(), 'paypal_partner');
         }
@@ -1455,6 +2210,12 @@ EOD;
 
         $request = new \PayPalCheckoutSdk\Orders\OrdersAuthorizeRequest($orderId);
         $request->prefer('return=representation');
+        if (self::getFraudnetSI()) {
+            $metaData = $this->getFraudNetSessionId();
+            if (!empty($metaData) ) {
+                $request->payPalClientMetadataId($metaData);
+            }
+        }
 
         try {
             return $this->getHttpClient()->execute($request);
@@ -1485,11 +2246,17 @@ EOD;
             return PAYPAL_PARTNER_SELLER_BOARDED_ERROR;
         }
 
+        $urlParams = [
+          'platform_id' => $platformId, 'set' => 'payment', 'module' => $this->code,
+        ];
+
         if (\Yii::$app->id == 'app-backend') {
-            $partner->getPartnerConfigOverride()->setReturnUrl(\Yii::$app->urlManager->createAbsoluteUrl(['modules/edit', 'platform_id' => $platformId, 'set' => 'payment', 'module' => $this->code, 'action' => 'checkOnBoarded']));
+            $returnUrl = \Yii::$app->urlManager->createAbsoluteUrl($urlParams+ ($this::BOARDING_MODE == 3?['modules/edit', 'action' => 'checkOnBoarded'] : ['modules/edit']) );
         } else {
-            $partner->getPartnerConfigOverride()->setReturnUrl(\Yii::$app->urlManager->createAbsoluteUrl(['admin/modules/edit', 'platform_id' => $platformId, 'set' => 'payment', 'module' => $this->code, 'action' => 'checkOnBoarded']));
+            $returnUrl = \Yii::$app->urlManager->createAbsoluteUrl($urlParams+ ($this::BOARDING_MODE == 3?['admin/modules/edit', 'action' => 'checkOnBoarded'] : ['admin/modules/edit']));
         }
+        $partner->getPartnerConfigOverride()->setReturnUrl($returnUrl);
+
         $logoUrl = \Yii::$app->urlManager->createAbsoluteUrl(['/'], 'https', true);
         if (strpos($logoUrl, '127.0.0.1') || strpos($logoUrl, 'localhost')) {
             $logoUrl = 'https://www.trueloaded.co.uk';
@@ -1501,37 +2268,48 @@ EOD;
 // ##########
 //$partner->getPartnerConfigOverride()->setReturnUrl('https://paypal.tllab.co.uk/index/log'); // debug
 
-        try {
-            $response = $partner->create($this->getApiContext());
+        if ($this->boardViaLink()) {
+            $tmp = \common\helpers\Country::get_country_info_by_id($seller->entry_country_id??STORE_COUNTRY);
+            $extra = $this->getExtraConfigClass();
+            return $extra::widget([
+                    'mode' => 'signupLink',
+                    'module' => $this,
+                    'link_params' => [
+                        'partnerClientId' => $this->_getClientId(),
+                        'partnerId' => $this->getPartnerId(),
+                        'sellerNonce' => $seller->tracking_id,
+                        'country' => $tmp['countries_iso_code_2']??'',
+                        'locale' => str_replace('_', '-', \Yii::$app->settings->get('locale')),
+                        'return_url' => rawurlencode($returnUrl),
+                        'partnerLogoUrl' => rawurlencode($logoUrl)
+                      ]
+            ]);
+        } else {
+            try {
+                $response = $partner->create($this->getApiContext());
 
-            if (is_array($response->links) && count($response->links) > 0) {
-                $extra = $this->getExtraConfigClass();
-                foreach ($response->links as $link) {
-                    if ($link->rel == 'action_url') {
-                        $toUrl = $link->getHref();
-                    } elseif ($link->rel == 'self') {
-                        //VL - the following is lie
-                        //"Read Referral Data shared by the Caller."
-                        //"href": "https://api.sandbox.paypal.com/v2/customer/partner-referrals/NDZlMjQ1YTItMGQwNi00ZjlkLWJjNmYtYjcwODNiMWEzOTk0c203SWFJeU9NQ3gvcDEvbUVaS21rWFAvSWdlV1JKWktGRGxPUFA1MEZtUT12Mg==",
-                        //$ref = str_replace('/partner-referrals/', '', substr($link->href, strpos($link->href, '/partner-referrals/')));
-                        /* if ($seller && !empty($ref)) {
-                          $seller->tracking_id = $ref;
-                          $seller->save(false);
-                          } */
+                if (is_array($response->links) && count($response->links) > 0) {
+                    $extra = $this->getExtraConfigClass();
+                    foreach ($response->links as $link) {
+                        if ($link->rel == 'action_url') {
+                            $toUrl = $link->getHref();
+                        } elseif ($link->rel == 'self') {
+                            //useless - just to check
+                        }
                     }
-                }
 
-                return $extra::widget([
-                      'mode' => 'signup', //?? suppose grant permissions
-                      'module' => $this,
-                      'url' => $toUrl, //$response->links[1]->getHref()
-                      'module' => $this,
-                ]);
-            } else {
-                $this->sendDebugEmail($response);
+                    return $extra::widget([
+                          'mode' => 'signup', //?? suppose grant permissions
+                          'module' => $this,
+                          'url' => $toUrl, //$response->links[1]->getHref()
+                          'module' => $this,
+                    ]);
+                } else {
+                    $this->sendDebugEmail($response);
+                }
+            } catch (\Exception $ex) {
+                $this->sendDebugEmail($ex);
             }
-        } catch (\Exception $ex) {
-            $this->sendDebugEmail($ex);
         }
         return PAYPAL_PARTNER_SELLER_BOARDED_ERROR;
     }
@@ -1540,31 +2318,49 @@ EOD;
     public $messages = [];
 
     /**
-     * get current webhooks for application and subscribe to required if needed
+     * get current webhooks for application
+     */
+    public function getNeededWebHooks() {
+        if (self::BOARDING_MODE == 1) {
+            $neededWebHooks = array_merge($this->webHooks, $this->webHooks1party);
+        } else {
+            $neededWebHooks = array_merge($this->webHooks, $this->webHooks3party);
+        }
+        return $neededWebHooks;
+    }
+    
+    public function getSubscribedWebHooks() {
+        //get webhooks (could be several, groupped by listener URL)
+        $whList = $this->getWebHooks();
+        $whListNames = []; // subscribed names only
+        $url = $this->getWebHookUrl();
+
+        if (!empty($whList->webhooks) && is_array($whList->webhooks)) {
+            $whListNames = array_reduce(array_map(
+                    function ($el) use ($url) {
+                        $ret = [];
+                        if ($url == $el->url && is_array($el->event_types)) {
+                            foreach ($el->event_types as $et) {
+                                $ret[] = $et->name;
+                            }
+                        }
+                        return $ret;
+                    }, $whList->webhooks), 'array_merge', array());
+        }
+        return $whListNames;
+    }
+    /**
+     * subscribe to required webhooks for application
      */
     public function addWebHooks() {
         if (!empty($this->webHooks)) {
-            //get webhooks (could be several, groupped by listener URL)
-            $whList = $this->getWebHooks();
-            $whListNames = []; // subscribed names only
-            $url = $this->getWebHookUrl();
+            $whListNames = $this->getSubscribedWebHooks();
+            $neededWebHooks = $this->getNeededWebHooks();
 
-            if (!empty($whList->webhooks) && is_array($whList->webhooks)) {
-                $whListNames = array_reduce(array_map(
-                        function ($el) use ($url) {
-                            $ret = [];
-                            if ($url == $el->url && is_array($el->event_types)) {
-                                foreach ($el->event_types as $et) {
-                                    $ret[] = $et->name;
-                                }
-                            }
-                            return $ret;
-                        }, $whList->webhooks), 'array_merge', array());
-            }
             if (is_array($whListNames) && !empty($whListNames) && is_array($whListNames)) {
-                $subEvents = array_diff($this->webHooks, $whListNames);
+                $subEvents = array_diff($neededWebHooks, $whListNames);
             } else {
-                $subEvents = $this->webHooks;
+                $subEvents = $neededWebHooks;
             }
 
             if (is_array($subEvents) && !empty($subEvents)) {
@@ -1577,10 +2373,37 @@ EOD;
         }
     }
 
+    protected function validateCredentials($data) {
+        $ret = ['html' => '...'];
+        if (!empty($data['checkVal']) && $data['checkVal'] == md5(\Yii::$app->params['secKey.global'])) {
+            $mode = 'Live';
+            if (in_array($data['configuration']['MODULE_PAYMENT_PAYPAL_PARTNER_TRANSACTION_SERVER'], ['Live', 'Sandbox'])) {
+                $mode = $data['configuration']['MODULE_PAYMENT_PAYPAL_PARTNER_TRANSACTION_SERVER'];
+            }
+            $auth = new PayPal\Auth\OAuthTokenCredential($data['SellerInfo']['own_client_id'], $data['SellerInfo']['own_client_secret']);
+            $apiContext = new PayPal\Rest\ApiContext($auth);
+            $apiContext->setConfig(['mode' => $mode]);
+            $merchant = $this->getMerchant();
+            if ($response = $merchant::checkStatus($this->getPartnerId(), $data['SellerInfo']['payer_id'], $apiContext)) {
+                $ret = $this->parseBoardingDetails($response);
+                if (!empty($response) && $response->getMerhantId() == $data['SellerInfo']['payer_id']) {
+                    $ret['html'] = MODULE_PAYMENT_PAYPAL_PARTNER_API_OK;
+                } else {
+                    $ret['html'] = MODULE_PAYMENT_PAYPAL_PARTNER_API_FAIL_DATA;
+                }
+
+            } else {
+                $ret['html'] = MODULE_PAYMENT_PAYPAL_PARTNER_API_FAIL;
+            }
+        }
+        return $ret;
+    }
+
+
     public function getBoardingDetails(int $platformId, lib\PaypalPartner\models\SellerInfo $seller) {
         $ret = [];
 
-        if (!empty($seller->boarding_json)) {
+        if (!empty($seller->boarding_json) && !$this->hasOwnKeys() ) {
             $merchant = new lib\PaypalPartner\api\Merchant();
             $ret = $this->parseBoardingDetails($merchant->fromJson($seller->boarding_json), $seller->boarding_date);
         } elseif($this->_isReady()) {
@@ -1592,7 +2415,8 @@ EOD;
             if ($response = $merchant::checkStatus($this->getPartnerId(), $seller->payer_id, $this->getApiContext())) {
                 $ret = $this->parseBoardingDetails($response);
                 try {
-                    if ($response->getPrimaryEmail() != $seller->email_address) {
+                    $sEmail = $response->getPrimaryEmail();
+                    if (!empty($sEmail) && $sEmail != $seller->email_address) {
                         $seller->email_address = $response->getPrimaryEmail();
                     }
                     $seller->boarding_json = $response->json;
@@ -1606,6 +2430,46 @@ EOD;
             }
         }
         return $ret;
+    }
+
+/**
+ * 
+ */
+    public function fetchOwnKeys() {
+        $get = \Yii::$app->request->get();
+        $post = \Yii::$app->request->post();
+        if (empty($post)) {
+            $payload = @file_get_contents('php://input');
+            if (!empty($payload )) {
+               // parse_str($payload, $post);
+                $post = json_decode($payload, true);
+            }
+        }
+        $platformId = $post['platform_id']??$this->getPlatformId();
+        try {
+            if (!empty($post['ppp_mode'])) {
+                $mode = $post['ppp_mode'];
+                $seller = $this->getSeller($platformId, $mode, true);
+                $partner_id = $this->getPartnerId($mode);
+            }
+            if (!$seller) {
+                $seller = $this->getSeller($platformId);
+                $mode = $this->getMode();
+                $partner_id =$this->getPartnerId();
+            }
+
+            $details = lib\PaypalPartner\api\Merchant::getCustomerToken($post['authCode'], $post['sharedId'], $seller->tracking_id, $partner_id, $mode);
+            if (!empty($details['client_id'])) {
+                $seller->own_client_id = $details['client_id'];
+                $seller->own_client_secret = $details['client_secret'];
+                $seller->payer_id = $details['payer_id'];
+                $seller->is_onboard = 1;
+                $seller->save(false);
+            }
+        } catch (\Exception $ex) {
+            $this->sendDebugEmail($ex);
+            $this->errors[] = $ex->getMessage();
+        }
     }
 
     public function checkOnBoarded() {
@@ -1740,10 +2604,15 @@ EOD;
             $platform_id = (int) \Yii::$app->request->post('platform_id');
         }
 
-        $this->call_webhooks();
+        $this->call_webhooks(); //?
         /** @var lib\PaypalPartner\ExtraConfig $extra */
         $extra = $this->getExtraConfigClass();
-        $seller = $this->getSeller($platform_id);
+        $psi_id =  \Yii::$app->request->post('psi_id', \Yii::$app->request->get('psi_id', false));
+        if ($psi_id) {
+            $seller = $this->getSellerById($platform_id, (int)$psi_id);
+        } else {
+            $seller = $this->getSeller($platform_id);
+        }
 
         $address = new \common\forms\AddressForm(['scenario' => \common\forms\AddressForm::BILLING_ADDRESS]);
         $messageStack = \Yii::$container->get('message_stack');
@@ -1754,6 +2623,7 @@ EOD;
             $seller->load(\Yii::$app->request->post());
             if (!empty($seller->own_client_id) && !empty($seller->own_client_secret) && !empty($seller->payer_id)) {
                 $seller->is_onboard = 1;
+                $seller->status = 1;
             }
 
             $a3dsOn = \Yii::$app->request->post('paypal_partner_ccp_status', 0);
@@ -1767,14 +2637,35 @@ EOD;
             $seller->paypal_partner_ccp_status = $a3dsOn;
             $seller->three_ds_settings = json_encode($a3dsSettings);
 
-            if ($address->load(\Yii::$app->request->post()) && $address->validate()) {
-                $book = [];
-                foreach ($address->getAttributes() as $key => $name) {
-                    $book['entry_' . $key] = $name;
-                }
-                $book['entry_country_id'] = $address->country;
-                if ($seller->load($book, '') && $seller->validate()) {
-                    $seller->save();
+            if (true || $this->boardViaLink()) {
+                $seller->save(false);
+                $seller->refresh();
+                // cleanup
+                lib\PaypalPartner\models\SellerInfo::deleteAll(
+                  ' partner_id="' . $seller->partner_id . '"' .
+                  ' and platform_id=' . $seller->platform_id .
+                  ' and psi_id<>' . $seller->psi_id
+                );
+
+            } else {
+//adddress generally is not required (only 1 time - to register new PP account)
+                if ($address->load(\Yii::$app->request->post()) /*&& $address->validate()*/) {
+                    $book = [];
+                    foreach ($address->getAttributes() as $key => $name) {
+                        $book['entry_' . $key] = $name;
+                    }
+                    $book['entry_country_id'] = $address->country;
+                        if ($seller->load($book, '') /*&& $seller->validate()*/) {
+                        $seller->save();
+                    } else {
+                        $err = '';
+                        foreach ($address->getErrors() as $error) {
+                            $err .= (is_array($error) ? implode("<br>", $error) : $error) . '<br>';
+                        }
+                        if (!empty($err)) {
+                            $messageStack->add($err);
+                        }
+                    }
                 } else {
                     $err = '';
                     foreach ($address->getErrors() as $error) {
@@ -1783,14 +2674,6 @@ EOD;
                     if (!empty($err)) {
                         $messageStack->add($err);
                     }
-                }
-            } else {
-                $err = '';
-                foreach ($address->getErrors() as $error) {
-                    $err .= (is_array($error) ? implode("<br>", $error) : $error) . '<br>';
-                }
-                if (!empty($err)) {
-                    $messageStack->add($err);
                 }
             }
         } else {
@@ -1850,11 +2733,51 @@ EOD;
         $currencies = \Yii::$container->get('currencies');
 
         switch ($get['action'] ?? null) {
+            case 'returnAPM':
+                echo $this->returnAPM($get['method']);
+                break;
+            case 'cancelAPM':
+                echo $this->cancelAPM($get['method']);
+                break;
             case 'processWebhook':
                 echo $this->onProcessWebhook();
                 break;
             case 'processOnBoard':
-                echo $this->onBoardingProcess();
+                if (($get['subaction']??'')=='checkDetails') {
+                    \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+                    return $this->validateCredentials(\Yii::$app->request->post());
+
+                } elseif (($get['subaction']??'')=='links') {
+                    $psi_id = \Yii::$app->request->post('psi_id', false);
+                    if (!($platformId = \Yii::$app->request->post('platform_id', false))) {
+                        $platformId = $this->getPlatformId();
+                    }
+                    if ($psi_id) {
+                        $tmp = $this->getInstallOptions($platformId, false, $psi_id);
+                    } else {
+                        $tmp = $this->getInstallOptions($platformId);
+                    }
+                    $ret = [
+                      'live' => 'https://www.paypal.com/bizsignup/partner/entry?partnerClientId=' . $tmp['link_params']['partnerClientId'] . '&partnerId=' . $tmp['link_params']['partnerId'] . '&displayMode=minibrowser&partnerLogoUrl=' . $tmp['link_params']['partnerLogoUrl'] . '&returnToPartnerUrl=' . $tmp['link_params']['return_url'] . '&integrationType=FO&features=PAYMENT&country.x=' . $tmp['link_params']['country'] . '&locale.x=' . $tmp['link_params']['locale'] . '&product=ppcp&sellerNonce=' . $tmp['link_params']['sellerNonce'],
+                      'sandbox' => 'https://www.sandbox.paypal.com/bizsignup/partner/entry?partnerClientId=' . $tmp['link_params_sandbox']['partnerClientId'] . '&partnerId=' . $tmp['link_params_sandbox']['partnerId'] . '&displayMode=minibrowser&partnerLogoUrl=' . $tmp['link_params_sandbox']['partnerLogoUrl'] . '&returnToPartnerUrl=' . $tmp['link_params_sandbox']['return_url'] . '&integrationType=FO&features=PAYMENT&country.x=' . $tmp['link_params_sandbox']['country'] . '&locale.x=' . $tmp['link_params_sandbox']['locale'] . '&product=ppcp&sellerNonce=' . $tmp['link_params_sandbox']['sellerNonce'],
+                    ];
+                    unset($tmp['link_params']);
+                    unset($tmp['link_params_sandbox']);
+                    $ret = $tmp + $ret;
+                    \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+                    return $ret;
+                } else {
+                    \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+                    $ret = $this->onBoardingProcess();
+                    return ['html' => $ret];
+                    
+                }
+                break;
+            case 'sellerDetails':
+                $this->fetchOwnKeys();
+                $platformId = $this->getPlatformId();
+                \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+                return ['reload' => 1, 'params' => 'platform_id=' . $platformId . '&set=payment&module=' . $this->code];
                 break;
             case 'checkOnBoarded':
                 $this->checkOnBoarded();
@@ -1869,27 +2792,91 @@ EOD;
                 }
                 break;
             case 'deleteSeller':
+                $platformId = $platform_id = (int)$this->getPlatformId();
+                $seller = $this->getSeller($platformId);
+                $ck = \Yii::$app->request->get('ck', '');
+                if (!$seller->isNewRecord && $ck == $seller->tracking_id) {
+
+                    //delete seller after new details save.
+                    //$seller->delete();
+                    //echo "<div classs='popup-wrap'>Deleted</div><script>window.location.reload()</script>";
+
+                    //cleanup temp sellers (could be finished connection)
+                    lib\PaypalPartner\models\SellerInfo::deleteAll('status=-1 and own_client_secret<>"" and own_client_id<>"" and platform_id=' . (int)$platformId);
+                    $seller = $this->getSeller($platformId, false, true);
+                    $extra = $this->getExtraConfigClass();
+    /*              $platformConf = new \common\classes\platform_config($platform_id);
+                    $tmp = explode(' ', $platformConf->getPlatformDataField('platform_owner'), 2);
+
+                    if (($platformConf->is_default_address ?? null) && $platformConf->platform_id != $platformConf->default_platform_id) {
+                        $platformConf = new \common\classes\platform_config($platformConf->default_platform_id);
+                    }
+                    $defAddr = $platformConf->getPlatformAddress();
+                    $addr = \common\helpers\Address::skipEntryKey([$defAddr]);
+
+                    $defAddr['firstname'] = $addr['firstname'] = $tmp[0];
+                    $defAddr['lastname'] = $addr['lastname'] = $tmp[1];
+                    $defAddr['telephone'] = $addr['telephone'] = $platformConf->getPlatformDataField('platform_telephone');
+                    $seller->email_address = $platformConf->getPlatformDataField('platform_email_address');
+                    try {
+                        $book = [];
+                        foreach ($defAddr as $key => $name) {
+                            if (strpos($key, 'entry_') === false) {
+                                $key = 'entry_' . $key;
+                            }
+                            $book[$key] = $name;
+                        }
+                        $seller->load($book, '');
+                        $seller->save(false);
+                    } catch (\Exception $e) { //not important if platform values don't match requirements
+                    }*/
+                    try {
+                        $seller->save(false);
+                        $seller->refresh();
+                    } catch (\Exception $e) {
+                        \Yii::error('seller tracking id is not saved ' . $e->getMessage(), 'paypal_partner');
+                    }
+                    $html = $extra::widget([
+                          'module' => $this,
+                          'seller' => $seller,
+                    ]);
+                }
+                \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+                return ['reload' => 1, 'params' => 'platform_id=' . $platformId . '&set=payment&module=' . $this->code . '&setup=1&psi_id=' . $seller->psi_id];
+                //return ['preload' => 1, 'html' => $html, 'block' => 'module-extra', 'params' => 'platform_id=' . $platformId . '&set=payment&module=' . $this->code];
+                break;
+            case 'subscribeSeller':
                 $platformId = $this->getPlatformId();
                 $seller = $this->getSeller($platformId);
                 $ck = \Yii::$app->request->get('ck', '');
                 if (!$seller->isNewRecord && $ck == $seller->tracking_id) {
-                    $seller->delete();
-                    //echo "<div classs='popup-wrap'>Deleted</div><script>window.location.reload()</script>";
+                    $this->addWebHooks();
                 }
                 \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
                 return ['reload' => 1, 'params' => 'platform_id=' . $platformId . '&set=payment&module=' . $this->code];
                 break;
+                
+            case 'customerDetails':
+                $this->manager->setPayment($this->code);
+                $ret = [];
+                if (!empty($get['option']) && $get['option']=='card') {
+                    $ret = $this->generateCCCustomerDetails();
+                }
+                \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+                return $ret;
+                break;
             case 'createOrder':
                 $this->manager->setPayment($this->code);
-                if (!$this->manager->getCustomerAssigned()) {
-                    $data = \Yii::$app->request->post();
-                } else {
-                    $data = [];
-                }
+                //customer assigned, but addresses could be in post only
+                $data = \Yii::$app->request->post();
                 $pRes = $this->createOrder($data);
                 $response = [];
                 if (is_object($pRes) && is_object($pRes->result)) {
                     $response['id'] = $pRes->result->id;
+                    if (!empty($get['option'])) {
+                        $response = $this->validateAPMCreateOrderResponse($get['option'], $pRes);
+                    }
+
                 } elseif (is_array($pRes) && !empty($pRes['error']) ) {
                     $response = $pRes;
                 }
@@ -1901,12 +2888,27 @@ EOD;
                 // pickup: reset shipping address in the PP order (it's set after login by default) and cause error during auth/capture.
                 $orderId = \Yii::$app->request->get('id');
                 $this->manager->setPayment($this->code);
+                $this->manager->set('partner_order_pending', false);
                 $json = [];
                 if ($orderId) {
                     $order = $this->manager->createOrderInstance('\common\classes\Order');
                     $response = $this->getOrder($orderId);
-                    if (!empty($response->result->status) && in_array(strtoupper($response->result->status), ['CREATED', 'APPROVED'])) {
+                    if (!empty($response->result->status) && 
+                        (in_array(strtoupper($response->result->status), ['CREATED', 'APPROVED'])
+                        ||
+                        ( strtoupper($response->result->status) == 'PENDING_APPROVAL' && !empty($response->result->payment_source->pay_upon_invoice)
+                            && !empty($response->result->processing_instruction) && $response->result->processing_instruction == 'ORDER_COMPLETE_ON_PAYMENT_APPROVAL'
+                            )
+                        )
+                        ) {
+                        if ( strtoupper($response->result->status) == 'PENDING_APPROVAL' && !empty($response->result->payment_source->pay_upon_invoice)
+                            && !empty($response->result->processing_instruction) && $response->result->processing_instruction == 'ORDER_COMPLETE_ON_PAYMENT_APPROVAL'
+                            ) {
+                            $this->manager->get('partner_order_pending');
+                            $this->manager->set('partner_order_pending', 'pay_upon_invoice');
+                        }
                         $updateAddress = false;
+///2DO no $payer in card payments!!
                         $payer = $response->result->payer;
                         if (\Yii::$app->user->isGuest) {
                             $customer = \common\components\Customer::find()->where(['customers_email_address' => $payer->email_address, 'opc_temp_account' => 0, 'customers_status' => 1])->limit(1)->one();
@@ -1950,13 +2952,13 @@ EOD;
                         }
 
                         $payerAddresses = [];
-                        $payerAddresses['billto'] = $response->result->payer->address??[];
+                        $payerAddresses['billto'] = $response->result->payer->address??(new \stdClass());
                         if (!empty($payerAddresses['billto']) && count((array)$payerAddresses['billto'])>2) {
                             $payerAddresses['billto']->firstname = $payer->name->given_name;
                             $payerAddresses['billto']->lastname = $payer->name->surname;
                         }
 
-                        $payerAddresses['sendto'] = $response->result->purchase_units[0]->shipping->address??[];
+                        $payerAddresses['sendto'] = $response->result->purchase_units[0]->shipping->address??(new \stdClass());
                         if (!empty($response->result->purchase_units[0]->shipping->name->full_name)) {
                             $_tmp = explode(' ', $response->result->purchase_units[0]->shipping->name->full_name, 2);
                             $payerAddresses['sendto']->firstname = $_tmp[0]??'';
@@ -1971,7 +2973,7 @@ EOD;
                                 $country = \common\helpers\Country::get_country_info_by_iso($payerAddress->country_code);
                                 $ship_zone_id = 0;
                                 $ship_zone = $payerAddress->admin_area_1;
-                                $zone = \common\models\Zones::find()->where(['zone_country_id' => $payerAddress->country_code])
+                                $zone = \common\models\Zones::find()->where(['zone_country_id' => $country['id']])
                                         ->andWhere(['or', ['zone_name' => $payerAddress->admin_area_1], ['zone_code' => $payerAddress->admin_area_1]])
                                         ->limit(1)->one();
                                 if ($zone) {
@@ -1981,8 +2983,8 @@ EOD;
                                 $ab = \common\models\AddressBook::find()
                                         ->where(['and',
                                           ['customers_id' => $customer->customers_id],
-                                          ['entry_firstname' => $payerAddress->firstname],
-                                          ['entry_lastname' => $payerAddress->lastname],
+                                          ['entry_firstname' => $payerAddress->firstname??''],
+                                          ['entry_lastname' => $payerAddress->lastname??''],
                                           ['entry_street_address' => $payerAddress->address_line_1??''],
                                           ['entry_postcode' => $payerAddress->postal_code??''],
                                           ['entry_city' => $payerAddress->admin_area_2??''],
@@ -1993,8 +2995,8 @@ EOD;
                                 } else {
                                     $sql_data_array = array(
                                       'customers_id' => $customer->customers_id,
-                                      'entry_firstname' => $payerAddress->firstname,
-                                      'entry_lastname' => $payerAddress->lastname,
+                                      'entry_firstname' => $payerAddress->firstname??'',
+                                      'entry_lastname' => $payerAddress->lastname??'',
                                       'entry_street_address' => $payerAddress->address_line_1??'',
                                       'entry_suburb' => $payerAddress->address_line_2??'',
                                       'entry_postcode' => $payerAddress->postal_code??'',
@@ -2256,7 +3258,9 @@ EOD;
 
     public function getStatusCode($transaction) {
         $type = $this->transactionType($transaction);
-        switch (strtoupper($transaction->result->status)) {
+        $sk = \common\helpers\OrderPayment::OPYS_PENDING;
+        if (!empty($transaction->result->status))
+          switch (strtoupper($transaction->result->status)) {
             case 'COMPLETED':
             case 'PARTIALLY_REFUNDED':
                 if (in_array($type, ['authorize', 'autorization'])) { //always pending
@@ -2337,20 +3341,123 @@ EOD;
         return $options;
     }
 
-    /**
-     * check possible options to get PP account and keys
-     * @return int 1 - sandbox 2 - live 3 - both partner's keys 4 - only own keys
-     */
-    public function getInstallOptions($platform_id) {
-        $ret = 0;
-        if (!empty(self::PARTNER_APP_CLIENT_ID) && !empty(self::PARTNER_APP_CLIENT_SECRET) && $this->_validateKey(self::PARTNER_APP_CLIENT_SECRET, $platform_id)) {
-           $ret += 2;
+/**
+ *  check possible options to get PP account and keys
+ * @param int $platform_id
+ * @param bool $only
+ * @param int $for_seller
+ * @return int|array $code: 1 - sandbox 2 - live 3 - both partner's keys 4 - only own keys
+ */
+    public function getInstallOptions($platform_id, $only = false) {
+        $ret = [];
+        $code = 0;//rudiment
+        if (!empty(self::PARTNER_APP_CLIENT_ID) && !empty(self::PARTNER_MERCHANT_ID)) {
+           $code += 2;
         }
-        if (!empty(self::PARTNER_APP_SANDBOX_CLIENT_ID) && !empty(self::PARTNER_APP_SANDBOX_CLIENT_SECRET) && $this->_validateKey(self::PARTNER_APP_SANDBOX_CLIENT_SECRET, $platform_id)) {
-           $ret += 1;
+        if (!empty(self::PARTNER_APP_SANDBOX_CLIENT_ID) && !empty(self::PARTNER_MERCHANT_SANDBOX_ID) ) {
+           $code += 1;
         }
-        if (!$ret) {
-            $ret = 4;
+        if (!$code) {
+            $code = 4;
+        }
+        if ($only) {
+            return $code;
+        }
+
+        $ppp = \common\models\PlatformsConfiguration::findOne([
+              'configuration_key' => 'MODULE_PAYMENT_PAYPAL_PARTNER_STATUS',
+              'platform_id' => $platform_id
+        ]);
+
+        $ret['activePPP'] = 0;
+        $installed = false;
+        if (!empty($ppp)) {
+            $ret['activePPP'] = (int)($ppp->configuration_value == 'True');
+            $installed = (new \common\classes\Migration())->isTableExists('paypal_seller_info');
+        }
+
+        $for_seller = true; // always new sellers;
+        $wh_urlParams = ['callback/webhooks.payment.' . $this->code, 'platform_id' => $platform_id];
+        $boardingOptionsUrl = \Yii::$app->urlManager->createAbsoluteUrl($wh_urlParams + ['action' => 'processOnBoard', 'subaction' => 'links'], null, true);
+        $ret['titlePPP'] = defined('ADD_PAYPAL')?ADD_PAYPAL:'PayPal Quick Setup';
+        $ret['installPPP'] = $code;// in any mode
+        $ret['golivePPP'] = false; // sandbox exists
+        $ret['boardingOptionsUrl'] = $boardingOptionsUrl;
+
+        if ($installed) {
+            $urlParams = [
+              'platform_id' => $platform_id, 'set' => 'payment', 'module' => $this->code,
+            ];
+            if (\Yii::$app->id == 'app-backend') {
+                $urlParams +=
+                    ($this::BOARDING_MODE == 3?['modules/edit', 'action' => 'checkOnBoarded'] : ['modules/edit']) ;
+            } else {
+                $urlParams +=
+                    ($this::BOARDING_MODE == 3?['admin/modules/edit', 'action' => 'checkOnBoarded'] : ['admin/modules/edit']);
+            }
+            if (\Yii::$app->controller->action->id == 'edit' && \Yii::$app->request->get('psi_id', false) > 0) {
+                $ret['cancelUrl'] =  \Yii::$app->urlManager->createAbsoluteUrl($urlParams);
+            }
+
+            
+            if ($this->liveConfigurationExists($platform_id)) {
+                $ret['installPPP'] = 0;
+
+            } else {
+
+                if ($this->ownSandboxConfigExists($platform_id) 
+                    && !(\Yii::$app->controller->action->id == 'edit' && $this->getMode() == 'Sandbox' && \Yii::$app->request->get('psi_id', false) > 0)
+                    ) { //
+                    $ret['titlePPP'] = defined('PAYPAL_PARTNER_GO_LIVE')?PAYPAL_PARTNER_GO_LIVE:'PayPal Go Live';
+                    $ret['golivePPP'] = true;// allow own live account only
+                } else {
+                    $ret['titlePPP'] = defined('ADD_PAYPAL')?ADD_PAYPAL:'PayPal Quick Setup';
+                }
+
+                if ($this->boardViaLink()) {
+
+                    $logoUrl = \Yii::$app->urlManager->createAbsoluteUrl(['/'], 'https', true);
+                    if (strpos($logoUrl, '127.0.0.1') || strpos($logoUrl, 'localhost')) {
+                        $logoUrl = 'https://paypal.oscommerce.host';
+                    }
+                    $logoUrl = rtrim($logoUrl, '/') . '/admin/themes/basic/img/logo_color.png';
+                    $seller = $this->getSeller($platform_id, 'Live', $for_seller);
+                    $seller->save();
+                    $seller->refresh();
+                    $sSeller = $this->getSeller($platform_id, 'Sandbox', $for_seller);
+                    $sSeller->save();
+                    $sSeller->refresh();
+
+                    $tmp = \common\helpers\Country::get_country_info_by_id($seller->entry_country_id??STORE_COUNTRY);
+                    $fetchKeysUrl = \Yii::$app->urlManager->createAbsoluteUrl($wh_urlParams + ['action' => 'sellerDetails'], null, true);
+                    if ($seller) {
+                        $ret['link_params'] = [
+                                'partnerClientId' => self::PARTNER_APP_CLIENT_ID,
+                                'partnerId' => self::PARTNER_MERCHANT_ID,
+                                'sellerNonce' => $seller->tracking_id,
+                                'country' => $tmp['countries_iso_code_2']??'',
+                                'locale' => str_replace('_', '-', \Yii::$app->settings->get('locale')),
+                                'return_url' => rawurlencode($returnUrl = \Yii::$app->urlManager->createAbsoluteUrl($urlParams+['psi_id' => $seller->psi_id])),
+                                'partnerLogoUrl' => rawurlencode($logoUrl)
+                              ];
+                        $ret['psi_id'] = $seller->psi_id;
+                    }
+                    if ($sSeller) {
+                        $ret['link_params_sandbox'] = [
+                                'partnerClientId' => self::PARTNER_APP_SANDBOX_CLIENT_ID,
+                                'partnerId' => self::PARTNER_MERCHANT_SANDBOX_ID,
+                                'sellerNonce' => $sSeller->tracking_id,
+                                'country' => $tmp['countries_iso_code_2']??'',
+                                'locale' => str_replace('_', '-', \Yii::$app->settings->get('locale')),
+                                'return_url' => rawurlencode($returnUrl = \Yii::$app->urlManager->createAbsoluteUrl($urlParams+['psi_id' => $sSeller->psi_id])),
+                                'partnerLogoUrl' => rawurlencode($logoUrl)
+                              ];
+                        $ret['spsi_id'] = $sSeller->psi_id;
+                    }
+                    $ret['fetchKeysUrl'] = $fetchKeysUrl;
+                }
+
+            }
         }
         return $ret;
     }
@@ -2359,21 +3466,35 @@ EOD;
  *
  * @return string|false
  */
-    public function saveOrderBefore() {
-        $orderClass = false;
-        if (defined('MODULE_PAYMENT_PAYPAL_PARTNER_ORDER_BEFORE_PAYMENT') && MODULE_PAYMENT_PAYPAL_PARTNER_ORDER_BEFORE_PAYMENT != 'False') {
-            if (MODULE_PAYMENT_PAYPAL_PARTNER_ORDER_BEFORE_PAYMENT == 'True') {
-                $orderClass = 'Order';
-            } else {
-                $orderClass = 'TmpOrder';
+    public function saveOrderBefore($force = false) {
+        if (is_string($force) && in_array($force, ['Order', 'TmpOrder']))   {
+            return $force;
+        } elseif ($force) {
+            $orderClass = 'Order';
+        } else {
+            $orderClass = false;
+            if (defined('MODULE_PAYMENT_PAYPAL_PARTNER_ORDER_BEFORE_PAYMENT') && MODULE_PAYMENT_PAYPAL_PARTNER_ORDER_BEFORE_PAYMENT != 'False') {
+                if (MODULE_PAYMENT_PAYPAL_PARTNER_ORDER_BEFORE_PAYMENT == 'True') {
+                    $orderClass = 'Order';
+                } else {
+                    $orderClass = 'TmpOrder';
+                }
             }
         }
         return $orderClass;
     }
 
-    public function saveOrderBySettings() {
+    public function checkSaveTmpOrder() {
         $ret = false;
-        $orderClass = $this->saveOrderBefore();
+        if (!$this->saveOrderBefore()) {
+            $ret = $this->saveOrderBySettings('TmpOrder');
+        }
+        return $ret;
+    }
+
+    public function saveOrderBySettings($force = false) {
+        $ret = false;
+        $orderClass = $this->saveOrderBefore($force);
         if ($orderClass) {
             if ($orderClass != 'TmpOrder') {
                 $order = $this->manager->getOrderInstance();
@@ -2394,6 +3515,108 @@ EOD;
         return $ret;
     }
 
+    public function boardViaLink() {
+        if ($this->getMode() == 'Live') {
+            $ret = self::PARTNER_APP_CLIENT_SECRET;
+        } else {
+            $ret = self::PARTNER_APP_SANDBOX_CLIENT_SECRET;
+        }
+        return empty($ret);
+    }
+    
+    function get_extra_params($platform_id) {
+        $response = [];
+        foreach ((new \Yii\db\Query())
+                ->from('paypal_seller_info')
+                ->where('platform_id = ' . (int)$platform_id)
+                ->all() as $info ) {
+            //not unique per platform - saved both live and sandbox values
+            unset($info['platform_id']);
+            unset($info['psi_id']);
+            unset($info['tracking_id']);
+            $response['seller_info'][] = base64_encode(json_encode($info));
+        }
+        return $response;
+    }
+
+    function set_extra_params($platform_id, $data) {
+        $ship_options_ids = $ship_zone_ids = $zone_table_ids = [];
+        \Yii::$app->db->createCommand('DELETE FROM paypal_seller_info WHERE platform_id='. $platform_id)->execute();
+
+        if (isset($data['seller_info']) && is_array($data['seller_info'])) {
+            foreach ($data['seller_info'] as $d) {
+                $attr = json_decode(base64_decode($d), true);
+                if (is_array($attr)) {
+                    $attr['platform_id'] = (int)$platform_id;
+                    $m = new lib\PaypalPartner\models\SellerInfo($attr);
+                    $m->save(false);
+                }
+            }
+        }
+
+    }
+
+    public function delete_tracking($data) {
+        try {
+            $tn = \common\models\TrackingNumbers::findOne($data['tracking_numbers_id']);
+            $pm = \common\models\OrdersPayment::findOne($data['orders_payment_id']);
+            if ($tn && $pm) {
+                $res = $this->cancelTracking($data['external_id'], [
+                  'transaction_id' => $pm->orders_payment_transaction_id,
+                  'tracking_number' => $tn->tracking_number,
+                ]);
+            }
+        } catch (\Exception $e) {
+            \Yii::warning(" #### " .print_r($e->getMessage() . $e->getTraceAsString(), true), 'TLDEBUG');
+        }
+
+    }
+
+    public function add_tracking($data) {
+
+        $res = $this->addTracking([$data]);
+
+        $ret = TEXT_ERROR_TRACKING_NOT_ADDED;
+        if (is_array($res) && !empty($res['error'])) {
+            $ret = $res['message']??TEXT_ERROR_TRACKING_NOT_ADDED;
+        } elseif (!empty($res)) {
+
+            
+            $log = \common\models\TrackingNumbersExport::findOne([
+              'classname' => $this->code, 
+              'tracking_numbers_id' => $data['tracking_numbers_id'],
+              'orders_payment_id' => $data['orders_payment_id']
+              ]);
+            if (!$log) {
+                $log = new \common\models\TrackingNumbersExport([
+                    'classname' => $this->code,
+                    'tracking_numbers_id' => $data['tracking_numbers_id'],
+                    'orders_payment_id' => $data['orders_payment_id'],
+                    'orders_id' => $data['orders_id']
+                ]);
+            }
+            if ($log) {
+                $log->loadDefaultValues();
+                if (!empty($res->result->tracker_identifiers[0])) {
+                    $tn = $res->result->tracker_identifiers[0]->tracking_number??'NOTRACKER';
+                    $log->external_id = $data['transaction_id'] . '-' . $tn;
+                    if (!empty($res->result->errors[0])) {
+                        $log->message = $res->result->errors[0]->message . ' ' . $res->result->errors[0]->details[0]['issue']??'';
+                        $log->status = 0;
+                    } else {
+                        $log->status = 1;
+                    }
+                }
+
+                try {
+                    \Yii::warning(" save#### " .print_r($log, true), 'TLDEBUG');
+                    $log->save(false);
+                } catch (\Exception $e) {
+                    \Yii::warning(" #### " .print_r($e->getMessage() . $e->getTraceAsString(), true), 'TLDEBUG');
+                }
+            }
+        }
+    }
     // 2d0  add 2 methods for own API keys:
     // check webhooks
     // assign webhooks

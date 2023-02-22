@@ -149,6 +149,14 @@
                                 </td>
                             </tr>
                             <tr>
+                                <td class="label_name">{$smarty.const.ADD_TO_DESCRIPTION}:</td>
+                                <td class="label_value">
+
+                                    {\backend\design\ComponentsButton::widget(['editor' => 'txt_category_description_'|cat:$mItem['languageId'], 'platform_id' => 0, 'languages_id' => $mItem['languageId'], 'buttons' => ['banner']])}
+
+                                </td>
+                            </tr>
+                            <tr>
                                 <td class="label_name">{$smarty.const.TEXT_EDIT_CATEGORIES_DESCRIPTION}</td>
                                 <td class="label_value">{$mItem['categories_description']}</td>
                             </tr>

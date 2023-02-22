@@ -92,7 +92,7 @@
                   <section></section>
               </label>
           {/foreach}
-        <label class="item list-type-1">
+        {*<label class="item list-type-1">
             <div class="">type-1 ({$smarty.const.DEPRECATED_TEXT})</div>
           <input type="radio" name="setting[0][listing_type]" value="type-1"{if $settings[0].listing_type == 'type-1'} checked{/if}/>
           <div class="frame-holder"></div>
@@ -103,7 +103,7 @@
           <input type="radio" name="setting[0][listing_type]" value="type-2"{if $settings[0].listing_type == 'type-2'} checked{/if}/>
           <div class="frame-holder"></div>
           <section></section>
-        </label>
+        </label>*}
       </div>
 
         </div>

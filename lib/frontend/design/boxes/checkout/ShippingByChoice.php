@@ -60,10 +60,10 @@ class ShippingByChoice extends Widget
                 ]
             ];
             if (\common\helpers\Acl::checkExtensionAllowed('DelayedDespatch', 'allowed')) {
-                $response['page']['widgets']['.w-delayed-despatch-checkout'] = \common\extensions\DelayedDespatch\Checkout\Checkout::widget(['params' => $params]);
+                $response['page']['widgets']['.w-delayed-despatch-checkout'] = \common\extensions\DelayedDespatch\widgets\Checkout\Checkout::widget(['params' => $params]);
             }
             if (\common\helpers\Acl::checkExtensionAllowed('Neighbour', 'allowed')) {
-                $response['page']['widgets']['.w-neighbour-checkout'] = \common\extensions\Neighbour\Checkout\Checkout::widget(['params' => $params]);
+                $response['page']['widgets']['.w-neighbour-checkout'] = \common\extensions\Neighbour\widgets\Checkout\Checkout::widget(['params' => $params]);
             }
         }
         return $response;

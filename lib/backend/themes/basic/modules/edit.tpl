@@ -1,11 +1,25 @@
 {use class="common\helpers\Html"}
-<form id="saveModules" name="modules" onSubmit="return updateModule('{$codeMod}');" enctype="multipart/form-data">
-  <input type="hidden" name="platform_id" value="{$selected_platform_id}">
+<form id="saveModules" name="modules" onSubmit="return updateModule('{$codeMod}');" enctype="multipart/form-data" class="{$codeMod}">
+  <input type="hidden" name="platform_id" id="page_platform_id" value="{$selected_platform_id}" />
   <input type="hidden" name="module" value="{$codeMod}">
   <input type="hidden" name="set" value="{$set}">
-<div class="btn-bar btn-bar-top after">
-	<div class="btn-left"><a href="javascript:void(0)" onclick="return backStatement();" class="btn btn-back">{$smarty.const.IMAGE_BACK}</a></div>
-	<div class="btn-right"><a href="javascript:void(0)" onClick="return changeModule('{$codeMod}', 'remove')" class="btn btn-delete">{$smarty.const.IMAGE_DELETE}</a></div>
+<div class="btn-bar btn-bar-top after ">
+	<div class="btn-left"><a href="{Yii::$app->urlManager->createUrl(['modules', 'platform_id' => $selected_platform_id, 'set'=>$set, 'type'=>$type])}" {*onclick="return backStatement();"*} class="btn btn-back">{$smarty.const.IMAGE_BACK}</a>
+{if $cancelUrl}
+	<a href="{$cancelUrl}" class="btn btn-cancel">{$smarty.const.IMAGE_CANCEL}</a>
+{else}
+    {if $smarty.get['set']=='payment' && $smarty.get['module']=='paypal_partner' && !empty($app->controller->view->extra_params) > 0 && $installPPP }
+        <div id="installPPPtop" class="div-installPPP " style="display:inline-block"><a class="btn btn-primary btn-no-margin" href="">{$smarty.const.ADD_PAYPAL}</a></div>
+    {/if}
+{/if}
+    </div>
+    {if (!$isExtension)}
+	<div class="btn-right">
+        <a class="btn btn-no-margin" href="{Yii::$app->urlManager->createUrl(['modules/export','platform_id' => $selected_platform_id, 'set' => $set, 'module' => $codeMod])}">{$smarty.const.TEXT_EXPORT_SETTINGS}</a>
+        <a class="btn btn-no-margin btn-import" href="javascript:void(0);">{$smarty.const.TEXT_IMPORT_SETTINGS}</a>
+        <a class="btn btn-edit btn-no-margin" target="_blank" href="{Yii::$app->urlManager->createUrl(['modules/translation','platform_id'=>$selected_platform_id,'set'=>$set, 'module' => $codeMod])}">{$smarty.const.IMAGE_BUTTON_TRANSLATE}</a>
+    </div>
+    {/if}
 </div>
 <div class="widget box box-no-shadow">
         <div class="widget-content edit-modules">
@@ -90,11 +104,19 @@
 </div>
 {/if}
 <div class="btn-bar edit-btn-bar">
-    <div class="btn-left"><a href="javascript:void(0)" class="btn btn-cancel-foot" onclick="return backStatement()">{$smarty.const.IMAGE_CANCEL}</a></div>
+    <div class="btn-left"><a href="{Yii::$app->urlManager->createUrl(['modules', 'platform_id' => $selected_platform_id, 'set'=>$set, 'type'=>$type])}" {*onclick="return backStatement();"*} class="btn btn-back">{$smarty.const.IMAGE_BACK}</a>
+{if $cancelUrl}
+	<a href="{$cancelUrl}" class="btn btn-cancel">{$smarty.const.IMAGE_CANCEL}</a>
+{/if}
+{*<a href="javascript:void(0)" class="btn btn-cancel-foot" onclick="return backStatement()">{$smarty.const.IMAGE_CANCEL}</a>*}</div>
     <div class="btn-right"><button class="btn btn-primary">{$smarty.const.IMAGE_UPDATE}</button></div>
 </div>
 
 </form>
+{if $smarty.get['set']=='payment' && $smarty.get['module']=='paypal_partner' && !empty($app->controller->view->extra_params) > 0}
+    {include file="./ppp_js.tpl"}
+{/if}
+
 <script type="text/javascript">
 function backStatement() { 
     window.history.back();      
@@ -252,4 +274,16 @@ $(document).ready(function() {
 
 });
 {/if}
+
+    $('.btn-import').each(function() {
+        $(this).dropzone({
+            url: '{Yii::$app->urlManager->createUrl(['modules/import','platform_id' => $selected_platform_id, 'set' => $set, 'module' => $class])}',
+            acceptedFiles: "application/json",      
+            success: function(){
+                $('.dz-complete').hide();
+                window.location.reload();
+            }
+        });
+    });
+
 </script>

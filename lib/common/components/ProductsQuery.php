@@ -492,18 +492,15 @@ class ProductsQuery {
 
   public function addCurrentCustomerGroup() {
     if (!empty($this->params['currentCustomerGroup']) && $this->params['currentCustomerGroup']) {
-      /* @var $ext \common\extensions\UserGroupsRestrictions\UserGroupsRestrictions */
       $customer_groups_id = (int) \Yii::$app->storage->get('customer_groups_id');
-      if ($ext = \common\helpers\Acl::checkExtensionAllowed('UserGroupsRestrictions', 'allowed')) {
-        if ($ext::isAllowed()) {
-          $this->query->andWhere(['exists', \common\models\GroupsProducts::find()
+      if ($groupsProducts = \common\helpers\Acl::checkExtensionTableExist('UserGroupsRestrictions', 'GroupsProducts', 'isAllowed')) {
+          $this->query->andWhere(['exists', $groupsProducts::find()
                                             ->where('p.products_id = products_id')
                                             ->andWhere([
                                                     'groups_id' => (int)$customer_groups_id,
                                                   ])
             ]);
 
-        }
       }
     }
   }
@@ -1791,7 +1788,8 @@ $s = \Yii::$app->db->createCommand($q->offset(null)->limit(null)->orderBy(null)-
         if (is_array($v['values'])) {
           //((!defined('DISPLAY_ONE_VALUE_FILTER') || DISPLAY_ONE_VALUE_FILTER == 'True' || count($values_array) > 1 || $any_selected) && count($values_array) > 0 && $products_count > 0) {
           uasort($v['values'], ['self', 'cmpFilterValues']);
-          if ((!defined('DISPLAY_ONE_VALUE_FILTER') || DISPLAY_ONE_VALUE_FILTER == 'True' || count($v['values']) > 1 || !empty($v['params'])) ) {
+//          if ((!defined('DISPLAY_ONE_VALUE_FILTER') || DISPLAY_ONE_VALUE_FILTER == 'True' || count($v['values']) > 1 || !empty($v['params'])) ) {
+          if ((self::isDisplayOneValueFilter() || count($v['values']) > 1 || !empty($v['params'])) ) {
             $retSorted[$sOrder[$k]] = $v;
           }
         }
@@ -2016,7 +2014,8 @@ $s = \Yii::$app->db->createCommand($q->offset(null)->limit(null)->orderBy(null)-
         if (is_array($v['values'])) {
           //((!defined('DISPLAY_ONE_VALUE_FILTER') || DISPLAY_ONE_VALUE_FILTER == 'True' || count($values_array) > 1 || $any_selected) && count($values_array) > 0 && $products_count > 0) {
           uasort($v['values'], ['self', 'cmpFilterValues']);
-          if ((!defined('DISPLAY_ONE_VALUE_FILTER') || DISPLAY_ONE_VALUE_FILTER == 'True' || count($v['values']) > 1 || !empty($v['params'])) ) {
+//          if ((!defined('DISPLAY_ONE_VALUE_FILTER') || DISPLAY_ONE_VALUE_FILTER == 'True' || count($v['values']) > 1 || !empty($v['params'])) ) {
+          if ((self::isDisplayOneValueFilter() || count($v['values']) > 1 || !empty($v['params'])) ) {
             $retSorted[$sOrder[$k]] = $v;
           }
         } else {
@@ -2026,6 +2025,15 @@ $s = \Yii::$app->db->createCommand($q->offset(null)->limit(null)->orderBy(null)-
       }
 
       return $retSorted;
+  }
+
+  private static function isDisplayOneValueFilter()
+  {
+      if($ext = \common\helpers\Acl::checkExtensionAllowed('ProductPropertiesFilters'))
+      {
+          return (method_exists($ext, 'optionDisplayOneValueFilter') ? $ext::optionDisplayOneValueFilter() : (!defined('DISPLAY_ONE_VALUE_FILTER') || DISPLAY_ONE_VALUE_FILTER == 'True'));
+      }
+      return false;
   }
 
 /**

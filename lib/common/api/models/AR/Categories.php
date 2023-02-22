@@ -326,14 +326,10 @@ class Categories extends EPMap
             unset($this->auto_status);
         }
         if ( $insert && !is_array($this->childCollections['assigned_customer_groups']) ) {
+            /** @var \common\extensions\UserGroupsRestrictions\UserGroupsRestrictions $ext */
             if ($ext = \common\helpers\Acl::checkExtensionAllowed('UserGroupsRestrictions', 'allowed')) {
-                if ($ext::select()) {
-                    /** @var \backend\services\GroupsService $groupService */
-                    try {
-                        $groupService = \Yii::createObject(\backend\services\GroupsService::class);
-                        $groupService->addCategoryToAllGroups($this->categories_id);
-                    } catch (\Exception $ex) {
-                    }
+                if ($groupService = $ext::getGroupsService()) {
+                    $groupService->addCategoryToAllGroups($this->categories_id);
                 }
             }
         }

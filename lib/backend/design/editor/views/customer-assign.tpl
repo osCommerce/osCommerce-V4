@@ -27,11 +27,15 @@
         $('input[name=search_customer]').autocomplete({
 			create: function(){
 				$(this).data('ui-autocomplete')._renderItem = function( ul, item ) {
-					return $( "<li></li>" )
-						.data( "item.autocomplete", item )	
-                        .append( "<a><span>" + item.label + "</span></a>")                        
-						.appendTo( ul );
-					};
+                    var el = $( "<li></li>" )
+						.data( "item.autocomplete", item );
+                    if (item.id) {
+                        el.append( "<a><span>" + item.label + "</span></a>");
+                    } else {
+                        el.append( "<span>" + item.label + "</span>");
+                    }
+                    return el.appendTo( ul );
+				};
 			},
 			source: function(request, response){
 				if (request.term.length > 2){

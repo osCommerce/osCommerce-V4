@@ -29,7 +29,8 @@
             </div>               
           {/foreach}
         {/if}
-
+        
+        <div class="wtres">
         <table class="table table-striped table-selectable table-checkable table-hover table-responsive table-bordered datatable dataTable sortable-grid table-properties" data_ajax="{$app->urlManager->createUrl('properties/list')}">
           <thead>
             <tr>
@@ -39,7 +40,7 @@
             </tr>
           </thead>
         </table>            
-
+        </div>
       </div>
 
     </div>

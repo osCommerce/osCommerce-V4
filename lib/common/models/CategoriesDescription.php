@@ -84,11 +84,8 @@ class CategoriesDescription extends \yii\db\ActiveRecord
         return $this->hasOne(Categories::className(), ['categories_id' => 'categories_id']);
     }
 
-    /**
-     * @return \yii\db\ActiveQuery
-     */
-    public function getGroupsCategories()
-    {
-        return $this->hasOne(GroupsCategories::className(), ['categories_id' => 'categories_id']);
-    }
+    //public function getGroupsCategories() - removed due extracting extension UsersGroupsRestriction - use this
+    // if ($model = Acl::checkExtensionTableExist('UserGroupsRestrictions', 'GroupsCategories')) {
+    //    $yourModel->innerJoin($model::tableName() ...)
+
 }

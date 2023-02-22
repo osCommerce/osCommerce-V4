@@ -26,6 +26,12 @@
         <td>{$details.page_name}</td>
       </tr>
     {/if}
+    {if $details.designer_mode}
+      <tr>
+        <td>{$smarty.const.EDIT_MODE}: </td>
+        <td>{$details.designer_mode}</td>
+      </tr>
+    {/if}
   </table>
 
   {if $details.widgetSettings}

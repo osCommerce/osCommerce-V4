@@ -20,6 +20,10 @@ use yii\base\Widget;
 use frontend\design\IncludeTpl;
 use yii\helpers\Html;
 use yii\helpers\ArrayHelper;
+use common\models\Banners;
+use common\models\BannersGroups;
+use common\models\BannersGroupsImages;
+use common\models\BannersGroupsSizes;
 
 class Banner extends Widget
 {
@@ -32,7 +36,8 @@ class Banner extends Widget
     {
         parent::init();
 
-        \frontend\design\Info::addJsData(['widgets' => [
+        Info::includeJsFile('reducers/widgets');
+        Info::addJsData(['widgets' => [
             $this->id => [ 'lazyLoad' => @$this->settings[0]['lazy_load']]
         ]]);
     }
@@ -42,6 +47,9 @@ class Banner extends Widget
         $languages_id = \Yii::$app->settings->get('languages_id');
         $banners = array();
         $banner_speed = '';
+
+        Info::addBlockToWidgetsList('banner');
+        Info::includeJsFile('Banner');
 
         if (!@$this->settings[0]['banners_group'] && @$this->settings[0]['params'])
             $this->settings[0]['banners_group'] = $this->settings[0]['params'];
@@ -58,6 +66,15 @@ class Banner extends Widget
         ) {
             $this->settings[0]['banners_group'] = $this->params['banners_group'];
         }
+        $groupId = 0;
+        if (preg_match("/^[0-9]+$/", $this->settings[0]['banners_group'])) {
+            $groupId = $this->settings[0]['banners_group'];
+        } else {
+            $bannersGroups = BannersGroups::findOne(['banners_group' => $this->settings[0]['banners_group']]);
+            if ($bannersGroups) {
+                $groupId = $bannersGroups->id;
+            }
+        }
 
         $andWhere = '';
         if ($this->settings[0]['ban_id']) {
@@ -69,12 +86,13 @@ class Banner extends Widget
             if ($ext::checkSattelite()){
                 $s_platform_id = $ext::getSatteliteId();
                 $sql = tep_db_query("select * from " . TABLE_BANNERS_TO_PLATFORM .
-                        " nb2p, " . TABLE_BANNERS_NEW . " nb, " . TABLE_BANNERS_LANGUAGES .
+                        " nb2p, " . Banners::tableName() . " nb, " . TABLE_BANNERS_LANGUAGES .
                         " bl where bl.banners_id = nb.banners_id AND bl.language_id='" . $languages_id . "' AND nb2p.banners_id=nb.banners_id "
-                        . "AND nb2p.platform_id='" . $s_platform_id . "'  and nb.banners_group = '" . $this->settings[0]['banners_group'] . "' "
+                        . "AND nb2p.platform_id='" . $s_platform_id . "'  and nb.group_id = '" . $groupId . "' "
                         . $andWhere
                         ." and (nb.expires_date is null or nb.expires_date >= now()) and (nb.date_scheduled is null or nb.date_scheduled <= now()) "
                         . "AND (bl.banners_html_text!='' OR bl.banners_image!='' OR bl.banners_url)
+                        and nb.status = '1'
                          order by " . ($this->settings[0]['banners_type'] == 'random' ? " RAND() LIMIT 1" : " nb.sort_order"));
                 if (tep_db_num_rows($sql)){
                     $use_phys_platform = false;
@@ -83,19 +101,21 @@ class Banner extends Widget
             }
         }
         if ($use_phys_platform){
-            $sql = tep_db_query("select * from " . TABLE_BANNERS_TO_PLATFORM . " nb2p, " . TABLE_BANNERS_NEW . " nb, " . TABLE_BANNERS_LANGUAGES .
+            $sql = tep_db_query("select * from " . TABLE_BANNERS_TO_PLATFORM . " nb2p, " . Banners::tableName() . " nb, " . TABLE_BANNERS_LANGUAGES .
                     " bl where bl.banners_id = nb.banners_id AND bl.language_id='" . $languages_id . "' AND nb2p.banners_id=nb.banners_id AND"
-                    . " nb2p.platform_id='" . $_platform_id . "'  and nb.banners_group = '" . $this->settings[0]['banners_group'] . "' "
+                    . " nb2p.platform_id='" . $_platform_id . "'  and nb.group_id = '" . $groupId . "' "
                     . $andWhere
                     ." AND (nb.expires_date is null or nb.expires_date >= now()) and (nb.date_scheduled is null or nb.date_scheduled <= now()) and "
-                    . "(bl.banners_html_text!='' OR bl.banners_image!='' OR bl.banners_url) order by " . ($this->settings[0]['banners_type'] == 'random' ? " RAND() LIMIT 1" : " nb.sort_order"));
+                    . "(bl.banners_html_text!='' OR bl.banners_image!='' OR bl.banners_url)
+                        and nb.status = '1'
+                        order by " . ($this->settings[0]['banners_type'] == 'random' ? " RAND() LIMIT 1" : " nb.sort_order"));
         }
         if (@$this->settings[0]['banners_type'] == 'random') {
             $this->settings[0]['banners_type'] = 'banner';
         }
         
         if (!@$this->settings[0]['banners_type']) {
-            $type_sql_query = tep_db_query("select nb.banner_type from " . TABLE_BANNERS_TO_PLATFORM . " nb2p, " . TABLE_BANNERS_NEW . " nb where nb.banners_group = '" . $this->settings[0]['banners_group'] . "' AND nb2p.banners_id=nb.banners_id AND nb2p.platform_id='" . $_platform_id . "' limit 1");
+            $type_sql_query = tep_db_query("select nb.banner_type from " . TABLE_BANNERS_TO_PLATFORM . " nb2p, " . Banners::tableName() . " nb where nb.group_id = '" . $groupId . "' AND nb2p.banners_id=nb.banners_id AND nb2p.platform_id='" . $_platform_id . "' limit 1");
             if (tep_db_num_rows($type_sql_query) > 0) {
                 $type_sql = tep_db_fetch_array($type_sql_query);
                 $type_array = $type_sql['banner_type'];
@@ -109,8 +129,8 @@ class Banner extends Widget
         }
 
         $bannerGroupSettings = [];
-        $groupSettings = \common\models\BannersGroups::find()
-            ->where([ 'banners_group' => $this->settings[0]['banners_group']])
+        $groupSettings = BannersGroupsSizes::find()
+            ->where([ 'group_id' => $groupId])
             ->asArray()
             ->all();
         if (is_array($groupSettings)) {
@@ -125,7 +145,7 @@ class Banner extends Widget
                 $row['banners_image'] = \common\classes\Images::getWebp($row['banners_image']);
             }
             $row['banners_image_url'] = \common\helpers\Media::getAlias('@webCatalogImages/'.$row['banners_image']);
-            if ($row['svg'] && $row['banner_display'] == 3) {
+            if ($row['svg']) {
                 $row['image'] = self::bannerGroupSvg(
                     $bannerGroupSettings,
                     $row['banners_id'],
@@ -173,6 +193,9 @@ class Banner extends Widget
 
         $settings = array_merge(self::$defaultSettings, $this->settings[0]);
         $template = '';
+        if ((!$this->settings[0]['template'] && $this->params['microtime'] > '1675836928') || !$this->params['microtime']) {
+            $this->settings[0]['template'] = 1;
+        }
         if ($this->settings[0]['template']) {
             $template = '-' . $this->settings[0]['template'];
 
@@ -197,35 +220,47 @@ class Banner extends Widget
     public static function bannerGroupImages ($bannerGroupSettings, $bannersId, $mainImage, $title = '', $lazyLoad = false, $dontUseWebp = false){
         $languages_id = \Yii::$app->settings->get('languages_id');
 
-        $naBanner = \frontend\design\Info::themeSetting('base64_banner');
+        $naBanner = Info::themeSetting('base64_banner');
         if (!$naBanner) {
-            $naBanner = \frontend\design\Info::themeSetting('na_banner', 'hide');
+            $naBanner = Info::themeSetting('na_banner', 'hide');
         }
 
-        $bannerGroupImages = \common\models\BannersGroupsImages::find()
+        $bannerGroupImages = BannersGroupsImages::find()
             ->where([ 'banners_id' => $bannersId, 'language_id' => $languages_id])
             ->asArray()
             ->all();
 
-        $size = @getimagesize(Images::getFSCatalogImagesPath() . $mainImage);
-        if (is_array($size)) {
-          $heightPer = round($size[1] * 100 / $size[0] , 4);
-        } else {
-          $heightPer = 100;
+        $firstType = self::getMediaType($mainImage);
+
+        if ($firstType == 'image') {
+            $size = @getimagesize(Images::getFSCatalogImagesPath() . $mainImage);
+            if (is_array($size)) {
+                $heightPer = round($size[1] * 100 / $size[0] , 4);
+            } else {
+                $heightPer = 100;
+            }
+            Info::setScriptCss('
+                #banner-' . $bannersId . ' {
+                    padding-top: ' . $heightPer . '%;
+                }');
         }
-        Info::setScriptCss('
-        #banner-' . $bannersId . ' {
-            padding-top: ' . $heightPer . '%;
-        }');
+
+        $mainType = $firstType;
+        foreach ($bannerGroupImages as $image){
+            if (self::getMediaType($image['image']) == 'video') {
+                $mainType = 'video';
+            }
+        }
 
         $sources = '';
-        $pictureAttributes = '';
         foreach ($bannerGroupImages as $image){
             if (!$bannerGroupSettings[$image['image_width']]) continue;
 
             $imageMedia = $image['image'];
 
-            if (!$dontUseWebp) {
+            $mediaType = self::getMediaType($imageMedia);
+
+            if (!$dontUseWebp && $mediaType == 'image') {
                 $image['image'] = \common\classes\Images::getWebp($image['image']);
             }
             $image['image'] = \common\helpers\Media::getAlias('@webCatalogImages/' . $image['image']);
@@ -241,20 +276,35 @@ class Banner extends Widget
                 $media .= '(max-width: ' . $bannerGroupSettings[$image['image_width']]['width_to'] . 'px)';
             }
 
-            if (is_file(Images::getFSCatalogImagesPath() . $imageMedia)) {
+            $sourcesAttr = [
+                'srcset' => str_replace(' ', '%20', $image['image']),
+                'media' => $media,
+                'data-max' => $bannerGroupSettings[$image['image_width']]['width_to'],
+                'data-min' => $bannerGroupSettings[$image['image_width']]['width_from'],
+                'data-type' => $mediaType,
+            ];
+
+            if ($bannerGroupSettings[$image['image_width']]['image_width'] &&
+                $bannerGroupSettings[$image['image_width']]['image_height']) {
+                $heightPer = round($bannerGroupSettings[$image['image_width']]['image_height'] * 100 / $bannerGroupSettings[$image['image_width']]['image_width'], 4);
+                $fit = $image['fit'] ? $image['fit'] : 'cover';
+                $position = $image['position'] ? $image['position'] : 'center';
+                Info::setScriptCss('@media ' . $media . ' {
+                    .banner-box-' . $bannersId . ' {padding-top: ' . $heightPer . '%;display: block; position: relative}
+                    .banner-box-' . $bannersId . ' > *, .banner-box-' . $bannersId . ' img {position: absolute!important; top: 0; left: 0; width: 100%; height: 100%; padding-top: 0!important; object-fit: ' . $fit . '; object-position: ' . $position . '}
+                }');
+            } elseif (is_file(Images::getFSCatalogImagesPath() . $imageMedia) && $mediaType == 'image') {
                 $size = getimagesize(Images::getFSCatalogImagesPath() . $imageMedia);
                 $heightPer = round($size[1] * 100 / $size[0], 4);
                 Info::setScriptCss('@media ' . $media . ' {
-                #banner-' . $bannersId . ' {
+                picture#banner-' . $bannersId . ' {
                     padding-top: ' . $heightPer . '%;
                 }}');
+            } elseif ($mediaType == 'video') {
+                Info::setScriptCss('@media ' . $media . ' {video#banner-' . $bannersId . ' {padding-top: 0}}');
             }
 
-            $sourcesAttr = [
-                'srcset' => $image['image'],
-                'media' => $media,
-            ];
-            if ($lazyLoad) {
+            if ($lazyLoad && $mainType == 'image') {
                 $sourcesAttr['data-srcset'] = $image['image'];
                 $sourcesAttr['srcset'] = $naBanner;
                 $sourcesAttr['class'] = 'na-banner';
@@ -274,20 +324,51 @@ class Banner extends Widget
         $attributes = [
             'title' => $title
         ];
-        if ($lazyLoad) {
+        if ($lazyLoad && $mainType == 'image') {
             $attributes['data-src'] = $mainImage;
             $attributes['class'] = 'na-banner';
             $mainImage = $naBanner;
         }
 
-        $img = Html::img($mainImage, $attributes);
-        return Html::tag('picture', $sources . $img, $pictureAttributes);
+        if ($mainType == 'image') {
+            $img = Html::img($mainImage, $attributes);
+            return Html::tag('picture', $sources . $img, $pictureAttributes);
+        } elseif ($mainType == 'video') {
+
+            if ($firstType == 'image') {
+                $pictureAttributes['poster'] = $mainImage;
+            }
+            $pictureAttributes['autoplay'] = 'autoplay';
+            $pictureAttributes['muted'] = 'muted';
+            $pictureAttributes['loop'] = 'loop';
+            $pictureAttributes['controls'] = 'controls';
+
+            $attributes['src'] = $mainImage;
+            $attributes['class'] = 'main';
+            $attributes['data-type'] = $firstType;
+            $img = Html::tag('source', '', $attributes);
+            return Html::tag('video', $sources . $img, $pictureAttributes);
+        }
+    }
+
+    public static function getMediaType ($imageMedia)
+    {
+        $mediaType = 'image';
+        if (is_file(Images::getFSCatalogImagesPath() . $imageMedia)) {
+            $mediaType = explode('/', mime_content_type(Images::getFSCatalogImagesPath() . $imageMedia));
+            $mediaType = $mediaType [0];
+        } elseif (is_file(DIR_FS_CATALOG . $imageMedia)) {
+            $mediaType = explode('/', mime_content_type(DIR_FS_CATALOG . $imageMedia));
+            $mediaType = $mediaType [0];
+        }
+
+        return $mediaType;
     }
 
     public static function bannerGroupSvg ($bannerGroupSettings, $bannersId, $mainImage){
         $languages_id = \Yii::$app->settings->get('languages_id');
 
-        $bannerGroupImages = \common\models\BannersGroupsImages::find()
+        $bannerGroupImages = BannersGroupsImages::find()
             ->where([ 'banners_id' => $bannersId, 'language_id' => $languages_id])
             ->asArray()
             ->all();

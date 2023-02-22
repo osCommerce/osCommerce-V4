@@ -1,5 +1,5 @@
 {use class="frontend\design\Info"}
-<div class="categories{if isset($settings) && isset($settings[0].view_as) && $settings[0].view_as == 'carousel'} carousel{/if}">
+<div class="categories items-list{if isset($settings) && isset($settings[0].view_as) && $settings[0].view_as == 'carousel'} carousel{/if}">
   {foreach $categories as $category}
       <a class="item category-link" href="{$category.link}">
           {if !($settings[0].hide_images|default:null)}

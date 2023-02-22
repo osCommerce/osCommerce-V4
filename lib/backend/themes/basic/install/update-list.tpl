@@ -1,3 +1,4 @@
+{if !empty($installed)}<p>Shop installation date: {$installed}</p>{/if}
 <p>Current version {$version}{if $updatesCount > 0} - <a href="javascript:void(0)" onclick="return showUpdateLog();">{$smarty.const.TEXT_SHOW_UPDATES}</a>{/if}</p>
 {foreach $updates as $item name=products}
     <p>{$item.filename}</p>

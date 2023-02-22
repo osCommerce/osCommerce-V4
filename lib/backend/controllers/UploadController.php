@@ -91,7 +91,7 @@ class UploadController extends Sceleton
         $settings = Yii::$app->request->post();
         $settings['src'] = str_replace(tep_catalog_href_link(), DIR_FS_CATALOG, $settings['src']);
         $settings['src'] = preg_replace("/^" . str_replace('/', '\/', DIR_WS_CATALOG) . "/", DIR_FS_CATALOG, $settings['src']);
-        $srcArr = explode('/', $settings['src']);
+        $srcArr = explode('/', str_replace('\\', '/', $settings['src']));
         $fileName = end($srcArr);
         $destination = DIR_FS_ADMIN . 'uploads' . DIRECTORY_SEPARATOR . $fileName;
 
@@ -101,7 +101,7 @@ class UploadController extends Sceleton
         $from = 1;
         $pos2 = strripos($destination, '-');
         $end = strtolower(substr($destination, $pos2+1));
-        if (preg_match("/[0-9]+/", $end)) {
+        if ($pos2 > 1 && preg_match("/[0-9]+/", $end)) {
             $name = substr($destination, 0, $pos2);
             $from = (int)$end;
         }

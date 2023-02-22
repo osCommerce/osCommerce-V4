@@ -176,7 +176,7 @@
                   {foreach $settings.media_query as $item}
                     <p style="float: left; width: 33%"><label>
                         <input type="checkbox" name="visibility[0][{$item.id}][accordion]"{if $visibility[0][$item.id].accordion} checked{/if}/>
-                            {$item.setting_value}
+                            {$smarty.const.WINDOW_WIDTH}: {$item.title}
                       </label></p>
                   {/foreach}
               </div>

@@ -34,6 +34,7 @@
                         </select>
                     </div>
 
+                    {if $settings.designer_mode == 'expert'}
                     <div class="setting-row">
                         <label for="">Type</label>
                         <select name="setting[0][type]" class="form-control" data-manager="menu_type">
@@ -41,6 +42,7 @@
                             <option value="builder"{if $settings[0].type == 'builder'} selected{/if}>Builder</option>
                         </select>
                     </div>
+                    {/if}
 
                     <div class="setting-row">
                         <label for="">{$smarty.const.TEXT_LIMIT_LEVELS}</label>
@@ -87,30 +89,34 @@
                             </select>
                         </div>
 
+                        {if $settings.designer_mode}
                         {if $settings.media_query|@count > 0}
                             <div style="margin-bottom: 20px">
                                 <h4>{$smarty.const.HIDE_MENU_UNDER_ICON}</h4>
                                 {foreach $settings.media_query as $item}
                                     <p><label>
                                             <input type="checkbox" name="visibility[0][{$item.id}][hide_menu]"{if $visibility[0][$item.id].hide_menu} checked{/if}/>
-                                            {$item.setting_value}
+                                            {$smarty.const.WINDOW_WIDTH}: {$item.title}
                                         </label></p>
                                 {/foreach}
                             </div>
+                        {/if}
                         {/if}
 
 
                         {include 'include/ajax.tpl'}
                     </div>
 
+                    {if $settings.designer_mode == 'expert'}
                     <div class="type-builder" data-menu_type="builder">
 
                         <div class="tabbable tabbable-custom box-style-tab">
                             <ul class="nav nav-tabs  style-tabs">
 
                                 <li class="active"><a href="#menu_main" data-toggle="tab">{$smarty.const.TEXT_MAIN}</a></li>
+                                <li class="label">{$smarty.const.WINDOW_WIDTH}:</li>
                                 {foreach $settings.media_query as $item}
-                                    <li><a href="#menu{$item.id}" data-toggle="tab">{$item.setting_value}</a></li>
+                                    <li><a href="#menu{$item.id}" data-toggle="tab">{$item.title}</a></li>
                                 {/foreach}
                             </ul>
                             <div class="tab-content menu-list">
@@ -285,10 +291,6 @@
         </select>
     </div>
 
-
-
-
-
 {/function}
 
                                 <div class="tab-pane active" id="menu_main">
@@ -308,7 +310,7 @@
                         </div>
 
                     </div>
-
+                    {/if}
                 </div>
                 <div class="tab-pane" id="style">
                     {include 'include/style.tpl'}

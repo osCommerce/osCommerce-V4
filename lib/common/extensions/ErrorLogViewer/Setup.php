@@ -71,6 +71,7 @@ class Setup extends \common\classes\modules\SetupExtensions
                 'EXT_ELV_TEXT_ERROR_LEVEL' => 'Level',
                 'EXT_ELV_TEXT_CATEGORY' => 'Category',
                 'EXT_ELV_TEXT_LOG_POSITION_DATE' => 'Position & date',
+                'EXT_ELV_TEXT_ERROR_DESCRIPTION' => 'Error description',
 
                 'EXT_ELV_DELETE_INTRO' => 'Are you sure you want to delete file \"%s\"?',
                 'EXT_ELV_DELETE_TITLE' => 'Delete file?',

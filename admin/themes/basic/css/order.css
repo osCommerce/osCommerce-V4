@@ -3,6 +3,10 @@
 .tab-content span.btn{top:0;}
 .left-box{width: 65%;display: inline-block;vertical-align: top;}
 .totals-box{overflow: auto;display: inline-block;vertical-align: top;float: right;background: #f7f5f5;width: 34%;  position: sticky; top: 0;}
+@media(max-width: 768px){
+    .totals-box, .left-box{width: 100%}
+    ._btn-tools{margin-top: 10px}
+}
 .modules-box .shipping-modules-box, .modules-box .payment-modules-box{width: 49%;display: inline-block;}
 .shippingNote{ display: inline; margin-left: 6px }
 .modules-box .payment-modules-box{float:right;}

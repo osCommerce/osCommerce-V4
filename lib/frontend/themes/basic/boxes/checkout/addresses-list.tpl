@@ -148,9 +148,12 @@
                 '{Info::themeFile('/js/select2/select2.min.js')}',
             ],function(){
 
+                try {
                 $('.select2').select2({
                     allowClear: true
                 });
+                } catch ( e ) {
+                }
 
                 let addresses = $('.{$type}-addresses');
                 let fields = $('input, select', addresses);

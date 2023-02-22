@@ -19,7 +19,7 @@ class TlUrl {
     public static function replaceUrl($text)
     {
         if ( !empty($text) && strpos($text,'##URL##')!==false ) {
-            $text = preg_replace_callback("/\#\#URL\#\#([^\"]+)/", "self::addUrl", $text);
+            $text = preg_replace_callback("/\#\#URL\#\#([^\"]+)/", self::class ."::addUrl", $text);
         }
 
         return $text;
@@ -94,17 +94,6 @@ class TlUrl {
                     'platform_id' => $platform_id
                 ])
             ],[
-                'name' => TEXT_DELIVERY_LOCATION_LINKS,
-                'class' => '',
-                'url' => \Yii::$app->urlManager->createUrl([
-                    $action,
-                    'name'=>'location',
-                    'editor_id' => $editor,
-                    'field' => $field,
-                    'languages_id' => $languages_id,
-                    'platform_id' => $platform_id
-                ]),
-            ],[
                 'name' => TEXT_BRANDS,
                 'class' => '',
                 'url' => \Yii::$app->urlManager->createUrl([
@@ -127,6 +116,21 @@ class TlUrl {
                     'platform_id' => $platform_id
                 ]),
             ]];
+
+        if ($ext = \common\helpers\Acl::checkExtensionAllowed('DeliveryLocation', 'allowed')) {
+            $links[] = [
+                'name' => TEXT_DELIVERY_LOCATION_LINKS,
+                'class' => '',
+                'url' => \Yii::$app->urlManager->createUrl([
+                    $action,
+                    'name' => 'location',
+                    'editor_id' => $editor,
+                    'field' => $field,
+                    'languages_id' => $languages_id,
+                    'platform_id' => $platform_id
+                ]),
+            ];
+        }
 
         return $links;
     }
@@ -165,6 +169,17 @@ class TlUrl {
 
             case 'common':
                 $items = self::common();
+                break;
+
+            case 'all':
+                $items['info'] = ['title' => TEXT_PAGE_LINKS, 'links' => self::info($platform_id, $lang_id)];
+                $items['product'] = ['title' => TEXT_PRODUCTS_LINKS, 'suggest' => 'index/search-suggest'];
+                $items['category'] = ['title' => TEXT_CATEGORIES_LINKS, 'links' => self::category($platform_id, $lang_id)];
+                if ($ext = \common\helpers\Acl::checkExtensionAllowed('DeliveryLocation', 'allowed')) {
+                    $items['location'] = ['title' => TEXT_DELIVERY_LOCATION_LINKS, 'links' => self::location($platform_id, $lang_id)];
+                }
+                $items['brand'] = ['title' => TEXT_BRANDS, 'links' => self::brand()];
+                $items['common'] = ['title' => COMMON_LINKS, 'links' => self::common()];
                 break;
         }
 

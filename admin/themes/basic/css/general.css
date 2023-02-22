@@ -209,7 +209,7 @@
 @media (max-width: 1400px) {
     #nav li a {
         font-size: 14px;
-        padding-left: 10px;
+        
     }
     #nav ul.sub-menu a {
         font-size: 13px;
@@ -327,42 +327,29 @@
     display: flex;
     align-items: end;
 }
-.btn-toolbar-col .btn {
+.btn-toolbar-col,
+.btn-toolbar-col-2 {
+    margin-top: 20px;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+}
+.btn-toolbar-col .btn,
+.btn-toolbar-col-2 .btn {
     display: block;
-    max-width: 250px;
     margin: 0 auto 10px !important;
 }
-
-.banner-filter {
-    display: flex;
-    min-height: 100px;
-    width: 600px;
-    max-width: 100%;
-    margin: 0 auto;
+.btn-toolbar-col .btn {
+    width: 100%;
+    max-width: 250px;
 }
-.banner-filter > * {
-    flex-grow: 1;
+.btn-toolbar-col-2 .btn {
+    width: 48%;
 }
-.banner-filter-right {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-}
-.banner-filter .platform-filter {
-    min-height: 150px;
-}
-@media (max-width: 1200px) {
-    .banner-filter .platform-filter {
-        min-height: 0;
-    }
-    .banner-filter {
-        flex-wrap: wrap;
-        width: 100%;
-    }
-    .platforms-list > div {
-        display: inline-block;
-        margin-right: 20px;
-    }
+.btn-toolbar-col .btn:before,
+.btn-toolbar-col-2 .btn:before {
+    font-weight: normal;
+    margin-right: 10px;
 }
 
 .warehouses-table .popup-content{
@@ -579,4 +566,111 @@
 
 .content-widget-popup {
     width: 650px !important;
+}
+
+.colorpicker {
+    z-index: 10000 !important;
+}
+
+.suggest_table {
+    display: flex;
+    width: 100%;
+}
+.suggest_table > span{
+    padding: 0 5px;
+    font-size: 14px;
+}
+.suggest_table > span img{
+    max-width: 40px;
+    max-height: 40px;
+    width: auto;
+    height: auto;
+}
+.suggest_table .td_price {
+    flex-grow: 1;
+    text-align: right;
+}
+.suggest_table .td_image {
+    width: 50px;
+    min-width: 50px;
+    max-width: 50px;
+}
+.search .suggest {
+    padding: 0;
+}
+.search .suggest a {
+    color: var(--main-color);
+    text-decoration: none !important;
+}
+.search .suggest a:hover {
+    text-decoration: none;
+}
+.search .suggest a.active {
+    background: var(--background-color-2);
+}
+
+.extension-info-ico {
+    position: relative;
+    display: block;
+    width: 100%;
+}
+.extension-info-ico i {
+    position: absolute;
+    top: 3px;
+    right: 3px;
+    z-index: 10000;
+    text-shadow: 0 0 2px #fff;
+}
+.ord-date-purch .extension-info-ico i{
+    top: -11px;
+    right: 0
+}
+.ord-date-purch .extension-info-ico{position: static;}
+.ord-date-purch{position:relative}
+input[type="checkbox"].form-control {
+    width: 18px;
+    height: 18px;
+    box-shadow: none;
+    display: inline-block;
+    position: relative;
+    top: -2px;
+}
+.image-heading-cell {
+    width: 120px;
+}
+.widget-settings {
+    max-height: calc(100vh - 45px);
+}
+.widget-settings .popup-content {
+    max-height: calc(100vh - 150px);
+}
+
+.radio-buttons-icons {
+    display: flex;
+    position: relative;
+    overflow: hidden;
+}
+.radio-buttons-icons input {
+    position: absolute;
+    top: -200px;
+    visibility: hidden;
+    left: -100px;
+    width: 0;
+}
+.radio-buttons-icons label > span {
+    width: 30px;
+    height: 30px;
+    line-height: 30px;
+    text-align: center;
+    font-size: 16px;
+    font-weight: normal;
+    border: 1px solid var(--border-color-midle);
+    display: inline-block;
+    cursor: pointer;
+    border-radius: 2px;
+    background: var(--background-color);
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.08);
+}
+.radio-buttons-icons label input:checked + span {
+    border: 1px solid var(--border-color-selected);
 }

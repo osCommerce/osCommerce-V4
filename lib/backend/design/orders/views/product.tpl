@@ -19,6 +19,9 @@
         {assign var = props value = $app->get('PropsHelper')}{$props::adminOrderProductView($product)}
         {$manager->render('Asset', ['manager' => $manager, 'asset' => $asset])}
         {$manager->render('ProductAssets', ['manager' => $manager, 'product' => $product])}
+        {foreach \common\helpers\Hooks::getList('orders/process-order', 'product-name') as $filename}
+            {include file=$filename}
+        {/foreach}
     </td>
     {if !($order instanceof \common\classes\TmpOrder)}
     <td class="dataTableContent" valign="top">

@@ -213,7 +213,7 @@ class Modules {
         if ($type=='extension' && ($ext = \common\helpers\Acl::checkExtension($code, 'always'))) {
             return \common\classes\modules\ModuleVer::parse($ext::getVersion());
         } elseif ($class = \common\classes\modules\Module::getClass($type, $code)) {
-            return $class::getVersion();
+            return \common\classes\modules\ModuleVer::parse($class::getVersion());
         } else {
             \Yii::warning("Cannot get version for $type: $code");
         }
@@ -277,7 +277,7 @@ class Modules {
 
     public static function getInfoLinkForExtension($module)
     {
-        return '<a href="'.\Yii::$app->urlManager->createUrl(['modules/edit', 'platform_id' => 0, 'set' => 'extensions', 'module' => $module]).'" target="_blank" title="Extension: '.$module.'"><i class="icon-info-circle"></i></a>';
+        return '<a href="'.\Yii::$app->urlManager->createUrl(['modules/edit', 'platform_id' => 0, 'set' => 'extensions', 'module' => $module]).'" target="_blank" title="Extension: '.$module.'" class="extension-info-ico"><i class="icon-info-circle"></i></a>';
     }
 
 }

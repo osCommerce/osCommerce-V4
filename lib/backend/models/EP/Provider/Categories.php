@@ -455,7 +455,7 @@ class Categories extends ProviderAbstract implements ImportInterface, ExportInte
 
     function assigned_customer_groups()
     {
-        if ( !isset($this->data['assigned_customer_groups']) ) {
+        if ( !isset($this->data['assigned_customer_groups']) && \Yii::$app->db->schema->getTableSchema('groups_categories')) {
             $this->data['assigned_customer_groups'] = [];
             $get_assigned_r = tep_db_query("SELECT groups_id FROM groups_categories WHERE categories_id='".$this->data['categories_id']."'");
             if ( tep_db_num_rows($get_assigned_r)>0 ){
@@ -485,6 +485,7 @@ class Categories extends ProviderAbstract implements ImportInterface, ExportInte
             $fileValue = 1;
         }
 
+        if (!\Yii::$app->db->schema->getTableSchema('groups_categories')) return;
         if ( isset($this->data['assigned_customer_groups'][$groups_id]) ) {
             if (!$fileValue) {
                 tep_db_query("DELETE FROM groups_categories WHERE groups_id='".(int)$groups_id."' AND categories_id='".(int)$categories_id."'");

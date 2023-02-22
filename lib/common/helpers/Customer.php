@@ -225,8 +225,6 @@ class Customer {
         tep_db_query("TRUNCATE TABLE " . TABLE_CUSTOMERS_CREDIT_HISTORY);
         tep_db_query("TRUNCATE TABLE " . TABLE_CUSTOMERS_ERRORS);
         tep_db_query("TRUNCATE TABLE " . TABLE_ADDRESS_BOOK);
-        tep_db_query("TRUNCATE TABLE " . TABLE_WISHLIST);
-        tep_db_query("TRUNCATE TABLE " . TABLE_WISHLIST_ATTRIBUTES);
         tep_db_query("TRUNCATE TABLE customers_emails");
         tep_db_query("TRUNCATE TABLE " . TABLE_COUPON_GV_CUSTOMER);
         tep_db_query("TRUNCATE TABLE coupon_refer_queue");
@@ -329,9 +327,6 @@ class Customer {
         if ($mCart = \common\helpers\Acl::checkExtensionAllowed('MultiCart', 'allowed')){
             $mCart::removeAllBaskets($customer_id);
         }
-        //tep_db_query("DELETE FROM  WHERE customers_id=" . (int)$customer_id);
-        tep_db_query("DELETE FROM " . TABLE_WISHLIST . " WHERE customers_id=" . (int)$customer_id);
-        tep_db_query("DELETE FROM " . TABLE_WISHLIST_ATTRIBUTES . " WHERE customers_id=" . (int)$customer_id);
 
         tep_db_query("DELETE FROM " . TABLE_WHOS_ONLINE . " WHERE customer_id = '" . (int) $customer_id . "'");
         tep_db_query("DELETE FROM " . TABLE_CUSTOMERS_CREDIT_HISTORY . " WHERE customers_id=" . (int)$customer_id);
@@ -340,7 +335,7 @@ class Customer {
         tep_db_query("DELETE FROM " . TABLE_VIRTUAL_GIFT_CARD_BASKET . " WHERE customers_id=" . (int)$customer_id);
 
         tep_db_query("DELETE FROM customers_phones WHERE customers_id=" . (int)$customer_id);
-        tep_db_query("DELETE FROM customers_stripe_tokens WHERE customers_id=" . (int)$customer_id);
+        tep_db_query("DELETE FROM customers_external_ids WHERE customers_id=" . (int)$customer_id);
         tep_db_query("DELETE FROM " . TABLE_COUPON_GV_CUSTOMER . " WHERE customer_id=" . (int)$customer_id);
         tep_db_query("DELETE FROM coupon_refer_queue WHERE customers_id=" . (int)$customer_id);
 
@@ -465,7 +460,6 @@ class Customer {
       tep_db_perform(TABLE_ORDERS, $sqlData, 'update', "customers_id = '" . (int)$customer_id . "'"  . $statusCheckWhere);
       tep_db_perform('tmp_' . TABLE_ORDERS, $sqlData, 'update', "customers_id = '" . (int)$customer_id . "'"  . $statusCheckWhere);
       unset($sqlData['basket_id']);
-      tep_db_perform(TABLE_SUBSCRIPTION, $sqlData, 'update', "customers_id = '" . (int)$customer_id . "'"  . $statusCheckWhere);
 
       foreach (['quote_' . TABLE_ORDERS, 'sample_' . TABLE_ORDERS] as $table) {
             if (\Yii::$app->db->schema->getTableSchema($table)) {
@@ -473,6 +467,9 @@ class Customer {
             }
       }
 
+      foreach (\common\helpers\Hooks::getList('order/anonymize') as $filename) {
+            include($filename);
+      }
     }
 
     public static function hasAddressBook($customer_id, $addr_id){

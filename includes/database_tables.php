@@ -74,10 +74,6 @@ define('TABLE_PRODUCTS_XSELL_TYPE', 'products_xsell_type');
 // Lango Added for Featured Products
 define('TABLE_FEATURED', 'featured');
 
-// Lango Added for Wishlist
-define('TABLE_WISHLIST', 'customers_wishlist');
-define('TABLE_WISHLIST_ATTRIBUTES', 'customers_wishlist_attributes');
-
 define('TABLE_INFORMATION', 'information');
 define('TABLE_CATS_PRODUCTS_XSELL', 'cats_products_xsell');
 define('TABLE_PRODUCTS_UPSELL', 'products_upsell');

@@ -125,7 +125,6 @@ class Socials {
     }
     
     public function handle(){
-     global $cart, $wish_list;
         $attributes = $this->client->getUserAttributes();
         $attributes = $this->client->prepareAttributes($attributes);
         $email = tep_db_prepare_input(ArrayHelper::getValue($attributes, 'email'));

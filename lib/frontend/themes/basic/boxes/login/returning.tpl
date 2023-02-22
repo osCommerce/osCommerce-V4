@@ -24,12 +24,11 @@
             <label for="password1">{field_label const="PASSWORD" required_text=""}</label>
             {Html::activePasswordInput($loginModel, 'password', ['autocomplete' => "off", 'class' => 'show-password'])}
         </div>
-        
-        {if $loginModel->captha_enabled == 'recaptha'}
-            {$loginModel->captcha_widget}<br><br>
-        {/if}
-        {if $loginModel->captha_enabled == 'captha'}
-        {Captcha::widget(['model' => $loginModel, 'attribute' => 'captcha'])}
+
+        {if in_array($loginModel->captha_enabled, ['captha', 'recaptha'])}
+            <div class="captcha-holder">
+                {$loginModel->captcha_widget}
+            </div>
         {/if}
 
         {if $b2b = \common\helpers\Acl::checkExtensionAllowed('BusinessToBusiness', 'allowed')}

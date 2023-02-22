@@ -16,6 +16,7 @@ use Yii;
 use yii\base\Widget;
 use frontend\design\IncludeTpl;
 use frontend\design\Info;
+use yii\helpers\ArrayHelper;
 
 class Logo extends Widget
 {
@@ -101,8 +102,12 @@ class Logo extends Widget
             }else{
                 $imageUrl =  Yii::$app->request->baseUrl . '/' . $image;
             }
+            $width = 0;
+            $height = 0;
             if (isset($this->params['absoluteUrl']) && $this->params['absoluteUrl']) {
                 $imageUrl = \Yii::$app->get('platform')->config()->getCatalogBaseUrl(Yii::$app->request->getIsSecureConnection()).$image;
+                $width = ArrayHelper::getValue($this->settings, [0,'width'], 0);
+                $height = ArrayHelper::getValue($this->settings, [0,'height'], 0);
             }
 
             return IncludeTpl::widget([
@@ -110,6 +115,8 @@ class Logo extends Widget
                 'params' => [
                     'url' => $url,
                     'image' => $imageUrl,
+                    'width' => $width,
+                    'height' => $height
                 ],
             ]);
         }

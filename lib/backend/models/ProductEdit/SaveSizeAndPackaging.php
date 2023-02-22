@@ -38,7 +38,10 @@ class SaveSizeAndPackaging
             //upload
             if (Yii::$app->request->post('delete_products_file') == 'yes') {
                 $products_previous_file = Yii::$app->request->post('products_previous_file');
-                @unlink(DIR_FS_DOWNLOAD . $products_previous_file);
+                $count = Products::find()->where(['products_file' => $products_previous_file])->count();
+                if ($count <= 1) {
+                    @unlink(DIR_FS_DOWNLOAD . $products_previous_file);
+                }
                 $sql_data_array['products_file'] = '';
             } else {
                 $products_file_name = Yii::$app->request->post('products_file');

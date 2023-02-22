@@ -654,7 +654,7 @@ abstract class Module{
    * get platform Id (in admin - from POST, GET; common - current)
    * @return int
    */
-  protected function getPlatformId() {
+  protected static function getPlatformId() {
 
     $platformId = null;
     if (\Yii::$app->id == 'app-backend') {
@@ -670,6 +670,11 @@ abstract class Module{
           $platformId = intval($tmp['platform_id']);
         }
       }
+    }
+    if ((isset($this) && $this instanceof self) ){
+        if (!$platformId && $this->manager && $this->manager->has('platform_id')) {
+            $platformId = $this->manager->get('platform_id');
+        }
     }
     if (!$platformId) {
       $platformId = \common\classes\platform::currentId();
@@ -788,6 +793,11 @@ abstract class Module{
         }
     }
 
+    public static function isExtension()
+    {
+        return self::getType() == 'extension';
+    }
+
     public static function getNamespace(string $type)
     {
         \common\helpers\Assert::keyExists(self::MODULE_TYPES, $type, "Unknown module type: " . $type);
@@ -829,6 +839,13 @@ abstract class Module{
         }
         \common\helpers\Assert::isNotNull($res, "Cannot find $type: $code");
         return $res;
+    }
+
+    public static function getRevision() {}
+
+    public static function getVersionRev() : string
+    {
+        return static::getVersionObj()->toCommonFormat() . (is_null($rev = static::getRevision()) ? '' : ".$rev");
     }
 
     /**
@@ -901,24 +918,16 @@ abstract class Module{
     }
 
 /**
- * use in your module's update_status()
- * @param type $zone_id
+ * use in your module's update_status() overwritten in modulePayment (status by billing address)
+ * @param int $zone_id
+ * @param string $which delivery|billing
  * @return bool true - ok false - switch off
  */
-    protected function checkStatusByBilling($zone_id) {
-        return $this->checkStatusZoneAddress($zone_id, 'billing');
-    }
-
-/**
- * use in your module's update_status()
- * @param type $zone_id
- * @return bool true - ok false - switch off
- */
-    protected function checkStatusByShipping($zone_id) {
-        return $this->checkStatusZoneAddress($zone_id, 'delivery');
-    }
-
-    private function checkStatusZoneAddress($zone_id, $which = 'shipping') {
+    protected function checkStatusByZone($zone_id, $which = 'delivery') {
+        $which = strtolower($which);
+        if ($which != 'billing') {
+            $which = 'delivery';
+        }
         $check_flag = false;
         $check_query = tep_db_query("select zone_id from " . TABLE_ZONES_TO_GEO_ZONES . " where geo_zone_id = '" . $zone_id . "' and zone_country_id = '" . ($this->$which['country']['id']??0) . "' order by zone_id");
         while ($check = tep_db_fetch_array($check_query)) {
@@ -933,6 +942,66 @@ abstract class Module{
 
         return $check_flag;
 
+    }
+    
+/**
+ * 
+ * @param string|array $data [external_id => SSS, customers_id => NNNN]
+ * @return boolean | true - success
+ */
+    public function saveExternalCustomersId($data) {
+        $ret = $extId = $cid = false;
+        if (is_scalar($data)) {
+            $extId = $data;
+        } elseif (is_array($data) && isset($data['external_id'])) {
+            $extId = $data['external_id'];
+            if (isset($data['customers_id'])) {
+                $cid = $data['customers_id'];
+            }
+        } 
+        if (empty($cid) && !empty($this->manager) && $this->manager->isCustomerAssigned()) {
+           $cid = $this->manager->getCustomerAssigned();
+        }
+        if (!empty($extId) && !empty($cid)) {
+            $model = \common\models\CustomersExternalIds::findOne([
+                    'customers_id' => $cid,
+                    'system_name' => $this->code,
+            ]);
+            if (!$model) {
+                $model = new \common\models\CustomersExternalIds();
+                $model->setAttributes([
+                    'customers_id' => $cid,
+                    'system_name' => $this->code
+                ]);
+            }
+            $model->external_id = $extId;
+            try {
+                $model->save(false);
+                $ret = true;
+            } catch (\Exception $e) {
+                \Yii::warning(" #### " .print_r($e->getMessage() . ' ' . $e->getTraceAsString(), true), 'TLDEBUG');
+            }
+
+        }
+        return $ret;
+
+    }
+
+    public function getExternalCustomersId($cid = 0) {
+        $ret = false;
+        if (empty($cid) && !empty($this->manager) && $this->manager->isCustomerAssigned()) {
+           $cid = $this->manager->getCustomerAssigned();
+        }
+        if (!empty($cid)) {
+            $model = \common\models\CustomersExternalIds::findOne([
+                        'customers_id' => $cid,
+                        'system_name' => $this->code,
+                ]);
+            if (!empty($model->external_id)) {
+               $ret = $model->external_id;
+            }
+        }
+        return $ret;
     }
 
 }

@@ -24,7 +24,6 @@ class ProductBundleListing extends ProductListing
 
     public function run()
     {
-        global $wish_list;
         $productList = [];
 
         self::$listType = design::pageName(Info::listType($this->settings[0]));

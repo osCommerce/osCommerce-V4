@@ -59,6 +59,7 @@ class BonusPointsConverter extends Widget
 
     public function run(): string
     {
+        if (!\common\helpers\Acl::checkExtensionAllowed('BonusActions')) return '';
         $rate = \common\helpers\Points::getCurrencyCoefficient($this->customerGroupId);
         if ($rate === false) {
             return '';

@@ -13,11 +13,11 @@
 namespace common\helpers;
 
 use backend\services\ConfigurationService;
-use backend\services\GroupsService;
 
 class Points {
 
     public static function get_bonus_points_price($product_id, $currency_id = 0, $group_id = 0, $default = '') {
+        if (!\common\helpers\Acl::checkExtensionAllowed('BonusActions')) return;
         if (USE_MARKET_PRICES != 'True') {
             $currency_id = 0;
         }
@@ -37,6 +37,7 @@ class Points {
     }
 
     public static function get_bonus_points_cost($product_id, $currency_id = 0, $group_id = 0, $default = '') {
+        if (!\common\helpers\Acl::checkExtensionAllowed('BonusActions')) return;
         if (USE_MARKET_PRICES != 'True') {
             $currency_id = 0;
         }
@@ -61,6 +62,7 @@ class Points {
      */
     public static function getCurrencyCoefficient(int $groupId /*= 0/**/)
     {
+        if (!\common\helpers\Acl::checkExtensionAllowed('BonusActions')) return 0;
         static $coefficient = null;
         if (is_array($coefficient)) {
             return $coefficient[$groupId] ?? $coefficient[0];
@@ -83,6 +85,7 @@ class Points {
     public static function getCurrencyCoefficientNoCache(?int $groupId = null, ?int $platformId = null)
     {
         $coefficient = false;
+        if (!\common\helpers\Acl::checkExtensionAllowed('BonusActions')) return false;
         try {
             /** @var ConfigurationService $configurationService */
             $configurationService = \Yii::createObject(ConfigurationService::class);
@@ -112,6 +115,7 @@ class Points {
      */
     public static function getCurrencyCoefficientApp()
     {
+        if (!\common\helpers\Acl::checkExtensionAllowed('BonusActions')) return;
         static $coefficient = null;
         if ($coefficient !== null) {
             return $coefficient;
@@ -127,6 +131,7 @@ class Points {
     /** @return bool */
     public static function canCustomerTransferToCreditAmount()
     {
+        if (!\common\helpers\Acl::checkExtensionAllowed('BonusActions')) return;
         static $flag = null;
         if ($flag !== null) {
             return $flag;
@@ -146,6 +151,7 @@ class Points {
      */
     public static function getBonusPointsPrice(float $productPrice, float $defaultBonusPointPrice, int $groupId /*= 0**/): float
     {
+        if (!\common\helpers\Acl::checkExtensionAllowed('BonusActions')) return 0;
         $coefficient = self::getCurrencyCoefficient($groupId);
         return $coefficient ? ceil(($productPrice) / $coefficient) : $defaultBonusPointPrice;
     }
@@ -221,6 +227,7 @@ class Points {
      */
     public static function allowApplyBonusPoints(float $price): bool
     {
+        if (!\common\helpers\Acl::checkExtensionAllowed('BonusActions')) return false;
         $threshold = defined('MODULE_ORDER_TOTAL_BONUS_POINTS_MINIMUM_CART') ? (float)MODULE_ORDER_TOTAL_BONUS_POINTS_MINIMUM_CART : 0.00;
         return $threshold <= $price;
     }

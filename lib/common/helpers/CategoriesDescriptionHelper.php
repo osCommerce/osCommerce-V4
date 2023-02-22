@@ -31,8 +31,8 @@ class CategoriesDescriptionHelper
         $category->innerJoinWith(['categories c'], false);
         $category->leftJoin('categories_description cd1', 'cd1.categories_id = c.categories_id');
 
-        if ($groupJoin) {
-            $category->innerJoinWith(['groupsCategories gc'], false);
+        if ($groupJoin && ($model = \common\helpers\Acl::checkExtensionTableExist('UserGroupsRestrictions', 'GroupsCategories'))) {
+            $category->innerJoin($model::tableName() .' gc', 'gc.categories_id=c.categories_id');
         }
 
         $category

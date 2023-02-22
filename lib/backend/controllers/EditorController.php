@@ -769,8 +769,11 @@ class EditorController extends Sceleton {
                         case 'search_customer':
                             $cRep = new \common\models\repositories\CustomersRepository();
                             $customers = [];
-                            foreach ($cRep->search($data['search'])->all() as $customer) {
+                            foreach ($cRep->search($data['search'])->limit(200)->all() as $customer) {
                                 $customers[] = ['id' => $customer->customers_id, 'text' => \common\helpers\Output::output_string_protected($customer->customers_firstname . ' ' . $customer->customers_lastname . ' (' . $customer->customers_email_address . ')')];
+                            }
+                            if (empty($customers)){
+                                $customers[] = ['text' => TEXT_NOTHING_FOUND];
                             }
                             echo json_encode($customers);
                             exit();
@@ -1347,11 +1350,8 @@ class EditorController extends Sceleton {
 
     public function actionQuoteEdit() {
 
-        if (\common\helpers\Acl::checkExtension('Quotations')) {
-            \Yii::warning('Quotations is migrating to AppStore. Not ready now');
-        }
-        return '';
-        
+        if (!\common\helpers\Acl::checkExtensionAllowed('Quotations')) return '';
+
         $this->admin->loadCustomersBaskets('quote');
 
         $oID = Yii::$app->request->get('orders_id');

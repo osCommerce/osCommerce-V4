@@ -93,7 +93,9 @@
 <script type="text/javascript">
   tl(function(){
     $('.compare_list').css('height',$(window).height()*0.75);
+    {if \common\helpers\Acl::checkExtensionAllowed('BonusActions')}
     {Yii::$app->controller->promoActionsObs->renderValidPromoAction('comparing_products')}
+    {/if}
   });
 
 function clear_compare() {

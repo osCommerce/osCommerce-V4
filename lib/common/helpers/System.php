@@ -191,20 +191,20 @@ class System {
         $db_query = tep_db_query("select now() as datetime");
         $db = tep_db_fetch_array($db_query);
 
-        list($system, $host, $kernel) = array_pad( preg_split('/[\s,]+/', @exec('uname -a'), 5), 3, 'unknown');
+        list($system, $host, $kernel) = array_pad( preg_split('/[\s,]+/', \common\helpers\Php::exec('uname -a'), 5), 3, 'unknown');
 
         return array('date' => \common\helpers\Date::datetime_short(date('Y-m-d H:i:s')),
             'system' => $system,
             'kernel' => $kernel,
             'host' => $host,
             'ip' => gethostbyname($host),
-            'uptime' => @exec('uptime'),
+            'uptime' => @\common\helpers\Php::exec('uptime'),
             'http_server' => $_SERVER['SERVER_SOFTWARE'],
             'php' => PHP_VERSION,
             'zend' => (function_exists('zend_version') ? zend_version() : ''),
             'db_server' => DB_SERVER,
             'db_ip' => gethostbyname(DB_SERVER),
-            'db_version' => 'MySQL ' . (function_exists('mysql_get_server_info') ? tep_db_get_server_info() : ''),
+            'db_version' => 'MySQL ' . (function_exists('mysqli_get_server_info') ? tep_db_get_server_info() : ''),
             'db_date' => \common\helpers\Date::datetime_short($db['datetime']));
     }
 
@@ -377,6 +377,11 @@ class System {
     public static function isFrontend()
     {
         return \Yii::$app->id == 'app-frontend';
+    }
+
+    public static function isConsole()
+    {
+        return \Yii::$app->id == 'app-console';
     }
 
     public static function isProduction()

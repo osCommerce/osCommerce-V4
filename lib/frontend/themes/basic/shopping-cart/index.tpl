@@ -85,6 +85,11 @@
       return false
     });
 
+	if($('.cart-page .w-cart-products .empty').length) {
+		$('.cart-page .order-summary').hide();
+		$('.cart-page .closeable-box').hide();
+		$('.cart-page .closeable-content').hide();
+	}
 
     $('.addresses input').radioHolder({ holder: '.address-item'});
     $('.shipping-method input').radioHolder();

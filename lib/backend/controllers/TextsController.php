@@ -322,8 +322,8 @@ class TextsController extends Sceleton {
                  $full_desc = \common\helpers\Translation::getTranslationValue($orders_status['translation_key'], $orders_status['translation_entity'], $_lang['id']);
                }
                $short_desc = preg_replace("/<.*?>/", " ", $full_desc);
-               if (strlen($short_desc) > 128) {
-                  $short_desc = substr($short_desc, 0, 122) . '...';
+               if (mb_strlen($short_desc) > 128) {
+                  $short_desc = mb_substr($short_desc, 0, 122) . '...';
                }
                $_prepare[] =  '
 <div class="ls-review-rev">
@@ -857,7 +857,7 @@ class TextsController extends Sceleton {
         
         $languages = \common\helpers\Language::get_languages(true);
         for ($i = 0, $n = sizeof($languages); $i < $n; $i++) {
-          if (!tep_not_null($translation_value[$languages[$i]['id']])) continue;
+          if (isset($languages[$i]['id']) && !tep_not_null($translation_value[$languages[$i]['id']] ?? null)) continue;
             $updated = false;
             if ($replace_key == 'on') {
                 \common\helpers\Translation::replaceTranslationValueByKey($translation_key, $translation_entity, $languages[$i]['id'], $translation_value[$languages[$i]['id']]);

@@ -9,6 +9,7 @@ use Yii;
  *
  * @property int $banners_id
  * @property string $banners_group
+ * @property int $group_id
  * @property int $expires_impressions
  * @property string $expires_date
  * @property string $date_scheduled
@@ -26,7 +27,7 @@ class Banners extends \yii\db\ActiveRecord
      */
     public static function tableName()
     {
-        return 'banners_new';
+        return 'banners';
     }
 
     /**
@@ -35,10 +36,8 @@ class Banners extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['banners_group', 'sort_order', 'banner_type'], 'required'],
             [['expires_impressions', 'status', 'affiliate_id', 'sort_order'], 'integer'],
             [['expires_date', 'date_scheduled', 'date_added', 'date_status_change'], 'safe'],
-            [['banners_group'], 'string', 'max' => 10],
             [['banner_type'], 'string', 'max' => 255],
         ];
     }
@@ -50,7 +49,7 @@ class Banners extends \yii\db\ActiveRecord
     {
         return [
             'banners_id' => 'Banners ID',
-            'banners_group' => 'Banners Group',
+            'group_id' => 'Group ID',
             'expires_impressions' => 'Expires Impressions',
             'expires_date' => 'Expires Date',
             'date_scheduled' => 'Date Scheduled',

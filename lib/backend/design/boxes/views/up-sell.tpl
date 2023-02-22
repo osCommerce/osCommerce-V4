@@ -57,36 +57,9 @@
           </div>
 
           {include 'include/ajax.tpl'}
-          <div class="tabbable tabbable-custom">
-            <ul class="nav nav-tabs">
-              <li class="active"><a href="#list" data-toggle="tab">Main</a></li>
-              {foreach $settings.media_query as $item}
-                <li><a href="#list{$item.id}" data-toggle="tab">{$item.setting_value}</a></li>
-              {/foreach}
 
-            </ul>
-            <div class="tab-content">
-              <div class="tab-pane active menu-list" id="list">
+          {include 'include/col_in_row.tpl'}
 
-                <div class="setting-row">
-                  <label for="">{$smarty.const.TEXT_COLUMNS_IN_ROW}</label>
-                  <input type="text" name="setting[0][col_in_row]" class="form-control" value="{$settings[0].col_in_row}"/>
-                </div>
-
-              </div>
-              {foreach $settings.media_query as $item}
-                <div class="tab-pane menu-list" id="list{$item.id}">
-
-                  <div class="setting-row">
-                    <label for="">{$smarty.const.TEXT_COLUMNS_IN_ROW}</label>
-                    <input type="text" name="visibility[0][{$item.id}][col_in_row]" class="form-control" value="{$visibility[0][{$item.id}].col_in_row}"/>
-                  </div>
-
-                </div>
-              {/foreach}
-
-            </div>
-          </div>
         </div>
         <div class="tab-pane" id="product">
           {include 'include/listings-product.tpl'}

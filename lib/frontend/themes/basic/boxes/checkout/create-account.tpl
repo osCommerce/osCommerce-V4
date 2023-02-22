@@ -18,7 +18,7 @@
 
 <div class="heading-2">{$smarty.const.CREATE_ACCOUNT_AND_TRACK_ORDERS}</div>
 
-<div class="columns form-inputs create-account"{if !$model->opc_temp_account  && !$manager->has('account')} style="display: none" {/if}>
+<div class="columns form-inputs create-account"{if $manager->get('guest') && !$manager->has('account')} style="display: none" {/if}>
     <div class="col-2">
 
         {if isset($messages_registration)}

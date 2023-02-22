@@ -115,13 +115,11 @@ class TmpOrdersController extends Sceleton {
             'not_important' => 1
         );
 
-        if ($ext = \common\helpers\Acl::checkExtension('Neighbour', 'allowed')){
-            if ($ext::allowed()){
-                $this->view->ordersTable[] =  array(
-                  'title' => TABLE_HEADING_NEIGHBOUR,
-                  'not_important' => 0
-                  );
-            }
+        if (\common\helpers\Acl::checkExtensionAllowed('Neighbour')){
+            $this->view->ordersTable[] =  array(
+                'title' => defined(EXT_NEIGHBOUR_TABLE_HEADING) ? EXT_NEIGHBOUR_TABLE_HEADING : TABLE_HEADING_NEIGHBOUR,
+                'not_important' => 0
+            );
         }
 
         $GET = Yii::$app->request->get();

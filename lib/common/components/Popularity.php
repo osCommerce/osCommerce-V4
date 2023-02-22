@@ -125,10 +125,10 @@ class Popularity {
       $p_expression .= " from products_description pd where p.products_id = pd.products_id)";
     }
 
-    if (defined('POPULARITY_WEIGHT_WISHLIST') && (float) POPULARITY_WEIGHT_WISHLIST > 0) {
-      $p_expression .= "+ (select ifnull(sum(products_quantity),0) * " . (float) POPULARITY_WEIGHT_WISHLIST;
-      $p_expression .= " from customers_wishlist wl where p.products_id = wl.products_id)"; //vl2check int=string
-    }
+//    if (defined('POPULARITY_WEIGHT_WISHLIST') && (float) POPULARITY_WEIGHT_WISHLIST > 0) {
+//      $p_expression .= "+ (select ifnull(sum(products_quantity),0) * " . (float) POPULARITY_WEIGHT_WISHLIST;
+//      $p_expression .= " from customers_wishlist wl where p.products_id = wl.products_id)"; //vl2check int=string
+//    }
 
     if ((defined('POPULARITY_WEIGHT_PUCHASE_WEEK') && (float) POPULARITY_WEIGHT_PUCHASE_WEEK > 0 ) ||
         (defined('POPULARITY_WEIGHT_PUCHASE_MONTH') && (float) POPULARITY_WEIGHT_PUCHASE_MONTH > 0)) {

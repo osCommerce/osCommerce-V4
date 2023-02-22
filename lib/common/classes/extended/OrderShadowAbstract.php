@@ -455,13 +455,12 @@ abstract class OrderShadowAbstract implements OrderInterface {
                         $this->info['subtotal_inc_tax'] += \common\helpers\Tax::reduce_tax_always($_price * $_qty, abs($_tax));
                     }
                 } else {
-                  if (PRODUCTS_PRICE_QTY_ROUND == 'true') {
-                    $this->info['subtotal_exc_tax'] += round($_price, $_roundTo) * $_qty;
-                    $this->info['subtotal_inc_tax'] += round(\common\helpers\Tax::add_tax_always($_price, $_tax), $_roundTo) * $_qty;
-                  } else {
-                    $this->info['subtotal_exc_tax'] += round($_price * $_qty, $_roundTo);
-                    $this->info['subtotal_inc_tax'] += round(\common\helpers\Tax::add_tax_always($_price, $_tax) * $_qty, $_roundTo);
-                  }
+                    if (defined('PRODUCTS_PRICE_QTY_ROUND') && PRODUCTS_PRICE_QTY_ROUND == 'true') {
+                        $this->info['subtotal_exc_tax'] += round($_price, $_roundTo) * $_qty;
+                    } else {
+                        $this->info['subtotal_exc_tax'] += round($_price * $_qty, $_roundTo);
+                    }
+                    $this->info['subtotal_inc_tax'] += $currencies->calculate_price($_price, $_tax, $_qty, '', true); // add_tax_always
                 }
 
                 $products_tax = abs($this->products[$index]['tax']);
@@ -477,11 +476,14 @@ abstract class OrderShadowAbstract implements OrderInterface {
                     }
 
                 } else {
-                    $this->info['tax'] += \common\helpers\Tax::roundTax(($products_tax / 100) * $shown_price);
+                    if (defined('PRODUCTS_PRICE_EXC_ROUND') && PRODUCTS_PRICE_EXC_ROUND == 'true') {
+                        $shown_price = $_price * $_qty; // Price excl tax should not be rounded
+                    }
+                    $this->info['tax'] += \common\helpers\Tax::roundTax(\common\helpers\Tax::calculate_tax($shown_price, $products_tax));
                     if (isset($this->info['tax_groups']["$products_tax_description"])) {
-                        $this->info['tax_groups']["$products_tax_description"] += \common\helpers\Tax::roundTax(($products_tax / 100) * $shown_price);
+                        $this->info['tax_groups']["$products_tax_description"] += \common\helpers\Tax::roundTax(\common\helpers\Tax::calculate_tax($shown_price, $products_tax));
                     } else {
-                        $this->info['tax_groups']["$products_tax_description"] = \common\helpers\Tax::roundTax(($products_tax / 100) * $shown_price);
+                        $this->info['tax_groups']["$products_tax_description"] = \common\helpers\Tax::roundTax(\common\helpers\Tax::calculate_tax($shown_price, $products_tax));
                     }
                 }
             }

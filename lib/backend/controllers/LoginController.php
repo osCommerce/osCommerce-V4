@@ -304,9 +304,14 @@ class LoginController extends Controller {
                             foreach (\common\models\AdminLogin::getSecurityKeyExpireArray() as $loginExpireArray) {
                                 $securityKeyExpireArray[] = ['id' => $loginExpireArray['ale_id'], 'text' => $loginExpireArray['ale_title']];
                             }
+                            $isMobile = false;
+                            if ($ext = \common\helpers\Acl::checkExtension('MobileDetect', 'init')) {
+                                $ext = new $ext();
+                                $isMobile = ($ext->isMobile() OR $ext->isTablet() OR $ext->isIphone());
+                            }
                             $parameterArray = [
                                 'securityKeyExpireArray' => $securityKeyExpireArray,
-                                'isMobile' => (\Yii::$app->mobileDetect->isMobile() OR \Yii::$app->mobileDetect->isTablet() OR \Yii::$app->mobileDetect->isIphone())
+                                'isMobile' => $isMobile,
                             ];
                             $two_step_auth_service = (($check_admin['admin_two_step_auth'] != '') ? $check_admin['admin_two_step_auth'] : ADMIN_TWO_STEP_AUTH_SERVICE);
                             if (($two_step_auth_service == 'email') OR (trim($check_admin['admin_phone_number']) == '')) {

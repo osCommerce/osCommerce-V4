@@ -214,8 +214,8 @@ class Importer implements \OscLink\XML\ImportTuningInterface
             if (empty($entityId)) {
                 return (new \yii\db\Query())->from($feed)->count() == 0;
             } else {
-                return (new \yii\db\Query())->from("$feed.f")
-                    ->leftJoin(Mapping::tableName().' m', "m.internal_id = f.$primaryCol AND entity_id => :entityId", ['enitityId' => $entityId])
+                return (new \yii\db\Query())->from("$feed f")
+                    ->leftJoin(Mapping::tableName().' m', "m.internal_id = f.$primaryCol AND entity_id = :entityId", ['entityId' => $entityId->id ?? null])
                     ->where('m.internal_id IS NULL')
                     ->count() == 0;
             }

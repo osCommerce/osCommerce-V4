@@ -22,7 +22,6 @@ use common\models\Orders;
 use common\models\repositories\AddressBookRepository;
 use common\models\repositories\CustomersInfoRepository;
 use common\models\repositories\CustomersRepository;
-use common\models\repositories\GroupsRepository;
 use common\models\repositories\OrderRepository;
 use common\services\BonusPointsService\BonusPointsService;
 use common\services\BonusPointsService\DTO\TransferData;
@@ -35,8 +34,6 @@ class CustomersService
     private $customersRepository;
     /** @var CustomersInfoRepository */
     private $customersInfoRepository;
-    /** @var GroupsRepository */
-    private $groupsRepository;
     /** @var TransactionManager */
     private $transactionManager;
     /** @var AddressBookRepository */
@@ -52,13 +49,11 @@ class CustomersService
         TransactionManager $transactionManager,
         AddressBookRepository $addressBookRepository,
         OrderRepository $orderRepository,
-        GroupsRepository $groupsRepository,
         BonusPointsService $bonusPointsService
     )
     {
         $this->customersRepository = $customersRepository;
         $this->customersInfoRepository = $customersInfoRepository;
-        $this->groupsRepository = $groupsRepository;
         $this->transactionManager = $transactionManager;
         $this->addressBookRepository = $addressBookRepository;
         $this->orderRepository = $orderRepository;

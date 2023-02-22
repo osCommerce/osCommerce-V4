@@ -12,7 +12,6 @@
 
 namespace common\models;
 
-use backend\services\GroupsService;
 use common\models\queries\CategoriesQuery;
 use Yii;
 use yii\db\ActiveRecord;
@@ -44,7 +43,6 @@ use paulzi\nestedsets\NestedSetsBehavior;
  * @property int $created_by_platform_id
  * @property int $maps_id
  *
- * @property GroupsCategories[] $groupsCategories
  * @property Groups[] $groups
  * @property string default_sort_order
  */
@@ -142,19 +140,16 @@ class Categories extends ActiveRecord
         return $this->hasMany(SuppliersCatalogPriceRules::class,['category_id' => 'categories_id']);
     }
 
-    /**
-     * @return \yii\db\ActiveQuery
-     */
-    public function getGroupsCategories()
-    {
-        return $this->hasMany(GroupsCategories::class, ['categories_id' => 'categories_id']);
-    }
+    //public function getGroupsCategories() - removed due extracting extension UsersGroupsRestriction - use this
+    // if ($model = Acl::checkExtensionTableExist('UserGroupsRestrictions', 'GroupsProducts')) {
+    //    $yourModel->innerJoin($model::tableName() ...)
 
     /**
      * @return \yii\db\ActiveQuery
      */
     public function getGroups()
     {
+        \Yii::warning('Using UserGroupRestrictions table. Not recommended - the table may be not exist in some osCommerce versions');
         return $this->hasMany(Groups::class, ['groups_id' => 'groups_id'])->viaTable('groups_categories', ['categories_id' => 'categories_id']);
     }
 
@@ -284,13 +279,10 @@ class Categories extends ActiveRecord
         parent::afterSave($insert, $changedAttributes);
 
         if ( $insert ) {
+            /** @var \common\extensions\UserGroupsRestrictions\UserGroupsRestrictions $ext */
             if ($ext = \common\helpers\Acl::checkExtensionAllowed('UserGroupsRestrictions', 'allowed')) {
-                if ( $ext::select() ){
-                    /** @var GroupsService $groupService */
-                    try {
-                        $groupService = \Yii::createObject(GroupsService::class);
-                        $groupService->addCategoryToAllGroups($this->categories_id);
-                    }catch (\Exception $ex){}
+                if ( $groupService = $ext::getGroupsService() ){
+                    $groupService->addCategoryToAllGroups($this->categories_id);
                 }
             }
         }

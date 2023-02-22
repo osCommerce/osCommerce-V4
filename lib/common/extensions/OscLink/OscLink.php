@@ -74,15 +74,11 @@ class OscLink extends \common\classes\modules\ModuleExtensions
             )
         );
         Yii::$app->controller->view->configurationArray = self::getConfigurationArray();
+        \common\helpers\Dbg::logVar(Yii::$app->controller->view->configurationArray);
         if (\Yii::$app->controller->view->connectionSuccess) {
             Yii::$app->controller->view->configurationArray['api_status_map']['cmc_value'] = self::getMappingTable(\Yii::$app->controller->view->OscStateStatusArray);
         }
-        Yii::$app->controller->view->platformList = []; //[0 => \common\helpers\Php8::getConst('EXTENSION_OSCLINK_API_PLATFORM_DEFAULT')];
-        foreach (\common\classes\platform::getList(true, true) as $platformRecord) {
-            Yii::$app->controller->view->platformList[$platformRecord['id']] = $platformRecord['text'];
-        }
-        unset($platformRecord);
-        asort(Yii::$app->controller->view->platformList, SORT_STRING);
+        Yii::$app->controller->view->platformList = self::getPlatformList(); //[0 => \common\helpers\Php8::getConst('EXTENSION_OSCLINK_API_PLATFORM_DEFAULT')];
         Yii::$app->controller->view->writerHtmlInterface = [];
         Yii::$app->controller->view->orderStatusArray = ([-1 => EXTENSION_OSCLINK_TEXT_MAPPING_ITEM_SKIPPED] + \common\helpers\Order::getStatusList(false, false, 0));
         Yii::$app->controller->view->actionsArray = self::getActionsArray();
@@ -131,16 +127,19 @@ class OscLink extends \common\classes\modules\ModuleExtensions
 
             try {
                 Configuration::deleteCancelSign();
+                self::checkPrerequisites();
                 $importer = new \OscLink\Importer( self::getConfigurationArray() );
                 $importer->Import($feed);
+                $success = true;
             } catch( \yii\base\UserException $ex) {
-                \OscLink\Progress::Log($ex->getMessage());
-
+                \OscLink\Progress::Log('Import was interrupted: ' . $ex->getMessage());
+                $success = false;
             } catch( \Throwable $ex) {
                 \Yii::warning("Import was interrupted due an error: ".$ex->getMessage() . "\n". $ex->getTraceAsString(), 'Extensions\OscLink');
                 \OscLink\Progress::Log('Import was interrupted due an error: '. $ex->getMessage());
+                $success = false;
             }
-            \OscLink\Progress::Done();
+            \OscLink\Progress::Done($success);
             Configuration::deleteCancelSign();
         }
     }
@@ -214,6 +213,22 @@ class OscLink extends \common\classes\modules\ModuleExtensions
 // </editor-fold>
 
 // <editor-fold defaultstate="collapsed" desc="private functions">
+
+    private static function getPlatformList()
+    {
+        $res = [];
+        foreach (\common\classes\platform::getList(true, true) as $platformRecord) {
+            $res[(int)$platformRecord['id']] = $platformRecord['text'];
+        }
+        asort($res, SORT_STRING);
+        return $res;
+    }
+
+    private static function correctPlatformIfNotInList($platform_id)
+    {
+        $list = self::getPlatformList();
+        return isset($list[(int) $platform_id]) ? $platform_id : \common\helpers\Php8::array_key_first($list);
+    }
 
     private static function getActionsArray()
     {
@@ -343,40 +358,48 @@ class OscLink extends \common\classes\modules\ModuleExtensions
         }
     }
 
+    private static $config = null;
+
     public static function getConfigurationArray($key = '')
     {
-        $key = trim($key);
-        $return = [];
-        
-        foreach(['connection' => 'api_url, api_method, api_key', 'mapping' => 'api_platform, api_status_map'/*, api_tax_map'*/] as $type=>$keys) {
-            foreach(explode(',', $keys) as $k) {
-                $return[trim($k)] = ['cmc_key' => trim($k), 'cmc_value' => '', 'cmc_type' => $type ];
-            }
-        }
+        if (is_null(self::$config)) {
+            $key = trim($key);
+            $return = [];
 
-        $configurationArray = Configuration::find()->asArray(true)->all();
-        foreach ($configurationArray as $itemArray) {
-            if (isset($return[$itemArray['cmc_key']])) {
-                $return[$itemArray['cmc_key']]['cmc_value'] = $itemArray['cmc_value'];
+            foreach (['connection' => 'api_url, api_method, api_key', 'mapping' => 'api_platform, api_measurement, api_status_map'/*, api_tax_map'*/] as $type => $keys) {
+                foreach (explode(',', $keys) as $k) {
+                    $return[trim($k)] = ['cmc_key' => trim($k), 'cmc_value' => '', 'cmc_type' => $type];
+                }
             }
-        }
-        unset($configurationArray);
-        unset($itemArray);
-        foreach ($return as &$itemArray) {
-            $title = ('EXTENSION_OSCLINK_' . strtoupper($itemArray['cmc_key']));
-            $title = \common\helpers\Php8::getConst($title);
-            $itemArray['title'] = $title;
-            unset($title);
-            if (in_array($itemArray['cmc_key'], array('api_status_map', 'api_tax_map'))) {
-                $itemArray['cmc_value'] = json_decode($itemArray['cmc_value'], true);
-                $itemArray['cmc_value'] = (is_array($itemArray['cmc_value']) ? $itemArray['cmc_value'] : array());
+
+            $configurationArray = Configuration::find()->asArray(true)->all();
+            foreach ($configurationArray as $itemArray) {
+                if (isset($return[$itemArray['cmc_key']])) {
+                    $return[$itemArray['cmc_key']]['cmc_value'] = $itemArray['cmc_value'];
+                }
             }
+            unset($configurationArray);
+            unset($itemArray);
+            foreach ($return as &$itemArray) {
+                $title = ('EXTENSION_OSCLINK_' . strtoupper($itemArray['cmc_key']));
+                $title = \common\helpers\Php8::getConst($title);
+                $itemArray['title'] = $title;
+                unset($title);
+                if (in_array($itemArray['cmc_key'], array('api_status_map', 'api_tax_map'))) {
+                    $itemArray['cmc_value'] = json_decode($itemArray['cmc_value'], true);
+                    $itemArray['cmc_value'] = (is_array($itemArray['cmc_value']) ? $itemArray['cmc_value'] : array());
+                }
+            }
+            unset($itemArray);
+            $return['api_platform']['cmc_value'] = self::correctPlatformIfNotInList($return['api_platform']['cmc_value']);
+            if (!in_array($return['api_measurement']['cmc_value'], ['english', 'metric'])) {
+                $return['api_measurement']['cmc_value'] = 'metric';
+            }
+            self::$config = $return;
         }
-        unset($itemArray);
-        return (($key == '') ? $return : (isset($return[$key]['cmc_value']) ? $return[$key]['cmc_value'] : false
-                )
-                );
+        return (($key == '') ? self::$config : (isset(self::$config[$key]['cmc_value']) ? self::$config[$key]['cmc_value'] : false));
     }
+
 
     private static function loadMappingArray($entityName)
     {
@@ -534,6 +557,11 @@ class OscLink extends \common\classes\modules\ModuleExtensions
         return (($key == '') ? self::$platformArray : (isset(self::$platformArray[$key]) ? self::$platformArray[$key] : null
                 )
                 );
+    }
+
+    private static function checkPrerequisites()
+    {
+        \common\helpers\AssertUser::assert(ini_get('allow_url_fopen'), 'PHP option <a href="https://www.php.net/manual/en/filesystem.configuration.php#ini.allow-url-fopen" target="_blank">allow_url_option</a> must be enabled for this operation. Please correct settings in your php.ini');
     }
 
 // </editor-fold>

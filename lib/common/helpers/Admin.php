@@ -90,4 +90,21 @@ class Admin
         }
     }
 
+    /**
+     * @return array|false
+     */
+    public static function limitedPlatformList()
+    {
+        $limited_platforms = false;
+        $admin_id = (int)$_SESSION['login_id'];
+        if (false === \common\helpers\Acl::rule(['SUPERUSER'])) {
+            $limited_platforms = [];
+            $platforms = \common\models\AdminPlatforms::find()->where(['admin_id' => $admin_id])->asArray()->all();
+            foreach ($platforms as $platform) {
+                $limited_platforms[(int)$platform['platform_id']] = (int)$platform['platform_id'];
+            }
+        }
+        return $limited_platforms;
+    }
+
 }

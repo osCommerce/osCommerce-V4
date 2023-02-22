@@ -26,8 +26,10 @@ namespace common\classes;
        $child_end_string = '</li>',
        $spacer_string = '',
        $spacer_multiplier = 1;
+     private $show_products = false;
+     protected $categories_products = [];
 
-   function __construct($load_from_database = true) {
+     function __construct($load_from_database = true) {
        global $languages_id, $current_category_id;
 
        $categories_join = '';
@@ -127,7 +129,9 @@ namespace common\classes;
        foreach ($this->data[$parent_id] as $category_id => $category) {
          $category_link = $category_id;
          $result .= $this->child_start_string;
-         if (isset($this->data[$category_id])) $result .= $this->parent_start_string;
+         if (isset($this->data[$category_id]) || isset($this->categories_products[$category['c_id_s']])) {
+             $result .= $this->parent_start_string;
+         }
 
          if ($level == 0) $result .= $this->root_start_string;
 		 
@@ -138,10 +142,15 @@ namespace common\classes;
 
          if ($level == 0) $result .= $this->root_end_string;
 
-         if (isset($this->data[$category_id])) $result .= $this->parent_end_string;
+         if (isset($this->data[$category_id]) || isset($this->categories_products[$category['c_id_s']])) {
+             $result .= $this->parent_end_string;
+         }
 
          $result .= $this->child_end_string;
 
+         if ( isset($this->categories_products[$category['c_id_s']]) ){
+             $result .= $this->buildProductsBranch($category['c_id_s'], $level+1);
+         }
          if (isset($this->data[$category_id]) && (($this->max_level == '0') ||
 		 ($this->max_level > $level+1))) $result .= $this->buildBranch2($category_id, $level+1);
        }
@@ -153,7 +162,64 @@ namespace common\classes;
 
     function buildTree() {
       global $current_category_id;
+      if ( $this->show_products ){
+          $this->loadProducts();
+      }
       return $this->buildBranch2($this->root_category_id);
     }
-  }
+
+     public function withProducts(bool $status)
+     {
+         $this->show_products = $status;
+     }
+
+     protected function loadProducts()
+     {
+
+         $q = new \common\components\ProductsQuery([
+             'orderBy' => ['products_date_added'=>SORT_DESC],
+         ]);
+         $ac = $q->buildQuery()->getQuery()
+            ->join('inner join', 'products_to_categories p2c_assign', 'p2c_assign.products_id=p.products_id')
+            ->addSelect('p2c_assign.categories_id');
+         $ac->select(['p.products_id', 'p2c_assign.categories_id']);
+
+         $assign_to = $ac->createCommand()->queryAll();
+         foreach ($assign_to as $assign){
+             if (!isset($this->categories_products[$assign['categories_id']])){
+                 $this->categories_products[$assign['categories_id']] = [];
+             }
+             $this->categories_products[$assign['categories_id']][(int)$assign['products_id']] = (int)$assign['products_id'];
+         }
+     }
+
+     protected function buildProductsBranch($category_id, $level)
+     {
+
+         $result = '';
+
+         if (isset($this->categories_products[$category_id]) && count($this->categories_products[$category_id])>0) {
+             $result .= $this->parent_group_start_string;
+             $product_names = [];
+             foreach ($this->categories_products[$category_id] as $pid){
+                 $product_names[$pid] = \common\helpers\Product::get_products_name($pid, '', \common\classes\platform::activeId());
+             }
+
+             foreach ($product_names as $products_id=>$products_name) {
+                 $result .= $this->child_start_string;
+
+                 $result .= str_repeat($this->spacer_string, $this->spacer_multiplier * $level) .
+                     '<a href="' . tep_href_link('catalog/product', 'products_id=' . $products_id) . '">';
+                 $result .= $products_name;
+                 $result .= '</a>';
+
+                 $result .= $this->child_end_string;
+             }
+             $result .= $this->parent_group_end_string;
+         }
+
+         return $result;
+     }
+
+ }
 ?>

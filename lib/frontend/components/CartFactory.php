@@ -14,7 +14,6 @@ namespace app\components;
 
 use Yii;
 use common\classes\shopping_cart;
-use common\classes\whish_list;
 
 class CartFactory {
 
@@ -29,18 +28,9 @@ class CartFactory {
     return;
   }
 
-  public static function initWish() {
-    global $wish_list;
-    if ( !tep_session_is_registered('wish_list') ) tep_session_register('wish_list');
-    if ( !is_object($wish_list) || !is_a($wish_list, 'wish_list') ) {
-      $wish_list = new whish_list();
-    }
-    $wish_list->cleanup();
-  }
-
   public static function work() {
     /** @var \common\classes\shopping_cart $cart */
-    global $cart, $wish_list, $session_started, $lvnr, $lvanz, $languages_id;
+    global $cart, $session_started, $lvnr, $lvanz, $languages_id;
     $messageStack = \Yii::$container->get('message_stack');
     $currency = \Yii::$app->settings->get('currency');
 
@@ -81,10 +71,6 @@ class CartFactory {
     }
 
     if (count($cart->contents) > 0 && ($cart->currency != $currency || $cart->language_id != $languages_id) && method_exists($cart, 'update_basket_info')) $cart->update_basket_info();
-
-    if (!(tep_session_is_registered('wish_list') && is_object($wish_list))){
-      self::initWish();
-    }
 
     static $manager = null;
     if (!$preventProcess){
@@ -297,7 +283,6 @@ class CartFactory {
 
                       //$customer_groups_id = DEFAULT_USER_GROUP;
                       $cart->reset();
-                      $wish_list->reset();
 
                       if ($ext = \common\helpers\Acl::checkExtension('Quotations', 'resetCart')) {
                           $ext::resetCart();
@@ -475,9 +460,6 @@ class CartFactory {
 
           (new \common\components\Popularity())->updateProductVisit($_POST['products_id']);
 
-
-          $wish_list->remove_any_product_id(\common\helpers\Inventory::get_prid($_POST['products_id']));
-
           $jsonRequest['products'] = $cart->get_products();
           $payment_modules = $manager->getPaymentCollection();
           $expressModules = $payment_modules->getExpressPayments();
@@ -598,130 +580,6 @@ class CartFactory {
 
         tep_redirect(Yii::$app->request->getReferrer());
       break;
-// Add product to the wishlist
-///// CHANGES TO case 'add_wishlist' BY DREAMSCAPE /////
-   case 'add_wishlist' :
-    if (isset($_POST['products_id']) && is_numeric($_POST['products_id']) && \common\helpers\Product::check_product((int)$_POST['products_id'])) {
-// {{
-        $wProds = [];
-        if (\common\helpers\Attributes::has_product_attributes((int)$_POST['products_id'])) {
-            if (is_array($_POST['mix']) && count($_POST['mix'])) {
-                $wProds = \common\helpers\Attributes::getQTAonMixedArray($_POST, true);
-            } else {
-                $wProds[] = ['products_id' => $_POST['products_id'], 'id' => $_POST['id']];
-            }
-        } else {
-            $wProds[] = ['products_id' => $_POST['products_id'], 'id' => []];
-        }
-        if ($wProds){
-            foreach($wProds as $wProd){
-                $attrs = $wProd['id']??[];
-                foreach ($attrs as $attr => $value) {
-                   if (!$value) {
-                     if ($_POST['popup']) {
-                       echo '<div id="error_wishlist_popup" style="padding: 20px 30px;">Select attributes from <strong>'.( strpos($attr, '-') ? \common\helpers\Product::get_products_name(preg_replace("/.*\-/s", '', $attr)): \common\helpers\Product::get_products_name((int)$_POST['products_id'])).'</strong></div>';
-                       die;
-                     }
-                     $_SESSION['product_info'] = PLEASE_CHOOSE_ATTRIBUTES;
-                       if (!Yii::$app->request->isAjax){
-                           tep_redirect(tep_href_link(FILENAME_PRODUCT_INFO, 'products_id=' . \common\helpers\Inventory::get_uprid($_POST['products_id'], $_POST['id'])));
-                       } else {
-                           echo '<script type="text/javascript">window.location.href = "' . tep_href_link(FILENAME_PRODUCT_INFO, 'products_id=' . \common\helpers\Inventory::get_uprid($_POST['products_id'], $_POST['id'])) . '"</script>';
-                       }
-                   }
-                }
-                $wish_list->add_product($wProd['products_id'], $attrs);
-            }
-        }
-        if (is_object(Yii::$app->controller->promoActionsObs)) {
-            Yii::$app->controller->promoActionsObs->triggerAction('add_to_wishlist');
-        }
-    }
-    tep_redirect(tep_href_link(FILENAME_WISHLIST, \common\helpers\Output::get_all_get_params($parameters), 'SSL'));
-    break;
-
-// Add wishlist item to the cart
-case 'wishlist_add_cart':   reset ($lvnr);
-                            reset ($lvanz);
-                                 while (list($key,$elem) =each ($lvnr))
-                                       {
-                                        (list($key1,$elem1) =each ($lvanz));
-                                        tep_db_query("update " . TABLE_WISHLIST . " SET products_quantity='".(int)$elem1."' WHERE customers_id='".(int)$customer_id."' AND products_id='".(int)$elem."'");
-                                        tep_db_query("delete from " . TABLE_WISHLIST . " WHERE customers_id='".(int)$customer_id."' AND products_quantity='999'");
-                                        $produkte_mit_anzahl=tep_db_query("select * from " . TABLE_WISHLIST . " WHERE customers_id='".(int)$customer_id."' AND products_id='".(int)$elem."' AND products_quantity<>'0'");
-
-                                        while ($_POST=tep_db_fetch_array($produkte_mit_anzahl))
-                                              {
-                                               $cart->add_cart($_POST['products_id'], $_POST['products_quantity']);
-                                               }
-                                        }
-                                  reset ($lvanz);
-                              tep_redirect(tep_href_link($goto, \common\helpers\Output::get_all_get_params($parameters), ''));
-                              break;
-
-
-// remove item from the wishlist
-///// CHANGES TO case 'remove_wishlisy' BY DREAMSCAPE /////
-      case 'wishlist_move_to_cart':
-
-        if (\Yii::$app->request->isPost || \Yii::$app->request->post('popup', false) ) {
-          $inPopup = true;
-        } else {
-          $inPopup = false;
-        }
-
-        if(isset($_GET['products_id'])){
-
-          $__product_info = $wish_list->get_product_info($_GET['products_id']);
-
-          if ( is_array($__product_info) ) {
-            $_prid = \common\helpers\Inventory::get_prid($_GET['products_id']);
-            $_attr = isset($__product_info['attributes'])?$__product_info['attributes']:'';
-            if ( \common\helpers\Product::check_product($_prid) && $cart->is_valid_product_data($_prid, $_attr) ){
-              $qty_add = \Yii::$app->request->post('qty', 1);
-              $qty_add = (int)($qty_add * \common\helpers\Product::getVirtualItemQuantityValue($_prid));
-              $cart->add_cart((int)$_prid, $cart->get_quantity(\common\helpers\Inventory::get_uprid($_prid, $_attr))+$qty_add, $_attr);
-
-              if(!$inPopup){
-                $wish_list->remove_product($_GET['products_id']);
-                tep_redirect(tep_href_link(FILENAME_SHOPPING_CART, '', ''));
-              } else {
-                tep_redirect(tep_href_link(FILENAME_SHOPPING_CART, 'popup=1'));
-              }
-
-            }else{
-              if ( \common\helpers\Attributes::has_product_attributes((int)$_GET['products_id']) ) {
-                $_SESSION['product_info'] = PLEASE_CHOOSE_ATTRIBUTES;
-              }
-              if(!$inPopup){
-                tep_redirect(tep_href_link(FILENAME_PRODUCT_INFO, 'products_id=' . \common\helpers\Inventory::get_uprid($_prid, $_attr)));
-              } else {
-                echo PLEASE_CHOOSE_ATTRIBUTES; die;
-              }
-            }
-          }
-
-        }
-        if(!$inPopup){
-          tep_redirect(tep_href_link(FILENAME_WISHLIST, \common\helpers\Output::get_all_get_params(array('action', 'products_id')), 'SSL'));
-        } else {
-          tep_redirect(tep_href_link(FILENAME_SHOPPING_CART, 'popup=1'));
-        }
-        break;
-      case 'remove_wishlist':
-        if ( isset($_GET['pid']) ) {
-          $wish_list->remove_any_product_id($_GET['pid']);
-        }elseif(isset($_GET['products_id'])){
-          if ( $wish_list->in_wish_list($_GET['products_id']) ) {
-            $wish_list->remove_product($_GET['products_id']);
-          }else{
-            $wish_list->remove_any_product_id($_GET['products_id']);
-          }
-        }
-        tep_redirect(tep_href_link(FILENAME_WISHLIST, \common\helpers\Output::get_all_get_params(array('action', 'pid', 'products_id')), 'SSL'));
-        break;
-
-
 
       // performed by the 'buy now' button in product listings and review page
       case 'buy_now' :
@@ -744,8 +602,7 @@ case 'wishlist_add_cart':   reset ($lvnr);
             }
 // }}
             if (isset($_GET['products_id']) && \common\helpers\Product::check_product((int)$_GET['products_id'])) {
-                if (!Yii::$app->user->isGuest) { tep_db_query("delete from " . TABLE_WISHLIST . " WHERE customers_id='".(int)$customer_id."' AND products_id=" . (int)$_GET['products_id']); }
-                $qty = (isset($_GET['qty']) ? (int)$_GET['qty'] : 1);
+                $qty = (is_numeric($_GET['qty']) ? $_GET['qty'] : 1);
                 $qty = (int)($qty * \common\helpers\Product::getVirtualItemQuantityValue($_GET['products_id']));
                 if (\common\helpers\Attributes::has_product_attributes($_GET['products_id'])) {
                     if (!Yii::$app->request->isAjax){
@@ -799,14 +656,12 @@ case 'wishlist_add_cart':   reset ($lvnr);
       case 'cust_order' :     if (!Yii::$app->user->isGuest && isset($_GET['pid']) &&  \common\helpers\Product::check_product((int)$_GET['pid'])) {
 
                                 if (\common\helpers\Attributes::has_product_attributes($_GET['pid'])) {
-                                  tep_db_query("delete from " . TABLE_WISHLIST . " WHERE customers_id='".(int)$customer_id."' AND products_id='".(int)$_GET['pid']."'");
                                     if (!Yii::$app->request->isAjax){
                                         tep_redirect(tep_href_link(FILENAME_PRODUCT_INFO, 'products_id=' . $_GET['pid'], ''));
                                     } else {
                                         echo '<script type="text/javascript">window.location.href = "' . tep_href_link(FILENAME_PRODUCT_INFO, 'products_id=' . $_GET['pid'], '') . '"</script>';
                                     }
                                  } else {
-                                  tep_db_query("delete from " . TABLE_WISHLIST . " WHERE customers_id='".(int)$customer_id."' AND products_id='".(int)$_GET['pid']."'");
                                   $cart->add_cart($_GET['pid'], $cart->get_quantity($_GET['pid'])+1);
                                 }
                               }

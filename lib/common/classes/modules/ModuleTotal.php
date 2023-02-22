@@ -15,6 +15,12 @@ namespace common\classes\modules;
 abstract class ModuleTotal extends Module {
     
     protected static $adjusting;
+    protected $processing_order = [];
+
+    public function setProcessingOrder($processing_order)
+    {
+        $this->processing_order = $processing_order;
+    }
 
     public function process() {
         

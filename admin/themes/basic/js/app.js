@@ -42,6 +42,7 @@ var App = function() {
 			const widthBreakPoint = 1400
 			visibilitySideBar();
 			$('.toggle-sidebar').on('click', function () {
+				$(this).toggleClass('open');
 				$('#sidebar').css('width', '');
 				$('#sidebar > #divider').css('margin-left', '');
 				$('#content').css('margin-left', '');
@@ -69,10 +70,12 @@ var App = function() {
 					$('.top_header').css('padding-right', '0');
 					$('.contentContainer > .btn-bar-top').css("left", '0');
 					$('#container').addClass('sidebar-closed');
+					
 				} else {
 					$('.top_header').css('padding-right', '252px');
 					$('.contentContainer > .btn-bar-top').css("left", '271px');
 					$('#container').removeClass('sidebar-closed');
+					$('.toggle-sidebar').addClass('open');
 				}
 			}
 			let oldWidth = $(window).width();
@@ -826,10 +829,10 @@ function updateClock (currentTime, clockSelector, dateSelector )
         $(clockSelector).html(currentTimeString);
 	}
 
-    var currentDay = dayOfWeek[currentTime.getDay()];
+    var currentDay = window.dayOfWeek && window.dayOfWeek[currentTime.getDay()];
     var currentDateW = currentTime.getDate();
     var numberMonth = currentTime.getMonth();
-    var currentMonth = monthNames[numberMonth];
+    var currentMonth = window.monthNames && window.monthNames[numberMonth];
     var currentYear = currentTime.getFullYear();
 
     // Compose the string for display
@@ -842,7 +845,7 @@ function updateClock (currentTime, clockSelector, dateSelector )
 
 function updateTime(){
     var currentTime = new Date ();
-    var serverTime = new Date (currentTime.getTime() - diferentServerTime);
+    var serverTime = new Date (currentTime.getTime() - (window.diferentServerTime || 0));
     updateClock(currentTime, "#clock", "#date");
     updateClock(currentTime, "#clock-1", "#date-1");
     updateClock(serverTime, "#clock-2", "#date-2")
