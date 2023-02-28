@@ -130,7 +130,7 @@ class Steps
             $count++;
         }
 
-        self::stepSave('applyMigration', $migration, $themeName);
+        //self::stepSave('applyMigration', $migration, $themeName);
 
         if ($count > 0) {
             return 'applied';
@@ -365,6 +365,8 @@ class Steps
             'page_name' => Theme::getPageName($data['box_id']),
             'box_settings' => self::settingVisibilityToStep($data['box_settings'], $data['theme_name']),
             'box_settings_old' => self::settingVisibilityToStep($data['box_settings_old'], $data['theme_name']),
+            'widget_params' => $data['widget_params'],
+            'widget_params_old' => $data['widget_params_old'],
         ];
 
         self::stepSave('boxSave', $data_s, $data['theme_name']);
@@ -380,10 +382,13 @@ class Steps
         if (!$themeName) {
             return '';
         }
-        $boxId = DesignBoxesTmp::findOne(['microtime' => $data['microtime'], 'theme_name' => $themeName])->id;
-        if (!$boxId) {
+        $designBox = DesignBoxesTmp::findOne(['microtime' => $data['microtime'], 'theme_name' => $themeName]);
+        if (!$designBox) {
             return '';
         }
+        $designBox->widget_params = $data['widget_params_old'];
+        $designBox->save();
+
         DesignBoxesSettingsTmp::deleteAll([
             'microtime' => $data['microtime'],
             'theme_name' => $themeName
@@ -393,7 +398,7 @@ class Steps
         foreach ($data['box_settings_old'] as $item){
             $designBoxesSettings = new DesignBoxesSettingsTmp();
             $designBoxesSettings->setAttributes([
-                'box_id' => $boxId,
+                'box_id' => $boxId->id,
                 'microtime' => $item['microtime'],
                 'theme_name' => $themeName,
                 'setting_name' => $item['setting_name'],
@@ -413,10 +418,12 @@ class Steps
         if (!isset($data['box_settings']) || !is_array($data['box_settings'])) {
             return '';
         }
-        $boxId = DesignBoxesTmp::findOne(['microtime' => $data['microtime'], 'theme_name' => $themeName])->id ?? null;
-        if (!$boxId) {
+        $designBox = DesignBoxesTmp::findOne(['microtime' => $data['microtime'], 'theme_name' => $themeName]);
+        if (!$designBox) {
             return '';
         }
+        $designBox->widget_params = $data['widget_params'];
+        $designBox->save();
         DesignBoxesSettingsTmp::deleteAll([
             'microtime' => $data['microtime'],
             'theme_name' => $themeName
@@ -425,7 +432,7 @@ class Steps
         foreach ($data['box_settings'] as $item){
             $designBoxesSettings = new DesignBoxesSettingsTmp();
             $designBoxesSettings->setAttributes([
-                'box_id' => $boxId,
+                'box_id' => $designBox->id,
                 'microtime' => $item['microtime'],
                 'theme_name' => $themeName,
                 'setting_name' => $item['setting_name'],

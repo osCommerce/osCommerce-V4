@@ -10,7 +10,7 @@
     {Info::getCss()}
 
 </head>
-<body>
+<body class="{if Info::isAdmin()} is-admin{/if}">
 {$this->beginBody()}
         {$content}
         <link rel="stylesheet" href="{Info::themeFile('/css/style.css')}"/>

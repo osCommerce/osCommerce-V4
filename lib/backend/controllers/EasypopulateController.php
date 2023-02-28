@@ -2036,7 +2036,10 @@ class EasypopulateController extends Sceleton
                 tep_db_query("TRUNCATE TABLE products_linked_children");
             }
 
-            tep_db_query("TRUNCATE TABLE personal_catalog");
+            $schemaCheck = Yii::$app->get('db')->schema->getTableSchema('personal_catalog');
+            if ( $schemaCheck ) {
+                tep_db_query("TRUNCATE TABLE personal_catalog");
+            }
 
         }
 

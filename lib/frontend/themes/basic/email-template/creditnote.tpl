@@ -94,7 +94,7 @@
     }
   </style>
 </head>
-<body>
+<body{if Info::isAdmin()} class="is-admin"{/if}>
   {Block::widget(['name' => 'creditnote', 'params' => ['type' => 'creditnote', 'params' => $params]])}
 
   <script type="text/javascript">

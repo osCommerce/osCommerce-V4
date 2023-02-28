@@ -42,25 +42,27 @@ class Banner extends Widget
               ->where(['group_id' => $bannersGroup['id']/*, 'status' => 1*/])->count();
       }
 
-    /* support old versions */
-    $this->settings[0]['banners_group'] = $this->settings[0]['banners_group'] ?? null;
-    $this->settings[0]['banners_type'] = $this->settings[0]['banners_type'] ?? null;
-    if (!$this->settings[0]['banners_group'] && $this->params) $this->settings[0]['banners_group'] = $this->params;
+      /* support old versions */
+      $this->settings[0]['banners_group'] = $this->settings[0]['banners_group'] ?? null;
+      $this->settings[0]['banners_type'] = $this->settings[0]['banners_type'] ?? null;
+      if (!$this->settings[0]['banners_group'] && $this->params) $this->settings[0]['banners_group'] = $this->params;
 
-    if (!$this->settings[0]['banners_type']) {
-      $type_sql_query = tep_db_query("select nb.banner_type from " . TABLE_BANNERS_TO_PLATFORM . " nb2p, " . TABLE_BANNERS_NEW . " nb where nb.banners_group = '" . $this->settings[0]['banners_group'] . "' AND nb2p.banners_id=nb.banners_id AND nb2p.platform_id='" . \common\classes\platform::currentId() . "' limit 1");
-      if (tep_db_num_rows($type_sql_query) > 0) {
-        $type_sql = tep_db_fetch_array($type_sql_query);
-        $type_array = $type_sql['banner_type'];
-        $type_exp = explode(';', $type_array);
-        if (isset($type_exp) && !empty($type_exp)) {
-          $this->settings[0]['banners_type'] = $type_exp[0];
-        } else {
-          $this->settings[0]['banners_type'] = $type_sql['banner_type'];
-        }
+      if (!$this->settings[0]['banners_type'] && $this->settings[0]['banners_group']) {
+          $banner = Banners::find()->alias('b')
+              ->leftJoin(BannersGroups::tableName() . ' bg', 'bg.id = b.group_id')
+              ->where(['bg.banners_group' => $this->settings[0]['banners_group']])
+              ->asArray()->one();
+          if ($banner && $banner['banner_type']) {
+              $type_array = $banner['banner_type'];
+              $type_exp = explode(';', $type_array);
+              if (isset($type_exp) && !empty($type_exp)) {
+                  $this->settings[0]['banners_type'] = $type_exp[0];
+              } else {
+                  $this->settings[0]['banners_type'] = $banner['banner_type'];
+              }
+          }
       }
-    }
-    /* /support old versions */
+      /* /support old versions */
 
       $microtime = \common\models\DesignBoxesTmp::findOne($this->id)->microtime;
       $microtime = substr($microtime, 0, strripos($microtime, '.'));

@@ -330,6 +330,7 @@ $(document).ready(function () {
         post_data.push({ name: 'module', value: 'paypal_partner'});
         post_data.push({ name: 'action', value: 'install'});
 
+// install module - we need it's installed before boarding so sync request
         if (!ppp_active) {
             $.ajax({
                 url: '{Yii::$app->urlManager->createUrl('modules/ppp-install')}',
@@ -339,6 +340,8 @@ $(document).ready(function () {
                 success: function(data){ }
             });
         }
+
+        pData.curUrl = window.location.origin + window.location.pathname;
 
         $.post("{$boardingOptionsUrl}", pData, function (data, status) {
 

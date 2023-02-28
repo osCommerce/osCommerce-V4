@@ -91,12 +91,11 @@
       $('input[name="values[]"]').each(function () {
         if ($(this).prop('checked')) {
           values_array[properties_counter].push($(this).val());
-        } else {
+        } else if ($(this).prop('type') != 'radio')  {
           values_array[properties_counter].push(0);
         }
       });
-      
-      properties_array[properties_counter] = properties_id;
+      ///ln89 properties_array[properties_counter] = properties_id;
       extra_values[properties_counter] = [];
       $('input[name="extra_values[]"]').each(function () {
         extra_values[properties_counter].push($(this).val());

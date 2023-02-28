@@ -796,10 +796,19 @@ class FrontendStructure
 
     private static function fieldPageGetParamsInform($pageKey, $platformId, $pageName)
     {
-        $informationId = \common\models\Information::find()->where([
+        $information = \common\models\Information::findOne([
             'visible' => '1',
             'platform_id' => $platformId,
-        ])->one()->information_id;
+            'template_name' => $pageName,
+        ]);
+        if ($information && $information->information_id) {
+            $informationId = $information->information_id;
+        } else {
+            $informationId = \common\models\Information::findOne([
+                'visible' => '1',
+                'platform_id' => $platformId,
+            ])->information_id;
+        }
 
         self::$pages[$pageKey]['get_params'][$platformId]['info_id'] = $informationId;
     }

@@ -1001,6 +1001,7 @@ and "capabilities[name==SEND_MONEY].limits" is anything but undefinited
                 }
             }
 
+            $_tmp = false;
             if (!empty($scopes)) {
                 $_tmp = $this->checkScopes($scopes, true);
             }
@@ -1048,11 +1049,14 @@ and "capabilities[name==SEND_MONEY].limits" is anything but undefinited
                     } else {
                         $status = $_capability['status']??'';
                     }
-                    $str =
-                        (defined('PAYPAL_PARTNER_' . strtoupper($_capability['name']) . '_TEXT')?
-                        constant('PAYPAL_PARTNER_' . strtoupper($_capability['name']) . '_TEXT'):
-                        $_capability['name']) . ": " . $status . ($_capability['limits']??'') . "";
-                    $capabilities[] = $str;
+
+                    if (!empty($_capability['name'])) {
+                        $str =
+                          (defined('PAYPAL_PARTNER_' . strtoupper($_capability['name']) . '_TEXT')?
+                          constant('PAYPAL_PARTNER_' . strtoupper($_capability['name']) . '_TEXT'):
+                          $_capability['name']) . ": " . $status . (!empty($_capability['limits']) && is_scalar($_capability['limits']) ? $_capability['limits'] : '') . "";
+                        $capabilities[] = $str;
+                    }
                 }
                 $info[
                   defined('PAYPAL_PARTNER_CAPABILITIES')?PAYPAL_PARTNER_CAPABILITIES:'Capabilities'

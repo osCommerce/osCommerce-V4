@@ -22,5 +22,8 @@
       {/if}
     {/if}
     {if \common\helpers\Acl::rule(['ACL_ORDER', 'TEXT_PRINT_LABEL'])}{$manager->render('PrintLabel', ['manager' => $manager, 'order' => $order])}{/if}
+    {foreach \common\helpers\Hooks::getList('orders/process-order', 'btn-bar-bottom') as $filename}
+        {include file=$filename}
+    {/foreach}
     {/if}
 </div>

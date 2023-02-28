@@ -42,6 +42,9 @@ class Product extends AbstractClass
     // ...
     public $newProductsImagesArray = [];
 
+    public $specialsArray = [];
+    //public $specialPricesArray = []; not done yet
+
     public function getId()
     {
         return $this->productId;
@@ -160,6 +163,10 @@ class Product extends AbstractClass
              * Warehouses Products
              */
             $this->warehousesProductsRecordArray = \common\models\WarehousesProducts::find()->where(['prid' => $productId])->asArray(true)->all();
+            /**
+             * Specials
+             */
+            $this->specialsArray = \common\models\Specials::find()->where(['products_id' => $productId])->asArray(true)->all();
 
             if ($extScl = \common\helpers\Acl::checkExtensionAllowed('StockControl', 'allowed')) {
                 $extScl::updateApiProductLoad($this);
@@ -309,6 +316,7 @@ class Product extends AbstractClass
         $this->platformStockControlRecordArray = (is_array($this->platformStockControlRecordArray) ? $this->platformStockControlRecordArray : array());
         $this->warehouseStockControlRecordArray = (is_array($this->warehouseStockControlRecordArray) ? $this->warehouseStockControlRecordArray : array());
         $this->oldSeoRedirectArray = (is_array($this->oldSeoRedirectArray) ? $this->oldSeoRedirectArray : array());
+        $this->specialsArray = (is_array($this->specialsArray) ? $this->specialsArray : array());
         // ...
         return true;
     }
@@ -1169,6 +1177,50 @@ class Product extends AbstractClass
             }
             unset($seoRedirectArray);
             // EOF OLD SEO REDIRECT
+
+            // SPECIALS
+            foreach ($this->specialsArray as $special) {
+                try {
+                    $specialId = $special['specials_id'] ?? null;
+                    unset($special['products_id']);
+                    $searchArray = [
+                        'products_id' => $this->productId
+                    ];
+                    $specialRecord = null;
+                    if ( $specialId > 0) {
+                        $searchArray['specials_id'] = $specialId;
+                        $specialRecord = \common\models\Specials::findOne($searchArray);
+                    }
+                    if (empty($specialRecord)) {
+                        $specialRecord = new \common\models\Specials();
+                        $specialRecord->loadDefaultValues();
+                        $specialRecord->setAttributes($searchArray);
+                    }
+                    $specialRecord->setAttributes($special);
+                    $specialRecord->save();
+
+                    $searchPricesArray = [
+                        'specials_id' => $specialRecord->specials_id,
+                        'groups_id' => 0,
+                        'currencies_id' => 0,
+                    ];
+                    $specialPricesRecord = \common\models\SpecialsPrices::findOne($searchPricesArray);
+                    if (empty($specialPricesRecord)) {
+                        $specialPricesRecord = new \common\models\SpecialsPrices();
+                        $specialPricesRecord->loadDefaultValues();
+                        $specialPricesRecord->setAttributes($searchPricesArray);
+                    }
+                    $specialPricesRecord->specials_new_products_price = $specialRecord->specials_new_products_price;
+                    $specialPricesRecord->save();
+
+                }  catch (\Throwable $exc) {
+                    \Yii::warning($exc->getMessage() . "\n" . $exc->getTraceAsString());
+                }
+                unset($specialRecord);
+                unset($searchArray);
+            }
+            // END OF SPECIALS
+
             $return = $this->productId;
         } else {
             $this->messageAdd($productClass->getErrorSummary(true));

@@ -132,6 +132,11 @@ class Inventory {
 
         $inventory_uprid = static::normalizeInventoryId($uprid);
         if ( strpos($inventory_uprid,'{')!==false ) {
+            if ($ext = \common\helpers\Acl::checkExtensionAllowed('UserGroupsRestrictions', 'isAllowed')) {
+                if ($ext::isRestricted($inventory_uprid)) {
+                    return false;
+                }
+            }
             $data = tep_db_fetch_array(tep_db_query(
                 "SELECT COUNT(*) AS check_exist ".
                 "FROM " . TABLE_INVENTORY . " ".
@@ -724,6 +729,22 @@ class Inventory {
 
         \Yii::$app->getDb()->createCommand($raw)->execute();
 
+        if (\common\helpers\Acl::checkExtensionAllowed('UserGroupsRestrictions')) {
+            $copyModelClass = '\common\extensions\UserGroupsRestrictions\models\GroupsInventory';
+            call_user_func_array([$copyModelClass, 'deleteAll'], [['prid' => $toProductId]]);
+            $sourceCollection = call_user_func_array([$copyModelClass, 'findAll'], [['prid' => $fromProductId]]);
+            foreach ($sourceCollection as $originModel) {
+                $__data = $originModel->getAttributes();
+                $__data['products_id'] = preg_replace("/^" . preg_quote((int)$fromProductId) . "(\{.+)$/", (int)$toProductId . "$1", $__data['products_id']);
+                $__data['prid'] = (int)$toProductId;
+                $copyModel = \Yii::createObject($copyModelClass);
+                if ($copyModel instanceof \yii\db\ActiveRecord) {
+                    $copyModel->setAttributes($__data, false);
+                    $copyModel->loadDefaultValues(true);
+                    $copyModel->save(false);
+                }
+            }
+        }
     }
 
 

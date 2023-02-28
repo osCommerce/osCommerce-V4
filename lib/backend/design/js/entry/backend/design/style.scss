@@ -666,6 +666,24 @@ div.widget-settings {
     }
 }
 
+.folder-ico {
+    text-align: center;
+}
+.folder-ico:before {
+    content: '\f114';
+    font-family: FontAwesome;
+    font-size: 20px;
+}
+
+.design-groups-wrap,
+.theme-javascript {
+    margin-top: 30px;
+}
+.choose-visibility {
+    margin-top: 30px;
+    margin-bottom: 10px;
+}
+
 @media (max-width: 1580px) {
     .theme-list {
         padding-left: 0;

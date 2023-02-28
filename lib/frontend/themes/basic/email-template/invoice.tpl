@@ -94,7 +94,7 @@
     }
   </style>
 </head>
-<body>
+<body{if Info::isAdmin()} class="is-admin"{/if}>
   {Block::widget(['name' => 'invoice', 'params' => ['type' => 'invoice', 'params' => $params]])}
 
   <script type="text/javascript">

@@ -1159,17 +1159,26 @@ class DesignController extends Sceleton {
       }
     }
 
+    $oldParams = '';
+    $box = DesignBoxesTmp::findOne(['id' => $params['id']]);
+    if ($box) {
+        $oldParams = $box->widget_params;
+    }
+
+    $widget_params = '';
     if (ArrayHelper::getValue($params, 'uploads') == '1'){
       if ($params['params'] != ''){
 
         $file_name = Uploads::move($params['params'], 'themes/' . $p['theme_name'] . '/img');
 
+        $widget_params = $file_name;
         $sql_data_array = array(
           'widget_params' => $file_name
         );
         tep_db_perform(TABLE_DESIGN_BOXES_TMP, $sql_data_array, 'update', "id = '" . (int)$params['id'] . "'");
       }
     } else {
+      $widget_params = $params['params'] ?? '';
       $sql_data_array = array(
         'widget_params' => tep_db_prepare_input($params['params'] ?? null)
       );
@@ -1189,7 +1198,9 @@ class DesignController extends Sceleton {
           'microtime' => $p['microtime'],
           'theme_name' => $p['theme_name'],
           'box_settings' => $box_settings,
-          'box_settings_old' => $box_settings_old
+          'box_settings_old' => $box_settings_old,
+          'widget_params' => $widget_params,
+          'widget_params_old' => $oldParams,
       ]);
 
 

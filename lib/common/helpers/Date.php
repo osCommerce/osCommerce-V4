@@ -194,7 +194,7 @@ class Date
         $minute = (int) substr($raw_datetime, 14, 2);
         $second = (int) substr($raw_datetime, 17, 2);
 
-        return strftime(DATE_TIME_FORMAT, mktime($hour, $minute, $second, $month, $day, $year));
+        return strftime(defined('DATE_TIME_FORMAT') ? DATE_TIME_FORMAT : '%d %b %Y %H:%M:%S', mktime($hour, $minute, $second, $month, $day, $year));
     }
 
     public static function date_raw($date, $reverse = false) {

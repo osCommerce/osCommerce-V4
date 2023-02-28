@@ -45,7 +45,7 @@ class CategoriesDescriptionHelper
                 'c.categories_status' => 1
             ]);
 
-        if ($groupWhere) {
+        if ($groupWhere && \common\helpers\Acl::checkExtensionTableExist('UserGroupsRestrictions', 'GroupsCategories')) {
             $category->andWhere([
                 'gc.groups_id' => $customerGroupsId
             ]);

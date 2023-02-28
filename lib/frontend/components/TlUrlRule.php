@@ -596,13 +596,6 @@ class TlUrlRule extends UrlRule
             $ext::checkRedirect($seo_path);
           }
 
-          if ($ext = \common\helpers\Acl::checkExtensionAllowed('DeliveryLocation', 'allowed')) {
-            $url = $ext::parseRequest($seo_path);
-            if ( $url && is_array($url) ) {
-              return $url;
-            }
-          }
-
           if ( $request->isGet && preg_match('#^catalog(/|/index)?$#', $seo_path) && empty($_GET) && empty($href) ) {
               $href = Yii::$app->getUrlManager()->createUrl(['index/index']);
               if ( empty($href) ) $href = '/';

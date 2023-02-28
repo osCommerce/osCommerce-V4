@@ -42,6 +42,8 @@ abstract class OrderAbstract extends OrderShadowAbstract{
     public $migrated;
     public $order_id;
 
+    public $withDelivery = null;
+
     function __construct($order_id = null) {
         $this->order_id = (int) $order_id;
         if (!is_null($this->order_id)) {

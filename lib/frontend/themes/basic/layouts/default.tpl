@@ -50,7 +50,7 @@
 	{Css::widget()}
 </head>
 
-<body class="layout-main {$this->context->id}-{$this->context->action->id} context-{$this->context->id} action-{$this->context->action->id}">
+<body class="layout-main {$this->context->id}-{$this->context->action->id} context-{$this->context->id} action-{$this->context->action->id}{if Info::isAdmin()} is-admin{/if}">
 {$this->beginBody()}
 
 {Block::widget(['name' => 'header', 'params' => ['type' => 'header']])}

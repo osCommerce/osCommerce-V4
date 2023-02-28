@@ -691,7 +691,14 @@
                 }
             }
             if (this.type == 'checkbox' && !this.disabled && typeof(this.name) !== 'undefined' && this.name != '') {
-                _vals[this.name] = this.checked;
+                if ( this.name.substr(-2,2) == '[]') {
+                    if (typeof _vals[this.name] !== 'object') {
+                        _vals[this.name] = new Array();
+                    }
+                    _vals[this.name].push(this.checked);
+                } else {
+                    _vals[this.name] = this.checked;
+                }
             }
         });
         //saved
@@ -730,11 +737,16 @@
                     }
                     if (this.type == 'checkbox') {
                         if(_vals[this.name] !== undefined) {
+                            if (typeof _vals[this.name]  === 'object') { // array
+                                _checked = _vals[this.name].shift();
+                            } else {
+                                _checked = _vals[this.name];
+                            }
                             try {
                                 if ($(this).parent().is('div.bootstrap-switch-container'))
-                                    $(this).bootstrapSwitch('state', _vals[this.name]);
+                                    $(this).bootstrapSwitch('state', _checked);
                             } catch (err) { }
-                            this.checked = _vals[this.name];
+                            this.checked = _checked;
                         }
                     }
                 }

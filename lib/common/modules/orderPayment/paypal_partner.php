@@ -2752,10 +2752,29 @@ provide you with a "Source Identifier" for every PayPal account used. Do not mak
                     if (!($platformId = \Yii::$app->request->post('platform_id', false))) {
                         $platformId = $this->getPlatformId();
                     }
+                    if (\Yii::$app->request->isPost) {
+                        $retUrl = \Yii::$app->request->post('curUrl', false);
+                        $check = false;
+                        try {
+                            $url_parts = parse_url($retUrl);
+                            if (!empty($url_parts['host'])) {
+                                $check = \common\models\Platforms::find()->andWhere([
+                                  'or',
+                                  ['like', 'platform_url', $url_parts['host']],
+                                  ['like', 'platform_url_secure', $url_parts['host']],
+                                ])->count();
+                            }
+                        } catch (\Exception $e) { 
+                            \Yii::warning(" #### " .print_r($e->getMessage() . $e->getTraceAsString(), true), 'TLDEBUG');
+                        }
+                        if (!$check) {
+                            $retUrl = false;
+                        }
+                    }
                     if ($psi_id) {
-                        $tmp = $this->getInstallOptions($platformId, false, $psi_id);
+                        $tmp = $this->getInstallOptions($platformId, false, $retUrl);
                     } else {
-                        $tmp = $this->getInstallOptions($platformId);
+                        $tmp = $this->getInstallOptions($platformId, false, $retUrl);
                     }
                     $ret = [
                       'live' => 'https://www.paypal.com/bizsignup/partner/entry?partnerClientId=' . $tmp['link_params']['partnerClientId'] . '&partnerId=' . $tmp['link_params']['partnerId'] . '&displayMode=minibrowser&partnerLogoUrl=' . $tmp['link_params']['partnerLogoUrl'] . '&returnToPartnerUrl=' . $tmp['link_params']['return_url'] . '&integrationType=FO&features=PAYMENT&country.x=' . $tmp['link_params']['country'] . '&locale.x=' . $tmp['link_params']['locale'] . '&product=ppcp&sellerNonce=' . $tmp['link_params']['sellerNonce'],
@@ -3348,7 +3367,7 @@ provide you with a "Source Identifier" for every PayPal account used. Do not mak
  * @param int $for_seller
  * @return int|array $code: 1 - sandbox 2 - live 3 - both partner's keys 4 - only own keys
  */
-    public function getInstallOptions($platform_id, $only = false) {
+    public function getInstallOptions($platform_id, $only = false, $retUrl = false) {
         $ret = [];
         $code = 0;//rudiment
         if (!empty(self::PARTNER_APP_CLIENT_ID) && !empty(self::PARTNER_MERCHANT_ID)) {
@@ -3428,28 +3447,42 @@ provide you with a "Source Identifier" for every PayPal account used. Do not mak
                     $sSeller->save();
                     $sSeller->refresh();
 
+                    if (!empty($retUrl) && strpos($retUrl, '/edit') === false) {
+                        $retUrl .= '/edit';
+                    }
+
                     $tmp = \common\helpers\Country::get_country_info_by_id($seller->entry_country_id??STORE_COUNTRY);
                     $fetchKeysUrl = \Yii::$app->urlManager->createAbsoluteUrl($wh_urlParams + ['action' => 'sellerDetails'], null, true);
                     if ($seller) {
+                        if (empty($retUrl)) {
+                            $returnUrl = \Yii::$app->urlManager->createAbsoluteUrl($urlParams+['psi_id' => $seller->psi_id]);
+                        } else {
+                            $returnUrl = $retUrl . '?set=payment&module=paypal_partner&platform_id=' . $platform_id . '&psi_id=' . $seller->psi_id;
+                        }
                         $ret['link_params'] = [
                                 'partnerClientId' => self::PARTNER_APP_CLIENT_ID,
                                 'partnerId' => self::PARTNER_MERCHANT_ID,
                                 'sellerNonce' => $seller->tracking_id,
                                 'country' => $tmp['countries_iso_code_2']??'',
                                 'locale' => str_replace('_', '-', \Yii::$app->settings->get('locale')),
-                                'return_url' => rawurlencode($returnUrl = \Yii::$app->urlManager->createAbsoluteUrl($urlParams+['psi_id' => $seller->psi_id])),
+                                'return_url' => rawurlencode($returnUrl),
                                 'partnerLogoUrl' => rawurlencode($logoUrl)
                               ];
                         $ret['psi_id'] = $seller->psi_id;
                     }
                     if ($sSeller) {
+                        if (empty($retUrl)) {
+                            $returnUrl = \Yii::$app->urlManager->createAbsoluteUrl($urlParams+['psi_id' => $sSeller->psi_id]);
+                        } else {
+                            $returnUrl = $retUrl . '?set=payment&module=paypal_partner&platform_id=' . $platform_id . '&psi_id=' . $sSeller->psi_id;
+                        }
                         $ret['link_params_sandbox'] = [
                                 'partnerClientId' => self::PARTNER_APP_SANDBOX_CLIENT_ID,
                                 'partnerId' => self::PARTNER_MERCHANT_SANDBOX_ID,
                                 'sellerNonce' => $sSeller->tracking_id,
                                 'country' => $tmp['countries_iso_code_2']??'',
                                 'locale' => str_replace('_', '-', \Yii::$app->settings->get('locale')),
-                                'return_url' => rawurlencode($returnUrl = \Yii::$app->urlManager->createAbsoluteUrl($urlParams+['psi_id' => $sSeller->psi_id])),
+                                'return_url' => rawurlencode($returnUrl),
                                 'partnerLogoUrl' => rawurlencode($logoUrl)
                               ];
                         $ret['spsi_id'] = $sSeller->psi_id;

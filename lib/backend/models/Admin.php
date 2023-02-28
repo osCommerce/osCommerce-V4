@@ -66,7 +66,7 @@ class Admin {
             return '';
         }
 
-        if ($_info[$key]) {
+        if (isset($_info[$key])) {
             return $_info[$key];
         }
 

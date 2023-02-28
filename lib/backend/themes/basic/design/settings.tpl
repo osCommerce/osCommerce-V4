@@ -68,15 +68,13 @@
             </select>
           </div>
 
-          {if $designer_mode == 'expert'}
-          <div class="setting-row">
+          <div class="setting-row"{if $designer_mode != 'expert'} style="display: none" {/if}>
             <label for="">{$smarty.const.TEXT_CUSTOMER_ACCOUNT}</label>
             <select name="settings[customer_account]" id="" class="form-control">
               <option value=""{if $settings.customer_account == ''} selected{/if}>{$smarty.const.TEXT_OLD}</option>
               <option value="new"{if $settings.customer_account == 'new'} selected{/if}>{$smarty.const.TEXT_NEW}</option>
             </select>
           </div>
-          {/if}
           <div class="setting-row">
             <label for="">{$smarty.const.TEXT_PRODUCTS_CAROUSEL}</label>
             <select name="settings[products_carousel]" id="" class="form-control">
@@ -85,8 +83,7 @@
             </select>
           </div>
 
-          {if $designer_mode}
-          <div class="setting-row">
+          <div class="setting-row"{if !$designer_mode} style="display: none" {/if}>
             <label for="">{$smarty.const.TEXT_THEME_COLOR}</label>
 
             <div id="cp3" class="input-group colorpicker-component" style="width: 243px">
@@ -96,7 +93,7 @@
           </div>
 
             {if !$is_mobile}
-              <div class="setting-row">
+              <div class="setting-row"{if !$designer_mode} style="display: none" {/if}>
                 <label for="">{$smarty.const.TEXT_USE_MOBILE_THEME}</label>
                 <select name="settings[use_mobile_theme]" id="" class="form-control">
                   <option value=""{if $settings.use_mobile_theme == ''} selected{/if}>{$smarty.const.TEXT_NO}</option>
@@ -104,9 +101,8 @@
                 </select>
               </div>
             {/if}
-            {/if}
 
-          {if $designer_mode == 'expert'}
+            <div{if $designer_mode != 'expert'} style="display: none" {/if}>
           <div class="setting-row">
             <label for="">Use Service Worker</label>
             <select name="settings[service_worker]" id="" class="form-control">
@@ -178,7 +174,7 @@
           {*<div class="setting-row">
             <a href="{Yii::$app->urlManager->createUrl(['design/apply-styles-file', 'theme_name' => $theme_name])}" class="btn">{$smarty.const.ADD_NEW_DESIGN_ELEMENTS}</a>
           </div>*}
-          {/if}
+        </div>
         </div>
       </div>
 
@@ -358,8 +354,7 @@
           </div>
           <div class="col-md-6">
 
-            {if $designer_mode == 'expert'}
-            <div class="widget box">
+            <div class="widget box"{if $designer_mode != 'expert'} style="display: none" {/if}>
               <div class="widget-header">
                 <h4>Image preloader for lazy loading in base64</h4>
               </div>
@@ -383,7 +378,6 @@
 
               </div>
             </div>
-            {/if}
 
           </div>
         </div>

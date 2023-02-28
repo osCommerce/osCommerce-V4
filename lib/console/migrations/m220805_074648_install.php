@@ -38,7 +38,7 @@ class m220805_074648_install extends Migration
             'MESSAGE_KEY_DOMAIN_INFO'
         ]);
         $this->addTranslation('admin/easypopulate', [
-            'MESSAGE_KEY_DOMAIN_OK' => 'Your store successfully connected to our <a target="_blank" href="%1$s">application shop</a>. You \'secutiry store key\' for this shop is [%2$s].',
+            'MESSAGE_KEY_DOMAIN_OK' => 'Your store successfully connected to our <a target="_blank" href="%1$s">application shop</a>. You \'security store key\' for this shop is [%2$s].',
             'MESSAGE_KEY_DOMAIN_ERROR' => 'Error: Your \'storage\' key is wrong. Please login at <a target="_blank" href="%1$s">application shop</a> with your credentials and copy it from there.',
             'MESSAGE_KEY_DOMAIN_INFO' => 'It looks like your store is not connected with our <a target="_blank" href="%1$s">application shop</a>.<br>If you are already registered with us please insert \'storage\' key value. If you do not remember your \'storage\' key - please login at <a target="_blank" href="%1$s">application shop</a> with your credentials and copy it from there.<br>If you are not registered with us yet, please visit <a target="_blank" href="%1$s">application shop</a>, register your account and put your \'security store key\' there.<br>Your \'secutiry store key\' for this shop is [%2$s].<br>After registration insert the received \'storage\' key (<a href="javascript:void(0);" onclick="$(\'.create_item_popup\').click();">use button on this page</a>) value.',
         ]);

@@ -27,7 +27,7 @@ class m230216_100305_install extends Migration
         ]);
         
         $this->addTranslation('admin/easypopulate', [
-            'MESSAGE_KEY_DOMAIN_ERROR' => 'Error: Your \'storage\' key is wrong. Please login at <a target="_blank" href="%1$s">application shop</a> with your credentials and copy it from there. You \'secutiry store key\' for this shop is [%2$s].',
+            'MESSAGE_KEY_DOMAIN_ERROR' => 'Error: Your \'storage\' key is wrong. Please login at <a target="_blank" href="%1$s">application shop</a> with your credentials and copy it from there. You \'security store key\' for this shop is [%2$s].',
         ]);
     }
 

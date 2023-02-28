@@ -14,6 +14,7 @@
     {if $banner_type == 'banner' || $banner_type == ''}
       
       {foreach $banners as $bKey => $banner}
+        {$banner.banner_display = '2'}
         {if $banner.banners_html_text && $banner.banner_display == '1'}
           <div class="single_banner">{$banner.banners_html_text}</div>
         {elseif $banner.banners_image && (!$banner.banner_display || $banner.banner_display == 3)}

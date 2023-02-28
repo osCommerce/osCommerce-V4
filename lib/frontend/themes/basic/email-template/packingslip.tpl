@@ -101,7 +101,7 @@
     }
   </style>
 </head>
-<body>
+<body{if Info::isAdmin()} class="is-admin"{/if}>
 
   {Block::widget(['name' => 'packingslip', 'params' => ['type' => 'packingslip', 'params' => $params]])}
 

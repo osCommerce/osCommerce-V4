@@ -564,9 +564,6 @@ class AccountController extends Sceleton
               include($filename);
         }
 
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('Quotations', 'allowed')) {
-            $ext::resetCart();
-        }
         if ($ext = \common\helpers\Acl::checkExtensionAllowed('Samples', 'allowed')) {
             $ext::resetCart();
         }

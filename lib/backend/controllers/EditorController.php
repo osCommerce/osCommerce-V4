@@ -1356,7 +1356,7 @@ class EditorController extends Sceleton {
 
         $oID = Yii::$app->request->get('orders_id');
         if (tep_not_null($oID) && $oID) {
-            $order = \common\models\QuoteOrders::findOne(['orders_id' => $oID]);
+            $order = \common\extensions\Quotations\models\QuoteOrders::findOne(['orders_id' => $oID]);
             if (!$order) {
                 return $this->redirect(['quotation/']);
             }

@@ -65,11 +65,12 @@
             </a>
             {/if}
 
+            {foreach \common\helpers\Hooks::getList('orders/process-order', 'btn-bar-top') as $filename}
+                {include file=$filename}
+            {/foreach}
         </div>
-        {foreach \common\helpers\Hooks::getList('orders/process-order', 'btn-bar-top') as $filename}
-            {include file=$filename}
-        {/foreach}
-    </div>
+
+</div>
 <!--=== Page Header ===-->
 <div class="page-header">
     <div class="page-title">

@@ -127,7 +127,7 @@
     }
   </style>
 </head>
-<body>
+<body{if Info::isAdmin()} class="is-admin"{/if}>
 
 
 <div class="widgets-page">

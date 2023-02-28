@@ -167,7 +167,7 @@ class LanguagesController extends Sceleton {
         unset($set);
 
         $output = null;
-        \comon\helpers\Php::exec("locale -a", $output);
+        \common\helpers\Php::exec("locale -a", $output);
 
         $lList = [];
         if (is_array($output) && class_exists('\ResourceBundle')) {

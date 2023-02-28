@@ -74,7 +74,6 @@ class OscLink extends \common\classes\modules\ModuleExtensions
             )
         );
         Yii::$app->controller->view->configurationArray = self::getConfigurationArray();
-        \common\helpers\Dbg::logVar(Yii::$app->controller->view->configurationArray);
         if (\Yii::$app->controller->view->connectionSuccess) {
             Yii::$app->controller->view->configurationArray['api_status_map']['cmc_value'] = self::getMappingTable(\Yii::$app->controller->view->OscStateStatusArray);
         }
@@ -348,7 +347,7 @@ class OscLink extends \common\classes\modules\ModuleExtensions
         unset($configurationArray);
         unset($value);
         unset($key);
-
+        self::clearConfigCache();
     }
 
     private static function allowedOrDie()
@@ -359,6 +358,11 @@ class OscLink extends \common\classes\modules\ModuleExtensions
     }
 
     private static $config = null;
+
+    private static function clearConfigCache()
+    {
+        self::$config = null;
+    }
 
     public static function getConfigurationArray($key = '')
     {
@@ -451,6 +455,7 @@ class OscLink extends \common\classes\modules\ModuleExtensions
 
     public static function saveMappingTable($valueArray, $entityName = '@order_status')
     {
+        self::clearConfigCache();
         $entity_id = Entity::forceEntityId($entityName);
         Mapping::deleteAll(['entity_id' => $entity_id]);
         foreach($valueArray as $key=>$value) {

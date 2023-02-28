@@ -39,8 +39,10 @@ class m221212_144859_customers_external_ids_table extends Migration
         }
 
         try {
-            exec('cd ' . DIR_FS_CATALOG . ' && mysqldump --opt -h' . DB_SERVER . ' -u' . DB_SERVER_USERNAME . ' -p' . DB_SERVER_PASSWORD . ' ' . DB_DATABASE . ' customers_stripe_tokens > sql/bkcustomers_stripe_tokens.sql');
-            $this->dropTable('customers_stripe_tokens');
+            if (function_exists('exec')) {
+                exec('cd ' . DIR_FS_CATALOG . ' && mysqldump --opt -h' . DB_SERVER . ' -u' . DB_SERVER_USERNAME . ' -p' . DB_SERVER_PASSWORD . ' ' . DB_DATABASE . ' customers_stripe_tokens > sql/bkcustomers_stripe_tokens.sql');
+            }
+            $this->dropTableIfExists('customers_stripe_tokens');
         } catch (\Exception $ex) {
             echo "Note Can't backup customers_stripe_tokens - not dropped \nBackup and drop Manually, data is moved to customers_external_ids \n";
         }

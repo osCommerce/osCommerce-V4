@@ -753,8 +753,8 @@ class Categories {
                 } else {
                     $category_query = tep_db_query("select cd.categories_name, c.parent_id from " . TABLE_CATEGORIES . " c, " . TABLE_CATEGORIES_DESCRIPTION . " cd where c.categories_id = '" . (int) $categories['categories_id'] . "' and c.categories_id = cd.categories_id and cd.language_id = '" . (int) $languages_id . "'");
                     $category = tep_db_fetch_array($category_query);
-                    array_unshift($categories_array[$index], array('id' => $categories['categories_id'], 'text' => $category['categories_name']));
-                    if ((tep_not_null($category['parent_id'])) && ($category['parent_id'] != '0'))
+                    array_unshift($categories_array[$index], array('id' => $categories['categories_id']??null, 'text' => $category['categories_name']??null));
+                    if ((tep_not_null($category['parent_id']??null)) && ($category['parent_id'] != '0'))
                         $categories_array = self::generate_category_path($category['parent_id'], 'category', $categories_array, $index);
                 }
                 $index++;

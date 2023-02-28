@@ -264,7 +264,7 @@ abstract class ModulePayment extends Module {
   }
 
 /**
- * part of checkout /process between before and after process for order which save usual order and call after_process in before_process method.
+ * part of checkout /process between before and after process. for modules which save usual order and call after_process in before_process method.
  */
     protected function no_process($order) {
 
@@ -287,7 +287,7 @@ abstract class ModulePayment extends Module {
 
     }
 /**
- * part of checkout /process after after_process for order which save usual order and call after_process in before_process method.
+ * part of checkout /process after after_process. for modules which save usual order and call after_process in before_process method.
  * redirect to success page
  */
     protected function no_process_after($order) {
@@ -1317,6 +1317,46 @@ padding-left: 10px;
 }
 
 ");
+    }
+
+    protected function isOrderPaymentPage() {
+        $ret = false;
+        if (\Yii::$app->id=='app-frontend' && (
+            (\Yii::$app->controller->id == 'checkout' && \Yii::$app->controller->action->id != 'login')
+            || (\Yii::$app->controller->id == 'payer') ) ) {
+            $ret = true;
+        }
+        return $ret;
+    }
+
+/**
+ * format as `+` and `country code` and `phone number`
+ * @param string $telephone
+ * @param array $country
+ * @return string
+ */
+    protected function formatPhone($telephone, $country) {
+        $telephone = preg_replace('/0-9\+/', '', $telephone);
+        // remove leading 0,
+        if (substr($telephone, 0, 1) == '+') {
+            $hasCountryCode = true;
+        } elseif (substr($telephone, 0, 1) == '0') {
+            $telephone = substr($telephone, 1);
+        }
+
+        if (!empty($country['dialling_prefix'])) {
+            $_countryCode = preg_replace('/[^0-9]/', '', $country['dialling_prefix']);
+        }
+
+        if (!$hasCountryCode && !empty($_countryCode) ) {
+            if (substr($telephone, 0, strlen($_countryCode))==$_countryCode && strlen($telephone)>7 ) {
+                //suppose correct country code, add +
+                    $telephone = '+' . $telephone;
+            } else { // add country code
+                $telephone = '+' . $_countryCode . $telephone;
+            }
+        }
+        return $telephone;
     }
 
 }

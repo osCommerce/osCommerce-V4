@@ -35,10 +35,6 @@
 
 {/if}
 
-    {foreach \common\helpers\Hooks::getList('orders/process-order', 'btn-bar-bottom') as $filename}
-        {include file=$filename}
-    {/foreach}
-
 {Html::endForm()}
     {$manager->render('Buttons', ['manager' => $manager, 'order' => $order, 'addedPages' => $addedPages])}
 <script>

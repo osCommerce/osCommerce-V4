@@ -1839,7 +1839,7 @@ function delete_tr_cost($obj){
       $arr = [];
 
       /** @var \common\extensions\CustomerModules\CustomerModules $CustomerModules */
-      if ($ext = \common\helpers\Acl::checkExtensionAllowed('CustomerModules', 'allowed') || $selected=='-1') {
+      if (\common\helpers\Acl::checkExtensionAllowed('CustomerModules') || $selected=='-1') {
         $arr += [-1 => TEXT_DISALLOW_ALL_ALLOW_BY_CUSTOMER];
       }
 

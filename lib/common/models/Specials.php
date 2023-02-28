@@ -47,7 +47,7 @@ class Specials extends \yii\db\ActiveRecord
     {
         return [
             [['products_id', 'status', 'specials_disabled', 'specials_enabled', 'max_per_order', 'total_qty'], 'integer'],
-            [['max_per_order', 'total_qty'], 'default', 0],
+            [['max_per_order', 'total_qty'], 'default', 'value' => 0],
             [['specials_new_products_price'], 'number'],
             [['specials_date_added', 'specials_last_modified', 'expires_date', 'date_status_change', 'start_date'], 'safe'],
         ];

@@ -729,8 +729,18 @@ class ProductsQuery {
 
   public function addWithInventory() {
     if (!empty($this->params['withInventory']) && $this->params['withInventory']) {
-      $this->query->leftJoin(['i' => TABLE_INVENTORY], 'p.products_id = i.prid');
+      $this->query->leftJoin(['i' => TABLE_INVENTORY], 'p.products_id = i.prid and i.non_existent = 0');
       $this->query->select(new \yii\db\Expression('ifnull(i.products_id, p.products_id) as products_id'));
+      if ($groupsInventory = \common\helpers\Acl::checkExtensionTableExist('UserGroupsRestrictions', 'GroupsInventory', 'isAllowed')) {
+        $customer_groups_id = (int) \Yii::$app->storage->get('customer_groups_id');
+        $this->query->andWhere(['exists',
+                        $groupsInventory::find()
+                            ->where('i.products_id = products_id and i.prid = prid')
+                            ->andWhere([
+                                'groups_id' => (int) $customer_groups_id,
+                            ])
+        ]);
+      }
     }
   }
 

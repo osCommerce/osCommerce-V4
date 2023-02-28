@@ -565,6 +565,11 @@ class Product {
 
     public static function get_products_stock($products_id) {
         $products_id = \common\helpers\Inventory::normalizeInventoryId($products_id);
+        if ($ext = \common\helpers\Acl::checkExtensionAllowed('UserGroupsRestrictions', 'isAllowed')) {
+            if (!$ext::isStockAvailable($products_id)) {
+                return 0;
+            }
+        }
         if (defined('TEMPORARY_STOCK_ENABLE') && TEMPORARY_STOCK_ENABLE == 'true') {
             $customers_temporary_stock_quantity = self::get_customers_temporary_stock_quantity($products_id);
         } else {

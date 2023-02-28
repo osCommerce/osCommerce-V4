@@ -541,9 +541,11 @@
   border: 1px dashed #eee;
   /*margin-bottom: 30px;*/
   position: relative;
+  overflow: visible !important;
 }
 .edit-blocks .box-block {
   /* margin-bottom: 30px;*/
+  overflow: visible !important;
 }
 .sizing .add-box,
 .sizing .menu-widget {

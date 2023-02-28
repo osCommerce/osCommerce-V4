@@ -247,7 +247,7 @@
 
   </style>
 </head>
-  <body>
+  <body{if Info::isAdmin()} class="is-admin"{/if}>
 {/if}<div class="{$page_name}">{Block::widget(['name' => $page_name, 'params' => ['type' => 'email', 'params' => $params]])}</div>{if Info::isAdmin()}
   </body>
 {/if}

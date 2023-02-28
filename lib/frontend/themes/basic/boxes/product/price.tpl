@@ -1,3 +1,4 @@
+{use class="frontend\design\Info"}
 <div class="price" {*itemprop="offers" itemscope itemtype="http://schema.org/Offer"*}>
     {if Yii::$app->user->isGuest && \common\helpers\PlatformConfig::getFieldValue('platform_please_login')}
         <div class="pnp_value">{sprintf($smarty.const.TEXT_PLEASE_LOGIN, tep_href_link(FILENAME_LOGIN,'','SSL'))}</div>
@@ -91,7 +92,7 @@
     {/if}
 </div>
 
-{if isset($settings[0].change_price) && $settings[0].change_price}
+{if isset($settings[0].change_price) && $settings[0].change_price && !Info::isAdmin()}
 <script>
     tl(function(){
         $(window).one('changedQty', function (event, qty) {

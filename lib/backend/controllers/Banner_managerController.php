@@ -208,6 +208,10 @@ class Banner_managerController extends Sceleton
     }
 
     public function getImage($banner){
+        if (!isset($banner) || !isset($banner['banners_image'])) {
+            return false;
+        }
+
         if ($banner['banners_image'] && is_file(Images::getFSCatalogImagesPath() . $banner['banners_image'])) {
 
             $type = explode('/', mime_content_type(Images::getFSCatalogImagesPath() . $banner['banners_image']));
@@ -249,11 +253,11 @@ class Banner_managerController extends Sceleton
         } else {
             $platform_id = Platform::defaultId();
         }
-        $search_title = $output['search_title'];
-        $search_file = $output['search_file'];
-        $search_text = $output['search_text'];
-        $search_status = $output['search_status'];
-        $empty_groups = $output['empty_groups'];
+        $search_title = $output['search_title'] ?? null;
+        $search_file = $output['search_file'] ?? null;
+        $search_text = $output['search_text'] ?? null;
+        $search_status = $output['search_status'] ?? null;
+        $empty_groups = $output['empty_groups'] ?? null;
 
         if ($group_id || $search_title || $search_file || $search_text || $search) {
             if ($group_id == '-1' || $group_id == -1) $group_id = 0;
@@ -458,6 +462,9 @@ class Banner_managerController extends Sceleton
             if ($empty_groups && !$tmp['count']) {
                 $responseList[] = $this->bannerRow($tmp);
             }
+        }
+        if (!isset($allBannersCount)) {
+            $allBannersCount = count($responseList);
         }
         $response = array(
             'draw' => $draw,
@@ -704,7 +711,7 @@ class Banner_managerController extends Sceleton
         }
 
         $sql_data_array['sort_order'] = tep_db_prepare_input($request['sort_order']);
-        $sql_data_array['nofollow'] = $request['nofollow'] ? 1 : 0;
+        $sql_data_array['nofollow'] = (isset($request['nofollow']) && $request['nofollow'] ? 1 : 0);
         $sql_data_array['group_id'] = tep_db_prepare_input($request['group_id']);
 
         if ($banners_id == 0) {
@@ -763,7 +770,7 @@ class Banner_managerController extends Sceleton
 
             $imgPath = DIR_WS_IMAGES . 'banners' . DIRECTORY_SEPARATOR . $banners_id;
 
-            if ($request['banners_image_delete'][$language_id] && $bannerLanguage->banners_image) {
+            if (isset($request['banners_image_delete'][$language_id]) && $bannerLanguage->banners_image) {
                 $deleteOldImage[$language_id] = true;
                 if (is_file($imgPath . $bannerLanguage->banners_image)) {
                     unlink($imgPath . $bannerLanguage->banners_image);
@@ -775,9 +782,11 @@ class Banner_managerController extends Sceleton
                 }
             }
 
-            $bannerLanguage->banners_image = str_replace(DIR_WS_IMAGES, '', $request['banners_image'][$language_id]);
+            if (isset($request['banners_image'][$language_id])) {
+                $bannerLanguage->banners_image = str_replace(DIR_WS_IMAGES, '', $request['banners_image'][$language_id]);
+            }
 
-            if ($request['banners_image_upload'][$language_id] != '') {
+            if (isset($request['banners_image_upload'][$language_id]) && $request['banners_image_upload'][$language_id] != '') {
 
                 $img = str_replace('uploads' . DIRECTORY_SEPARATOR, '', $request['banners_image_upload'][$language_id]);
                 $val = \backend\design\Uploads::move($img, $imgPath);
@@ -1548,15 +1557,18 @@ class Banner_managerController extends Sceleton
 
             $sizeImages = [];
             foreach ($groupSizes as $size) {
-                $image = $groupImagesLang[$language['id']][$size['image_width']]['image'];
-
                 $type = 'image';
-                if (is_file(Images::getFSCatalogImagesPath() . $image)) {
-                    $type = explode('/', mime_content_type(Images::getFSCatalogImagesPath() . $image));
-                    $type = $type[0];
-                } elseif (is_file(DIR_FS_CATALOG . $image)) {
-                    $type = explode('/', mime_content_type(DIR_FS_CATALOG . $image));
-                    $type = $type[0];
+                $image = '';
+                if (isset($groupImagesLang[$language['id']])) {
+                    $image = $groupImagesLang[$language['id']][$size['image_width']]['image'];
+
+                    if (is_file(Images::getFSCatalogImagesPath() . $image)) {
+                        $type = explode('/', mime_content_type(Images::getFSCatalogImagesPath() . $image));
+                        $type = $type[0];
+                    } elseif (is_file(DIR_FS_CATALOG . $image)) {
+                        $type = explode('/', mime_content_type(DIR_FS_CATALOG . $image));
+                        $type = $type[0];
+                    }
                 }
 
                 $sizeImages[$size['image_width']] = [
@@ -1566,9 +1578,9 @@ class Banner_managerController extends Sceleton
                     'image_height' => $size['image_height'],
                     'image' => ($image ? DIR_WS_IMAGES . $image : ''),
                     'type' => $type,
-                    'svg' => $groupImagesLang[$language['id']][$size['image_width']]['svg'],
-                    'fit' => $groupImagesLang[$language['id']][$size['image_width']]['fit'],
-                    'position' => $groupImagesLang[$language['id']][$size['image_width']]['position'],
+                    'svg' => $groupImagesLang[$language['id']][$size['image_width']]['svg'] ?? null,
+                    'fit' => $groupImagesLang[$language['id']][$size['image_width']]['fit'] ?? null,
+                    'position' => $groupImagesLang[$language['id']][$size['image_width']]['position'] ?? null,
                     'svg_url' => Yii::$app->urlManager->createUrl([
                             'banner_manager/banner-editor',
                         'language_id' => $language['id'],
@@ -1614,6 +1626,9 @@ class Banner_managerController extends Sceleton
 
         foreach ($languages as $language) {
             foreach ($groupSizes as $groupSize) {
+                if (!isset($groupImage[$language['id']])) {
+                    continue;
+                }
                 $image = str_replace(DIR_WS_IMAGES, '', $groupImage[$language['id']][$groupSize['image_width']]);
                 $imageUpload = $groupImageUpload[$language['id']][$groupSize['image_width']];
                 $imageDelete = $groupImageDelete[$language['id']][$groupSize['image_width']];

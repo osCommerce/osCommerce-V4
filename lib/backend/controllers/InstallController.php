@@ -132,6 +132,18 @@ class InstallController extends Sceleton {
                         'cachePath' => '@frontend/runtime/cache'
                     ],
                 ],
+                'log' => [
+                    'targets' => [
+                        [
+                            'class' => 'yii\log\FileTarget',
+                            'levels' => ['error', 'warning'],
+                        ],
+                    ],
+                ],
+                'errorHandler' => [
+                    'errorAction' => 'index/error',
+                    'class' => '\common\classes\TlErrorHandler',
+                ],
             ]);
             \Yii::$app->runAction('migrate/up', ['migrationPath' => '@console/migrations/', 'interactive' => false]);
             \Yii::$app = $oldApp;

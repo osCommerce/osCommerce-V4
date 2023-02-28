@@ -21,8 +21,9 @@ class m221217_010132_paypal_partner_extra_config_options extends Migration
     public function safeUp()
     {
         try {
-            exec('cd ' . DIR_FS_CATALOG . ' && mysqldump --opt -h' . DB_SERVER . ' -u' . DB_SERVER_USERNAME . ' -p' . DB_SERVER_PASSWORD . ' ' . DB_DATABASE . ' configuration platforms_configuration > sql/bkconfigurations.sql');
-
+            if (function_exists('exec')) {
+                exec('cd ' . DIR_FS_CATALOG . ' && mysqldump --opt -h' . DB_SERVER . ' -u' . DB_SERVER_USERNAME . ' -p' . DB_SERVER_PASSWORD . ' ' . DB_DATABASE . ' configuration platforms_configuration > sql/bkconfigurations.sql');
+            }
 
             $showCheckout = (new yii\db\Query())->from(TABLE_CONFIGURATION)->where(['configuration_key' => 'EXPRESS_PAYMENTS_AT_CHECKOUT'])->select('configuration_value')->scalar();
 

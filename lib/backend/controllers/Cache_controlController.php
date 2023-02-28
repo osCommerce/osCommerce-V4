@@ -286,6 +286,8 @@ class Cache_controlController extends Sceleton  {
         }
         
         if (Yii::$app->request->post('do_migrations') == 1) {
+            defined('STDIN') or define('STDIN', fopen('php://input', 'r'));
+            defined('STDOUT') or define('STDOUT', fopen('php://output', 'w'));
             $oldApp = \Yii::$app;
             new \yii\console\Application([
                 'id' => 'Command runner',
@@ -296,11 +298,26 @@ class Cache_controlController extends Sceleton  {
                         'class' => 'yii\caching\FileCache',
                         'cachePath' => '@frontend/runtime/cache'
                     ],
+                    'log' => [
+                        'targets' => [
+                            [
+                                'class' => 'yii\log\FileTarget',
+                                'levels' => ['error', 'warning'],
+                            ],
+                        ],
+                    ],
+                    'errorHandler' => [
+                        'errorAction' => 'index/error',
+                        'class' => '\common\classes\TlErrorHandler',
+                    ],
                 ],
             ]);
+            ob_start();
             \Yii::$app->runAction('migrate/up', ['migrationPath' => '@console/migrations/', 'interactive' => false]);
+            $buffer = ob_get_clean();
             \Yii::$app = $oldApp;
-            $message = 'Migrations applied';
+            $message = strpos($buffer, 'Migration failed') ? 'Migration failed' : 'Migrations applied';
+            \Yii::warning("$message\n$buffer");
             ?>
             <div class="pop-mess-cont pop-mess-cont-<?= $messageType?>">
                 <?= $message?>

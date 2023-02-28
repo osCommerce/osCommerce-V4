@@ -355,6 +355,10 @@ class SaveAttributesAndInventory
                         }
                     }
 
+                    if ($ext = \common\helpers\Acl::checkExtensionAllowed('UserGroupsRestrictions', 'allowed')) {
+                        $ext::saveInventory($db_uprid, $post_uprid);
+                    }
+
                     if ($ext = \common\helpers\Acl::checkExtensionAllowed('AttributesDetails', 'allowed')) {
                         $ext::saveProduct($inventory_id, $post_uprid);
                     }

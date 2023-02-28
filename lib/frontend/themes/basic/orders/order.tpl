@@ -94,7 +94,7 @@
         }
     </style>
 </head>
-<body>
+<body{if Info::isAdmin()} class="is-admin"{/if}>
 {Block::widget(['name' => $page_name|cat:'_header', 'params' => ['type' => $type, 'params' => $params]])}
 {Block::widget(['name' => $page_name, 'params' => ['type' => $type, 'params' => $params]])}
 {Block::widget(['name' => $page_name|cat:'_footer', 'params' => ['type' => $type, 'params' => $params]])}

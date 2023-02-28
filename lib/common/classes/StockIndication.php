@@ -372,6 +372,17 @@ class StockIndication
             }
         }
 
+        if ($ext = \common\helpers\Acl::checkExtensionAllowed('UserGroupsRestrictions', 'isAllowed')) {
+            if ($data_array['products_id']) {
+                if (!$ext::isStockAvailable($data_array['products_id'])) {
+                    $stock_indication_id = 0;
+                    $data_array['stock_indication_id'] = 0;
+                    $data_array['stock_delivery_terms_id'] = 0;
+                    $data_array['products_quantity'] = 0;
+                }
+            }
+        }
+
         if ($is_virtual)
         {
             $add_to_cart = $add_to_cart = $productItem->cart_button;
