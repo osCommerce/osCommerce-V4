@@ -267,7 +267,7 @@ class Style
             foreach ($rows as $row) {
                 $rowExplode = explode(':', $row);
                 $attribute = trim($rowExplode[0]);
-                $value = isset($rowExplode[1]) ? trim($rowExplode[1]) : '';
+                $value = (isset($rowExplode[1]) ? trim($rowExplode[1]) : '');
                 if ($selector && $attribute && $value !== '') {
                     $attributeTl = self::parsAttributes($attribute, $value);
                     foreach ($attributeTl as $item) {
@@ -862,11 +862,6 @@ class Style
                     $borderColor = $matches[1];
                 }
                 if ($borderColor) {
-                    if (is_array($borderColor)) {
-                        echo '<pre>';
-                        var_dump($borderColor);
-                        echo '</pre>';die;
-                    }
                     $attr[] = [
                         'attribute' => 'border-top-color',
                         'value' => $borderColor
@@ -1558,7 +1553,7 @@ class Style
                 }
                 krsort($mediaSizes);
                 foreach ($mediaSizes as $media) {
-                    $arr = $item[$media] ?? '';
+                    $arr = $item[$media] ?? null;
                     $query = tep_db_fetch_array(tep_db_query("select setting_value from " . TABLE_THEMES_SETTINGS . " where id = '" . $media . "'"));
                     $arr2 = explode('w', $query['setting_value']);
                     $media = '';
@@ -1716,10 +1711,10 @@ class Style
         }
         if (isset($attributes['font-family']) && !$to_pdf){
             if (Yii::$app->controller->action->id == 'get-css' || stripos($attributes['font-family'], "'") !== false || stripos($attributes['font-family'], '"') !== false) {
-                $style .= $displacement . 'font-family:' . $attributes['font-family'] . '' . (isset($importantArr['font-family']) ? $importantArr['font-family'] : '') . ';' . $br;
+                $style .= $displacement . 'font-family:' . $attributes['font-family'] . '' . $importantArr['font-family'] . ';' . $br;
             } else {
                 if ($attributes['font-family'] == 'inherit') {
-                    $style .= $displacement . 'font-family:inherit' . (isset($importantArr['font-family']) ? $importantArr['font-family'] : '') . ';' . $br;
+                    $style .= $displacement . 'font-family:inherit' . $importantArr['font-family'] . ';' . $br;
                 } else {
                     $style .= $displacement . 'font-family:\'' . $attributes['font-family'] . '\', Verdana, Arial, sans-serif' . (isset($importantArr['font-family']) ? $importantArr['font-family'] : '') . ';' . $br;
                 }
@@ -1784,7 +1779,7 @@ class Style
                 $attributes['border-top-color'];
         } else {
             if (isset($attributes['border-top-width'])) {
-                $style .= $displacement . 'border-top-width:' . $attributes['border-top-width'] . self::dimension(@$attributes['border_top_width_measure']) . (isset($importantArr['border-top-width']) ? $importantArr['border-top-width'] : '') . ';' . $br;
+                $style .= $displacement . 'border-top-width:' . $attributes['border-top-width'] . self::dimension($attributes['border_top_width_measure']) . $importantArr['border-top-width'] . ';' . $br;
             }
             if (isset($attributes['border-top-color']) && $attributes['border-top-color']) {
                 $style .= $displacement . 'border-top-color:' . $attributes['border-top-color'] . ArrayHelper::getValue($importantArr, 'border-top-color') . ';' . $br;
@@ -1883,7 +1878,7 @@ class Style
                 $attributes['border-top-left-radius'] . self::dimension($attributes['border_radius_1_measure']) . ' ' .
                 $attributes['border-top-right-radius'] . self::dimension($attributes['border_radius_2_measure']) . ' ' .
                 $attributes['border-bottom-right-radius'] . self::dimension($attributes['border_radius_3_measure']) . ' ' .
-                $attributes['border-bottom-left-radius'] . self::dimension($attributes['border_radius_4_measure']) . (isset($importantArr['border-radius']) ? $importantArr['border-radius'] : '') . ';' . $br;
+                $attributes['border-bottom-left-radius'] . self::dimension($attributes['border_radius_4_measure']) . $importantArr['border-radius'] . ';' . $br;
         } else {
             if (isset($attributes['border-top-left-radius'])) {
                 $style .= $displacement . 'border-top-left-radius:' . $attributes['border-top-left-radius'] . self::dimension($attributes['border_radius_1_measure']) . $importantArr['border-top-left-radius'] . ';' . $br;
@@ -1954,34 +1949,34 @@ class Style
                 $attributes['margin-left'] == $attributes['margin-right']
             ) {
                 $style .= $displacement . 'margin:' .
-                    $attributes['margin-top'] . self::dimension(@$attributes['margin_top_measure']) . ' ' .
-                    $attributes['margin-right'] . self::dimension(@$attributes['margin_right_measure'], '', $attributes['margin-right']) . self::cssImportant($importantArr, 'margin') . ';' . $br;
+                    $attributes['margin-top'] . self::dimension($attributes['margin_top_measure']) . ' ' .
+                    $attributes['margin-right'] . self::dimension($attributes['margin_right_measure'], '', $attributes['margin-right']) . self::cssImportant($importantArr, 'margin') . ';' . $br;
             } elseif ($attributes['margin-left'] == $attributes['margin-right']) {
                 $style .= $displacement . 'margin:' .
-                    $attributes['margin-top'] . self::dimension(@$attributes['margin_top_measure']) . ' ' .
+                    $attributes['margin-top'] . self::dimension($attributes['margin_top_measure']) . ' ' .
                     (
-                    isset($attributes['margin_right_measure']) && $attributes['margin_right_measure'] == 'auto' ?
+                    $attributes['margin_right_measure'] == 'auto' ?
                         'auto' :
-                        $attributes['margin-right'] . self::dimension(@$attributes['margin_right_measure'], '', $attributes['margin-right'])
+                        $attributes['margin-right'] . self::dimension($attributes['margin_right_measure'], '', $attributes['margin-right'])
                     ) . ' ' .
                     $attributes['margin-bottom'] . self::dimension($attributes['margin_bottom_measure']) . self::cssImportant($importantArr, 'margin') . ';' . $br;
-            } elseif (ArrayHelper::getValue($attributes, 'margin_right_measure') == 'auto') {
+            } elseif ($attributes['margin_right_measure'] == 'auto') {
                 $style .= $displacement . 'margin:' .
-                    $attributes['margin-top'] . self::dimension(@$attributes['margin_top_measure']) . ' auto ' .
-                    $attributes['margin-bottom'] . self::dimension(@$attributes['margin_bottom_measure']) . self::cssImportant($importantArr, 'margin') . ';' . $br;
+                    $attributes['margin-top'] . self::dimension($attributes['margin_top_measure']) . ' auto ' .
+                    $attributes['margin-bottom'] . self::dimension($attributes['margin_bottom_measure']) . self::cssImportant($importantArr, 'margin') . ';' . $br;
             } else {
                 $style .= $displacement . 'margin:' .
-                    $attributes['margin-top'] . self::dimension(@$attributes['margin_top_measure']) . ' ' .
+                    $attributes['margin-top'] . self::dimension($attributes['margin_top_measure']) . ' ' .
                     (
-                        isset($attributes['margin_right_measure']) && $attributes['margin_right_measure'] == 'auto' ?
+                        $attributes['margin_right_measure'] == 'auto' ?
                             'auto' :
-                            $attributes['margin-right'] . self::dimension(@$attributes['margin_right_measure'], '', $attributes['margin-right'])
+                            $attributes['margin-right'] . self::dimension($attributes['margin_right_measure'], '', $attributes['margin-right'])
                     ) . ' ' .
-                    $attributes['margin-bottom'] . self::dimension(@$attributes['margin_bottom_measure']) . ' ' .
+                    $attributes['margin-bottom'] . self::dimension($attributes['margin_bottom_measure']) . ' ' .
                     (
-                    isset($attributes['margin_left_measure']) && $attributes['margin_left_measure'] == 'auto' ?
+                    $attributes['margin_left_measure'] == 'auto' ?
                         'auto' :
-                        $attributes['margin-left'] . self::dimension(@$attributes['margin_left_measure'], '', $attributes['margin-left'])
+                        $attributes['margin-left'] . self::dimension($attributes['margin_left_measure'], '', $attributes['margin-left'])
                     ) . self::cssImportant($importantArr, 'margin') . ';' . $br;
             }
         } else {
@@ -3015,7 +3010,7 @@ class Style
         Style::createCache($params['theme_name'], $params['widget']);
 
         $data = $boxSaveData ?? [];
-        $data['theme_name'] = $params['theme_name'] ?? '';
+        $data['theme_name'] = $params['theme_name'];
         $data['attributes_changed'] = $attributesChanged;
         $data['attributes_delete'] = $attributesDelete;
         $data['attributes_new'] = $attributesNew;

@@ -40,14 +40,14 @@ class StructuredProducts extends Widget {
         if (!is_object($this->order))
             throw new \Exception('Invalid order object');
         $this->structure = new \backend\design\boxes\invoice\StructuredProducts;
-        if ($this->settings[0]['sort_order']) {
+        if (!empty($this->settings[0]['sort_order'])) {
             $this->fields = explode(";", $this->settings[0]['sort_order']);
         } else {
             $this->fields = $this->structure->baseColumns;
         }
         if (is_array($this->fields)) {
             foreach ($this->fields as $key => $field) {
-                if (!(isset($this->settings[0][$field]) || $this->settings[0][$field])) {
+                if (empty($this->settings[0][$field])) {
                     unset($this->fields[$key]);
                 }
             }

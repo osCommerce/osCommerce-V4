@@ -8,8 +8,8 @@ class TlMainFileLogWriter extends \yii\log\FileTarget
     protected function getContextMessage()
     {
         $sysInfo = \common\helpers\System::get_system_information();
-        $sysInfo['ocCommerce version'] = defined('PROJECT_VERSION')? PROJECT_VERSION : 'unknown' ;
-        $sysInfo['ocCommerce revision'] = defined('MIGRATIONS_DB_REVISION')? MIGRATIONS_DB_REVISION : 'unknown' ;
+        $sysInfo['osCommerce version'] = defined('PROJECT_VERSION')? PROJECT_VERSION : 'unknown' ;
+        $sysInfo['osCommerce revision'] = defined('MIGRATIONS_DB_REVISION')? MIGRATIONS_DB_REVISION : 'unknown' ;
         $s = '';
         foreach($sysInfo as $key => $info) {
             if (!empty($info) && $info != 'unknown') {

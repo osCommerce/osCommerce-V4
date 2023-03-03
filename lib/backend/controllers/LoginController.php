@@ -126,8 +126,8 @@ class LoginController extends Controller {
             }
 
             if ($get['login'] !== 'fail') {
-                $email_address = tep_db_prepare_input($_POST['email_address']);
-                $password = tep_db_prepare_input($_POST['password']);
+                $email_address = (isset($_POST['email_address']) ? tep_db_prepare_input($_POST['email_address']) : '');
+                $password = (isset($_POST['password']) ? tep_db_prepare_input($_POST['password']) : '');
 
                 $adminLoginLogRecord = new \common\models\AdminLoginLog();
                 $adminLoginLogRecord->all_event = 1;

@@ -30,7 +30,7 @@ class Compare
         $parentId = true;
         $cutout = 20;
         while ($categoryId && $parentId && $cutout) {
-            $parentId = \common\models\Categories::findOne(['categories_id' => $categoryId])->parent_id;
+            $parentId = \common\models\Categories::findOne(['categories_id' => $categoryId])->parent_id ?? null;
             if ($parentId) {
                 $categoryId = $parentId;
             }

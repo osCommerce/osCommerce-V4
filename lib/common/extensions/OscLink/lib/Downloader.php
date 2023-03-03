@@ -63,7 +63,6 @@ class Downloader
             case 'get':
                 $stream_context_params['http']['method']  = 'GET';
                 $stream_context_params['http']['header']  = 'Cache-Control: no-store';
-                $url .= '&key=' . $this->apiKey;
                 break;
             case 'post':
                 $stream_context_params['http']['method']  = 'POST';
@@ -91,6 +90,9 @@ class Downloader
         $url = $this->apiUrl . '?';
         foreach($params as $name => $value) {
             $url .=  $name . '=' . urlencode($value) . '&';
+        }
+        if ($this->apiMethod == 'get') {
+            $url .= 'key=' . $this->apiKey;
         }
 
         $feed = $params['feed'] ?? null;

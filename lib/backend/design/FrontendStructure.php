@@ -920,6 +920,10 @@ class FrontendStructure
         self::init();
         $theme = \common\models\Themes::findOne(['theme_name' => self::$theme_name]);
 
+        if (!$theme) {
+            return [];
+        }
+
         $_theme_id = (int)$theme->id;
         $themePlatforms = [];
         $platforms = \common\models\PlatformsToThemes::find()->where([

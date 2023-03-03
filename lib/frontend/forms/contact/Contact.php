@@ -128,7 +128,7 @@ class Contact extends \frontend\forms\registration\CustomerRegistration {
             \common\helpers\Mail::send(
                 $to_name, $platform_config->const_value('STORE_OWNER_EMAIL_ADDRESS'),
                 EMAIL_SUBJECT, $this->content,
-                $this->name, $this->email_address, //$to_name, $platform_config->const_value('STORE_OWNER_EMAIL_ADDRESS'),
+                $to_name, $platform_config->const_value('STORE_OWNER_EMAIL_ADDRESS'),
                 array(), 'CC: ' . $to_email . "\n" . 'Reply-To: "' . $this->name . '" <' . $this->email_address . '>'
             );
         } else {
@@ -136,7 +136,7 @@ class Contact extends \frontend\forms\registration\CustomerRegistration {
             \common\helpers\Mail::send(
                 $to_name, $to_email,
                 EMAIL_SUBJECT, $this->content,
-                $this->name, $this->email_address, //$to_name, $to_email,
+                $to_name, $to_email,
                 array(), 'Reply-To: "' . $this->name . '" <' . $this->email_address . '>'
             );
         }

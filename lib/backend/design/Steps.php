@@ -22,6 +22,7 @@ use common\models\ThemesSettings;
 use common\models\ThemesSteps;
 use common\models\ThemesStyles;
 use common\classes\design as DesignerHelper;
+use yii\helpers\ArrayHelper;
 
 class Steps
 {
@@ -365,8 +366,8 @@ class Steps
             'page_name' => Theme::getPageName($data['box_id']),
             'box_settings' => self::settingVisibilityToStep($data['box_settings'], $data['theme_name']),
             'box_settings_old' => self::settingVisibilityToStep($data['box_settings_old'], $data['theme_name']),
-            'widget_params' => $data['widget_params'],
-            'widget_params_old' => $data['widget_params_old'],
+            'widget_params' => $data['widget_params'] ?? '',
+            'widget_params_old' => $data['widget_params_old'] ?? '',
         ];
 
         self::stepSave('boxSave', $data_s, $data['theme_name']);
@@ -378,7 +379,7 @@ class Steps
         if (!isset($data['box_settings_old']) || !is_array($data['box_settings_old'])) {
             return '';
         }
-        $themeName = $data['box_settings_old'][0]['theme_name'];
+        $themeName = ArrayHelper::getValue($data, ['box_settings_old', 0, 'theme_name'], false);
         if (!$themeName) {
             return '';
         }
@@ -386,7 +387,7 @@ class Steps
         if (!$designBox) {
             return '';
         }
-        $designBox->widget_params = $data['widget_params_old'];
+        $designBox->widget_params = $data['widget_params_old'] ?? '';
         $designBox->save();
 
         DesignBoxesSettingsTmp::deleteAll([
@@ -422,7 +423,7 @@ class Steps
         if (!$designBox) {
             return '';
         }
-        $designBox->widget_params = $data['widget_params'];
+        $designBox->widget_params = $data['widget_params'] ?? '';
         $designBox->save();
         DesignBoxesSettingsTmp::deleteAll([
             'microtime' => $data['microtime'],
@@ -1223,10 +1224,6 @@ class Steps
             'setting_group' => 'added_page_settings',
             'setting_name' => $data['page_name'],
         ]);
-        echo '<pre>';
-        var_dump($step['theme_name']);
-        var_dump($data['page_name']);
-        echo '</pre>';
 
         if (!isset($data['settings_old']) || !is_array($data['settings_old'])) {
             return '';
@@ -1317,7 +1314,7 @@ class Steps
 
         $trunk = array();
         $tree = array();
-        while (is_array($log[$current])){
+        while (isset($log[$current]) && is_array($log[$current])){
             $trunk[] = $current;
             $tree[$current] = $log[$current];
             $tree[$current]['branches'] = 1;
@@ -1336,7 +1333,7 @@ class Steps
 
         while (count($branches) > 0) {
             foreach ($branches as $item) {
-                if (is_array($tree[$item['parent_id']])) {
+                if (isset($tree[$item['parent_id']]) && is_array($tree[$item['parent_id']])) {
                     $tree[$item['parent_id']]['branches']++;
 
                     $tree[$item['steps_id']] = $item;

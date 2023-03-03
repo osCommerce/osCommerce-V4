@@ -165,7 +165,7 @@ class ProductsQuery {
       if ($customer_groups_id>0) {
             $this->query
                 ->leftJoin(['pp' => TABLE_PRODUCTS_PRICES], [
-                                                        'pp.products_id'   => new \Yii\db\Expression('p.products_id'),
+                                                        'pp.products_id'   => new \yii\db\Expression('p.products_id'),
                                                         'pp.groups_id'     => (int)$customer_groups_id,
                                                         'pp.currencies_id' => (USE_MARKET_PRICES == 'True' ? (int)$currency_id : 0),
                                                       ])
@@ -180,7 +180,7 @@ class ProductsQuery {
       if ($this->skipTop=='all') {
             // LEFTJOIN instead of NOT EXISTS SELECT => 2 tmp_tables less
             $this->query->leftJoin(['p2cskip' => TABLE_PRODUCTS_TO_CATEGORIES], [
-                                                        'p2cskip.products_id'   => new \Yii\db\Expression('p.products_id'),
+                                                        'p2cskip.products_id'   => new \yii\db\Expression('p.products_id'),
                                                         'p2cskip.categories_id' => 0
                                                       ])
                 ->andWhere(['<>', new \yii\db\Expression('COALESCE(p2cskip.categories_id, 1)'), 0]); // p2cskip.categories_id <> 0 (null safe)

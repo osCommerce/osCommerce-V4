@@ -131,21 +131,21 @@ class InstallController extends Sceleton {
                         'class' => 'yii\caching\FileCache',
                         'cachePath' => '@frontend/runtime/cache'
                     ],
-                ],
-                'log' => [
-                    'targets' => [
-                        [
-                            'class' => 'yii\log\FileTarget',
-                            'levels' => ['error', 'warning'],
+                    'log' => [
+                        'targets' => [
+                            [
+                                'class' => 'yii\log\FileTarget',
+                                'levels' => ['error', 'warning'],
+                            ],
                         ],
                     ],
-                ],
-                'errorHandler' => [
-                    'errorAction' => 'index/error',
-                    'class' => '\common\classes\TlErrorHandler',
+                    'errorHandler' => [
+                        'errorAction' => 'index/error',
+                        'class' => '\common\classes\TlErrorHandler',
+                    ],
                 ],
             ]);
-            \Yii::$app->runAction('migrate/up', ['migrationPath' => '@console/migrations/', 'interactive' => false]);
+            \Yii::$app->runAction('migrate/up', ['migrationPath' => '@console/migrations/', 'interactive' => false, 'compact' => true]);
             \Yii::$app = $oldApp;
         }
         
@@ -636,6 +636,7 @@ class InstallController extends Sceleton {
                             }
                             $this->doInstallRecord($filename, (string)$distribution->type, (string)($distribution->class ?? ''), (string)$distribution->version, $oldData);
                             $this->doSystem = true;
+                            $this->doTheme = true;
                             $zip->close();
                             break;
                         case 'payment':// Payment
@@ -744,6 +745,7 @@ class InstallController extends Sceleton {
                             } catch (\Exception $ex) {
                                 //echo "err:".$ex->getMessage()."\n".$ex->getTraceAsString()."\n";die();
                                 $status = false;
+                                $this->sendEcho("<font color='red'>Exception: " . $ex->getMessage() . ".</font><br>\n" );
                             }
                             break;
                         case 'system':
@@ -979,6 +981,7 @@ class InstallController extends Sceleton {
 
     private function runFileDst($rules, $zipFile, $pathP, $echo = false) 
     {
+//        $pathP = \yii\helpers\BaseFileHelper::normalizePath($pathP, '/');
         $path = Yii::getAlias('@site_root') . DIRECTORY_SEPARATOR;
         $zip = new \ZipArchive();
         if ($zip->open($path . 'uploads' . DIRECTORY_SEPARATOR . $zipFile) === true) {
@@ -1006,7 +1009,9 @@ class InstallController extends Sceleton {
                         break;
                     case 'modify':
                         if ($src->type == 'file') {
-                            @unlink($pathP . DIRECTORY_SEPARATOR . $dst);
+                            $fileName = $pathP . DIRECTORY_SEPARATOR . $dst;
+                            @rename($fileName, $fileName . '_old'); // to avoid 'Failed to open stream: Permission denied' under Windows
+                            @unlink($fileName . '_old');
                             $zip->extractTo($pathP, $dst);
                             if ($echo) echo "<font color='blue'>" . TEXT_FILE . " $dst " . TEXT_MODIFIED . ".</font><br>\n";
                         }
@@ -2604,7 +2609,7 @@ class InstallController extends Sceleton {
         try {
             \common\models\InstallIgnoreList::deleteAll();
         } catch (\Exception $exc) {
-            //echo $exc->getTraceAsString();
+            $this->sendEcho("<font color='red'>Exception: " . $exc->getMessage() . ".</font><br>\n" );
         }
 
         
@@ -2674,8 +2679,12 @@ class InstallController extends Sceleton {
                         } else {
                             $this->sendEcho(TEXT_FOUND_UPDATE . ". " . TEXT_FILE . " $filename " . TEXT_ALREADY_DOWNLOADED . ".<br>\n");
                         }
-                        
-                        $status = $this->installFileWithDependencies($filename, ['force' => $force], true);
+                        try {
+                            $status = $this->installFileWithDependencies($filename, ['force' => $force], true);
+                        } catch (\Exception $exc) {
+                            $status = false;
+                            $this->sendEcho("<font color='red'>Exception: " . $exc->getMessage() . ".</font><br>\n" );
+                        }
                         $force = 0;
                         ob_flush();
                         flush();
@@ -2704,7 +2713,11 @@ class InstallController extends Sceleton {
                             $updatedDate->configuration_value = date('Y-m-d H:i:s');
                             $updatedDate->save(false);
                             $needReCache = true;
-                            $this->runSystemReCache(true);
+                            try {
+                                $this->runSystemReCache(true);
+                            } catch (\Exception $exc) {
+                                $this->sendEcho("<font color='red'>Exception: " . $exc->getMessage() . ".</font><br>\n" );
+                            }
                             ob_flush();
                             flush();
                             //@unlink($path . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . $filename);

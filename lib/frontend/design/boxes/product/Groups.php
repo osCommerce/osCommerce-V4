@@ -124,7 +124,7 @@ class Groups extends Widget {
             $properties_array[$property['properties_id']] = $property;
         }
 
-        if (count($properties_array) > 0) {
+        if (is_array($properties_array) && count($properties_array) > 0) {
             $prop_ids = array_keys($properties_array);
             $pruid_mask = [];
             $properties_names = [];

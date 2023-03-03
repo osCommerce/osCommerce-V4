@@ -3879,7 +3879,7 @@ class OrdersController extends Sceleton {
                     $orders_products[$__order_products[$i]['orders_products_id']] = $__order_products[$i];
                     $orders_products[$__order_products[$i]['orders_products_id']]['selected'] = true;
                 }
-                $already_selected_products_query = (new \Yii\db\Query())->select('orders_products_id, products_quantity')->from(TABLE_ORDERS_LABEL_TO_ORDERS_PRODUCTS)->where(['orders_id' => $orders_id])->all();
+                $already_selected_products_query = (new \yii\db\Query())->select('orders_products_id, products_quantity')->from(TABLE_ORDERS_LABEL_TO_ORDERS_PRODUCTS)->where(['orders_id' => $orders_id])->all();
                 foreach ($already_selected_products_query as $already_selected_products) {
                     if ($orders_products[$already_selected_products['orders_products_id']]['qty'] > $already_selected_products['products_quantity']) {
                         $orders_products[$already_selected_products['orders_products_id']]['qty'] -= $already_selected_products['products_quantity'];

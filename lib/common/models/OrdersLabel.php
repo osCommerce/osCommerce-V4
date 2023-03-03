@@ -57,7 +57,7 @@ class OrdersLabel extends ActiveRecord {
     public function getOrdersLabelProducts() {
         $selected_order_products = [];
         if ($this->orders_id && $this->orders_label_id) {
-            foreach ((new \Yii\db\Query())->select('orders_products_id, products_quantity')->from(TABLE_ORDERS_LABEL_TO_ORDERS_PRODUCTS)->where(['orders_id' => $this->orders_id, 'orders_label_id' => $this->orders_label_id])->all() as $selected_products) {
+            foreach ((new \yii\db\Query())->select('orders_products_id, products_quantity')->from(TABLE_ORDERS_LABEL_TO_ORDERS_PRODUCTS)->where(['orders_id' => $this->orders_id, 'orders_label_id' => $this->orders_label_id])->all() as $selected_products) {
                 $selected_order_products[$selected_products['orders_products_id']] = $selected_products['products_quantity'];
             }
         }

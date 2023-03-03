@@ -3559,7 +3559,7 @@ provide you with a "Source Identifier" for every PayPal account used. Do not mak
     
     function get_extra_params($platform_id) {
         $response = [];
-        foreach ((new \Yii\db\Query())
+        foreach ((new \yii\db\Query())
                 ->from('paypal_seller_info')
                 ->where('platform_id = ' . (int)$platform_id)
                 ->all() as $info ) {

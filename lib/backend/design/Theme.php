@@ -451,7 +451,7 @@ class Theme
             foreach ($vArr as $vKey => $vItem) {
                 if ($vItem > 10) {
                     $vMedia = tep_db_fetch_array(tep_db_query("select setting_value from " . TABLE_THEMES_SETTINGS . " where id = '" . $vItem . "'"));
-                    $vArr[$vKey] = $vMedia['setting_value'];
+                    $vArr[$vKey] = $vMedia['setting_value'] ?? '';
                 }
             }
             $item['visibility'] = Style::vStr($vArr, true);
@@ -503,7 +503,7 @@ class Theme
         if (!in_array($widget['widget_name'], self::$widgetTranslationKeysWidgetsNames)) {
             return $translations;
         }
-        if (is_array($widget['settings']))
+        if (isset($widget['settings']) && is_array($widget['settings']))
         foreach ($widget['settings'] as $setting) {
             if (!isset($setting['setting_name']) || !in_array($setting['setting_name'], self::$widgetTranslationKeysSettingsNames)) {
                 continue;

@@ -101,7 +101,7 @@
         })
 
 
-        $('.btn-confirm, .save-group', form).on('click', function(){
+        $('.banner-group-form .btn-confirm, .top-buttons .save-group').on('click', function(){
             $.post('{$app->urlManager->createUrl('banner_manager/banner-groups-save')}', form.serializeArray(), function(d){
                 if (d.error) {
                     alertMessage(d.text, 'alert-message');

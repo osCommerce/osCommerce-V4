@@ -572,7 +572,7 @@ class MenuHelper {
                 ->where(['item_id' => $menuItem['id']])
                 ->asArray()->all();
             foreach ($menuTitles as $menuTitle) {
-                if (!$languages[$menuTitle['language_id']]) {
+                if (!isset($languages[$menuTitle['language_id']]) || !$languages[$menuTitle['language_id']]) {
                     $lng = Language::get_language_code($menuTitle['language_id']);
                     $languages[$menuTitle['language_id']] = $lng['code'];
                 }

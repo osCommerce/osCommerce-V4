@@ -86,7 +86,7 @@ class Translation
 
         define($translation['translation_key'], '##' . $translation['translation_key'] . '##');
 
-        if (self::$translations[$translation['translation_key']]) {
+        if (isset(self::$translations[$translation['translation_key']]) && self::$translations[$translation['translation_key']]) {
             return true;
         }
 

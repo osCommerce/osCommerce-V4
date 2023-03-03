@@ -36,7 +36,7 @@ class Groups
 
         $groups = DesignBoxesGroups::find()->asArray()->all();
         foreach ($groups as $group) {
-            if ($files[$group['file']]) {
+            if (isset($files[$group['file']]) && $files[$group['file']]) {
                 unset($files[$group['file']]);
             } else {
                 DesignBoxesGroups::deleteAll(['file' => $group['file']]);

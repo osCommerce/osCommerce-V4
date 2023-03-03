@@ -158,9 +158,9 @@
                     <label class="col-xs-3 align-right">{$smarty.const.TEXT_BANNERS_GROUP}</label>
                     <div class="col-xs-4 col-lg-3">{$banners_data['banners_group']}</div>
                     <div class="col-xs-3">
-                        <span href="{Yii::$app->urlManager->createUrl(['banner_manager/newgroup'])}" class="btn btn-add-group">
+                        {*<span href="{Yii::$app->urlManager->createUrl(['banner_manager/newgroup'])}" class="btn btn-add-group">
                             {$smarty.const.TEXT_ADD_NEW_BANNER}
-                        </span>
+                        </span>*}
                     </div>
                 </div>
 
@@ -439,7 +439,7 @@
 
                 function saveGroup() {
                     const data = $form.serializeArray();
-                    data.push({ name: 'group_id', value: name});
+                    //data.push({ name: 'group_id', value: name});
 
                     $.post('banner_manager/banner-groups-save', data, function(response){
                         if (response.error) {

@@ -212,7 +212,7 @@ class Banner_managerController extends Sceleton
             return false;
         }
 
-        if ($banner['banners_image'] && is_file(Images::getFSCatalogImagesPath() . $banner['banners_image'])) {
+        if (isset($banner['banners_image']) && is_file(Images::getFSCatalogImagesPath() . $banner['banners_image'])) {
 
             $type = explode('/', mime_content_type(Images::getFSCatalogImagesPath() . $banner['banners_image']));
             if ($type[0] == 'image') {
@@ -220,7 +220,7 @@ class Banner_managerController extends Sceleton
             } else {
                 return '<span class="ico-video"></span>';
             }
-        } elseif (is_file(DIR_FS_CATALOG . $banner['banners_image'])) {
+        } elseif (isset($banner['banners_image']) && is_file(DIR_FS_CATALOG . $banner['banners_image'])) {
 
             $type = explode('/', mime_content_type(DIR_FS_CATALOG . $banner['banners_image']));
             if ($type[0] == 'image') {
@@ -1056,7 +1056,7 @@ class Banner_managerController extends Sceleton
                 $platform_statuses = Html::hiddenInput('platform_status[' . Platform::firstId() . ']', 1);
             }
 
-            $mainDesc['status'] = tep_draw_checkbox_field('status', '1', ($banner_data['status'] ? true : false), '', 'class="check_on_off"');
+            $mainDesc['status'] = tep_draw_checkbox_field('status', '1', (isset($banner_data['status']) && $banner_data['status'] ? true : false), '', 'class="check_on_off"');
 
             $mainDesc['sort_order'] = tep_draw_input_field('sort_order', ($banner_data ? $banner_data['sort_order'] : ''), 'class="form-control"');
             $mainDesc['nofollow'] = tep_draw_checkbox_field('nofollow', '', ($banner_data ? $banner_data['nofollow'] : ''), 'class="form-control"');
@@ -1373,7 +1373,12 @@ class Banner_managerController extends Sceleton
             return $this->redirect(Yii::$app->urlManager->createUrl(['banner_manager/banner-groups-edit', 'platform_id' => $platform_id, 'group_id' => $groupId, 'row_id' => $row_id]));
         }
 
-        $groupName = BannersGroups::findOne(['id' => $groupId])->banners_group;
+        $bannersGroups = BannersGroups::findOne(['id' => $groupId]);
+        if ($bannersGroups) {
+            $groupName = $bannersGroups->banners_group;
+        } else {
+            $groupName = '';
+        }
 
         $this->selectedMenu = array('marketing', 'banner_manager');
         $this->topButtons[] = '<span class="btn btn-confirm save-group">' . IMAGE_SAVE . '</span>';
@@ -1429,7 +1434,7 @@ class Banner_managerController extends Sceleton
             if (!$bannersGroups) {
                 $bannersGroups = new BannersGroups();
             }
-            $bannersGroups->banners_group = $post['banners_group'];
+            $bannersGroups->banners_group = $post['banners_group'] ?? '';
             $bannersGroups->save();
 
             $groupSizes = BannersGroupsSizes::find()
@@ -1559,8 +1564,7 @@ class Banner_managerController extends Sceleton
             foreach ($groupSizes as $size) {
                 $type = 'image';
                 $image = '';
-                if (isset($groupImagesLang[$language['id']])) {
-                    $image = $groupImagesLang[$language['id']][$size['image_width']]['image'];
+                if ($image = ArrayHelper::getValue($groupImagesLang, [$language['id'], $size['image_width'], 'image'])) {
 
                     if (is_file(Images::getFSCatalogImagesPath() . $image)) {
                         $type = explode('/', mime_content_type(Images::getFSCatalogImagesPath() . $image));
@@ -1629,12 +1633,36 @@ class Banner_managerController extends Sceleton
                 if (!isset($groupImage[$language['id']])) {
                     continue;
                 }
-                $image = str_replace(DIR_WS_IMAGES, '', $groupImage[$language['id']][$groupSize['image_width']]);
-                $imageUpload = $groupImageUpload[$language['id']][$groupSize['image_width']];
-                $imageDelete = $groupImageDelete[$language['id']][$groupSize['image_width']];
-                $svgDelete = $groupSvgDelete[$language['id']][$groupSize['image_width']];
-                $position = $positions[$language['id']][$groupSize['image_width']];
-                $fit = $fits[$language['id']][$groupSize['image_width']];
+                if (isset($groupImage[$language['id']]) && isset($groupImage[$language['id']][$groupSize['image_width']])){
+                    $image = str_replace(DIR_WS_IMAGES, '', $groupImage[$language['id']][$groupSize['image_width']]);
+                } else {
+                    $image = '';
+                }
+                if (isset($groupImageUpload[$language['id']]) && isset($groupImageUpload[$language['id']][$groupSize['image_width']])){
+                    $imageUpload = $groupImageUpload[$language['id']][$groupSize['image_width']];
+                } else {
+                    $imageUpload = '';
+                }
+                if (isset($groupImageDelete[$language['id']]) && isset($groupImageDelete[$language['id']][$groupSize['image_width']])){
+                    $imageDelete = $groupImageDelete[$language['id']][$groupSize['image_width']];
+                } else {
+                    $imageDelete = '';
+                }
+                if (isset($groupSvgDelete[$language['id']]) && isset($groupSvgDelete[$language['id']][$groupSize['image_width']])){
+                    $svgDelete = $groupSvgDelete[$language['id']][$groupSize['image_width']];
+                } else {
+                    $svgDelete = '';
+                }
+                if (isset($positions[$language['id']]) && isset($positions[$language['id']][$groupSize['image_width']])){
+                    $position = $positions[$language['id']][$groupSize['image_width']];
+                } else {
+                    $position = '';
+                }
+                if (isset($fits[$language['id']]) && isset($fits[$language['id']][$groupSize['image_width']])){
+                    $fit = $fits[$language['id']][$groupSize['image_width']];
+                } else {
+                    $fit = '';
+                }
 
                 $bannersGroupsImages = BannersGroupsImages::findOne([
                     'banners_id' => $bannersId,
@@ -1642,11 +1670,14 @@ class Banner_managerController extends Sceleton
                     'image_width' => $groupSize['image_width'],
                 ]);
 
-
                 $dotPos = strrpos($oldImage[$language['id']], '.');
                 $end = substr($oldImage[$language['id']], $dotPos);
                 $_oldImage = substr($oldImage[$language['id']], 0, $dotPos). '[' . $groupSize['image_width'] . ']' . $end;
-                $sameImage = str_contains(str_replace('\\', '/', $bannersGroupsImages->image), str_replace('\\', '/', $_oldImage));
+                if ($bannersGroupsImages) {
+                    $sameImage = str_contains(str_replace('\\', '/', $bannersGroupsImages->image), str_replace('\\', '/', $_oldImage));
+                } else {
+                    $sameImage = false;
+                }
                 $newImg = '';
 
                 $imgPath = 'banners' . DIRECTORY_SEPARATOR . $bannersId;
@@ -1663,8 +1694,8 @@ class Banner_managerController extends Sceleton
                         ->asArray()
                         ->one();
 
-                    if (is_file(DIR_FS_CATALOG_IMAGES . $mainImage['banners_image']) ||
-                        $sameImage
+                    if (isset($mainImage['banners_image']) && (is_file(DIR_FS_CATALOG_IMAGES . $mainImage['banners_image']) ||
+                        $sameImage)
                     ) {
                         $imgExplode = explode('/', str_replace('\\', '/', $mainImage['banners_image']));
                         $imgName = end($imgExplode);
@@ -1674,9 +1705,11 @@ class Banner_managerController extends Sceleton
 
                         $newImg = $imgPath . DIRECTORY_SEPARATOR . $name . '[' . $groupSize['image_width'] . ']' . $ext;
 
-                        if (!is_file(DIR_FS_CATALOG_IMAGES .$newImg)) {
+                        $type = explode('/', mime_content_type(DIR_FS_CATALOG_IMAGES . $mainImage['banners_image']));
+
+                        if (!is_file(DIR_FS_CATALOG_IMAGES .$newImg) && $type == 'image') {
                             $size = @GetImageSize(DIR_FS_CATALOG_IMAGES . $mainImage['banners_image']);
-                            if ($size[0]) {
+                            if (isset($size[0]) && $size[0]) {
 
                                 if ($groupSize['image_width'] && $groupSize['image_height'] && ($fit == 'cover' || !$fit)) {
                                     $scale = @max($groupSize['image_width'] / $size[0], $groupSize['image_height'] / $size[1]);

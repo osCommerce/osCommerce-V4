@@ -1159,15 +1159,6 @@
                 <filename></filename>
             </item>
             <item>
-                <sort_order>18</sort_order>
-                <acl_check></acl_check>
-                <config_check></config_check>
-                <box_type>0</box_type>
-                <path>banner_manager/banner-groups</path>
-                <title>BOX_BANNER_GROUPS</title>
-                <filename></filename>
-            </item>
-            <item>
                 <sort_order>19</sort_order>
                 <acl_check></acl_check>
                 <config_check></config_check>

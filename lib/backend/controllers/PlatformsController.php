@@ -1188,18 +1188,22 @@ class PlatformsController extends Sceleton {
         $results = tep_db_query("select * from " . TABLE_THEMES);
         $tInfo = array();
         while($results_array = tep_db_fetch_array ($results)){
-            $image = \common\models\ThemesSettings::findOne([
+            $themesSettings = \common\models\ThemesSettings::findOne([
                 'theme_name' => $results_array['theme_name'],
                 'setting_group' => 'hide',
                 'setting_name' => 'theme_image',
-            ])->setting_value;
-                $tInfo[] = array(
-                    'id'=> $results_array['id'],
-                    'theme_name'=> $results_array['theme_name'],
-                    'title'=> $results_array['title'],
-                    'description'=> $results_array['description'],
-                    'theme_image'=> $image
-                );
+            ]);
+            $image = '';
+            if ($themesSettings) {
+                $image = $themesSettings->setting_value;
+            }
+            $tInfo[] = array(
+                'id'=> $results_array['id'],
+                'theme_name'=> $results_array['theme_name'],
+                'title'=> $results_array['title'],
+                'description'=> $results_array['description'],
+                'theme_image'=> $image
+            );
         }
         return $this->render('addtheme.tpl', [
                 'results' => $tInfo,
@@ -1224,10 +1228,12 @@ class PlatformsController extends Sceleton {
         }
 
         $banners = \common\models\Banners::find()->alias('b')
-            ->select(['b.banners_id', 'b.banners_group', 'bl.banners_title'])
-            ->leftJoin(\common\models\BannersLanguages::tableName() . ' bl', 'b.banners_id = bl.banners_id')
-            ->where(['b.banners_group' => $bannerGroups, 'bl.language_id' => $languagesId])
-            ->orderBy('b.banners_group')
+            ->select(['b.banners_id', 'bg.banners_group', 'bl.banners_title'])
+            ->leftJoin(\common\models\BannersLanguages::tableName() . ' bl', 'b.banners_id = bl.banners_id and bl.language_id = ' . $languagesId)
+            ->leftJoin(\common\models\BannersGroups::tableName() . ' bg', 'bg.id = b.group_id')
+            ->where(['in', 'b.group_id', $bannerGroups])
+            ->orWhere(['in', 'bg.banners_group', $bannerGroups])
+            ->orderBy('bg.banners_group')
             ->asArray()->all();
 
         $assignedBanners = \common\models\BannersToPlatform::find()
@@ -2291,13 +2297,15 @@ class PlatformsController extends Sceleton {
 
         $theme = tep_db_fetch_array(tep_db_query("select t.* from " . TABLE_PLATFORMS_TO_THEMES . " AS p2t INNER JOIN " . TABLE_THEMES . " as t ON (p2t.theme_id=t.id) where p2t.is_default = 1 and p2t.platform_id = " . (int)$item_id));
 
-        $themeImage = \common\models\ThemesSettings::findOne([
-            'theme_name' => $theme['theme_name'],
-            'setting_group' => 'hide',
-            'setting_name' => 'theme_image',
-        ]);
-        if ($themeImage && $themeImage->setting_value) {
-            $theme['theme_image'] = $themeImage->setting_value;
+        if (isset($theme['theme_name'])) {
+            $themeImage = \common\models\ThemesSettings::findOne([
+                'theme_name' => $theme['theme_name'],
+                'setting_group' => 'hide',
+                'setting_name' => 'theme_image',
+            ]);
+            if ($themeImage && $themeImage->setting_value) {
+                $theme['theme_image'] = $themeImage->setting_value;
+            }
         }
 
         if (isset($theme['id'])) {

@@ -232,12 +232,12 @@ class DesignController extends Sceleton {
             'is_default' => 0,
             'sort_order' => 0,
             'themes_group_id' => $params['group_id'],
-            'parent_theme' => ($params['parent_theme'] && $params['theme_source'] == 'theme' && $params['parent_theme_files'] == 'link' ? $params['parent_theme'] : 0)
+            'parent_theme' => (isset($params['parent_theme']) && $params['parent_theme'] && $params['theme_source'] == 'theme' && $params['parent_theme_files'] == 'link' ? $params['parent_theme'] : 0)
         );
         tep_db_perform(TABLE_THEMES, $sql_data_array);
 
 
-        if ($params['parent_theme'] && $params['theme_source'] == 'theme'){
+        if (isset($params['parent_theme']) && $params['parent_theme'] && $params['theme_source'] == 'theme'){
 
             Theme::copyTheme($params['theme_name'], $params['parent_theme'], $params['parent_theme_files']);
             Theme::copyTheme($params['theme_name'] . '-mobile', $params['parent_theme'] . '-mobile', $params['parent_theme_files']);
@@ -1705,7 +1705,7 @@ class DesignController extends Sceleton {
     public function actionImport()
     {
         $params = Yii::$app->request->get();
-        if ($_FILES['file']['error'] == UPLOAD_ERR_OK  && is_uploaded_file($_FILES['file']['tmp_name'])) {
+        if (isset($_FILES['file']) && isset($_FILES['file']['error']) && isset($_FILES['file']['tmp_name']) && $_FILES['file']['error'] == UPLOAD_ERR_OK  && is_uploaded_file($_FILES['file']['tmp_name'])) {
             if ( \backend\design\Theme::import($params['theme_name'],$_FILES['file']['tmp_name']) ) {
                 Theme::saveThemeVersion($params['theme_name']);
                 return 'OK';
@@ -2641,7 +2641,7 @@ class DesignController extends Sceleton {
             'block_view' => $get['block_view'],
             'font_added' => $font_added,
             'designer_mode' => $this->designerMode,
-            'styleHide' => ($get['data_class'] ? Style::hide($get['data_class']) : []),
+            'styleHide' => (isset($get['data_class']) && $get['data_class'] ? Style::hide($get['data_class']) : []),
         ]);
 
     }

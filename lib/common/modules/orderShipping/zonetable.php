@@ -643,7 +643,7 @@ class zonetable extends ModuleShipping {
 
     function get_extra_params($platform_id) {
         $response = [];
-        foreach ((new \Yii\db\Query())
+        foreach ((new \yii\db\Query())
                 ->from('ship_options')
                 ->where('platform_id = ' . (int)$platform_id)
                 ->all() as $methods) {
@@ -652,7 +652,7 @@ class zonetable extends ModuleShipping {
             unset($methods['platform_id']);
             $response['ship_options'][] = $methods;
         }
-        foreach ((new \Yii\db\Query())
+        foreach ((new \yii\db\Query())
                 ->from('ship_zones')
                 ->where('platform_id = ' . (int)$platform_id)
                 ->all() as $methods) {
@@ -663,7 +663,7 @@ class zonetable extends ModuleShipping {
             $response['ship_zones'][] = $methods;
         }
         
-        foreach ((new \Yii\db\Query())
+        foreach ((new \yii\db\Query())
                 ->from('zones_to_ship_zones')
                 ->where('platform_id = ' . (int)$platform_id)
                 ->all() as $methods) {
@@ -674,7 +674,7 @@ class zonetable extends ModuleShipping {
             unset($methods['last_modified']);
             $response['zones_to_ship_zones'][] = $methods;
         }
-        foreach ((new \Yii\db\Query())
+        foreach ((new \yii\db\Query())
                 ->from('zone_table')
                 ->where('platform_id = ' . (int)$platform_id)
                 ->all() as $methods) {

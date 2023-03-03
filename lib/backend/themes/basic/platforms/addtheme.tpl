@@ -74,6 +74,7 @@ var jcarousel = $('.jcarousel').jcarousel();
 			let group = '';
 			$.get('platforms/theme-banners', { theme_name: theme_name, platform_id: platform_id }, function(response){
 				let items = response.reduce(function(sum, current){
+					if (!current.banners_group) return sum;
 					let item = '';
 					if (group != current.banners_group) {
 						group = current.banners_group;

@@ -193,7 +193,7 @@ class offline extends ModulePayment {
 
     function get_extra_params($platform_id) {
         $response = [];
-        foreach ((new \Yii\db\Query())
+        foreach ((new \yii\db\Query())
                 ->from('payment_offline')
                 ->where('platform_id = ' . (int)$platform_id)
                 ->all() as $methods) {

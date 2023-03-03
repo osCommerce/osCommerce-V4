@@ -46,7 +46,7 @@ class PrintLabel extends Widget {
                     }
                 }
                 $products_left = array_sum(\yii\helpers\ArrayHelper::getColumn($this->order->products, 'qty'));
-                $already_selected_products_query = (new \Yii\db\Query())->select('products_quantity')->from(TABLE_ORDERS_LABEL_TO_ORDERS_PRODUCTS)->where(['orders_id' => $this->order->order_id])->all();
+                $already_selected_products_query = (new \yii\db\Query())->select('products_quantity')->from(TABLE_ORDERS_LABEL_TO_ORDERS_PRODUCTS)->where(['orders_id' => $this->order->order_id])->all();
                 foreach ($already_selected_products_query as $already_selected_products) {
                     $products_left -= $already_selected_products['products_quantity'];
                 }

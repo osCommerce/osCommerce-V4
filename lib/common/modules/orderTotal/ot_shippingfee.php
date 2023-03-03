@@ -212,7 +212,7 @@ class ot_shippingfee extends ModuleTotal {
 
     function get_extra_params($platform_id) {
         $response = [];
-        foreach ((new \Yii\db\Query())
+        foreach ((new \yii\db\Query())
                 ->from('shipping_fee')
                 ->where('platform_id = ' . (int)$platform_id)
                 ->all() as $methods) {

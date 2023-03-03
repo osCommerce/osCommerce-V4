@@ -313,8 +313,12 @@ class Cache_controlController extends Sceleton  {
                 ],
             ]);
             ob_start();
-            \Yii::$app->runAction('migrate/up', ['migrationPath' => '@console/migrations/', 'interactive' => false]);
-            $buffer = ob_get_clean();
+            try {
+                \Yii::$app->runAction('migrate/up', ['migrationPath' => '@console/migrations/', 'interactive' => false]);
+            } catch (\Throwable $e) {
+                \Yii::warning('Error running migrate/up action: ' . $e->getMessage());
+            }
+            $buffer = ob_get_flush();
             \Yii::$app = $oldApp;
             $message = strpos($buffer, 'Migration failed') ? 'Migration failed' : 'Migrations applied';
             \Yii::warning("$message\n$buffer");
