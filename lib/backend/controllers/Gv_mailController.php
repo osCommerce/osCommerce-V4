@@ -371,7 +371,8 @@ class Gv_mailController extends Sceleton {
                         $email_params = array();
                         $email_params['STORE_NAME'] = $STORE_NAME;
                         $email_params['STORE_URL'] = \common\helpers\Output::get_clickable_link(tep_catalog_href_link('', '', 'NONSSL'/* , $store['store_url'] */));
-
+                        $email_params['CUSTOMER_FIRSTNAME'] = $mail['customers_firstname'];
+                        $email_params['CUSTOMER_LASTNAME'] = $mail['customers_lastname'];
                         $email_params['COUPON_CODE'] = $data['id1'];
                         $email_params['COUPON_NAME'] = $subject;
                         $email_params['COUPON_DESCRIPTION'] = $_POST['message'];
