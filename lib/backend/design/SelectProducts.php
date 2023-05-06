@@ -24,6 +24,7 @@ class SelectProducts extends Widget
     public $selectedSortName;
     public $selectedBackLink;
     public $selectedBackLink_c;
+    public $onlyIncludeJs = false;
 
     public function init(){
         parent::init();
@@ -41,8 +42,10 @@ class SelectProducts extends Widget
         \backend\design\Data::addJsData(['tr' => $tr]);
 
         $selectedProducts = [];
-        foreach ($this->selectedProducts as $product) {
-            $selectedProducts[] = $product;
+        if (is_array($this->selectedProducts) ) {
+            foreach ($this->selectedProducts as $product) {
+                $selectedProducts[] = $product;
+            }
         }
 
         return $this->render('select-products.tpl', [
@@ -53,6 +56,7 @@ class SelectProducts extends Widget
             'selectedSortName' => $this->selectedSortName,
             'selectedBackLink' => $this->selectedBackLink,
             'selectedBackLink_c' => $this->selectedBackLink_c,
+            'onlyIncludeJs' => $this->onlyIncludeJs,
         ]);
     }
 }

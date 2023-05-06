@@ -1,12 +1,13 @@
 <?php
 /**
- * @link http://www.yiiframework.com/
+ * @link https://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
- * @license http://www.yiiframework.com/license/
+ * @license https://www.yiiframework.com/license/
  */
 
 namespace yii\db\cubrid;
 
+use Yii;
 use yii\base\NotSupportedException;
 use yii\db\Constraint;
 use yii\db\ConstraintFinderInterface;
@@ -30,7 +31,7 @@ class Schema extends \yii\db\Schema implements ConstraintFinderInterface
 
     /**
      * @var array mapping from physical column types (keys) to abstract column types (values)
-     * Please refer to [CUBRID manual](http://www.cubrid.org/manual/91/en/sql/datatype.html) for
+     * Please refer to [CUBRID manual](https://www.cubrid.org/manual/en/9.3.0/sql/datatype.html) for
      * details on data types.
      */
     public $typeMap = [
@@ -248,7 +249,7 @@ class Schema extends \yii\db\Schema implements ConstraintFinderInterface
      */
     public function createQueryBuilder()
     {
-        return new QueryBuilder($this->db);
+        return Yii::createObject(QueryBuilder::className(), [$this->db]);
     }
 
     /**
@@ -345,7 +346,7 @@ class Schema extends \yii\db\Schema implements ConstraintFinderInterface
 
     /**
      * {@inheritdoc}
-     * @see http://www.cubrid.org/manual/91/en/sql/transaction.html#database-concurrency
+     * @see https://www.cubrid.org/manual/en/9.3.0/sql/transaction.html#database-concurrency
      */
     public function setTransactionIsolationLevel($level)
     {

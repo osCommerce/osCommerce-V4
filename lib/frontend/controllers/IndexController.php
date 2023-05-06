@@ -2,10 +2,10 @@
 /**
  * This file is part of osCommerce ecommerce platform.
  * osCommerce the ecommerce
- * 
+ *
  * @link https://www.oscommerce.com
  * @copyright Copyright (c) 2000-2022 osCommerce LTD
- * 
+ *
  * Released under the GNU General Public License
  * For the full copyright and license information, please view the LICENSE.TXT file that was distributed with this source code.
  */
@@ -92,13 +92,13 @@ class IndexController extends Sceleton
         \common\helpers\Translation::init('account/login');
         \common\helpers\Translation::init('account/password-forgotten');
         global $navigation;
-        
+
         if (defined('SUPERADMIN_ENABLED') && SUPERADMIN_ENABLED) {
             return $this->render('superadmin.tpl');
         }
-        
+
         $get = Yii::$app->request->get();
-        
+
         if ($ext = \common\helpers\Acl::checkExtensionAllowed('BusinessToBusiness', 'allowed')) {
             if ($ext::checkNeedLogin()){
                 \common\helpers\Translation::init('js');
@@ -111,10 +111,10 @@ class IndexController extends Sceleton
                 $authContainer = new \frontend\forms\registration\AuthContainer();
                 $params['enterModels'] = $authContainer->getForms('index/auth');
                 $params['showAddress'] = $authContainer->isShowAddress();
-                                
+
                 if (Yii::$app->request->isPost){
                     $scenario = Yii::$app->request->post('scenario');
-            
+
                     $authContainer->loadScenario($scenario);
                     if (!$authContainer->hasErrors()){
                         if (sizeof($navigation->snapshot) > 0) {
@@ -136,7 +136,7 @@ class IndexController extends Sceleton
                             $messages = $messageStack->output($scenario);
                         }
                         $params['messages_'.$scenario] = $messages;
-                        $params['active'] = $scenario;                        
+                        $params['active'] = $scenario;
                     }
                 }
 
@@ -197,6 +197,10 @@ class IndexController extends Sceleton
 
         \common\components\google\widgets\GoogleTagmanger::setEvent('indexPage');
 
+        foreach (\common\helpers\Hooks::getList('index/index') as $filename) {
+            include($filename);
+        }
+
         /** @var \common\extensions\UserGroups\UserGroups $ugExt */
         if ($ugExt = \common\helpers\Acl::checkExtensionAllowed('UserGroups', 'allowed')) {
             $tmp = $ugExt::getLandingPage();
@@ -204,7 +208,7 @@ class IndexController extends Sceleton
                 return Yii::$app->runAction($tmp);
             }
         }
-        
+
         return $this->render('index.tpl', ['page_name' => $page_name, 'params' => $params]);
     }
 
@@ -382,11 +386,11 @@ class IndexController extends Sceleton
         throw new \yii\web\NotFoundHttpException();
       }
     }
-    
+
     public function actionLoadLanguagesJs(){
 	  //header('X-Content-Type-Options: nosniff');
       $list = \common\helpers\Translation::loadJS('js');
-      
+
       return \common\widgets\JSLanguage::widget(['list' => $list]);
     }
 
@@ -411,12 +415,12 @@ class IndexController extends Sceleton
                 \common\helpers\Translation::init('admin/texts');
                 break;
         }
-        
+
         $get['theme_name'] = filter_var($get['theme_name'], FILTER_SANITIZE_STRING);
         $get['theme_name'] = preg_replace('/[^A-Za-z0-9\-_]/', '', $get['theme_name']);
-        
+
         $widgetsList = \backend\design\Style::getCssWidgetsList($get['theme_name']);
-        
+
         foreach ($widgetsList as $widget) {
             $widget = str_replace('.w-', '', $widget);
             $widget = str_replace('.b-', '', $widget);
@@ -502,5 +506,5 @@ class IndexController extends Sceleton
         }
     }
 
-    
+
 }

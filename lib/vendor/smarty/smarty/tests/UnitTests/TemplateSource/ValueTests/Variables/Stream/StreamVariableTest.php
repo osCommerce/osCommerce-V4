@@ -15,9 +15,9 @@
  */
 class StreamVariableTest extends PHPUnit_Smarty
 {
-    public function setUp()
+    public function setUp(): void
     {
-        $this->setUpSmarty(dirname(__FILE__));
+        $this->setUpSmarty(__DIR__);
 
         stream_wrapper_register("var", "VariableStream")
         or die("Failed to register protocol");
@@ -31,7 +31,7 @@ class StreamVariableTest extends PHPUnit_Smarty
         $this->cleanDirs();
     }
 
-    public function tearDown()
+    protected function tearDown(): void
     {
         parent::tearDown();
         stream_wrapper_unregister("var");
@@ -68,6 +68,7 @@ class StreamVariableTest extends PHPUnit_Smarty
     //    }
 }
 
+#[AllowDynamicProperties]
 class VariableStream
 {
     private $position;
@@ -96,7 +97,7 @@ class VariableStream
         $v = &$GLOBALS[$this->varname];
         $l = strlen($data);
         $p = &$this->position;
-        $v = substr($v, 0, $p) . $data . substr($v, $p += $l);
+        $v = substr($v ?? '', 0, $p) . $data . substr($v ?? '', $p += $l);
 
         return $l;
     }

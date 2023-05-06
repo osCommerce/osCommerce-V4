@@ -15,12 +15,12 @@
  */
 class UserliteralTest extends PHPUnit_Smarty
 {
-    public function setUp()
+    public function setUp(): void
     {
         if (!property_exists('Smarty', 'literals')) {
             $this->markTestSkipped('user literal support');
         } else {
-            $this->setUpSmarty(dirname(__FILE__));
+            $this->setUpSmarty(__DIR__);
         }
     }
 

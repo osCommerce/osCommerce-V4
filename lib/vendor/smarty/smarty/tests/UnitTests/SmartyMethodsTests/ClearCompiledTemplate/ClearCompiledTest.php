@@ -17,9 +17,9 @@
 class ClearCompiledTest extends PHPUnit_Smarty
 {
     public $methodName = null;
-    public function setUp()
+    public function setUp(): void
     {
-        $this->setUpSmarty(dirname(__FILE__));
+        $this->setUpSmarty(__DIR__);
         $this->smarty->addTemplateDir('./templates_2/');
         $this->methodName = 'clearCompiledTemplate';
     }

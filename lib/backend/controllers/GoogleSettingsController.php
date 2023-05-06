@@ -52,18 +52,30 @@ class GoogleSettingsController extends Sceleton {
             }
         }
         
+        $platforms = [];
+        $platforms[0] = [
+            'id' => 0,
+            'text' => (defined('TEXT_DEFAULT') ? TEXT_DEFAULT : 'Default'),
+        ];
+        $platforms += \common\classes\platform::getList(false, true);
+        
+
+        
+        $_provider = $googleTools->getCaptchaProvider();
+        $_provider->platforms = $platforms;
+        
         $providers = [
             'independed' => [
                 $googleTools->getMapProvider(),
-                $googleTools->getCaptchaProvider(),
             ],
             'platformed' => [
-                
+                $_provider,
             ],
             'selected' => $selected,
         ];
         
-        $platforms = \common\classes\platform::getList(false, true);
+        unset($platforms[0]);
+        
         foreach([$googleTools->getAnalyticsProvider(), ] as $_provider){
             $_provider->platforms = $platforms;
             $providers['platformed'][] = $_provider;

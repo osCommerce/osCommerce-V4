@@ -15,9 +15,9 @@
  */
 class ExtendsResourceTest extends PHPUnit_Smarty
 {
-    public function setUp()
+    public function setUp(): void
     {
-        $this->setUpSmarty(dirname(__FILE__));
+        $this->setUpSmarty(__DIR__);
         $this->smarty->enableSecurity();
     }
 
@@ -48,8 +48,8 @@ class ExtendsResourceTest extends PHPUnit_Smarty
             $this->smarty->compile_id = 1;
         }
         $result = $this->smarty->fetch('extends:003_parent.tpl|003_child_prepend.tpl');
-        $this->assertContains("prepend - Default Title", $result, $testName . ' - content');
-        $this->assertContains("test:{$testNumber} compiled:{$compileTestNumber} rendered:{$renderTestNumber}", $result, $testName . ' - fetch() failure');
+        $this->assertStringContainsString("prepend - Default Title", $result, $testName . ' - content');
+        $this->assertStringContainsString("test:{$testNumber} compiled:{$compileTestNumber} rendered:{$renderTestNumber}", $result, $testName . ' - fetch() failure');
     }
     /**
      * test  child/parent template chain with apppend
@@ -67,8 +67,8 @@ class ExtendsResourceTest extends PHPUnit_Smarty
             $this->smarty->compile_id = 1;
         }
         $result = $this->smarty->fetch('extends:004_parent.tpl|004_child_append.tpl');
-        $this->assertContains("Default Title - append", $result, $testName . ' - content');
-        $this->assertContains("test:{$testNumber} compiled:{$compileTestNumber} rendered:{$renderTestNumber}", $result, $testName . ' - fetch() failure');
+        $this->assertStringContainsString("Default Title - append", $result, $testName . ' - content');
+        $this->assertStringContainsString("test:{$testNumber} compiled:{$compileTestNumber} rendered:{$renderTestNumber}", $result, $testName . ' - fetch() failure');
     }
 
     /**
@@ -87,9 +87,26 @@ class ExtendsResourceTest extends PHPUnit_Smarty
             $this->smarty->compile_id = 1;
         }
         $result = $this->smarty->fetch('extends:040_parent.tpl|040_child.tpl');
-        $this->assertContains("var-bar-var", $result, $testName . ' - content');
-        $this->assertContains("test:{$testNumber} compiled:{$compileTestNumber} rendered:{$renderTestNumber}", $result, $testName . ' - fetch() failure');
+        $this->assertStringContainsString("var-bar-var", $result, $testName . ' - content');
+        $this->assertStringContainsString("test:{$testNumber} compiled:{$compileTestNumber} rendered:{$renderTestNumber}", $result, $testName . ' - fetch() failure');
     }
+
+	/**
+	 * @dataProvider data
+	 */
+	public function testCompileBlockIncreaseInChild_050($caching, $merge, $testNumber, $compileTestNumber, $renderTestNumber, $testName)
+	{
+		$this->smarty->registerFilter('pre', array($this, 'compiledPrefilter'));
+		$this->smarty->assign('test', $testNumber);
+		$this->smarty->caching = $caching;
+		$this->smarty->merge_compiled_includes = $merge;
+		if ($merge) {
+			$this->smarty->compile_id = 1;
+		}
+		$result = $this->smarty->fetch('extends:050_parent.tpl|050_child.tpl|050_grandchild.tpl');
+		$this->assertStringContainsString("var-bar-var", $result, $testName . ' - content');
+		$this->assertStringContainsString("test:{$testNumber} compiled:{$compileTestNumber} rendered:{$renderTestNumber}", $result, $testName . ' - fetch() failure');
+	}
 
     /**
      * test  grandchild/child/parent dependency test1
@@ -103,7 +120,7 @@ class ExtendsResourceTest extends PHPUnit_Smarty
         $tpl = $this->smarty->createTemplate('extends:021_parent.tpl|021_child.tpl|021_grandchild.tpl');
         $this->assertFalse($tpl->isCached());
         $result = $this->smarty->fetch($tpl);
-        $this->assertContains('Grandchild Page Title', $result);
+        $this->assertStringContainsString('Grandchild Page Title', $result);
     }
 
     /**
@@ -118,7 +135,7 @@ class ExtendsResourceTest extends PHPUnit_Smarty
          $tpl2 = $this->smarty->createTemplate('extends:021_parent.tpl|021_child.tpl|021_grandchild.tpl');
         $this->assertTrue($tpl2->isCached());
         $result = $this->smarty->fetch($tpl2);
-        $this->assertContains('Grandchild Page Title', $result);
+        $this->assertStringContainsString('Grandchild Page Title', $result);
     }
 
     /**
@@ -137,7 +154,7 @@ class ExtendsResourceTest extends PHPUnit_Smarty
         $tpl = $this->smarty->createTemplate('extends:021_parent.tpl|021_child.tpl|021_grandchild.tpl');
         $this->assertFalse($tpl->isCached());
         $result = $this->smarty->fetch($tpl);
-        $this->assertContains('Grandchild Page Title', $result);
+        $this->assertStringContainsString('Grandchild Page Title', $result);
     }
     /**
      * test  grandchild/child/parent dependency test2
@@ -152,7 +169,7 @@ class ExtendsResourceTest extends PHPUnit_Smarty
         $tpl2 = $this->smarty->createTemplate('extends:021_parent.tpl|021_child.tpl|021_grandchild.tpl');
         $this->assertTrue($tpl2->isCached());
         $result = $this->smarty->fetch($tpl2);
-        $this->assertContains('Grandchild Page Title', $result);
+        $this->assertStringContainsString('Grandchild Page Title', $result);
     }
 
     /**
@@ -171,7 +188,7 @@ class ExtendsResourceTest extends PHPUnit_Smarty
         $tpl = $this->smarty->createTemplate('extends:021_parent.tpl|021_child.tpl|021_grandchild.tpl');
         $this->assertFalse($tpl->isCached());
         $result = $this->smarty->fetch($tpl);
-        $this->assertContains('Grandchild Page Title', $result);
+        $this->assertStringContainsString('Grandchild Page Title', $result);
     }
     /**
      * test  grandchild/child/parent dependency test3
@@ -186,7 +203,7 @@ class ExtendsResourceTest extends PHPUnit_Smarty
         $tpl2 = $this->smarty->createTemplate('extends:021_parent.tpl|021_child.tpl|021_grandchild.tpl');
         $this->assertTrue($tpl2->isCached());
         $result = $this->smarty->fetch($tpl2);
-        $this->assertContains('Grandchild Page Title', $result);
+        $this->assertStringContainsString('Grandchild Page Title', $result);
     }
 
     /**
@@ -205,7 +222,7 @@ class ExtendsResourceTest extends PHPUnit_Smarty
         $tpl = $this->smarty->createTemplate('extends:021_parent.tpl|021_child.tpl|021_grandchild.tpl');
         $this->assertFalse($tpl->isCached());
         $result = $this->smarty->fetch($tpl);
-        $this->assertContains('Grandchild Page Title', $result);
+        $this->assertStringContainsString('Grandchild Page Title', $result);
     }
     /**
      * test  grandchild/child/parent dependency test4
@@ -220,7 +237,7 @@ class ExtendsResourceTest extends PHPUnit_Smarty
         $tpl = $this->smarty->createTemplate('extends:021_parent.tpl|021_child.tpl|021_grandchild.tpl');
         $this->assertTrue($tpl->isCached());
         $result = $this->smarty->fetch($tpl);
-        $this->assertContains('Grandchild Page Title', $result);
+        $this->assertStringContainsString('Grandchild Page Title', $result);
     }
 
     /**
@@ -241,10 +258,10 @@ class ExtendsResourceTest extends PHPUnit_Smarty
             $this->smarty->setCompileId(1);
         }
         $result = $this->smarty->fetch('extends:./child/parent/033_parent.tpl|./child/033_child.tpl|033_grandchild.tpl');
-        $this->assertContains('include grand:content include grand', $result, $testName . ' - grand');
-        $this->assertContains('include child:content include child', $result, $testName . ' - grand');
-        $this->assertContains('include parent:content include parent', $result, $testName . ' - grand');
-        $this->assertContains("test:{$testNumber} compiled:{$compileTestNumber} rendered:{$renderTestNumber}", $result,
+        $this->assertStringContainsString('include grand:content include grand', $result, $testName . ' - grand');
+        $this->assertStringContainsString('include child:content include child', $result, $testName . ' - grand');
+        $this->assertStringContainsString('include parent:content include parent', $result, $testName . ' - grand');
+        $this->assertStringContainsString("test:{$testNumber} compiled:{$compileTestNumber} rendered:{$renderTestNumber}", $result,
                               $testName . ' - fetch() failure');
     }
     public function data(){
@@ -259,7 +276,7 @@ class ExtendsResourceTest extends PHPUnit_Smarty
              */
             array(false, false, 1, 1, 1, 'no caching, no merge - new'),
             array(false, false, 2, 1, 2, 'no caching, no merge - exits'),
-            array(true, false, 3, 3, 3, 'caching, no merge - new'),
+            array(true, false, 3, 3, 3, 'caching, no merge - new'), // 2
             array(true, false, 4, 3, 3, 'caching, no merge - exits'),
             array(false, true, 5, 5, 5, 'no caching, merge - new'),
             array(false, true, 6, 5, 6, 'no caching, merge - exits'),
@@ -293,11 +310,11 @@ class ExtendsResourceTest extends PHPUnit_Smarty
             }
             $this->smarty->setCompileId($cid);
             $result = $this->smarty->fetch('extends:034_parent.tpl|034_grandchild.tpl');
-            $this->assertContains('grandchild - grandchild', $result, $testName . ' - grand');
-            $this->assertContains('parent - parent', $result, $testName . ' - grand');
-            $this->assertContains($extends_recursion ? 'child - child' : 'child - parent', $result,
+            $this->assertStringContainsString('grandchild - grandchild', $result, $testName . ' - grand');
+            $this->assertStringContainsString('parent - parent', $result, $testName . ' - grand');
+            $this->assertStringContainsString($extends_recursion ? 'child - child' : 'child - parent', $result,
                                   $testName . ' - grand');
-            $this->assertContains("test:{$testNumber} compiled:{$compileTestNumber} rendered:{$renderTestNumber}",
+            $this->assertStringContainsString("test:{$testNumber} compiled:{$compileTestNumber} rendered:{$renderTestNumber}",
                                   $result, $testName . ' - fetch() failure');
         }
     }

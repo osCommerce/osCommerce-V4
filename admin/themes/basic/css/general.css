@@ -674,3 +674,48 @@ input[type="checkbox"].form-control {
 .radio-buttons-icons label input:checked + span {
     border: 1px solid var(--border-color-selected);
 }
+
+div.define-date-formats {
+    width: 900px;
+}
+div.define-date-formats .language_edit.platform #tab_formats .template_cell:nth-child(4n + 1) {
+    width: 33%;
+}
+div.define-date-formats .language_edit.platform #tab_formats .template_cell:nth-child(4n + 2) {
+    width: 23%;
+}
+div.define-date-formats .language_edit.platform #tab_formats .template_cell:nth-child(4n + 3) {
+    width: 18%;
+}
+
+.tips-info {
+    display: inline-block;
+    position: relative;
+    z-index: 1;
+}
+.tips-info:before {
+    content: '\f05a';
+    font-family: FontAwesome;
+    width: 24px;
+    height: 24px;
+    display: inline-block;
+    line-height: 24px;
+    text-align: center;
+}
+.tips-info > div {
+    display: none;
+    position: absolute;
+    background: var(--background-color);
+    padding: 5px 10px;
+    border-radius: 5px;
+    border: 1px solid var(--border-color-strong);
+    box-shadow: 0 0 10px var(--border-color-strong);
+    top: 0;
+    right: 100%;
+    width: 200px;
+    text-align: left;
+    line-height: 1.5;
+}
+.tips-info:hover > div {
+    display: block;
+}

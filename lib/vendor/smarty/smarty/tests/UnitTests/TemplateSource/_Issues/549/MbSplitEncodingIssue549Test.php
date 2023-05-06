@@ -28,18 +28,18 @@ class MbSplitEncodingIssue549Test extends PHPUnit_Smarty
         "result" => '4772c3bc6e657374c3bc726d', // "Grünestürm"
     );
 
-    public function setUp()
+	public function setUp(): void
     {
         if(!\Smarty::$_MBSTRING)
         {
-            return $this->markTestSkipped("mbstring extension is not in use by Smarty");
+            $this->markTestSkipped("mbstring extension is not in use by Smarty");
         }
 
         $this->charset = \Smarty::$_CHARSET;
-        $this->setUpSmarty(dirname(__FILE__));
+        $this->setUpSmarty(__DIR__);
     }
 
-    public function tearDown()
+    protected function tearDown(): void
     {
         \Smarty::$_CHARSET = $this->charset ?: \Smarty::$_CHARSET;
         $this->cleanDirs();

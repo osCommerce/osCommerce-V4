@@ -13,6 +13,7 @@
 namespace frontend\design;
 
 use common\classes\design;
+use common\models\Zones;
 use Yii;
 use common\classes\Images;
 use backend\design\Style;
@@ -954,19 +955,26 @@ class Info
   }
 
 
-    public static function widgetsArr($name, $include_blocks = false)
+    public static function widgetsArr($name, $include_blocks = false, $theme_name = '')
     {
         static $_cache = [];
 
         $controller = Yii::$app->controller->id;
         $action = Yii::$app->controller->action->id;
 
-        $cache_key = (string)$name.'^'.(int)$include_blocks.'^'.(string)$controller.'^'.(string)$action;
+        if (!$theme_name && defined("THEME_NAME")) {
+            $theme_name = THEME_NAME;
+        }
+        if (!$theme_name) {
+            return [];
+        }
+
+        $cache_key = (string)$name.'^'.(int)$include_blocks.'^'.(string)$controller.'^'.(string)$action.'^'.(string)$theme_name;
 
         if ( !isset($_cache[$cache_key]) ) {
             $widgets = array();
 
-            $query = tep_db_query("select id, widget_name from " . TABLE_DESIGN_BOXES . " where theme_name = '" . tep_db_input(THEME_NAME) . "' and block_name = '" . tep_db_input($name) . "'");
+            $query = tep_db_query("select id, widget_name from " . TABLE_DESIGN_BOXES . " where theme_name = '" . tep_db_input($theme_name) . "' and block_name = '" . tep_db_input($name) . "'");
 
             while ($item = tep_db_fetch_array($query)) {
 
@@ -1016,12 +1024,12 @@ class Info
                     if ($item['widget_name'] != 'BlockBox' && $item['widget_name'] != 'Tabs' || $include_blocks) {
                       $widgets['id-' . $item['id']] = $item['widget_name'];
                     }
-                    $widgets = array_merge($widgets, Info::widgetsArr('block-' . $item['id']));
-                    $widgets = array_merge($widgets, Info::widgetsArr('block-' . $item['id'] . '-1'));
-                    $widgets = array_merge($widgets, Info::widgetsArr('block-' . $item['id'] . '-2'));
-                    $widgets = array_merge($widgets, Info::widgetsArr('block-' . $item['id'] . '-3'));
-                    $widgets = array_merge($widgets, Info::widgetsArr('block-' . $item['id'] . '-4'));
-                    $widgets = array_merge($widgets, Info::widgetsArr('block-' . $item['id'] . '-5'));
+                    $widgets = array_merge($widgets, Info::widgetsArr('block-' . $item['id'], false, $theme_name));
+                    $widgets = array_merge($widgets, Info::widgetsArr('block-' . $item['id'] . '-1', false, $theme_name));
+                    $widgets = array_merge($widgets, Info::widgetsArr('block-' . $item['id'] . '-2', false, $theme_name));
+                    $widgets = array_merge($widgets, Info::widgetsArr('block-' . $item['id'] . '-3', false, $theme_name));
+                    $widgets = array_merge($widgets, Info::widgetsArr('block-' . $item['id'] . '-4', false, $theme_name));
+                    $widgets = array_merge($widgets, Info::widgetsArr('block-' . $item['id'] . '-5', false, $theme_name));
                 }
             }
             $_cache[$cache_key] = $widgets;
@@ -1139,9 +1147,10 @@ class Info
  * @param string  $setting_name
  * @param string $block_name
  * @param type $include_blocks
+ * @param string $theme_name
  * @return type
  */
-  public static function widgetSettings($widget_name = false, $setting_name = false, $block_name = false, $include_blocks = false) {
+  public static function widgetSettings($widget_name = false, $setting_name = false, $block_name = false, $include_blocks = false, $theme_name = '') {
 
     $settings = array();
     
@@ -1149,7 +1158,7 @@ class Info
       $block_name = Info::pageBlock();
     }
 
-    $widgets = Info::widgetsArr($block_name, $include_blocks);
+    $widgets = Info::widgetsArr($block_name, $include_blocks, $theme_name);
     if ($widget_name){
         if (!array_search($widget_name, $widgets)) {
             return false;
@@ -1269,6 +1278,13 @@ class Info
       $query2['country'] = \common\helpers\Country::get_country_name($query2['country_id']);
       $query2['country_info'] = \common\helpers\Country::get_country_info_by_id($query2['country_id']);
 
+      if (!$query2['state'] && (int)$query2['zone_id']) {
+          $zone = Zones::findOne(['zone_id' => $query2['zone_id']]);
+          if ($zone) {
+              $query2['state'] = $zone->zone_name;
+          }
+      }
+
       $data = array_merge($query1, $query2, $times);
 
       return $data;
@@ -1277,7 +1293,6 @@ class Info
     }
 
   }
-
 
   public  static function themeFile($file_path, $visibility = 'ws', $version = true)
   {
@@ -1727,7 +1742,7 @@ class Info
 
         $theme = 'theme-1';
 
-        if ($theme_array['theme_name']){
+        if ($theme_array['theme_name'] ?? null){
             $theme = $theme_array['theme_name'];
         }
 
@@ -1797,7 +1812,7 @@ class Info
             if (isset($matches[2]) && defined($matches[2])) {
                 return sprintf(constant($matches[1]), constant($matches[2]));
             } elseif (isset($matches[2])) {
-                return sprintf(constant($matches[1]), constant($matches[2]));
+                return sprintf(constant($matches[1]), $matches[2]);
             } else {
                 return constant($matches[1]);
             }

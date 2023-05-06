@@ -2,6 +2,7 @@
 
 namespace PhpOffice\PhpSpreadsheetTests\Calculation\Functions\Engineering;
 
+use PhpOffice\PhpSpreadsheet\Calculation\Calculation;
 use PhpOffice\PhpSpreadsheet\Calculation\Exception as CalcExp;
 use PhpOffice\PhpSpreadsheet\Calculation\Functions;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -41,6 +42,7 @@ class Bin2DecTest extends TestCase
         $sheet->getCell('A1')->setValue("=BIN2DEC($formula)");
         $result = $sheet->getCell('A1')->getCalculatedValue();
         self::assertEquals($expectedResult, $result);
+        $spreadsheet->disconnectWorksheets();
     }
 
     public function providerBIN2DEC(): array
@@ -71,6 +73,7 @@ class Bin2DecTest extends TestCase
         $sheet->getCell('A1')->setValue("=BIN2DEC($formula)");
         $result = $sheet->getCell('A1')->getCalculatedValue();
         self::assertEquals($expectedResult, $result);
+        $spreadsheet->disconnectWorksheets();
     }
 
     public function testBIN2DECFrac(): void
@@ -89,5 +92,28 @@ class Bin2DecTest extends TestCase
         $cell = 'E1';
         $sheet->setCellValue($cell, '=BIN2DEC(101.1)');
         self::assertEquals('#NUM!', $sheet->getCell($cell)->getCalculatedValue(), 'Excel');
+        $spreadsheet->disconnectWorksheets();
+    }
+
+    /**
+     * @dataProvider providerBin2DecArray
+     */
+    public function testBin2DecArray(array $expectedResult, string $value): void
+    {
+        $calculation = Calculation::getInstance();
+
+        $formula = "=BIN2DEC({$value})";
+        $result = $calculation->_calculateFormulaValue($formula);
+        self::assertEquals($expectedResult, $result);
+    }
+
+    public function providerBin2DecArray(): array
+    {
+        return [
+            'row/column vector' => [
+                [[4, 7, 63, 153, 204, 341]],
+                '{"100", "111", "111111", "10011001", "11001100", "101010101"}',
+            ],
+        ];
     }
 }

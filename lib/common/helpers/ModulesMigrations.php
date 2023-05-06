@@ -88,4 +88,9 @@ class ModulesMigrations {
         }
     }
 
+    public static function clear($code, $type = 'extension')
+    {
+        \common\models\ModulesMigrations::deleteAll(['code' => $code, 'type' => $type]);
+    }
+
 }

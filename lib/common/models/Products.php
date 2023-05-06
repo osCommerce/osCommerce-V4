@@ -329,11 +329,12 @@ class Products extends \yii\db\ActiveRecord
         ];
     }
 
-    public function getCustomers()
-    {
-        return $this->hasMany(\common\models\Customers::class, ['customers_id' => 'customers_id'])
-            ->viaTable('personal_catalog', ['products_id' => 'products_id']);
-    }
+// personal_catalolog moved to extension. relation is used nowhere in osc and extensions but maybe somethere in old projects?
+//    public function getCustomers()
+//    {
+//        return $this->hasMany(\common\models\Customers::class, ['customers_id' => 'customers_id'])
+//            ->viaTable('personal_catalog', ['products_id' => 'products_id']);
+//    }
 
     /**
      * one-to-many all languages 1 platform (current)

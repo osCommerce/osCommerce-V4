@@ -240,12 +240,12 @@ function alertMessage(data, className){
   $pupUp.css('top', $(window).scrollTop() + d);
 
   $('.pop-up-close, .around-pop-up', $pupUp).click(function(e){
-    e.preventDefault()
-    $pupUp.remove();
+    e.preventDefault();
+    setTimeout(() => $pupUp.remove(), 0);
   });
   $('.popup-box', $pupUp).on('click', '.btn-cancel', function(e){
-    e.preventDefault()
-    $pupUp.remove();
+    e.preventDefault();
+    setTimeout(() => $pupUp.remove(), 0);
   });
 
   return $pupUp

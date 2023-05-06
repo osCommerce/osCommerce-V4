@@ -1,6 +1,6 @@
 <?php
 
-namespace PhpOffice\PhpSpreadsheetTests\Reader;
+namespace PhpOffice\PhpSpreadsheetTests\Reader\Xlsx;
 
 use PhpOffice\PhpSpreadsheet\Reader\Xlsx;
 use PhpOffice\PhpSpreadsheet\Style\Border;
@@ -62,13 +62,9 @@ class NamespaceNonStdTest extends \PHPUnit\Framework\TestCase
         self::assertSame('A2', $sheet->getFreezePane());
         self::assertSame('A2', $sheet->getTopLeftCell());
         self::assertSame('B3', $sheet->getSelectedCells());
-        $sheet = $spreadsheet->getSheetByName('SylkTest');
-        if ($sheet === null) {
-            self::fail('Unable to load expected sheet');
-        } else {
-            self::assertNull($sheet->getFreezePane());
-            self::assertNull($sheet->getTopLeftCell());
-        }
+        $sheet = $spreadsheet->getSheetByNameOrThrow('SylkTest');
+        self::assertNull($sheet->getFreezePane());
+        self::assertNull($sheet->getTopLeftCell());
     }
 
     public function testLoadXlsx(): void
@@ -77,9 +73,9 @@ class NamespaceNonStdTest extends \PHPUnit\Framework\TestCase
         $spreadsheet = $reader->load(self::$testbook);
         $sheet = $spreadsheet->getSheet(0);
         self::assertEquals('SylkTest', $sheet->getTitle());
-        if (strpos(__FILE__, 'NonStd') !== false) {
-            self::markTestIncomplete('Not yet ready');
-        }
+        //if (strpos(__FILE__, 'NonStd') !== false) {
+        //    self::markTestIncomplete('Not yet ready');
+        //}
 
         self::assertEquals('FFFF0000', $sheet->getCell('A1')->getStyle()->getFont()->getColor()->getARGB());
         self::assertEquals(Fill::FILL_PATTERN_GRAY125, $sheet->getCell('A2')->getStyle()->getFill()->getFillType());
@@ -168,9 +164,9 @@ class NamespaceNonStdTest extends \PHPUnit\Framework\TestCase
         $spreadsheet = $reader->load(self::$testbook);
         $sheet = $spreadsheet->getSheet(1);
         self::assertEquals('Second', $sheet->getTitle());
-        if (strpos(__FILE__, 'NonStd') !== false) {
-            self::markTestIncomplete('Not yet ready');
-        }
+        //if (strpos(__FILE__, 'NonStd') !== false) {
+        //    self::markTestIncomplete('Not yet ready');
+        //}
         self::assertEquals('center', $sheet->getCell('A2')->getStyle()->getAlignment()->getHorizontal());
         self::assertSame('inherit', $sheet->getCell('A2')->getStyle()->getProtection()->getLocked());
         self::assertEquals('top', $sheet->getCell('A3')->getStyle()->getAlignment()->getVertical());

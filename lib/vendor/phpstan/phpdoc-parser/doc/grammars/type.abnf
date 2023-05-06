@@ -6,22 +6,33 @@ Type
 	= Atomic [Union / Intersection]
 	/ Nullable
 
+ParenthesizedType
+	= Atomic [Union / Intersection / Conditional]
+	/ Nullable
+
 Union
 	= 1*(TokenUnion Atomic)
 
 Intersection
 	= 1*(TokenIntersection Atomic)
 
+Conditional
+    = 1*ByteHorizontalWs TokenIs [TokenNot] Atomic TokenNullable Type TokenColon ParenthesizedType
+
 Nullable
-	= TokenNullable TokenIdentifier [Generic]
+	= TokenNullable Atomic
 
 Atomic
 	= TokenIdentifier [Generic / Callable / Array]
 	/ TokenThisVariable
-	/ TokenParenthesesOpen Type TokenParenthesesClose [Array]
+	/ TokenParenthesesOpen ParenthesizedType TokenParenthesesClose [Array]
 
 Generic
-	= TokenAngleBracketOpen Type *(TokenComma Type) TokenAngleBracketClose
+	= TokenAngleBracketOpen GenericTypeArgument *(TokenComma GenericTypeArgument) TokenAngleBracketClose
+
+GenericTypeArgument
+    = [TokenContravariant / TokenCovariant] Type
+    / TokenWildcard
 
 Callable
 	= TokenParenthesesOpen [CallableParameters] TokenParenthesesClose TokenColon CallableReturnType
@@ -173,7 +184,22 @@ TokenDoubleColon
 	= "::" *ByteHorizontalWs
 
 TokenThisVariable
-	= %x24.74.68.69.73 *ByteHorizontalWs
+	= %s"$this" *ByteHorizontalWs
+
+TokenIs
+	= %s"is" 1*ByteHorizontalWs
+
+TokenNot
+	= %s"not" 1*ByteHorizontalWs
+
+TokenContravariant
+    = %s"contravariant" 1*ByteHorizontalWs
+
+TokenCovariant
+    = %s"covariant" 1*ByteHorizontalWs
+
+TokenWildcard
+	= "*" *ByteHorizontalWs
 
 TokenIdentifier
 	= [ByteBackslash] ByteIdentifierFirst *ByteIdentifierSecond *(ByteBackslash ByteIdentifierFirst *ByteIdentifierSecond) *ByteHorizontalWs

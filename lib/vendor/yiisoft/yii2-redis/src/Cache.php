@@ -1,8 +1,8 @@
 <?php
 /**
- * @link http://www.yiiframework.com/
+ * @link https://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
- * @license http://www.yiiframework.com/license/
+ * @license https://www.yiiframework.com/license/
  */
 
 namespace yii\redis;
@@ -195,7 +195,12 @@ class Cache extends \yii\caching\Cache
      */
     protected function getValue($key)
     {
-        return $this->getReplica()->executeCommand('GET', [$key]);
+        $value = $this->getReplica()->executeCommand('GET', [$key]);
+        if ($value === null) {
+            return false; // Key is not in the cache or expired
+        }
+
+        return $value;
     }
 
     /**

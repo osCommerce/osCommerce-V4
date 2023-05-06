@@ -17,7 +17,7 @@ class payment extends modules\ModuleCollection {
 
     public $modules;
     public $selected_module;
-    protected $include_modules = [];
+    public $include_modules = [];
     private $manager;
 
 // class constructor
@@ -132,6 +132,10 @@ class payment extends modules\ModuleCollection {
                     '    error_message = error_message + ' . json_encode(JS_ERROR_NO_PAYMENT_MODULE_SELECTED, JSON_PARTIAL_OUTPUT_ON_ERROR) . ';' . "\n" .
                     '    error = 1;' . "\n" .
                     '  }' . "\n\n";
+            } else {
+                //$js .= "$(window).trigger('disable-checkout-button', { name: 'no_payment_method', value: true} );\n";
+                $js .= "\n" . '    error_message = error_message + "\n" + ' . json_encode(JS_ERROR_NO_PAYMENT_MODULE_SELECTED, JSON_PARTIAL_OUTPUT_ON_ERROR) . ";\n" .
+                              "    error = 2;\n";
             }
             if (defined('GERMAN_SITE') && GERMAN_SITE == 'True' && !defined('ONE_PAGE_POST_PAYMENT')) {
                 $js .= ' if (!document.one_page_checkout.conditions.checked){' . "\n" .
@@ -146,6 +150,7 @@ function check_form() {
     var error = 0;
     var error_message = "{$JS_ERROR}";
     var payment_value = null;
+    if (document.one_page_checkout.payment) {
     if (document.one_page_checkout.payment.length) {
         for (var i=0; i<document.one_page_checkout.payment.length; i++) {
             if (document.one_page_checkout.payment[i].checked) {
@@ -157,8 +162,9 @@ function check_form() {
     } else if (document.one_page_checkout.payment.value) {
         payment_value = document.one_page_checkout.payment.value;
     }
+    }
     {$js}
-    if (error == 1 && submitter != 1) {
+    if (error >= 1 && submitter != 1) {
         alert(error_message);
         return false;
     } else {

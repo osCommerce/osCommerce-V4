@@ -1628,6 +1628,9 @@ class Banner_managerController extends Sceleton
             ->asArray()
             ->all();
 
+        $imgPath = 'banners' . DIRECTORY_SEPARATOR . $bannersId;
+        FileHelper::createDirectory(\common\classes\Images::getFSCatalogImagesPath() . $imgPath);
+
         foreach ($languages as $language) {
             foreach ($groupSizes as $groupSize) {
                 if (!isset($groupImage[$language['id']])) {
@@ -1680,7 +1683,6 @@ class Banner_managerController extends Sceleton
                 }
                 $newImg = '';
 
-                $imgPath = 'banners' . DIRECTORY_SEPARATOR . $bannersId;
                 if ($imageUpload) {
                     $imageUpload = str_replace('uploads' . DIRECTORY_SEPARATOR, '', $imageUpload);
                     $tmpImg = \backend\design\Uploads::move($imageUpload, DIR_WS_IMAGES . $imgPath, false);
@@ -1707,7 +1709,7 @@ class Banner_managerController extends Sceleton
 
                         $type = explode('/', mime_content_type(DIR_FS_CATALOG_IMAGES . $mainImage['banners_image']));
 
-                        if (!is_file(DIR_FS_CATALOG_IMAGES .$newImg) && $type == 'image') {
+                        if (!is_file(DIR_FS_CATALOG_IMAGES .$newImg) && $type && $type[0] == 'image') {
                             $size = @GetImageSize(DIR_FS_CATALOG_IMAGES . $mainImage['banners_image']);
                             if (isset($size[0]) && $size[0]) {
 

@@ -44,6 +44,22 @@ practise), it will reject the Xls loader that it would normally use for
 a .xls file; and test the file using the other loaders until it finds
 the appropriate loader, and then use that to read the file.
 
+If you know that this is an `xls` file, but don't know whether it is a
+genuine BIFF-format Excel or Html markup with an xls extension, you can
+limit the loader to check only those two possibilities by passing in an
+array of Readers to test against.
+
+```php
+$inputFileName = './sampleData/example1.xls';
+$testAgainstFormats = [
+    \PhpOffice\PhpSpreadsheet\IOFactory::READER_XLS,
+    \PhpOffice\PhpSpreadsheet\IOFactory::READER_HTML,
+];
+
+/** Load $inputFileName to a Spreadsheet Object  **/
+$spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($inputFileName, 0, $testAgainstFormats);
+```
+
 While easy to implement in your code, and you don't need to worry about
 the file type; this isn't the most efficient method to load a file; and
 it lacks the flexibility to configure the loader in any way before
@@ -118,6 +134,34 @@ $spreadsheet = $reader->load($inputFileName);
 See `samples/Reader/04_Simple_file_reader_using_the_IOFactory_to_identify_a_reader_to_use.php`
 for a working example of this code.
 
+As with the IOFactory `load()` method, you can also pass an array of formats
+for  the `identify()` method to check against if you know that it will only
+be in a subset of the possible formats that PhpSpreadsheet supports.
+
+```php
+$inputFileName = './sampleData/example1.xls';
+$testAgainstFormats = [
+    \PhpOffice\PhpSpreadsheet\IOFactory::READER_XLS,
+    \PhpOffice\PhpSpreadsheet\IOFactory::READER_HTML,
+];
+
+/**  Identify the type of $inputFileName  **/
+$inputFileType = \PhpOffice\PhpSpreadsheet\IOFactory::identify($inputFileName, $testAgainstFormats);
+```
+
+You can also use this to confirm that a file is what it claims to be:
+
+```php
+$inputFileName = './sampleData/example1.xls';
+
+try {
+    /**  Verify that $inputFileName really is an Xls file **/
+    $inputFileType = \PhpOffice\PhpSpreadsheet\IOFactory::identify($inputFileName, [\PhpOffice\PhpSpreadsheet\IOFactory::READER_XLS]);
+} catch (\PhpOffice\PhpSpreadsheet\Reader\Exception $e) {
+    // File isn't actually an Xls file, even though it has an xls extension 
+}
+```
+
 ## Spreadsheet Reader Options
 
 Once you have created a reader object for the workbook that you want to
@@ -146,7 +190,7 @@ $spreadsheet = $reader->load($inputFileName);
 See `samples/Reader/05_Simple_file_reader_using_the_read_data_only_option.php`
 for a working example of this code.
 
-It is important to note that Workbooks (and PhpSpreadsheet) store dates
+It is important to note that most Workbooks (and PhpSpreadsheet) store dates
 and times as simple numeric values: they can only be distinguished from
 other numeric values by the format mask that is applied to that cell.
 When setting read data only to true, PhpSpreadsheet doesn't read the
@@ -162,8 +206,8 @@ Reading Only Data from a Spreadsheet File applies to Readers:
 
 Reader    | Y/N |Reader  | Y/N |Reader        | Y/N |
 ----------|:---:|--------|:---:|--------------|:---:|
-Xlsx      | YES | Xls | YES | Xml | YES |
-Ods    | YES | SYLK   | NO  | Gnumeric     | YES |
+Xlsx      | YES | Xls    | YES | Xml          | YES |
+Ods       | YES | SYLK   | NO  | Gnumeric     | YES |
 CSV       | NO  | HTML   | NO
 
 ### Reading Only Named WorkSheets from a File
@@ -233,8 +277,8 @@ Reading Only Named WorkSheets from a File applies to Readers:
 
 Reader    | Y/N |Reader  | Y/N |Reader        | Y/N |
 ----------|:---:|--------|:---:|--------------|:---:|
-Xlsx      | YES | Xls | YES | Xml | YES |
-Ods    | YES | SYLK   | NO  | Gnumeric     | YES |
+Xlsx      | YES | Xls    | YES | Xml          | YES |
+Ods       | YES | SYLK   | NO  | Gnumeric     | YES |
 CSV       | NO  | HTML   | NO
 
 ### Reading Only Specific Columns and Rows from a File (Read Filters)
@@ -381,7 +425,7 @@ Using Read Filters applies to:
 
 Reader    | Y/N |Reader  | Y/N |Reader        | Y/N |
 ----------|:---:|--------|:---:|--------------|:---:|
-Xlsx      | YES | Xls    | YES | Xml | YES |
+Xlsx      | YES | Xls    | YES | Xml          | YES |
 Ods       | YES | SYLK   | NO  | Gnumeric     | YES |
 CSV       | YES | HTML   | NO  |              |     |
 
@@ -439,7 +483,7 @@ Combining Multiple Files into a Single Spreadsheet Object applies to:
 
 Reader    | Y/N |Reader  | Y/N |Reader        | Y/N |
 ----------|:---:|--------|:---:|--------------|:---:|
-Xlsx      | NO  | Xls    | NO  | Xml | NO  |
+Xlsx      | NO  | Xls    | NO  | Xml          | NO  |
 Ods       | NO  | SYLK   | YES | Gnumeric     | NO  |
 CSV       | YES | HTML   | NO
 
@@ -516,7 +560,7 @@ Splitting a single loaded file across multiple worksheets applies to:
 
 Reader    | Y/N |Reader  | Y/N |Reader        | Y/N |
 ----------|:---:|--------|:---:|--------------|:---:|
-Xlsx      | NO  | Xls    | NO  | Xml | NO  |
+Xlsx      | NO  | Xls    | NO  | Xml          | NO  |
 Ods       | NO  | SYLK   | NO  | Gnumeric     | NO  |
 CSV       | YES | HTML   | NO
 
@@ -556,7 +600,45 @@ Setting CSV delimiter applies to:
 
 Reader    | Y/N |Reader  | Y/N |Reader        | Y/N |
 ----------|:---:|--------|:---:|--------------|:---:|
-Xlsx      | NO  | Xls    | NO  | Xml | NO  |
+Xlsx      | NO  | Xls    | NO  | Xml          | NO  |
+Ods       | NO  | SYLK   | NO  | Gnumeric     | NO  |
+CSV       | YES | HTML   | NO
+
+
+### Reading formatted Numbers from a CSV File
+
+Unfortunately, numbers in a CSV file may be formatted as strings.
+If that number is a simple integer or float (with a decimal `.` separator) without any thousands separator, then it will be treated as a number.
+However, if the value has a thousands separator (e.g. `12,345`), or a decimal separator that isn't a `.` (e.g. `123,45` for a European locale), then it will be loaded as a string with that formatting.
+If you want the Csv Reader to convert that value to a numeric when it loads the file, the you need to tell it to do so. The `castFormattedNumberToNumeric()` lets you do this.
+
+(Assuming that our server is configured with German locale settings: otherwise it may be necessary to call `setlocale()` before loading the file.)
+```php
+$inputFileType = 'Csv';
+$inputFileName = './sampleData/example1.de.csv';
+
+/** It may be necessary to call setlocale() first if this is not your default locale  */
+// setlocale(LC_ALL, 'de_DE.UTF-8', 'deu_deu');
+
+/**  Create a new Reader of the type defined in $inputFileType  **/
+$reader = \PhpOffice\PhpSpreadsheet\IOFactory::createReader($inputFileType);
+/**  Enable loading numeric values formatted with German , decimal separator and . thousands separator  **/
+$reader->castFormattedNumberToNumeric(true);
+
+/**  Load the file to a Spreadsheet Object  **/
+$spreadsheet = $reader->load($inputFileName);
+```
+This will attempt to load those formatted numeric values as numbers, based on the server's locale settings.
+
+If you want to load those values as numbers, but also to retain the formatting as a number format mask, then you can pass a boolean `true` as a second argument to the `castFormattedNumberToNumeric()` method to tell the Reader to identify the format masking to use for that value. This option does have an arbitrary limit of 6 decimal places.
+
+If your Csv file includes other formats for numbers (currencies, scientific format, etc); then you should probably also use the Advanced Value Binder to handle these cases.  
+
+Applies to:
+
+Reader    | Y/N |Reader  | Y/N |Reader        | Y/N |
+----------|:---:|--------|:---:|--------------|:---:|
+Xlsx      | NO  | Xls    | NO  | Xml          | NO  |
 Ods       | NO  | SYLK   | NO  | Gnumeric     | NO  |
 CSV       | YES | HTML   | NO
 
@@ -608,7 +690,7 @@ Loading using a Value Binder applies to:
 
 Reader    | Y/N |Reader  | Y/N |Reader        | Y/N
 ----------|:---:|--------|:---:|--------------|:---:
-Xlsx      | NO  | Xls    | NO  | Xml | NO
+Xlsx      | NO  | Xls    | NO  | Xml          | NO
 Ods       | NO  | SYLK   | NO  | Gnumeric     | NO
 CSV       | YES | HTML   | YES
 

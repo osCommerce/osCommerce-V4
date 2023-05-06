@@ -488,7 +488,7 @@ class Product extends AbstractClass
                     if (!($productsAttributesDownloadClass instanceof \common\models\ProductsAttributesDownload)) {
                         $productsAttributesDownloadClass = new \common\models\ProductsAttributesDownload();
                         $productsAttributesDownloadClass->loadDefaultValues();
-                        $productsAttributesClass->products_attributes_id = $productsAttributesId;
+                        $productsAttributesDownloadClass->products_attributes_id = $productsAttributesId;
                     }
                     $productsAttributesDownloadClass->setAttributes($productsAttributesDownloadRecord, false);
                     if ($productsAttributesDownloadClass->save(false)) {

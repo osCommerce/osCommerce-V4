@@ -3,6 +3,7 @@
 namespace Doctrine\Tests\Common\Annotations;
 
 use Doctrine\Common\Annotations\DocLexer;
+use Doctrine\Common\Lexer\Token;
 use PHPUnit\Framework\TestCase;
 
 use function str_repeat;
@@ -19,11 +20,13 @@ class DocLexerTest extends TestCase
 
         self::assertTrue($lexer->moveNext());
         self::assertNull($lexer->token);
-        self::assertEquals('@', $lexer->lookahead['value']);
+        self::assertNotNull($lexer->lookahead);
+        self::assertEquals('@', $lexer->lookahead->value);
 
         self::assertTrue($lexer->moveNext());
-        self::assertEquals('@', $lexer->token['value']);
-        self::assertEquals('Name', $lexer->lookahead['value']);
+        self::assertNotNull($lexer->token);
+        self::assertEquals('@', $lexer->token->value);
+        self::assertEquals('Name', $lexer->lookahead->value);
 
         self::assertFalse($lexer->moveNext());
     }
@@ -112,9 +115,9 @@ class DocLexerTest extends TestCase
         foreach ($tokens as $expected) {
             $lexer->moveNext();
             $lookahead = $lexer->lookahead;
-            self::assertEquals($expected['value'], $lookahead['value']);
-            self::assertEquals($expected['type'], $lookahead['type']);
-            self::assertEquals($expected['position'], $lookahead['position']);
+            self::assertEquals($expected['value'], $lookahead->value);
+            self::assertEquals($expected['type'], $lookahead->type);
+            self::assertEquals($expected['position'], $lookahead->position);
         }
 
         self::assertFalse($lexer->moveNext());
@@ -153,9 +156,9 @@ class DocLexerTest extends TestCase
         foreach ($tokens as $expected) {
             $lexer->moveNext();
             $lookahead = $lexer->lookahead;
-            self::assertEquals($expected['value'], $lookahead['value']);
-            self::assertEquals($expected['type'], $lookahead['type']);
-            self::assertEquals($expected['position'], $lookahead['position']);
+            self::assertEquals($expected['value'], $lookahead->value);
+            self::assertEquals($expected['type'], $lookahead->type);
+            self::assertEquals($expected['position'], $lookahead->position);
         }
 
         self::assertFalse($lexer->moveNext());
@@ -170,7 +173,7 @@ class DocLexerTest extends TestCase
 
         $lexer->setInput('"' . str_repeat('.', 20240) . '"');
 
-        self::assertIsArray($lexer->glimpse());
+        self::assertInstanceOf(Token::class, $lexer->glimpse());
     }
 
     /**
@@ -214,9 +217,9 @@ class DocLexerTest extends TestCase
         foreach ($tokens as $expected) {
             $lexer->moveNext();
             $lookahead = $lexer->lookahead;
-            self::assertEquals($expected['value'], $lookahead['value']);
-            self::assertEquals($expected['type'], $lookahead['type']);
-            self::assertEquals($expected['position'], $lookahead['position']);
+            self::assertEquals($expected['value'], $lookahead->value);
+            self::assertEquals($expected['type'], $lookahead->type);
+            self::assertEquals($expected['position'], $lookahead->position);
         }
 
         self::assertFalse($lexer->moveNext());
@@ -294,9 +297,9 @@ class DocLexerTest extends TestCase
             $lookahead = $lexer->lookahead;
 
             $actualTokens[] = [
-                'value' => $lookahead['value'],
-                'type' => $lookahead['type'],
-                'position' => $lookahead['position'],
+                'value' => $lookahead->value,
+                'type' => $lookahead->type,
+                'position' => $lookahead->position,
             ];
         }
 
@@ -317,5 +320,10 @@ class DocLexerTest extends TestCase
         self::assertTrue($lexer->moveNext());
         self::assertFalse($lexer->nextTokenIsAdjacent());
         self::assertFalse($lexer->moveNext());
+    }
+
+    public function testItReturnsNullWhenThereIsNothingToParse(): void
+    {
+        self::assertNull((new DocLexer())->peek());
     }
 }

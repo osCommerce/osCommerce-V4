@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace JMS\Serializer\Tests\Metadata\Driver;
 
 use Doctrine\Common\Annotations\AnnotationReader;
+use JMS\Serializer\Metadata\ClassMetadata;
 use JMS\Serializer\Metadata\Driver\AnnotationDriver;
 use JMS\Serializer\Metadata\Driver\DocBlockDriver;
 use JMS\Serializer\Metadata\Driver\TypedPropertiesDriver;
@@ -27,16 +28,23 @@ use JMS\Serializer\Tests\Fixtures\DocBlockType\Collection\CollectionOfInterfaces
 use JMS\Serializer\Tests\Fixtures\DocBlockType\Collection\CollectionOfNotExistingClasses;
 use JMS\Serializer\Tests\Fixtures\DocBlockType\Collection\CollectionOfScalars;
 use JMS\Serializer\Tests\Fixtures\DocBlockType\Collection\CollectionTypedAsGenericClass;
+use JMS\Serializer\Tests\Fixtures\DocBlockType\Collection\ConstructorPropertyPromotion;
+use JMS\Serializer\Tests\Fixtures\DocBlockType\Collection\ConstructorPropertyPromotionWithoutDocblock;
+use JMS\Serializer\Tests\Fixtures\DocBlockType\Collection\ConstructorPropertyPromotionWithScalar;
 use JMS\Serializer\Tests\Fixtures\DocBlockType\Collection\Details\ProductColor;
 use JMS\Serializer\Tests\Fixtures\DocBlockType\Collection\Details\ProductDescription;
 use JMS\Serializer\Tests\Fixtures\DocBlockType\Collection\Details\ProductName;
 use JMS\Serializer\Tests\Fixtures\DocBlockType\Collection\MapTypedAsGenericClass;
 use JMS\Serializer\Tests\Fixtures\DocBlockType\Collection\Product;
 use JMS\Serializer\Tests\Fixtures\DocBlockType\Collection\Vehicle;
+use JMS\Serializer\Tests\Fixtures\DocBlockType\Phpstan\PhpstanArrayCollectionShape;
+use JMS\Serializer\Tests\Fixtures\DocBlockType\Phpstan\PhpstanArrayShape;
+use JMS\Serializer\Tests\Fixtures\DocBlockType\Phpstan\PhpstanMultipleArrayShapes;
+use JMS\Serializer\Tests\Fixtures\DocBlockType\Phpstan\PhpstanNestedArrayShape;
+use JMS\Serializer\Tests\Fixtures\DocBlockType\Phpstan\ProductType;
 use JMS\Serializer\Tests\Fixtures\DocBlockType\SingleClassFromDifferentNamespaceTypeHint;
 use JMS\Serializer\Tests\Fixtures\DocBlockType\SingleClassFromGlobalNamespaceTypeHint;
 use JMS\Serializer\Tests\Fixtures\DocBlockType\UnionTypedDocBLockProperty;
-use Metadata\ClassMetadata;
 use PHPUnit\Framework\TestCase;
 
 class DocBlockDriverTest extends TestCase
@@ -354,6 +362,92 @@ class DocBlockDriverTest extends TestCase
 
         self::assertEquals(
             null,
+            $m->propertyMetadata['data']->type
+        );
+    }
+
+    public function testInferTypeForConstructorPropertyPromotion()
+    {
+        if (PHP_VERSION_ID < 80000) {
+            $this->markTestSkipped('Constructor property promotion requires PHP 8.0');
+        }
+
+        $m = $this->resolve(ConstructorPropertyPromotion::class);
+
+        self::assertEquals(
+            ['name' => 'array', 'params' => [['name' => 'string', 'params' => []]]],
+            $m->propertyMetadata['data']->type
+        );
+    }
+
+    public function testInferTypeForConstructorPropertyPromotionWithoutDocblock()
+    {
+        if (PHP_VERSION_ID < 80000) {
+            $this->markTestSkipped('Constructor property promotion requires PHP 8.0');
+        }
+
+        $m = $this->resolve(ConstructorPropertyPromotionWithoutDocblock::class);
+
+        self::assertEquals(
+            null,
+            $m->propertyMetadata['data']->type
+        );
+    }
+
+    public function testInferTypeForConstructorPropertyPromotionWithScalar()
+    {
+        if (PHP_VERSION_ID < 80000) {
+            $this->markTestSkipped('Constructor property promotion requires PHP 8.0');
+        }
+
+        $m = $this->resolve(ConstructorPropertyPromotionWithScalar::class);
+
+        self::assertEquals(
+            ['name' => 'string', 'params' => []],
+            $m->propertyMetadata['data']->type
+        );
+    }
+
+    public function testInferTypeForPhpstanArray()
+    {
+        $m = $this->resolve(PhpstanArrayShape::class);
+
+        self::assertEquals(
+            ['name' => 'array', 'params' => []],
+            $m->propertyMetadata['data']->type
+        );
+    }
+
+    public function testInferTypeForPhpstanNestedArrayShape()
+    {
+        $m = $this->resolve(PhpstanNestedArrayShape::class);
+
+        self::assertEquals(
+            ['name' => 'array', 'params' => []],
+            $m->propertyMetadata['data']->type
+        );
+    }
+
+    public function testInferTypeForMultiplePhpstanArray()
+    {
+        $m = $this->resolve(PhpstanMultipleArrayShapes::class);
+
+        self::assertEquals(
+            ['name' => 'array', 'params' => []],
+            $m->propertyMetadata['data']->type
+        );
+        self::assertEquals(
+            ['name' => 'array', 'params' => []],
+            $m->propertyMetadata['details']->type
+        );
+    }
+
+    public function testInferTypeForPhpstanArrayCollection()
+    {
+        $m = $this->resolve(PhpstanArrayCollectionShape::class);
+
+        self::assertEquals(
+            ['name' => 'array', 'params' => [['name' => 'int', 'params' => []], ['name' => ProductType::class, 'params' => []]]],
             $m->propertyMetadata['data']->type
         );
     }

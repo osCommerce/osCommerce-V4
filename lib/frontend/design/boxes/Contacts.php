@@ -43,7 +43,7 @@ class Contacts extends Widget
                     'telephone' => $data['telephone']
                 ]], ['Organization', 'telephone']);
                 if (isset($this->settings[0]['add_link_on_phone']) && $this->settings[0]['add_link_on_phone']) {
-                    $data['telephone'] = '<a href="mailto:' . $data['telephone'] . '">' . $data['telephone'] . '</a>';
+                    $data['telephone'] = '<a href="tel:' . $data['telephone'] . '">' . $data['telephone'] . '</a>';
                 }
                 return $data['telephone'];
             case 'email':
@@ -302,7 +302,7 @@ class Contacts extends Widget
     }
 
     public static function translate($matches) {
-        return constant($matches[1]);
+        return defined($matches[1]) ? constant($matches[1]) : $matches[1];
     }
 
     public static function data($name, $data, $seo)

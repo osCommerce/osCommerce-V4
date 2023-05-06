@@ -50,9 +50,9 @@ class AnalyticsProvider extends Providers implements GoogleProviderInterface{
         }
     }
     
-    public function getConfig($platformId){
+    public function getConfig($platformId = 0){
         static $setting = null;
-        if (is_null($setting) || ($setting && $platformId != $setting->platform_id)){
+        if (is_null($setting) || ($setting == false) || ($setting && $platformId != $setting->platform_id)){
             $setting = $this->getSetting($platformId);
         }
         if ($setting){
@@ -64,8 +64,8 @@ class AnalyticsProvider extends Providers implements GoogleProviderInterface{
         return false;
     }
     
-    public function getSetting($platformId){
-        return $this->gsRepository->getSetting($this->code, $platformId, 1);
+    public function getSetting($platformId = 0){
+        return $this->gsRepository->getSetting($this->code, $platformId, null);
     }
     
     protected function prepareConfig($data){
@@ -110,7 +110,7 @@ class AnalyticsProvider extends Providers implements GoogleProviderInterface{
         }
     }
     
-    public function getFileKey($platformId){
+    public function getFileKey($platformId = 0){
         $config = $this->getConfig($platformId);
         if ($config){
             $values = $this->_decode($config);
@@ -121,7 +121,7 @@ class AnalyticsProvider extends Providers implements GoogleProviderInterface{
         return false;
     }
     
-    public function getViewId($platformId){
+    public function getViewId($platformId = 0){
         $config = $this->getConfig($platformId);
         if ($config){
             $values = $this->_decode($config);
@@ -132,7 +132,7 @@ class AnalyticsProvider extends Providers implements GoogleProviderInterface{
         return false;
     }
     
-    public function drawConfigTemplate($platformId){
+    public function drawConfigTemplate($platformId = 0){
         return widgets\AnalyticsWidget::widget(['jsonFile' => $this->getFileKey($platformId), 'viewId' => $this->getViewId($platformId), 'owner' => $this->getClassName(), 'description' => $this->getDescription(), 'platformId' => $platformId]);
     }
 }

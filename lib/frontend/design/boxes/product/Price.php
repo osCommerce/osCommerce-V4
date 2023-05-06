@@ -84,6 +84,23 @@ class Price extends Widget
         }
 
         if ((abs($product['products_price']) < 0.01 && defined('PRODUCT_PRICE_FREE') && PRODUCT_PRICE_FREE == 'true')) {
+
+            if (isset($product['special_expiration_date']) && !empty($product['special_expiration_date'])) {
+                $priceValidUntil = date("Y-m-d", strtotime($product['special_expiration_date']));
+            } else {
+                $priceValidUntil = date("Y-m-d", time() + 60*60*24*365);
+            }
+            \frontend\design\JsonLd::addData(['Product' => [
+                'offers' => [
+                    '@type' => 'Offer',
+                    'url' => Yii::$app->urlManager->createAbsoluteUrl(['catalog/product', 'products_id' => $params['products_id']]),
+                    'availability' => 'https://schema.org/' . ($stock_info['stock_code'] == 'out-stock' ? 'OutOfStock' : 'InStock'),
+                    'price' => '0.00',
+                    'priceCurrency' => \Yii::$app->settings->get('currency'),
+                    'priceValidUntil' => $priceValidUntil,
+                ]
+            ]]);
+
             //return TEXT_FREE;
             return IncludeTpl::widget(['file' => 'boxes/product/price.tpl', 'params' => [
                 'special' => '',

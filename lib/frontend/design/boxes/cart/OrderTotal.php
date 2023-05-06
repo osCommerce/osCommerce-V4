@@ -31,7 +31,7 @@ class OrderTotal extends Widget
     public function run()
     {
         global $cart;
-        
+
         $manager = $this->params['manager'];
 
         $coupon_remove_action = Yii::$app->urlManager->createUrl(['shopping-cart', 'action' => 'remove_cart_total']);
@@ -54,7 +54,7 @@ class OrderTotal extends Widget
         } else {
             $result = $manager->getTotalOutput(true, 'TEXT_SHOPPING_CART');
         }
-        
+
         foreach ($result as $key => $value) {
             if ($value['code'] == 'ot_coupon') {
                 $result[$key]['coupon'] = '';
@@ -66,12 +66,12 @@ class OrderTotal extends Widget
             }
         }
 
+        $this->params['order_total_output'] = $result;
+        $this->params['coupon_remove_action'] = $coupon_remove_action;
+
         return IncludeTpl::widget([
             'file' => 'boxes/cart/order-total.tpl',
-            'params' => [
-                'order_total_output' => $result,
-                'coupon_remove_action' => $coupon_remove_action,
-            ]
+            'params' => $this->params
         ]);
     }
 }

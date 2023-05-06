@@ -286,6 +286,10 @@ class BasePrice {
             $this->getProductsDiscountPrice(['qty' => $qty]);
         }
 
+        foreach (\common\helpers\Hooks::getList('base-price/get-product-price') as $filename) {
+            include($filename);
+        }
+
         $this->saveCalculated('products_price');
         return $this->products_price['value'];
     }
@@ -872,6 +876,11 @@ class BasePrice {
         if (((is_array($params['qty']) && array_sum($params['qty']) > 1) || (!is_array($params['qty']) && $params['qty'] > 1)) && $this->inventory_price['value'] > 0) {
             $this->inventory_price['value'] = $this->getInventoryDiscountPrice($params);
         }
+
+        foreach (\common\helpers\Hooks::getList('base-price/get-inventory-group-price') as $filename) {
+            include($filename);
+        }
+
         $this->saveCalculated('inventory_price');
         return $this->inventory_price['value'];
     }

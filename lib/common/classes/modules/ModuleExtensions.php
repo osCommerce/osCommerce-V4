@@ -172,6 +172,11 @@ class ModuleExtensions extends Module {
                 return '';
             } else {
                 static::initTranslation('init_widget');
+                foreach($res as &$wd){
+                    if (isset($wd['type']) && empty($wd['type'])) {
+                        $wd['type'] = 'general';
+                    }
+                }
                 return $res;
             }
         }
@@ -247,7 +252,7 @@ class ModuleExtensions extends Module {
             \common\helpers\MenuHelper::removeAdminMenuItems(static::getAdminMenu());
             static::removeTranslationArray($platform_id, $migrate, $this->userConfirmedDeleteAcl); // after remove menu
 
-            \common\helpers\Hooks::unresisterHooks($this->code);
+            \common\helpers\Hooks::unregisterHooks($this->code);
             return parent::remove($platform_id);
             \common\helpers\Modules::changeModule($this->code, 'remove');
 
@@ -562,16 +567,30 @@ class ModuleExtensions extends Module {
 
     public static function getExtDir()
     {
-        $ref = new \ReflectionClass(get_called_class());
-        return \Yii::getAlias('@common/extensions/' . $ref->getShortName());
+        return self::getBaseDir();
     }
 
+    public static function getBaseDir()
+    {
+        return \Yii::getAlias('@site_root/' . self::getBaseDirRelative());
+    }
+
+    public static function getBaseDirRelative()
+    {
+        return \common\helpers\Extensions::getBaseDirRelative(self::getModuleCode());
+    }
+
+    public static function getImageRelative($imageFN, $defImageRelativeFN = null)
+    {
+        return \common\helpers\Extensions::getImageRelative(self::getModuleCode(), $imageFN, $defImageRelativeFN);
+    }
 
     private static function getViewFile($view)
     {
-        $ref = new \ReflectionClass(get_called_class());
-        return '@common/extensions/' . $ref->getShortName() . '/views/' . $view;
+        return '@common/extensions/' . self::getModuleCode() . '/views/' . $view;
     }
+
+
 
     public static function render($view, $params = [])
     {

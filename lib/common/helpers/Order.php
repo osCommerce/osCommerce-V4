@@ -1214,11 +1214,8 @@ class Order
       } elseif (!in_array($table, [TABLE_ORDERS, 'quote_'. TABLE_ORDERS, 'sample_' . TABLE_ORDERS, 'tmp_' . TABLE_ORDERS, TABLE_SUBSCRIPTION])) {
         $table = false;
       }
-      if ($table) {
-        if (TABLE_SUBSCRIPTION == $table) {
-          unset($sqlData['basket_id']);
-        }
-        tep_db_perform($table, $sqlData, 'update', "orders_id = '" . (int)$orders_id . "'"  . $statusCheckWhere);
+      foreach (\common\helpers\Hooks::getList('orders/order-anonymize') as $filename) {
+        include($filename);
       }
     }
 

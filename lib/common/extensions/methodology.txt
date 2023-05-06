@@ -13,6 +13,7 @@ Basic Provisions:
    Backend controllers - folder 'backend/controllers'
    Backend views - folder 'backend/views'
    Hooks - folder 'hooks'
+   Images - extension images folder
 
 
 Extension Generator
@@ -121,8 +122,9 @@ In addition a list of available values page_name and page_area:
 'customers/register', ''
 'customers/logoff', ''
 'customers/after-auth', ''
-'customers/after-trunk', ''  // helpers/customer.php
-'customers/after-delete', '' // helpers/customer.php
+'customers/after-trunk', ''     // helpers/customer.php
+'customers/after-delete', ''    // helpers/customer.php
+'customers/order-anonymize', '' // helpers/customer.php
 'customergroups/groupedit/before-render', ''
 'customergroups/groupedit', 'right-column'
 'categories/brandedit', ''
@@ -134,6 +136,7 @@ In addition a list of available values page_name and page_area:
 'categories/productedit-beforesave', ''
 'categories/productedit', ''
 'categories/productedit/before-render', ''
+'categories/productedit', 'prices-left-top'
 'categories/productedit', 'details-left-column'
 'categories/productedit', 'details-right-column'
 'categories/productedit', 'details-actions'
@@ -155,14 +158,16 @@ In addition a list of available values page_name and page_area:
 'categories/after-trunk', ''  // helpers/categories
 'product/after-delete', ''    //helpers/products.php
 'product/after-trunk', ''     //helpers/products.php
+'product/get-products-discount-table', ''
 'orders/process-order', ''
 'orders/process-order', 'totals-block'
 'orders/process-order', 'btn-bar-top'
 'orders/process-order', 'btn-bar-bottom'
+'orders/process-order', 'btn-bar-right'
 'orders/process-order', 'product-name'
-'orders/after-delete', '' // helpers/order.php
-'orders/after-trunk', '' // helpers/order.php
-'order/anonymize', '' // helpers/customer.php
+'orders/after-delete', ''   // helpers/order.php
+'orders/after-trunk', ''    // helpers/order.php
+'orders/order-anonymize', '' // helpers/order.php
 // deprecated 'Order', 'save_order/before'
 // deprecated 'Order', 'save_order/after'
 // deprecated 'Order', 'notify_customer'
@@ -170,17 +175,35 @@ In addition a list of available values page_name and page_area:
 'order/after-save', ''
 'order/notify_customer', ''
 'order-manager/check-free-shipping', ''
+'order-manager/reset-delivery-address', ''
+'order-manager/total-process', ''
+'ot-shipping/process', ''
+'tax/get-tax-rate', ''
+'tax/get-tax-values', ''
+'tmp-orders/process-order', 'btn-bar-top'
+'tmp-orders/process-order', 'btn-bar-bottom'
+'tmp-orders/process-order', 'btn-bar-right'
+'shopping-cart/index', ''
 'shopping-cart/reset', ''
 'shopping-cart/add-cart', ''
 'shopping-cart/remove', ''
+'shopping-cart/cleanup', ''
 'module-payment/process-notification', ''
+'attributes/get-options-values-price', ''
+'base-price/get-product-price', ''
+'base-price/get-inventory-group-price', ''
 'base-price/get-inventory-special-price', ''
 'base-price/get-product-special-price', ''
-'platforms/after-delete'
+'platforms/after-delete', ''
+'platforms-settings/after-save', ''
+'index/index', ''
 'checkout/index', ''
 'checkout/process', ''
 'checkout/after-process', ''
+'analytics', 'checkout/step'
 'checkout/success', ''
+'catalog/product', ''
+'catalog/search-suggest', ''
 'init-factory/init', ''
 'cart-factory/work', ''
 'cart-factory/work/end', ''
@@ -189,5 +212,16 @@ In addition a list of available values page_name and page_area:
 'product_props/init_workers', ''
 'account/order_history_info', 'order-product' // smarty tpl
 'frontend/layouts-main', 'before-body-close'
+'frontend/layouts-ajax', ''
+'box/product', 'button-buy-attribute'
+'box/product-listing', ''
+'box/product-listing', 'button-buy-attribute'
+'shipping/check-ignored', ''
+'frontend/jsonld-organization', ''
+'frontend/jsonld-product', ''
+'comment-template/visibility-variants', ''
+'email/template-keys', ''
+'email/after-sending', ''
+'design/export-block', ''
+'design/import-block', ''
 </HOOKS>
-

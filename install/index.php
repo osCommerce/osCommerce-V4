@@ -20,9 +20,9 @@ $rootPath = './../';
 
 ini_set("display_errors", 0);
 
-defined('VERSION_EXT') or define('VERSION_EXT', 'v.4.04 build 50612');
-defined('VERSION_PHP_RQ') or define('VERSION_PHP_RQ', '7.2.0');
-defined('VERSION_PHP_REC') or define('VERSION_PHP_REC', '7.4.0');
+defined('VERSION_EXT') or define('VERSION_EXT', 'v.4.12 build 56860');
+defined('VERSION_PHP_RQ') or define('VERSION_PHP_RQ', '7.4.0');
+defined('VERSION_PHP_REC') or define('VERSION_PHP_REC', '7.4.33');
 defined('REQ_PHP_MEMORY') or define('REQ_PHP_MEMORY', '128M');
 defined('REQ_PHP_MEMORY_REC') or define('REQ_PHP_MEMORY_REC', '256M');
 
@@ -60,6 +60,7 @@ if (file_exists($rootPath . 'includes/local/configure.php'))
     include_once $rootPath . 'includes/local/configure.php';
 
 include_once($rootPath . 'install/install.class.php');
+Log::write('Install started', 'info');
 $install = new install();
 $install->root_path = $rootPath;
 $install->init();

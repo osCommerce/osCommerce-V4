@@ -451,6 +451,14 @@
 .edit-banner-popup .btn-bar.edit-btn-bar{
     display: none;
 }
+.edit-banner-popup-wrap .popup-box {
+    width: 1600px;
+    max-width: 95%;
+}
+.edit-banner-popup .popup-content {
+    height: calc(100vh - 160px);
+    overflow: auto;
+}
 .banner-disabled-text {
     color: var(--color-warning);
 }

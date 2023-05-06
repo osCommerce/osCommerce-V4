@@ -7,6 +7,8 @@
   {foreach $attributes as $item}
     {if $item['type'] == 'radio'}
       {include file="`$smarty.current_dir`/attributes/radio.tpl" item=$item}
+    {elseif is_array($item['options_2level']) && count($item['options_2level']) > 1}
+      {include file="`$smarty.current_dir`/attributes/2level.tpl" item=$item}
     {else}
       {include file="`$smarty.current_dir`/attributes/select.tpl" item=$item}
     {/if}

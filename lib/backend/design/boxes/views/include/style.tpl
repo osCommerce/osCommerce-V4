@@ -19,8 +19,8 @@
         <ul class="nav nav-tabs nav-tabs-scroll style-tabs">
 
           {if $styleHide.responsive !== 1}
+            <li class="label">{$smarty.const.WINDOW_WIDTH}:</li>
             {foreach $settings.media_query as $item}
-              <li class="label">{$smarty.const.WINDOW_WIDTH}:</li>
               <li {if $item@index == 0} class="active" {/if}>
                 <a href="#m{$item.id}" data-toggle="tab">
                   {$item.title}

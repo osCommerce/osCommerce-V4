@@ -27,15 +27,26 @@ class ReCaptcha {
         $this->enabled = true;
         
         $provider = \common\components\GoogleTools::instance()->getCaptchaProvider();
+        $platformId = \common\classes\platform::activeId();
         
-        $this->public_key = $provider->getPublickey();
+        $this->public_key = $provider->getPublickey($platformId);
+        $this->secret_key = $provider->getPrivateKey($platformId);
+        $this->version = $provider->getVersion($platformId);
         
-        $this->secret_key = $provider->getPrivateKey();
+        if ($platformId > 0) {
+            if (
+                    (empty($this->public_key) || $this->public_key === false) ||
+                    (empty($this->secret_key) || $this->secret_key === false)
+                ) {
+                $this->public_key = $provider->getPublickey(0);
+                $this->secret_key = $provider->getPrivateKey(0);
+                $this->version = $provider->getVersion(0);
+            }
+        }
         
-        $this->version = $provider->getVersion();
-        
-        if (empty($this->public_key) || empty($this->secret_key))
+        if (empty($this->public_key) || empty($this->secret_key)) {
             $this->enabled = false;
+        }
     }
     
     public function isEnabled(){

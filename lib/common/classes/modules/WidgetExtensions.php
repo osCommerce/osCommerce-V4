@@ -33,6 +33,7 @@ class WidgetExtensions extends \yii\base\Widget
         $this->extName = $ext['name'];
         $this->extDir = $ext['dir'];
         $this->extClass = $ext['class'];
+        self::allowed(); //init translations for settings
     }
 
 

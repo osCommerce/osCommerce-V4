@@ -452,7 +452,8 @@ window.paypal_render_subfields_{$option} = function () {
     if (paypal.HostedFields.isEligible()) {
          let pppOrderId;
         // Renders card fields
-        if (paymentCollection && !paymentCollection.hasOwnProperty('pppCardFields')) {
+        //paymentCollection.hasOwnProperty('pppCardFields') is incorrect after payment block reload
+        if (paymentCollection && (!paymentCollection.hasOwnProperty('pppCardFields') || $('#ppp-card-number').children().length == 0) ) {
             paypal.HostedFields.render({
               createOrder: () => {
                 return fetch('{$createUrl}' {$customersDetails}
@@ -475,9 +476,9 @@ window.paypal_render_subfields_{$option} = function () {
                 expirationDate: {selector: '#ppp-expiration-date', placeholder: '" . PAYPAL_PARTNER_TEXT_EXP_PLACEHOLDER . "' }
               }
             }).then((cardFields) => {
-              if (!paymentCollection.hasOwnProperty('pppCardFields')) {
+              //if (!paymentCollection.hasOwnProperty('pppCardFields')) {
                   paymentCollection.pppCardFields = cardFields;
-              }
+              //}
 
             });
         }

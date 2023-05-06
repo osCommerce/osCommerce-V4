@@ -12,11 +12,14 @@
 
 namespace backend\design;
 
+use common\classes\design;
 use common\helpers\Language;
 use common\models\DesignBoxesSettings;
 use common\models\DesignBoxesSettingsTmp;
+use common\models\Modules;
 use common\models\ThemesSettings;
 use common\models\ThemesStyles;
+use common\models\ThemesStylesMain;
 use yii\helpers\FileHelper;
 use common\classes\Images;
 use common\models\DesignBoxes;
@@ -40,7 +43,7 @@ class Theme
         if ($zip->open($tmp_path . $backup_file . '.zip', \ZipArchive::CREATE) === TRUE) {
 
             $theme = $theme_name;
-            $themeFolder = DIRECTORY_SEPARATOR . 'desktop';
+            $themeFolder = '/desktop';
             for ($i = 0; $i < 2 && $theme; $i++) {
 
                 $json = self::getThemeJson($theme);
@@ -63,27 +66,27 @@ class Theme
                     $path = $rootPath . 'themes' . DIRECTORY_SEPARATOR . $themeParent . DIRECTORY_SEPARATOR;
                     $files = self::themeFiles($themeParent);
                     foreach ($files as $item) {
-                        $separator = DIRECTORY_SEPARATOR;
-                        if (strpos($item, DIRECTORY_SEPARATOR) === 0) {
-                            $separator = '';
-                        }
-                        $zip->addFile($path . $item, $themeFolder . $separator . $item);// add css, js, images, fonts
+                        $item = ltrim($item, '\//');
+                        $item = str_replace('\\', '/', $item);
+                        $zip->addFile($path . $item, $themeFolder . '/' . $item);// add css, js, images, fonts
                     }
 
                     $tplPath = $rootPath . 'lib' . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR;
                     $tplPath .= 'themes' . DIRECTORY_SEPARATOR . $themeParent . DIRECTORY_SEPARATOR;
                     $tplFiles = self::themeFiles($themeParent, '', true);
                     foreach ($tplFiles as $item) {
-                        $zip->addFile($tplPath . $item, $themeFolder . DIRECTORY_SEPARATOR . 'tpl' . $item);// add tpl files
+                        $item = str_replace('\\', '/', $item);
+                        $zip->addFile($tplPath . $item, $themeFolder . '/tpl' . $item);// add tpl files
                     }
                 }
 
-                $zip->addFromString ($themeFolder . DIRECTORY_SEPARATOR . 'theme-tree.json', $json);
+                $zip->addFromString ($themeFolder . '/theme-tree.json', $json);
 
                 foreach (Uploads::$archiveImages as $item){// add images from different places, by records in db
                     if (is_file($img_path . $item['old'])){
                         if (!in_array('img' . DIRECTORY_SEPARATOR . $item['new'], $files)) {
-                            $zip->addFile($img_path . $item['old'], $themeFolder . DIRECTORY_SEPARATOR . 'img' . DIRECTORY_SEPARATOR . $item['new']);
+                            $item['new'] = str_replace('\\', '/', $item['new']);
+                            $zip->addFile($img_path . $item['old'], $themeFolder . '/img/' . $item['new']);
                         }
                     }
                 }
@@ -167,7 +170,7 @@ class Theme
         ])->orderBy('sort_order')->asArray()->all();
 
         if ($params['block-name']) {
-            $themeArchive = $params['block-name'];
+            $themeArchive = design::pageName($params['block-name']);
         } else {
             $themeArchive = $theme_name . '_' . ($id == 'box' ? $designBoxes[0]['widget_name'] . '_' : '') . $id;
         }
@@ -206,15 +209,17 @@ class Theme
         $zip->addFromString ('files.json', json_encode($files));
 
         $info = [
-            'name' => $params['block-name'],
-            'name_title' => $params['block-title'],
-            'groupCategory' => $params['group-categories'],
-            'comment' => $params['comment'],
+            'name' => $params['block-name'] ?? '',
+            'name_title' => $params['block-title'] ?? '',
+            'groupCategory' => $params['group-categories'] ?? '',
+            'comment' => $params['comment'] ?? '',
+            'page_type' => $params['page_type'] ?? '',
         ];
         $zip->addFromString ('info.json', json_encode($info));
 
         if ($params['image']) {
-            $zip->addFromString ('screenshot.png', base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $params['image'])));
+            $zip->addFromString ('images/screenshot.png', base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $params['image'])));
+            $zip->addFromString ('images.json', json_encode(['screenshot.png']));
         }
 
         $zip->close();
@@ -230,7 +235,8 @@ class Theme
 
         return json_encode([
             'text' => $message,
-            'filename' => $themeArchive
+            'filename' => $themeArchive,
+            'extensionWidgets' => self::extensionWidgets()
         ]);
     }
 
@@ -340,20 +346,24 @@ class Theme
         }
 
         $boxIdArr = [];
-        if ($boxesArr['microtime']) {
+        if ($boxesArr['microtime'] ?? false) {
             $boxIdArr[] = Theme::blocksTreeImport($boxesArr, $params['theme_name'], $params['block_name'], $params['sort_order']);
         } else {
-            foreach ($boxesArr as $arr) {
-                $sortOrder = $params['sort_order'] + $arr['sort_order'];
-                $blockBoxes = DesignBoxesTmp::find()->where([
-                    'block_name' => $params['block_name'],
-                    'theme_name' => $params['theme_name'],
-                ])->andWhere(['>=', 'sort_order', $sortOrder])->all();
-                foreach ($blockBoxes as $box) {
-                    $box->sort_order = $box->sort_order + 1;
-                    $box->save();
+            foreach ($boxesArr as $blockName => $arr) {
+                if (is_int($blockName)) {
+                    $sortOrder = $params['sort_order'] + $arr['sort_order'];
+                    $blockBoxes = DesignBoxesTmp::find()->where([
+                        'block_name' => $params['block_name'],
+                        'theme_name' => $params['theme_name'],
+                    ])->andWhere(['>=', 'sort_order', $sortOrder])->all();
+                    foreach ($blockBoxes as $box) {
+                        $box->sort_order = $box->sort_order + 1;
+                        $box->save();
+                    }
+                    $boxIdArr[] = Theme::blocksTreeImport($arr, $params['theme_name'], $params['block_name'], $sortOrder);
+                } else {
+                    $boxIdArr[] = Theme::blocksTreeImport($arr, $params['theme_name'], $blockName);
                 }
-                $boxIdArr[] = Theme::blocksTreeImport($arr, $params['theme_name'], $params['block_name'], $sortOrder);
             }
         }
 
@@ -465,6 +475,8 @@ class Theme
                 'accessibility' => $item['accessibility'],
             ];
         }
+
+        $theme['main_styles'] = ThemesStylesMain::find()->where(['theme_name' => $theme_name])->asArray()->all();
 
         return json_encode($theme);
     }
@@ -597,7 +609,7 @@ class Theme
     public static function getStyleMediaSizes($sizeId, $themeName)
     {
         static $size = [];
-        if (!$size[$themeName]) {
+        if (!($size[$themeName] ?? null)) {
             $size[$themeName] = [];
         }
 
@@ -675,7 +687,7 @@ class Theme
     public static function getCssByClass($class, $themeName)
     {
         static $response = [];
-        if (!isset($response[$themeName])) {
+        if (!($response[$themeName] ?? null)) {
             $response[$themeName] = [];
         }
 
@@ -723,11 +735,42 @@ class Theme
         return $response;
     }
 
+    public static function extensionWidgets($widgetName = '')
+    {
+        static $widgets = [];
+
+        if ($widgetName) {
+            $widgetPath = explode('\\', $widgetName);
+
+            if (count($widgetPath) > 2 || (count($widgetPath) > 1 && ctype_upper(substr($widgetPath[0], 0, 1)))) {
+                if (array_search($widgetName, array_column($widgets, 'name')) === false) {
+                    $status = 'no';
+                    $path = DIR_FS_CATALOG . 'common/extensions/' . $widgetName;
+                    if (is_dir($path)) {
+                        $status = (Modules::find()->where(['code' => $widgetPath[0]])->count() ? 'installed' : 'not-installed');
+                    }
+
+                    $widgets[] = [
+                        'name' => $widgetName,
+                        'extension' => $widgetPath[0],
+                        'status' => $status
+                    ];
+                }
+            }
+        }
+
+        return $widgets;
+    }
+
     public static function blocksTree($id, $images = false)
     {
         $arr = array();
 
         $query = tep_db_fetch_array(tep_db_query("select widget_name, widget_params, sort_order, block_name, theme_name, microtime from " . TABLE_DESIGN_BOXES_TMP . " where id = '" . (int)$id . "'"));
+
+        if (!$query) {
+            return [];
+        }
 
         $arr['microtime'] = $query['microtime'];
         $arr['block_name'] = $query['block_name'];
@@ -739,6 +782,8 @@ class Theme
             $widgetCssClass = self::widgetNameToCssClass($arr['widget_name']);
             $css['current'] = self::getCssByClass($widgetCssClass, $query['theme_name']);
         }
+
+        self::extensionWidgets($arr['widget_name']);
 
         $query2 = tep_db_query("
 select dbs.setting_name, dbs.setting_value, dbs.visibility, dbs.microtime, l.code
@@ -780,6 +825,10 @@ where dbs.box_id = '" . (int)$id . "'
 
         $arr['translation'] = self::widgetTranslationKeys($arr);
 
+        foreach (\common\helpers\Hooks::getList('design/export-block') as $filename) {
+            include($filename);
+        }
+
         if ($query['widget_name'] == 'BatchSelectedProducts') {
             $arr['settings'][] = array(
                 'setting_name' => 'cross_id',
@@ -789,7 +838,7 @@ where dbs.box_id = '" . (int)$id . "'
             );
         }
 
-        if ($query['widget_name'] == 'BlockBox' || $query['widget_name'] == 'email\BlockBox' || $query['widget_name'] == 'invoice\Container' || $query['widget_name'] == 'cart\CartTabs'){
+        if ($query['widget_name'] == 'BlockBox' || $query['widget_name'] == 'email\BlockBox' || $query['widget_name'] == 'invoice\Container' || $query['widget_name'] == 'cart\CartTabs' || $query['widget_name'] == 'ClosableBox'){
 
             $query = tep_db_query("select id from " . TABLE_DESIGN_BOXES_TMP . " where block_name = 'block-" . tep_db_input($id) . "'");
             if (tep_db_num_rows($query) > 0){
@@ -829,6 +878,22 @@ where dbs.box_id = '" . (int)$id . "'
                     while ($item = tep_db_fetch_array($query)) {
                         $arr['sub_' . $i][] = self::blocksTree($item['id'], $images);
                     }
+                }
+            }
+        } elseif ($query['widget_name'] == 'WidgetsAria'){
+            $aria = DesignBoxesSettingsTmp::find()->where([
+                'box_id' => $id,
+                'setting_name' => 'aria_name'
+            ])->asArray()->one();
+
+            if ($aria['setting_value'] ?? false) {
+                $areaBoxes = DesignBoxesTmp::find()->where([
+                    'theme_name' => $query['theme_name'],
+                    'block_name' => $aria['setting_value']
+                ])->asArray()->all();
+
+                foreach ($areaBoxes as $areaBox) {
+                    $arr['WidgetsAria'][] = self::blocksTree($areaBox['id'], $images);
                 }
             }
         }
@@ -921,13 +986,29 @@ where dbs.box_id = '" . (int)$id . "'
             //tep_db_perform(TABLE_THEMES_STYLES_TMP, $sql_data_array);
         }
 
+        if (isset($arr['main_styles']) && is_array($arr['main_styles'])) {
+            ThemesStylesMain::deleteAll(['theme_name' => $theme_name]);
+            foreach ($arr['main_styles'] as $style) {
+                $mainStyle = new ThemesStylesMain();
+                $mainStyle->theme_name = $theme_name;
+                $mainStyle->name = $style['name'];
+                $mainStyle->value = $style['value'];
+                $mainStyle->type = $style['type'];
+                $mainStyle->sort_order = $style['sort_order'];
+                $mainStyle->save();
+            }
+        }
+
         self::elementsSave($theme_name);
     }
 
     public static function blocksTreeImport($arr, $theme_name, $block_name = '', $sort_order = '', $save = false, $newMicrotime = true)
     {
-        $microtime =  $newMicrotime ? microtime(true) . rand(0, 99) : $arr['microtime'];
+        $microtime =  $newMicrotime || !isset($arr['microtime']) ? microtime(true) . rand(0, 99) : $arr['microtime'];
 
+        if (!($arr['block_name'] ?? false)) {
+            return '';
+        }
         $sql_data_array = array(
             'microtime' => $microtime,
             'theme_name' => $theme_name,
@@ -943,16 +1024,24 @@ where dbs.box_id = '" . (int)$id . "'
             tep_db_perform(TABLE_DESIGN_BOXES, $sql_data_array);
         }
 
-        self::addTranslations($arr['translation']);
+        self::extensionWidgets($arr['widget_name']);
+
+        if (isset($arr['translation'])) {
+            self::addTranslations($arr['translation']);
+        }
         self::addCss($arr['css'] ?? null, $theme_name, $arr['widget_name']);
+
+        foreach (\common\helpers\Hooks::getList('design/import-block') as $filename) {
+            include($filename);
+        }
 
         if (is_array($arr['settings'] ?? null) && count($arr['settings']))
             foreach ($arr['settings'] as $item){
                 $language_id = 0;
                 $key = true;
-                if ($item['language_id']){
+                if ($item['language_id'] ?? false){
                     $lan_query = tep_db_fetch_array(tep_db_query("select languages_id from " . TABLE_LANGUAGES . " where code = '" . tep_db_input($item['language_id']) . "'"));
-                    if ($lan_query['languages_id']) {
+                    if ($lan_query['languages_id'] ?? false) {
                         $language_id = $lan_query['languages_id'];
                     } else {
                         $key = false;
@@ -997,7 +1086,7 @@ where dbs.box_id = '" . (int)$id . "'
                 }
             }
 
-        if ($arr['widget_name'] == 'BlockBox' || $arr['widget_name'] == 'email\BlockBox' || $arr['widget_name'] == 'invoice\Container' || $arr['widget_name'] == 'cart\CartTabs'){
+        if ($arr['widget_name'] == 'BlockBox' || $arr['widget_name'] == 'email\BlockBox' || $arr['widget_name'] == 'invoice\Container' || $arr['widget_name'] == 'cart\CartTabs' || $arr['widget_name'] == 'ClosableBox'){
 
             if (is_array($arr['sub_1'] ?? null) && count($arr['sub_1']) > 0){
                 foreach ($arr['sub_1'] as $item){
@@ -1031,6 +1120,26 @@ where dbs.box_id = '" . (int)$id . "'
                     foreach ($arr['sub_' . $i] as $item){
                         self::blocksTreeImport($item, $theme_name, 'block-' . $box_id . '-' . $i, '', $save, $newMicrotime);
                     }
+                }
+            }
+        } elseif ($arr['widget_name'] == 'WidgetsAria' && isset($arr['settings']) && is_array($arr['settings'])){
+            $areaName = '';
+            foreach ($arr['settings'] as $setting){
+                if ($setting['setting_name'] == 'aria_name') {
+                    $areaName = $setting['setting_value'];
+                    break;
+                }
+            }
+
+            if (is_array($arr['WidgetsAria'] ?? null) && count($arr['WidgetsAria']) > 0){
+                $boxes = DesignBoxesTmp::find()->where(['theme_name' => $theme_name, 'block_name' => $areaName])
+                    ->asArray()->all();
+                foreach ($boxes as $box) {
+                    Theme::deleteBlock($box['id']);
+                }
+                DesignBoxesTmp::deleteAll(['theme_name' => $theme_name, 'block_name' => $areaName]);
+                foreach ($arr['WidgetsAria'] as $item){
+                    self::blocksTreeImport($item, $theme_name, $areaName, '', $save, false);
                 }
             }
         }
@@ -1129,9 +1238,11 @@ where dbs.box_id = '" . (int)$id . "'
         }
         $parent_theme = $parent_theme;
         $parents[] = $parent_theme;
-        while ($themes_arr[$parent_theme]) {
-            $parents[] = $themes_arr[$parent_theme];
-            $parent_theme = $themes_arr[$parent_theme];
+        if (isset($themes_arr[$parent_theme]) && is_array($themes_arr[$parent_theme])) {
+            while ($themes_arr[$parent_theme]) {
+                $parents[] = $themes_arr[$parent_theme];
+                $parent_theme = $themes_arr[$parent_theme];
+            }
         }
         $parents = array_reverse($parents);
 
@@ -1269,6 +1380,16 @@ where dbs.box_id = '" . (int)$id . "'
             tep_db_perform(TABLE_THEMES_STYLES, $sql_data_array);
         }
 
+        $mainStyles = ThemesStylesMain::find()->where(['theme_name' => $parent_theme])->all();
+        if (is_array($mainStyles)) {
+            foreach ($mainStyles as $style) {
+                $newStyle = new ThemesStylesMain();
+                $newStyle->attributes = $style->attributes;
+                $newStyle->theme_name = $theme_name;
+                $newStyle->save();
+            }
+        }
+
         if ($parent_theme_files == 'copy') {
 
             foreach ($parents as $parentItem) {
@@ -1314,6 +1435,7 @@ where dbs.box_id = '" . (int)$id . "'
         tep_db_query("delete from " . TABLE_THEMES_STYLES_CACHE . " where theme_name = '" . tep_db_input($theme_name) . "'");
         tep_db_query("delete from " . TABLE_THEMES_STEPS . " where theme_name = '" . tep_db_input($theme_name) . "'");
         tep_db_query("delete from " . TABLE_THEMES_STYLES_CACHE . " where theme_name = '" . tep_db_input($theme_name) . "'");
+        ThemesStylesMain::deleteAll(['theme_name' => $theme_name]);
 
         $themeBackups = DIR_FS_CATALOG . 'lib'
             . DIRECTORY_SEPARATOR . 'backend'
@@ -1494,11 +1616,11 @@ where dbs.box_id = '" . (int)$id . "'
         $mime = $info['mime'];
 
         if ($mime == 'image/jpeg'){
-            $im = imagecreatefromjpeg(DIR_FS_CATALOG . $uploadedFile);
+            $im = @imagecreatefromjpeg(DIR_FS_CATALOG . $uploadedFile);
         } elseif ($mime == 'image/png'){
-            $im = imagecreatefrompng(DIR_FS_CATALOG . $uploadedFile);
+            $im = @imagecreatefrompng(DIR_FS_CATALOG . $uploadedFile);
         } elseif ($mime == 'image/gif'){
-            $im = imagecreatefromgif(DIR_FS_CATALOG . $uploadedFile);
+            $im = @imagecreatefromgif(DIR_FS_CATALOG . $uploadedFile);
         }
         if (!$im) {
             return false;
@@ -1747,6 +1869,7 @@ where dbs.box_id = '" . (int)$id . "'
                     $i++;
                 }
 
+                FileHelper::createDirectory(dirname(DIR_FS_CATALOG . $tempName), 0666);
                 copy($fileFrom, DIR_FS_CATALOG . $tempName);
                 @chmod(DIR_FS_CATALOG . $tempName, 0666);
 
@@ -1786,7 +1909,7 @@ where dbs.box_id = '" . (int)$id . "'
             foreach ($designBoxes as $designBox) {
                 DesignBoxes::deleteAll(['id' => $designBox['id']]);
                 DesignBoxesSettings::deleteAll(['box_id' => $designBox['id']]);
-                self::deleteBlock($designBox['id']);
+                self::deleteBlock($designBox['id'], true);
             }
         }
     }

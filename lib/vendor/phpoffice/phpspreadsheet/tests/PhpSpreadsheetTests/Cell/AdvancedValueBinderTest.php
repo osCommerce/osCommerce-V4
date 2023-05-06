@@ -4,16 +4,16 @@ namespace PhpOffice\PhpSpreadsheetTests\Cell;
 
 use PhpOffice\PhpSpreadsheet\Cell\AdvancedValueBinder;
 use PhpOffice\PhpSpreadsheet\Cell\Cell;
-use PhpOffice\PhpSpreadsheet\Cell\DataType;
-use PhpOffice\PhpSpreadsheet\Collection\Cells;
+use PhpOffice\PhpSpreadsheet\Cell\IValueBinder;
+use PhpOffice\PhpSpreadsheet\Settings;
 use PhpOffice\PhpSpreadsheet\Shared\StringHelper;
-use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
-use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
-use PHPUnit\Framework\MockObject\MockObject;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PHPUnit\Framework\TestCase;
 
 class AdvancedValueBinderTest extends TestCase
 {
+    const AVB_PRECISION = 1.0E-8;
+
     /**
      * @var string
      */
@@ -29,11 +29,19 @@ class AdvancedValueBinderTest extends TestCase
      */
     private $thousandsSeparator;
 
+    /**
+     * @var IValueBinder
+     */
+    private $valueBinder;
+
     protected function setUp(): void
     {
+        Settings::setLocale('en_US');
         $this->currencyCode = StringHelper::getCurrencyCode();
         $this->decimalSeparator = StringHelper::getDecimalSeparator();
         $this->thousandsSeparator = StringHelper::getThousandsSeparator();
+        $this->valueBinder = Cell::getValueBinder();
+        Cell::setValueBinder(new AdvancedValueBinder());
     }
 
     protected function tearDown(): void
@@ -41,23 +49,53 @@ class AdvancedValueBinderTest extends TestCase
         StringHelper::setCurrencyCode($this->currencyCode);
         StringHelper::setDecimalSeparator($this->decimalSeparator);
         StringHelper::setThousandsSeparator($this->thousandsSeparator);
+        Cell::setValueBinder($this->valueBinder);
     }
 
     public function testNullValue(): void
     {
-        /** @var Cell&MockObject $cellStub */
-        $cellStub = $this->getMockBuilder(Cell::class)
-            ->disableOriginalConstructor()
-            ->getMock();
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
 
-        // Configure the stub.
-        $cellStub->expects(self::once())
-            ->method('setValueExplicit')
-            ->with(null, DataType::TYPE_NULL)
-            ->willReturn(true);
+        $sheet->getCell('A1')->setValue(null);
+        self::assertNull($sheet->getCell('A1')->getValue());
 
-        $binder = new AdvancedValueBinder();
-        $binder->bindValue($cellStub, null);
+        $spreadsheet->disconnectWorksheets();
+    }
+
+    public function testBoolean(): void
+    {
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $sheet->getCell('A1')->setValue(true);
+        self::assertTrue($sheet->getCell('A1')->getValue());
+
+        $sheet->getCell('A2')->setValue(false);
+        self::assertFalse($sheet->getCell('A2')->getValue());
+
+        $sheet->getCell('A3')->setValue('true');
+        self::assertTrue($sheet->getCell('A3')->getValue());
+
+        $sheet->getCell('A4')->setValue('false');
+        self::assertFalse($sheet->getCell('A4')->getValue());
+
+        $spreadsheet->disconnectWorksheets();
+    }
+
+    public function testBooleanLocale(): void
+    {
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        Settings::setLocale('nl_NL');
+
+        $sheet->getCell('A1')->setValue('Waar');
+        self::assertTrue($sheet->getCell('A1')->getValue());
+
+        $sheet->getCell('A2')->setValue('OnWaar');
+        self::assertFalse($sheet->getCell('A2')->getValue());
+
+        $spreadsheet->disconnectWorksheets();
     }
 
     /**
@@ -65,65 +103,39 @@ class AdvancedValueBinderTest extends TestCase
      *
      * @param mixed $value
      * @param mixed $valueBinded
-     * @param mixed $format
      * @param mixed $thousandsSeparator
      * @param mixed $decimalSeparator
      * @param mixed $currencyCode
      */
-    public function testCurrency($value, $valueBinded, $format, $thousandsSeparator, $decimalSeparator, $currencyCode): void
+    public function testCurrency($value, $valueBinded, $thousandsSeparator, $decimalSeparator, $currencyCode): void
     {
-        $sheet = $this->getMockBuilder(Worksheet::class)
-            ->onlyMethods(['getStyle', 'getCellCollection'])
-            ->addMethods(['getNumberFormat', 'setFormatCode'])
-            ->getMock();
-        $cellCollection = $this->getMockBuilder(Cells::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $cellCollection->expects(self::any())
-            ->method('getParent')
-            ->willReturn($sheet);
-
-        $sheet->expects(self::once())
-            ->method('getStyle')
-            ->willReturnSelf();
-        // @phpstan-ignore-next-line
-        $sheet->expects(self::once())
-            ->method('getNumberFormat')
-            ->willReturnSelf();
-        // @phpstan-ignore-next-line
-        $sheet->expects(self::once())
-            ->method('setFormatCode')
-            ->with($format)
-            ->willReturnSelf();
-        $sheet->expects(self::any())
-            ->method('getCellCollection')
-            ->willReturn($cellCollection);
-
         StringHelper::setCurrencyCode($currencyCode);
         StringHelper::setDecimalSeparator($decimalSeparator);
         StringHelper::setThousandsSeparator($thousandsSeparator);
 
-        $cell = new Cell(null, DataType::TYPE_STRING, $sheet);
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
 
-        $binder = new AdvancedValueBinder();
-        $binder->bindValue($cell, $value);
-        self::assertEquals($valueBinded, $cell->getValue());
+        $sheet->getCell('A1')->setValue($value);
+        self::assertEquals($valueBinded, $sheet->getCell('A1')->getValue());
+
+        $spreadsheet->disconnectWorksheets();
     }
 
     public function currencyProvider(): array
     {
-        $currencyUSD = NumberFormat::FORMAT_CURRENCY_USD_SIMPLE;
-        $currencyEURO = str_replace('$', '€', NumberFormat::FORMAT_CURRENCY_USD_SIMPLE);
-
         return [
-            ['$10.11', 10.11, $currencyUSD, ',', '.', '$'],
-            ['$1,010.12', 1010.12, $currencyUSD, ',', '.', '$'],
-            ['$20,20', 20.2, $currencyUSD, '.', ',', '$'],
-            ['$2.020,20', 2020.2, $currencyUSD, '.', ',', '$'],
-            ['€2.020,20', 2020.2, $currencyEURO, '.', ',', '€'],
-            ['€ 2.020,20', 2020.2, $currencyEURO, '.', ',', '€'],
-            ['€2,020.22', 2020.22, $currencyEURO, ',', '.', '€'],
-            ['$10.11', 10.11, $currencyUSD, ',', '.', '€'],
+            ['$10.11', 10.11, ',', '.', '$'],
+            ['$1,010.12', 1010.12, ',', '.', '$'],
+            ['$20,20', 20.2, '.', ',', '$'],
+            ['$2.020,20', 2020.2, '.', ',', '$'],
+            ['€2.020,20', 2020.2, '.', ',', '€'],
+            ['€ 2.020,20', 2020.2, '.', ',', '€'],
+            ['€2,020.22', 2020.22, ',', '.', '€'],
+            ['$10.11', 10.11, ',', '.', '€'],
+            ['€2,020.20', 2020.2, ',', '.', '$'],
+            ['-2,020.20€', -2020.2, ',', '.', '$'],
+            ['- 2,020.20 € ', -2020.2, ',', '.', '$'],
         ];
     }
 
@@ -132,59 +144,34 @@ class AdvancedValueBinderTest extends TestCase
      *
      * @param mixed $value
      * @param mixed $valueBinded
-     * @param mixed $format
      */
-    public function testFractions($value, $valueBinded, $format): void
+    public function testFractions($value, $valueBinded): void
     {
-        $sheet = $this->getMockBuilder(Worksheet::class)
-            ->onlyMethods(['getStyle', 'getCellCollection'])
-            ->addMethods(['getNumberFormat', 'setFormatCode'])
-            ->getMock();
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
 
-        $cellCollection = $this->getMockBuilder(Cells::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $cellCollection->expects(self::any())
-            ->method('getParent')
-            ->willReturn($sheet);
+        $sheet->getCell('A1')->setValue($value);
+        self::assertEquals($valueBinded, $sheet->getCell('A1')->getValue());
 
-        $sheet->expects(self::once())
-            ->method('getStyle')
-            ->willReturnSelf();
-        // @phpstan-ignore-next-line
-        $sheet->expects(self::once())
-            ->method('getNumberFormat')
-            ->willReturnSelf();
-        // @phpstan-ignore-next-line
-        $sheet->expects(self::once())
-            ->method('setFormatCode')
-            ->with($format)
-            ->willReturnSelf();
-        $sheet->expects(self::any())
-            ->method('getCellCollection')
-            ->willReturn($cellCollection);
-
-        $cell = new Cell(null, DataType::TYPE_STRING, $sheet);
-
-        $binder = new AdvancedValueBinder();
-        $binder->bindValue($cell, $value);
-        self::assertEquals($valueBinded, $cell->getValue());
+        $spreadsheet->disconnectWorksheets();
     }
 
     public function fractionProvider(): array
     {
         return [
-            ['1/5', 0.2, '?/?'],
-            ['-1/5', -0.2, '?/?'],
-            ['12/5', 2.4, '??/?'],
-            ['2/100', 0.02, '?/???'],
-            ['15/12', 1.25, '??/??'],
-            ['20/100', 0.2, '??/???'],
-            ['1 3/5', 1.6, '# ?/?'],
-            ['-1 3/5', -1.6, '# ?/?'],
-            ['1 4/20', 1.2, '# ?/??'],
-            ['1 16/20', 1.8, '# ??/??'],
-            ['12 20/100', 12.2, '# ??/???'],
+            ['1/5', 0.2],
+            ['-1/5', -0.2],
+            ['- 1/5', -0.2],
+            ['12/5', 2.4],
+            ['2/100', 0.02],
+            ['15/12', 1.25],
+            ['20/100', 0.2],
+            ['1 3/5', 1.6],
+            ['-1 3/5', -1.6],
+            ['1 4/20', 1.2],
+            ['1 16/20', 1.8],
+            ['12 20/100', 12.2],
+            ['-1 4/20', -1.2],
         ];
     }
 
@@ -193,51 +180,28 @@ class AdvancedValueBinderTest extends TestCase
      *
      * @param mixed $value
      * @param mixed $valueBinded
-     * @param mixed $format
      */
-    public function testPercentages($value, $valueBinded, $format): void
+    public function testPercentages($value, $valueBinded): void
     {
-        $sheet = $this->getMockBuilder(Worksheet::class)
-            ->onlyMethods(['getStyle', 'getCellCollection'])
-            ->addMethods(['getNumberFormat', 'setFormatCode'])
-            ->getMock();
-        $cellCollection = $this->getMockBuilder(Cells::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $cellCollection->expects(self::any())
-            ->method('getParent')
-            ->willReturn($sheet);
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
 
-        $sheet->expects(self::once())
-            ->method('getStyle')
-            ->willReturnSelf();
-        // @phpstan-ignore-next-line
-        $sheet->expects(self::once())
-            ->method('getNumberFormat')
-            ->willReturnSelf();
-        // @phpstan-ignore-next-line
-        $sheet->expects(self::once())
-            ->method('setFormatCode')
-            ->with($format)
-            ->willReturnSelf();
-        $sheet->expects(self::any())
-            ->method('getCellCollection')
-            ->willReturn($cellCollection);
+        $sheet->getCell('A1')->setValue($value);
+        self::assertEquals($valueBinded, $sheet->getCell('A1')->getValue());
 
-        $cell = new Cell(null, DataType::TYPE_STRING, $sheet);
-
-        $binder = new AdvancedValueBinder();
-        $binder->bindValue($cell, $value);
-        self::assertEquals($valueBinded, $cell->getValue());
+        $spreadsheet->disconnectWorksheets();
     }
 
     public function percentageProvider(): array
     {
         return [
-            ['10%', 0.1, NumberFormat::FORMAT_PERCENTAGE_00],
-            ['-12%', -0.12, NumberFormat::FORMAT_PERCENTAGE_00],
-            ['120%', 1.2, NumberFormat::FORMAT_PERCENTAGE_00],
-            ['12.5%', 0.125, NumberFormat::FORMAT_PERCENTAGE_00],
+            ['10%', 0.1],
+            ['-12%', -0.12],
+            ['120%', 1.2],
+            ['12.5%', 0.125],
+            ['-12.5%', -0.125],
+            ['12,345%', 123.45],
+            ['12,345.67%', 123.4567],
         ];
     }
 
@@ -246,92 +210,41 @@ class AdvancedValueBinderTest extends TestCase
      *
      * @param mixed $value
      * @param mixed $valueBinded
-     * @param mixed $format
      */
-    public function testTimes($value, $valueBinded, $format): void
+    public function testTimes($value, $valueBinded): void
     {
-        $sheet = $this->getMockBuilder(Worksheet::class)
-            ->onlyMethods(['getStyle', 'getCellCollection'])
-            ->addMethods(['getNumberFormat', 'setFormatCode'])
-            ->getMock();
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
 
-        $cellCollection = $this->getMockBuilder(Cells::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $cellCollection->expects(self::any())
-            ->method('getParent')
-            ->willReturn($sheet);
+        $sheet->getCell('A1')->setValue($value);
+        self::assertEqualsWithDelta($valueBinded, $sheet->getCell('A1')->getValue(), self::AVB_PRECISION);
 
-        $sheet->expects(self::once())
-            ->method('getStyle')
-            ->willReturnSelf();
-        // @phpstan-ignore-next-line
-        $sheet->expects(self::once())
-            ->method('getNumberFormat')
-            ->willReturnSelf();
-        // @phpstan-ignore-next-line
-        $sheet->expects(self::once())
-            ->method('setFormatCode')
-            ->with($format)
-            ->willReturnSelf();
-        $sheet->expects(self::any())
-            ->method('getCellCollection')
-            ->willReturn($cellCollection);
-
-        $cell = new Cell(null, DataType::TYPE_STRING, $sheet);
-
-        $binder = new AdvancedValueBinder();
-        $binder->bindValue($cell, $value);
-        self::assertEquals($valueBinded, $cell->getValue());
+        $spreadsheet->disconnectWorksheets();
     }
 
     public function timeProvider(): array
     {
         return [
-            ['1:20', 0.05555555556, NumberFormat::FORMAT_DATE_TIME3],
-            ['09:17', 0.386805555556, NumberFormat::FORMAT_DATE_TIME3],
-            ['15:00', 0.625, NumberFormat::FORMAT_DATE_TIME3],
-            ['17:12:35', 0.71707175926, NumberFormat::FORMAT_DATE_TIME4],
-            ['23:58:20', 0.99884259259, NumberFormat::FORMAT_DATE_TIME4],
+            ['1:20', 0.05555555556],
+            ['09:17', 0.386805555556],
+            ['15:00', 0.625],
+            ['17:12:35', 0.71707175926],
+            ['23:58:20', 0.99884259259],
         ];
     }
 
     /**
      * @dataProvider stringProvider
      */
-    public function testStringWrapping(string $value, bool $wrapped): void
+    public function testStringWrapping(string $value): void
     {
-        $sheet = $this->getMockBuilder(Worksheet::class)
-            ->onlyMethods(['getStyle', 'getCellCollection'])
-            ->addMethods(['getAlignment', 'setWrapText'])
-            ->getMock();
-        $cellCollection = $this->getMockBuilder(Cells::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $cellCollection->expects(self::any())
-            ->method('getParent')
-            ->willReturn($sheet);
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
 
-        $sheet->expects($wrapped ? self::once() : self::never())
-            ->method('getStyle')
-            ->willReturnSelf();
-        // @phpstan-ignore-next-line
-        $sheet->expects($wrapped ? self::once() : self::never())
-            ->method('getAlignment')
-            ->willReturnSelf();
-        // @phpstan-ignore-next-line
-        $sheet->expects($wrapped ? self::once() : self::never())
-            ->method('setWrapText')
-            ->with($wrapped)
-            ->willReturnSelf();
-        $sheet->expects(self::any())
-            ->method('getCellCollection')
-            ->willReturn($cellCollection);
+        $sheet->getCell('A1')->setValue($value);
+        self::assertEquals($value, $sheet->getCell('A1')->getValue());
 
-        $cell = new Cell(null, DataType::TYPE_STRING, $sheet);
-
-        $binder = new AdvancedValueBinder();
-        $binder->bindValue($cell, $value);
+        $spreadsheet->disconnectWorksheets();
     }
 
     public function stringProvider(): array

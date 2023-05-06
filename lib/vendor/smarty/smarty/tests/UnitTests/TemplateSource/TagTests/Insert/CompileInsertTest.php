@@ -15,10 +15,10 @@
  */
 class CompileInsertTest extends PHPUnit_Smarty
 {
-    public function setUp()
+    public function setUp(): void
     {
-        $this->setUpSmarty(dirname(__FILE__));
-        $this->smarty->addPluginsDir(dirname(__FILE__) . "/PHPunitplugins/");
+        $this->setUpSmarty(__DIR__);
+        $this->smarty->addPluginsDir(__DIR__ . "/PHPunitplugins/");
         $this->smarty->enableSecurity();
     }
 
@@ -120,7 +120,7 @@ class CompileInsertTest extends PHPUnit_Smarty
      */
     public function testInsertPluginCaching1_2()
     {
-        $this->smarty->addPluginsDir(dirname(__FILE__) . "/PHPunitplugins/");
+        $this->smarty->addPluginsDir(__DIR__ . "/PHPunitplugins/");
         global $insertglobal;
         $insertglobal = 'changed global 2';
         $this->smarty->caching = 1;
@@ -138,7 +138,7 @@ class CompileInsertTest extends PHPUnit_Smarty
      */
     public function testInsertPluginCaching1_3()
     {
-        $this->smarty->addPluginsDir(dirname(__FILE__) . "/PHPunitplugins/");
+        $this->smarty->addPluginsDir(__DIR__ . "/PHPunitplugins/");
         global $insertglobal;
         $insertglobal = 'changed global';
         $this->smarty->caching = 1;
@@ -156,7 +156,7 @@ class CompileInsertTest extends PHPUnit_Smarty
     public function testInsertPluginCaching1_4()
     {
         global $insertglobal;
-        $this->smarty->addPluginsDir(dirname(__FILE__) . "/PHPunitplugins/");
+        $this->smarty->addPluginsDir(__DIR__ . "/PHPunitplugins/");
             $insertglobal = 'changed global 4';
             $this->smarty->caching = 1;
             $this->smarty->assign('foo', 'buh', true);
@@ -192,7 +192,7 @@ class CompileInsertTest extends PHPUnit_Smarty
         $this->smarty->compile_id = 1;
         $tpl = $this->smarty->createTemplate('insertplugintest.tpl');
         $tpl->assign('foo', 'buh');
-        $this->assertContains('param foo bar globalvar global 2', $this->smarty->fetch($tpl));
+        $this->assertStringContainsString('param foo bar globalvar global 2', $this->smarty->fetch($tpl));
     }
     /**
      * test insert plugin caching 3
@@ -203,7 +203,7 @@ class CompileInsertTest extends PHPUnit_Smarty
     {
         $this->smarty->caching = true;
         $this->smarty->assign('insert',$t=time());
-        $this->assertContains($t.'Inner template', $this->smarty->fetch('insertplugintest2.tpl'));
+        $this->assertStringContainsString($t.'Inner template', $this->smarty->fetch('insertplugintest2.tpl'));
     }
 
     /**
@@ -217,7 +217,7 @@ class CompileInsertTest extends PHPUnit_Smarty
         sleep(2);
         $this->smarty->caching = true;
         $this->smarty->assign('insert',$t=time());
-        $this->assertContains($t.'Inner template', $this->smarty->fetch('insertplugintest2.tpl'));
+        $this->assertStringContainsString($t.'Inner template', $this->smarty->fetch('insertplugintest2.tpl'));
     }
 
 
@@ -233,7 +233,7 @@ class CompileInsertTest extends PHPUnit_Smarty
             $this->smarty->fetch($tpl);
         }
         catch (Exception $e) {
-            $this->assertContains("{insert} no function or plugin found for 'mustfail'", $e->getMessage());
+            $this->assertStringContainsString("{insert} no function or plugin found for 'mustfail'", $e->getMessage());
 
             return;
         }
@@ -252,7 +252,7 @@ class CompileInsertTest extends PHPUnit_Smarty
             $this->smarty->fetch($tpl);
         }
         catch (Exception $e) {
-            $this->assertContains('missing script file', $e->getMessage());
+            $this->assertStringContainsString('missing script file', $e->getMessage());
 
             return;
         }

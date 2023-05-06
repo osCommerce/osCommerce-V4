@@ -123,10 +123,11 @@ class Customers extends ActiveRecord
                 ->limit(1)->one();
     }
 
-    public function getProducts(){
-        return $this->hasMany(\common\models\Products::className(), ['products_id' => 'products_id'])
-                    ->viaTable('personal_catalog', ['customers_id' => 'customers_id']);
-    }
+// personal_catalolog moved to extension. relation is used nowhere in osc and extensions but maybe somethere in old projects?
+//    public function getProducts(){
+//        return $this->hasMany(\common\models\Products::className(), ['products_id' => 'products_id'])
+//                    ->viaTable('personal_catalog', ['customers_id' => 'customers_id']);
+//    }
 
     public function getAddressBooks(){
         return $this->hasMany(AddressBook::className(), ['customers_id' => 'customers_id'])->joinWith('country');

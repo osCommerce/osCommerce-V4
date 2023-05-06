@@ -305,7 +305,9 @@
                     {tep_draw_input_field('products_date_available', $pInfo->products_date_available, 'class="datepicker form-control form-control-small"' )}
                 </div>
 
+                {if \common\helpers\Acl::checkExtensionAllowed('NotifyProductsDate')}
                     {\common\extensions\NotifyProductsDate\NotifyProductsDate::renderCheckBox($pInfo->products_id)}
+                {/if}
                 <div class="edp-line edp-line-heig">
                     <label>{$smarty.const.TEXT_FEATURED_PRODUCT}</label>
                     <input type="checkbox" name="featured" value="1"

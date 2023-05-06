@@ -771,8 +771,27 @@ class Migration extends \yii\db\Migration {
         $this->delete(TABLE_PLATFORMS_CONFIGURATION, $conditions);
     }
 
-    public function addWidget($placeholder, $widget, $ifNoWidget = '', $themeName = false)
+    public function isWidgetExist($widgetNameOrArray)
     {
+        return !empty(\common\models\DesignBoxes::findOne(['widget_name' => $widgetNameOrArray]));
+    }
+
+    /**
+     * @param string|array $placeholder it can be page_name or placeholder from widget_params
+     * @param string $widget widget name or path to widget archive
+     * @param string $ifNoWidget  $widget can be added to $placeholder only if $placeholder dont have $ifNoWidget
+     * @param string $themeName
+     * @param string $position 'start', 'middle', 'end'
+     * @return string
+     */
+    public function addWidget($placeholder, $widget, $ifNoWidget = '', $themeName = '', $position = 'end')
+    {
+      try {
+          if (is_string($placeholder)) {
+              $placeholders = [$placeholder];
+          } else {
+              $placeholders = $placeholder;
+          }
         if (is_file(DIR_FS_CATALOG . $widget)) {
             $widgetName = '';
             $widgetLocation = DIR_FS_CATALOG . $widget;
@@ -801,20 +820,40 @@ class Migration extends \yii\db\Migration {
         }
 
         $themeError = '';
-        if ($themeName && \common\models\Themes::findOne(['theme_name' => $themeName])) {
+        $_themeName = $themeName;
+        if ($themeName) {
+            $_themeName = str_replace('-mobile', '', $themeName);
+        }
+        if ($themeName && \common\models\Themes::findOne(['theme_name' => $_themeName])) {
             $themes = [['theme_name' => $themeName]];
         } else {
             $themes = \common\models\Themes::find()->asArray()->all();
         }
         foreach ($themes as $theme) {
-            $box = \common\models\DesignBoxesTmp::find()->where([
-                'widget_params' => $placeholder, 'theme_name' => $theme['theme_name']
-            ])->asArray()->one();
-            if ($box && is_array($box)) {
-                $params['block_name'] = 'block-' . $box['id'];
-            } else {
-                $params['block_name'] = $placeholder;
+            $params = [];
+            foreach ($placeholders as $blockName) {
+                if (!str_contains($blockName, '-')) {
+                    $params['block_name'] = $blockName;
+                    break;
+                }
+
+                $box = \common\models\DesignBoxesTmp::find()->where([
+                    'widget_params' => $placeholder, 'theme_name' => $theme['theme_name']
+                ])->asArray()->one();
+                if ($box && is_array($box)) {
+                    $params['block_name'] = 'block-' . $box['id'];
+                    break;
+                }
             }
+            if (!$params['block_name']) {
+                if (str_contains($placeholder, '-')) {
+                    $message = "Placeholder '$placeholder' not found in theme '$theme', widget '$widget' could not be installed in the theme\n";
+                    $this->print($message);
+                    \Yii::warning($message);
+                }
+                $params['block_name'] = end($placeholders);
+            }
+
             $params['theme_name'] = $theme['theme_name'];
 
             if ($ifNoWidget) {
@@ -826,11 +865,37 @@ class Migration extends \yii\db\Migration {
                 }
             }
 
-            $max = \common\models\DesignBoxesTmp::find()->where([
-                'block_name' => $params['block_name'], 'theme_name' => $theme['theme_name']
+            if ($position == 'end') {
+                $max = \common\models\DesignBoxesTmp::find()->where([
+                    'block_name' => $params['block_name'], 'theme_name' => $theme['theme_name']
                 ])->max('sort_order');
+                $params['sort_order'] = $max + 1;
+            } else {
+                $boxes = \common\models\DesignBoxesTmp::find()->where([
+                    'block_name' => $params['block_name'], 'theme_name' => $theme['theme_name']
+                ])->orderBy('sort_order')->all();
 
-            $params['sort_order'] = $max + 1;
+                if ($position == 'middle') {
+                    $params['sort_order'] = round(count($boxes)/2) + 1;
+                    $sortOrder = 1;
+                    foreach ($boxes as $box) {
+                        if ($sortOrder == $params['sort_order']) {
+                            $sortOrder++;
+                        }
+                        $box->sort_order = $sortOrder;
+                        $box->save();
+                        $sortOrder++;
+                    }
+                } elseif ($position == 'start') {
+                    $params['sort_order'] = 1;
+                    $sortOrder = 2;
+                    foreach ($boxes as $box) {
+                        $box->sort_order = $sortOrder;
+                        $box->save();
+                        $sortOrder++;
+                    }
+                }
+            }
 
 
             if ($widgetLocation ?? null) {
@@ -856,13 +921,16 @@ class Migration extends \yii\db\Migration {
             \common\models\DesignBoxesCache::deleteAll(['theme_name' => $params['theme_name']]);
         }
         return $themeError;
+      } catch (\Throwable $e) {
+          \Yii::warning($e->getMessage() . "\n" . $e->getTraceAsString());
+          return $e->getMessage();
+      }
     }
 
     public function removeWidget($widgetName)
     {
         $boxes = \common\models\DesignBoxesTmp::find()
             ->where(['widget_name' => $widgetName])
-            ->orWhere(['block_name' => $widgetName])
             ->asArray()->all();
         foreach ($boxes as $box) {
             \backend\design\Theme::deleteBlock($box['id'], true);
@@ -871,6 +939,29 @@ class Migration extends \yii\db\Migration {
             \common\models\DesignBoxes::deleteAll(['id' => $box['id']]);
             \common\models\DesignBoxesTmp::deleteAll(['id' => $box['id']]);
         }
+    }
+
+    /**
+     * @param string $pageName block_name in design_boxes_tmp table
+     * @return void
+     */
+    public function removePage(string $pageName)
+    {
+        $boxes = \common\models\DesignBoxesTmp::find()
+            ->where(['block_name' => $pageName])
+            ->asArray()->all();
+        foreach ($boxes as $box) {
+            \backend\design\Theme::deleteBlock($box['id'], true);
+            \common\models\DesignBoxesSettings::deleteAll(['box_id' => $box['id']]);
+            \common\models\DesignBoxesSettingsTmp::deleteAll(['box_id' => $box['id']]);
+            \common\models\DesignBoxes::deleteAll(['id' => $box['id']]);
+            \common\models\DesignBoxesTmp::deleteAll(['id' => $box['id']]);
+        }
+
+        \common\models\ThemesSettings::deleteAll([
+            'setting_group' => 'added_page',
+            'setting_value' => $pageName,
+        ]);
     }
 
     /**
@@ -902,7 +993,9 @@ class Migration extends \yii\db\Migration {
             ['old_name' => $oldName]
         );
         $this->print(sprintf("Widget style renamed from %s to %s: %d records\n", $oldName, $newName, $count));
-        \Yii::$app->db->createCommand()->truncateTable(TABLE_THEMES_STYLES_CACHE)->execute();
+        if ($count) {
+            \Yii::$app->db->createCommand()->truncateTable(TABLE_THEMES_STYLES_CACHE)->execute();
+        }
     }
 
     public function updateTheme($themeName, $migrationPath)
@@ -913,10 +1006,12 @@ class Migration extends \yii\db\Migration {
             return '';
         }
 
-        $filePath = DIR_FS_CATALOG . DIRECTORY_SEPARATOR . trim($migrationPath, DIRECTORY_SEPARATOR);
+        $filePath = rtrim(DIR_FS_CATALOG, '/\\') . DIRECTORY_SEPARATOR . trim($migrationPath, DIRECTORY_SEPARATOR);
 
         if (!is_file($filePath)) {
             $this->print("Migration file not found: " . $filePath . " \n");
+            \Yii::warning("Migration file not found: " . $filePath);
+            return '';
         }
 
         $migration = json_decode(file_get_contents($filePath), true);

@@ -216,7 +216,7 @@
                     <div class="buttons">
 
 {if $freezeExt && $freezeExt::isFreezed()}
-    <a href="{$ext::getUrl()}" target="_blank">{$smarty.const.BOX_FREEZE_STOCK} {$smarty.const.TEXT_ENABLED}</a>
+    <a href="{$freezeExt::getUrl()}" target="_blank">{$smarty.const.BOX_FREEZE_STOCK} {$smarty.const.TEXT_ENABLED}</a>
 {else}
 
     {if $pInfo->products_id > 0}

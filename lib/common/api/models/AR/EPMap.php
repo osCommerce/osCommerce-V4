@@ -31,6 +31,8 @@ class EPMap extends ActiveRecord
 
     protected $loadedCollections = [];
 
+    protected $modelFlags = [];
+
     public function __construct(array $config = [])
     {
         $initArray = [];
@@ -79,6 +81,11 @@ class EPMap extends ActiveRecord
 
     public function initiateAfterSave($action){
         $this->_afterSaveHooks[$action] = $action;
+    }
+
+    public function setModelFlag($flagName, $flagValue)
+    {
+        $this->modelFlags[$flagName] = $flagValue;
     }
 
     public function beforeSave($insert)

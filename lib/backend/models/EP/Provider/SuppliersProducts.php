@@ -256,6 +256,11 @@ class SuppliersProducts extends ProviderAbstract implements ImportInterface, Exp
             $message->info('"' . $file_primary_value_text . '"' . print_r($e->getMessage(),1) .  ' Skipped');
             return false;
         }
+        if ($this->data['products_id'] ?? null) {
+            tep_db_perform(TABLE_PRODUCTS, array(
+                'products_last_modified' => 'now()',
+            ), 'update', "products_id='" . (int)$this->data['products_id'] . "'");
+        }
 
         return true;
 

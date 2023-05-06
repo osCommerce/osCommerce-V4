@@ -1,5 +1,5 @@
 {
-	"name": "subdee/yii2soapserver",
+	"name": "subdee/yii2-soap-server",
 	"description": "SOAP server for the Yii 2 framework based on the Yii 1 implementation",
 	"keywords": ["yii2", "soap", "server"],
 	"homepage": "https://github.com/subdee/yii2-soap-server",

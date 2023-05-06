@@ -65,6 +65,7 @@ class AutoFilterTest extends SetupTeardown
         $ranges = [
             'G1:J512' => "$title!G1:J512",
             'K1:N20' => 'K1:N20',
+            'B10' => 'B10',
         ];
 
         foreach ($ranges as $actualRange => $fullRange) {
@@ -94,11 +95,22 @@ class AutoFilterTest extends SetupTeardown
         self::assertEquals($expectedResult, $result);
     }
 
-    public function testSetRangeInvalidRange(): void
+    public function testSetRangeInvalidRowRange(): void
     {
         $this->expectException(PhpSpreadsheetException::class);
 
-        $expectedResult = 'A1';
+        $expectedResult = '999';
+
+        $sheet = $this->getSheet();
+        $autoFilter = $sheet->getAutoFilter();
+        $autoFilter->setRange($expectedResult);
+    }
+
+    public function testSetRangeInvalidColumnRange(): void
+    {
+        $this->expectException(PhpSpreadsheetException::class);
+
+        $expectedResult = 'ABC';
 
         $sheet = $this->getSheet();
         $autoFilter = $sheet->getAutoFilter();
@@ -132,6 +144,64 @@ class AutoFilterTest extends SetupTeardown
             $result = $autoFilter->getColumnOffset($columnIndex);
             self::assertEquals($columnOffset, $result);
         }
+    }
+
+    public function testRemoveColumns(): void
+    {
+        $sheet = $this->getSheet();
+        $sheet->fromArray(range('H', 'O'), null, 'H2');
+        $autoFilter = $sheet->getAutoFilter();
+        $autoFilter->setRange(self::INITIAL_RANGE);
+        $autoFilter->getColumn('L')->addRule((new Column\Rule())->setValue(5));
+
+        $sheet->removeColumn('K', 2);
+        $result = $autoFilter->getRange();
+        self::assertEquals('H2:M256', $result);
+
+        // Check that the rule that was set for column L is no longer set
+        self::assertEmpty($autoFilter->getColumn('L')->getRule(0)->getValue());
+    }
+
+    public function testRemoveRows(): void
+    {
+        $sheet = $this->getSheet();
+        $sheet->fromArray(range('H', 'O'), null, 'H2');
+        $autoFilter = $sheet->getAutoFilter();
+        $autoFilter->setRange(self::INITIAL_RANGE);
+
+        $sheet->removeRow(42, 128);
+        $result = $autoFilter->getRange();
+        self::assertEquals('H2:O128', $result);
+    }
+
+    public function testInsertColumns(): void
+    {
+        $sheet = $this->getSheet();
+        $sheet->fromArray(range('H', 'O'), null, 'H2');
+        $autoFilter = $sheet->getAutoFilter();
+        $autoFilter->setRange(self::INITIAL_RANGE);
+        $autoFilter->getColumn('N')->addRule((new Column\Rule())->setValue(5));
+
+        $sheet->insertNewColumnBefore('N', 3);
+        $result = $autoFilter->getRange();
+        self::assertEquals('H2:R256', $result);
+
+        // Check that column N no longer has a rule set
+        self::assertEmpty($autoFilter->getColumn('N')->getRule(0)->getValue());
+        // Check that the rule originally set in column N has been moved to column Q
+        self::assertSame(5, $autoFilter->getColumn('Q')->getRule(0)->getValue());
+    }
+
+    public function testInsertRows(): void
+    {
+        $sheet = $this->getSheet();
+        $sheet->fromArray(range('H', 'O'), null, 'H2');
+        $autoFilter = $sheet->getAutoFilter();
+        $autoFilter->setRange(self::INITIAL_RANGE);
+
+        $sheet->insertNewRowBefore(3, 4);
+        $result = $autoFilter->getRange();
+        self::assertEquals('H2:O260', $result);
     }
 
     public function testGetInvalidColumnOffset(): void
@@ -439,5 +509,27 @@ class AutoFilterTest extends SetupTeardown
         self::assertArrayHasKey('J', $columns);
         self::assertArrayHasKey('K', $columns);
         self::assertArrayHasKey('M', $columns);
+    }
+
+    public function testAutoExtendRange(): void
+    {
+        $spreadsheet = $this->getSpreadsheet();
+        $worksheet = $spreadsheet->addSheet(new Worksheet($spreadsheet, 'Autosized AutoFilter'));
+
+        $worksheet->getCell('A1')->setValue('Col 1');
+        $worksheet->getCell('B1')->setValue('Col 2');
+
+        $worksheet->setAutoFilter('A1:B1');
+        $lastRow = $worksheet->getAutoFilter()->autoExtendRange(1, 1);
+        self::assertSame(1, $lastRow, 'No data below AutoFilter, so there should ne no resize');
+
+        $lastRow = $worksheet->getAutoFilter()->autoExtendRange(1, 999);
+        self::assertSame(999, $lastRow, 'Filter range is already correctly sized');
+
+        $data = [['A', 'A'], ['B', 'A'], ['A', 'B'], ['C', 'B'], ['B', null], [null, null], ['D', 'D'], ['E', 'E']];
+        $worksheet->fromArray($data, null, 'A2', true);
+
+        $lastRow = $worksheet->getAutoFilter()->autoExtendRange(1, 1);
+        self::assertSame(6, $lastRow, 'Filter range has been re-sized incorrectly');
     }
 }

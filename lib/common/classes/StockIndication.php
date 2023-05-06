@@ -672,6 +672,9 @@ class StockIndication
             }
             else
             {
+                if ($stock_info['limit_cart_qty_by_stock'] ?? null) {
+                    $orderQuantityMax = (int)$data_array['products_quantity'];
+                }
                 $stock_info['max_qty'] = min($orderQuantityMax, MAX_CART_QTY);
             }
 

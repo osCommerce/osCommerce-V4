@@ -47,17 +47,18 @@ class Cart extends Widget {
             }
         }
 
-		//$products = $cart->get_products();
-        
-    $cartDecorator = new \frontend\design\CartDecorator($cart);
-    $products = $cartDecorator->getProducts();
+        if (!isset($this->settings[0])) {
+            $this->settings[0] = [];
+        }
 
-		foreach( $products as $key => $item ) {
-			$products[ $key ]['price'] = $products[ $key ]['final_price'];
-/*			$products[ $key ]['price'] = $currencies->display_price( $item['final_price'], \common\helpers\Tax::get_tax_rate( $item['tax_class_id'] ), $item['quantity'] );
-			$products[ $key ]['image'] = Images::getImageUrl( $item['id'], 'Small' );
-			$products[ $key ]['link']  = tep_href_link( 'catalog/product', 'products_id=' . $item['id'] . '&platform_id=' . $item['platform_id']);*/
-		}
+        if ($this->settings[0]['show_products']) {
+            $cartDecorator = new \frontend\design\CartDecorator($cart);
+            $products = $cartDecorator->getProducts();
+
+            foreach ($products as $key => $item) {
+                $products[$key]['price'] = $products[$key]['final_price'];
+            }
+        }
 
 		if (!Yii::$app->user->isGuest){
 		  $checkout_link = tep_href_link('checkout', '', 'SSL');
@@ -66,7 +67,7 @@ class Cart extends Widget {
 		}
 		
 		$params = [
-			'total'          => $currencies->format( $cart->show_total() ),
+			'total'          => ($this->settings[0]['total'] ? $currencies->format( $cart->show_total() ) : ''),
 			'count_contents' => $cart->count_contents(),
 			'settings'       => $this->settings,
 			'products'       => $products,

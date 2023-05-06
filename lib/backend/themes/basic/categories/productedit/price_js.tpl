@@ -51,12 +51,11 @@
             id={$default_currency['id']|json_encode};
         }
 
-
-        var sep_th_a = { {$default_currency['id']|json_encode}:{$default_currency['thousands_point']|json_encode}{foreach $app->controller->view->currenciesTabs|default:null as $c},{$c['id']|json_encode}:{$c['thousands_point']|json_encode}{/foreach} };
-        var sep_dec_a = { {$default_currency['id']|json_encode}:{$default_currency['decimal_point']|json_encode}{foreach $app->controller->view->currenciesTabs|default:null as $c},{$c['id']|json_encode}:{$c['decimal_point']|json_encode}{/foreach} };
-        var symbol_right_a = { {$default_currency['id']|json_encode}:{$default_currency['symbol_right']|json_encode}{foreach $app->controller->view->currenciesTabs|default:null as $c},{$c['id']|json_encode}:{$c['symbol_right']|json_encode}{/foreach} };
-        var symbol_left_a = { {$default_currency['id']|json_encode}:{$default_currency['symbol_left']|json_encode}{foreach $app->controller->view->currenciesTabs|default:null as $c},{$c['id']|json_encode}:{$c['symbol_left']|json_encode}{/foreach} };
-        var decimal_places_a = { {$default_currency['id']|json_encode}:{$default_currency['decimal_places']|json_encode}{foreach $app->controller->view->currenciesTabs|default:null as $c},{$c['id']|json_encode}:{$c['decimal_places']|json_encode}{/foreach} };
+        var sep_th_a = { {foreach $app->controller->view->currenciesFormats as $c}{$c['id']|json_encode}:{$c['thousands_point']|json_encode},{/foreach} };
+        var sep_dec_a = { {foreach $app->controller->view->currenciesFormats as $c}{$c['id']|json_encode}:{$c['decimal_point']|json_encode},{/foreach} };
+        var symbol_right_a = { {foreach $app->controller->view->currenciesFormats as $c}{$c['id']|json_encode}:{$c['symbol_right']|json_encode},{/foreach} };
+        var symbol_left_a = { {foreach $app->controller->view->currenciesFormats as $c}{$c['id']|json_encode}:{$c['symbol_left']|json_encode},{/foreach} };
+        var decimal_places_a = { {foreach $app->controller->view->currenciesFormats as $c}{$c['id']|json_encode}:{$c['decimal_places']|json_encode},{/foreach} };
 
         var sep_th = sep_th_a[id];
         var sep_dec = sep_dec_a[id];
@@ -900,23 +899,32 @@
 
     function updatePricesAndProfit(supplierBlock, supplierId) {
         var landedPrice = $('.js-supplier-landed-price-field', supplierBlock).val();
-        var supplierCost = $('.js-supplier-cost', supplierBlock).val();
+        var supplierTaxRate = parseFloat( $('.js-supplier-tax-rate',supplierBlock).textInputNullableValue() );
+        var supplierTaxInCost = $('.js-supplier-tax-rate-flag',supplierBlock).get(0).checked?1:0;
         var supplierDiscount = $('.js-supplier-discount', supplierBlock).textInputNullableValue();
-        calcLandedPrice = doRound(supplierCost * (1 - supplierDiscount / 100), 6);
+        var supplierCost = $('.js-supplier-cost', supplierBlock).val();
+        var supplierNetCost = 0;
+        if (!supplierTaxInCost) {
+            supplierNetCost = supplierCost;
+            supplierCost = supplierCost * ((100 + supplierTaxRate) / 100);
+        } else {
+            supplierNetCost = supplierTaxRate > 0 ?  supplierCost*(100-supplierTaxRate)/100 : supplierCost;
+        }
+        var calcLandedPrice = doRound(supplierCost * (1 - supplierDiscount / 100), 6);
         $('.js-overridden-mark', supplierBlock).toggle(!!landedPrice);
         fieldLandedPrice = $('.js-supplier-landed-price-gross-displayed', supplierBlock);
         if (landedPrice) {
+            supplierNetCost = supplierTaxRate > 0 ?  landedPrice*(100-supplierTaxRate)/100 : landedPrice;
             fieldLandedPrice.addClass('overridden-price');
         } else {
             landedPrice = calcLandedPrice;
             fieldLandedPrice.removeClass('overridden-price');
         }
-        fieldLandedPrice.html(currencyFormat(landedPrice)).data('calc-value', calcLandedPrice);
+        var supplierCurrency = $('.js-supplier-currency',supplierBlock).val()
+        fieldLandedPrice.html(currencyFormat(landedPrice, supplierCurrency)).data('calc-value', calcLandedPrice);
 
         // Net Landed
-        var supplierTaxRate = $('.js-supplier-tax-rate',supplierBlock).textInputNullableValue();
-        supplierNetCost = supplierTaxRate > 0 ?  landedPrice*(100-supplierTaxRate)/100 : landedPrice;
-        $('.js-supplier-landed-price-net-displayed', supplierBlock).html(currencyFormat(supplierNetCost));
+        $('.js-supplier-landed-price-net-displayed', supplierBlock).html(currencyFormat(supplierNetCost, supplierCurrency));
 
         // Calculated Price and Profit
         var calcNetPrice = $('.js-supplier-calc-net-price', supplierBlock).data('value');

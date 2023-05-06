@@ -13,7 +13,12 @@ $finder = PhpCsFixer\Finder::create()
 
 $config = new PhpCsFixer\Config('faker');
 
+if (!is_dir('.build/php-cs-fixer')) {
+    mkdir('.build/php-cs-fixer', 0755, true);
+}
+
 return $config
+    ->setCacheFile('.build/php-cs-fixer/cache')
     ->setFinder($finder)
     ->setRiskyAllowed(true)
     ->setRules([
@@ -97,7 +102,11 @@ return $config
         'no_spaces_around_offset' => true,
         'no_superfluous_elseif' => true,
         'no_superfluous_phpdoc_tags' => true,
-        'no_trailing_comma_in_singleline_array' => true,
+        'no_trailing_comma_in_singleline' => [
+            'elements' => [
+                'array',
+            ],
+        ],
         'no_unneeded_control_parentheses' => true,
         'no_unneeded_curly_braces' => true,
         'no_unneeded_final_method' => true,
@@ -165,6 +174,7 @@ return $config
         ],
         'phpdoc_var_without_name' => true,
         'pow_to_exponentiation' => true,
+        'protected_to_private' => true,
         'psr_autoloading' => true,
         'random_api_migration' => true,
         'return_assignment' => true,
@@ -183,6 +193,7 @@ return $config
         'ternary_to_null_coalescing' => true,
         'trailing_comma_in_multiline' => [
             'elements' => [
+                'arguments',
                 'arrays',
             ],
         ],
@@ -195,5 +206,6 @@ return $config
                 'property',
             ],
         ],
+        'void_return' => false,
         'whitespace_after_comma_in_array' => true,
     ]);

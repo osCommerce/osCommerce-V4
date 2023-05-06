@@ -40,7 +40,7 @@ class Popularity {
 
   public function updateProductVisit($products_id) {
     if ($products_id && isset($_SESSION['viewed_products']) && !isset($_SESSION['viewed_products'][(int) $products_id])) {
-      $todayVisit = ProductsPopularity::find()->where('products_id=:prid and viewed_date = CURDATE()', [':prid' => (int) $products_id])->one();
+      $todayVisit = ProductsPopularity::find()->where('products_id=:prid and viewed_date = :date', [':prid' => (int) $products_id, ':date' => date("Y-m-d")])->one();
       if ($todayVisit) {
         $todayVisit->updateCounters(['products_viewed' => 1]);
       } else {

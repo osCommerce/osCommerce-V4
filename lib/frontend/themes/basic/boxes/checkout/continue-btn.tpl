@@ -22,9 +22,12 @@
                 } else {
                     $('#frmCheckout button').removeClass('disabled-area')
                 }
-            })
-        })
+            });
+        });
     </script>
+    {if ($ccExt = \common\helpers\Acl::checkExtensionAllowed('CustomerCredit', 'allowed'))}
+        {$ccExt::getButtonContinueHtml($manager)}
+    {/if}
 {/if}
 {if is_array($inline)}
   {foreach $inline as $link}

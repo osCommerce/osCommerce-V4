@@ -15,9 +15,9 @@
  */
 class FileResourceTest extends PHPUnit_Smarty
 {
-    public function setUp()
+    public function setUp(): void
     {
-        $this->setUpSmarty(dirname(__FILE__));
+        $this->setUpSmarty(__DIR__);
         $this->smarty->enableSecurity();
     }
 
@@ -28,7 +28,7 @@ class FileResourceTest extends PHPUnit_Smarty
 
     protected function relative($path)
     {
-        $path = str_replace(str_replace("\\", "/", dirname(__FILE__)), '.', str_replace("\\", "/", $path));
+        $path = str_replace(str_replace("\\", "/", __DIR__), '.', str_replace("\\", "/", $path));
 
         return $path;
     }
@@ -65,16 +65,14 @@ class FileResourceTest extends PHPUnit_Smarty
     }
 
     /**
-     * @expectedException        SmartyException
-     * @expectedExceptionMessage Unable to
-     * @expectedExceptionMessage notthere.tpl
-     *
      * test not existing file
      */
     public function testTemplateFileNotExists3()
     {
-
-            $result = $this->smarty->fetch('notthere.tpl');
+        $this->expectException('SmartyException');
+        $this->expectExceptionMessage('Unable to');
+        $this->expectExceptionMessage('notthere.tpl');
+        $this->smarty->fetch('notthere.tpl');
     }
 
     public function testGetTemplateTimestamp()
@@ -110,6 +108,9 @@ class FileResourceTest extends PHPUnit_Smarty
         );
     }
 
+    /**
+     * @doesNotPerformAssertions
+     */
     public function testGetCompiledTimestampPrepare()
     {
         $tpl = $this->smarty->createTemplate('helloworld.tpl');
@@ -142,6 +143,9 @@ class FileResourceTest extends PHPUnit_Smarty
         $this->assertTrue($tpl->mustCompile());
     }
 
+    /**
+     * @doesNotPerformAssertions
+     */
     public function testMustCompileTouchedSourcePrepare()
     {
         // touch to prepare next test
@@ -196,7 +200,7 @@ class FileResourceTest extends PHPUnit_Smarty
     public function testRelativeInclude()
     {
         $result = $this->smarty->fetch('relative.tpl');
-        $this->assertContains('hello world', $result);
+        $this->assertStringContainsString('hello world', $result);
     }
 
     /**
@@ -208,12 +212,9 @@ class FileResourceTest extends PHPUnit_Smarty
     public function testRelativeIncludeSub()
     {
         $result = $this->smarty->fetch('sub/relative.tpl');
-        $this->assertContains('hello world', $result);
+        $this->assertStringContainsString('hello world', $result);
     }
     /**
-     * @expectedException        SmartyException
-     * @expectedExceptionMessage Unable to
-     * @expectedExceptionMessage notthereh.tpl
      * @runInSeparateProcess
      * @preserveGlobalState disabled
      *
@@ -221,11 +222,11 @@ class FileResourceTest extends PHPUnit_Smarty
      */
     public function testRelativeIncludeFail()
     {
-        $result =  $this->smarty->fetch('relative_sub.tpl');
+        $this->expectException('SmartyException');
+        $this->expectExceptionMessage('Unable to');
+        $this->smarty->fetch('relative_sub.tpl');
     }
     /**
-     * @expectedException        SmartyException
-      * @expectedExceptionMessage ./hello.tpl
      * @runInSeparateProcess
      * @preserveGlobalState disabled
      *
@@ -233,8 +234,10 @@ class FileResourceTest extends PHPUnit_Smarty
      */
     public function testRelativeIncludeFailOtherDir()
     {
+        $this->expectException('SmartyException');
+        $this->expectExceptionMessage('./hello.tpl');
         $this->smarty->addTemplateDir('./templates_2');
-         $result =    $this->smarty->fetch('relative_notexist.tpl');
+        $this->smarty->fetch('relative_notexist.tpl');
      }
 
     /**
@@ -246,8 +249,8 @@ class FileResourceTest extends PHPUnit_Smarty
     public function testRelativeFetch()
     {
         $this->smarty->setTemplateDir(array(
-                                          dirname(__FILE__) . '/does-not-exist/',
-                                          dirname(__FILE__) . '/templates/sub/',
+                                          __DIR__ . '/does-not-exist/',
+                                          __DIR__ . '/templates/sub/',
                                       ));
         $this->smarty->security_policy = null;
         $this->assertEquals('hello world', $this->smarty->fetch('./relative.tpl'));
@@ -262,8 +265,8 @@ class FileResourceTest extends PHPUnit_Smarty
     public function testRelativeFetch2()
     {
          $this->smarty->setTemplateDir(array(
-                                          dirname(__FILE__) . '/does-not-exist/',
-                                          dirname(__FILE__) . '/templates/sub/',
+                                          __DIR__ . '/does-not-exist/',
+                                          __DIR__ . '/templates/sub/',
                                       ));
         $this->smarty->security_policy = null;
         $this->assertEquals('hello world', $this->smarty->fetch('../helloworld.tpl'));
@@ -278,12 +281,12 @@ class FileResourceTest extends PHPUnit_Smarty
     public function testRelativeFetchCwd()
     {
         $cwd = getcwd();
-        chdir(dirname(__FILE__) . '/templates/sub/');
-        $dn = dirname(__FILE__);
+        chdir(__DIR__ . '/templates/sub/');
+        $dn = __DIR__;
         $this->smarty->setCompileDir($dn . '/templates_c/');
         $this->smarty->setCacheDir($dn . '/cache/');
         $this->smarty->setTemplateDir(array(
-                                          dirname(__FILE__) . '/does-not-exist/',
+                                          __DIR__ . '/does-not-exist/',
                                       ));
         $this->smarty->security_policy = null;
         $this->assertEquals('hello world', $this->smarty->fetch('./relative.tpl'));
@@ -299,12 +302,12 @@ class FileResourceTest extends PHPUnit_Smarty
     public function testRelativeFetchCwd2()
     {
         $cwd = getcwd();
-        chdir(dirname(__FILE__) . '/templates/sub/');
-        $dn = dirname(__FILE__);
+        chdir(__DIR__ . '/templates/sub/');
+        $dn = __DIR__;
         $this->smarty->setCompileDir($dn . '/templates_c/');
         $this->smarty->setCacheDir($dn . '/cache/');
         $this->smarty->setTemplateDir(array(
-                                          dirname(__FILE__) . '/does-not-exist/',
+                                          __DIR__ . '/does-not-exist/',
                                       ));
         $this->smarty->security_policy = null;
         $this->assertEquals('hello world', $this->smarty->fetch('../helloworld.tpl'));
@@ -356,7 +359,7 @@ class FileResourceTest extends PHPUnit_Smarty
         $this->smarty->security_policy = null;
 
         $cwd = getcwd();
-        $dn = dirname(__FILE__);
+        $dn = __DIR__;
         $this->smarty->setCompileDir($dn . '/templates_c/');
         $this->smarty->setCacheDir($dn . '/cache/');
         $this->smarty->setTemplateDir(array($dn . '/templates/relativity/theory/',));
@@ -375,7 +378,7 @@ class FileResourceTest extends PHPUnit_Smarty
         $this->smarty->security_policy = null;
 
         $cwd = getcwd();
-        $dn = dirname(__FILE__);
+        $dn = __DIR__;
         $this->smarty->setCompileDir($dn . '/templates_c/');
         $this->smarty->setCacheDir($dn . '/cache/');
 
@@ -406,7 +409,7 @@ class FileResourceTest extends PHPUnit_Smarty
         $this->smarty->security_policy = null;
 
         $cwd = getcwd();
-        $dn = dirname(__FILE__);
+        $dn = __DIR__;
 
         $this->smarty->setCompileDir($dn . '/templates_c/');
         $this->smarty->setCacheDir($dn . '/cache/');
@@ -435,7 +438,7 @@ class FileResourceTest extends PHPUnit_Smarty
         $this->smarty->security_policy = null;
 
         $cwd = getcwd();
-        $dn = dirname(__FILE__);
+        $dn = __DIR__;
 
         $this->smarty->setCompileDir($dn . '/templates_c/');
         $this->smarty->setCacheDir($dn . '/cache/');
@@ -455,7 +458,7 @@ class FileResourceTest extends PHPUnit_Smarty
         $this->smarty->security_policy = null;
 
         $cwd = getcwd();
-        $dn = dirname(__FILE__);
+        $dn = __DIR__;
 
         $this->smarty->setCompileDir($dn . '/templates_c/');
         $this->smarty->setCacheDir($dn . '/cache/');
@@ -486,7 +489,7 @@ class FileResourceTest extends PHPUnit_Smarty
         $this->smarty->security_policy = null;
 
         $cwd = getcwd();
-        $dn = dirname(__FILE__);
+        $dn = __DIR__;
 
         $this->smarty->setCompileDir($dn . '/templates_c/');
         $this->smarty->setCacheDir($dn . '/cache/');
@@ -504,7 +507,7 @@ class FileResourceTest extends PHPUnit_Smarty
         $this->smarty->security_policy = null;
 
         $cwd = getcwd();
-        $dn = dirname(__FILE__);
+        $dn = __DIR__;
 
         $this->smarty->setCompileDir($dn . '/templates_c/');
         $this->smarty->setCacheDir($dn . '/cache/');
@@ -523,7 +526,7 @@ class FileResourceTest extends PHPUnit_Smarty
         $this->smarty->security_policy = null;
 
         $cwd = getcwd();
-        $dn = dirname(__FILE__);
+        $dn = __DIR__;
 
         $this->smarty->setCompileDir($dn . '/templates_c/');
         $this->smarty->setCacheDir($dn . '/cache/');
@@ -557,7 +560,7 @@ class FileResourceTest extends PHPUnit_Smarty
         $this->smarty->security_policy = null;
 
         $cwd = getcwd();
-        $dn = dirname(__FILE__);
+        $dn = __DIR__;
         $this->smarty->setCompileDir($dn . '/templates_c/');
         $this->smarty->setCacheDir($dn . '/cache/');
         $this->smarty->setTemplateDir(array(
@@ -596,7 +599,7 @@ class FileResourceTest extends PHPUnit_Smarty
      *
      */
     public function testSmartyCurrentDir() {
-        $dirname = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'templates';
+        $dirname = __DIR__ . DIRECTORY_SEPARATOR . 'templates';
         $this->assertEquals('current_dir = ' . $dirname, $this->smarty->fetch('001_smarty_current_dir.tpl'));
     }
 }

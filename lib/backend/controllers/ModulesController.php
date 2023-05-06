@@ -861,7 +861,8 @@ class ModulesController extends Sceleton
                                 }
 
                                 $keys .= tep_call_function([$ns . $class_method[0], $class_method[1]], $value['value'], ${$class_method[0]} ?? null);
-
+                            }elseif(method_exists($class, $use_function)){
+                                $keys .= call_user_func_array([$class, $use_function], [$value['value']]);
                             } else {
                                 $keys .= tep_call_function($use_function, $value['value']);
                             }
@@ -904,7 +905,7 @@ class ModulesController extends Sceleton
      * @param $level integer hierarchy level depth. Default value is 0
      * @return string Extension menu in html format or empty string
      */
-    private static function buildExtensionMenuTree($adminMenu, $level = 0)
+    private static function buildExtensionMenuTree($adminMenu, $level = 0, $ignoreRoot = false)
     {
         if(!is_array($adminMenu)){ // If empty $adminMenu then return nothing
             return '';
@@ -912,7 +913,7 @@ class ModulesController extends Sceleton
         $res = "";
         foreach ($adminMenu as $item)
         {
-            if(isset($item['parent']) && $level < 1)
+            if(isset($item['parent']) && !$ignoreRoot)
             {
                 $rootLevel = 0;
                 foreach (array_reverse(  // Reversing the root values because the buildRootMenu() method searches "from bottom to top"
@@ -940,7 +941,7 @@ class ModulesController extends Sceleton
             }
             if(isset($item['child']))
             {
-                $res .= self::buildExtensionMenuTree($item['child'],$level+1);
+                $res .= self::buildExtensionMenuTree($item['child'],$level+1, true);
             }
 
         }
@@ -1725,7 +1726,7 @@ class ModulesController extends Sceleton
                     }
                 }
                 if (!$module->check($this->selected_platform_id)) {
-                    $module->remove($this->selected_platform_id);
+                    // $module->remove($this->selected_platform_id);
                     $module->install($this->selected_platform_id);
                     if ($this->needTranslation($module, $set)){
                         $response['need_translate'] = $module->code;

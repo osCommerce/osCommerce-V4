@@ -429,7 +429,7 @@ class WarehousesController extends Sceleton {
                 'warehouse_landline' => $warehouse_landline,
                 'is_store' => $is_store,
                 'status' => (int)$status,
-                'shipping_additional_charge' => $shipping_additional_charge,
+                'shipping_additional_charge' => (float)$shipping_additional_charge,
             ];
 
             if ($is_default !== false) {

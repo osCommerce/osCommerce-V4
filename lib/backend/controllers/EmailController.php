@@ -405,20 +405,20 @@ if (\common\helpers\Acl::rule(['MANAGE_EMAIL_TEMPLATES', 'DELETE_EMAIL_TEMPLATES
         $this->layout = false;
 
         $keysList = [];
-        $keysList[] = ['text' => BOX_CONFIGURATION_MYSTORE, 'child' => [
+        $keysList[0] = ['text' => BOX_CONFIGURATION_MYSTORE, 'child' => [
             '##STORE_NAME##',
             '##HTTP_HOST##',
             '##STORE_OWNER_EMAIL_ADDRESS##',
-            '##STORE_TESTIMONIALS_URL##',
             '##SECURITY_KEY##'
         ]];
-        $keysList[] = ['text' => BOX_CUSTOMERS_CUSTOMERS, 'child' => [
+        $keysList[1] = ['text' => BOX_CUSTOMERS_CUSTOMERS, 'child' => [
             '##CUSTOMER_EMAIL##',
             '##CUSTOMER_FIRSTNAME##',
+            '##CUSTOMER_LASTNAME##',
             '##NEW_PASSWORD##',
             '##USER_GREETING##',
         ]];
-        $keysList[] = ['text' => BOX_CUSTOMERS_ORDERS, 'child' => [
+        $keysList[2] = ['text' => BOX_CUSTOMERS_ORDERS, 'child' => [
             '##ORDER_NUMBER##',
             '##ORDER_DATE_LONG##',
             '##ORDER_DATE_SHORT##',
@@ -429,12 +429,11 @@ if (\common\helpers\Acl::rule(['MANAGE_EMAIL_TEMPLATES', 'DELETE_EMAIL_TEMPLATES
             '##NEW_ORDER_STATUS##',
             '##ORDER_TOTALS##',
             '##PRODUCTS_ORDERED##',
-            '##PRODUCTS_ORDERED_REVIEW##',
             '##ORDER_INVOICE_URL##',
             '##TRACKING_NUMBER##',
             '##TRACKING_NUMBER_URL##',
         ]];
-        $keysList[] = ['text' => BOX_HEADING_GV_ADMIN, 'child' => [
+        $keysList[3] = ['text' => BOX_HEADING_GV_ADMIN, 'child' => [
             '##COUPON_AMOUNT##',
             '##COUPON_NAME##',
             '##COUPON_DESCRIPTION##',
@@ -443,7 +442,7 @@ if (\common\helpers\Acl::rule(['MANAGE_EMAIL_TEMPLATES', 'DELETE_EMAIL_TEMPLATES
 
         if (\Yii::$app->request->get('email_templates_key') == 'Wedding invitation') {
             $keysList = [];
-            $keysList[] = ['text' => 'Wedding invitation', 'child' => [
+            $keysList[0] = ['text' => 'Wedding invitation', 'child' => [
                 '##STORE_NAME##',
                 '##INVITED_EMAIL##',
                 '##INVITED_NAME##',
@@ -452,6 +451,18 @@ if (\common\helpers\Acl::rule(['MANAGE_EMAIL_TEMPLATES', 'DELETE_EMAIL_TEMPLATES
                 '##FROM_EMAIL_ADDRESS##',
                 '##SHARE_LINK##',
             ]];
+        }
+
+        foreach (\common\helpers\Hooks::getList('email/template-keys') as $filename) {
+            include($filename);
+        }
+
+        if (\common\helpers\Extensions::isAllowed('Testimonials')) {
+            $keysList[0]['child'][] ='##STORE_TESTIMONIALS_URL##';
+        }
+
+        if (\common\helpers\Extensions::isAllowed('MailSurvay')) {
+            $keysList[2]['child'][] = '##PRODUCTS_ORDERED_REVIEW##';
         }
 
 

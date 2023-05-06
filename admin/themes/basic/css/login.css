@@ -222,7 +222,7 @@ textarea:focus, input[type="text"]:focus, input[type="password"]:focus, input[ty
 img{max-width: 100%;height: auto;}
 .box {
   background-color: #fff;
-  width: 350px;
+  width: 360px;
   margin: 0 auto;
   border-radius: 10px;
 }

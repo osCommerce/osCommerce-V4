@@ -37,9 +37,7 @@ $spreadsheet->getActiveSheet()
 ### Creating a new Cell
 
 If you make a call to `getCell()`, and the cell doesn't already exist, then
-PhpSpreadsheet will (by default) create the cell for you. If you don't want
-to create a new cell, then you can pass a second argument of false, and then
-`getCell()` will return a null if the cell doesn't exist.
+PhpSpreadsheet will create that cell for you.
 
 ### BEWARE: Cells assigned to variables as a Detached Reference
 
@@ -48,10 +46,10 @@ particularly when working with large spreadsheets. One technique used to
 reduce this memory overhead is cell caching, so cells are actually
 maintained in a collection that may or may not be held in memory while you
 are working with the spreadsheet. Because of this, a call to `getCell()`
-(or any similar method) returns the cell data, and a pointer to the collection.
+(or any similar method) returns the cell data, and sets a cell pointer to that cell in the collection.
 While this is not normally an issue, it can become significant
 if you assign the result of a call to `getCell()` to a variable. Any
-subsequent calls to retrieve other cells will unset that pointer, although
+subsequent calls to retrieve other cells will change that pointer, although
 the cell object will still retain its data values.
 
 What does this mean? Consider the following code:
@@ -443,16 +441,25 @@ foreach ($worksheet->getRowIterator() as $row) {
 echo '</table>' . PHP_EOL;
 ```
 
-Note that we have set the cell iterator's
-`setIterateOnlyExistingCells()` to FALSE. This makes the iterator loop
-all cells within the worksheet range, even if they have not been set.
+Note that we have set the cell iterator's `setIterateOnlyExistingCells()`
+to FALSE. This makes the iterator loop all cells within the worksheet
+range, even if they have not been set.
 
-The cell iterator will return a `null` as the cell value if it is not
-set in the worksheet. Setting the cell iterator's
-`setIterateOnlyExistingCells()` to `false` will loop all cells in the
-worksheet that can be available at that moment. This will create new
-cells if required and increase memory usage! Only use it if it is
-intended to loop all cells that are possibly available.
+The cell iterator will create a new empty cell in the worksheet if it
+doesn't exist; return a `null` as the cell value if it is not set in
+the worksheet; although we can also tell it to return a null value
+rather than returning a new empty cell.
+Setting the cell iterator's `setIterateOnlyExistingCells()` to `false`
+will loop all cells in the worksheet that can be available at that
+moment. If this is then set to create new cells if required, then it
+will likely increase memory usage!
+Only use it if it is intended to loop all cells that are possibly
+available; otherwise use the option to return a null value if a cell
+doesn't exist, or iterate only the cells that already exist.
+
+It is also possible to call the Row object's `isEmpty()` method to
+determine whether you need to instantiate the Cell Iterator for that
+Row.
 
 ### Looping through cells using indexes
 
@@ -532,7 +539,7 @@ types of entered data using a cell's `setValue()` method (the
 Optionally, the default behaviour of PhpSpreadsheet can be modified,
 allowing easier data entry. For example, a
 `\PhpOffice\PhpSpreadsheet\Cell\AdvancedValueBinder` class is available.
-It automatically converts percentages, number in scientific format, and
+It automatically converts percentages, numbers in scientific format, and
 dates entered as strings to the correct format, also setting the cell's
 style information. The following example demonstrates how to set the
 value binder in PhpSpreadsheet:
@@ -577,7 +584,26 @@ $stringValueBinder->setNumericConversion(false)
 \PhpOffice\PhpSpreadsheet\Cell\Cell::setValueBinder( $stringValueBinder );
 ```
 
-**Creating your own value binder is relatively straightforward.** When more specialised
+You can override the current binder when setting individual cell values by specifying a different Binder to use in the Cell's `setValue()` or the Worksheet's `setCellValue()` methods.
+```php
+$spreadsheet = new Spreadsheet();
+Cell::setValueBinder(new AdvancedValueBinder());
+
+$value = '12.5%';
+
+$cell = $spreadsheet->getActiveSheet()->getCell('A1');
+// Value will be set as a number 0.125 with a format mask '0.00%'
+$cell->setValue($value); // Using the Advanced Value Binder
+
+$cell = $spreadsheet->getActiveSheet()->getCell('A2');
+// Value will be set as a string '12.5%' with a format mask 'General'
+$cell->setValue($value, new StringValueBinder()); // Overriding the Advanced Value Binder
+```
+
+
+### Creating your own value binder
+
+Creating your own value binder is relatively straightforward. When more specialised
 value binding is required, you can implement the
 `\PhpOffice\PhpSpreadsheet\Cell\IValueBinder` interface or extend the existing
 `\PhpOffice\PhpSpreadsheet\Cell\DefaultValueBinder` or

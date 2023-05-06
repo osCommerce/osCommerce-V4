@@ -69,6 +69,16 @@ class WidgetsList
             $widgets = $backendOrder;
         }
 
+        if ($type == 'backendOrdersList'){
+            $backendOrder = [];
+            foreach ($widgets as $key => $widget) {
+                if ($widget['type'] == 'backendOrdersList'){
+                    $backendOrder[] = $widget;
+                }
+            }
+            $widgets = $backendOrder;
+        }
+
         $widgets = array_merge($widgets, \backend\design\Groups::getWidgetGroups($type));
 
         return $widgets;
@@ -221,9 +231,7 @@ class WidgetsList
     {
         $widgets = [];
 
-        $widgets[] = array('name' => 'sample\Products', 'title' => TEXT_SAMPLE_PRODUCTS, 'description' => 'Sample', 'type' => 'sample', 'class' => 'products');
         $widgets[] = array('name' => 'cart\CartTabs', 'title' => TEXT_CART_TABS, 'description' => '', 'type' => 'sample', 'class' => '');
-        $widgets[] = array('name' => 'sample\CheckoutBtn', 'title' => TEXT_SAMPLE_CHECKOUT_BUTTON, 'description' => 'Sample', 'type' => 'sample', 'class' => 'checkout-button');
 
         return $widgets;
     }
@@ -256,7 +264,6 @@ class WidgetsList
         $widgets[] = array('name' => 'checkout\Totals', 'title' => TEXT_TOTALS, 'description' => '', 'type' => 'checkout', 'class' => '');
         $widgets[] = array('name' => 'cart\Products', 'title' => TABLE_HEADING_PRODUCTS, 'description' => '', 'type' => 'checkout', 'class' => '');
         $widgets[] = array('name' => 'quote\Products', 'title' => TEXT_QUOTE_PRODUCTS, 'description' => '', 'type' => 'checkout', 'class' => 'products');
-        $widgets[] = array('name' => 'sample\Products', 'title' => TEXT_SAMPLE_PRODUCTS, 'description' => '', 'type' => 'checkout', 'class' => 'products');
         $widgets[] = array('name' => 'checkout\CreateAccount', 'title' => TEXT_CREATE_ACCOUNT, 'description' => '', 'type' => 'checkout', 'class' => '');
         $widgets[] = array('name' => 'checkout\ShippingChoice', 'title' => TEXT_SHIPPING_CHOICE, 'description' => '', 'type' => 'checkout', 'class' => '');
         $widgets[] = array('name' => 'checkout\Terms', 'title' => TEXT_TERMS_CONDITIONS, 'description' => '', 'type' => 'checkout', 'class' => '');
@@ -283,7 +290,6 @@ class WidgetsList
         $widgets[] = array('name' => 'cart\Products', 'title' => TABLE_HEADING_PRODUCTS, 'description' => '', 'type' => 'confirmation', 'class' => '');
         $widgets[] = array('name' => 'checkout\EditBtn', 'title' => TEXT_EDIT_LINK, 'description' => '', 'type' => 'confirmation', 'class' => '');
         $widgets[] = array('name' => 'quote\Products', 'title' => TEXT_QUOTE_PRODUCTS, 'description' => '', 'type' => 'confirmation', 'class' => 'products');
-        $widgets[] = array('name' => 'sample\Products', 'title' => TEXT_SAMPLE_PRODUCTS, 'description' => '', 'type' => 'confirmation', 'class' => 'products');
         $widgets[] = array('name' => 'checkout\ContactConfirm', 'title' => TEXT_CONTACT_INFO, 'description' => '', 'type' => 'confirmation', 'class' => '');
 
         return $widgets;
@@ -500,9 +506,6 @@ class WidgetsList
         $widgets[] = array('name' => 'CustomerData', 'title' => TEXT_CUSTOMER_DATA, 'description' => '', 'type' => 'general', 'class' => '');
         //$widgets[] = array('name' => 'ProductElement', 'title' => TEXT_PRODUCT_ELEMENT, 'description' => '', 'type' => 'general', 'class' => ''); //this widget has to parent product component
 
-        if (\common\helpers\Acl::checkExtensionAllowed('Samples', 'allowed')) {
-            $widgets[] = array('name' => 'Sample', 'title' => TEXT_SAMPLE_CART, 'description' => '', 'type' => 'general', 'class' => 'sample');
-        }
         if (\common\helpers\Acl::checkExtensionAllowed('Trustpilot', 'allowed')) {
             $client = new \common\extensions\Trustpilot\Trustpilot();
             if ($client->anyAPIKeyExists()){
@@ -661,7 +664,7 @@ class WidgetsList
         $widgets[] = array('name' => 'TopCategories', 'title' => TEXT_CATEGORIES, 'description' => '', 'type' => 'index', 'class' => 'categories');
         $widgets[] = array('name' => 'login\Returning', 'title' => 'Returning customer', 'description' => '', 'type' => 'index', 'class' => 'categories');
         $widgets[] = array('name' => 'login\Register', 'title' => 'Register', 'description' => '', 'type' => 'index', 'class' => 'categories');
-        $widgets[] = array('name' => 'login\Enquire', 'title' => 'Enquire', 'description' => '', 'type' => 'index', 'class' => 'categories');
+        //$widgets[] = array('name' => 'login\Enquire', 'title' => 'Enquire', 'description' => '', 'type' => 'index', 'class' => 'categories');
 
         return $widgets;
     }
@@ -713,7 +716,6 @@ class WidgetsList
         $widgets[] = array('name' => 'productListing\bonusPoints', 'title' => TEXT_BONUS_POINTS, 'description' => '', 'type' => 'productListing', 'class' => '');
         $widgets[] = array('name' => 'productListing\buyButton', 'title' => TEXT_BUY_BUTTON, 'description' => '', 'type' => 'productListing', 'class' => '');
         $widgets[] = array('name' => 'productListing\quoteButton', 'title' => REQUEST_FOR_QUOTE_BUTTON, 'description' => '', 'type' => 'productListing', 'class' => '');
-        $widgets[] = array('name' => 'productListing\sampleButton', 'title' => REQUEST_FOR_SAMPLE_BUTTON, 'description' => '', 'type' => 'productListing', 'class' => '');
         $widgets[] = array('name' => 'productListing\qtyInput', 'title' => TEXT_QUANTITY_INPUT, 'description' => '', 'type' => 'productListing', 'class' => '');
         $widgets[] = array('name' => 'productListing\viewButton', 'title' => TEXT_VIEW_BUTTON, 'description' => '', 'type' => 'productListing', 'class' => '');
         //$widgets[] = array('name' => 'productListing\wishlistButton', 'title' => TEXT_WISHLIST_BUTTON, 'description' => '', 'type' => 'productListing', 'class' => '');
@@ -779,6 +781,37 @@ class WidgetsList
         $widgets[] = array('name' => 'Trustpilot', 'title' => 'Trustpilot', 'description' => '', 'type' => 'backendOrder', 'class' => '');
         $widgets[] = array('name' => 'Unprocessed', 'title' => 'Unprocessed', 'description' => '', 'type' => 'backendOrder', 'class' => '');
         $widgets[] = array('name' => 'ClosableBox', 'title' => 'ClosableBox', 'description' => '', 'type' => 'backendOrder', 'class' => '');
+
+
+        return $widgets;
+    }
+
+    private static function backendOrdersList()
+    {
+        $widgets = [];
+
+        $widgets[] = array('name' => 'title', 'title' => ORDERS_LIST_ITEMS, 'description' => '', 'type' => 'backendOrdersList');
+        $widgets[] = array('name' => 'BlockBox', 'title' => TEXT_BLOCK, 'description' => '', 'type' => 'backendOrdersList', 'class' => 'block-box');
+        $widgets[] = array('name' => 'backendOrdersList\BatchCheckbox', 'title' => BATCH_CHECKBOX_CELL, 'description' => '', 'type' => 'backendOrdersList', 'class' => '');
+        $widgets[] = array('name' => 'backendOrdersList\OrderMarkersCell', 'title' => ORDER_MARKERS_CELL, 'description' => '', 'type' => 'backendOrdersList', 'class' => '');
+        $widgets[] = array('name' => 'backendOrdersList\CustomerColumnCell', 'title' => CUSTOMER_COLUMN_CELL, 'description' => '', 'type' => 'backendOrdersList', 'class' => '');
+        $widgets[] = array('name' => 'backendOrdersList\OrderTotalsCell', 'title' => ORDER_TOTALS_CELL, 'description' => '', 'type' => 'backendOrdersList', 'class' => '');
+        $widgets[] = array('name' => 'backendOrdersList\OrderDescriptionCell', 'title' => ORDER_DESCRIPTION_CELL, 'description' => '', 'type' => 'backendOrdersList', 'class' => '');
+        $widgets[] = array('name' => 'backendOrdersList\OrderPurchaseCell', 'title' => ORDER_PURCHASE_CELL, 'description' => '', 'type' => 'backendOrdersList', 'class' => '');
+        $widgets[] = array('name' => 'backendOrdersList\OrderStatusCell', 'title' => ORDER_STATUS_CELL, 'description' => '', 'type' => 'backendOrdersList', 'class' => '');
+        $widgets[] = array('name' => 'backendOrdersList\NeighbourCell', 'title' => NEIGHBOUR_CELL, 'description' => '', 'type' => 'backendOrdersList', 'class' => '');
+        $widgets[] = array('name' => 'backendOrdersList\CustomerGender', 'title' => CUSTOMER_GENDER, 'description' => '', 'type' => 'backendOrdersList', 'class' => '');
+        $widgets[] = array('name' => 'backendOrdersList\CustomerName', 'title' => TEXT_CUSTOMER_NAME, 'description' => '', 'type' => 'backendOrdersList', 'class' => '');
+        $widgets[] = array('name' => 'backendOrdersList\CustomerEmail', 'title' => TEXT_CUSTOMER_EMAIL, 'description' => '', 'type' => 'backendOrdersList', 'class' => '');
+        $widgets[] = array('name' => 'backendOrdersList\OrderLocation', 'title' => ORDER_LOCATION, 'description' => '', 'type' => 'backendOrdersList', 'class' => '');
+        $widgets[] = array('name' => 'backendOrdersList\WalkinOrder', 'title' => WALKIN_ORDER, 'description' => '', 'type' => 'backendOrdersList', 'class' => '');
+        $widgets[] = array('name' => 'Html_box', 'title' => 'html', 'description' => '', 'type' => 'backendOrdersList', 'class' => 'html');
+        $widgets[] = array('name' => 'backendOrdersList\OrderId', 'title' => TEXT_ORDER_ID, 'description' => '', 'type' => 'backendOrdersList', 'class' => '');
+        $widgets[] = array('name' => 'backendOrdersList\OrderProducts', 'title' => ORDER_PRODUCTS, 'description' => '', 'type' => 'backendOrdersList', 'class' => '');
+        $widgets[] = array('name' => 'backendOrdersList\Platform', 'title' => TABLE_HEADING_PLATFORM, 'description' => '', 'type' => 'backendOrdersList', 'class' => '');
+        $widgets[] = array('name' => 'backendOrdersList\PaymentMethod', 'title' => TEXT_INFO_PAYMENT_METHOD, 'description' => '', 'type' => 'backendOrdersList', 'class' => '');
+        $widgets[] = array('name' => 'backendOrdersList\ShippingMethod', 'title' => TEXT_CHOOSE_SHIPPING_METHOD, 'description' => '', 'type' => 'backendOrdersList', 'class' => '');
+        $widgets[] = array('name' => 'backendOrdersList\OrderPurchase', 'title' => TABLE_HEADING_DATE_PURCHASED, 'description' => '', 'type' => 'backendOrdersList', 'class' => '');
 
 
         return $widgets;

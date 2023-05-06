@@ -6,6 +6,7 @@
 	<title>{$this->title}</title>
 	<link rel="stylesheet" href="{$app->view->theme->baseUrl}/css/fontawesome/font-awesome.min.css">
 	<link href="{$app->view->theme->baseUrl}/css/login.css?3" rel="stylesheet" type="text/css" />
+	<link href="{$app->view->theme->baseUrl}/css/superadmin.css?3" rel="stylesheet" type="text/css" />
 	<script type="text/javascript" src="{$app->view->theme->baseUrl}/js/libs/jquery.min.js?3"></script>
 	<script type="text/javascript" src="{$app->request->baseUrl}/plugins/validation/jquery.validate.min.js"></script>
 	<script type="text/javascript" src="{$app->view->theme->baseUrl}/js/login.js?3"></script>
@@ -19,8 +20,8 @@
 	<!-- Logo -->
 	<div class="logo">
 		{if ((defined('WL_ENABLED') && WL_ENABLED === true) && (defined('WL_COMPANY_LOGO') && WL_COMPANY_LOGO != ''))}
-			<img src="/admin/themes/basic/img/oscommerce_logo.png" alt="osc 4">
-			<div class="subLogo">the eCommerce</div>
+			<img src="{$app->view->theme->baseUrl}/img/logo-powerful-commerce-white.png" alt="Powerful">
+			<div class="subLogo">SUPERADMIN AREA</div>
 		{else}
 			{include './login-logo.tpl'}
 		{/if}
@@ -29,6 +30,7 @@
 
 	<!-- Login Box -->
 	<div class="box">
+            {if ($action != 'restore')}
 		<div class="content login-content">
 			<!-- Login Formular -->
                         {Html::beginForm($app->urlManager->createUrl(["login", 'action' => 'process']), 'post', ['class' => 'form-vertical login-form'])}
@@ -49,6 +51,7 @@
 {/if}
 
 				<!-- Input Fields -->
+                            {if ($action != 'otp')}
 				<div class="form-group">
 					<!--<label for="username">E-Mail Address:</label>-->
 					<div class="input-icon">
@@ -56,6 +59,11 @@
                                                 <input type="text" name="email_address" class="form-control" placeholder="{$smarty.const.ENTRY_EMAIL_ADDRESS}" autofocus="autofocus" autocomplete="off" data-rule-required="true" data-msg-required="{$smarty.const.TEXT_ENTER_YOUR_PASSWORD}" />
 					</div>
 				</div>
+                            {else}
+                                <input type="hidden" name="action" value="{$action}" />
+                                <input type="hidden" name="email_address" value="{$email}" />
+                            {/if}
+                            {if (!defined('ADMIN_LOGIN_OTP_ENABLE') OR (ADMIN_LOGIN_OTP_ENABLE != 'True') OR {$action == 'otp'})}
 				<div class="form-group">
 					<!--<label for="password">Password:</label>-->
 					<div class="input-icon">
@@ -63,6 +71,7 @@
 						<input type="password" name="password" class="form-control" placeholder="{$smarty.const.TEXT_PASSWORD}" autocomplete="off" data-rule-required="true" data-msg-required="{$smarty.const.TEXT_ENTER_PASSWORD}" />
 					</div>
 				</div>
+                            {/if}
 {if $loginModel->captha_enabled == 'recaptha'}
     {$loginModel->captcha_widget}
 {/if}
@@ -80,13 +89,19 @@
 						{$smarty.const.TEXT_SIGN_IN} <i class="icon-angle-right"></i>
 					</button>
 				</div>
-
-			<a href="{Yii::$app->urlManager->createUrl('login')}#restore" class="forgot-password-link">{$smarty.const.TEXT_FORGOT_PASSWORD}</a>
-
+                            {if ($action == 'otp')}
+                                <div class="form-actions">
+                                    <a class="btn" href="{Yii::$app->urlManager->createUrl('login')}">{$smarty.const.IMAGE_BACK}</a>
+                                </div>
+                            {/if}
+                    {if ((!defined('ADMIN_LOGIN_OTP_ENABLE') OR (ADMIN_LOGIN_OTP_ENABLE != 'True')) AND (\common\models\AdminPasswordForgotLog::isBlocked() != true))}
+			<a href="{Yii::$app->urlManager->createUrl(['login', 'action' => 'restore'])}#restore" class="forgot-password-link">{$smarty.const.TEXT_FORGOT_PASSWORD}</a>
+                    {/if}
 			{Html::endForm()}
 			<!-- /Login Formular -->
 		</div> <!-- /.content -->
-
+            {/if}
+            {if ((!defined('ADMIN_LOGIN_OTP_ENABLE') OR (ADMIN_LOGIN_OTP_ENABLE != 'True')) AND ($action == 'restore'))}
 		<!-- Forgot Password Form -->
 		<div class="inner-box">
 			<div class="content forgot-password-content">
@@ -130,13 +145,22 @@
 						</div>
 					</div>
     {/if}
-{/foreach}                                        
+{/foreach}
 					<div class="form-group">
 						<div class="input-icon">
 							<i class="icon-envelope"></i>
 							<input type="text" name="email_address" class="form-control" placeholder="{$smarty.const.TEXT_ENTER_EMAIL_ADDRESS}" data-rule-required="true" data-rule-email="true" data-msg-required="{$smarty.const.TEXT_ENTER_YOUR_EMAIL}" />
 						</div>
 					</div>
+{if $loginModel->captha_enabled == 'recaptha'}
+    {$loginModel->captcha_widget}
+{/if}
+{if $loginModel->captha_enabled == 'captha'}
+                                <div class="form-group">
+                                    {Captcha::widget(['model' => $loginModel, 'attribute' => 'captcha'])}
+                                    {*Captcha::widget(['name' => 'captcha'])*}
+                                </div>
+{/if}
 					<!-- /Input Fields -->
 
 					<button type="submit" class="submit btn btn-default btn-block btn-primary">
@@ -157,6 +181,7 @@
 			</div> <!-- /.content -->
 		</div>
 		<!-- /Forgot Password Form -->
+            {/if}
 	</div>
 	<!-- /Login Box -->
 	</div>
@@ -193,7 +218,7 @@
             {/if}
 		</ul>
 
-	      {if ((defined('WL_ENABLED') && WL_ENABLED === true) && 
+	      {if ((defined('WL_ENABLED') && WL_ENABLED === true) &&
 	           (defined('WL_COMPANY_NAME') && WL_COMPANY_NAME != ''))}
 
 	        Copyright &copy; {$smarty.now|date_format:"%Y"} <a target="_blank" href="https://oscommerce.com">{$smarty.const.WL_COMPANY_NAME}</a>. All rights reserved.
@@ -244,7 +269,7 @@
 		
 		var bgArray = ['bg1.jpg', 'bg2.jpg', 'bg3.jpg', 'bg4.jpg', 'bg5.jpg', 'bg6.jpg'];
 		var bg = '{$app->view->theme->baseUrl}/img/' + bgArray[Math.floor(Math.random() * bgArray.length)];
-		$('body').css('background-image', 'url(' + bg + ')');	
+		$('body').css('background-image', 'url(' + bg + ')');
 	})
 </script>
 {/strip}

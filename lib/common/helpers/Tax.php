@@ -66,7 +66,7 @@ class Tax {
     public static function calculate_tax($price, $tax) {
         //$currency = \Yii::$app->settings->get('currency');
         //$currencies = \Yii::$container->get('currencies');
-        return round($price * $tax / 100, 6); //$currencies->currencies[$currency]['decimal_places']
+        return round((float)$price * $tax / 100, 6); //$currencies->currencies[$currency]['decimal_places']
     }
 
     public static function get_tax_description($class_id, $country_id, $zone_id) {
@@ -132,6 +132,11 @@ class Tax {
  * @return int
  */
     public static function get_tax_rate($class_id, $country_id = -1, $zone_id = -1, $extraAddress='', $check_group = true) {
+        $tax_rate = false;
+        foreach (\common\helpers\Hooks::getList('tax/get-tax-rate') as $filename) {
+            $tax_rate = include($filename);
+            if ($tax_rate !== false) return $tax_rate;
+        }
         global $tax_rates_array;
         $customer_groups_id = (int) \Yii::$app->storage->get('customer_groups_id');
 
@@ -287,8 +292,12 @@ class Tax {
             ;
     }
 
-
     public static function getTaxValues($platform_id, $tax_class_id, $tax_country_id, $tax_zone_id) {
+        $tax_values = false;
+        foreach (\common\helpers\Hooks::getList('tax/get-tax-values') as $filename) {
+            $tax_values = include($filename);
+            if (is_array($tax_values) && isset($tax_values['tax'])) return $tax_values;
+        }
         $tax = 0;
         $tax_description = '';
 
@@ -508,7 +517,7 @@ class Tax {
                 \Yii::warning($e->getMessage() . ' ' . $e->getTraceAsString());
             }
         }
-        return $ret;
+        return (float)$ret;
     }
 
     public static function roundTax($price) {

@@ -2,6 +2,10 @@
 
 namespace PHPStan\PhpDocParser\Lexer;
 
+use function implode;
+use function preg_match_all;
+use const PREG_SET_ORDER;
+
 /**
  * Implementation based on Nette Tokenizer (New BSD License; https://github.com/nette/tokenizer)
  */
@@ -41,12 +45,15 @@ class Lexer
 	public const TOKEN_WILDCARD = 30;
 	public const TOKEN_OPEN_CURLY_BRACKET = 31;
 	public const TOKEN_CLOSE_CURLY_BRACKET = 32;
+	public const TOKEN_NEGATED = 33;
+	public const TOKEN_ARROW = 34;
 
 	public const TOKEN_LABELS = [
 		self::TOKEN_REFERENCE => '\'&\'',
 		self::TOKEN_UNION => '\'|\'',
 		self::TOKEN_INTERSECTION => '\'&\'',
 		self::TOKEN_NULLABLE => '\'?\'',
+		self::TOKEN_NEGATED => '\'!\'',
 		self::TOKEN_OPEN_PARENTHESES => '\'(\'',
 		self::TOKEN_CLOSE_PARENTHESES => '\')\'',
 		self::TOKEN_OPEN_ANGLE_BRACKET => '\'<\'',
@@ -60,6 +67,7 @@ class Lexer
 		self::TOKEN_VARIADIC => '\'...\'',
 		self::TOKEN_DOUBLE_COLON => '\'::\'',
 		self::TOKEN_DOUBLE_ARROW => '\'=>\'',
+		self::TOKEN_ARROW => '\'->\'',
 		self::TOKEN_EQUAL => '\'=\'',
 		self::TOKEN_OPEN_PHPDOC => '\'/**\'',
 		self::TOKEN_CLOSE_PHPDOC => '\'*/\'',
@@ -84,28 +92,17 @@ class Lexer
 	/** @var string|null */
 	private $regexp;
 
-	/** @var int[]|null */
-	private $types;
-
 	public function tokenize(string $s): array
 	{
-		if ($this->regexp === null || $this->types === null) {
-			$this->initialize();
+		if ($this->regexp === null) {
+			$this->regexp = $this->generateRegexp();
 		}
 
-		assert($this->regexp !== null);
-		assert($this->types !== null);
+		preg_match_all($this->regexp, $s, $matches, PREG_SET_ORDER);
 
-		preg_match_all($this->regexp, $s, $tokens, PREG_SET_ORDER);
-
-		$count = count($this->types);
-		foreach ($tokens as &$match) {
-			for ($i = 1; $i <= $count; $i++) {
-				if ($match[$i] !== null && $match[$i] !== '') {
-					$match = [$match[0], $this->types[$i - 1]];
-					break;
-				}
-			}
+		$tokens = [];
+		foreach ($matches as $match) {
+			$tokens[] = [$match[0], (int) $match['MARK']];
 		}
 
 		$tokens[] = ['', self::TOKEN_END];
@@ -114,14 +111,21 @@ class Lexer
 	}
 
 
-	private function initialize(): void
+	private function generateRegexp(): string
 	{
 		$patterns = [
+			self::TOKEN_HORIZONTAL_WS => '[\\x09\\x20]++',
+
+			self::TOKEN_IDENTIFIER => '(?:[\\\\]?+[a-z_\\x80-\\xFF][0-9a-z_\\x80-\\xFF-]*+)++',
+			self::TOKEN_THIS_VARIABLE => '\\$this(?![0-9a-z_\\x80-\\xFF])',
+			self::TOKEN_VARIABLE => '\\$[a-z_\\x80-\\xFF][0-9a-z_\\x80-\\xFF]*+',
+
 			// '&' followed by TOKEN_VARIADIC, TOKEN_VARIABLE, TOKEN_EQUAL, TOKEN_EQUAL or TOKEN_CLOSE_PARENTHESES
 			self::TOKEN_REFERENCE => '&(?=\\s*+(?:[.,=)]|(?:\\$(?!this(?![0-9a-z_\\x80-\\xFF])))))',
 			self::TOKEN_UNION => '\\|',
 			self::TOKEN_INTERSECTION => '&',
 			self::TOKEN_NULLABLE => '\\?',
+			self::TOKEN_NEGATED => '!',
 
 			self::TOKEN_OPEN_PARENTHESES => '\\(',
 			self::TOKEN_CLOSE_PARENTHESES => '\\)',
@@ -136,12 +140,13 @@ class Lexer
 			self::TOKEN_VARIADIC => '\\.\\.\\.',
 			self::TOKEN_DOUBLE_COLON => '::',
 			self::TOKEN_DOUBLE_ARROW => '=>',
+			self::TOKEN_ARROW => '->',
 			self::TOKEN_EQUAL => '=',
 			self::TOKEN_COLON => ':',
 
 			self::TOKEN_OPEN_PHPDOC => '/\\*\\*(?=\\s)\\x20?+',
 			self::TOKEN_CLOSE_PHPDOC => '\\*/',
-			self::TOKEN_PHPDOC_TAG => '@[a-z][a-z0-9-]*+',
+			self::TOKEN_PHPDOC_TAG => '@(?:[a-z][a-z0-9-\\\\]+:)?[a-z][a-z0-9-\\\\]*+',
 			self::TOKEN_PHPDOC_EOL => '\\r?+\\n[\\x09\\x20]*+(?:\\*(?!/)\\x20?+)?',
 
 			self::TOKEN_FLOAT => '(?:-?[0-9]++\\.[0-9]*+(?:e-?[0-9]++)?)|(?:-?[0-9]*+\\.[0-9]++(?:e-?[0-9]++)?)|(?:-?[0-9]++e-?[0-9]++)',
@@ -149,20 +154,17 @@ class Lexer
 			self::TOKEN_SINGLE_QUOTED_STRING => '\'(?:\\\\[^\\r\\n]|[^\'\\r\\n\\\\])*+\'',
 			self::TOKEN_DOUBLE_QUOTED_STRING => '"(?:\\\\[^\\r\\n]|[^"\\r\\n\\\\])*+"',
 
-			self::TOKEN_IDENTIFIER => '(?:[\\\\]?+[a-z_\\x80-\\xFF][0-9a-z_\\x80-\\xFF-]*+)++',
-			self::TOKEN_THIS_VARIABLE => '\\$this(?![0-9a-z_\\x80-\\xFF])',
-			self::TOKEN_VARIABLE => '\\$[a-z_\\x80-\\xFF][0-9a-z_\\x80-\\xFF]*+',
-
-			self::TOKEN_HORIZONTAL_WS => '[\\x09\\x20]++',
-
 			self::TOKEN_WILDCARD => '\\*',
 
 			// anything but TOKEN_CLOSE_PHPDOC or TOKEN_HORIZONTAL_WS or TOKEN_EOL
 			self::TOKEN_OTHER => '(?:(?!\\*/)[^\\s])++',
 		];
 
-		$this->regexp = '~(' . implode(')|(', $patterns) . ')~Asi';
-		$this->types = array_keys($patterns);
+		foreach ($patterns as $type => &$pattern) {
+			$pattern = '(?:' . $pattern . ')(*MARK:' . $type . ')';
+		}
+
+		return '~' . implode('|', $patterns) . '~Asi';
 	}
 
 }

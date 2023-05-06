@@ -347,10 +347,6 @@ class UserGroups extends \common\classes\modules\ModuleExtensions {
           }
         }
 
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('UserGroupsExtraDiscounts', 'allowed')) {
-            $ext::adminEditGroups($item_id);
-        }
-
         foreach (\common\helpers\Hooks::getList('customergroups/groupedit/before-render') as $filename) {
             include($filename);
         }

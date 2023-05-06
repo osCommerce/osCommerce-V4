@@ -1,3 +1,9 @@
+⚠️ PHP 8 introduced
+[attributes](https://www.php.net/manual/en/language.attributes.overview.php),
+which are a native replacement for annotations. As such, this library is
+considered feature complete, and should receive exclusively bugfixes and
+security fixes.
+
 # Doctrine Annotations
 
 [![Build Status](https://github.com/doctrine/annotations/workflows/Continuous%20Integration/badge.svg?label=build)](https://github.com/doctrine/persistence/actions)
@@ -10,7 +16,7 @@ Docblock Annotations Parser library (extracted from [Doctrine Common](https://gi
 
 ## Documentation
 
-See the [doctrine-project website](https://www.doctrine-project.org/projects/doctrine-annotations/en/latest/index.html).
+See the [doctrine-project website](https://www.doctrine-project.org/projects/doctrine-annotations/en/stable/index.html).
 
 ## Contributing
 

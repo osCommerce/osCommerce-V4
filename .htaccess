@@ -2,11 +2,12 @@
 #  Header always set Strict-Transport-Security "max-age=86400; includeSubDomains; preload"
 #</IfModule> 
 
+<IfModule mod_rewrite.c>
 RewriteEngine on
 
-RedirectMatch 403 /\\.svn(/|$)
-RedirectMatch 403 /*\.sh($)
-RedirectMatch 403 /*\.log($)
+RewriteRule /*\.svn(/|$) - [F,L]
+RewriteRule /*\.sh($) - [F,L]
+RewriteRule /*\.log($) - [F,L]
 
 #RewriteCond %{HTTP_HOST} !^www\.
 #RewriteCond %{HTTPS}s on(s)|offs()
@@ -22,6 +23,7 @@ RewriteCond %{REQUEST_FILENAME} !-f
 
 # otherwise forward it to index.php
 RewriteRule . index.php
+</IfModule>
 
 
 ## EXPIRES CACHING ##

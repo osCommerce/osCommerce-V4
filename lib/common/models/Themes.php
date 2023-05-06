@@ -16,6 +16,7 @@ use yii\db\ActiveRecord;
  * @property integer $is_default
  * @property integer $sort_order
  * @property string $parent_theme
+ * @property integer $themes_group_id
  */
 class Themes extends ActiveRecord
 {

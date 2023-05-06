@@ -1,6 +1,6 @@
 <ul class="nav navbar-nav navbar-left hidden-xs hidden-sm">
     <li>
-        <a id="helpLink" href="https://wiki.oscommerce.com/" target="_blank">
+        <a id="helpLink" href="https://www.oscommerce.com/wiki/Main_Page" target="_blank">
             Help
         </a>
     </li>

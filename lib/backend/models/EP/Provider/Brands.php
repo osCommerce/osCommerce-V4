@@ -162,12 +162,48 @@ class Brands extends ProviderAbstract implements ImportInterface, ExportInterfac
 
     public function importRow($data, Messages $message)
     {
-        // TODO: Implement importRow() method.
+
+        $this->data = $data;
+        $multi_data = EP\ArrayTransform::convertFlatToMultiDimensional($this->data);
+
+        $brandModel = Manufacturer::findOne(['manufacturers_id'=>$this->data['key_field']]);
+        if ( !$brandModel ) {
+
+            $brandModel =  Manufacturer::findOne(['manufacturers_name' => $multi_data['manufacturers_name']]);
+            if ( !empty($brandModel) ){
+                $message->info('Duplicate name. Skipped');
+                return false;
+            }
+
+            $brandModel = new Manufacturer();
+            $brandModel->loadDefaultValues();
+            unset($multi_data['key_field']);
+        }
+
+        if ( !empty($multi_data['manufacturers_image']) ) {
+            if (preg_match('/^https?:\/\//', $multi_data['manufacturers_image'])) {
+                // download remote images
+                $multi_data['manufacturers_image_source_url'] = $multi_data['manufacturers_image'];
+                $multi_data['manufacturers_image'] = basename($multi_data['manufacturers_image_source_url']);
+            } elseif ($this->import_folder && is_dir($this->import_folder) && is_file($this->import_folder . $multi_data['manufacturers_image'])) {
+                $multi_data['manufacturers_image_source_url'] = $this->import_folder . $multi_data['manufacturers_image'];
+            } elseif (is_file(\common\classes\Images::getFSCatalogImagesPath() . 'import/' . $multi_data['manufacturers_image'])) {
+                $multi_data['manufacturers_image_source_url'] = \common\classes\Images::getFSCatalogImagesPath() . 'import/' . $multi_data['manufacturers_image'];
+            } elseif (is_file(\common\classes\Images::getFSCatalogImagesPath() . $multi_data['manufacturers_image'])) {
+                $multi_data['manufacturers_image_source_url'] = \common\classes\Images::getFSCatalogImagesPath() . $multi_data['manufacturers_image'];
+            }
+        }
+
+        $brandModel->importArray($multi_data);
+        if ($brandModel->save(false)) {
+            $this->entry_counter++;
+        }
     }
 
     public function postProcess(Messages $message)
     {
-        // TODO: Implement postProcess() method.
+        $message->info('Brands processed: ' . $this->entry_counter);
+        $message->info('Done');
     }
 
 }

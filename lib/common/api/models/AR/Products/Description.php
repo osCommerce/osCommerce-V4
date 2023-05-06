@@ -28,6 +28,7 @@ class Description extends EPMap
         'products_id',
         'language_id',
         'platform_id',
+        'department_id',
         'products_name_soundex',
         'products_description_soundex',
     ];
@@ -43,10 +44,24 @@ class Description extends EPMap
                     'products_id' => null,
                     'language_id' => $lang['id'],
                     'platform_id' => $platform->platform_id,
+                    'department_id' => 0,
                 ];
             }
         }
-        
+        if (defined('SUPERADMIN_ENABLED') && SUPERADMIN_ENABLED && \Yii::$app->has('department')){
+            $active_department = \Yii::$app->get('department')->getActiveDepartmentId();
+            foreach (\common\classes\department::getCatalogAssignList() as $department) {
+                if ($department['id'] != $active_department) continue;
+                $keyCode = $lang['code'].'_0_'.$department['id'];
+                $keyCodes[$keyCode] = [
+                    'products_id' => null,
+                    'language_id' => $lang['id'],
+                    'platform_id' => \common\classes\platform::defaultId(),
+                    'department_id' => $department['id'],
+                ];
+            }
+        }
+
         return $keyCodes;
     }
 

@@ -13,6 +13,7 @@
 namespace backend\design;
 
 use common\models\ThemesSettings;
+use common\models\ThemesStylesMain;
 use Yii;
 use yii\helpers\ArrayHelper;
 use common\models\ThemesStyles;
@@ -860,6 +861,8 @@ class Style
                     $borderColor = $matches[1];
                 } elseif (preg_match('/(\#[\-0-9a-fA-F]{3,6})/', $value, $matches)) {
                     $borderColor = $matches[1];
+                } elseif (preg_match('/(\$[\-0-9a-z]+)/', $value, $matches)) {
+                    $borderColor = $matches[1];
                 }
                 if ($borderColor) {
                     $attr[] = [
@@ -945,6 +948,8 @@ class Style
                     $borderColor = $matches[1];
                 } elseif (preg_match('/(\#[\-0-9a-fA-F]{3,6})/', $value, $matches)) {
                     $borderColor = $matches[1];
+                } elseif (preg_match('/($[\-0-9a-z]+)/', $value, $matches)) {
+                    $borderColor = $matches[1];
                 } elseif (strpos($value, 'transparent') !== false) {
                     $borderColor = 'transparent';
                 }
@@ -978,6 +983,8 @@ class Style
             if (preg_match('/(rgb[a]{0,1}\([\-0-9\.\,\s]+\))/', $value, $matches)) {
                 $borderColor = $matches[1];
             } elseif (preg_match('/(\#[\-0-9a-fA-F]{3,6})/', $value, $matches)) {
+                $borderColor = $matches[1];
+            } elseif (preg_match('/(\$[\-0-9a-z]+)/', $value, $matches)) {
                 $borderColor = $matches[1];
             }
             if ($borderColor) {
@@ -1270,6 +1277,11 @@ class Style
                         'attribute' => 'background-color',
                         'value' => $matches[1]
                     ];
+                } elseif (preg_match('/(\$[\-0-9a-z]+)/', $value, $matches)) {
+                    $attr[] = [
+                        'attribute' => 'background-color',
+                        'value' => $matches[1]
+                    ];
                 }
 
             }
@@ -1393,7 +1405,7 @@ class Style
         ];
     }
 
-    public static function getCss($theme_name, $widgets = array(), $page = '', $all = true)
+    public static function getCss($theme_name, $widgets = array(), $page = '', $all = true, $cachedAccessibility = null )
     {
         $css = '';
         $tab = '  ';
@@ -1427,10 +1439,30 @@ class Style
             }
         }
 
-        $area = "'" . implode("','", $areaArr) . "'";
+        $mainStyles = [];
+        if (Yii::$app->controller->action->id != 'get-css') {
+            $mainStyles = self::mainStyles($theme_name);
+        }
+        if (count($areaArr) == 1) {
 
-        $query = tep_db_query("select * from " . TABLE_THEMES_STYLES . " where theme_name = '" . tep_db_input($theme_name) . "' " . (count($areaArr) > 0 ? " and accessibility in(" . $area . ") " : '') . " order by accessibility, media, selector, attribute, visibility");
-        while ($item = tep_db_fetch_array($query)) {
+            if ($cachedAccessibility) {
+                $reader = $cachedAccessibility;
+            } else {
+                static $cmd = null; // unfortunately prepared queries has not enought effect
+                if (is_null($cmd)) {
+                    $cmd = \Yii::$app->db->createCommand("select * from " . TABLE_THEMES_STYLES . " where theme_name = :theme and accessibility = :area order by accessibility, media, selector, attribute, visibility");
+                }
+                $reader = $cmd->bindValues([':theme' => tep_db_input($theme_name), ':area' => reset($areaArr)])->query();
+            }
+        } else { // it should not happen, but just in case
+            $reader = \common\models\ThemesStyles::find()->where(['theme_name' => $theme_name])->orderBy('accessibility, media, selector, attribute, visibility')->asArray();
+            if (count($areaArr) > 0) {
+                $reader = $reader->andWhere(['accessibility' => $areaArr]);
+            }
+            $reader = $reader->each();
+        }
+
+        foreach($reader as $item) {
             $vArr = self::vArr($item['visibility']);
             $visibility = '';
             foreach ($vArr as $vKey => $vItem) {
@@ -1464,6 +1496,10 @@ class Style
                     }
                 }
                 $item['selector'] = implode(', ', $selectorArr);
+            }
+
+            if (isset($item['value']) && isset($mainStyles[$item['value']])) {
+                $item['value'] = $mainStyles[$item['value']];
             }
 
             if ($visibility) {
@@ -1540,18 +1576,26 @@ class Style
                 $cssArr['general'] = $cssArr['general'] . self::getCssMedia($item, '', $tab, $displacement);
             } elseif ($key == 'visibility') {
 
-                $mediaSizes = [];
-                $mediaSizesQuery = tep_db_query("select id, setting_value from " . TABLE_THEMES_SETTINGS . " where theme_name = '" . tep_db_input($theme_name) . "' and setting_group = 'extend' and setting_name = 'media_query'");
-                while ($mediaSize = tep_db_fetch_array($mediaSizesQuery)) {
-                    $arr2 = explode('w', $mediaSize['setting_value']);
-                    if (isset($arr2[0]) && $arr2[0]) {
-                        $mediaSizes[(int)($arr2[0] . '0')] = $mediaSize['id'];
+                static $cachedMediaSizes = [];
+                if (!is_array($mediaSizes[tep_db_input($theme_name)]??null)) {
+                    $mediaSizes = [];
+                    $mediaSizesQuery = tep_db_query("select id, setting_value from " . TABLE_THEMES_SETTINGS . " where theme_name = '" . tep_db_input($theme_name) . "' and setting_group = 'extend' and setting_name = 'media_query'");
+
+                    while ($mediaSize = tep_db_fetch_array($mediaSizesQuery)) {
+                        $arr2 = explode('w', $mediaSize['setting_value']);
+                        if (isset($arr2[0]) && $arr2[0]) {
+                            $mediaSizes[(int)($arr2[0] . '0')] = $mediaSize['id'];
+                        }
+                        if (isset($arr2[1]) && $arr2[1]) {
+                            $mediaSizes[(int)$arr2[1]] = $mediaSize['id'];
+                        }
                     }
-                    if (isset($arr2[1]) && $arr2[1]) {
-                        $mediaSizes[(int)$arr2[1]] = $mediaSize['id'];
-                    }
+                    krsort($mediaSizes);
+                    $cachedMediaSizes[tep_db_input($theme_name)] = $mediaSizes;
+                } else {
+                    $mediaSizes = $cachedMediaSizes[tep_db_input($theme_name)];
                 }
-                krsort($mediaSizes);
+
                 foreach ($mediaSizes as $media) {
                     $arr = $item[$media] ?? null;
                     $query = tep_db_fetch_array(tep_db_query("select setting_value from " . TABLE_THEMES_SETTINGS . " where id = '" . $media . "'"));
@@ -2069,7 +2113,19 @@ class Style
         return $str;
     }
 
-    public static function createCache($theme_name, $accessibility = false)
+    private static function addThemeStyleCacheRecord($theme_name, $accessibility, $accessibilityStyles)
+    {
+        $css = self::getCss($theme_name, array($accessibility), '', true, $accessibilityStyles);
+        $sqlDataArray = array(
+            'theme_name' => $theme_name,
+            'accessibility' => $accessibility,
+            'css' => $css,
+        );
+        tep_db_perform(TABLE_THEMES_STYLES_CACHE, $sqlDataArray);
+        return $css;
+    }
+
+    public static function createCache($theme_name, $accessibility = false, $needDelete = true)
     {
         if ($accessibility == 'all'){
             $accessibility = false;
@@ -2080,7 +2136,9 @@ class Style
         self::$cssFrontend = true;
         $themesPath = DIR_FS_CATALOG . 'themes' . DIRECTORY_SEPARATOR . $theme_name . DIRECTORY_SEPARATOR;
 
-        tep_db_query("delete from " . TABLE_THEMES_STYLES_CACHE . " where theme_name = '" . tep_db_input($theme_name) . "'" . ($accessibility !== false ? " and accessibility = '" . $accessibility . "'" : ""));
+        if ($needDelete) {
+            tep_db_query("delete from " . TABLE_THEMES_STYLES_CACHE . " where theme_name = '" . tep_db_input($theme_name) . "'" . ($accessibility !== false ? " and accessibility = '" . $accessibility . "'" : ""));
+        }
 
         $bottom = '';
         $basicThemesPath = DIR_FS_CATALOG . 'themes' . DIRECTORY_SEPARATOR . 'basic' . DIRECTORY_SEPARATOR;
@@ -2089,20 +2147,28 @@ class Style
         }
 
         if ($accessibility === false) {
-            $query = tep_db_query("select distinct accessibility from " . TABLE_THEMES_STYLES . " where theme_name = '" . tep_db_input($theme_name) . "'");
-            while ($item = tep_db_fetch_array($query)) {
-                $css = self::getCss($theme_name, array($item['accessibility']));
-                $sqlDataArray = array(
-                    'theme_name' => $theme_name,
-                    'accessibility' => $item['accessibility'],
-                    'css' => $css,
-                );
-                tep_db_perform(TABLE_THEMES_STYLES_CACHE, $sqlDataArray);
+            $query = \common\models\ThemesStyles::find()->where(['theme_name' => $theme_name])->orderBy('accessibility, media, selector, attribute, visibility')->asArray();
 
-                if ($item['accessibility'] == '.b-bottom') {
+            $accessibilityStyles = [];
+            $prevAccessibility = null;
+            foreach($query->each() as $item) {
+                if ($item['accessibility'] != $prevAccessibility && !empty($accessibilityStyles)) {
+                    $css = self::addThemeStyleCacheRecord($theme_name, $prevAccessibility, $accessibilityStyles);
+                    if ($prevAccessibility == '.b-bottom') {
+                        $bottom .= $css;
+                    }
+                    $accessibilityStyles = [];
+                }
+                $prevAccessibility = $item['accessibility'];
+                $accessibilityStyles[] = $item;
+            }
+            if (!empty($accessibilityStyles)) {
+                $css = self::addThemeStyleCacheRecord($theme_name, $prevAccessibility, $accessibilityStyles);
+                if ($prevAccessibility == '.b-bottom') {
                     $bottom .= $css;
                 }
             }
+            unset($accessibilityStyles);
 
             $bottom = \frontend\design\Info::minifyCss($bottom);
             $filePath = $themesPath . 'css' . DIRECTORY_SEPARATOR;
@@ -3389,4 +3455,68 @@ class Style
 
         return $mediaSizes[$id];
     }
+
+    public static function mainStyles($themeName)
+    {
+        static $styles = [];
+        $styles[$themeName] = false;
+        if ($styles[$themeName]) {
+            return $styles[$themeName];
+        }
+        $styles[$themeName] = [];
+
+        $themesStylesMain = ThemesStylesMain::find()->where(['theme_name' => $themeName])->asArray()->all();
+        foreach ($themesStylesMain as $style) {
+            $styles[$themeName]['$' . $style['name']] = $style['value'];
+        }
+
+        return $styles[$themeName];
+    }
+
+    private static function flushCacheTheme($themeName, $needDelete = true)
+    {
+        $themeMobile = $themeName . '-mobile';
+        if ($needDelete) {
+            \common\models\DesignBoxesCache::deleteAll(['or', ['theme_name' => $themeName], ['theme_name' => $themeMobile]]);
+        }
+        self::createCache($themeName, false, $needDelete);
+        self::createCache($themeMobile, false, $needDelete);
+    }
+
+    public static function flushCacheAll()
+    {
+        $themes = \common\models\Themes::find()->asArray()->all();
+
+        $dbArr = [
+            'theme_name' => $themes[0]['theme_name'],
+            'setting_group' => 'hide',
+            'setting_name' => 'flush_cache_stamp',
+        ];
+
+        $setting = \common\models\ThemesSettings::findOne($dbArr);
+
+        if ($setting && $setting->setting_value + 300 > time()) {
+            return false;
+        }
+        \common\models\ThemesSettings::deleteAll($dbArr);
+
+        $setting = new \common\models\ThemesSettings();
+        $setting->theme_name = $themes[0]['theme_name'];
+        $setting->setting_group = 'hide';
+        $setting->setting_name = 'flush_cache_stamp';
+        $setting->setting_value = time();
+        $setting->save();
+
+        // speed up
+        \Yii::$app->db->createCommand()->truncateTable(\common\models\DesignBoxesCache::tableName())->execute();
+        \Yii::$app->db->createCommand()->truncateTable(\common\models\ThemesStylesCache::tableName())->execute();
+
+        foreach ($themes as $theme) {
+            self::flushCacheTheme($theme['theme_name'], false);
+        }
+
+        \common\models\ThemesSettings::deleteAll($dbArr);
+        return true;
+    }
+
 }

@@ -526,6 +526,7 @@ class PDFBox extends \TCPDF {
 
     public function BlockCreate($name, $page_params, $position, $pdf_params)
     {
+        $mainStyles = \backend\design\Style::mainStyles($page_params['theme_name']);
 
         $ds = $pdf_params['dimension_scale'];
 
@@ -596,6 +597,9 @@ class PDFBox extends \TCPDF {
 
 
             if (!empty($settings[0]['background-color'])) {
+                if ($mainStyles[$settings[0]['background-color']] ?? false) {
+                    $settings[0]['background-color'] = $mainStyles[$settings[0]['background-color']];
+                }
               // rgba(250,244,151,0.54) or #NNnnNN
                 $rgb = self::extractColor($settings[0]['background-color']);
                 if (is_array($rgb) && count($rgb)==3) {
@@ -639,7 +643,10 @@ class PDFBox extends \TCPDF {
               }
             }
 
-            if ($settings[0]['border-top-width']){
+            if ($settings[0]['border-top-width'] ?? false){
+                if ($mainStyles[$settings[0]['border-top-color']] ?? false) {
+                    $settings[0]['border-top-color'] = $mainStyles[$settings[0]['border-top-color']];
+                }
                 list($r, $g, $b) = sscanf($settings[0]['border-top-color'], "#%02x%02x%02x");
                 $this->Line(
                     $position['left'] - $ds/10 - $ds/10,
@@ -649,7 +656,10 @@ class PDFBox extends \TCPDF {
                     array('width' => $settings[0]['border-top-width'] * $ds, 'color' => array($r, $g, $b))
                 );
             }
-            if ($settings[0]['border-left-width']){
+            if ($settings[0]['border-left-width'] ?? false){
+                if ($mainStyles[$settings[0]['border-left-color']] ?? false) {
+                    $settings[0]['border-left-color'] = $mainStyles[$settings[0]['border-left-color']];
+                }
                 list($r, $g, $b) = sscanf($settings[0]['border-left-color'], "#%02x%02x%02x");
                 $this->Line(
                     $position['left'] + ($settings[0]['border-left-width'] * $ds)/2 - $ds/10,
@@ -659,7 +669,10 @@ class PDFBox extends \TCPDF {
                     array('width' => $settings[0]['border-left-width'] * $ds, 'color' => array($r, $g, $b))
                 );
             }
-            if ($settings[0]['border-right-width']){
+            if ($settings[0]['border-right-width'] ?? false){
+                if ($mainStyles[$settings[0]['border-right-color']] ?? false) {
+                    $settings[0]['border-right-color'] = $mainStyles[$settings[0]['border-right-color']];
+                }
                 list($r, $g, $b) = sscanf($settings[0]['border-right-color'], "#%02x%02x%02x");
                 $this->Line(
                     $position['left'] + $width - ($settings[0]['border-right-width'] * $ds)/2 + $ds/10,
@@ -669,8 +682,15 @@ class PDFBox extends \TCPDF {
                     array('width' => $settings[0]['border-right-width'] * $ds, 'color' => array($r, $g, $b))
                 );
             }
-            if ($settings[0]['border-bottom-width']){
-                list($r, $g, $b) = sscanf($settings[0]['border-bottom-color'], "#%02x%02x%02x");
+            if ($settings[0]['border-bottom-width'] ?? false){
+                if ($mainStyles[$settings[0]['border-bottom-color']] ?? false) {
+                    $settings[0]['border-bottom-color'] = $mainStyles[$settings[0]['border-bottom-color']];
+                }
+                if ($settings[0]['border-bottom-color'] ?? false) {
+                    list($r, $g, $b) = sscanf($settings[0]['border-bottom-color'], "#%02x%02x%02x");
+                } else {
+                    list($r, $g, $b) = [0, 0, 0];
+                }
                 $this->Line(
                     $position['left'] - $ds/10,
                     $position['top'] + $height - ($settings[0]['border-bottom-width'] * $ds)/2 + $ds/10,
@@ -741,6 +761,9 @@ class PDFBox extends \TCPDF {
                 //$this->Set_FontBold($settings[0]['font-weight'], $name);
                 //$this->Set_FontColor($settings[0]['color'], $name);
 
+                if (($settings[0]['color'] ?? false) && $mainStyles[$settings[0]['color']] ?? false) {
+                    $settings[0]['color'] = $mainStyles[$settings[0]['color']];
+                }
                 $htm = $this->fontStyles($settings, $widget);
                 if ($settings[0]['position'] == 'absolute'){
                     $this->writeHTMLCell($width, $heightBox, $leftBox, $topBox, $htm, 0, 1);

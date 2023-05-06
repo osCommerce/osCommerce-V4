@@ -102,6 +102,38 @@ class ot_gv extends ModuleTotal {
 
         $order = $this->manager->getOrderInstance();
 
+        if ($ccExt = \common\helpers\Acl::checkExtensionAllowed('CustomerCredit', 'allowed')) {
+            $currencies = \Yii::$container->get('currencies');
+            foreach ($ccExt::getDiscountArray($this->manager) as $discountRecord) {
+                $discountAmount = ($discountRecord['value'] + $discountRecord['tax']);
+                parent::$adjusting -= $currencies->format_clear($discountAmount, true, $order->info['currency'], $order->info['currency_value']);
+                $order->info['total'] = ($order->info['total'] - $discountAmount);
+                $order->info['total_inc_tax'] = ($order->info['total_inc_tax'] - $discountAmount);
+                $order->info['total_exc_tax'] = ($order->info['total_exc_tax'] - $discountAmount);
+                if ($order->info['total'] < 0) {
+                    $order->info['total'] = 0;
+                }
+                if ($order->info['total_inc_tax'] < 0) {
+                    $order->info['total_inc_tax'] = 0;
+                }
+                if ($order->info['total_exc_tax'] < 0) {
+                    $order->info['total_exc_tax'] = 0;
+                }
+                $this->output[] = array(
+                    'title' => ($discountRecord['title'] . ':'),
+                    'text' => ('-' . $currencies->format($discountAmount)),
+                    'value' => $discountAmount,
+                    'text_exc_tax' => ('-' . $currencies->format($discountAmount)),
+                    'text_inc_tax' => ('-' . $currencies->format($discountAmount)),
+                    'tax_class_id' => $discountRecord['tax_class_id'],
+                    'value_exc_vat' => $discountAmount,
+                    'value_inc_tax' => $discountAmount,
+                );
+                unset($discountAmount);
+            }
+            unset($discountRecord);
+        }
+
         $this->checkUnsavedVoucher();
         if ($this->manager->has('cot_gv') || $replacing_value != -1 || $visible) {
             $cot_gv = $this->manager->get('cot_gv');
@@ -259,7 +291,9 @@ class ot_gv extends ModuleTotal {
         if (method_exists('\common\helpers\Coupon', 'credit_order_check_state')){
             \common\helpers\Coupon::credit_order_check_state((int) $order_id);
         }
-
+        if ($ccExt = \common\helpers\Acl::checkExtensionAllowed('CustomerCredit', 'allowed')) {
+            $ccExt::onOrderSave($this->manager, $_null);
+        }
         return $gv_payment_amount;
     }
 

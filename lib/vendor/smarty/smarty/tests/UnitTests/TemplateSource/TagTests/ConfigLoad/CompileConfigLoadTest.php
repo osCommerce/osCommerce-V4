@@ -20,9 +20,9 @@ class CompileConfigLoadTest extends PHPUnit_Smarty
      * This method is called before a test is executed.
      *
      */
-    public function setUp()
+    public function setUp(): void
     {
-        $this->setUpSmarty(dirname(__FILE__));
+        $this->setUpSmarty(__DIR__);
         $this->smarty->addPluginsDir("../../../__shared/PHPunitplugins/");
         $this->smarty->addTemplateDir("../../../__shared/templates/");
         $this->smarty->addTemplateDir("./templates_tmp");
@@ -161,12 +161,12 @@ class CompileConfigLoadTest extends PHPUnit_Smarty
     }
 
     /**
-     * @expectedException        SmartyCompilerException
-     * @expectedExceptionMessage Syntax error in config file
      * test config file syntax error
      */
     public function testConfigSyntaxError_009()
     {
+        $this->expectException('SmartyCompilerException');
+        $this->expectExceptionMessage('Syntax error in config file');
         $this->smarty->fetch('009_error.tpl');
     }
 }

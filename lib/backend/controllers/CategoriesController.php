@@ -2276,9 +2276,6 @@ class CategoriesController extends Sceleton {
             $this->view->import_export = new ViewImportExport($pInfo);
         }
 
-        if ( class_exists('\backend\models\EP\Datasource\HolbiSoap') ) {
-            \backend\models\EP\Datasource\HolbiSoap::productEdit($pInfo);
-        }
 
 ///////////// other lists (for both new and edit product - attributes, properties, x-sell)
 
@@ -2859,6 +2856,12 @@ class CategoriesController extends Sceleton {
               //'maxWidth' => '520px',
               //'include' => 'test/test.tpl',
           ];
+        }
+        $this->view->currenciesFormats = []; // used to format currency in js
+        foreach ($currencies->currencies as $value) {
+            $value['def_data'] = ['currencies_id' => $value['id']];
+            $value['title'] = $value['symbol_left'] . ' ' . $value['code'] . ' ' . $value['symbol_right'];
+            $this->view->currenciesFormats[] = $value;
         }
 
     //// groups tabs and params
@@ -6793,7 +6796,7 @@ class CategoriesController extends Sceleton {
                 'supplierselect', [
                         'endpointUrl' => Yii::$app->urlManager->createUrl(['categories/supplier-add','mode'=>$mode]),
                         'mode' => $mode,
-                        'uprid' => $_GET['uprid'],
+                        'uprid' => \Yii::$app->request->get('uprid'),
                     ]
         );
     }

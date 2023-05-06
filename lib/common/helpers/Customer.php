@@ -98,7 +98,7 @@ class Customer {
         }
         if ($customer){
             $additionals = \common\models\Groups::find()->where('groups_id =:id', [':id' => $customer->groups_id])->with('additionalDiscountsCS')->one();
-            if ($additionals->additionalDiscountsCS){
+            if ($additionals instanceof \common\models\Groups && $additionals->additionalDiscountsCS){
                 $OrderedAmount = $customer->fetchOrderTotalAmount(true);
                 $discounts = \yii\helpers\ArrayHelper::index($additionals->additionalDiscountsCS, 'groups_discounts_amount');
                 $currentDiscount = self::check_customer_groups($customer->groups_id, 'groups_discount');
@@ -467,7 +467,7 @@ class Customer {
             }
       }
 
-      foreach (\common\helpers\Hooks::getList('order/anonymize') as $filename) {
+      foreach (\common\helpers\Hooks::getList('customers/order-anonymize') as $filename) {
             include($filename);
       }
     }

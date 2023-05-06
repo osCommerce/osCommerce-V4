@@ -1,4 +1,5 @@
 
+{use class="backend\design\SelectStyle"}
 <div class="tabbable tabbable-custom box-style-tab">
   <ul class="nav nav-tabs">
 {*if $responsive && !$settings.data_class}
@@ -52,7 +53,6 @@
     {/if}*}
     {*<div class="tab-pane{if ($responsive != 1 || $settings.data_class) && $styleHide.font !== 1} active{/if}" id="font-{$id}">*}
     <div class="tab-pane{if $styleHide.font !== 1} active{/if}" id="font-{$id}">
-
       {if !$designer_mode}
 
         <div class="font-styles">
@@ -132,7 +132,11 @@
       {if $styleHide.font['font_family'] !== 1}
       <div class="setting-row">
         <label for="">{$smarty.const.TEXT_FONT_FAMILY}</label>
-        <select name="{$name}[font-family]" id="" class="form-control">
+
+
+        {SelectStyle::widget(['type' => 'font', 'name' => $name|cat:'[font-family]', 'theme_name' => $theme_name, 'value' => $value['font-family']])}
+
+        {*<select name="{$name}[font-family]" id="" class="form-control">
           <option value=""{if $value['font-family'] == ''} selected{/if}></option>
           <option value="Arial"{if $value['font-family'] == 'Arial'} selected{/if}>Arial</option>
           <option value="Verdana"{if $value['font-family'] == 'Verdana'} selected{/if}>Verdana</option>
@@ -149,20 +153,15 @@
           {foreach $font_added as $item}
             <option value="{$item}"{if $value['font-family'] == $item} selected{/if}>{$item}</option>
           {/foreach}
-        </select>
+        </select>*}
       </div>
       {/if}
 
       {if $styleHide.font.color !== 1}
       <div class="setting-row">
         <label for="">{$smarty.const.TEXT_COLOR_}</label>
-        <div class="colors-inp">
-          <div id="cp3" class="input-group colorpicker-component">
-            <input type="text" name="{$name}[color]" value="{$value.color}" class="form-control" placeholder="{$smarty.const.TEXT_COLOR_}" />
-            <span class="input-group-addon"><i></i></span>
-          </div>
-        </div>
-        <span style="display:inline-block; padding: 7px 0 0 10px">{$smarty.const.TEXT_CLICK_RIGHT_FIELD}</span>
+        {SelectStyle::widget(['type' => 'color', 'name' => $name|cat:'[color]', 'theme_name' => $theme_name, 'value' => $value['color']])}
+
       </div>
       {/if}
 
@@ -277,12 +276,8 @@
             <option value="vmax"{if $value.text_shadow_size_measure == 'vmax'} selected{/if}>vmax</option>
           </select>
 
-          <div class="colors-inp">
-            <div id="cp3" class="input-group colorpicker-component">
-              <input type="text" name="{$name}[text_shadow_color]" value="{$value.text_shadow_color}" class="form-control" placeholder="{$smarty.const.TEXT_COLOR_}" />
-              <span class="input-group-addon"><i></i></span>
-            </div>
-          </div>
+          {SelectStyle::widget(['type' => 'color', 'name' => $name|cat:'[text_shadow_color]', 'theme_name' => $theme_name, 'value' => $value['text_shadow_color']])}
+
         </div>
       </div>
       {/if}
@@ -385,13 +380,7 @@
       {if $styleHide.background.background_color !== 1}
       <div class="setting-row">
         <label for="">{$smarty.const.TEXT_BACKGROUND_COLOR}</label>
-        <div class="colors-inp">
-          <div id="cp2" class="input-group colorpicker-component">
-            <input type="text" name="{$name}[background-color]" value="{$value['background-color']}" class="form-control" placeholder="{$smarty.const.TEXT_COLOR_}" />
-            <span class="input-group-addon"><i></i></span>
-          </div>
-        </div>
-        <span style="display:inline-block; padding: 7px 0 0 10px">{$smarty.const.TEXT_CLICK_RIGHT_FIELD}</span>
+        {SelectStyle::widget(['type' => 'color', 'name' => $name|cat:'[background-color]', 'theme_name' => $theme_name, 'value' => $value['background-color']])}
       </div>
       {/if}
 
@@ -635,13 +624,8 @@
       <div class="setting-row setting-row-border">
         <label for="">{$smarty.const.TEXT_BORDER_TOP}</label>
         <input type="number" name="{$name}[border-top-width]" value="{$value['border-top-width']}" class="form-control" /><span class="px">px</span>
-        <div class="colors-inp">
-          <div class="input-group colorpicker-component">
-            <input type="text" name="{$name}[border-top-color]" value="{$value['border-top-color']}" class="form-control" placeholder="{$smarty.const.TEXT_COLOR_}" />
-            <span class="input-group-addon"><i></i></span>
-          </div>
-        </div>
-        <span style="display:inline-block; padding: 0 0 0 1px">{$smarty.const.TEXT_CLICK_CHOOSE_COLOR}</span>
+
+        {SelectStyle::widget(['type' => 'color', 'name' => $name|cat:'[border-top-color]', 'theme_name' => $theme_name, 'value' => $value['border-top-color']])}
       </div>
       {/if}
 
@@ -649,12 +633,8 @@
       <div class="setting-row setting-row-border">
         <label for="">{$smarty.const.TEXT_BORDER_LEFT}</label>
         <input type="number" name="{$name}[border-left-width]" value="{$value['border-left-width']}" class="form-control" /><span class="px">px</span>
-        <div class="colors-inp">
-          <div class="input-group colorpicker-component">
-            <input type="text" name="{$name}[border-left-color]" value="{$value['border-left-color']}" class="form-control" placeholder="{$smarty.const.TEXT_COLOR_}" />
-            <span class="input-group-addon"><i></i></span>
-          </div>
-        </div>
+
+        {SelectStyle::widget(['type' => 'color', 'name' => $name|cat:'[border-left-color]', 'theme_name' => $theme_name, 'value' => $value['border-left-color']])}
       </div>
       {/if}
 
@@ -662,12 +642,8 @@
       <div class="setting-row setting-row-border">
         <label for="">{$smarty.const.TEXT_BORDER_RIGHT}</label>
         <input type="number" name="{$name}[border-right-width]" value="{$value['border-right-width']}" class="form-control" /><span class="px">px</span>
-        <div class="colors-inp">
-          <div class="input-group colorpicker-component">
-            <input type="text" name="{$name}[border-right-color]" value="{$value['border-right-color']}" class="form-control" placeholder="{$smarty.const.TEXT_COLOR_}" />
-            <span class="input-group-addon"><i></i></span>
-          </div>
-        </div>
+        {SelectStyle::widget(['type' => 'color', 'name' => $name|cat:'[border-right-color]', 'theme_name' => $theme_name, 'value' => $value['border-right-color']])}
+
       </div>
       {/if}
 
@@ -675,12 +651,8 @@
       <div class="setting-row setting-row-border">
         <label for="">{$smarty.const.TEXT_BORDER_BOTTOM}</label>
         <input type="number" name="{$name}[border-bottom-width]" value="{$value['border-bottom-width']}" class="form-control" /><span class="px">px</span>
-        <div class="colors-inp">
-          <div class="input-group colorpicker-component">
-            <input type="text" name="{$name}[border-bottom-color]" value="{$value['border-bottom-color']}" class="form-control" placeholder="{$smarty.const.TEXT_COLOR_}" />
-            <span class="input-group-addon"><i></i></span>
-          </div>
-        </div>
+
+        {SelectStyle::widget(['type' => 'color', 'name' => $name|cat:'[border-bottom-color]', 'theme_name' => $theme_name, 'value' => $value['border-bottom-color']])}
       </div>
       {/if}
 
@@ -792,12 +764,8 @@
             <option value="vmax"{if $value.box_shadow_spread_measure == 'vmax'} selected{/if}>vmax</option>
           </select>
 
-          <div class="colors-inp" style="margin-right: 11px">
-            <div id="cp3" class="input-group colorpicker-component">
-              <input type="text" name="{$name}[box_shadow_color]" value="{$value.box_shadow_color}" class="form-control" placeholder="{$smarty.const.TEXT_COLOR_}" />
-              <span class="input-group-addon"><i></i></span>
-            </div>
-          </div>
+          {SelectStyle::widget(['type' => 'color', 'name' => $name|cat:'[box_shadow_color]', 'theme_name' => $theme_name, 'value' => $value['box_shadow_color']])}
+
           <select name="{$name}[box_shadow_set]" id="" class="form-control" style="width: 100px;">
             <option value=""{if $value.box_shadow_set == ''} selected{/if}>outset</option>
             <option value="inset"{if $value.box_shadow_set == 'inset'} selected{/if}>inset</option>
@@ -920,6 +888,10 @@
 
     </div>
     <div class="tab-pane{if $styleHide.font === 1 && $styleHide.background === 1 && $styleHide.padding === 1 && $styleHide.border === 1 && $styleHide.size === 1 && $styleHide.display !== 1} active{/if}" id="display-{$id}">
+
+      {if $responsive && !$settings.data_class && $value.display_none}
+        <p><label><input type="checkbox" name="{$name}[display_none]"{if $value.display_none} checked{/if}/> {$smarty.const.TEXT_HIDE_BLOCK}</label></p>
+      {/if}
 
       {if $styleHide.display.float !== 1}
       <div class="setting-row">

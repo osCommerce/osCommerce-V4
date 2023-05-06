@@ -18,7 +18,7 @@
       {$smarty.const.TEXT_CUSTOMIZE_THEME_STYLES}
     </a>
 
-    <a class="btn menu-theme-edit{if $menu == 'groups'} active{/if}" href="{Yii::$app->urlManager->createUrl(['design/groups', 'theme_name' => $theme_name])}">
+    <a class="btn menu-theme-edit{if $menu == 'groups'} active{/if}" href="{Yii::$app->urlManager->createUrl(['design-groups', 'theme_name' => $theme_name])}">
       {$smarty.const.TEXT_WIDGET_GROUPS}
     </a>
 
@@ -27,6 +27,8 @@
     {/if}
 
   <a class="btn menu-settings{if $menu == 'settings'} active{/if}" href="{Yii::$app->urlManager->createUrl(['design/settings', 'theme_name' => $theme_name])}">{$smarty.const.THEME_SETTINGS}</a>
+
+  <a class="btn menu-settings{if $menu == 'wizard'} active{/if}" href="{Yii::$app->urlManager->createUrl(['design-groups/wizard', 'theme_name' => $theme_name])}">Wizard</a>
 
   {if $designer_mode == 'expert'}
     <a class="btn menu-settings{if $menu == 'styles'} active{/if}" href="{Yii::$app->urlManager->createUrl(['design/styles', 'theme_name' => $theme_name])}">styles</a>

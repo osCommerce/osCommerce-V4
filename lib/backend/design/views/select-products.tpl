@@ -1,5 +1,6 @@
 {\backend\assets\SelectProductsAsset::register($this)|void}
 
+{if !$onlyIncludeJs}
 <div {if $name}id="{$name}"{else}class="select-products"{/if}></div>
 <script type="text/javascript">
     $(function(){
@@ -13,3 +14,4 @@
         })
     })
 </script>
+{/if}

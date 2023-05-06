@@ -6,7 +6,7 @@
  * @author  Uwe Tews
  */
 
-include_once dirname(__FILE__) . '/../_shared/CacheResourceTestCommon.php';
+include_once __DIR__ . '/../_shared/CacheResourceTestCommon.php';
 
 /**
  * class for cache resource file tests
@@ -18,9 +18,9 @@ include_once dirname(__FILE__) . '/../_shared/CacheResourceTestCommon.php';
 class CacheResourceFileTest extends CacheResourceTestCommon
 {
 
-    public function setUp()
+    public function setUp(): void
     {
-        $this->setUpSmarty(dirname(__FILE__));
+        $this->setUpSmarty(__DIR__);
         parent::setUp();
         $this->smarty->setCachingType('filetest');
     }
@@ -107,7 +107,7 @@ class CacheResourceFileTest extends CacheResourceTestCommon
         $this->smarty->caching = true;
         $this->smarty->cache_lifetime = 1000;
         $this->cleanCacheDir();
-        $this->smarty->setUseSubDirs(false);
+        $this->smarty->setUseSubDirs(true);
         $tpl = $this->smarty->createTemplate('helloworld.tpl', 'foo|bar', 'blar');
         $this->writeCachedContent($tpl);
         $tpl2 = $this->smarty->createTemplate('helloworld.tpl', 'foo|bar2', 'blar');

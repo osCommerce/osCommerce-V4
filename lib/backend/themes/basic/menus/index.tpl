@@ -19,15 +19,15 @@
           <div class="user-groups">
             <label class="m-r-2">
               <input type="checkbox" name="group" value="0"
-                     {if is_array($item.groups) && in_array('0', $item.groups)}checked {/if}
-                     class="uniform"/>
+                     {if (is_array($item.groups) && in_array('0', $item.groups) || !$item)}checked {/if}
+                     class="uniform-menu"/>
               <span>{$smarty.const.TEXT_ALL}</span>
             </label>
           {foreach $groups as $group}
             <label class="m-r-2">
               <input type="checkbox" name="group" value="{$group.groups_id}"
                      {if is_array($item.groups) && in_array($group.groups_id, $item.groups)}checked{/if}
-                     class="uniform"/>
+                     class="uniform-menu"/>
               <span>{$group.groups_name}</span>
             </label>
           {/foreach}
@@ -96,10 +96,10 @@
                 
 
               <div class="link-setting">
-                <input type="checkbox" class="uniform" name="target"/> <label for="">{$smarty.const.TEXT_OPEN_NEW_TAB}</label>
+                <input type="checkbox" class="uniform-menu" name="target"/> <label for="">{$smarty.const.TEXT_OPEN_NEW_TAB}</label>
               </div>
               <div class="link-setting">
-                <input type="checkbox" class="uniform" name="nofollow"/> <label for="">{$smarty.const.TEXT_REL_NOFOLLOW}</label>
+                <input type="checkbox" class="uniform-menu" name="nofollow"/> <label for="">{$smarty.const.TEXT_REL_NOFOLLOW}</label>
               </div>
 
               <div class="link-setting">
@@ -141,10 +141,10 @@
                   </div>
                   
                   <div class="link-setting">
-                    <input type="checkbox" class="uniform" name="target"/> <label for="">{$smarty.const.TEXT_OPEN_NEW_TAB}</label>
+                    <input type="checkbox" class="uniform-menu" name="target"/> <label for="">{$smarty.const.TEXT_OPEN_NEW_TAB}</label>
                   </div>
                 <div class="link-setting">
-                  <input type="checkbox" class="uniform" name="nofollow"/> <label for="">{$smarty.const.TEXT_REL_NOFOLLOW}</label>
+                  <input type="checkbox" class="uniform-menu" name="nofollow"/> <label for="">{$smarty.const.TEXT_REL_NOFOLLOW}</label>
                 </div>
 
                   <div class="link-setting">
@@ -226,15 +226,15 @@
                   </div>
 
                   <div class="link-setting">
-                    <input type="checkbox" class="uniform" name="target"/> <label for="">{$smarty.const.TEXT_OPEN_NEW_TAB}</label>
+                    <input type="checkbox" class="uniform-menu" name="target"/> <label for="">{$smarty.const.TEXT_OPEN_NEW_TAB}</label>
                   </div>
                   <div class="link-setting">
-                    <input type="checkbox" class="uniform" name="nofollow"/> <label for="">{$smarty.const.TEXT_REL_NOFOLLOW}</label>
+                    <input type="checkbox" class="uniform-menu" name="nofollow"/> <label for="">{$smarty.const.TEXT_REL_NOFOLLOW}</label>
                   </div>
 
                   {if $need_login}
                     <div class="link-setting">
-                      <input type="checkbox" class="uniform" name="no_logged"/> <label for="">{$smarty.const.SHOW_FOR_NON_LOGGED}</label>
+                      <input type="checkbox" class="uniform-menu" name="no_logged"/> <label for="">{$smarty.const.SHOW_FOR_NON_LOGGED}</label>
                     </div>
                   {/if}
 
@@ -253,11 +253,11 @@
               </li>
             </ul>
           {function name=categoriesTree}
-            {foreach $lst as $categories_id => $item}
-              {if (!$checkParent || (isset($item['parent_id']) && $item['parent_id'] == 0))}
+            {foreach $lst as $categories_id => $cat_item}
+              {if (!$checkParent || (isset($cat_item['parent_id']) && $cat_item['parent_id'] == 0))}
                 {$childrenCount = (isset($categories[$categories_id]['children']) && count($categories[$categories_id]['children'])>0)}
                 <li data-type-id="{$categories_id}" data-type="categories" class="{if $childrenCount}cat-parent closed{/if}" id="cat_{$categories_id}">
-                  <div class="item-handle"><div class="item-handle-move"></div><div class="item-close {if $smarty.const.MENU_CATEGORIES_COLLAPSED !== false && $childrenCount}closed{/if}" data-close-id="cat_{$categories_id}"></div><div class="searchable">{$item.categories_name}</div><div class="edit"></div><div class="remove"></div>
+                  <div class="item-handle"><div class="item-handle-move"></div><div class="item-close {if $smarty.const.MENU_CATEGORIES_COLLAPSED !== false && $childrenCount}closed{/if}" data-close-id="cat_{$categories_id}"></div><div class="searchable">{$cat_item.categories_name}</div><div class="edit"></div><div class="remove"></div>
                     <div class="link-setting-c">
                       <label for="">{$smarty.const.TEXT_SHOW_SUBCATEGORIES}: </label> <input type="checkbox" name="sub_categories" class="check_on_off" checked/>
                     </div>
@@ -288,19 +288,19 @@
                     </div>
 
                     <div class="link-setting">
-                      <input type="checkbox" class="uniform" name="sub_categories"/> <label for="">{$smarty.const.TEXT_SHOW_SUBCATEGORIES}</label>
+                      <input type="checkbox" class="uniform-menu" name="sub_categories"/> <label for="">{$smarty.const.TEXT_SHOW_SUBCATEGORIES}</label>
                     </div>
 
                     <div class="link-setting">
-                      <input type="checkbox" class="uniform" name="target"/> <label for="">{$smarty.const.TEXT_OPEN_NEW_TAB}</label>
+                      <input type="checkbox" class="uniform-menu" name="target"/> <label for="">{$smarty.const.TEXT_OPEN_NEW_TAB}</label>
                     </div>
                     <div class="link-setting">
-                      <input type="checkbox" class="uniform" name="nofollow"/> <label for="">{$smarty.const.TEXT_REL_NOFOLLOW}</label>
+                      <input type="checkbox" class="uniform-menu" name="nofollow"/> <label for="">{$smarty.const.TEXT_REL_NOFOLLOW}</label>
                     </div>
 
                     {if $need_login}
                       <div class="link-setting">
-                        <input type="checkbox" class="uniform" name="no_logged"/> <label for="">{$smarty.const.SHOW_FOR_NON_LOGGED}</label>
+                        <input type="checkbox" class="uniform-menu" name="no_logged"/> <label for="">{$smarty.const.SHOW_FOR_NON_LOGGED}</label>
                       </div>
                     {/if}
 
@@ -365,15 +365,15 @@
                 </div>
 
                 <div class="link-setting">
-                  <input type="checkbox" class="uniform" name="target"/> <label for="">{$smarty.const.TEXT_OPEN_NEW_TAB}</label>
+                  <input type="checkbox" class="uniform-menu" name="target"/> <label for="">{$smarty.const.TEXT_OPEN_NEW_TAB}</label>
                 </div>
                 <div class="link-setting">
-                  <input type="checkbox" class="uniform" name="nofollow"/> <label for="">{$smarty.const.TEXT_REL_NOFOLLOW}</label>
+                  <input type="checkbox" class="uniform-menu" name="nofollow"/> <label for="">{$smarty.const.TEXT_REL_NOFOLLOW}</label>
                 </div>
 
                 {if $need_login}
                   <div class="link-setting">
-                    <input type="checkbox" class="uniform" name="no_logged"/> <label for="">{$smarty.const.SHOW_FOR_NON_LOGGED}</label>
+                    <input type="checkbox" class="uniform-menu" name="no_logged"/> <label for="">{$smarty.const.SHOW_FOR_NON_LOGGED}</label>
                   </div>
                 {/if}
 
@@ -393,9 +393,9 @@
           </ul>
 
           <ul class="brands-tree">
-            {foreach $brands as $item}
-                <li data-type-id="{$item.manufacturers_id}" data-type="brands">
-                  <div class="item-handle"><div class="item-handle-move"></div><div class="item-close"></div><div class="searchable">{$item.manufacturers_name}</div><div class="edit"></div><div class="remove"></div>
+            {foreach $brands as $brand}
+                <li data-type-id="{$brand.manufacturers_id}" data-type="brands">
+                  <div class="item-handle"><div class="item-handle-move"></div><div class="item-close"></div><div class="searchable">{$brand.manufacturers_name}</div><div class="edit"></div><div class="remove"></div>
 
                   </div>
                   <div class="link-settings">
@@ -424,15 +424,15 @@
                     </div>
 
                     <div class="link-setting">
-                      <input type="checkbox" class="uniform" name="target"/> <label for="">{$smarty.const.TEXT_OPEN_NEW_TAB}</label>
+                      <input type="checkbox" class="uniform-menu" name="target"/> <label for="">{$smarty.const.TEXT_OPEN_NEW_TAB}</label>
                     </div>
                     <div class="link-setting">
-                      <input type="checkbox" class="uniform" name="nofollow"/> <label for="">{$smarty.const.TEXT_REL_NOFOLLOW}</label>
+                      <input type="checkbox" class="uniform-menu" name="nofollow"/> <label for="">{$smarty.const.TEXT_REL_NOFOLLOW}</label>
                     </div>
 
                     {if $need_login}
                       <div class="link-setting">
-                        <input type="checkbox" class="uniform" name="no_logged"/> <label for="">{$smarty.const.SHOW_FOR_NON_LOGGED}</label>
+                        <input type="checkbox" class="uniform-menu" name="no_logged"/> <label for="">{$smarty.const.SHOW_FOR_NON_LOGGED}</label>
                       </div>
                     {/if}
 
@@ -488,15 +488,15 @@
                   </div>
 
                   <div class="link-setting">
-                    <input type="checkbox" class="uniform" name="target"/> <label for="">{$smarty.const.TEXT_OPEN_NEW_TAB}</label>
+                    <input type="checkbox" class="uniform-menu" name="target"/> <label for="">{$smarty.const.TEXT_OPEN_NEW_TAB}</label>
                   </div>
                   <div class="link-setting">
-                    <input type="checkbox" class="uniform" name="nofollow"/> <label for="">{$smarty.const.TEXT_REL_NOFOLLOW}</label>
+                    <input type="checkbox" class="uniform-menu" name="nofollow"/> <label for="">{$smarty.const.TEXT_REL_NOFOLLOW}</label>
                   </div>
 
                   {if $page.opt_need_login && $need_login}
                     <div class="link-setting">
-                      <input type="checkbox" class="uniform" name="no_logged"/> <label for="">{$smarty.const.SHOW_FOR_NON_LOGGED}</label>
+                      <input type="checkbox" class="uniform-menu" name="no_logged"/> <label for="">{$smarty.const.SHOW_FOR_NON_LOGGED}</label>
                     </div>
                   {/if}
 
@@ -552,15 +552,15 @@
                     </div>
 
                     <div class="link-setting">
-                      <input type="checkbox" class="uniform" name="target"/> <label for="">{$smarty.const.TEXT_OPEN_NEW_TAB}</label>
+                      <input type="checkbox" class="uniform-menu" name="target"/> <label for="">{$smarty.const.TEXT_OPEN_NEW_TAB}</label>
                     </div>
                     <div class="link-setting">
-                      <input type="checkbox" class="uniform" name="nofollow"/> <label for="">{$smarty.const.TEXT_REL_NOFOLLOW}</label>
+                      <input type="checkbox" class="uniform-menu" name="nofollow"/> <label for="">{$smarty.const.TEXT_REL_NOFOLLOW}</label>
                     </div>
 
                     {if $need_login}
                       <div class="link-setting">
-                        <input type="checkbox" class="uniform" name="no_logged"/> <label for="">{$smarty.const.SHOW_FOR_NON_LOGGED}</label>
+                        <input type="checkbox" class="uniform-menu" name="no_logged"/> <label for="">{$smarty.const.SHOW_FOR_NON_LOGGED}</label>
                       </div>
                     {/if}
 
@@ -616,10 +616,10 @@
                     </div>
 
                     <div class="link-setting">
-                      <input type="checkbox" class="uniform" name="target"/> <label for="">{$smarty.const.TEXT_OPEN_NEW_TAB}</label>
+                      <input type="checkbox" class="uniform-menu" name="target"/> <label for="">{$smarty.const.TEXT_OPEN_NEW_TAB}</label>
                     </div>
                     <div class="link-setting">
-                      <input type="checkbox" class="uniform" name="nofollow"/> <label for="">{$smarty.const.TEXT_REL_NOFOLLOW}</label>
+                      <input type="checkbox" class="uniform-menu" name="nofollow"/> <label for="">{$smarty.const.TEXT_REL_NOFOLLOW}</label>
                     </div>
 
                     <div class="link-setting">
@@ -793,16 +793,16 @@
 
             {if $item.link_type != 'component'}
                   <div class="link-setting">
-                    <input type="checkbox" class="uniform" name="target" {if isset($item.target_blank) && $item.target_blank == '1'}checked{/if}/> <label for="">{$smarty.const.TEXT_OPEN_NEW_TAB}</label>
+                    <input type="checkbox" class="uniform-menu" name="target" {if isset($item.target_blank) && $item.target_blank == '1'}checked{/if}/> <label for="">{$smarty.const.TEXT_OPEN_NEW_TAB}</label>
                   </div>
               <div class="link-setting">
-                <input type="checkbox" class="uniform" name="nofollow" {if isset($item.target_blank) && $item.nofollow == '1'}checked{/if}/> <label for="">{$smarty.const.TEXT_REL_NOFOLLOW}</label>
+                <input type="checkbox" class="uniform-menu" name="nofollow" {if isset($item.target_blank) && $item.nofollow == '1'}checked{/if}/> <label for="">{$smarty.const.TEXT_REL_NOFOLLOW}</label>
               </div>
             {/if}
 
                   {if $need_login && $item.link_type != 'custom'}
                     <div class="link-setting">
-                      <input type="checkbox" class="uniform" name="no_logged" {if isset($item.no_logged) && $item.no_logged == '1'}checked{/if}/> <label for="">{$smarty.const.SHOW_FOR_NON_LOGGED}</label>
+                      <input type="checkbox" class="uniform-menu" name="no_logged" {if isset($item.no_logged) && $item.no_logged == '1'}checked{/if}/> <label for="">{$smarty.const.SHOW_FOR_NON_LOGGED}</label>
                     </div>
                   {/if}
 
@@ -1255,9 +1255,8 @@
         if (e.item.data('type-id') == '999999999'){
           {if !$smarty.const.MENU_CATEGORIES_COLLAPSED}
             $('> ul', e.item).html($('.categories-tree').html());
-          ///$('> ul', e.item).html($($('.categories-tree').html()).remove('> ul'));
           {else}
-          $('> ul', e.item).html($('.categories-tree').html());
+            $('> ul', e.item).html($('.categories-tree').html());
           {/if}
         } else if (e.item.data('type-id') == '999999998') {
           $('> ul', e.item).html($('.brands-tree').html());
@@ -1340,6 +1339,7 @@
         $('.ui-sortable li').removeClass('active');
         this_li.addClass('active');
         addQueryString('edit', this_li.data('id'));
+        $('.menu-right-list .uniform-menu').uniform();
       }
 
       $(window).trigger('change_menu');
@@ -1461,7 +1461,7 @@
 
     var start_list = menuList();
 
-    $('.btn-bar .btn-save, .top-buttons .btn-save').on('click', function(){
+    $('.btn-bar .btn-save, .top-buttons .btn-save').off('click').on('click', function(){
       alertMessage('<div class="preloader"></div>');
 
       $.post('{$action_url_save_menu}', {
@@ -1474,7 +1474,7 @@
           $('.pop-up-content').html('<div class="response">' + d[0] + '</div>');
           $.get($('.select-menu form').attr('action'), { menu: d[1] }, function(d){
             $('.content-container').html(d);
-            $('.content-container .uniform').uniform();
+            $('.menu-right-list .uniform-menu').uniform();
             setTimeout(function(){ $('.popup-box-wrap').remove() }, 500)
           })
         } else if (d == 'Deleted'){
@@ -1482,7 +1482,7 @@
           addQueryString('menu', 0);
           $.get($('.select-menu form').attr('action'), { }, function(d){
             $('.content-container').html(d);
-            $('.content-container .uniform').uniform();
+            $('.menu-right-list .uniform-menu').uniform();
             setTimeout(function(){ $('.popup-box-wrap').remove() }, 500)
           })
         } else {
@@ -1490,7 +1490,7 @@
           addQueryString('menu', $('select', select_menu).val());
           $.get($('.select-menu form').attr('action'), { menu: $('.select-menu select').val() }, function(d){
             $('.content-container').html(d);
-            $('.content-container .uniform').uniform();
+            $('.menu-right-list .uniform-menu').uniform();
             setTimeout(function(){ $('.popup-box-wrap').remove() }, 500)
           })
         }

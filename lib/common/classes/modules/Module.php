@@ -21,7 +21,7 @@ abstract class Module{
 
     use VersionTrait;
 /**
- * @prop \common\services\OrderManager $manager
+ * @var \common\services\OrderManager $manager
  */
     public $manager;
     public $code;
@@ -150,7 +150,13 @@ abstract class Module{
     if ( isset($data['set_function']) ) {
       $sql_data['set_function'] = $data['set_function'];
     }
-    tep_db_perform(TABLE_PLATFORMS_CONFIGURATION, $sql_data);
+    $model = \common\models\PlatformsConfiguration::findOne(['platform_id' => (int)$platform_id, 'configuration_key' => $key]);
+    if (empty($model))  {
+        $model = new \common\models\PlatformsConfiguration();
+        $model->loadDefaultValues();
+    }
+    $model->setAttributes($sql_data, false);
+    $model->save(false);
   }
 
   public function remove($platform_id) {

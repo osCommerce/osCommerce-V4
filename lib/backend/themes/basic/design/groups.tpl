@@ -113,7 +113,6 @@
         $(".check_on_off").bootstrapSwitch(
             {
                 onSwitchChange: function (element, arguments) {
-                    console.log(element.data('id'));
                     return true;
                 },
                 onText: "{$smarty.const.SW_ON}",

@@ -21,15 +21,6 @@ return array (
       '@yii/httpclient' => $vendorDir . '/yiisoft/yii2-httpclient',
     ),
   ),
-  'yiisoft/yii2-codeception' => 
-  array (
-    'name' => 'yiisoft/yii2-codeception',
-    'version' => '2.0.6.0',
-    'alias' => 
-    array (
-      '@yii/codeception' => $vendorDir . '/yiisoft/yii2-codeception',
-    ),
-  ),
   'paulzi/yii2-nested-sets' => 
   array (
     'name' => 'paulzi/yii2-nested-sets',
@@ -39,28 +30,69 @@ return array (
       '@paulzi/nestedsets' => $vendorDir . '/paulzi/yii2-nested-sets',
     ),
   ),
-  'yiisoft/yii2-faker' => 
+  'yidas/yii2-composer-bower-skip' => 
   array (
-    'name' => 'yiisoft/yii2-faker',
-    'version' => '2.0.5.0',
+    'name' => 'yidas/yii2-composer-bower-skip',
+    'version' => '2.0.13.0',
+  ),
+  'yiisoft/yii2-debug' => 
+  array (
+    'name' => 'yiisoft/yii2-debug',
+    'version' => '2.1.22.0',
     'alias' => 
     array (
-      '@yii/faker' => $vendorDir . '/yiisoft/yii2-faker/src',
+      '@yii/debug' => $vendorDir . '/yiisoft/yii2-debug/src',
+    ),
+  ),
+  'yiisoft/yii2-gii' => 
+  array (
+    'name' => 'yiisoft/yii2-gii',
+    'version' => '2.2.5.0',
+    'alias' => 
+    array (
+      '@yii/gii' => $vendorDir . '/yiisoft/yii2-gii/src',
     ),
   ),
   'yiisoft/yii2-imagine' => 
   array (
     'name' => 'yiisoft/yii2-imagine',
-    'version' => '2.3.0.0',
+    'version' => '2.3.1.0',
     'alias' => 
     array (
       '@yii/imagine' => $vendorDir . '/yiisoft/yii2-imagine/src',
     ),
   ),
+  'subdee/yii2-soap-server' => 
+  array (
+    'name' => 'subdee/yii2-soap-server',
+    'version' => 'dev-master',
+    'alias' => 
+    array (
+      '@subdee/soapserver' => $vendorDir . '/subdee/yii2-soap-server',
+    ),
+  ),
+  'yiisoft/yii2-redis' => 
+  array (
+    'name' => 'yiisoft/yii2-redis',
+    'version' => 'dev-master',
+    'alias' => 
+    array (
+      '@yii/redis' => $vendorDir . '/yiisoft/yii2-redis/src',
+    ),
+  ),
+  'yiisoft/yii2-smarty' => 
+  array (
+    'name' => 'yiisoft/yii2-smarty',
+    'version' => 'dev-master',
+    'alias' => 
+    array (
+      '@yii/smarty' => $vendorDir . '/yiisoft/yii2-smarty/src',
+    ),
+  ),
   'yiisoft/yii2-bootstrap' => 
   array (
     'name' => 'yiisoft/yii2-bootstrap',
-    'version' => '2.0.11.0',
+    'version' => 'dev-master',
     'alias' => 
     array (
       '@yii/bootstrap' => $vendorDir . '/yiisoft/yii2-bootstrap/src',
@@ -69,46 +101,28 @@ return array (
   'yiisoft/yii2-swiftmailer' => 
   array (
     'name' => 'yiisoft/yii2-swiftmailer',
-    'version' => '2.1.3.0',
+    'version' => 'dev-master',
     'alias' => 
     array (
       '@yii/swiftmailer' => $vendorDir . '/yiisoft/yii2-swiftmailer/src',
     ),
   ),
-  'yiisoft/yii2-smarty' => 
+  'yiisoft/yii2-codeception' => 
   array (
-    'name' => 'yiisoft/yii2-smarty',
-    'version' => '2.0.10.0',
+    'name' => 'yiisoft/yii2-codeception',
+    'version' => 'dev-master',
     'alias' => 
     array (
-      '@yii/smarty' => $vendorDir . '/yiisoft/yii2-smarty/src',
+      '@yii/codeception' => $vendorDir . '/yiisoft/yii2-codeception',
     ),
   ),
-  'yiisoft/yii2-redis' => 
+  'yiisoft/yii2-faker' => 
   array (
-    'name' => 'yiisoft/yii2-redis',
-    'version' => '2.0.17.0',
+    'name' => 'yiisoft/yii2-faker',
+    'version' => 'dev-master',
     'alias' => 
     array (
-      '@yii/redis' => $vendorDir . '/yiisoft/yii2-redis/src',
-    ),
-  ),
-  'yiisoft/yii2-gii' => 
-  array (
-    'name' => 'yiisoft/yii2-gii',
-    'version' => '2.2.4.0',
-    'alias' => 
-    array (
-      '@yii/gii' => $vendorDir . '/yiisoft/yii2-gii/src',
-    ),
-  ),
-  'yiisoft/yii2-debug' => 
-  array (
-    'name' => 'yiisoft/yii2-debug',
-    'version' => '2.1.19.0',
-    'alias' => 
-    array (
-      '@yii/debug' => $vendorDir . '/yiisoft/yii2-debug/src',
+      '@yii/faker' => $vendorDir . '/yiisoft/yii2-faker/src',
     ),
   ),
 );

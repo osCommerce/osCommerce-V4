@@ -2,36 +2,62 @@
 
 namespace PhpOffice\PhpSpreadsheetTests\Calculation\Functions\Statistical;
 
-use PhpOffice\PhpSpreadsheet\Calculation\Functions;
-use PhpOffice\PhpSpreadsheet\Calculation\Statistical;
-use PHPUnit\Framework\TestCase;
+use PhpOffice\PhpSpreadsheet\Calculation\Calculation;
 
-class ChiInvRightTailTest extends TestCase
+class ChiInvRightTailTest extends AllSetupTeardown
 {
-    protected function setUp(): void
-    {
-        Functions::setCompatibilityMode(Functions::COMPATIBILITY_EXCEL);
-    }
-
     /**
      * @dataProvider providerCHIINV
      *
      * @param mixed $expectedResult
-     * @param mixed $probability
-     * @param mixed $degrees
      */
-    public function testCHIINV($expectedResult, $probability, $degrees): void
+    public function testCHIINV($expectedResult, ...$args): void
     {
-        $result = Statistical::CHIINV($probability, $degrees);
-        if (!is_string($expectedResult)) {
-            $reverse = Statistical\Distributions\ChiSquared::distributionRightTail($result, $degrees);
-            self::assertEqualsWithDelta($probability, $reverse, 1E-12);
-        }
-        self::assertEqualsWithDelta($expectedResult, $result, 1E-12);
+        $this->runTestCases('CHISQ.INV.RT', $expectedResult, ...$args);
     }
 
     public function providerCHIINV(): array
     {
         return require 'tests/data/Calculation/Statistical/CHIINVRightTail.php';
+    }
+
+    public function invVersusDistTest(): void
+    {
+        $expectedResult = 8.383430828608;
+        $probability = 0.3;
+        $degrees = 7;
+        $calculation = Calculation::getInstance();
+        $formula = "=CHISQ.INV.RT($probability, $degrees)";
+        $result = $calculation->_calculateFormulaValue($formula);
+        self::assertEqualsWithDelta($expectedResult, $result, 1.0e-8);
+        $formula = "=CHISQ.DIST.RT($result, $degrees)";
+        $result = $calculation->_calculateFormulaValue($formula);
+        self::assertEqualsWithDelta($probability, $result, 1.0e-8);
+    }
+
+    /**
+     * @dataProvider providerChiInvRightTailArray
+     */
+    public function testChiInvRightTailArray(array $expectedResult, string $probabilities, string $degrees): void
+    {
+        $calculation = Calculation::getInstance();
+
+        $formula = "=CHISQ.INV.RT({$probabilities}, {$degrees})";
+        $result = $calculation->_calculateFormulaValue($formula);
+        self::assertEqualsWithDelta($expectedResult, $result, 1.0e-14);
+    }
+
+    public function providerChiInvRightTailArray(): array
+    {
+        return [
+            'row/column vectors' => [
+                [
+                    [7.8061229155968075, 6.345811195521517, 100.0],
+                    [13.266097125199911, 11.34032237742413, 24.388802783239434],
+                ],
+                '{0.35, 0.5, 0.018}',
+                '{7; 12}',
+            ],
+        ];
     }
 }

@@ -51,12 +51,14 @@
             {tep_draw_checkbox_field('allow_in_stock_notify',1, !!$oInfo->allow_in_stock_notify)}
         </div>
     </div>
+    {if \common\helpers\Extensions::isAllowed('Quotations')}
     <div class="row">
         <div class="col-md-2"><label>{$smarty.const.TEXT_REQUEST_FOR_QUOTE}</label></div>
         <div class="col-md-4">
             {tep_draw_checkbox_field('request_for_quote',1, !!$oInfo->request_for_quote)}
         </div>
     </div>
+    {/if}
     <div class="row">
         <div class="col-md-2"><label>{$smarty.const.TEXT_IS_HIDDEN}</label></div>
         <div class="col-md-4">
@@ -67,6 +69,12 @@
         <div class="col-md-2"><label>{$smarty.const.TEXT_DISABLE_PRODUCT_ON_OOS}</label></div>
         <div class="col-md-4">
             {tep_draw_checkbox_field('disable_product_on_oos',1, !!$oInfo->disable_product_on_oos)}
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-2"><label>{$smarty.const.TEXT_LIMIT_CART_QTY_BY_STOCK}</label></div>
+        <div class="col-md-4">
+            {tep_draw_checkbox_field('limit_cart_qty_by_stock',1, !!$oInfo->limit_cart_qty_by_stock)}
         </div>
     </div>
     <div class="row">

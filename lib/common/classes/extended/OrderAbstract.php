@@ -184,6 +184,7 @@ abstract class OrderAbstract extends OrderShadowAbstract{
         $this->info = array('currency' => $order['currency'],
             'currency_value' => $order['currency_value'],
             'platform_id' => $order['platform_id'],
+            'department_id' => $order['department_id'],
             'language_id' => $order['language_id'],
             'admin_id' => $order['admin_id'],
             'orders_id' => $order['orders_id'],
@@ -709,6 +710,7 @@ abstract class OrderAbstract extends OrderShadowAbstract{
             'billing_country' => isset($this->billing['country']['title']) ? $this->billing['country']['title'] : '',
             'billing_address_format_id' => $this->billing['format_id'] ?? 6,
             'platform_id' => $this->info['platform_id'] ?? 0,
+            'department_id' => $this->info['department_id'] ?? 0,
             'payment_method' => strip_tags($this->info['payment_method'] ?? ''),
 // BOF: Lango Added for print order mod
             'payment_info' => $this->manager->getPaymentCollection()->getConfirmationTitle(),//['payment_info'],
@@ -1483,6 +1485,7 @@ abstract class OrderAbstract extends OrderShadowAbstract{
         $email_params['SHIPPING_METHOD'] = $this->info['shipping_method'];
 
         $email_params['CUSTOMER_FIRSTNAME'] = $this->customer['firstname'];
+        $email_params['CUSTOMER_LASTNAME'] = $this->customer['lastname'];
 
         $email_params['ORDER_COMMENTS'] = tep_db_output($this->info['comments']);
 

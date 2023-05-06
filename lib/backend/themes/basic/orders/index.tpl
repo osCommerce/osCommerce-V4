@@ -109,9 +109,13 @@
             <table class="table table-striped table-selectable table-checkable table-hover table-responsive table-bordered datatable tabl-res double-grid table-orders table-colored" data_ajax="orders/orderlist" checkable_list="">
                 <thead>
                     <tr>
+                    {if $tableHeading}
+                        {$tableHeading}
+                    {else}
                         {foreach $app->controller->view->ordersTable as $tableItem}
                             <th{if isset($tableItem['not_important']) && $tableItem['not_important'] == 2} class="checkbox-column"{/if}{if isset($tableItem['not_important']) && $tableItem['not_important'] == 1} class="hidden-xs"{/if}>{$tableItem['title']}</th>
-                            {/foreach}
+                        {/foreach}
+                    {/if}
                     </tr>
                 </thead>
 

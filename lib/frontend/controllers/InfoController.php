@@ -85,8 +85,9 @@ class InfoController extends Sceleton
     public function actions()
     {
         $action = filter_var(Yii::$app->request->get('action', ''), FILTER_SANITIZE_STRING);
-        $params = array_diff($_GET, [$action]);
+        // $params = array_diff($_GET, [$action]); may be cause of the error: convert string to array
         if (isset($_GET['action'])) unset($_GET['action']);
+        $params = $_GET;
         return [
             'custom' => [
                 'class' => '\frontend\controllers\CustomPageAction',

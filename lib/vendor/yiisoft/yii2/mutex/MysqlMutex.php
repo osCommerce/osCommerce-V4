@@ -8,6 +8,7 @@
 namespace yii\mutex;
 
 use yii\base\InvalidConfigException;
+use yii\db\Expression;
 
 /**
  * MysqlMutex implements mutex "lock" mechanism via MySQL locks.
@@ -36,6 +37,13 @@ use yii\base\InvalidConfigException;
 class MysqlMutex extends DbMutex
 {
     /**
+     * @var Expression|string|null prefix value. If null (by default) then connection's current database name is used.
+     * @since 2.0.47
+     */
+    public $keyPrefix = null;
+
+
+    /**
      * Initializes MySQL specific mutex component implementation.
      * @throws InvalidConfigException if [[db]] is not MySQL connection.
      */
@@ -44,6 +52,9 @@ class MysqlMutex extends DbMutex
         parent::init();
         if ($this->db->driverName !== 'mysql') {
             throw new InvalidConfigException('In order to use MysqlMutex connection must be configured to use MySQL database.');
+        }
+        if ($this->keyPrefix === null) {
+            $this->keyPrefix = new Expression('DATABASE()');
         }
     }
 
@@ -58,9 +69,13 @@ class MysqlMutex extends DbMutex
     {
         return $this->db->useMaster(function ($db) use ($name, $timeout) {
             /** @var \yii\db\Connection $db */
-            return (bool) $db->createCommand(
-                'SELECT GET_LOCK(:name, :timeout)',
-                [':name' => $this->hashLockName($name), ':timeout' => $timeout]
+            $nameData = $this->prepareName();
+            return (bool)$db->createCommand(
+                'SELECT GET_LOCK(' . $nameData[0] . ', :timeout), :prefix',
+                array_merge(
+                    [':name' => $this->hashLockName($name), ':timeout' => $timeout, ':prefix' => $this->keyPrefix],
+                    $nameData[1]
+                )
             )->queryScalar();
         });
     }
@@ -75,11 +90,31 @@ class MysqlMutex extends DbMutex
     {
         return $this->db->useMaster(function ($db) use ($name) {
             /** @var \yii\db\Connection $db */
-            return (bool) $db->createCommand(
-                'SELECT RELEASE_LOCK(:name)',
-                [':name' => $this->hashLockName($name)]
+            $nameData = $this->prepareName();
+            return (bool)$db->createCommand(
+                'SELECT RELEASE_LOCK(' . $nameData[0] . '), :prefix',
+                array_merge(
+                    [':name' => $this->hashLockName($name), ':prefix' => $this->keyPrefix],
+                    $nameData[1]
+                )
             )->queryScalar();
         });
+    }
+
+    /**
+     * Prepare lock name
+     * @return array expression and params
+     * @since 2.0.48
+     */
+    protected function prepareName()
+    {
+        $params = [];
+        $expression = "SUBSTRING(CONCAT(:prefix, :name), 1, 64)";
+        if ($this->keyPrefix instanceof Expression) {
+            $expression = strtr($expression, [':prefix' => $this->keyPrefix->expression]);
+            $params = $this->keyPrefix->params;
+        }
+        return [$expression, $params];
     }
 
     /**
@@ -90,7 +125,8 @@ class MysqlMutex extends DbMutex
      * @since 2.0.16
      * @see https://github.com/yiisoft/yii2/pull/16836
      */
-    protected function hashLockName($name) {
+    protected function hashLockName($name)
+    {
         return sha1($name);
     }
 }

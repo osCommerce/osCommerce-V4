@@ -77,7 +77,7 @@ class Banner extends Widget
         }
 
         $andWhere = '';
-        if ($this->settings[0]['ban_id']) {
+        if (($this->settings[0]['ban_id'] ?? false) && isset($this->settings[0]['banners_type']) && $this->settings[0]['banners_type'] == 'single') {
             $andWhere = ' and bl.banners_id = ' . $this->settings[0]['ban_id'] . ' ';
         }
 
@@ -242,6 +242,8 @@ class Banner extends Widget
             Info::setScriptCss('
                 #banner-' . $bannersId . ' {
                     padding-top: ' . $heightPer . '%;
+                } .banner-box-' . $bannersId . ' picture {
+                    padding-top: ' . $heightPer . '%;
                 }');
         }
 
@@ -298,6 +300,8 @@ class Banner extends Widget
                 $heightPer = round($size[1] * 100 / $size[0], 4);
                 Info::setScriptCss('@media ' . $media . ' {
                 picture#banner-' . $bannersId . ' {
+                    padding-top: ' . $heightPer . '%;
+                } .banner-box-' . $bannersId . ' picture {
                     padding-top: ' . $heightPer . '%;
                 }}');
             } elseif ($mediaType == 'video') {

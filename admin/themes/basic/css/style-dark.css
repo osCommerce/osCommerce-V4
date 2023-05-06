@@ -256,9 +256,26 @@ table.table > thead > tr > th{background-color: #111111!important; color: #bdbdb
 .ord-id{font-weight: 700; }
 .order-inf{display: block;  color: #2493f2;}
 .ord-id:before{content: '\f0f6'; font-family: FontAwesome; font-weight: 400; color: #2493f2; margin: 0 5px 0 0;}
-.ord-status > span{font-weight: 700;  display: block; position: relative; padding-left: 20px;}
-.ord-status > span i{display: inline-block; width: 16px; height: 16px; position: absolute; top: 2px; left: 0;}
-.ord-status > div{padding-left: 21px;}
+.ord-status {
+  padding-left: 20px;
+}
+.ord-status > span{
+  font-weight: 700;
+  display: inline-block;
+  position: relative;
+}
+.ord-status > span i{
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  margin: 0 4px 0 -20px;
+  vertical-align: middle;
+  position: relative;
+  top: -1px;
+}
+.ord-status > div{
+  display: inline-block;
+}
 .ord-date-purch{margin-bottom: 5px;}
 .ord-date-purch-delivery{position: relative; padding-right: 17px;}
 .ord-date-purch-delivery:after{content: '\f00d'; font-family: FontAwesome; font-weight: 400; color: #ff3f2b; position: absolute; right: 0; top: -1px; font-size: 16px;}

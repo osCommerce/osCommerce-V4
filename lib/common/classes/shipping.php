@@ -302,7 +302,16 @@ class shipping extends modules\ModuleCollection {
                         }
                     }
                     if (is_array($quotes)) {
-/**/
+
+                        $module_ignored = false;
+                        foreach (\common\helpers\Hooks::getList('shipping/check-ignored') as $filename) {
+                            $module_ignored = include($filename);
+                            if ($module_ignored) break;
+                        }
+                        if ($module_ignored) continue;
+
+
+                        /**/
                       if ($CustomerModules && !\Yii::$app->user->isGuest) {
                         if ( is_array($quotes['methods'])) {
                           foreach ($quotes['methods'] as $key => $value) {

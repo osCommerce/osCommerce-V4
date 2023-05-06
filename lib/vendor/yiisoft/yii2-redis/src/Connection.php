@@ -1,8 +1,8 @@
 <?php
 /**
- * @link http://www.yiiframework.com/
+ * @link https://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
- * @license http://www.yiiframework.com/license/
+ * @license https://www.yiiframework.com/license/
  */
 
 namespace yii\redis;
@@ -259,6 +259,11 @@ class Connection extends Component
      * If [[unixSocket]] is specified, hostname and [[port]] will be ignored.
      */
     public $hostname = 'localhost';
+    /**
+     * @var string the connection scheme used for connecting to the redis server. Defaults to 'tcp'.
+     * @since 2.0.18
+     */
+    public $scheme = 'tcp';
     /**
      * @var string if the query gets redirected, use this as the temporary new hostname
      * @since 2.0.11
@@ -593,7 +598,7 @@ class Connection extends Component
             return 'unix://' . $this->unixSocket;
         }
 
-        return 'tcp://' . ($this->redirectConnectionString ?: "$this->hostname:$this->port");
+        return $this->scheme . '://' . ($this->redirectConnectionString ?: "$this->hostname:$this->port");
     }
 
     /**

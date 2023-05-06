@@ -148,6 +148,7 @@ class Properties extends Widget
                 'params' => [
                     'products_data' => $products_data,
                     'properties_tree_array' => $properties_tree_array,
+                    'path' => \common\helpers\Product::get_product_path($products_data['products_id']),
                     'settings' => $this->settings[0]
                 ]
             ]);

@@ -15,9 +15,9 @@
  */
 class SmartyErrorTest extends PHPUnit_Smarty
 {
-    public function setUp()
+    public function setUp(): void
     {
-        $this->setUpSmarty(dirname(__FILE__));
+        $this->setUpSmarty(__DIR__);
     }
 
     public function testInit()
@@ -25,12 +25,11 @@ class SmartyErrorTest extends PHPUnit_Smarty
         $this->cleanDirs();
     }
     /**
-     * @expectedException        SmartyException
-     * @expectedExceptionMessage $smarty.foo is not defined
      * test undefined Smarty special variable
-     *
      */
     public function testSmartyError() {
+        $this->expectException('SmartyException');
+        $this->expectExceptionMessage('$smarty.foo is not defined');
         $this->assertEquals(Smarty::SMARTY_VERSION, $this->smarty->fetch('error.tpl'));
     }
  }

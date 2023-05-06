@@ -101,7 +101,7 @@ class Zones {
         } else {
             $classes_query = tep_db_query("select geo_zone_name from " . TABLE_TAX_ZONES . " where geo_zone_id = '" . (int) $zone_class_id . "'");
             $classes = tep_db_fetch_array($classes_query);
-            return $classes['geo_zone_name'];
+            return $classes['geo_zone_name'] ?? null;
         }
     }
     
@@ -219,7 +219,7 @@ class Zones {
     }
 
     public static function stick_shipping_rates($rates_array, $innerTable=false, $size = false, $extra=[]) {
-        $check_secret = preg_split('/[:;]/', $rates_array[0]);
+        $check_secret = preg_split('/[:;]/', $rates_array[0]??null);
         if (sizeof($check_secret) > 2) {
             return str_replace(',', '.', $rates_array[0]);
         }
@@ -313,6 +313,28 @@ class Zones {
             }
         }
         return $output;
+    }
+
+    /**
+     * Used in shippings if there is zone restriction
+     * @param $geoZoneId
+     * @param $countryId
+     * @param $stateId
+     * @return bool true is $countryId and $stateId belong $geoZoneId
+     */
+    public static function isGeoZone($geoZoneId, $countryId, $stateId = 0 /* All zones*/): bool
+    {
+        if (empty($countryId)) return false;
+
+        $res = \common\models\ZonesToGeoZones::find()
+            ->where(['geo_zone_id' => $geoZoneId])
+            ->andWhere('COALESCE(zone_country_id,0) = 0 OR (zone_country_id = :country_id AND (COALESCE(zone_id,0) = 0 OR zone_id=:state_id))', [
+                ':country_id' => $countryId,
+                ':state_id' => $stateId
+            ]);
+        \common\helpers\Dbg::logQuery($res);
+        $res = $res->one();
+        return !empty($res);
     }
 
 }

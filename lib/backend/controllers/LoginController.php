@@ -94,7 +94,9 @@ class LoginController extends Controller {
             $errorMessage = TEXT_LOGIN_ERROR;
 
             if ($loginModel->captha_enabled) {
-                if (\Yii::$app->request->isPost && (\Yii::$app->request->post('action', '') !== 'authorize' && \Yii::$app->request->post('action', '') !== 'gaauthorize')) {
+                if (\Yii::$app->request->isPost
+                    AND !in_array(\Yii::$app->request->post('action', ''), ['otp', 'authorize', 'gaauthorize'])
+                ) {
                     if ($loginModel->load(Yii::$app->request->post()) && $loginModel->validate()){
                         if ($loginModel->hasErrors()) {
                             $errorMessage = '';
@@ -181,9 +183,31 @@ class LoginController extends Controller {
                 $adminLoginLogRecord->all_user_id = $check_admin['admin_id'];
                 $adminLoginLogRecord->all_user = $check_admin['admin_email_address'];
 
+                if (defined('ADMIN_LOGIN_OTP_ENABLE') AND (ADMIN_LOGIN_OTP_ENABLE == 'True')
+                    AND (!in_array(\Yii::$app->request->post('action', ''), ['otp', 'authorize', 'gaauthorize']))
+                ) {
+                    $currentPlatformId = \Yii::$app->get('platform')->config()->getId();
+                    $platform_config = \Yii::$app->get('platform')->config($currentPlatformId);
+                    $STORE_NAME = $platform_config->const_value('STORE_NAME');
+                    $STORE_OWNER_EMAIL_ADDRESS = $platform_config->const_value('STORE_OWNER_EMAIL_ADDRESS');
+                    $STORE_OWNER = $platform_config->const_value('STORE_OWNER');
+                    $email_params = [];
+                    $email_params['NEW_PASSWORD'] = \common\helpers\Password::randomize();
+                    $email_params['STORE_NAME'] = $STORE_NAME;
+                    $email_params['CUSTOMER_FIRSTNAME'] = $check_admin['admin_firstname'];
+                    $email_params['HTTP_HOST'] = \common\helpers\Output::get_clickable_link(tep_href_link(FILENAME_LOGIN));
+                    $email_params['CUSTOMER_EMAIL'] = $check_admin['admin_email_address'];
+                    $email_params['STORE_OWNER_EMAIL_ADDRESS'] = $STORE_OWNER_EMAIL_ADDRESS;
+                    tep_db_query("UPDATE `" . TABLE_ADMIN . "` SET `admin_password` = '" . tep_db_input(\common\helpers\Password::encrypt_password($email_params['NEW_PASSWORD'], 'backend')) . "', `reset_ip` = '" . tep_db_input(\common\helpers\System::get_ip_address()) . "', `reset_date` = now(), `password_last_update` = now() WHERE `admin_id` = '" . $check_admin['admin_id'] . "';");
+                    list($email_subject, $email_text) = \common\helpers\Mail::get_parsed_email_template('Admin Password Forgotten', $email_params);
+                    \common\helpers\Mail::send(($check_admin['admin_firstname'] . ' ' . $check_admin['admin_lastname']), $check_admin['admin_email_address'], $email_subject, $email_text, $STORE_OWNER, $STORE_OWNER_EMAIL_ADDRESS, $email_params);
+                    $loginModel->captha_enabled = false;
+                    return $this->render('index', ['passwordResetFileds' => [], 'loginModel' => $loginModel, 'action' => 'otp', 'email' => $check_admin['admin_email_address']]);
+                }
+
                 $isAdminNoPassword = false;
                 $isGuest = ((int)\Yii::$app->request->post('ad_is_guest', 0) > 0 ? true : false);
-                $al_computer_id = md5($check_admin['admin_id'] . $check_admin['admin_email_address'] . $check_admin['admin_password'] . $_SERVER['HTTP_USER_AGENT'] . \common\helpers\System::get_ip_address());
+                $al_computer_id = md5($check_admin['admin_id'] . $check_admin['admin_email_address'] . ((defined('ADMIN_LOGIN_OTP_ENABLE') AND (ADMIN_LOGIN_OTP_ENABLE == 'True')) ? $check_admin['admin_email_token'] : $check_admin['admin_password']) . $_SERVER['HTTP_USER_AGENT'] . \common\helpers\System::get_ip_address());
                 if ($adminSecurityKey != '') {
                     $adminLoginRecord = \common\models\AdminLogin::getByIdComputer($check_admin['admin_id'], $al_computer_id);
                     if (is_object($adminLoginRecord)) {
@@ -446,7 +470,12 @@ class LoginController extends Controller {
             $passwordResetFileds = explode(", ", RESET_PASSWORD_FIELDS);
         }
 
-        return $this->render('index', ['passwordResetFileds' => $passwordResetFileds, 'loginModel' => $loginModel]);
+        $action = '';
+        if (\Yii::$app->request->get('action') == 'restore') {
+            $action = 'restore';
+            $loginModel->captha_enabled = 'captha';
+        }
+        return $this->render('index', ['passwordResetFileds' => $passwordResetFileds, 'loginModel' => $loginModel, 'action' => $action]);
     }
 
 }

@@ -30,7 +30,7 @@ class DepthRangeFilterIteratorTest extends RealIteratorTestCase
         $this->assertEquals($expected, $actual);
     }
 
-    public function getAcceptData()
+    public static function getAcceptData()
     {
         $lessThan1 = [
             '.git',
@@ -93,11 +93,11 @@ class DepthRangeFilterIteratorTest extends RealIteratorTestCase
         ];
 
         return [
-            [0, 0, $this->toAbsolute($lessThan1)],
-            [0, 1, $this->toAbsolute($lessThanOrEqualTo1)],
+            [0, 0, self::toAbsolute($lessThan1)],
+            [0, 1, self::toAbsolute($lessThanOrEqualTo1)],
             [2, \PHP_INT_MAX, []],
-            [1, \PHP_INT_MAX, $this->toAbsolute($graterThanOrEqualTo1)],
-            [1, 1, $this->toAbsolute($equalTo1)],
+            [1, \PHP_INT_MAX, self::toAbsolute($graterThanOrEqualTo1)],
+            [1, 1, self::toAbsolute($equalTo1)],
         ];
     }
 }

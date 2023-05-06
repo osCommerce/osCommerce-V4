@@ -213,8 +213,10 @@ class PlatformsController extends Sceleton {
 
         $watermark_edit_link = Url::toRoute(['platforms/setup-watermark', 'id' => $platform->platform_id]);
         $platform_soap_server_link = '';
-        if (\common\helpers\Acl::checkExtensionAllowed('PlatformSoapServer', 'allowed')) {
-            $platform_soap_server_link = Url::toRoute(['platforms/configure-soap-server', 'id' => $platform->platform_id]);;
+        if (\common\helpers\Acl::checkExtensionAllowed('SoapServer', 'allowed')) {
+            if ( \common\helpers\Acl::rule(['BOX_HEADING_FRONENDS', 'BOX_SOAP_SERVER_SETTINGS']) ) {
+                $platform_soap_server_link = Url::toRoute(['platforms/soap-server-configure', 'id' => $platform->platform_id]);
+            }
         }
 
         $platform_working_timetable_link = '';
@@ -574,7 +576,7 @@ class PlatformsController extends Sceleton {
                 continue;
             }
 
-            if (ACCOUNT_STATE == 'required' || ACCOUNT_STATE == 'visible') {
+            if (in_array(ACCOUNT_STATE, ['required', 'visible', 'required_register']) ) {
                 if ($entry_country_error == true) {
                     //$entry_state_error = true;
                 } else {
@@ -1572,9 +1574,9 @@ class PlatformsController extends Sceleton {
         $id = Yii::$app->request->get('id',0);
       }
 
+      $lList = [];
       if (is_array($output) && class_exists('\ResourceBundle')){
         $all_locales = \ResourceBundle::getLocales ('');
-        $lList = [];
         foreach($output as $line){
           if (tep_not_null($line)){
             $ex = explode(".", $line);

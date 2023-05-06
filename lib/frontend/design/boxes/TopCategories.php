@@ -40,9 +40,15 @@ class TopCategories extends Widget
 
     public function run()
     {
-        $categories = \common\models\Categories::getHomepageCategories()
-            ->select('{{%categories}}.categories_id, parent_id, {{%categories}}.maps_id, {{%categories}}.categories_image, {{%categories}}.categories_image_3, {{%categories}}.show_on_home')
+        $categories = \common\models\Categories::getHomepageCategories();
+        if ($ext =\common\helpers\Acl::checkExtensionAllowed('UserGroupsRestrictions'))
+        {
+            $categories->innerJoin('groups_categories gc')
+                ->andWhere('gc.categories_id = {{%categories}}.categories_id and gc.groups_id ='.(int) \Yii::$app->storage->get('customer_groups_id'));
+        }
+        $categories->select('{{%categories}}.categories_id, parent_id, {{%categories}}.maps_id, {{%categories}}.categories_image, {{%categories}}.categories_image_3, {{%categories}}.show_on_home')
             ->orderBy("categories_left, sort_order, categories_name");
+
 
         if (isset($this->settings[0]['max_items']) && $this->settings[0]['max_items']) {
             $categories->limit((int)$this->settings[0]['max_items']);

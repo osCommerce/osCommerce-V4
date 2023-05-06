@@ -34,7 +34,7 @@ class CustomerAdditionalField extends Widget
 
         global $languages_id;
 
-        $fields = \common\models\AdditionalFields::find()
+        $fields = \common\extensions\CustomerAdditionalFields\models\AdditionalFields::find()
             ->alias('f')
             ->select('f.*, fd.title, gd.title as group_title')
             ->leftJoin('additional_fields_description fd', 'fd.additional_fields_id = f.additional_fields_id')

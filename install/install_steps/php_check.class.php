@@ -86,6 +86,16 @@ class php_check extends install_generic {
                 'installed' => $this->lang['yes'],
                 'passfail' => (function_exists('pathinfo')) ? true : false
             ),
+            'intl' => array(
+                'required' => $this->lang['yes'],
+                'installed' => (extension_loaded('intl') && function_exists('transliterator_transliterate')) ? $this->lang['yes'] : $this->lang['no'],
+                'passfail' => (extension_loaded('intl') && function_exists('transliterator_transliterate')) ? true : false
+            ),
+            'openssl' => array( // needed in Yii: lib/vendor/yiisoft/yii2/base/Security.php:251
+                'required' => $this->lang['yes'],
+                'installed' => (extension_loaded('openssl')) ? $this->lang['yes'] : $this->lang['no'],
+                'passfail' => (extension_loaded('openssl')) ? true : false
+            ),
         );
     }
 

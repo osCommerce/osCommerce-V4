@@ -465,7 +465,27 @@ class Mail {
             $message->addBcc(trim(ALL_EMAIL_BCC_COPY));
         }
         // }} admin bcc
+        $errMsg = '';
+        try {
+            $res = ((int)$message->send($to_name, $to_email_address, $from_email_name, $from_email_address, $email_subject, $headers) > 0);
+            if (!$res) {
+                $errMsg = 'Unknown error';
+                \Yii::warning(sprintf("Email was not sent. Unknown error while sending email to %s <%s> from %s <%s>", $to_name, $to_email_address, $from_email_name, $from_email_address));
+            }
+        } catch (\Throwable $e) {
+            $errMsg = 'Error: ' . $e->getMessage();
+            \Yii::warning(sprintf("Email was not sent. Error while sending email to %s <%s> from %s <%s>: %s\n %s", $to_name, $to_email_address, $from_email_name, $from_email_address, $e->getMessage(), $e->getTraceAsString()));
+            $res = false;
+        }
+        foreach (\common\helpers\Hooks::getList('email/after-sending') as $filename) {
+            include($filename);
+        }
+        if (!($ext = \common\helpers\Extensions::isAllowed('ReportEmailsHistory')) || method_exists($ext, 'saveEmail')) {
+            return $res;
+        }
+
         //add to EmailsHistory
+        /** @var \common\extensions\ReportEmailsHistory\models\EmailsHistory $model */
         if ($model = \common\helpers\Acl::checkExtensionTableExist('ReportEmailsHistory', 'EmailsHistory')) {
 
             if (is_array($email_params)) {
@@ -499,12 +519,16 @@ class Mail {
                 $EmailsHistory->email_text = $email_text;
                 $EmailsHistory->headers = (is_array($headers) ? serialize($headers) : $headers);
                 $EmailsHistory->date_sent = date('Y-m-d H:i:s');
+                if (\Yii::$app->db->getTableSchema($EmailsHistory->tableName(), true)->getColumn('sending_result') !== null) {
+                    $EmailsHistory->sending_result = (int)!$res; // 0 - success
+                    $EmailsHistory->sending_error_msg = $errMsg;
+                }
                 $EmailsHistory->save(false);
             } catch (\Exception $exc) {
                 \Yii::warning(($exc->getMessage() . ' ' . $exc->getTraceAsString()), 'ErrorMailSendEmailHistorySave');
             }
         }
-        return ((int)$message->send($to_name, $to_email_address, $from_email_name, $from_email_address, $email_subject, $headers) > 0);
+        return $res;
     }
 
     public static function sendPlain($to_name, $to_email_address, $email_subject, $email_text, $from_email_name, $from_email_address, $email_params = array(), $headers = '') {

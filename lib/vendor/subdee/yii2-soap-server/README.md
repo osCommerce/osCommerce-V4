@@ -3,19 +3,23 @@ yii2-soap-server
 
 A SOAP server for Yii 2 based on the implementation of Yii 1 framework.
 
-This extension is an adaptation of the SOAP Web Service available in Yii1, to Yii2. 
-It contains features available up to v1.1.15.
+This extension is an adaptation of the SOAP Web Service available in Yii1, to
+Yii2. It contains features available up to v1.1.15.
 
-Note: Things might not work as Yii2 progresses but I'll keep it updated as much as I can.
+Note: Things might not work as Yii2 progresses but I'll keep it updated as much
+as I can.
 
-[![Build Status](https://travis-ci.org/subdee/yii2-soap-server.png)](https://travis-ci.org/subdee/yii2-soap-server)
+[![Build Status](https://travis-ci.org/subdee/yii2-soap-server.png)](
+    https://travis-ci.org/subdee/yii2-soap-server)
 
-##Requirements
+
+## Requirements
 
 - [Yii2](http://github.com/yiisoft/yii2)
-- [php soap](php.net/soap)
+- [PHP SOAP](https://secure.php.net/manual/en/soap.installation.php)
 
-##Installation
+
+## Installation
 
 Use composer and add the following line to your composer.json file:
 
@@ -23,9 +27,11 @@ Use composer and add the following line to your composer.json file:
 "subdee/yii2-soap-server": "*"
 ```
 
-##Usage
 
-Usage is similar to the explanation in the [Yii guide](http://www.yiiframework.com/doc/guide/1.1/en/topics.webservice)
+## Usage
+
+Usage is similar to the explanation in the
+[Yii guide](http://www.yiiframework.com/doc/guide/1.1/en/topics.webservice)
 
 Define the custom action in your controller:
 
@@ -42,7 +48,7 @@ public function actions()
 }
 ```
 
-Add the @soap keyword to the properly documented actions you want:
+Add the `@soap` keyword to the properly documented actions you want:
 
 ```php
 /**
@@ -58,7 +64,8 @@ public function getHello($name)
 }
 ```
 
-Also, remember to turn off CSRF validation for the controller by setting its property:
+Also, remember to turn off CSRF validation for the controller by setting its
+property:
 
 ```php
 public $enableCsrfValidation = false;

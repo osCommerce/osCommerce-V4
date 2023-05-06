@@ -30,7 +30,7 @@ class ShippingByChoice extends Widget
     public function run()
     {   
         $params = ['manager' => $this->manager ];
-        if (Info::themeSetting('checkout_view') == 1 && !$this->manager->is('\common\extensions\Samples\SampleCart')){
+        if (Info::themeSetting('checkout_view') == 1 && !$this->manager->is('\common\extensions\Samples\classes\SampleCart')){
             if (true){
                 $params['page_name'] = 'index';
             } else {

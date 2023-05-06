@@ -16,13 +16,16 @@
           {$order_total.text}
           {if $order_total.code == 'ot_coupon' && !empty($order_total.coupon)}
               <span class="remove-discount" data-code="{$order_total.coupon}"></span>
-          {/if}    
+          {/if}
           {if $order_total.code == 'ot_gv' || $order_total.code == 'ot_bonus_points'}
           <span class="remove-discount"></span>
           {/if}
       </div>
     </div>
   {/foreach}
+    {if ($ccExt = \common\helpers\Acl::checkExtensionAllowed('CustomerCredit', 'allowed'))}
+        {$ccExt::getCheckoutTotalHtml($manager)}
+    {/if}
 </div>
 
 <script>

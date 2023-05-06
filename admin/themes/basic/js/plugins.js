@@ -700,7 +700,7 @@ if (typeof onDrawCallbackEvent==='function') {
                                                     
                                                     if (self.hasClass('double-grid')) {
                                                         $('.double-grid > tbody > tr > td').dblclick(function() {
-                                                            var _tmp = $(this).find('.click_double');
+                                                            var _tmp = $(this).parent().find('.click_double');
                                                             
                                                             if ($(_tmp).data('clickDouble') != 'undefined' && $(_tmp).data('clickDouble') != null){
                                                               var url_edit = $(_tmp).data('clickDouble');

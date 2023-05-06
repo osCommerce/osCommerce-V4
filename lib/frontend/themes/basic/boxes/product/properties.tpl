@@ -80,7 +80,9 @@
     {if {$property['values']|@count} > 0}
       {foreach $property['values'] as $value_id => $value}
         <div class="sel_pr_values">
+          {if $settings.clickable_property_filters == '' && strlen($path) > 0}<a href="{tep_href_link('catalog/index', 'cPath='|cat:$path|cat:'&pr'|cat:$property['properties_id']|cat:'[]='|cat:$value_id)}">{elseif $settings.clickable_property_filters != 'no'}<a href="{tep_href_link('catalog/all-products', 'pr'|cat:$property['properties_id']|cat:'[]='|cat:$value_id)}">{/if}
           {if !empty($property['images'][$value_id])}<img src="{$app->request->baseUrl}/images/{$property['images'][$value_id]}" alt="{$value}" width="48px;">{/if}<span{if !empty($property['colors'][$value_id])} style="color: {$property['colors'][$value_id]};"{/if} class="propertiesValue-span" id="value-{$value_id}" itemprop="value">{$hvo}{$value}{$hvc}{if isset($property['extra_values'][$value_id])} {$property['extra_values'][$value_id]}{/if}</span>
+          {if $settings.clickable_property_filters != 'no'}</a>{/if}
         </div>
       {/foreach}
     {/if}

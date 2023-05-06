@@ -76,6 +76,7 @@ class OrdersController extends Sceleton {
         if (\common\helpers\Acl::rule(['ACL_ORDER', 'IMAGE_NEW'])) {
             $this->topButtons[] = '<a href="' . Yii::$app->urlManager->createUrl(['editor/order-edit', 'back' => 'orders']) . '" class="btn btn-primary"><i class="icon-file-text"></i>' . TEXT_CREATE_NEW_OREDER . '</a>';
         }
+
         $this->view->headingTitle = HEADING_TITLE;
         $this->view->ordersTable = [];
         $this->view->ordersTable[] = array(
@@ -112,7 +113,7 @@ class OrdersController extends Sceleton {
 
         if (\common\helpers\Acl::checkExtensionAllowed('Neighbour')){
             $this->view->ordersTable[] =  array(
-                'title' => defined(EXT_NEIGHBOUR_TABLE_HEADING) ? EXT_NEIGHBOUR_TABLE_HEADING : TABLE_HEADING_NEIGHBOUR,
+                'title' => defined('EXT_NEIGHBOUR_TABLE_HEADING') ? EXT_NEIGHBOUR_TABLE_HEADING : TABLE_HEADING_NEIGHBOUR,
                 'not_important' => 0
             );
         }
@@ -423,6 +424,23 @@ class OrdersController extends Sceleton {
             ->all();
         $addedPages = ArrayHelper::map($addedPages, 'id', 'setting_value', 'setting_name');
 
+        $tableHeading = '';
+        $adminTable = \common\models\Admin::findOne(['admin_id' => (int)$login_id]);
+        if ($adminTable) {
+            $adminTemplates = \common\models\AdminTemplates::findOne([
+                'access_levels_id' => $adminTable->access_levels_id,
+                'page' => 'backendOrdersList'
+            ]);
+            if ($adminTemplates) {;
+                defined('THEME_NAME') or define('THEME_NAME', \common\classes\design::pageName(BACKEND_THEME_NAME));
+                $params = [];
+                $params['backendOrdersList\BatchCheckbox'] = '<div class="checkbox-column"><input type="checkbox" class="uniform"></div>';
+                if ($adminTemplates->template) {
+                    $tableHeading = \frontend\design\boxes\TableRow::headingRow($params, $adminTemplates->template);
+                }
+            }
+        }
+
         return $this->render('index', [
                     'isMultiPlatform' => \common\classes\platform::isMulti(),
                     'platforms' => \common\classes\platform::getList(true, true),
@@ -430,6 +448,7 @@ class OrdersController extends Sceleton {
                     'ordersStatuses' => $ordersStatuses,
                     'ordersStatusesOptions' => $ordersStatusesOptions,
                     'addedPages' => $addedPages,
+                    'tableHeading' => $tableHeading,
         ]);
     }
 
@@ -975,6 +994,19 @@ class OrdersController extends Sceleton {
             $flags = $ext::getFlags();
         }
 
+        $pageName = false;
+        $adminTable = \common\models\Admin::findOne(['admin_id' => (int)$login_id]);
+        if ($adminTable) {
+            $adminTemplates = \common\models\AdminTemplates::findOne([
+                'access_levels_id' => $adminTable->access_levels_id,
+                'page' => 'backendOrdersList'
+            ]);
+            if ($adminTemplates) {
+                $pageName = $adminTemplates->template;
+            }
+        };
+        defined('THEME_NAME') or define('THEME_NAME', \common\classes\design::pageName(BACKEND_THEME_NAME));
+
         $responseList = array();
         $stack = [];
         if ($ordersAll){
@@ -1082,6 +1114,7 @@ class OrdersController extends Sceleton {
                     $departmentInfo = ($orders['admin_id'] > 0 ? '&nbsp;by admin' : (\common\classes\platform::isMulti() >= 0 ? (SHOW_PRODUCTS_ON_ORDER_LIST === 'False' ? '<br>' : ' ') . TEXT_FROM . ' ' . \common\classes\platform::name($orders['platform_id']) : ''));
                 }
 
+                $tableOrderRow = [];
                 $purchasedDate = \common\helpers\Date::datetime_short($orders['date_purchased']);
                 $todayDate = \common\helpers\Date::date_short(date('Y-m-d'));
                 $purchasedDate = str_replace($todayDate, TEXT_TODAY, $purchasedDate);
@@ -1091,23 +1124,39 @@ class OrdersController extends Sceleton {
                     (\common\models\Customers::findOne($orders['customers_id'])?
                     '<a href="' . \Yii::$app->urlManager->createUrl(['customers/customeredit', 'customers_id' => $orders['customers_id']]) . '" title="' . strip_tags($orders['customers_name']) . '">' . Html::encode(self::cropStr($orders['customers_name'], 22)) . '</a>':Html::encode(self::cropStr($orders['customers_name'], 22))) .
                     '</div><a href="mailto:' . $orders['customers_email_address'] . '" class="ord-name-email" title="' . strip_tags($customers_email_address) . '">' . self::cropStr($customers_email_address, 22) . '</a><div class="ord-location" style="margin-top: 5px;">' . Html::encode($orders['customers_postcode']) . '<div class="ord-total-info ord-location-info"><div class="ord-box-img"></div><b>' . Html::encode($orders['customers_name']) . '</b>' . Html::encode($orders['customers_street_address']) . '<br>' . Html::encode($orders['customers_city'] . ', ' . $orders['customers_state']) . '&nbsp;' . Html::encode($orders['customers_postcode']) . '<br>' . $orders['customers_country'] . '</div></div>';
+
+                    $tableOrderRow['backendOrdersList\CustomerGender'] = $orders['customers_gender'];
+                    $tableOrderRow['backendOrdersList\CustomerName'] = (\common\models\Customers::findOne($orders['customers_id'])?
+                        '<a href="' . \Yii::$app->urlManager->createUrl(['customers/customeredit', 'customers_id' => $orders['customers_id']]) . '" title="' . strip_tags($orders['customers_name']) . '">' . Html::encode(self::cropStr($orders['customers_name'], 22)) . '</a>':Html::encode(self::cropStr($orders['customers_name'], 22)));
+
+                    $tableOrderRow['backendOrdersList\CustomerEmail'] = '<a href="mailto:' . $orders['customers_email_address'] . '" class="ord-name-email" title="' . strip_tags($customers_email_address) . '">' . self::cropStr($customers_email_address, 22) . '</a>';
+                    $tableOrderRow['backendOrdersList\OrderLocation'] = '<div class="ord-total-info ord-location-info"><div class="ord-box-img"></div><b>' . Html::encode($orders['customers_name']) . '</b>' . Html::encode($orders['customers_street_address']) . '<br>' . Html::encode($orders['customers_city'] . ', ' . $orders['customers_state']) . '&nbsp;' . Html::encode($orders['customers_postcode']) . '<br>' . $orders['customers_country'] . '</div></div>';
+
                 } elseif ($orders['admin_id']) {
                     $customer_delivery_name = '('.$orders['delivery_name'].')';
                     $customer_delivery_info = '<div class="ord-location" style="margin-top: 5px;">' . $orders['delivery_postcode'] . '<div class="ord-total-info ord-location-info"><div class="ord-box-img"></div><b>' . Html::encode($orders['delivery_name']) . '</b>' . Html::encode($orders['delivery_street_address']) . '<br>' . Html::encode($orders['delivery_city'] . ', ' . $orders['delivery_state']) . '&nbsp;' . Html::encode($orders['delivery_postcode']) . '<br>' . $orders['delivery_country'] . '</div></div>';
                     $cusColumn = '<div class="ord-name click_double" data-click-double="' . \Yii::$app->urlManager->createUrl(['orders/process-order', 'orders_id' => $orders['orders_id']]) . '">' . (defined('TEXT_WALKIN_ORDER')? TEXT_WALKIN_ORDER: '') . $orders['admin_firstname'] . ' ' . $orders['admin_lastname']. ' '.$customer_delivery_name.'</div>'.$customer_delivery_info;
+
+                    $tableOrderRow['backendOrdersList\CustomerName'] = $customer_delivery_name;
+                    $tableOrderRow['backendOrdersList\OrderLocation'] = $customer_delivery_info;
+                    $tableOrderRow['backendOrdersList\WalkinOrder'] = (defined('TEXT_WALKIN_ORDER')? TEXT_WALKIN_ORDER: '') . $orders['admin_firstname'] . ' ' . $orders['admin_lastname'];
                 }
 
                 $orderRow = [];
                 if ( $orders['hold_on_date'] ) {
                     $orderRow['DT_RowClass'] = ArrayHelper::getValue($orderRow, 'DT_RowClass') . ' holdOnOrder';
                     $purchasedDate .= '<div class="holdOrderInfo">'.sprintf(LIST_ORDER_HOLD_ON, \common\helpers\Date::date_short($orders['hold_on_date'])).'</div>';
+                    $tableOrderRow['DT_RowClass'] = $orderRow['DT_RowClass'];
                 }
 
                 if ( isset($orders['isFraud']) && $orders['isFraud'] ) {
                     $orderRow['DT_RowClass'] = ArrayHelper::getValue($orderRow, 'DT_RowClass') . ' fraudOrder';
+                    $tableOrderRow['DT_RowClass'] = $orderRow['DT_RowClass'];
                 }
 
-                $orderRow[] = '<input type="checkbox" class="uniform">' . '<input class="cell_identify" type="hidden" value="' . $orders['orders_id'] . '">';
+                $batchCheckbox = '<input type="checkbox" class="uniform">' . '<input class="cell_identify" type="hidden" value="' . $orders['orders_id'] . '">';
+                $orderRow[] = $batchCheckbox;
+                $tableOrderRow['backendOrdersList\BatchCheckbox'] = $batchCheckbox;
 
                 $coloredRow = '';
                 if ($ext = \common\helpers\Acl::checkExtensionAllowed('OrderMarkers', 'allowed')) {
@@ -1116,26 +1165,56 @@ class OrdersController extends Sceleton {
                         $coloredRow = $markers[$orderMarkers['markers']];
                     }
                     $paint = '<div class="fa-paint-brush" onclick="sendOrderMarker(' . (int)$orders['orders_id'] . ', ' . (int)($orderMarkers['markers'] ?? 0) . ')"></div>';
+                    $orderMarkers = '';
                     if (isset($orderMarkers['flags']) && isset($flags[$orderMarkers['flags']])){
-                        $orderRow[] = '<div class="fa-flag" style="color: ' . $flags[$orderMarkers['flags']] . ';" onclick="sendOrderFlag(' . (int)$orders['orders_id'] . ', ' . (int)$orderMarkers['flags'] . ')"></div>' . $paint;
+                        $orderMarkers = '<div class="fa-flag" style="color: ' . $flags[$orderMarkers['flags']] . ';" onclick="sendOrderFlag(' . (int)$orders['orders_id'] . ', ' . (int)$orderMarkers['flags'] . ')"></div>' . $paint;
                     } else {
-                        $orderRow[] = '<div class="fa-flag-o" onclick="sendOrderFlag(' . (int)$orders['orders_id'] . ')"></div>' . $paint;
+                        $orderMarkers = '<div class="fa-flag-o" onclick="sendOrderFlag(' . (int)$orders['orders_id'] . ')"></div>' . $paint;
                     }
+                    $orderRow[] = $orderMarkers;
+                    $tableOrderRow['backendOrdersList\OrderMarkersCell'] = '<input type="checkbox" class="uniform">' . '<input class="cell_identify" type="hidden" value="' . $orders['orders_id'] . '">';
                 }
 
-                $orderRow[] = $cusColumn . '<input class="row_colored" type="hidden" value="' . $coloredRow . '">';
-                $orderRow[] = '<div class="ord-total click_double" data-click-double="' . \Yii::$app->urlManager->createUrl(['orders/process-order', 'orders_id' => $orders['orders_id']]) . '">' . $orders['order_total'] . '<div class="ord-total-info"><div class="ord-box-img"></div>' . $orderTotals . '</div></div>';
-                $orderRow[] = '<div class="ord-desc-tab click_double" data-click-double="' . \Yii::$app->urlManager->createUrl(['orders/process-order', 'orders_id' => $orders['orders_id']]) . '"><a href="' . \Yii::$app->urlManager->createUrl(['orders/process-order', 'orders_id' => $orders['orders_id']]) . '" class="order-inf"><span class="ord-id">' . TEXT_ORDER_NUM . (!empty($orders['order_number'])?$orders['order_number']:$orders['orders_id']) . '</span> ' . (!empty($orders['invoice_number'])?' <span class="inv-id"><span class="title">' . TEXT_INVOICE . '</span>' . $orders['invoice_number'] . '</span> ':'')   . $departmentInfo . (tep_not_null($orders['payment_method']) ? (SHOW_PRODUCTS_ON_ORDER_LIST === 'False' ? '<br>' : ' ') . TEXT_VIA . ' ' . strip_tags($orders['payment_method']) : '') . (tep_not_null($orders['shipping_method']) ? ' ' . TEXT_DELIVERED_BY . ' ' . strip_tags($orders['shipping_method']) : '') . '</a>' . (SHOW_PRODUCTS_ON_ORDER_LIST !== 'False' ? $p_list : '') . '</div>';
-                $orderRow[] = '<div class="ord-date-purch click_double" data-click-double="' . \Yii::$app->urlManager->createUrl(['orders/process-order', 'orders_id' => $orders['orders_id']]) . '">' . $purchasedDate . $deliveryInfo;
-                $orderRow[] = '<div class="ord-status click_double" data-click-double="' . \Yii::$app->urlManager->createUrl(['orders/process-order', 'orders_id' => $orders['orders_id']]) . '"><span><i style="background: ' . $orders['orders_status_groups_color'] . ';"></i>' . $orders['orders_status_groups_name'] . '</span><div>' . $orders['orders_status_name'] . '</div></div>';
+                $customerColumn = $cusColumn . '<input class="row_colored" type="hidden" value="' . $coloredRow . '">';
+                $orderRow[] = $customerColumn;
+                $tableOrderRow['backendOrdersList\CustomerColumnCell'] = $customerColumn;
+
+                $orderTotals = '<div class="ord-total click_double" data-click-double="' . \Yii::$app->urlManager->createUrl(['orders/process-order', 'orders_id' => $orders['orders_id']]) . '">' . $orders['order_total'] . '<div class="ord-total-info"><div class="ord-box-img"></div>' . $orderTotals . '</div></div>';
+                $orderRow[] = $orderTotals;
+                $tableOrderRow['backendOrdersList\OrderTotalsCell'] = $orderTotals;
+
+                $orderDescription = '<div class="ord-desc-tab click_double" data-click-double="' . \Yii::$app->urlManager->createUrl(['orders/process-order', 'orders_id' => $orders['orders_id']]) . '"><a href="' . \Yii::$app->urlManager->createUrl(['orders/process-order', 'orders_id' => $orders['orders_id']]) . '" class="order-inf"><span class="ord-id">' . TEXT_ORDER_NUM . (!empty($orders['order_number'])?$orders['order_number']:$orders['orders_id']) . '</span> ' . (!empty($orders['invoice_number'])?' <span class="inv-id"><span class="title">' . TEXT_INVOICE . '</span>' . $orders['invoice_number'] . '</span> ':'')   . $departmentInfo . (tep_not_null($orders['payment_method']) ? (SHOW_PRODUCTS_ON_ORDER_LIST === 'False' ? '<br>' : ' ') . TEXT_VIA . ' ' . strip_tags($orders['payment_method']) : '') . (tep_not_null($orders['shipping_method']) ? ' ' . TEXT_DELIVERED_BY . ' ' . strip_tags($orders['shipping_method']) : '') . '</a>' . (SHOW_PRODUCTS_ON_ORDER_LIST !== 'False' ? $p_list : '') . '</div>';
+                $orderRow[] = $orderDescription;
+                $tableOrderRow['backendOrdersList\OrderDescriptionCell'] = $orderDescription;
+
+                $orderPurchase = '<div class="ord-date-purch click_double" data-click-double="' . \Yii::$app->urlManager->createUrl(['orders/process-order', 'orders_id' => $orders['orders_id']]) . '">' . $purchasedDate . $deliveryInfo;
+                $orderRow[] = $orderPurchase;
+                $tableOrderRow['backendOrdersList\OrderPurchaseCell'] = $orderPurchase;
+                $tableOrderRow['backendOrdersList\OrderPurchase'] = $purchasedDate;
+
+                $orderStatus = '<div class="ord-status click_double" data-click-double="' . \Yii::$app->urlManager->createUrl(['orders/process-order', 'orders_id' => $orders['orders_id']]) . '"><span><i style="background: ' . $orders['orders_status_groups_color'] . ';"></i>' . $orders['orders_status_groups_name'] . ',</span> <div>' . $orders['orders_status_name'] . '</div></div>';
+                $orderRow[] = $orderStatus;
+                $tableOrderRow['backendOrdersList\OrderStatusCell'] = $orderStatus;
 
                 if ($ext = \common\helpers\Acl::checkExtension('Neighbour', 'allowed')){
                     if ($ext::allowed()){
-                        $orderRow[] = ($orders['to_neighbour']?'<div class=" ord-date-purch-delivery ord-date-purch-delivery-check">':'');
+                        $neighbour = ($orders['to_neighbour']?'<div class=" ord-date-purch-delivery ord-date-purch-delivery-check">':'');
+                        $orderRow[] = $neighbour;
+                        $tableOrderRow['backendOrdersList\NeighbourCell'] = $neighbour;
                     }
                 }
 
-                $responseList[] = $orderRow;
+                $tableOrderRow['backendOrdersList\OrderId'] = $orders['orders_id'];
+                $tableOrderRow['backendOrdersList\OrderProducts'] = $p_list;
+                $tableOrderRow['backendOrdersList\Platform'] = \common\classes\platform::name($orders['platform_id']);
+                $tableOrderRow['backendOrdersList\PaymentMethod'] = $orders['payment_method'] ?? '';
+                $tableOrderRow['backendOrdersList\ShippingMethod'] = $orders['shipping_method'] ?? '';
+
+                if ($pageName) {
+                    $responseList[] = \frontend\design\boxes\TableRow::row($tableOrderRow, $pageName);
+                } else {
+                    $responseList[] = $orderRow;
+                }
             }
         }
 

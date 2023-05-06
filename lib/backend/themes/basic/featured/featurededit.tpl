@@ -28,16 +28,8 @@ Released under the GNU General Public License
               {Html::dropDownList('featured_type_id', $sInfo->featured_type_id|default:null, $featured_types, ['class'=>"form-control form-control-med"])}
             </div>
             <div class="col-md-6">
-              {if $sInfo->featured_id|default:null>0 }
-                {if $sInfo->status > 0}
-                  <label>{$smarty.const.TEXT_ACTIVE}</label>
-                {else}
-                  <label>{$smarty.const.TEXT_INACTIVE}</label>
-                {/if}
-              {else}
-                <label for="status" accesskey="s">{$smarty.const.TABLE_HEADING_STATUS}</label>
-                {Html::checkbox('status', $sInfo->status|default:null, ['class'=>'check_on_off', 'value' => 1])}
-              {/if}
+              <label for="status" accesskey="s">{$smarty.const.TABLE_HEADING_STATUS}</label>
+              {Html::checkbox('status', $sInfo->status|default:null, ['class'=>'check_on_off', 'value' => 1])}
             </div>
           </div>
           <div>

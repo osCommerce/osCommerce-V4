@@ -213,7 +213,7 @@
         $('#save_banner_form').on('submit', saveBanner);
         $('.top-buttons .btn-confirm').off('click').on('click', () => $('#save_banner_form').trigger('submit'));
 
-        $('.ck-editor').each(function(){
+        $('#save_banner_form .ck-editor').each(function(){
             CKEDITOR.replace(this, {
                 height: '200px',
             })
@@ -279,7 +279,7 @@
 
         return false;
     }
-    
+
     $(function () {
         $(".datepicker").datepicker({
             changeMonth: true,

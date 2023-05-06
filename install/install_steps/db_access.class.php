@@ -119,7 +119,7 @@ class db_access extends install_generic {
             $link = false;
         }
         if (!$link) {
-            $this->log('install_error', 'Can\'t connect to database server.');
+            $this->log('install_error', 'Can\'t connect to database server.', mysqli_connect_error());
             return false;
         }
         $db_selected = mysqli_select_db($link, $this->dbname);
@@ -137,6 +137,8 @@ class db_access extends install_generic {
                 return false;
             }
         }
+        
+        $installed_microtime = microtime(true);
 
         $content  = '<?php' . "\n";
         $content .= "define('DB_SERVER', '" . $this->dbhost . "');" . "\n";
@@ -145,16 +147,19 @@ class db_access extends install_generic {
         $content .= "define('DB_DATABASE', '" . $this->dbname . "');" . "\n";
         $content .= "define('USE_PCONNECT', 'false');" . "\n";
         $content .= "define('STORE_SESSIONS', 'mysql');" . "\n";
+        $content  .= "" . "\n";
+        $content  .= "define('INSTALLED_MICROTIME', '". $installed_microtime . "');" . "\n";
+        error_clear_last();
         $response = file_put_contents($this->root_path . 'includes/local/configure.php', $content);
         if ($response === false) {
-            $this->log('install_error', 'Can\'t save config file.');
+            $this->log('install_error', 'Can\'t save config file.', error_get_last()['message']??null);
             return false;
         }
 
         $hostname = $_SERVER['HTTP_HOST'];
         $pathname = rtrim(trim(dirname(dirname($_SERVER['SCRIPT_NAME'])), DIRECTORY_SEPARATOR), DIRECTORY_SEPARATOR);
         if (!empty($pathname)) {
-            $pathname = '/' . $pathname;
+            $pathname = '/' . ltrim($pathname, '/\\'); // prevent double slash
         }
 
         $content  = '<?php' . "\n";
@@ -166,10 +171,10 @@ class db_access extends install_generic {
         $content  .= "define('ENABLE_SSL_CATALOG', true);" . "\n";
         $content  .= "" . "\n";
         $content  .= 'define(\'DIR_FS_DOCUMENT_ROOT\', $_SERVER[\'DOCUMENT_ROOT\']);' . "\n";
-        $content  .= "define('DIR_WS_ADMIN', '" . $pathname . "/admin/');" . "\n";
-        $content  .= "define('DIR_FS_ADMIN', DIR_FS_DOCUMENT_ROOT . DIR_WS_ADMIN);" . "\n";
-        $content  .= "define('DIR_WS_CATALOG', '" . $pathname . "/');" . "\n";
-        $content  .= "define('DIR_FS_CATALOG', DIR_FS_DOCUMENT_ROOT . DIR_WS_CATALOG);" . "\n";
+        $content  .= "define('DIR_WS_ADMIN', '" . rtrim($pathname, '/\\') . "/admin/');" . "\n";
+        $content  .= "define('DIR_FS_ADMIN', rtrim(DIR_FS_DOCUMENT_ROOT, '/\\\\') . DIR_WS_ADMIN);" . "\n";
+        $content  .= "define('DIR_WS_CATALOG', '" . rtrim($pathname, '/\\') . "/');" . "\n";
+        $content  .= "define('DIR_FS_CATALOG', rtrim(DIR_FS_DOCUMENT_ROOT, '/\\\\') . DIR_WS_CATALOG);" . "\n";
         $content  .= "define('DIR_WS_IMAGES', 'images/');" . "\n";
         $content  .= "define('DIR_WS_ICONS', DIR_WS_IMAGES . 'icons/');" . "\n";
         $content  .= "define('DIR_WS_CATALOG_IMAGES', DIR_WS_CATALOG . 'images/');" . "\n";
@@ -199,9 +204,12 @@ class db_access extends install_generic {
         $content  .= "define('USE_PCONNECT', 'false');" . "\n";
         $content  .= "define('STORE_SESSIONS', 'mysql');" . "\n";
         $content  .= "" . "\n";
+        $content  .= "define('INSTALLED_MICROTIME', '". $installed_microtime . "');" . "\n";
+        $content  .= "" . "\n";
+        error_clear_last();
         $response = file_put_contents($this->root_path . 'admin/includes/local/configure.php', $content);
         if ($response === false) {
-            $this->log('install_error', 'Can\'t save admin config file.');
+            $this->log('install_error', 'Can\'t save admin config file.', error_get_last()['message']??null);
             return false;
         }
 
@@ -221,9 +229,11 @@ class db_access extends install_generic {
 
         $sqls = $this->parse_sql_file($restore_from);
         foreach($sqls as $sql) {
+            $sql = trim($sql);
+            if (empty($sql)) continue;
             $result = mysqli_query($link, $sql);
             if (!$result) {
-                $this->log('install_error', 'Can\'t update database.');
+                $this->log('install_error', 'Can\'t update database: ' . $link->error, $sql);
                 return false;
             }
         }

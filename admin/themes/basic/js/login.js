@@ -52,6 +52,7 @@ var Login = function() {
 			$('.forgot-password-content').show();
 			$('.login-content').hide();
 			$('.forgot-password-done').hide();
+			$('input[name="email_address"]').focus();
 		}
 		// Click on "Forgot Password?" link
 		$('.forgot-password-link, .login-link').click(function(e) {
@@ -205,6 +206,22 @@ var Login = function() {
 									$('.forgot-password-success').hide();
 									$('.forgot-password-fail').show();
 									$('.forgot-password-done').show();
+									data = 'captcha';
+								}
+								if (data == 'ban') {
+									$('.success-icon').hide();
+									$('.danger-icon').show();
+									$('.forgot-password-success').hide();
+									$('.forgot-password-fail').show();
+									$('.forgot-password-done').show();
+									data = 'captcha';
+									window.history.back();
+								}
+								if (data == 'captcha') {
+									if ($('#login-captcha-image').data('src') == undefined) {
+										$('#login-captcha-image').data('src', $('#login-captcha-image').attr('src'));
+									}
+									$('#login-captcha-image').attr('src', ($('#login-captcha-image').data('src') + '&t=' + Date.now()));
 								}
 							});
 	 						$('.inner-box').slideDown(350);

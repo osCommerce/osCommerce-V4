@@ -2,17 +2,8 @@
 
 namespace PhpOffice\PhpSpreadsheetTests\Calculation\Functions\Financial;
 
-use PhpOffice\PhpSpreadsheet\Calculation\Financial;
-use PhpOffice\PhpSpreadsheet\Calculation\Functions;
-use PHPUnit\Framework\TestCase;
-
-class NPerTest extends TestCase
+class NPerTest extends AllSetupTeardown
 {
-    protected function setUp(): void
-    {
-        Functions::setCompatibilityMode(Functions::COMPATIBILITY_EXCEL);
-    }
-
     /**
      * @dataProvider providerNPER
      *
@@ -20,8 +11,7 @@ class NPerTest extends TestCase
      */
     public function testNPER($expectedResult, array $args): void
     {
-        $result = Financial::NPER(...$args);
-        self::assertEqualsWithDelta($expectedResult, $result, 1E-8);
+        $this->runTestCase('NPER', $expectedResult, $args);
     }
 
     public function providerNPER(): array

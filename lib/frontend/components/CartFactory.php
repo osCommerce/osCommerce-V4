@@ -287,9 +287,6 @@ class CartFactory {
                       if ($ext = \common\helpers\Acl::checkExtension('Quotations', 'resetCart')) {
                           $ext::resetCart();
                       }
-                      if ($ext = \common\helpers\Acl::checkExtension('Samples', 'resetCart')) {
-                          $ext::resetCart();
-                      }
 
                       if( $ext = \common\helpers\Acl::checkExtension( 'MultiCart', 'resetCarts' ) ) {
                           $ext::resetCarts();
@@ -571,15 +568,6 @@ class CartFactory {
         tep_redirect($goto_link);
 
         break;
-      case 'taxabeling':
-        Yii::$app->storage->set('taxable', \Yii::$app->request->post('taxable', 0));
-        /** @var \common\extensions\CustomerTaxable $cTaxable */
-        if ($cTaxable = \common\helpers\Acl::checkExtensionAllowed('CustomerTaxable', 'allowed')) {
-          $cTaxable::saveCustomer();
-        }
-
-        tep_redirect(Yii::$app->request->getReferrer());
-      break;
 
       // performed by the 'buy now' button in product listings and review page
       case 'buy_now' :

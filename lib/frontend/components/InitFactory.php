@@ -97,6 +97,9 @@ class InitFactory {
             }
           }
       }
+    } else {
+        // if not logged customer - default group can be different for different platforms
+        Yii::$app->storage->set('customer_groups_id', DEFAULT_USER_GROUP);
     }
 
   // verify the browser user agent if the feature is enabled
@@ -111,13 +114,6 @@ class InitFactory {
         tep_session_destroy();
         tep_redirect(tep_href_link(FILENAME_LOGIN));
       }
-    }
-
-    /*if (!tep_session_is_registered('customer_groups_id')) {
-      $customer_groups_id = $_SESSION['customer_groups_id'] = DEFAULT_USER_GROUP;
-    }*/
-    if (!Yii::$app->storage->has('customer_groups_id')){
-        Yii::$app->storage->set('customer_groups_id', DEFAULT_USER_GROUP);
     }
 
   // verify the IP address if the feature is enabled

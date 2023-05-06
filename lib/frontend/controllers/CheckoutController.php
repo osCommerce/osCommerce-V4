@@ -75,6 +75,11 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
             $this->manager->remove('guest');
         }
 
+        if (!Yii::$app->user->isGuest) {
+            $this->manager->remove('estimate_ship');
+            $this->manager->remove('estimate_bill');
+        }
+
         //$create_temp_account = ($this->manager->has('guest_email_address') && !empty($this->manager->get('guest_email_address')));
 
         /*if (!$create_temp_account && Yii::$app->user->isGuest) {
@@ -97,19 +102,6 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
         }
 
         if (Yii::$app->request->isPost) {
-
-            if ($ext = \common\helpers\Acl::checkExtensionAllowed('Neighbour', 'allowed')) {
-                $ext::saveNeighbourDetails($this->manager);
-            }
-
-            if ($this->manager->isShippingNeeded()) {
-                if ($ext = \common\helpers\Acl::checkExtensionAllowed('DelayedDespatch', 'allowed')) {
-                    $response = $ext::prepareDeliveryDate(false, $this->manager);
-                    if ($response) {
-                        $error = true;
-                    }
-                }
-            }
 
             if (tep_not_null($_POST['comments'])) {
                 $this->manager->set('comments', tep_db_prepare_input($_POST['comments']));
@@ -148,7 +140,7 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
                         $this->manager->set('one_page_checkout_' . $key, $value);
                     }
                 }
-                
+
                 /** @var \common\classes\payment $_p_modules*/
                 $_p_modules = $this->manager->getPaymentCollection($this->manager->getPayment());
                 if (Yii::$app->request->isAjax && $this->manager->getPayment() && ($_p_modules->popUpMode() || $_p_modules->directPayment())) {
@@ -178,6 +170,9 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
             }
         }
 
+        if ($this->manager->getCreditPayment()) {
+            $this->manager->remove('cot_gv');
+        }
         $this->manager->totalCollectPosts($_POST);
 
         $payment_error = '';
@@ -193,6 +188,10 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
 
         $order->prepareOrderInfo();
         $order->prepareOrderInfoTotals();
+
+        if ($creditPayment = $this->manager->getCreditPayment()) {
+            $creditPayment->processIfEnabled();
+        }
 
         $this->manager->totalProcess();
 
@@ -257,6 +256,10 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
         ]);
 
         \common\components\google\widgets\GoogleTagmanger::setEvent('orderStep2');
+        $checkoutStep = 2;
+        foreach (\common\helpers\Hooks::getList('analytics', 'checkout/step') as $filename) {
+            include($filename);
+        }
 
         return $this->render($tpl, $render_data);
     }
@@ -349,6 +352,10 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
         }
 
         \common\components\google\widgets\GoogleTagmanger::setEvent('orderStep1');
+        $checkoutStep = 1;
+        foreach (\common\helpers\Hooks::getList('analytics', 'checkout/step') as $filename) {
+            include($filename);
+        }
 
         return $this->render($tpl, ['params' => $params, 'settings' => ['tabsManually' => true]]);
     }
@@ -468,6 +475,11 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
         $this->manager->totalCollectPosts();
 //ICW ADDED FOR CREDIT CLASS SYSTEM
         $this->manager->totalProcess();
+
+        if ($ccExt = \common\helpers\Acl::checkExtensionAllowed('CustomerCredit', 'allowed')) {
+            $ccExt::onCheckout($this->manager);
+        }
+
         $this->manager->totalPreConfirmationCheck();
 
 // ICW CREDIT CLASS Amended Line
@@ -593,6 +605,10 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
             }
         } else {
             \common\components\google\widgets\GoogleTagmanger::setEvent('orderStep3');
+            $checkoutStep = 3;
+            foreach (\common\helpers\Hooks::getList('analytics', 'checkout/step') as $filename) {
+                include($filename);
+            }
         }
 
         $render_data = [
@@ -829,6 +845,10 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
 
         $this->manager->totalProcess();
 
+        if ($ccExt = \common\helpers\Acl::checkExtensionAllowed('CustomerCredit', 'allowed')) {
+            $ccExt::onCheckout($this->manager);
+        }
+
 // load the before_process function from the payment modules
 
         if (!$withoutPayment) {
@@ -1003,7 +1023,7 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
         }
 
         Yii::configure($this->manager, [
-            'combineShippings' => !(($ext = \common\helpers\Extensions::isAllowed('CollectionPoints')) && $ext::isSeparateShipping()),
+            'combineShippings' => !(($ext = \common\helpers\Extensions::isAllowed('CollectionPoints')) && method_exists($ext, 'isSeparateShipping') && $ext::isSeparateShipping()),
         ]);
     }
 

@@ -15,9 +15,9 @@
  */
 class FunctionTest extends PHPUnit_Smarty
 {
-    public function setUp()
+    public function setUp(): void
     {
-        $this->setUpSmarty(dirname(__FILE__));
+        $this->setUpSmarty(__DIR__);
     }
 
     public function testInit()
@@ -35,7 +35,7 @@ class FunctionTest extends PHPUnit_Smarty
             $this->smarty->fetch('eval:{unknown()}');
         }
         catch (Exception $e) {
-            $this->assertContains("PHP function 'unknown' not allowed by security setting", $e->getMessage());
+            $this->assertStringContainsString("PHP function 'unknown' not allowed by security setting", $e->getMessage());
 
             return;
         }

@@ -128,7 +128,11 @@ class ot_shipping extends ModuleTotal {
                 if (!isset($order->info['total_inc_tax'])) {
                     $order->info['total_inc_tax'] = 0;
                 }
-                
+
+                foreach (\common\helpers\Hooks::getList('ot-shipping/process') as $filename) {
+                    include($filename);
+                }
+
                 $order->info['tax'] += $shipping_tax_calculated;
                 $order->info['tax_groups'][$shipping_tax_description] += $shipping_tax_calculated;
                 if (defined('PRICE_WITH_BACK_TAX') && PRICE_WITH_BACK_TAX == 'True') {

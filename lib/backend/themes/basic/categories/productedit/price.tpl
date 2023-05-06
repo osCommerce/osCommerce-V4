@@ -16,6 +16,9 @@
   <div class="widget widget-full box box-no-shadow">
     <div class="widget-header"><h4>{$smarty.const.TEXT_OUR_PRICE}<span class="colon">:</span></h4></div>
     <div class="widget-content price-and-cost-content">
+      {foreach \common\helpers\Hooks::getList('categories/productedit', 'prices-left-top') as $filename}
+        {include file=$filename}
+      {/foreach}
         
       <div class="tax-cl row align-items-center" style="max-width: 500px">
           <div class="col-xs-12">

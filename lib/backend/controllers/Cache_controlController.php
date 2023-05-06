@@ -176,40 +176,10 @@ class Cache_controlController extends Sceleton  {
          * Theme cache
          */
         if (Yii::$app->request->post('theme') == 1) {
-
-            $themes = \common\models\Themes::find()->asArray()->all();
-
-            $dbArr = [
-                'theme_name' => $themes[0]['theme_name'],
-                'setting_group' => 'hide',
-                'setting_name' => 'flush_cache_stamp',
-            ];
-
-            $setting = \common\models\ThemesSettings::findOne($dbArr);
-
-            if ($setting && $setting->setting_value + 300 > time()) {
-
-                $message = 'Theme cache flush is already in process';
-
-            } else {
-                \common\models\ThemesSettings::deleteAll($dbArr);
-
-                $setting = new \common\models\ThemesSettings();
-                $setting->theme_name = $themes[0]['theme_name'];
-                $setting->setting_group = 'hide';
-                $setting->setting_name = 'flush_cache_stamp';
-                $setting->setting_value = time();
-                $setting->save();
-
-                foreach ($themes as $theme) {
-                    \common\models\DesignBoxesCache::deleteAll(['theme_name' => $theme['theme_name']]);
-                    \common\models\DesignBoxesCache::deleteAll(['theme_name' => $theme['theme_name'] . '-mobile']);
-                    \backend\design\Style::createCache($theme['theme_name']);
-                    \backend\design\Style::createCache($theme['theme_name'] . '-mobile');
-                }
-
-                \common\models\ThemesSettings::deleteAll($dbArr);
+            if (\backend\design\Style::flushCacheAll()) {
                 $message = 'Theme cache flushed';
+            } else {
+                $message = 'Theme cache flush is already in process';
             }
 
             ?>
@@ -307,8 +277,7 @@ class Cache_controlController extends Sceleton  {
                         ],
                     ],
                     'errorHandler' => [
-                        'errorAction' => 'index/error',
-                        'class' => '\common\classes\TlErrorHandler',
+                        'class' => '\common\classes\TlErrorHandlerConsole',
                     ],
                 ],
             ]);

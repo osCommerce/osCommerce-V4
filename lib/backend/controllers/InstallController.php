@@ -37,20 +37,33 @@ class InstallController extends Sceleton {
     function __construct($id,$module=null) {
         \common\helpers\Translation::init('admin/install');
 
-        return parent::__construct($id,$module);
+        parent::__construct($id,$module);
     }
     
+    private function checkSystemRequires()
+    {
+        if (!(PHP_VERSION_ID >= 70400)) {
+            echo 'Further system upgrade requires a PHP version ">= 7.4.0". You are running ' . PHP_VERSION . '.';
+            die();
+        }
+    }
+
+    private static function isKnownRequireModule($filename)
+    {
+        return $filename === 'php_version_74';
+    }
+
     private function basename($param, $suffix=null,$charset = 'utf-8')
     {
         if ( $suffix ) {
-            $tmpstr = ltrim(mb_substr($param, mb_strrpos($param, DIRECTORY_SEPARATOR, null, $charset), null, $charset), DIRECTORY_SEPARATOR);
+            $tmpstr = ltrim(mb_substr($param, mb_strrpos($param, DIRECTORY_SEPARATOR, 0, $charset), null, $charset), DIRECTORY_SEPARATOR);
             if ( (mb_strpos($param, $suffix, null, $charset)+mb_strlen($suffix, $charset) )  ==  mb_strlen($param, $charset) ) {
                 return str_ireplace( $suffix, '', $tmpstr);
             } else {
-                return ltrim(mb_substr($param, mb_strrpos($param, DIRECTORY_SEPARATOR, null, $charset), null, $charset), DIRECTORY_SEPARATOR);
+                return ltrim(mb_substr($param, mb_strrpos($param, DIRECTORY_SEPARATOR, 0, $charset), null, $charset), DIRECTORY_SEPARATOR);
             }
         } else {
-            return ltrim(mb_substr($param, mb_strrpos($param, DIRECTORY_SEPARATOR, null, $charset), null, $charset), DIRECTORY_SEPARATOR);
+            return ltrim(mb_substr($param, mb_strrpos($param, DIRECTORY_SEPARATOR, 0, $charset), null, $charset), DIRECTORY_SEPARATOR);
         }
     }
     
@@ -140,8 +153,7 @@ class InstallController extends Sceleton {
                         ],
                     ],
                     'errorHandler' => [
-                        'errorAction' => 'index/error',
-                        'class' => '\common\classes\TlErrorHandler',
+                        'class' => '\common\classes\TlErrorHandlerConsole',
                     ],
                 ],
             ]);
@@ -183,36 +195,7 @@ class InstallController extends Sceleton {
         }
         
         if ($this->doTheme) {
-            $themes = \common\models\Themes::find()->asArray()->all();
-
-            $dbArr = [
-                'theme_name' => $themes[0]['theme_name'],
-                'setting_group' => 'hide',
-                'setting_name' => 'flush_cache_stamp',
-            ];
-
-            $setting = \common\models\ThemesSettings::findOne($dbArr);
-            if ($setting && $setting->setting_value + 300 > time()) {
-                if ($echo) echo'Theme cache flush is already in process';
-            } else {
-                if ($echo) echo "Clean theme...<br>\n";
-                \common\models\ThemesSettings::deleteAll($dbArr);
-
-                $setting = new \common\models\ThemesSettings();
-                $setting->theme_name = $themes[0]['theme_name'];
-                $setting->setting_group = 'hide';
-                $setting->setting_name = 'flush_cache_stamp';
-                $setting->setting_value = time();
-                $setting->save();
-
-                foreach ($themes as $theme) {
-                    \common\models\DesignBoxesCache::deleteAll(['theme_name' => $theme['theme_name']]);
-                    \common\models\DesignBoxesCache::deleteAll(['theme_name' => $theme['theme_name'] . '-mobile']);
-                    \backend\design\Style::createCache($theme['theme_name']);
-                    \backend\design\Style::createCache($theme['theme_name'] . '-mobile');
-                }
-                \common\models\ThemesSettings::deleteAll($dbArr);
-            }
+            \backend\design\Style::flushCacheAll();
         }
         
         $this->resetReCacheFlags();
@@ -225,20 +208,23 @@ class InstallController extends Sceleton {
         if ($request = curl_init()) {
             $storageUrl = \Yii::$app->params['appStorage.url'];
             $storageKey = $this->getStorageKey();
+            $secKeyGlobal = md5(\Yii::$app->db->dsn . (defined('INSTALLED_MICROTIME') ? INSTALLED_MICROTIME : ''));
             curl_setopt($request, CURLOPT_URL, $storageUrl . 'app-api-server/product');
 
             // for testing
             curl_setopt($request, CURLOPT_SSL_VERIFYPEER, false);
             curl_setopt($request, CURLOPT_SSL_VERIFYHOST, false);
-            curl_setopt($request, CURLOPT_SSL_VERIFYSTATUS, false);
+            if (defined('CURLOPT_SSL_VERIFYSTATUS')) { // Added in cURL 7.41.0
+                curl_setopt($request, CURLOPT_SSL_VERIFYSTATUS, false);
+            }
 
-            curl_setopt($request, CURLOPT_TIMEOUT_MS, 5000);
+            curl_setopt($request, CURLOPT_TIMEOUT_MS, 30000);
             curl_setopt($request, CURLOPT_CUSTOMREQUEST, 'POST');
             curl_setopt($request, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($request, CURLOPT_HTTPHEADER, array(
                 'Content-Type: application/json',
                 'Accept: application/json',
-                'Authorization: Bearer ' . $storageKey
+                'Authorization: Bearer ' . $storageKey . ':' . $secKeyGlobal
             ));
 
             $postFieldArray = [
@@ -363,6 +349,7 @@ class InstallController extends Sceleton {
                 }
                 if (isset($distribution->require->modules) && is_array($distribution->require->modules)) {
                     foreach ($distribution->require->modules as $subfile) {
+                        if (self::isKnownRequireModule($subfile)) continue;
                         $record = \common\models\Installer::find()->where(['filename' => $subfile])->one();
                         if ( !($record instanceof \common\models\Installer) ) {
                             $status = $status && $this->installFileWithDependencies($subfile, $settings, $echo);
@@ -495,6 +482,7 @@ class InstallController extends Sceleton {
                             $zip->open($path . 'uploads' . DIRECTORY_SEPARATOR . $filename);
                             $localejson = $zip->getFromName('locale.json');
                             $localejson = preg_replace('#/\*(?:[^*]*(?:\*(?!/))*)*\*/#','',$localejson);
+                            $oldData = [];
                             if (!empty($json)) {
                                 $localejson = json_decode($localejson, JSON_OBJECT_AS_ARRAY);
                                 $lang = \common\models\Languages::find()->where(['code' => (string)$localejson['code']])->one();
@@ -548,6 +536,10 @@ class InstallController extends Sceleton {
                                                 $lFormats->language_id = $insert_id;
                                                 $lFormats->save(false);
                                             }
+                                            $oldData[] = [
+                                                'action' => 'deletelanguage',
+                                                'language_id' => $insert_id
+                                            ];
                                         }
                                     }
                                     $languages = \common\helpers\Language::get_languages(true);
@@ -555,7 +547,6 @@ class InstallController extends Sceleton {
                                 // update or create from default language
                                 \common\helpers\Language::copyLanguage((int) \common\helpers\Language::get_default_language_id(), (int) $insert_id);
                             }
-                            $oldData = [];
                             foreach ((array)$distribution->files as $file) {
                                 $CsvString = $zip->getFromName($file);
                                 
@@ -995,16 +986,18 @@ class InstallController extends Sceleton {
                     case 'add':
                         if ($src->type == 'dir') {
                             if (!is_dir($pathP . DIRECTORY_SEPARATOR . $dst)) {
-                                mkdir($pathP . DIRECTORY_SEPARATOR . $dst);
+                                @mkdir($pathP . DIRECTORY_SEPARATOR . $dst);
                                 if ($echo) echo "<font color='blue'>" . TEXT_DIRECTORY . " $dst " . TEXT_ADDED . ".</font><br>\n";
                             }
                         }
                         if ($src->type == 'file') {
                             if (!$zip->extractTo($pathP, $dst)) {
                                 $errorMsg = sprintf('Error extracting %s: %s', $dst, $zip->getStatusString() );
-                                throw new \Exception($errorMsg);
+                                \Yii::warning($errorMsg);
+                                if ($echo) echo "<font color='red'>$errorMsg</font><br>\n";
+                            } else {
+                                if ($echo) echo "<font color='blue'>" . TEXT_FILE . " $dst " . TEXT_ADDED . ".</font><br>\n";
                             }
-                            if ($echo) echo "<font color='blue'>" . TEXT_FILE . " $dst " . TEXT_ADDED . ".</font><br>\n";
                         }
                         break;
                     case 'modify':
@@ -1012,29 +1005,49 @@ class InstallController extends Sceleton {
                             $fileName = $pathP . DIRECTORY_SEPARATOR . $dst;
                             @rename($fileName, $fileName . '_old'); // to avoid 'Failed to open stream: Permission denied' under Windows
                             @unlink($fileName . '_old');
-                            $zip->extractTo($pathP, $dst);
-                            if ($echo) echo "<font color='blue'>" . TEXT_FILE . " $dst " . TEXT_MODIFIED . ".</font><br>\n";
+                            if (!$zip->extractTo($pathP, $dst)) {
+                                $errorMsg = sprintf('Error extracting %s: %s', $dst, $zip->getStatusString() );
+                                \Yii::warning($errorMsg);
+                                if ($echo) echo "<font color='red'>$errorMsg</font><br>\n";
+                            } else {
+                                if ($echo) echo "<font color='blue'>" . TEXT_FILE . " $dst " . TEXT_MODIFIED . ".</font><br>\n";
+                            }
                         }
-                    break;
+                        break;
                     case 'copy':
                         if ($src->type == 'dir') {
                             for($i = 0; $i < $zip->numFiles; $i++) {
                                 $entry = $zip->getNameIndex($i);
                                 if (strpos($entry, $dst) === 0) {
-                                    $zip->extractTo($pathP, $entry);
+                                    if (!$zip->extractTo($pathP, $entry)) {
+                                        \Yii::warning($errorMsg);
+                                        $errorMsg = sprintf('Error extracting %s: %s', $entry, $zip->getStatusString() );
+                                        if ($echo) echo "<font color='red'>$errorMsg</font><br>\n";
+                                    }
                                 }
                             }
                             if ($echo) echo "<font color='blue'>" . TEXT_DIRECTORY . " $dst " . TEXT_COPIED . ".</font><br>\n";
                         }
                         break;
                     case 'delete':
-                        if ($src->type == 'dir' && is_dir($pathP . DIRECTORY_SEPARATOR . $dst)) {
-                            rmdir($pathP . DIRECTORY_SEPARATOR . $dst);
-                            if ($echo) echo "<font color='blue'>" . TEXT_DIRECTORY . " $dst " . TEXT_DELETED . ".</font><br>\n";
+                        $fn = $pathP . DIRECTORY_SEPARATOR . $dst;
+                        if ($src->type == 'dir' && is_dir($fn)) {
+                            if (!@rmdir($fn)) {
+                                $errorMsg = "Can't remove dir $fn: " . error_get_last()['message']??'unknown';
+                                \Yii::warning($errorMsg . "Dir contains: " . implode("\n", glob($fn . '/*')) . "\n" . implode("\n", glob($fn . '/.*')));
+                                if ($echo) echo "<font color='red'>$errorMsg</font><br>\n";
+                            } else {
+                                if ($echo) echo "<font color='blue'>" . TEXT_DIRECTORY . " $dst " . TEXT_DELETED . ".</font><br>\n";
+                            }
                         }
-                        if ($src->type == 'file' && is_file($pathP . DIRECTORY_SEPARATOR . $dst)) {
-                            unlink($pathP . DIRECTORY_SEPARATOR . $dst);
-                            if ($echo) echo "<font color='blue'>" . TEXT_FILE . " $dst " . TEXT_DELETED . ".</font><br>\n";
+                        if ($src->type == 'file' && is_file($fn)) {
+                            if (!@unlink($fn)) {
+                                $errorMsg = "Can't remove file $fn: " . error_get_last()['message']??'unknown';
+                                \Yii::warning($errorMsg);
+                                if ($echo) echo "<font color='red'>$errorMsg</font><br>\n";
+                            } else {
+                                if ($echo) echo "<font color='blue'>" . TEXT_FILE . " $dst " . TEXT_DELETED . ".</font><br>\n";
+                            }
                         }
                         break;
                     default:
@@ -1138,7 +1151,7 @@ class InstallController extends Sceleton {
                         }
                     }
                 }
-                $module->remove($selected_platform_id);
+                // $module->remove($selected_platform_id);
             }
             if (method_exists($module, 'install')) {
                 if ($acl > 0) {
@@ -1338,21 +1351,19 @@ class InstallController extends Sceleton {
             );
             $messages[] = $message;
         } elseif (empty($storageKey)) {
-            $message = (defined('MESSAGE_KEY_DOMAIN_INFO')
-                ? constant('MESSAGE_KEY_DOMAIN_INFO')
-                : 'It is looks like your store is not connected to our <a target="_blank" href="%1$s">application shop</a>.<br>If your already registered with us, please insert \'storage\' key value. If you do not remember your \'storage\' key - please login at <a target="_blank" href="%1$s">application shop</a> with your credentials and copy it from there.<br>If you not registered with us, please visit <a target="_blank" href="%1$s">application shop</a>, register your account and put there your \'security store key\'.<br>You \'secutiry store key\' for this shop is [%2$s].<br>After registration insert the received \'storage\' key (<a href="javascript:void(0);" onclick="$(\'.create_item_popup\').click();">use button on this page</a>) value.'
-            );
-            $messages[] = sprintf($message, $storageUrl . 'account?return', $secKeyGlobal);
-        } else {
+            
+            $showEmptyKeyIntro = true;
             if ($request = curl_init()) {
                 curl_setopt($request, CURLOPT_URL, $storageUrl . 'app-api-server');
             
                 // for testing
                 curl_setopt($request, CURLOPT_SSL_VERIFYPEER, false);
                 curl_setopt($request, CURLOPT_SSL_VERIFYHOST, false);
-                curl_setopt($request, CURLOPT_SSL_VERIFYSTATUS, false);
+                if (defined('CURLOPT_SSL_VERIFYSTATUS')) { // Added in cURL 7.41.0
+                    curl_setopt($request, CURLOPT_SSL_VERIFYSTATUS, false);
+                }
 
-                curl_setopt($request, CURLOPT_TIMEOUT_MS, 5000);
+                curl_setopt($request, CURLOPT_TIMEOUT_MS, 30000);
                 curl_setopt($request, CURLOPT_RETURNTRANSFER, true);
                 curl_setopt($request, CURLOPT_HTTPHEADER, array(
                     'Content-Type: application/json',
@@ -1361,6 +1372,54 @@ class InstallController extends Sceleton {
                 ));
 
                 $return = curl_exec($request);
+                $response = curl_getinfo($request);
+                curl_close($request);
+                
+                if ($response['http_code'] == 406 ) {
+                    $result = json_decode($return, true);
+                    if (isset($result['code']) && $result['code'] == 428) {
+                        $ownerName = $result['message'];
+                        $message = (defined('MESSAGE_KEY_DOMAIN_INFO2')
+                            ? constant('MESSAGE_KEY_DOMAIN_INFO2')
+                            : 'This shop is already registered to %3$s and is not shared key to all administrators. You need to connect it using your own credentials.<br>
+                                If your already registered with us and %3$s, approved your storage key, please insert \'storage\' key value. If you do not remember your \'storage\' key - please login at <a target="_blank" href="%1$s">application shop</a> with your credentials and copy it from there.<br>
+                                If you not registered with us, please visit <a target="_blank" href="%1$s">application shop</a>, register your account and put there your \'security store key\'.<br>
+                                You \'secutiry store key\' for this shop is [%2$s].<br>
+                                After registration, wait for confirmation by %3$s. If this approuve take a lot, you may e-mail him directly. After confirmation insert the received \'storage\' key (<a href="javascript:void(0);" onclick="$(\'.create_item_popup\').click();">use button on this page</a>) value.'
+                        );
+                        $messages[] = sprintf($message, $storageUrl . 'account?return', $secKeyGlobal, $ownerName);
+                        $showEmptyKeyIntro = false;
+                    }
+                }
+            }
+            
+            if ($showEmptyKeyIntro) {
+                $message = (defined('MESSAGE_KEY_DOMAIN_INFO')
+                    ? constant('MESSAGE_KEY_DOMAIN_INFO')
+                    : 'It is looks like your store is not connected to our <a target="_blank" href="%1$s">application shop</a>.<br>If your already registered with us, please insert \'storage\' key value. If you do not remember your \'storage\' key - please login at <a target="_blank" href="%1$s">application shop</a> with your credentials and copy it from there.<br>If you not registered with us, please visit <a target="_blank" href="%1$s">application shop</a>, register your account and put there your \'security store key\'.<br>You \'secutiry store key\' for this shop is [%2$s].<br>After registration insert the received \'storage\' key (<a href="javascript:void(0);" onclick="$(\'.create_item_popup\').click();">use button on this page</a>) value.'
+                );
+                $messages[] = sprintf($message, $storageUrl . 'account?return', $secKeyGlobal);
+            }
+        } else {
+            if ($request = curl_init()) {
+                curl_setopt($request, CURLOPT_URL, $storageUrl . 'app-api-server');
+            
+                // for testing
+                curl_setopt($request, CURLOPT_SSL_VERIFYPEER, false);
+                curl_setopt($request, CURLOPT_SSL_VERIFYHOST, false);
+                if (defined('CURLOPT_SSL_VERIFYSTATUS')) { // Added in cURL 7.41.0
+                    curl_setopt($request, CURLOPT_SSL_VERIFYSTATUS, false);
+                }
+
+                curl_setopt($request, CURLOPT_TIMEOUT_MS, 30000);
+                curl_setopt($request, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($request, CURLOPT_HTTPHEADER, array(
+                    'Content-Type: application/json',
+                    'Accept: application/json',
+                    'Authorization: Bearer ' . $storageKey . ':' . $secKeyGlobal
+                ));
+
+                curl_exec($request);
                 $response = curl_getinfo($request);
                 curl_close($request);
                 
@@ -1492,15 +1551,17 @@ class InstallController extends Sceleton {
                 // for testing
                 curl_setopt($request, CURLOPT_SSL_VERIFYPEER, false);
                 curl_setopt($request, CURLOPT_SSL_VERIFYHOST, false);
-                curl_setopt($request, CURLOPT_SSL_VERIFYSTATUS, false);
+                if (defined('CURLOPT_SSL_VERIFYSTATUS')) { // Added in cURL 7.41.0
+                    curl_setopt($request, CURLOPT_SSL_VERIFYSTATUS, false);
+                }
 
-                curl_setopt($request, CURLOPT_TIMEOUT_MS, 5000);
+                curl_setopt($request, CURLOPT_TIMEOUT_MS, 30000);
                 curl_setopt($request, CURLOPT_CUSTOMREQUEST, 'POST');
                 curl_setopt($request, CURLOPT_RETURNTRANSFER, true);
                 curl_setopt($request, CURLOPT_HTTPHEADER, array(
                     'Content-Type: application/json',
                     'Accept: application/json',
-                    'Authorization: Bearer ' . $storageKey
+                    'Authorization: Bearer ' . $storageKey . ':' . $secKeyGlobal
                 ));
 
                 $postField = [
@@ -1590,20 +1651,23 @@ class InstallController extends Sceleton {
             if ($request = curl_init()) {
                 $storageUrl = \Yii::$app->params['appStorage.url'];
                 $storageKey = $this->getStorageKey();
+                $secKeyGlobal = md5(\Yii::$app->db->dsn . (defined('INSTALLED_MICROTIME') ? INSTALLED_MICROTIME : ''));
                 curl_setopt($request, CURLOPT_URL, $storageUrl . 'app-api-server/product-info');
 
                 // for testing
                 curl_setopt($request, CURLOPT_SSL_VERIFYPEER, false);
                 curl_setopt($request, CURLOPT_SSL_VERIFYHOST, false);
-                curl_setopt($request, CURLOPT_SSL_VERIFYSTATUS, false);
+                if (defined('CURLOPT_SSL_VERIFYSTATUS')) { // Added in cURL 7.41.0
+                    curl_setopt($request, CURLOPT_SSL_VERIFYSTATUS, false);
+                }
 
-                curl_setopt($request, CURLOPT_TIMEOUT_MS, 5000);
+                curl_setopt($request, CURLOPT_TIMEOUT_MS, 30000);
                 curl_setopt($request, CURLOPT_CUSTOMREQUEST, 'POST');
                 curl_setopt($request, CURLOPT_RETURNTRANSFER, true);
                 curl_setopt($request, CURLOPT_HTTPHEADER, array(
                     'Content-Type: application/json',
                     'Accept: application/json',
-                    'Authorization: Bearer ' . $storageKey
+                    'Authorization: Bearer ' . $storageKey . ':' . $secKeyGlobal
                 ));
 
                 $postFieldArray = [
@@ -1682,20 +1746,23 @@ class InstallController extends Sceleton {
             if ($request = curl_init()) {
                 $storageUrl = \Yii::$app->params['appStorage.url'];
                 $storageKey = $this->getStorageKey();
+                $secKeyGlobal = md5(\Yii::$app->db->dsn . (defined('INSTALLED_MICROTIME') ? INSTALLED_MICROTIME : ''));
                 curl_setopt($request, CURLOPT_URL, $storageUrl . 'app-api-server/product-synergy');
 
                 // for testing
                 curl_setopt($request, CURLOPT_SSL_VERIFYPEER, false);
                 curl_setopt($request, CURLOPT_SSL_VERIFYHOST, false);
-                curl_setopt($request, CURLOPT_SSL_VERIFYSTATUS, false);
+                if (defined('CURLOPT_SSL_VERIFYSTATUS')) { // Added in cURL 7.41.0
+                    curl_setopt($request, CURLOPT_SSL_VERIFYSTATUS, false);
+                }
 
-                curl_setopt($request, CURLOPT_TIMEOUT_MS, 5000);
+                curl_setopt($request, CURLOPT_TIMEOUT_MS, 30000);
                 curl_setopt($request, CURLOPT_CUSTOMREQUEST, 'POST');
                 curl_setopt($request, CURLOPT_RETURNTRANSFER, true);
                 curl_setopt($request, CURLOPT_HTTPHEADER, array(
                     'Content-Type: application/json',
                     'Accept: application/json',
-                    'Authorization: Bearer ' . $storageKey
+                    'Authorization: Bearer ' . $storageKey . ':' . $secKeyGlobal
                 ));
 
                 $postFieldArray = [
@@ -1952,19 +2019,14 @@ class InstallController extends Sceleton {
                         }
                     }
                     
-                    
-                    
-                    
-                    
-                    
                     $file_row = array(
+                        \common\helpers\Date::datetime_short(date('Y-m-d H:i:s', filemtime($path . $file))),
+                        $fileNameCell,
+                        //$formatter->asShortSize(filesize($path . $file), 3),
                         $appName,
                         $type,
                         $req,
-                        $fileNameCell,
-                        $formatter->asShortSize(filesize($path . $file), 3),
-                        \common\helpers\Date::datetime_short(date('Y-m-d H:i:s', filemtime($path . $file))),
-                        ($deployed ? '<p style="color:green">deployed</p>' : '<p style="color:red">not deployed</p>'),
+                        ($deployed ? '<span style="color:green;">deployed</span>' : '<span style="white-space: nowrap;color:red;">not deployed</span>'),
                         '<div class="job-actions">' .
                         //remove archive
                         ($canDelete ? '<a class="job-button" href="javascript:void(0);" onclick="return file_remove(\'' . $file . '\');"><i class="icon-trash iconTrash"></i></a>' : '') .
@@ -1974,14 +2036,17 @@ class InstallController extends Sceleton {
                         '</div>'
                     );
                     
-                    $files[] = $file_row;
+                    $files[filemtime($path . $file).'_'.$recordsTotal] = $file_row;
+                    
+                    $recordsTotal++;
+                    $recordsFiltered++;
                 }
             }
         }
-        
+        krsort($files);
         Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
         Yii::$app->response->data = [
-            'data' => $files,
+            'data' => array_values($files),
             'recordsTotal' => $recordsTotal,
             'recordsFiltered' => $recordsFiltered,
         ];
@@ -2085,6 +2150,11 @@ class InstallController extends Sceleton {
                             if (is_array($oldData)) {
                                 foreach ($oldData as $old) {
                                     switch ($old['action']) {
+                                        case 'deletelanguage':
+                                            if (isset($old['language_id'])) {
+                                                \common\helpers\Language::dropLanguage($old['language_id']);
+                                            }
+                                            break;
                                         case 'update':
                                             \common\models\Translation::updateAll(
                                                     ['translation_value' => $old['translation_value'], 'translated' => $old['translated']],
@@ -2482,6 +2552,9 @@ class InstallController extends Sceleton {
     {
         \common\helpers\Translation::init('admin/install');
         $this->layout = false;
+        
+        $this->checkSystemRequires();
+        
         $updates = [];
         $version = (defined('MIGRATIONS_DB_REVISION') ? MIGRATIONS_DB_REVISION : '');
         
@@ -2498,15 +2571,17 @@ class InstallController extends Sceleton {
             // for testing
             curl_setopt($request, CURLOPT_SSL_VERIFYPEER, false);
             curl_setopt($request, CURLOPT_SSL_VERIFYHOST, false);
-            curl_setopt($request, CURLOPT_SSL_VERIFYSTATUS, false);
-            
-            curl_setopt($request, CURLOPT_TIMEOUT_MS, 5000);
+            if (defined('CURLOPT_SSL_VERIFYSTATUS')) { // Added in cURL 7.41.0
+                curl_setopt($request, CURLOPT_SSL_VERIFYSTATUS, false);
+            }
+
+            curl_setopt($request, CURLOPT_TIMEOUT_MS, 30000);
             curl_setopt($request, CURLOPT_CUSTOMREQUEST, 'POST');
             curl_setopt($request, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($request, CURLOPT_HTTPHEADER, array(
                 'Content-Type: application/json',
                 'Accept: application/json',
-                'Authorization: Bearer ' . $storageKey
+                'Authorization: Bearer ' . $storageKey . ':' . $secKeyGlobal
             ));
             
             $postFieldArray = [
@@ -2593,6 +2668,8 @@ class InstallController extends Sceleton {
     
     public function actionUpdateNow() 
     {
+        $this->checkSystemRequires();
+        
         @set_time_limit(0);
         @ignore_user_abort(true);
         
@@ -2644,15 +2721,17 @@ class InstallController extends Sceleton {
                     // for testing
                     curl_setopt($request, CURLOPT_SSL_VERIFYPEER, false);
                     curl_setopt($request, CURLOPT_SSL_VERIFYHOST, false);
-                    curl_setopt($request, CURLOPT_SSL_VERIFYSTATUS, false);
+                    if (defined('CURLOPT_SSL_VERIFYSTATUS')) { // Added in cURL 7.41.0
+                        curl_setopt($request, CURLOPT_SSL_VERIFYSTATUS, false);
+                    }
 
-                    curl_setopt($request, CURLOPT_TIMEOUT_MS, 5000);
+                    curl_setopt($request, CURLOPT_TIMEOUT_MS, 30000);
                     curl_setopt($request, CURLOPT_CUSTOMREQUEST, 'POST');
                     curl_setopt($request, CURLOPT_RETURNTRANSFER, true);
                     curl_setopt($request, CURLOPT_HTTPHEADER, array(
                         'Content-Type: application/json',
                         'Accept: application/json',
-                        'Authorization: Bearer ' . $storageKey
+                        'Authorization: Bearer ' . $storageKey . ':' . $secKeyGlobal
                     ));
 
                     $postFieldArray = [
@@ -2728,6 +2807,9 @@ class InstallController extends Sceleton {
                         }
                         
                     } else {
+                        if ($response['http_code'] != 400 ) {
+                            $this->sendEcho("<font color='red'>Status response: " . $response['http_code'] . ".</font><br>\n");
+                        }
                         $this->sendEcho(TEXT_NO_UPDATES . "<br>\n");
                         $version = '';
                     }

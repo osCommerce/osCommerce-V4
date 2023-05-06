@@ -406,6 +406,10 @@ class Attributes {
                 $all_filled = $all_filled && (bool) $value;
             }
         }
+        $priceOption = \frontend\design\Info::widgetSettings('product\Attributes', 'price_option', 'product'); // 0 - diff, 1 - full, 2 - don't show
+        if ($priceOption < 2 && \Yii::$app->user->isGuest && \common\helpers\PlatformConfig::getFieldValue('platform_please_login')) {
+            $priceOption = 2; // don't show price
+        }
 
         $attributes_array = array();
         $attributePirces = []; // need it here to process -1 pseudo price
@@ -424,7 +428,7 @@ class Attributes {
                             = self::get_options_values_price($products_options['products_attributes_id'], !empty($params['qty'])?$params['qty']:1);
               $attributePirces[$products_options_name['products_options_id']][$products_options['products_options_values_id']]['price_prefix'] = $products_options['price_prefix'];
               if ($curPrice >= 0 ) { // usual or discounted for group (-2)
-                if ($curPrice > 0) {
+                if ($curPrice > 0 && $priceOption == 0) {
                     if ( strpos($products_options['price_prefix'],'%')!==false ) {
                         $products_options['products_options_values_name'] .= ' (' . substr($products_options['price_prefix'],0,1).''.\common\helpers\Output::percent($curPrice).') ';
                     }else{
@@ -626,10 +630,14 @@ class Attributes {
             $data = tep_db_fetch_array(tep_db_query("select options_values_price from " . TABLE_PRODUCTS_ATTRIBUTES . " where products_attributes_id = '" . (int) $products_attributes_id . "'"));
         }
         if ($qty > 1 && $data['options_values_price'] > 0) {
-            return self::get_options_values_discount_price($products_attributes_id, $qty, $data['options_values_price']);
-        } else {
-            return $data['options_values_price'];
+            $data['options_values_price'] =  self::get_options_values_discount_price($products_attributes_id, $qty, $data['options_values_price']);
         }
+
+        foreach (\common\helpers\Hooks::getList('attributes/get-options-values-price') as $filename) {
+            include($filename);
+        }
+
+        return $data['options_values_price'];
     }
 
     public static function get_attributes_price($attributes_id, $currency_id = 0, $group_id = 0, $default = '') {
@@ -902,4 +910,27 @@ class Attributes {
         }
         return $response;
     }
+
+    public static function add2LevelAttributeOptions($attributes_array) {
+        foreach ($attributes_array as $key => $option) {
+            if ($option['type'] == '' && is_array($option['options']) && count($option['options']) > CONDITION_2LEVEL_ATTRIBUTE_SELECTION) {
+                $options_2level = array();
+                $words = \Yii::$app->request->get('words_' . str_replace('[' . $option['id'] . ']', '', $option['name']), array());
+                $selected_word = $words[$option['id']];
+                foreach ($option['options'] as $value) {
+                    $first_word = strtok($value['text'], ' ,.-');
+                    $options_2level[$first_word][] = $value;
+                    if (!$selected_word && $option['selected'] == $value['id']) {
+                        $selected_word = $first_word;
+                    }
+                }
+                if (count($option['options']) > count($options_2level)) {
+                    $attributes_array[$key]['options_2level'] = $options_2level;
+                    $attributes_array[$key]['selected_word'] = $selected_word;
+                }
+            }
+        }
+        return $attributes_array;
+    }
+
 }

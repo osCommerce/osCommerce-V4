@@ -10,6 +10,9 @@
                         </button>
                     </div>
                 {/if}
+                <div style="float: left; padding: 5px 10px 0 5px;">
+                    <button id = "refresh" class="btn btn-redo" style="float: right;">{$smarty.const.TEXT_REFRESH}</button>
+                </div>
                 <div class="btn-wr after btn-wr-top disable-btn data-table-top-left">
                     <div>
                         <div>
@@ -28,7 +31,11 @@
                             <a href="javascript:void(0)" onclick="deleteSelectedLogs();" class="btn btn-del">{$smarty.const.TEXT_DELETE_SELECTED}</a>
                         </div>
                     </div>
+                    <div>
+
+                    </div>
                 </div>
+
                 <table class="table table-striped table-selectable table-checkable table-hover table-responsive table-bordered tabl-res double-grid" id="logList" checkable_list="">
                     <thead>
                     <tr>
@@ -214,6 +221,9 @@
                 ],
             });
             table.columns(4).visible(false);
+            $('#refresh').on('click', function () {
+                table.ajax.reload();
+            });
 
             $('body').on('click', 'th.checkbox-column .checkbox', function() {
                 if($(this).is(':checked'))

@@ -2,17 +2,8 @@
 
 namespace PhpOffice\PhpSpreadsheetTests\Calculation\Functions\Logical;
 
-use PhpOffice\PhpSpreadsheet\Calculation\Functions;
-use PhpOffice\PhpSpreadsheet\Calculation\Logical;
-use PHPUnit\Framework\TestCase;
-
-class IfTest extends TestCase
+class IfTest extends AllSetupTeardown
 {
-    protected function setUp(): void
-    {
-        Functions::setCompatibilityMode(Functions::COMPATIBILITY_EXCEL);
-    }
-
     /**
      * @dataProvider providerIF
      *
@@ -20,8 +11,7 @@ class IfTest extends TestCase
      */
     public function testIF($expectedResult, ...$args): void
     {
-        $result = Logical::statementIf(...$args);
-        self::assertEquals($expectedResult, $result);
+        $this->runTestCase('IF', $expectedResult, ...$args);
     }
 
     public function providerIF(): array

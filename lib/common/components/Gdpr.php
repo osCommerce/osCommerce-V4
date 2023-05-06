@@ -143,7 +143,7 @@ class Gdpr {
 
     //account login
     function processGdprChecking(){
-        if (in_array(ACCOUNT_DOB, ['required_register', 'visible_register']) && !$this->entity->dob_flag) {            
+        if (ACCOUNT_GDPR == 'true' && in_array(ACCOUNT_DOB, ['required_register', 'visible_register']) && !$this->entity->dob_flag) {
             if (empty($this->entity->customers_dob) || $this->entity->customers_dob == '0000-00-00 00:00:00' || $this->isFraud()) {
                 $new_token = $this->getGdprToken();
                 if (Yii::$app->request->isAjax){
@@ -166,7 +166,7 @@ class Gdpr {
 
 
     public function validateGdpr(){  
-        if ($this->dobDate){
+        if (ACCOUNT_GDPR == 'true' && $this->dobDate){
             $difference = $this->getTDifference();
             if ($difference->invert == 1) {
                 $this->message = ENTRY_DATE_OF_BIRTH_ERROR;

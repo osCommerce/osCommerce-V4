@@ -44,7 +44,7 @@ class BundlePrice extends Price {
     }
 
     public static function getInstance($uprid) {
-        if (!isset(self::$instanses[$uprid])) {
+        if (!isset(self::$instanses[$uprid]) || Yii::$app->params['reset_static_product_prices_cache']) {
             self::$instanses[$uprid] = new self();
             self::$instanses[$uprid]->uprid = $uprid;
             self::$instanses[$uprid]->bundle_price = [

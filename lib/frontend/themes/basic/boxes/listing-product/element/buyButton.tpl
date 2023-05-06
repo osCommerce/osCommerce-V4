@@ -3,12 +3,13 @@
 {if $product.cart_button == 0 || (Yii::$app->user->isGuest && \common\helpers\PlatformConfig::getFieldValue('platform_please_login'))}
 
 {else}
+    {$product['buttonArray'][$product.products_id]['quantity']='$(this).closest(".item").find(".qty-inp").val()'}
     <a href="{$product.link_buy}"
-       class="btn-1 btn-buy"
-       rel="nofollow"
-       {\common\components\google\widgets\GoogleTagmanger::onclickAddToCart($product.products_id, '$(this).closest(".item").find(".qty-inp").val()')}
-       title="{if !empty($product.stock_indicator.preorder_only) }{$smarty.const.BUTTON_TEXT_PREORDER|escape:'html'}{else}{$smarty.const.ADD_TO_CART|escape:'html'}{/if}"
-       {if $product.product_in_cart && Info::themeSetting('show_in_cart_button') != 'no' || (isset($product.stock_indicator.flags.notify_instock) && $product.stock_indicator.flags.notify_instock)}style="display: none"{/if}>{if !empty($product.stock_indicator.preorder_only) }{$smarty.const.BUTTON_TEXT_PREORDER}{else}{$smarty.const.ADD_TO_CART}{/if}</a>
+        class="btn-1 btn-buy {$product['buttonArray'][$product.products_id]['buttonId']}"
+        rel="nofollow"
+        {\common\components\google\widgets\GoogleTagmanger::onclickAddToCart($product.products_id, '$(this).closest(".item").find(".qty-inp").val()')}
+        title="{if !empty($product.stock_indicator.preorder_only) }{$smarty.const.BUTTON_TEXT_PREORDER|escape:'html'}{else}{$smarty.const.ADD_TO_CART|escape:'html'}{/if}"
+        {if $product.product_in_cart && Info::themeSetting('show_in_cart_button') != 'no' || (isset($product.stock_indicator.flags.notify_instock) && $product.stock_indicator.flags.notify_instock)}style="display: none"{/if}>{if !empty($product.stock_indicator.preorder_only) }{$smarty.const.BUTTON_TEXT_PREORDER}{else}{$smarty.const.ADD_TO_CART}{/if}</a>
 
     {if isset($product.stock_indicator.flags.out_stock_action) && $product.stock_indicator.flags.out_stock_action == 2}
         {$contactName = Info::themeSetting('contact_name')}
@@ -35,4 +36,7 @@
     <div class="loaded-qty"{if !$product.product_in_cart} style="display: none"{/if}>(<span>{$product.product_in_cart}</span> {$smarty.const.TEXT_LISTING_ADDED})</div>
     {/if}
 
+    {foreach \common\helpers\Hooks::getList('box/product-listing', 'button-buy-attribute') as $filename}
+        {include file=$filename}
+    {/foreach}
 {/if}

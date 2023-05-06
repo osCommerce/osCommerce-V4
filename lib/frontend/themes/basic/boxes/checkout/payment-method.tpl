@@ -79,9 +79,9 @@
             //trigger change after list update to hide extra fields on inactive modules
             try {
                 if ($('#payment_method input[name=payment]:checked').length) {
-                    $('#payment_method input[name=payment]:checked').trigger('change');
+                    $('#payment_method input[name=payment]:checked').trigger('click');
                 } else {
-                    $('#payment_method input[name=payment]:first').trigger('change');
+                    $('#payment_method input[name=payment]:first').trigger('click');
                 }
             } catch ( e ) {
 //console.log( e );

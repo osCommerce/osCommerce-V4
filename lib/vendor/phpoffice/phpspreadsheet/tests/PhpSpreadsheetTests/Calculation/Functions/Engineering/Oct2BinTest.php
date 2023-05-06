@@ -2,6 +2,7 @@
 
 namespace PhpOffice\PhpSpreadsheetTests\Calculation\Functions\Engineering;
 
+use PhpOffice\PhpSpreadsheet\Calculation\Calculation;
 use PhpOffice\PhpSpreadsheet\Calculation\Exception as CalcExp;
 use PhpOffice\PhpSpreadsheet\Calculation\Functions;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -41,6 +42,7 @@ class Oct2BinTest extends TestCase
         $sheet->getCell('A1')->setValue("=OCT2BIN($formula)");
         $result = $sheet->getCell('A1')->getCalculatedValue();
         self::assertEquals($expectedResult, $result);
+        $spreadsheet->disconnectWorksheets();
     }
 
     public function providerOCT2BIN(): array
@@ -71,6 +73,7 @@ class Oct2BinTest extends TestCase
         $sheet->getCell('A1')->setValue("=OCT2BIN($formula)");
         $result = $sheet->getCell('A1')->getCalculatedValue();
         self::assertEquals($expectedResult, $result);
+        $spreadsheet->disconnectWorksheets();
     }
 
     public function testOCT2BINFrac(): void
@@ -89,5 +92,28 @@ class Oct2BinTest extends TestCase
         $cell = 'E1';
         $sheet->setCellValue($cell, '=OCT2BIN(10.1)');
         self::assertEquals('#NUM!', $sheet->getCell($cell)->getCalculatedValue());
+        $spreadsheet->disconnectWorksheets();
+    }
+
+    /**
+     * @dataProvider providerOct2BinArray
+     */
+    public function testOct2BinArray(array $expectedResult, string $value): void
+    {
+        $calculation = Calculation::getInstance();
+
+        $formula = "=OCT2BIN({$value})";
+        $result = $calculation->_calculateFormulaValue($formula);
+        self::assertEquals($expectedResult, $result);
+    }
+
+    public function providerOct2BinArray(): array
+    {
+        return [
+            'row/column vector' => [
+                [['100', '111', '111111', '10011001', '11001100', '101010101']],
+                '{"4", "7", "77", "231", "314", "525"}',
+            ],
+        ];
     }
 }

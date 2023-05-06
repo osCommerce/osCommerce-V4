@@ -67,7 +67,7 @@ class Admin
                 : 'Your shop is not connected with <a href="%1$s">App Shop</a>. Why and how do I need to connect to App Shop? Please see the article <a target="_blank" href="%2$s">Connecting to App shop</a> for more details.'
             );
             $appUrl = \Yii::$app->urlManager->createUrl('install');
-            $wikiUrl = 'https://wiki.oscommerce.com/index.php?title=Connecting_to_App_Shop';
+            $wikiUrl = 'https://www.oscommerce.com/wiki/index.php?title=Connecting_to_App_Shop';
             \Yii::$container->get('message_stack')->add(sprintf($message, $appUrl, $wikiUrl), 'alert', 'info');
         } else {
             $storageUrl = \Yii::$app->params['appStorage.url'];

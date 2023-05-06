@@ -29,12 +29,17 @@ class ClosableBox extends Widget
         parent::init();
     }
 
+    public static function children($id, $settings, $themeName)
+    {
+        return 'block-' . $id;
+    }
+
     public function run()
     {
         return IncludeTpl::widget([
             'file' => 'boxes/closable-box.tpl',
             'params' => [
-                'blockId' => $blockId,
+                'blockId' => 0,//$blockId,
                 'id' => $this->id,
                 'params' => $this->params,
                 'settings' => $this->settings,

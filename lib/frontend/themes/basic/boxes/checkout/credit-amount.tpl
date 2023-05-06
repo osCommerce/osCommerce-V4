@@ -5,6 +5,13 @@
             <span class="title">{$smarty.const.TEXT_CREDIT_AMOUNT_INFO}</span>
             <span class="amount-val">{$credit_modules.credit_amount_formatted}</span>
         </div>
+        {if $creditPaymentExists}
+            {if $creditPaymentExists == 'enabled'}
+                <div class="text">You can pay in full</div>
+            {else}
+                <div class="text">You can't pay in full</div>
+            {/if}
+        {else}
         <div class="text">{$smarty.const.TEXT_CREDIT_AMOUNT_CUSTOM_USE}</div>
         <div class="js_cot_gv_dep">
             <input type="checkbox" name="cot_gv" {if $credit_modules.cot_gv_active } checked="checked" {/if} style="display: none">
@@ -18,6 +25,7 @@
             >
             <span class="btn-remove"></span>
         </div>
+        {/if}
     </div>
     <script>
     tl( '{Info::themeFile('/js/bootstrap-switch.js')}', function(){

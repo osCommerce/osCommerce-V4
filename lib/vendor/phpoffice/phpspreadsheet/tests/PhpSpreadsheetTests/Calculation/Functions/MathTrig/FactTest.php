@@ -2,8 +2,12 @@
 
 namespace PhpOffice\PhpSpreadsheetTests\Calculation\Functions\MathTrig;
 
+use PhpOffice\PhpSpreadsheet\Calculation\Calculation;
+
 class FactTest extends AllSetupTeardown
 {
+    const FACT_PRECISION = 1E-12;
+
     /**
      * @dataProvider providerFACT
      *
@@ -51,11 +55,32 @@ class FactTest extends AllSetupTeardown
             $sheet->getCell('B1')->setValue('=FACT(A1)');
         }
         $result = $sheet->getCell('B1')->getCalculatedValue();
-        self::assertEquals($expectedResult, $result);
+        self::assertEqualsWithDelta($expectedResult, $result, self::FACT_PRECISION);
     }
 
     public function providerFACTGnumeric(): array
     {
         return require 'tests/data/Calculation/MathTrig/FACTGNUMERIC.php';
+    }
+
+    /**
+     * @dataProvider providerFactArray
+     */
+    public function testFactArray(array $expectedResult, string $array): void
+    {
+        $calculation = Calculation::getInstance();
+
+        $formula = "=FACT({$array})";
+        $result = $calculation->_calculateFormulaValue($formula);
+        self::assertEqualsWithDelta($expectedResult, $result, self::FACT_PRECISION);
+    }
+
+    public function providerFactArray(): array
+    {
+        return [
+            'row vector' => [[['#NUM!', 120, 362880]], '{-2, 5, 9}'],
+            'column vector' => [[['#NUM!'], [120], [362880]], '{-2; 5; 9}'],
+            'matrix' => [[['#NUM!', 120], [362880, 6]], '{-2, 5; 9, 3.5}'],
+        ];
     }
 }

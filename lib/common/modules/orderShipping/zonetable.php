@@ -166,7 +166,7 @@ class zonetable extends ModuleShipping {
         }
     }
 
-    public function possibleMethods()
+    public function possibleMethods($platform_id = 0)
     {
         $languages_id = \Yii::$app->settings->get('languages_id');
 
@@ -175,7 +175,7 @@ class zonetable extends ModuleShipping {
             "select ship_options_id as id, ship_options_name as name ".
             "from " . TABLE_SHIP_OPTIONS . " ".
             "where language_id='" . $languages_id . "' ".
-            " and platform_id='".\Yii::$app->get('platform')->config()->getId()."' ".
+            " and platform_id='".($platform_id > 0 ? $platform_id : \Yii::$app->get('platform')->config()->getId())."' ".
             "order by sort_order, ship_options_id"
         );
         while ($d = tep_db_fetch_array($ship_options_query)) {
@@ -910,7 +910,7 @@ class zonetable extends ModuleShipping {
             case 'options':
                 $ship_options_name = \Yii::$app->request->post('ship_options_name');
                 $sort_order = \Yii::$app->request->post('sort_order');
-                $restrict_access = array_map('intval', \Yii::$app->request->post('restrict_access'));
+                $restrict_access = array_map('intval', \Yii::$app->request->post('restrict_access', []));
                 $options_query = tep_db_query("select * from " . TABLE_SHIP_OPTIONS . " where platform_id='" . $platform_id . "'");
                 while ($options = tep_db_fetch_array($options_query)) {
                     if (isset($ship_options_name[$options['ship_options_id']][$options['language_id']])) {
@@ -984,7 +984,7 @@ class zonetable extends ModuleShipping {
                             $value_new_add = \common\helpers\Zones::stick_shipping_rates($new_rate[$zone_table_id][$ship_options_id], $line_price_rate, false, $extra_new_val);
                         } else {
                             $value_true = \common\helpers\Zones::stick_shipping_rates($rate[$zone_table_id][$ship_options_id], false, false, $extra_val);
-                            $value_new_add = \common\helpers\Zones::stick_shipping_rates($new_rate[$zone_table_id][$ship_options_id], false, false, $extra_new_val);
+                            $value_new_add = \common\helpers\Zones::stick_shipping_rates($new_rate[$zone_table_id][$ship_options_id]??null, false, false, $extra_new_val);
                         }
                         if (strlen($value_new_add)) $value_true .= $value_new_add;
                         // {{ sort ASC
@@ -1481,7 +1481,7 @@ function delete_tr_cost($obj){
                               <div>' . TEXT_PER_KG_PRICE . '</div>
                               <div class="setting-row" style="clear:both">
                                 <div style="float:left; width:150px">' . tep_draw_input_field('handling_price[' . $table['zone_table_id'] . '][' . $id . ']', $cInfo->handling_price[$id], 'size="5"') . '</div>
-                                ' . tep_draw_input_field('per_kg_price[' . $table['zone_table_id'] . '][' . $id . ']', $cInfo->per_kg_price[$id], 'size="5"') . '
+                                ' . tep_draw_input_field('per_kg_price[' . $table['zone_table_id'] . '][' . $id . ']', $cInfo->per_kg_price[$id]??null, 'size="5"') . '
                                 </div>
                                 <div>'.TEXT_HANDLING_PRICE_PER_ITEM . tep_draw_input_field('handling_price_per_item[' . $table['zone_table_id'] . '][' . $id . ']', $cInfo->handling_price_per_item[$id], 'size="5" class="form-control"') . '</div>
                                 <div><div>'.TEXT_SHIPPING_SURCHARGE_VALUE .'</div><div class="input-group">'.Html::textInput('surcharge[' . $table['zone_table_id'] . '][' . $id . ']', $cInfo->surcharge[$id], ['style'=>'width:100px']).Html::dropDownList('surcharge_type[' . $table['zone_table_id'] . '][' . $id . ']', $cInfo->surcharge_type[$id], ['P'=>TEXT_SHIPPING_SURCHARGE_TYPE_PERCENT,'F'=>TEXT_SHIPPING_SURCHARGE_TYPE_FIXED], ['class'=>'form-control','style'=>'width:auto']). '</div></div>
@@ -1605,6 +1605,7 @@ function delete_tr_cost($obj){
 
     public static function tep_draw_shipping_table_cost($shipping_cost_string, $id, $zone_table_id, $mode, $each_additional_unit=[]){
 
+        $output = null;
         $shipping_cost_string = trim($shipping_cost_string," ;\t\n\r\0\x0B");
         $shipping_cost = preg_split('/[;:]/',$shipping_cost_string);
         for($i=0;$i<sizeof($shipping_cost);$i+=2){

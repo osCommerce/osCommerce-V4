@@ -62,7 +62,7 @@ class Brand extends Widget
         if (isset($manufacture['manufacturers_name']) && !empty($manufacture['manufacturers_name'])) {
             \frontend\design\JsonLd::addData(['Product' => [
                 'brand' => [
-                    '@type' => 'Thing',
+                    '@type' => 'Brand',
                     'name' => $manufacture['manufacturers_name']
                 ],
             ]]);

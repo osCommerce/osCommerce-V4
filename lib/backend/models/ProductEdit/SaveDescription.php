@@ -48,16 +48,16 @@ class SaveDescription
                         if ($selectedDepartmentId > 0) {
                             $pDescriptionOriginal = \common\models\ProductsDescription::find()->where(['products_id' => $products_id, 'language_id' => $language_id, 'platform_id' => $platform->platform_id, 'department_id' => 0 ])->one();
                             if (is_object($pDescriptionOriginal)) {
-                                if ($pDescriptionOriginal->products_name == $posted_description[$platform->platform_id][$language_id]['products_name']) {
+                                if ($pDescriptionOriginal->products_name == ($posted_description[$platform->platform_id][$language_id]['products_name'] ?? '')) {
                                     $posted_description[$platform->platform_id][$language_id]['products_name'] = '';
                                 }
-                                if ($pDescriptionOriginal->products_internal_name == $posted_description[$platform->platform_id][$language_id]['products_internal_name']) {
+                                if ($pDescriptionOriginal->products_internal_name == ($posted_description[$platform->platform_id][$language_id]['products_internal_name'] ?? '')) {
                                     $posted_description[$platform->platform_id][$language_id]['products_internal_name'] = '';
                                 }
-                                if ($pDescriptionOriginal->products_description_short == $posted_description[$platform->platform_id][$language_id]['products_description_short']) {
+                                if ($pDescriptionOriginal->products_description_short == ($posted_description[$platform->platform_id][$language_id]['products_description_short'] ?? '')) {
                                     $posted_description[$platform->platform_id][$language_id]['products_description_short'] = '';
                                 }
-                                if ($pDescriptionOriginal->products_description == $posted_description[$platform->platform_id][$language_id]['products_description']) {
+                                if ($pDescriptionOriginal->products_description == ($posted_description[$platform->platform_id][$language_id]['products_description'] ?? '')) {
                                     $posted_description[$platform->platform_id][$language_id]['products_description'] = '';
                                 }
                                 //$posted_description[$platform->platform_id][$language_id]['products_seo_page_name'] = $pDescriptionOriginal->products_seo_page_name;

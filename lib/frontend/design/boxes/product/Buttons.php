@@ -2,10 +2,10 @@
 /**
  * This file is part of osCommerce ecommerce platform.
  * osCommerce the ecommerce
- * 
+ *
  * @link https://www.oscommerce.com
  * @copyright Copyright (c) 2000-2022 osCommerce LTD
- * 
+ *
  * Released under the GNU General Public License
  * For the full copyright and license information, please view the LICENSE.TXT file that was distributed with this source code.
  */
@@ -33,13 +33,13 @@ class Buttons extends Widget
   {
     global $cart;
     $params = Yii::$app->request->get();
-    
+
     if (Yii::$app->user->isGuest && \common\helpers\PlatformConfig::getFieldValue('platform_please_login')) {
         return '';
     }
 
     if ($params['products_id'] && !GROUPS_DISABLE_CART) {
-        
+
       $externalPayments = '';
       if (empty($this->settings[0]['hide_express_buttons'])) {
         $payment_modules = \common\services\OrderManager::loadManager($cart)->getPaymentCollection();
@@ -64,7 +64,7 @@ class Buttons extends Widget
       } else {
           $stock_info = $product[$products::TYPE_STOCK];
       }
-      
+
         if (!isset($stock_info['flags'])) {
             $stock_info['flags'] = [];
         }
@@ -76,7 +76,7 @@ class Buttons extends Widget
                 $stock_info['flags']['out_stock_action'] = 2;
             }
         }
-        
+
         $add_to_cart = $stock_info['flags']['add_to_cart'];
         $customer_groups_id = (int) \Yii::$app->storage->get('customer_groups_id');
         $cart_for_logged_only = \common\helpers\Customer::check_customer_groups($customer_groups_id, 'cart_for_logged_only');
@@ -86,7 +86,12 @@ class Buttons extends Widget
             }
             return sprintf(TEXT_PLEASE_LOGIN_CART, tep_href_link(FILENAME_LOGIN,'','SSL'));
         }
-
+        $buttonArray = [
+            $params['products_id'] => [
+                'buttonId' => ('b_atc_' . preg_replace('/[^\d]/', '_', $params['products_id'])),
+                'quantity' => '1',
+            ]
+        ];
       $cart_button = isset($product->cart_button) ? $product->cart_button : 1;
       return IncludeTpl::widget(['file' => 'boxes/product/buttons.tpl', 'params' => [
         'compare_link' => $compare_link,
@@ -103,6 +108,7 @@ class Buttons extends Widget
         'show_in_cart_button' => Info::themeSetting('show_in_cart_button'),
         'products_id' => (int)$params['products_id'],
           'id' => $this->id,
+          'buttonArray' => $buttonArray
       ]]);
     } else {
       return '';

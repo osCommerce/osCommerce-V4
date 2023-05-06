@@ -180,7 +180,7 @@ function tabsUpdateStates() {
     });
 }
 function progressSetText(msg) {
-    $('#ProgressText').text(msg);
+    $('#ProgressText').html(msg);
 }
 function progressClear() {
     progressSetText('');

@@ -15,6 +15,7 @@ use Yii;
  * @property string|null $comment
  * @property int $sort_order
  * @property string|null $date_added
+ * @property string|null $category
  */
 class DesignBoxesGroups extends \yii\db\ActiveRecord
 {
@@ -35,7 +36,7 @@ class DesignBoxesGroups extends \yii\db\ActiveRecord
             [['status', 'sort_order'], 'integer'],
             [['comment'], 'string'],
             [['date_added'], 'safe'],
-            [['name', 'file', 'page_type'], 'string', 'max' => 255],
+            [['name', 'file', 'page_type', 'category'], 'string', 'max' => 255],
         ];
     }
 
@@ -53,6 +54,7 @@ class DesignBoxesGroups extends \yii\db\ActiveRecord
             'comment' => 'Comment',
             'sort_order' => 'Sort Order',
             'date_added' => 'Date Added',
+            'category' => 'Category',
         ];
     }
 }

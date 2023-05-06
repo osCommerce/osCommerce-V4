@@ -19,7 +19,7 @@
       <li>
         <div class="item-handle">
           <div class="checkbox-item">
-            {if in_array($item.event, ['cssSave', 'boxAdd', 'blocksMove', 'boxSave', 'boxDelete', 'settings', 'javascriptSave', 'addPage', 'removePageTemplate', 'addPageSettings', 'importBlock', 'stylesChange', 'copyPage', 'styleSave'])}
+            {if in_array($item.event, ['cssSave', 'boxAdd', 'blocksMove', 'boxSave', 'boxDelete', 'settings', 'javascriptSave', 'addPage', 'removePageTemplate', 'addPageSettings', 'importBlock', 'stylesChange', 'copyPage', 'styleSave', 'setGroup', 'setStyles'])}
                 {*  'removeClass' *}
             <input type="checkbox" class="uniform step-id" name="id[{$item.steps_id}]" data-id="{$item.steps_id}">
             {else}

@@ -99,9 +99,9 @@ class Menu extends Widget
             unset($counts);
         }
 
-        $andWere = '';
+        $andWhere = '';
         if ($ext = \common\helpers\Acl::checkExtensionAllowed('UserGroups', 'allowed')) {
-            $andWere .= " and (user_groups like '%#" . $customer_groups_id . "#%' or user_groups like '%#0#%')";
+            $andWhere .= " and (user_groups like '%#" . $customer_groups_id . "#%' or user_groups like '%#0#%')";
         }
 
         $infoPagePublicStatusIds = \common\helpers\PageStatus::getIds('public', 'information');
@@ -113,9 +113,9 @@ class Menu extends Widget
             from " . TABLE_MENUS . " m
               inner join " . TABLE_MENU_ITEMS . " i on i.menu_id = m.id and i.platform_id='".$platformCurrentId."'
               left join " . TABLE_MENU_TITLES . " t on t.item_id = i.id and t.language_id = " . (int)$languages_id . "
-              left join " . TABLE_CATEGORIES_DESCRIPTION . " cd on cd.language_id =" . (int)$languages_id . " and cd.categories_id=i.link_id and i.link_type='categories' " . $andWere . "
+              left join " . TABLE_CATEGORIES_DESCRIPTION . " cd on cd.language_id =" . (int)$languages_id . " and cd.categories_id=i.link_id and i.link_type='categories' 
             where
-              m.menu_name = '" . $this->settings[0]['params'] . "'
+              m.menu_name = '" . $this->settings[0]['params'] . "' ".$andWhere." 
             order by i.sort_order
           ");
         while ($row = tep_db_fetch_array($sql)) {
@@ -179,13 +179,19 @@ class Menu extends Widget
                     ) {
                         //$row['title'] = 'All categories';
                         /// new categories (added after menu update) are shown in any case.
+                        $join = '';
+                        if ($ugr = \common\helpers\Acl::checkExtensionAllowed('UserGroupsRestrictions')) {
+                            $join = $ugr::sqlCategoriesWhere();
+                        }
                         $sql3 = tep_db_query(
                             "select c.categories_id, c.parent_id, cd.categories_name ".
-                            "from " . TABLE_CATEGORIES . " c  {$categories_join}".
+                            "from " . TABLE_CATEGORIES . " c ".
                             " inner join ".TABLE_PLATFORMS_CATEGORIES." pc on pc.categories_id=c.categories_id and pc.platform_id='".$platformCurrentId."' ".
+                            $join.
                             " left join " . TABLE_CATEGORIES_DESCRIPTION . " cd on c.categories_id = cd.categories_id  ".
                             "where c.date_added > '" . $row['last_modified'] . "' and cd.language_id = '" . $languages_id . "' and cd.affiliate_id=0 and c.categories_status=1"
                         );
+
                         if (tep_db_num_rows($sql3) > 0){
                             while ($item = tep_db_fetch_array($sql3)){
                                 $count = $categories_all[$item['categories_id']]['products'];

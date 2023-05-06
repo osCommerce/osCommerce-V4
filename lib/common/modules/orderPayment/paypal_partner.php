@@ -2719,7 +2719,7 @@ provide you with a "Source Identifier" for every PayPal account used. Do not mak
             }
         }
 
-        return $extra::widget([
+        return @$extra::widget([
               'module' => $this,
               'seller' => $seller,
               'address' => $address,
@@ -3321,8 +3321,9 @@ provide you with a "Source Identifier" for every PayPal account used. Do not mak
                 if (empty($shipping_quote_item['error'])) {
 
                     foreach ($shipping_quote_item['methods'] as $shipping_quote_item_method) {
+                        if (strlen($shipping_quote_item_method['code']) > 125) continue;
                         $label = html_entity_decode(strip_tags($shipping_quote_item['module'] . ' '. $shipping_quote_item_method['title']));
-                        $mxl = 128;
+                        $mxl = 125;
                         if (strlen($label) > $mxl) {
                             $label = substr($label, 0, $mxl-3) . '...';
                         }

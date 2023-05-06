@@ -46,7 +46,7 @@ class Progress
             }
 
             echo ('<script>window.parent.doProgressUpdate(' . json_encode($params) . ')</script>'
-                . "\n" . str_repeat(' ', (1024 * 8)) . "\n"
+                . "\n" . str_repeat(' ', (1024 * 8 * 4)) . "\n"
             );
             while (ob_get_level() > 0) {
                 ob_end_flush();

@@ -140,6 +140,7 @@
 
     function changeModule(item_id, action, enabled, data_removeable = []) {
       var process_changes = function (user_confirmed_drop_datatables = false, user_confirmed_drop_acl = false) {
+        $('#content > .container').addClass('hided-box').append('<div class="hided-box-holder" style="position: fixed"><div class="preloader"></div></div>');
         var attr_check = $('input[name="enabled"]').val();
         if (enabled === true) {
           attr_check = 'on';
@@ -156,6 +157,8 @@
           'user_confirmed_drop_datatables': user_confirmed_drop_datatables,
           'user_confirmed_drop_acl': user_confirmed_drop_acl
         }, function (response, status) {
+          $('#content > .container').removeClass('hided-box');
+          $('.hided-box-holder').remove();
           if (status == "success") {
             //if (response.need_translate != undefined) {
               //window.location.href = '{Yii::$app->urlManager->createUrl("modules/translation")}?module=' + response.need_translate + '&set={$set}&row=' + $('#row_id').val();
@@ -175,6 +178,8 @@
           }
         }, "json")
         .fail(function(jqXHR){
+            $('#content > .container').removeClass('hided-box');
+            $('.hided-box-holder').remove();
             alert('{$smarty.const.TEXT_GENERAL_ERROR} \nServer error: '+jqXHR.status);
         });
       }

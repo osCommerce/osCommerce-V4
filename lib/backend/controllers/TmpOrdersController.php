@@ -117,7 +117,7 @@ class TmpOrdersController extends Sceleton {
 
         if (\common\helpers\Acl::checkExtensionAllowed('Neighbour')){
             $this->view->ordersTable[] =  array(
-                'title' => defined(EXT_NEIGHBOUR_TABLE_HEADING) ? EXT_NEIGHBOUR_TABLE_HEADING : TABLE_HEADING_NEIGHBOUR,
+                'title' => defined('EXT_NEIGHBOUR_TABLE_HEADING') ? EXT_NEIGHBOUR_TABLE_HEADING : TABLE_HEADING_NEIGHBOUR,
                 'not_important' => 0
             );
         }

@@ -421,6 +421,22 @@ class Product {
         return $volume;
     }
 
+    public static function convert_kgs_to_lbs($weight) {
+      return round($weight * 2.20462, 2);
+    }
+
+    public static function convert_lbs_to_kgs($weight) {
+      return round($weight / 2.20462, 3);
+    }
+
+    public static function convert_inch_to_cm($size) {
+      return round($size * 2.54, 1);
+    }
+
+    public static function convert_cm_to_inch($size) {
+      return round($size / 2.54, 2);
+    }
+
     public static function getProductColumns($products_id, $fields)
     {
         $column_values = [];
@@ -1367,6 +1383,11 @@ class Product {
                 $ar[$i+1] = $ar[$i+1] * (1 - ($discount/100));
             }
         }
+
+        foreach (\common\helpers\Hooks::getList('product/get-products-discount-table') as $filename) {
+            include($filename);
+        }
+
         return $ar;
     }
 

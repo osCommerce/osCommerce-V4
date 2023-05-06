@@ -245,19 +245,47 @@
                         {$registerModel->captcha_widget}
                     </div>
                 {/if}
-                <div class="col-full privacy-row">
-                    <div class="terms-login">
-                        {Html::activeCheckbox($registerModel, 'terms', ['class' => 'terms-conditions', 'value' => '1', 'label' => '', 'checked' => false])}{$smarty.const.TEXT_TERMS_CONDITIONS}
-                    </div>
+                {if $verifyEmail}    
+                <div id="email_validation_box" class="center-buttons">
+                    <button class="btn-2" type="button" onclick="sendValidationRequest();">{$smarty.const.TEXT_EMAIL_VERIFICATION}</button>
                 </div>
-                <div class="center-buttons">
-                    <button class="btn-2 disabled-area" type="submit">{$smarty.const.CREATE}</button>
+                {/if}
+                <div id="register_buttons_box"{if $verifyEmail} style="display: none;"{/if}>
+                    {if $verifyEmail}
+                        <div class="col-full">
+                            <label>{$smarty.const.TEXT_VERIFICATION_CODE}:</label>
+                            <input type="text" name="email_verification_code" value="">
+                        </div>
+                    {/if}
+                    <div class="col-full privacy-row">
+                        <div class="terms-login">
+                            {Html::activeCheckbox($registerModel, 'terms', ['class' => 'terms-conditions', 'value' => '1', 'label' => '', 'checked' => false])}{$smarty.const.TEXT_TERMS_CONDITIONS}
+                        </div>
+                    </div>
+                    <div class="center-buttons">
+                        <button class="btn-2 disabled-area" type="submit">{$smarty.const.CREATE}</button>
+                    </div>
                 </div>
                 {Html::endForm()}
             </div>
 </div>
 
 <script type="text/javascript">
+{if $verifyEmail} 
+function sendValidationRequest()
+{
+    var email = $('#registration-email_address').val();
+    if (email === '') {
+        alertMessage('{$smarty.const.EMPTY_EMAIL_ERROR|escape:javascript}');
+        return false;
+    }
+    $.get('{$app->urlManager->createUrl('account/send-validation-request')}', { 'email': email }, function(data){
+        $('#register_buttons_box').show();
+        $('#email_validation_box').hide();
+    }, 'json');
+    return false;
+}
+{/if} 
     tl(function(){
 
         {if isset($messages_registration) && $messages_registration}

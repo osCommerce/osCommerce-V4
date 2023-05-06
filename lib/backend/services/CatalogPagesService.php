@@ -533,14 +533,14 @@ class CatalogPagesService
     private function basename(string $param, $suffix = null, string $charset = 'utf-8')
     {
         if ($suffix) {
-            $tmpStr = ltrim(mb_substr($param, mb_strrpos($param, DIRECTORY_SEPARATOR, null, $charset), null, $charset), DIRECTORY_SEPARATOR);
+            $tmpStr = ltrim(mb_substr($param, mb_strrpos($param, DIRECTORY_SEPARATOR, 0, $charset), null, $charset), DIRECTORY_SEPARATOR);
             if ((mb_strpos($param, $suffix, null, $charset) + mb_strlen($suffix, $charset)) === mb_strlen($param, $charset)) {
                 return str_ireplace($suffix, '', $tmpStr);
             } else {
-                return ltrim(mb_substr($param, mb_strrpos($param, DIRECTORY_SEPARATOR, null, $charset), null, $charset), DIRECTORY_SEPARATOR);
+                return ltrim(mb_substr($param, mb_strrpos($param, DIRECTORY_SEPARATOR, 0, $charset), null, $charset), DIRECTORY_SEPARATOR);
             }
         } else {
-            return ltrim(mb_substr($param, mb_strrpos($param, DIRECTORY_SEPARATOR, null, $charset), null, $charset), DIRECTORY_SEPARATOR);
+            return ltrim(mb_substr($param, mb_strrpos($param, DIRECTORY_SEPARATOR, 0, $charset), null, $charset), DIRECTORY_SEPARATOR);
         }
     }
 }

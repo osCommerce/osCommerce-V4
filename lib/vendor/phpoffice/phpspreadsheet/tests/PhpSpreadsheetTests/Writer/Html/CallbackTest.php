@@ -12,15 +12,15 @@ class CallbackTest extends Functional\AbstractFunctional
     public function yellowBody(string $html): string
     {
         $newstyle = <<<EOF
-<style type='text/css'>
-body {
-    background-color: yellow;
-}
-</style>
+            <style type='text/css'>
+            body {
+                background-color: yellow;
+            }
+            </style>
 
-EOF;
+            EOF;
 
-        return preg_replace('~</head>~', "$newstyle</head>", $html);
+        return preg_replace('~</head>~', "$newstyle</head>", $html) ?? '';
     }
 
     public function testSetAndReset(): void
@@ -46,6 +46,7 @@ EOF;
         $writer->save($oufil);
         $html4 = file_get_contents($oufil);
         unlink($oufil);
+        self::assertNotFalse($html4);
         self::assertNotFalse(strpos($html4, 'background-color: yellow'));
 
         $this->writeAndReload($spreadsheet, 'Html');

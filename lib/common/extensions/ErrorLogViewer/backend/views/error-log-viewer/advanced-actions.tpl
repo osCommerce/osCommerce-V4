@@ -14,7 +14,7 @@
     </div>
     <div class="row_or">
         <b>{$smarty.const.EXT_ELV_TEXT_ERROR_DESCRIPTION}:</b><br>
-        <small><span style="color: dimgrey">{htmlspecialchars($log->text)}</span></small>
+        <small><span style="color: dimgrey">{mb_strimwidth(htmlspecialchars($log->text), 0, 500, "...")}</span></small>
     </div>
     <br>
     <div class="btn-toolbar btn-toolbar-order">

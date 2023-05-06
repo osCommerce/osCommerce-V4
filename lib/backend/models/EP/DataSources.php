@@ -182,7 +182,11 @@ class DataSources
 
                     $exportDate = $item['date_exported']>2000?\common\helpers\Date::datetime_short($item['date_exported']):'';
                     $info .= '<div>';
-                    $info .= TEXT_EXTERNAL_ORDERS_ID . ' ' . $remoteId . '<br />';
+                    if (method_exists($directory->getDatasource(), 'getOrderLink')) {
+                        $info .= TEXT_EXTERNAL_ORDERS_ID . ' ' . $directory->getDatasource()->getOrderLink($remoteId) . '<br />';
+                    } else {
+                        $info .= TEXT_EXTERNAL_ORDERS_ID . ' ' . $remoteId . '<br />';
+                    }
                     if( $exportDate ){
                         $info .= TEXT_DATE_ADDED . ' ' . $exportDate;
                     }

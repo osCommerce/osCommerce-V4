@@ -13,7 +13,7 @@
             </a>
             {call name=renderMenu items=$item.child level=$level+1}
         {else}
-            <a href="{$app->urlManager->createUrl($item['path'])}">
+            <a href="{if isset($item['disabled']) && $item['disabled']}javascript:void(0);{else}{$app->urlManager->createUrl($item['path'])}{/if}">
                 <i class="icon-{$item['filename']}"></i>
                 {$item['title']}
             </a>

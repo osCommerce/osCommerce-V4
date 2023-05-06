@@ -23,7 +23,7 @@ use common\components\Socials;
  */
 abstract class AbstractCheckoutController extends \frontend\controllers\Sceleton {
 
-/** @prop \common\services\OrderManager $manager */
+/** @var \common\services\OrderManager $manager */
     public $manager;
     public $loginPage = 'checkout/login';
     public $indexPage = 'checkout/';
@@ -218,8 +218,10 @@ abstract class AbstractCheckoutController extends \frontend\controllers\Sceleton
                 if ($value) {
                     $this->manager->changeCustomerAddressSelection($type, $value);
                     if ($type == 'shipping') {
+                        $this->manager->resetDeliveryAddress();
                         $this->manager->set('shipping', false);
                     } else {
+                        $this->manager->resetBillingAddress();
                         $this->manager->set('payment', false);
                     }
                 }
@@ -282,7 +284,13 @@ abstract class AbstractCheckoutController extends \frontend\controllers\Sceleton
                 if ($payment) {
                     $this->manager->setSelectedPayment($payment);
                 }
+                if ($this->manager->getCreditPayment()) {
+                    $this->manager->remove('cot_gv');
+                }
                 $this->manager->checkoutOrder();
+                if ($creditPayment = $this->manager->getCreditPayment()) {
+                    $creditPayment->processIfEnabled();
+                }
                 $data['order_totals'] = $this->manager->render('Totals', ['manager' => $this->manager], 'json');
                 break;
             case 'credit_class':

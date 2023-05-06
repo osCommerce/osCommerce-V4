@@ -514,7 +514,7 @@ var App = function() {
 	}
 
 	var handleCheckableTables = function() {
-		$( 'body').on('change', '.table-checkable thead th.checkbox-column :checkbox', function() {
+		$( 'body').on('change', '.table-checkable thead th.checkbox-column :checkbox, .table-checkable thead th .checkbox-column :checkbox', function() {
 			var checked = $( this ).prop( 'checked' );
 
 			var data_horizontalWidth = $(this).parents('table.table-checkable').data('horizontalWidth');

@@ -260,37 +260,40 @@ class ImageMap extends Widget
             $brandsArr[] = $brand;
         }
 
-
-        $locations = \common\models\SeoDeliveryLocation::find()
-            ->from(['dl' => \common\models\SeoDeliveryLocation::tableName()])
-            ->select([
-                'id' => 'dl.id',
-                'title' => 't.location_name',
-                'image' => 'dl.image_listing',
-                'description' => 't.location_description',
-            ])
-            ->joinWith([
-                'locationText t' => function ($query) {
-                    $query->onCondition(['t.language_id' => \Yii::$app->settings->get('languages_id')])
-                        ->select([
-                            'text' => 't.location_name',
-                        ]);
-                }
-            ])
-            ->where([
-                'dl.id' => $deliveryIds,
-            ])
-            ->asArray()
-            ->all();
         $locationsArr = [];
-        foreach ($locations as $location) {
-            $location['img'] = \common\helpers\Media::getAlias('@webCatalogImages/'.$location['image']);
-            if (!is_file(Yii::getAlias('@webroot') . '/images/' . $location['image'])) {
-                $location['img'] = \frontend\design\Info::themeSetting('na_category', 'hide');
+        if (\common\helpers\Acl::checkExtensionAllowed('DeliveryLocation'))
+        {
+            $locations = \common\extensions\DeliveryLocation\models\SeoDeliveryLocation::find()
+                ->from(['dl' => \common\extensions\DeliveryLocation\models\SeoDeliveryLocation::tableName()])
+                ->select([
+                    'id' => 'dl.id',
+                    'title' => 't.location_name',
+                    'image' => 'dl.image_listing',
+                    'description' => 't.location_description',
+                ])
+                ->joinWith([
+                    'locationText t' => function ($query) {
+                        $query->onCondition(['t.language_id' => \Yii::$app->settings->get('languages_id')])
+                            ->select([
+                                'text' => 't.location_name',
+                            ]);
+                    }
+                ])
+                ->where([
+                    'dl.id' => $deliveryIds,
+                ])
+                ->asArray()
+                ->all();
+            foreach ($locations as $location) {
+                $location['img'] = \common\helpers\Media::getAlias('@webCatalogImages/'.$location['image']);
+                if (!is_file(Yii::getAlias('@webroot') . '/images/' . $location['image'])) {
+                    $location['img'] = \frontend\design\Info::themeSetting('na_category', 'hide');
+                }
+                $location['description'] = substr(strip_tags($location['description']), 0, 200);
+                $locationsArr[] = $location;
             }
-            $location['description'] = substr(strip_tags($location['description']), 0, 200);
-            $locationsArr[] = $location;
         }
+
 
         return IncludeTpl::widget(['file' => 'boxes/image-map.tpl', 'params' => [
             'image' => $image,

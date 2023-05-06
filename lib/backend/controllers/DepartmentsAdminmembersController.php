@@ -14,6 +14,7 @@ namespace backend\controllers;
 
 use Yii;
 use \common\models\PDOConnector;
+use common\helpers\Affiliate;
 
 class DepartmentsAdminmembersController extends Sceleton {
 
@@ -46,8 +47,8 @@ class DepartmentsAdminmembersController extends Sceleton {
             ),
         );
 
-        $this->view->filters = new \stdClass();
-        $this->view->filters->row = (int) $_GET['row'];
+        $this->view->filters = new \objectInfo(['row'=>0]);
+        $this->view->filters->row = (int) Yii::$app->request->get('row', 0);
 
         $selected_department_id = (int)Yii::$app->request->get('department_id');
 
@@ -200,7 +201,7 @@ class DepartmentsAdminmembersController extends Sceleton {
         $mInfo = new \objectInfo($admins);
 
         echo '<div class="row_or_wrapp">';
-        echo '<div class="row_or"><div>' . TEXT_INFO_FULLNAME . '</div><div>' . $mInfo->admin_firstname . ' ' . $mInfo->admin_latname . '</div></div>';
+        echo '<div class="row_or"><div>' . TEXT_INFO_FULLNAME . '</div><div>' . $mInfo->admin_firstname . ' ' . $mInfo->admin_lastname . '</div></div>';
         echo '<div class="row_or"><div>' . TEXT_INFO_EMAIL . '</div><div>' . $mInfo->admin_email_address . '</div></div>';
         echo '<div class="row_or"><div>' . TEXT_INFO_GROUP . '</div><div>' . $mInfo->access_levels_name . '</div></div>';
         echo '<div class="row_or"><div>' . TEXT_INFO_CREATED . '</div><div>' . \common\helpers\Date::date_short($mInfo->admin_created) . '</div></div>';
@@ -209,7 +210,7 @@ class DepartmentsAdminmembersController extends Sceleton {
         echo '<div class="row_or"><div>' . TEXT_INFO_LOGNUM . '</div><div>' . $mInfo->admin_lognum . '</div></div>';
         echo '</div>';
         echo '<div class="btn-toolbar btn-toolbar-order">';
-        echo '<button class="btn btn-edit btn-no-margin" onclick="editAdmin(' . $mInfo->admin_id . ')">' . IMAGE_EDIT . '</button>' . (!Affiliate::isLogged() ? '<button onclick="confirmDeleteAdmin(' . $mInfo->admin_id . ')" class="btn btn-delete">' . IMAGE_DELETE . '</button>' : '') . '<a class="hidden btn" href="' . tep_href_link(FILENAME_ORDERS, 'mID=' . $mInfo->admin_id) . '">' . IMAGE_ORDERS . '</a><a class="hidden btn btn-primary" href="' . tep_href_link(FILENAME_MAIL, 'customer=' . $mInfo->customers_email_address) . '">' . IMAGE_EMAIL . '</a>';
+        echo '<button class="btn btn-edit btn-no-margin" onclick="editAdmin(' . $mInfo->admin_id . ')">' . IMAGE_EDIT . '</button>' . (!Affiliate::isLogged() ? '<button onclick="confirmDeleteAdmin(' . $mInfo->admin_id . ')" class="btn btn-delete">' . IMAGE_DELETE . '</button>' : '');// . '<a class="hidden btn" href="' . tep_href_link(FILENAME_ORDERS, 'mID=' . $mInfo->admin_id) . '">' . IMAGE_ORDERS . '</a><a class="hidden btn btn-primary" href="' . tep_href_link(FILENAME_MAIL, 'customer=' . $mInfo->customers_email_address) . '">' . IMAGE_EMAIL . '</a>';
         echo '<a class="btn btn-primary btn-process-order" href="' . Yii::$app->urlManager->createUrl(['departments-adminmembers/override-permissions', 'admin_id' => $mInfo->admin_id, 'department_id' => $department_id]) . '">' . TEXT_OVERRIDE_PERMISSIONS . '</a>';
         if ($mInfo->login_failture > 2) {
             if (\common\helpers\Acl::rule(['BOX_HEADING_ADMINISTRATOR', 'BOX_ADMINISTRATOR_MEMBERS', 'TEXT_ENABLE_USER'])) {
@@ -261,8 +262,12 @@ class DepartmentsAdminmembersController extends Sceleton {
         PDOConnector::init(['host' => $departments['departments_db_server_host'], 'user' => $departments['departments_db_server_username'], 'password' => $departments['departments_db_server_password'], 'dbname' => $departments['departments_db_database']]);
 
         PDOConnector::query("select * from " . TABLE_ADMIN . " where admin_id = $admin_id; ");
-        if ($admin = PDOConnector::fetch())
+        if ($admin = PDOConnector::fetch()){
             $mInfo = new \objectInfo($admin);
+        }else{
+            $mInfo = new \common\models\Admin();
+            $mInfo->loadDefaultValues();
+        }
 
         $access_array = [];
         PDOConnector::query("select * from " . TABLE_ACCESS_LEVELS . " order by access_levels_id ");
@@ -378,6 +383,7 @@ class DepartmentsAdminmembersController extends Sceleton {
             $salt = "abchefghjkmnpqrstuvwxyz0123456789";
             srand((double) microtime() * 1000000);
             $i = 0;
+            $pass = '';
             while ($i <= 7) {
                 $num = rand() % 33;
                 $tmp = substr($salt, $num, 1);

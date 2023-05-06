@@ -42,6 +42,7 @@ class IncludeTpl extends Widget
         for ($i = 0; $i < count(Yii::$app->view->theme->pathMap['@app/views']); $i++) {
             $path = Yii::getAlias(Yii::$app->view->theme->pathMap['@app/views'][$i]);
             $path = str_replace('lib/backend', 'lib/frontend', $path);
+            $path = str_replace('lib\backend', 'lib/frontend', $path);
             if (file_exists($path . '/' . $this->file)) {
                 $path2 = str_replace('@app', '@app/../frontend', Yii::$app->view->theme->pathMap['@app/views'][$i]);
                 return $this->render($path2 . '/' . $this->file, $this->params);

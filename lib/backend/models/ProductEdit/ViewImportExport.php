@@ -44,6 +44,7 @@ class ViewImportExport
                 if ( $view ) {
                     $this->list[] = [
                         'datasource' => $datasource,
+                        'directory_name' => $directory->directory,
                         'title' => $datasource->getName(),
                         'content' => $view,
                     ];

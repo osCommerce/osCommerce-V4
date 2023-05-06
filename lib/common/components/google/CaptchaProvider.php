@@ -39,10 +39,10 @@ class CaptchaProvider extends Providers implements GoogleProviderInterface {
         $this->gsRepository = $gsRepository;
     }
     
-    public function getConfig(){
+    public function getConfig($platformId = 0){
         static $setting = null;
-        if (is_null($setting)){
-            $setting = $this->getSetting();
+        if (is_null($setting) || ($setting == false) || ($setting && $platformId != $setting->platform_id)){
+            $setting = $this->getSetting($platformId);
         }
         if ($setting){
             $value = $setting->getValue();
@@ -53,8 +53,8 @@ class CaptchaProvider extends Providers implements GoogleProviderInterface {
         return false;
     }
     
-    public function getSetting(){
-        return $this->gsRepository->getSetting($this->code, 0, 1);
+    public function getSetting($platformId = 0){
+        return $this->gsRepository->getSetting($this->code, $platformId, 1);
     }
     
     private function prepareConfig($data){
@@ -71,16 +71,16 @@ class CaptchaProvider extends Providers implements GoogleProviderInterface {
         return false;
     }
     
-    public function updateSetting($setting, $data){
+    public function updateSetting($setting, $data, $platformId){
         if ($config = $this->prepareConfig($data)){
-            return $this->gsRepository->updateSetting($setting, [ $this->gsRepository->getConfigHolder() => $config ]);
+            return $this->gsRepository->updateSetting($setting, [ $this->gsRepository->getConfigHolder() => $config, 'platform_id' => $platformId ]);
         }
         return false;
     }
     
-    public function createSetting($data){
+    public function createSetting($data, $platformId){
         if ($config = $this->prepareConfig($data)){
-            return $this->gsRepository->createSetting($this->getCode(), $this->getName(), $config, 0, 1);
+            return $this->gsRepository->createSetting($this->getCode(), $this->getName(), $config, $platformId, 1);
         }
         return false;
     }
@@ -93,8 +93,8 @@ class CaptchaProvider extends Providers implements GoogleProviderInterface {
         }
     }
     
-    public function getPublicKey(){
-        $config = $this->getConfig();
+    public function getPublicKey($platformId = 0){
+        $config = $this->getConfig($platformId);
         if ($config){
             $values = $this->_decode($config);
             if ($values){
@@ -104,8 +104,8 @@ class CaptchaProvider extends Providers implements GoogleProviderInterface {
         return false;
     }
     
-    public function getPrivateKey(){
-        $config = $this->getConfig();
+    public function getPrivateKey($platformId = 0){
+        $config = $this->getConfig($platformId);
         if ($config){
             $values = $this->_decode($config);
             if ($values){
@@ -115,8 +115,8 @@ class CaptchaProvider extends Providers implements GoogleProviderInterface {
         return false;
     }
     
-    public function getVersion(){
-        $config = $this->getConfig();
+    public function getVersion($platformId = 0){
+        $config = $this->getConfig($platformId);
         if ($config){
             $values = $this->_decode($config);
             if ($values){
@@ -125,8 +125,8 @@ class CaptchaProvider extends Providers implements GoogleProviderInterface {
         }
         return false;
     }
-
-    public function drawConfigTemplate(){
-        return widgets\CaptchaWidget::widget(['publicKey' => $this->getPublicKey(), 'privateKey' => $this->getPrivateKey(), 'version' => $this->getVersion(), 'owner' => $this->getClassName(), 'description' => $this->getDescription()]);
+    
+    public function drawConfigTemplate($platformId = 0){
+        return widgets\CaptchaWidget::widget(['publicKey' => $this->getPublicKey($platformId), 'privateKey' => $this->getPrivateKey($platformId), 'version' => $this->getVersion($platformId), 'owner' => $this->getClassName(), 'description' => $this->getDescription()]);
     }
 }

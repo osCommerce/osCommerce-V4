@@ -484,8 +484,9 @@ class AccountController extends Sceleton
                     $navigation->clear_snapshot();
                     tep_redirect($origin_href);
                 } else {
-                    if (\common\helpers\Acl::checkExtensionAllowed('TradeForm') && \common\helpers\Php8::getConst('ENABLE_TRADE_FORM') == 'True') {
-                        $this->redirect(Yii::$app->urlManager->createAbsoluteUrl(['trade-form/trade-form', 'create' => 1]));
+                    /** @var \common\extensions\TradeForm\TradeForm $ext*/
+                    if (($ext = \common\helpers\Acl::checkExtensionAllowed('TradeForm')) && method_exists($ext, 'optIsMandatoryTradeForm') && $ext::optIsMandatoryTradeForm()) {
+                        $this->redirect(Yii::$app->urlManager->createAbsoluteUrl(['trade-form/', 'create' => 1]));
                     } else {
                         tep_redirect(tep_href_link(FILENAME_CREATE_ACCOUNT_SUCCESS, '', 'SSL'));
                     }
@@ -559,14 +560,6 @@ class AccountController extends Sceleton
 
         //$customer_groups_id = DEFAULT_USER_GROUP;
         $cart->reset();
-
-        foreach (\common\helpers\Hooks::getList('customers/logoff') as $filename) {
-              include($filename);
-        }
-
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('Samples', 'allowed')) {
-            $ext::resetCart();
-        }
 
         if( $ext = \common\helpers\Acl::checkExtensionAllowed( 'MultiCart', 'allowed' ) ) {
             $ext::resetCarts();
@@ -950,6 +943,7 @@ class AccountController extends Sceleton
                 $customer->customers_password = \common\helpers\Password::encrypt_password($password_new, 'frontend');
                 $customer->update(false);
                 $customer->updateUserToken($customer->customers_id);
+                \common\helpers\Session::deleteCustomerSessions($customer->customers_id);
                 $messageStack->add_session('Password has been changed, Please Login', 'login', 'success');
                 tep_redirect(tep_href_link('account/login', '', 'SSL'));
             }
@@ -2591,6 +2585,32 @@ class AccountController extends Sceleton
                 'document_name' => 'gift_card.pdf',
             ]
         ]);
+    }
+    
+    public function actionSendValidationRequest() 
+    {
+        if (Yii::$app->request->isAjax) {
+            $email = trim(filter_var(htmlentities(Yii::$app->request->get('email')), FILTER_SANITIZE_STRING));
+            if (!empty($email)) {
+                $cevEmail = md5($email);
+                $cevCode = \common\helpers\Password::create_random_value(8, 'digits');
+                $emailValidation = \common\models\CustomersEmailValidation::find()->where(['cev_email' => $cevEmail])->one();
+                if ( !($emailValidation instanceof \common\models\CustomersEmailValidation) ) {
+                    $emailValidation = new \common\models\CustomersEmailValidation();
+                    $emailValidation->loadDefaultValues();
+                    $emailValidation->cev_email = $cevEmail;
+                }
+                $emailValidation->cev_code = md5($cevCode);
+                if ($emailValidation->save(false)){
+                    $email_subject = TEXT_VERIFICATION_CODE;
+                    $email_text = $cevCode;
+                    \common\helpers\Mail::send('', $email, $email_subject, $email_text, STORE_OWNER, STORE_OWNER_EMAIL_ADDRESS);
+                }
+            }
+            \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+            return ['status' => 'ok'];
+        }
+        tep_redirect(tep_href_link(FILENAME_ACCOUNT, '', 'SSL'));
     }
 
 }

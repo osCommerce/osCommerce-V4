@@ -16,7 +16,7 @@
         <th></th>
         <th>XLS</th>
         <th>XLSX</th>
-        <th>Excel2003XML</th>
+        <th>XML (Excel2003XML)</th>
         <th>Ods</th>
         <th>Gnumeric</th>
         <th>CSV</th>
@@ -733,7 +733,27 @@
         <td></td>
     </tr>
     <tr>
+        <td style="padding-left: 1em;">Hidden Worksheets</td>
+        <td style="text-align: center; color: green;">✔</td> 
+        <td style="text-align: center; color: green;">✔</td> 
+        <td></td>
+        <td style="text-align: center; color: green;">✔</td> 
+        <td style="text-align: center; color: green;">✔</td> 
+        <td style="text-align: center;">N/A</td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+    </tr>
+    <tr>
         <td style="padding-left: 1em;">Coloured Tabs</td>
+        <td></td>
         <td></td>
         <td></td>
         <td></td>
@@ -1255,7 +1275,7 @@
         <td></td>
     </tr>
     <tr>
-        <td style="padding-left: 1em;">Rich Text</td>
+        <td style="padding-left: 2em;">Rich Text</td>
         <td style="text-align: center; color: red;">✖ <sup>2</sup></td>
         <td style="text-align: center; color: green;">✔</td>
         <td style="text-align: center; color: red;">✖</td>
@@ -1273,7 +1293,7 @@
         <td></td>
     </tr>
     <tr>
-        <td style="padding-left: 1em;">Alignment</td>
+        <td style="padding-left: 2em;">Alignment</td>
         <td style="text-align: center; color: red;">✖ <sup>3</sup></td>
         <td style="text-align: center; color: red;">✖</td>
         <td style="text-align: center; color: red;">✖</td>
@@ -1289,6 +1309,24 @@
         <td style="text-align: center;">N/A</td>
         <td></td>
         <td></td>
+    </tr>
+    <tr>
+        <td style="padding-left: 2em;">Background Image</td>
+        <td style="text-align: center; color: red;">✖</td>
+        <td style="text-align: center; color: green;">✔</td>
+        <td style="text-align: center; color: red;">✖</td>
+        <td style="text-align: center; color: red;">✖</td>
+        <td style="text-align: center; color: red;">✖</td>
+        <td style="text-align: center; color: red;">✖</td>
+        <td style="text-align: center; color: red;">✖</td>
+        <td style="text-align: center; color: red;">✖</td>
+        <td style="text-align: center; color: green;">✔</td>
+        <td style="text-align: center; color: red;">✖</td>
+        <td style="text-align: center; color: red;">✖</td>
+        <td style="text-align: center; color: red;">✖</td>
+        <td style="text-align: center; color: red;">✖</td>
+        <td>$comment->getBackgroundImage()</td>
+        <td>$comment->setBackgroundImage()</td>
     </tr>
     <tr>
         <td><strong>Cell Validation</strong></td>

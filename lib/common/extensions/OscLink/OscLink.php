@@ -96,6 +96,7 @@ class OscLink extends \common\classes\modules\ModuleExtensions
         try {
             self::saveConfiguration(Yii::$app->request->post());
 
+            self::checkPrerequisites();
             $connection = self::downloader();
             $connection->testConnection();
             return 'success';
@@ -125,6 +126,8 @@ class OscLink extends \common\classes\modules\ModuleExtensions
             }
 
             try {
+                header('X-Accel-Buffering: no');
+                //header('Content-Encoding: none;'); don't use - the error under Chrome
                 Configuration::deleteCancelSign();
                 self::checkPrerequisites();
                 $importer = new \OscLink\Importer( self::getConfigurationArray() );

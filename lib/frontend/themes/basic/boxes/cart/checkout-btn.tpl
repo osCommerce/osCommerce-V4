@@ -11,3 +11,6 @@
     </div>
 {/if}
 </div>
+{if ($ccExt = \common\helpers\Acl::checkExtensionAllowed('CustomerCredit', 'allowed'))}
+    {$ccExt::getButtonContinueHtml($manager)}
+{/if}

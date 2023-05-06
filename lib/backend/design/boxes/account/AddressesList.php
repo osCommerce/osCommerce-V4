@@ -33,7 +33,7 @@ class AddressesList extends Widget
         if (!\common\helpers\Acl::checkExtensionAllowed('CustomerAdditionalFields')) return '';
         global $languages_id;
 
-        $groups = \common\models\AdditionalFieldsGroupDescription::find()
+        $groups = \common\extensions\CustomerAdditionalFields\models\AdditionalFieldsGroupDescription::find()
             ->select(['id' => 'additional_fields_group_id', 'title'])
             ->where(['language_id' => $languages_id])
             ->asArray()->all();

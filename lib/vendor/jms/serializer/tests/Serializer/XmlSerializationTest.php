@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace JMS\Serializer\Tests\Serializer;
 
 use JMS\Serializer\Context;
-use JMS\Serializer\DeserializationContext;
 use JMS\Serializer\Exception\InvalidArgumentException;
 use JMS\Serializer\Exception\RuntimeException;
 use JMS\Serializer\Exception\XmlErrorException;
 use JMS\Serializer\GraphNavigatorInterface;
 use JMS\Serializer\Handler\DateHandler;
 use JMS\Serializer\Handler\HandlerRegistryInterface;
+use JMS\Serializer\Metadata\ClassMetadata;
 use JMS\Serializer\Metadata\StaticPropertyMetadata;
 use JMS\Serializer\SerializationContext;
 use JMS\Serializer\SerializerBuilder;
@@ -121,7 +121,7 @@ class XmlSerializationTest extends BaseSerializationTest
     public function testExternalEntitiesAreDisabledByDefault()
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('The document type "<!DOCTYPE author [<!ENTITY foo SYSTEM "php://filter/read=convert.base64-encode/resource=XmlSerializationTest.php">]>" is not allowed. If it is safe, you may add it to the whitelist configuration.');
+        $this->expectExceptionMessage('The document type "<!DOCTYPE author [<!ENTITY foo SYSTEM "php://filter/read=convert.base64-encode/resource=XmlSerializationTest.php">]>" is not allowed. If it is safe, you may add it to the allowlist configuration.');
 
         $this->deserialize('<?xml version="1.0"?>
             <!DOCTYPE author [
@@ -135,7 +135,7 @@ class XmlSerializationTest extends BaseSerializationTest
     public function testDocumentTypesAreNotAllowed()
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('The document type "<!DOCTYPE foo>" is not allowed. If it is safe, you may add it to the whitelist configuration.');
+        $this->expectExceptionMessage('The document type "<!DOCTYPE foo>" is not allowed. If it is safe, you may add it to the allowlist configuration.');
 
         $this->deserialize('<?xml version="1.0"?><!DOCTYPE foo><foo></foo>', 'stdClass');
     }
@@ -415,11 +415,11 @@ class XmlSerializationTest extends BaseSerializationTest
             'ObjectWithXmlNamespacesAndObjectPropertyAuthorVirtual',
             $this->getFormat(),
             static function (XmlSerializationVisitor $visitor, $data, $type, Context $context) use ($author) {
-                $factory = $context->getMetadataFactory(get_class($author));
+                $factory = $context->getMetadataFactory();
                 $classMetadata = $factory->getMetadataForClass(get_class($author));
+                \assert($classMetadata instanceof ClassMetadata);
 
                 $metadata = new StaticPropertyMetadata(get_class($author), 'foo', $author);
-                $metadata->xmlNamespace = $classMetadata->xmlRootNamespace;
                 $metadata->xmlNamespace = $classMetadata->xmlRootNamespace;
 
                 $visitor->visitProperty($metadata, $author);
@@ -536,10 +536,7 @@ class XmlSerializationTest extends BaseSerializationTest
 
     public function testEvaluatesToNull()
     {
-        $context = $this->getMockBuilder(DeserializationContext::class)->getMock();
-        $navigator = $this->getMockBuilder(GraphNavigatorInterface::class)->getMock();
-
-        $visitor = (new XmlDeserializationVisitorFactory())->getVisitor($navigator, $context);
+        $visitor = (new XmlDeserializationVisitorFactory())->getVisitor();
         $xsdNilAsTrueElement = simplexml_load_string('<empty xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:nil="true"/>');
         $xsdNilAsOneElement = simplexml_load_string('<empty xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:nil="1"/>');
 
@@ -550,10 +547,7 @@ class XmlSerializationTest extends BaseSerializationTest
 
     public function testDoubleEncoding()
     {
-        $context = $this->getMockBuilder(DeserializationContext::class)->getMock();
-        $navigator = $this->getMockBuilder(GraphNavigatorInterface::class)->getMock();
-
-        $visitor = (new XmlSerializationVisitorFactory())->getVisitor($navigator, $context);
+        $visitor = (new XmlSerializationVisitorFactory())->getVisitor();
 
         // Setting locale with comma fractional separator
         $locale = setlocale(LC_ALL, 0);
@@ -570,13 +564,17 @@ class XmlSerializationTest extends BaseSerializationTest
         setlocale(LC_ALL, $locale);
     }
 
-    public function testSerialisationWithPercisionForFloat(): void
+    public function testSerialisationWithPrecisionForFloat(): void
     {
         $objectWithFloat = new ObjectWithFloatProperty(
+            1.555555555,
             1.555555555,
             1.555,
             1.15,
             1.15,
+            1.555,
+            1.5,
+            1.555,
             1.555
         );
 
@@ -586,10 +584,14 @@ class XmlSerializationTest extends BaseSerializationTest
             '<?xml version="1.0" encoding="UTF-8"?>
             <result>
               <floating_point_unchanged>1.555555555</floating_point_unchanged>
+              <floating_point_precision_zero>2.0</floating_point_precision_zero>
               <floating_point_half_down>1.55</floating_point_half_down>
               <floating_point_half_even>1.2</floating_point_half_even>
               <floating_point_half_odd>1.1</floating_point_half_odd>
               <floating_point_half_up>1.56</floating_point_half_up>
+              <floating_point_fixed_decimals>1.50</floating_point_fixed_decimals>
+              <floating_point_fixed_decimals_less>1.6</floating_point_fixed_decimals_less>
+              <floating_point_fixed_decimals_more>1.560</floating_point_fixed_decimals_more>
             </result>',
             $result
         );

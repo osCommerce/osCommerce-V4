@@ -101,6 +101,8 @@ class Setup extends \common\classes\modules\SetupExtensions
     public static function getVersionHistory()
     {
         return [
+            '1.0.2' => 'Added Refresh button in main page',
+            '1.0.1' => 'Fixed a bug where the "Details" button was not displayed in the right menu',
             '1.0.0' => 'changed as AppStore Extensions',
         ];
     }

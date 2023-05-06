@@ -1,6 +1,18 @@
 Yii Framework 2 smarty extension Change Log
 ===========================================
 
+2.0.12 under development
+------------------------
+
+- no changes in this release.
+
+
+2.0.11 November 18, 2022
+------------------------
+
+- Enh #42: Allow smarty v4 (simialbi)
+
+
 2.0.10 August 09, 2021
 ----------------------
 

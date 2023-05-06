@@ -12,7 +12,6 @@
 
 namespace backend\controllers;
 
-use common\helpers\SeoDeliveryLocation;
 use Yii;
 use yii\helpers\ArrayHelper;
 use backend\components\Information;

@@ -481,6 +481,10 @@ class CatalogController extends Sceleton
 
         \common\components\google\widgets\GoogleTagmanger::setEvent('productPage');
 
+        foreach (\common\helpers\Hooks::getList('catalog/product') as $filename) {
+            include($filename);
+        }
+
         Info::addBlockToPageName($page_name);
 
         return $this->render('product.tpl', [
@@ -554,6 +558,10 @@ class CatalogController extends Sceleton
             if ( $runAttributes ) {
                 $details = \common\helpers\Attributes::getDetails($products_id, $attributes, $params);
             }
+        }
+
+        if (defined('CONDITION_2LEVEL_ATTRIBUTE_SELECTION') && CONDITION_2LEVEL_ATTRIBUTE_SELECTION > 0) {
+            $details['attributes_array'] = \common\helpers\Attributes::add2LevelAttributeOptions($details['attributes_array']);
         }
 
         if ($productDesigner = \common\helpers\Acl::checkExtensionAllowed('ProductDesigner', 'allowed')){
@@ -895,6 +903,9 @@ class CatalogController extends Sceleton
               }
             }
 
+            foreach (\common\helpers\Hooks::getList('catalog/search-suggest') as $filename) {
+                include($filename);
+            }
         }
 
         return $this->render('search.tpl', ['list' => $response]);

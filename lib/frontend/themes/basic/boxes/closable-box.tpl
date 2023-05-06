@@ -11,7 +11,7 @@
     </div>
     <div class="widget-content">
 
-        {\frontend\design\Block::widget(['name' => 'block-'|cat:$id, 'params' => ['params' => $params]])}
+        {\frontend\design\Block::widget(['name' => 'block-'|cat:$id, 'params' => ['params' => $params, 'settings' => $settings]])}
 
     </div>
 </div>

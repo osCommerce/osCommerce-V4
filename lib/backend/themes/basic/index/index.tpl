@@ -38,6 +38,11 @@
         {\backend\widgets\Products::widget()}
 
     </div>
+    {if defined('SUPERADMIN_ENABLED') && SUPERADMIN_ENABLED == True}
+    <div class="col-sm-6">
+        {\backend\widgets\NewOrders::widget()}
+    </div>
+    {/if}
     <div class="col-sm-3">
 
         <div class="widget box">
@@ -71,6 +76,7 @@
         </div>
 
     </div>
+    {if !defined('SUPERADMIN_ENABLED') || SUPERADMIN_ENABLED != True}
     <div class="col-sm-3">
 
         <div class="widget box">
@@ -99,6 +105,7 @@
         </div>
 
     </div>
+    {/if}
 </div>
 
 {if \common\helpers\Acl::rule(['TEXT_DASHBOARD', 'WIDGET_GOOGLEMAPS'])}

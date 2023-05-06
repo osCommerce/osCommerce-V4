@@ -138,7 +138,7 @@ class admin_user extends install_generic {
         include_once $this->root_path . 'includes/local/configure.php';
         $link = mysqli_connect(DB_SERVER, DB_SERVER_USERNAME, DB_SERVER_PASSWORD);
         if (!$link) {
-            $this->log('install_error', 'Can\'t connect to database server.');
+            $this->log('install_error', 'Can\'t connect to database server.', mysqli_connect_error());
             return false;
         }
         $db_selected = mysqli_select_db($link, DB_DATABASE);
@@ -160,7 +160,7 @@ class admin_user extends install_generic {
             $secKeyFrontend .= $symbolArray[mt_rand(0, $max)];
         }
         unset($symbolArray);
-        $secKeyGlobal = md5('mysql:host='.DB_SERVER.';dbname='.DB_DATABASE);
+        $secKeyGlobal = md5('mysql:host='.DB_SERVER.';dbname='.DB_DATABASE . INSTALLED_MICROTIME);
 
         $content  = '<?php' . "\n";
         $content  .= "return [" . "\n";
@@ -170,9 +170,15 @@ class admin_user extends install_generic {
         $content  .= "];" . "\n";
         $result = file_put_contents($this->root_path . '/lib/common/config/params-local.php', $content);
         if ($result === false) {
-            $this->log('install_error', 'Can\'t save local params file.');
+            $this->log('install_error', 'Can\'t save local params file.', error_get_last()['message']??null);
             return false;
         }
+        
+        $query = "INSERT INTO `configuration` (`configuration_title`, `configuration_key`, `configuration_value`, `configuration_description`, `configuration_group_id`, `sort_order`, `last_modified`, `date_added`) VALUES ('Date of installation', 'INSTALLED_DATE', now(), '', '', NULL, NULL, now());";
+        mysqli_query($link, $query);
+        
+        $query = "INSERT INTO `configuration` (`configuration_title`, `configuration_key`, `configuration_value`, `configuration_description`, `configuration_group_id`, `sort_order`, `last_modified`, `date_added`) VALUES ('Date of last update', 'UPDATED_DATE', '', '', '', NULL, NULL, now());";
+        mysqli_query($link, $query);
 
         $query = "UPDATE admin SET " .
                 "admin_username='" . $this->prepare_input($this->username) . "'" .

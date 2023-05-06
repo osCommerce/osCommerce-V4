@@ -55,7 +55,7 @@ class GitignoreTest extends TestCase
         }
     }
 
-    public function provider(): array
+    public static function provider(): array
     {
         $cases = [
             [
@@ -392,9 +392,9 @@ class GitignoreTest extends TestCase
         return $cases;
     }
 
-    public function providerExtended(): array
+    public static function providerExtended(): array
     {
-        $basicCases = $this->provider();
+        $basicCases = self::provider();
 
         $cases = [];
         foreach ($basicCases as $case) {
@@ -479,7 +479,7 @@ class GitignoreTest extends TestCase
         }
     }
 
-    public function provideNegatedPatternsCases(): iterable
+    public static function provideNegatedPatternsCases(): iterable
     {
         yield [
             [''],

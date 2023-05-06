@@ -963,7 +963,7 @@ class CustomersController extends Sceleton {
 //echo "#### <PRE>" .print_r($cInfo, 1) ."</PRE>"; die;
 
         if ($messageStack->size() > 0) {
-            if ($_GET['read'] == 'only') {
+            if (\Yii::$app->request->get('read') == 'only') {
 
             } else {
                 echo $messageStack->output();
@@ -1492,15 +1492,16 @@ class CustomersController extends Sceleton {
 
         \common\helpers\Translation::init('admin/customers');
 
-        $customers_id = tep_db_prepare_input($_POST['cID']);
-        $check_customer_query = tep_db_query("select customers_firstname, customers_lastname, customers_password, customers_id ,customers_email_address, platform_id, language_id from " . TABLE_CUSTOMERS . " where customers_id = '" . $customers_id . "'");
-        if (tep_db_num_rows($check_customer_query)) {
-            $check_customer = tep_db_fetch_array($check_customer_query);
-            if (trim($_POST['change_pass']) == '') {
+        $customers_id = (int)Yii::$app->request->post('cID', 0);
+        $check_customer = Customers::find()->where(['customers_id' => $customers_id])->one();
+        if ($check_customer instanceof Customers) {
+            $change_pass = trim(Yii::$app->request->post('change_pass', ''));
+            if ($change_pass == '') {
                 $new_password = \common\helpers\Password::create_random_value(ENTRY_PASSWORD_MIN_LENGTH);
             } else {
-                $new_password = $_POST['change_pass'];
+                $new_password = $change_pass;
             }
+            unset($change_pass);
             $crypted_password = \common\helpers\Password::encrypt_password($new_password, 'frontend');
 
             if (\common\helpers\Acl::checkExtensionAllowed('ReportChangesHistory')) {
@@ -1511,37 +1512,39 @@ class CustomersController extends Sceleton {
                 unset($beforeObject);
             }
 
-            tep_db_query("update " . TABLE_CUSTOMERS . " set customers_password = '" . tep_db_input($crypted_password) . "' where customers_id = '" . (int) $check_customer['customers_id'] . "'");
+            $check_customer->customers_password = $crypted_password;
+            if ($check_customer->save(false)) {
 
-            if (\common\helpers\Acl::checkExtensionAllowed('ReportChangesHistory') && isset($logger)) {
-                $afterObject = new \common\api\Classes\Customer();
-                $afterObject->load($customers_id);
-                $logger->setAfterObject($afterObject);
-                unset($afterObject);
-                $logger->run();
+                if (\common\helpers\Acl::checkExtensionAllowed('ReportChangesHistory') && isset($logger)) {
+                    $afterObject = new \common\api\Classes\Customer();
+                    $afterObject->load($customers_id);
+                    $logger->setAfterObject($afterObject);
+                    unset($afterObject);
+                    $logger->run();
+                }
+
+                $platform_config = Yii::$app->get('platform')->config($check_customer->platform_id);
+
+                $eMail_store = $platform_config->const_value('STORE_NAME');
+                $eMail_address = $platform_config->const_value('STORE_OWNER_EMAIL_ADDRESS');
+                $eMail_store_owner = $platform_config->const_value('STORE_OWNER');
+
+                $email_params = array();
+                $email_params['STORE_URL'] = \common\helpers\Output::get_clickable_link(tep_catalog_href_link(''));
+                $email_params['CUSTOMER_FIRSTNAME'] = $check_customer->customers_firstname;
+                $email_params['CUSTOMER_LASTNAME'] = $check_customer->customers_lastname;
+                $email_params['NEW_PASSWORD'] = $new_password;
+                $email_params['STORE_NAME'] = $eMail_store;
+
+                list($email_subject, $email_text) = \common\helpers\Mail::get_parsed_email_template('Account update', $email_params, $check_customer->language_id, $check_customer->platform_id);
+
+                //$email_text = sprintf(TEXT_EMAIL_ACCOUNT_UPDATE, $check_customer->customers_firstname . ' ' . $check_customer->customers_lastname, HTTP_CATALOG_SERVER . DIR_WS_CATALOG, $new_password, $eMail_store);
+
+                \common\helpers\Mail::send($check_customer->customers_firstname . ' ' . $check_customer->customers_lastname, $check_customer->customers_email_address, $email_subject, $email_text, $eMail_store_owner, $eMail_address, [], '', '', ['add_br' => 'no']);
+                $messageStack->add_session(PASSWORD_SENT_MESSAGE, 'header', 'success');
+                
+                \common\helpers\Session::deleteCustomerSessions($check_customer->customers_id);
             }
-
-            $platform_config = Yii::$app->get('platform')->config($check_customer['platform_id']);
-
-            $eMail_store = $platform_config->const_value('STORE_NAME');
-            $eMail_address = $platform_config->const_value('STORE_OWNER_EMAIL_ADDRESS');
-            $eMail_store_owner = $platform_config->const_value('STORE_OWNER');
-
-
-
-            $email_params = array();
-            $email_params['STORE_URL'] = \common\helpers\Output::get_clickable_link(tep_catalog_href_link(''));
-            $email_params['CUSTOMER_FIRSTNAME'] = $check_customer['customers_firstname'];
-            $email_params['CUSTOMER_LASTNAME'] = $check_customer['customers_lastname'];
-            $email_params['NEW_PASSWORD'] = $new_password;
-            $email_params['STORE_NAME'] = $eMail_store;
-
-            list($email_subject, $email_text) = \common\helpers\Mail::get_parsed_email_template('Account update', $email_params, $check_customer['language_id'], $check_customer['platform_id']);
-
-            //$email_text = sprintf(TEXT_EMAIL_ACCOUNT_UPDATE, $check_customer['customers_firstname'] . ' ' . $check_customer['customers_lastname'], HTTP_CATALOG_SERVER . DIR_WS_CATALOG, $new_password, $eMail_store);
-
-            \common\helpers\Mail::send($check_customer['customers_firstname'] . ' ' . $check_customer['customers_lastname'], $check_customer['customers_email_address'], $email_subject, $email_text, $eMail_store_owner, $eMail_address, [], '', '', ['add_br' => 'no']);
-            $messageStack->add_session(PASSWORD_SENT_MESSAGE, 'header', 'success');
         }
         //$this->redirect(array('customers/customeractions', 'customers_id'=>  $customers_id));
         echo json_encode(array('customers_id' => $customers_id));

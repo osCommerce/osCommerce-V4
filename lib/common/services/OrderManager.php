@@ -370,6 +370,11 @@ class OrderManager {
                         $quotes[$i]['methods'][$j]['code'] = $quotes[$i]['id'] . '_' . $quotes[$i]['methods'][$j]['id'];
                         $quotes[$i]['methods'][$j]['selected'] = $select_shipping === $quotes[$i]['methods'][$j]['code'];
                         $quotes[$i]['selected'] = $select_shipping === $quotes[$i]['methods'][$j]['code'];
+                        if ($ext = \common\helpers\Acl::checkExtensionAllowed('ModulesZeroPrice', 'allowed')) {
+                            if ( method_exists($ext, 'shippingQuoteMethod') ) {
+                                $quotes[$i]['methods'][$j] = $ext::shippingQuoteMethod($this->getPlatformId(), $quotes[$i]['methods'][$j]);
+                            }
+                        }
                     }
                 }
             }
@@ -539,6 +544,15 @@ class OrderManager {
     public function getPaymentSelection($opc = false, $onlyOnline = false) {
         $selections = $this->getPaymentCollection()->selection($opc, $onlyOnline, $this->getModulesVisibility(), $this->get('customer_groups_id'));
         return $this->wrapSelections($selections);
+    }
+
+    public function getCreditPayment() {
+        $payments = $this->getPaymentCollection();
+        foreach ($payments->include_modules as $payment) {
+            if ($payment->manageCredit ?? false) {
+                return $payment;
+            }
+        }
     }
 
     public function wrapSelections($selections) {
@@ -842,6 +856,9 @@ class OrderManager {
 
     public function resetDeliveryAddress(){
         $this->deliveryAddressChanged = true;
+        foreach (\common\helpers\Hooks::getList('order-manager/reset-delivery-address') as $filename) {
+            include($filename);
+        }
     }
 
     private $billingAddressChanged = false;
@@ -1479,6 +1496,10 @@ class OrderManager {
 //echo "manager #### <PRE>" . __FILE__ . ':' . __LINE__ . ' ' . print_r($this->getAll(), true) . "</PRE>";
 //echo "before #### <PRE>" . __FILE__ . ':' . __LINE__ . ' ' . print_r($this->getOrderInstance(), true) . "</PRE>";
 
+        foreach (\common\helpers\Hooks::getList('order-manager/total-process') as $filename) {
+            include($filename);
+        }
+
         $ret =  $this->getTotalCollection()->process();
 //echo "after #### <PRE>" . __FILE__ . ':' . __LINE__ . ' ' . print_r($this->getOrderInstance(), true) . "</PRE>";
 
@@ -1667,6 +1688,7 @@ class OrderManager {
         return $this->contactForm;
     }
 
+    /** @var $var \common\classes\extended\OrderAbstract $orderInstance */
     private $orderInstance;
 
     //create empty instance of order
@@ -1920,7 +1942,6 @@ class OrderManager {
             $estimate = [];
             if ($this->has('estimate_ship')) {
                 $estimate = $this->get('estimate_ship');
-                $this->remove('estimate_ship');
             }
 
             $estimate_data = array(

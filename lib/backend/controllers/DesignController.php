@@ -20,6 +20,7 @@ use common\models\DesignBoxesGroups;
 use common\models\DesignBoxesSettingsTmp;
 use common\models\DesignBoxesTmp;
 use common\models\Platforms;
+use common\models\ThemesStylesMain;
 use frontend\design\Info;
 use Yii;
 use yii\helpers\ArrayHelper;
@@ -101,7 +102,9 @@ class DesignController extends Sceleton {
     {
         $groupId = $request = Yii::$app->request->get('group_id', 0);
 
-        $this->topButtons[] = '<a href="' . Yii::$app->urlManager->createUrl(['design/theme-add', 'group_id' => $groupId]) . '" class="btn btn-primary btn-add-theme">' . TEXT_ADD_THEME . '</a>';
+        //$this->topButtons[] = '<a href="' . Yii::$app->urlManager->createUrl(['design/theme-add', 'group_id' => $groupId]) . '" class="btn btn-primary btn-add-theme">' . TEXT_ADD_THEME . '</a>';
+        $this->topButtons[] = '<a href="' . Yii::$app->urlManager->createUrl(['design-groups/wizard', 'group_id' => $groupId]) . '" class="btn btn-primary">' . CREATE_THEME . '</a>';
+
         $this->topButtons[] = '<a href="' . Yii::$app->urlManager->createUrl(['design/theme-import', 'group_id' => $groupId]) . '" class="btn btn-primary btn-import-theme">' . IMPORT_THEME . '</a>';
         if ($groupId) {
             $this->topButtons[] = '<a href="' . Yii::$app->urlManager->createUrl('design/themes') . '" class="btn">' . BACK_TO_ROOT . '</a>';
@@ -336,6 +339,7 @@ class DesignController extends Sceleton {
             $css_status = 1;
         }
 
+        $mainStyles = ThemesStylesMain::find()->where(['theme_name' => $params['theme_name']])->orderBy('sort_order')->asArray()->all();
 
         return $this->render('css.tpl', [
             'menu' => 'css',
@@ -344,6 +348,7 @@ class DesignController extends Sceleton {
             'css_status' => $css_status,
             'widgets_list' => Style::getCssWidgetsList($params['theme_name']),
             'designer_mode' => $this->designerMode,
+            'mainStyles' => $mainStyles,
         ]);
     }
 
@@ -451,11 +456,16 @@ class DesignController extends Sceleton {
         $this->selectedMenu = array('design', 'elements');
         $params = Yii::$app->request->get();
 
+        if (!isset($params['theme_name'])) {
+            return Yii::$app->getResponse()->redirect(['design/themes']);
+        }
+
         $language_query = tep_db_fetch_array(tep_db_query("select code from " . TABLE_LANGUAGES . " where languages_id = '" . $languages_id . "' order by sort_order"));
         $language_code = $language_query['code'];
 
         \backend\design\Data::addJsData([
             'languageCode' => $language_code,
+            'languages' => Language::get_languages(),
         ]);
 
         $this->topButtons[] = '<span data-href="' . Yii::$app->urlManager->createUrl(['design/elements-save']) . '" class="btn btn-confirm btn-save-boxes">' . IMAGE_SAVE . '</span>';
@@ -503,11 +513,14 @@ class DesignController extends Sceleton {
                 'EDIT_TEXTS' => EDIT_TEXTS,
                 'ICON_WARNING' => ICON_WARNING,
                 'DATA_FROM_NETWORK_CHANGED' => DATA_FROM_NETWORK_CHANGED,
+                'BLOCK_CONTAINS_EXTENSION_WIDGETS' => BLOCK_CONTAINS_EXTENSION_WIDGETS,
             ],
             'pages' => FrontendStructure::getPages(),
             'groups' => FrontendStructure::getPageGroups(),
             'unitedTypes' => FrontendStructure::getUnitedTypesGroup(),
+            'groupCategories' => FrontendStructure::getGroupCategories(),
             'platformSelect' => FrontendStructure::getThemePlatforms(),
+            'platformsList' => \common\classes\platform::getList(false),
             'theme_name' => ($params['theme_name'] ? $params['theme_name'] : 'theme-1'),
             'theme_title' => Theme::getThemeTitle($params['theme_name']),
             'designer_mode' => $this->designerMode,
@@ -1019,7 +1032,7 @@ class DesignController extends Sceleton {
 
         $setting_value = tep_db_fetch_array(tep_db_query("select setting_value from " . TABLE_DESIGN_BOXES_SETTINGS_TMP . " where box_id = '" . (int)$id . "' and setting_name = '" . tep_db_input($key) . "' and	language_id='" . $language . "' and visibility = '" . tep_db_input($visibility) . "'"));
 
-        if ($val && $setting_value['setting_value'] != $val) {
+        if ($val && (!($setting_value ?? false) || ($setting_value['setting_value'] ?? null) != $val)) {
           $val_tmp = Uploads::move($val, 'themes/' . $theme_name['theme_name'] . '/img');
           if ($val_tmp){
             $val = $val_tmp;
@@ -1130,7 +1143,7 @@ class DesignController extends Sceleton {
             }
         }
 
-        if (isset($params['setting']) && is_array($params['setting'])) {
+        if (is_array($params['setting'] ?? null)) {
             foreach ($params['setting'] as $language => $set) {
 
                 if (strlen($set['video_upload'] ?? null) > 3) unset($set['video']);
@@ -1301,6 +1314,54 @@ class DesignController extends Sceleton {
         }
     }
 
+    public function actionStyleMainSave()
+    {
+        $styles = Yii::$app->request->post('styles');
+        $theme_name = Yii::$app->request->post('theme_name');
+
+        $oldStyles = ThemesStylesMain::find()->where(['theme_name' => $theme_name])->asArray()->all();
+
+        ThemesStylesMain::deleteAll(['theme_name' => $theme_name]);
+        if (is_array($styles)) {
+            $sortOrder = 0;
+            foreach ($styles as $key => $style) {
+                $themesStylesMain = new ThemesStylesMain();
+                $themesStylesMain->theme_name = $theme_name;
+                $themesStylesMain->name = $style['name'];
+                $themesStylesMain->value = $style['value'];
+                $themesStylesMain->type = $style['type'];
+                $themesStylesMain->sort_order = $sortOrder;
+                $themesStylesMain->save();
+                $styles[$key]['sort_order'] = $sortOrder;
+                $sortOrder++;
+            }
+        }
+
+        $data = [
+            'theme_name' => $theme_name,
+            'old_styles' => $oldStyles,
+            'new_styles' => $styles,
+        ];
+        Steps::styleSave($data);
+
+        return json_encode(['text' => MESSAGE_SAVED]);
+    }
+
+    public function actionStylesData()
+    {
+        $action = Yii::$app->request->get('action');
+        $theme_name = Yii::$app->request->get('theme_name');
+        $name = Yii::$app->request->get('name');
+
+        switch ($action) {
+            case 'count':
+                $count = ThemesStyles::find()->where(['theme_name' => $theme_name, 'value' => '$' . $name])->count();
+                $count += DesignBoxesSettingsTmp::find()->where(['theme_name' => $theme_name, 'setting_value' => '$' . $name])->count();
+
+                return json_encode(['text' => sprintf(THIS_STYLE_PLACED_IN, $count), 'count' => $count]);
+        }
+    }
+
     public function actionStyleSave()
     {
         $values = Yii::$app->request->post('values');
@@ -1396,6 +1457,60 @@ class DesignController extends Sceleton {
         Steps::cssSave($data);
 
         return '';
+    }
+
+    public function actionStyleAdd()
+    {
+        $theme_name = Yii::$app->request->post('theme_name');
+        $name = Yii::$app->request->post('name');
+        $value = Yii::$app->request->post('value');
+        $type = Yii::$app->request->post('type');
+
+        if (!$name) {
+            return json_encode(['error' => 'Name is empty']);
+        }
+        if (!$value) {
+            return json_encode(['error' => 'Value is empty']);
+        }
+        if (!$type) {
+            return json_encode(['error' => 'Type is empty']);
+        }
+        if (!$theme_name) {
+            return json_encode(['error' => 'theme_name is empty']);
+        }
+        $style = ThemesStylesMain::findOne(['theme_name' => $theme_name, 'name' => $name]);
+        if ($style) {
+            return json_encode(['error' => THIS_STYLE_NAME_EXISTS]);
+        }
+
+        $oldStyles = ThemesStylesMain::find()->where(['theme_name' => $theme_name])->asArray()->all();
+
+        $style = new ThemesStylesMain();
+        $style->theme_name = $theme_name;
+        $style->name = $name;
+        $style->value = $value;
+        $style->type = $type;
+        $style->save();
+
+        $newStyles = array_merge($oldStyles, [
+            'theme_name' => $theme_name,
+            'name' => $name,
+            'value' => $value,
+            'type' => $type,
+        ]);
+
+        if (isset($style->errors) && count($style->errors)) {
+            return json_encode(['error' => 'db error']);
+        }
+
+        $data = [
+            'theme_name' => $theme_name,
+            'old_styles' => $oldStyles,
+            'new_styles' => $newStyles,
+        ];
+        Steps::styleSave($data);
+
+        return json_encode(['text' => MESSAGE_ADDED]);
     }
 
   public function actionBackups()
@@ -1666,10 +1781,10 @@ class DesignController extends Sceleton {
     public function actionExportBlock()
     {
         $params = Yii::$app->request->get();
-        if (!$params['id']) {
+        if (!isset($params['id']) || !$params['id']) {
             $params = Yii::$app->request->post();
         }
-        if (!$params['id']) {
+        if (!isset($params['id']) || !$params['id']) {
             return json_encode(['error' => 'Error']);
         }
 
@@ -2185,40 +2300,6 @@ class DesignController extends Sceleton {
     }
 
 
-    $selectors_query = tep_db_query("
-      select DISTINCT selector
-      from " . TABLE_THEMES_STYLES . "
-      where theme_name = '" . tep_db_input($get['theme_name']) . "'
-");
-
-    $selectors = array();
-    while ($item = tep_db_fetch_array($selectors_query)) {
-      $selectors[] = $item['selector'];
-    }
-
-    sort($selectors);
-
-    $list = array();
-    foreach ($selectors as $item) {
-      $items = explode(',', $item);
-      foreach ($items as $i) {
-        $i = preg_replace("/[ ]+/", ' ', trim($i));
-        $list[$i] = $item;
-      }
-    }
-    asort($list);
-
-    $list2 = array();
-    foreach ($list as $item => $key) {
-      $items = explode(' ', $item);
-      $new = true;
-      if (in_array($key, $sf)){
-        $new = false;
-      }
-      $list2[$items[0]][] = ['short' => $item, 'long' => $key, 'new' => $new];
-    }
-
-
     $fontColors = array();
     $query = tep_db_query("select value from " . TABLE_THEMES_STYLES . " where theme_name = '" .tep_db_input($get['theme_name']) . "' and attribute = 'color'");
     while ($item = tep_db_fetch_array($query)) {
@@ -2302,16 +2383,22 @@ class DesignController extends Sceleton {
       $fontAdded[] = $val[1];
     }
 
-    return $this->render('styles.tpl', [
+    $tpl = 'styles-new.tpl';
+    if (Yii::$app->request->get('old')) {
+        $tpl = 'styles.tpl';
+    }
+
+    return $this->render($tpl, [
         'theme_name' => $get['theme_name'],
-        'selectors' => $selectors,
-        'list' => $list2,
         'fontColors' => $fontColors,
         'backgroundColors' => $backgroundColors,
         'borderColors' => $borderColors,
         'fontFamily' => $fontFamily,
         'fontAdded' => $fontAdded,
         'designer_mode' => $this->designerMode,
+        'mainStyles' => ThemesStylesMain::find()->where(['theme_name' => $get['theme_name']])
+            ->orderBy('sort_order')->asArray()->all(),
+        'menu' => 'styles',
     ]);
   }
 
@@ -2635,6 +2722,7 @@ class DesignController extends Sceleton {
         return $this->render('/../design/boxes/views/include/style_tab.tpl', [
             'id' => $get['id'],
             'name' => $get['name'],
+            'theme_name' => $get['theme_name'],
             'value' => $value,
             'responsive' => ($get['visibility'] > 10 ? '1' : ''),
             'responsive_settings' => json_decode($get['responsive_settings'], true),
@@ -3165,130 +3253,6 @@ class DesignController extends Sceleton {
         return json_encode(['text' => 'Sorted']);
     }
 
-    public function actionGroups()
-    {
-        $this->selectedMenu = array('design_controls', 'design/themes');
-        $this->navigation[] = array('link' => Yii::$app->urlManager->createUrl('design/groups'), 'title' => BOX_HEADING_THEMES);
-        $this->view->headingTitle = BOX_HEADING_THEMES;
-        $this->topButtons[] = '<span class="btn btn-primary btn-add-group">Add</span>';
-
-        $this->topButtons[] = '<span class="mode-title">' . $this->designerModeTitle . '</span>';
-
-        \backend\design\Groups::synchronize();
-
-        return $this->render('groups.tpl', [
-            'menu' => 'groups',
-            'theme_name' => Yii::$app->request->get('theme_name'),
-            'designer_mode' => $this->designerMode,
-        ]);
-    }
-
-    public function actionGroupsList()
-    {
-        $languages_id = \Yii::$app->settings->get('languages_id');
-        $draw = Yii::$app->request->get('draw', 1);
-        $start = Yii::$app->request->get('start', 0);
-        $length = Yii::$app->request->get('length', 10);
-        $search = Yii::$app->request->get('search');
-        if( $length == -1 ) $length = 10000;
-        $keywords = '';
-        if ($search) {
-            $keywords = $search['value'];
-        }
-
-        $designBoxesGroups = DesignBoxesGroups::find();
-
-        if ($keywords) {
-            $designBoxesGroups->where(['like', 'name', $keywords]);
-            $designBoxesGroups->orWhere(['like', 'file', $keywords]);
-        }
-
-        $designBoxesGroups->orderBy(['date_added' => SORT_DESC]);
-
-        $designBoxesGroupsArr = $designBoxesGroups->asArray()->all();
-
-        $responseList = [];
-        if (!is_array($designBoxesGroupsArr)) $designBoxesGroupsArr = [];
-        $groupsSlice = array_slice($designBoxesGroupsArr, $start, $length);
-        foreach ($groupsSlice as $group) {
-            $responseList[] = [
-                '<div class="group-info" data-id="' . $group['id'] . '">' . $group['name'] . '</div>',
-                $group['file'],
-                $group['page_type'] ? $group['page_type'] : 'All',
-                Html::checkbox('status', $group['status'], ['class' => 'check_on_off']),
-            ];
-        }
-
-        $response = array(
-            'draw' => $draw,
-            'recordsTotal' => count($designBoxesGroupsArr),
-            'recordsFiltered' => count($designBoxesGroupsArr),
-            'data' => $responseList
-        );
-        echo json_encode($response);
-    }
-
-    public function actionGroupAction()
-    {
-        $action = Yii::$app->request->post('action');
-        if (in_array($action, ['status', 'save', 'delete'])){
-            return \backend\design\Groups::$action();
-        }
-
-        if (!Yii::$app->request->post('id')) {
-            return '';
-        }
-
-        $this->layout = false;
-        $group = DesignBoxesGroups::find()->where(['id' => Yii::$app->request->post('id')])->asArray()->one();
-
-        $pageTypes = ['' => 'All'];
-        $pageTypesArr = \backend\design\FrontendStructure::getPageTypes();
-        foreach ($pageTypesArr as $type => $item) {
-            $pageTypes[$type] = $type;
-        }
-
-        return $this->render('group-action.tpl', [
-            'group' => $group,
-            'pageTypes' => Html::dropDownList('page_type', $group['page_type'], $pageTypes, ['class' => 'form-control']),
-            'designer_mode' => $this->designerMode,
-        ]);
-    }
-
-    public function actionGroupUpload()
-    {
-        if (isset($_FILES['file'])) {
-            $path = DIR_FS_CATALOG . implode(DIRECTORY_SEPARATOR, ['lib', 'backend', 'design', 'groups']);
-
-            $i = 1;
-            $dot_pos = strrpos($_FILES['file']['name'], '.');
-            $end = substr($_FILES['file']['name'], $dot_pos);
-            $tempName = $_FILES['file']['name'];
-            while (is_file($path . DIRECTORY_SEPARATOR . $tempName)) {
-                $tempName = substr($_FILES['file']['name'], 0, $dot_pos) . '-' . $i . $end;
-                $tempName = str_replace(' ', '_', $tempName);
-                $i++;
-            }
-            $uploadFile = $path . DIRECTORY_SEPARATOR . $tempName;
-
-            if ( !is_writeable(dirname($path)) ) {
-                $response = ['status' => 'error', 'text'=> 'Directory "' . $path . '" not writeable'];
-            } elseif (!is_uploaded_file($_FILES['file']['tmp_name']) || filesize($_FILES['file']['tmp_name'])==0) {
-                $response = ['status' => 'error', 'text'=> 'File upload error'];
-            } else {
-                if (move_uploaded_file($_FILES['file']['tmp_name'], $uploadFile)) {
-                    $text = '';
-                    $response = ['status' => 'ok', 'text' => $text];
-                } else {
-                    $response = ['status' => 'error'];
-                }
-            }
-
-            \backend\design\Groups::synchronize();
-        }
-        echo json_encode($response);
-    }
-
     public function actionContentWidget()
     {
         $params = tep_db_prepare_input(Yii::$app->request->get());
@@ -3316,5 +3280,146 @@ class DesignController extends Sceleton {
             'content' => $content,
             'widgetName' => $params['name']
         ]);
+    }
+
+    public function actionSetThemeSetting()
+    {
+        $theme_name = Yii::$app->request->post('theme_name', false);
+        $setting_group = Yii::$app->request->post('setting_group', false);
+        $setting_name = Yii::$app->request->post('setting_name', false);
+        $setting_value = Yii::$app->request->post('setting_value', 2);
+
+        if (!$theme_name || !$setting_group || !$setting_name) {
+            return json_encode(['error' => 'Error']);
+        }
+
+        $themeSetting = ThemesSettings::findOne([
+            'theme_name' => $theme_name,
+            'setting_group' => $setting_group,
+            'setting_name' => $setting_name,
+        ]);
+        if (!$themeSetting) {
+            $themeSetting = new ThemesSettings();
+            $themeSetting->theme_name = $theme_name;
+            $themeSetting->setting_group = $setting_group;
+            $themeSetting->setting_name = $setting_name;
+        }
+        $themeSetting->setting_value = $setting_value;
+        $themeSetting->save();
+
+        if ($themeSetting->errors ?? false) {
+            return json_encode(['error' => 'Error']);
+        }
+
+        return json_encode(['text' => MESSAGE_SAVED]);
+    }
+
+    public function actionExportStyles()
+    {
+        $themeName = Yii::$app->request->post('theme_name', false);
+        $type = Yii::$app->request->post('type', false);
+        $saveToGroups = Yii::$app->request->post('save-to-groups', false);
+        $name = Yii::$app->request->post('name', 2);
+        $comment = Yii::$app->request->post('comment', 2);
+
+        if (!$name) {
+            return json_encode(['error' => PLEASE_ENTER_NAME]);
+        }
+        if (!$themeName || !$type) {
+            return json_encode(['error' => 'Error']);
+        }
+
+        $fsCatalog = DIR_FS_CATALOG . implode(DIRECTORY_SEPARATOR, ['lib', 'backend', 'design', 'groups']) . DIRECTORY_SEPARATOR;
+
+        $themeArchive = design::pageName($name);
+
+        FileHelper::createDirectory($fsCatalog);
+        chmod($fsCatalog, 0755);
+
+        $_name = $themeArchive;
+        for ($i = 1; $i < 100 && file_exists($fsCatalog . $themeArchive . '.zip'); $i++) {
+            $themeArchive = $_name . '-' . $i;
+        }
+
+        $zip = new \ZipArchive();
+        if ($zip->open($fsCatalog . $themeArchive . '.zip', \ZipArchive::CREATE) !== TRUE) {
+            return 'Error';
+        }
+
+        $styles = ThemesStylesMain::find()->where(['theme_name' => $themeName, 'type' => $type])->asArray()->all();
+
+        if ($type == 'font' && is_array($styles)) {
+            foreach ($styles as $key => $style) {
+                $fontSetting = ThemesSettings::find()->where([
+                    'theme_name' => $themeName,
+                    'setting_group' => 'extend',
+                    'setting_name' => 'font_added'
+                ])->andWhere(['like', 'setting_value', $style['value']])->asArray()->one();
+                $styles[$key]['font_settings'] = preg_replace('/themes[\/\\\]' . $themeName . '/', 'themes/<theme_name>', $fontSetting['setting_value']);
+
+                $files = [];
+                preg_match_all("/url\([\'\"]{0,1}(themes[\/\\\]' . $themeName . '[^'^\"^)]+)\?[^'^\"^)]+[\'\"]{0,1}\)/", $fontSetting['setting_value'], $files);
+                if (isset($files[1]) && is_array($files[1])) {
+                    foreach ($files[1] as $file) {
+                        if (is_file(DIR_FS_CATALOG . $file)) {
+                            $filePath = explode('/', $file);
+                            $filePath = explode('\\', end($filePath));
+                            $fileName = end($filePath);
+                            $zip->addFile(DIR_FS_CATALOG . $file, $fileName);
+                        }
+                    }
+                }
+            }
+        }
+
+        $json = json_encode($styles);
+        $zip->addFromString('data.json', $json);
+
+        $info = [
+            'name' => $name,
+            'name_title' => $name,
+            'groupCategory' => $type,
+            'comment' => $comment,
+            'page_type' => $type,
+        ];
+        $zip->addFromString('info.json', json_encode($info));
+        $zip->addFromString('images.json', json_encode([]));
+
+        $zip->close();
+        $themeArchive .= '.zip';
+
+        Groups::synchronize();
+
+        if ($saveToGroups) {
+            $message = sprintf(SAVED_TO_GROUPS, $name);
+        } else {
+            $message = sprintf(COMMON_CREATED, $name);
+        }
+
+        return json_encode([
+            'text' => $message,
+            'filename' => $themeArchive
+        ]);
+    }
+
+    public function actionCheckOriginTheme()
+    {
+        $this->layout = false;
+        $themeFile = Groups::groupFilePath() . DIRECTORY_SEPARATOR . 'origin.zip';
+
+        if (!is_file($themeFile)) {
+            return '';
+        }
+
+        foreach (['origin', 'new_theme'] as $themeName) {
+            if (DesignBoxes::findOne(['theme_name' => $themeName])) {
+                continue;
+            }
+
+            Theme::import($themeName, $themeFile);
+            Style::createCache($themeName);
+        }
+
+        return '';
     }
 }

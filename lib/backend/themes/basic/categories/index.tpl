@@ -1,4 +1,5 @@
 {\backend\assets\Categories::register($this)|void}
+{\backend\design\SelectProducts::widget([ 'onlyIncludeJs' => true ])}
 <!--=== Page Header ===-->
 {$directOutput=false}
 {include file="./cat_main_box.tpl"}

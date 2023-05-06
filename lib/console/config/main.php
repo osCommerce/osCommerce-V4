@@ -53,8 +53,7 @@ return [
             ],
         ],
         'errorHandler' => [
-            'errorAction' => 'index/error',
-            'class' => '\common\classes\TlErrorHandler',
+            'class' => '\common\classes\TlErrorHandlerConsole',
         ],
     ],
     'controllerMap' => [

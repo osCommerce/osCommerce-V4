@@ -1,5 +1,9 @@
-
 {include 'menu.tpl'}
+
+{use class="backend\assets\DesignAsset"}
+{DesignAsset::register($this)|void}
+
+<div class="style-edit-page">
 <!--=== Page Header ===-->
 <div class="page-header">
   <div class="page-title">
@@ -66,6 +70,7 @@
   <!--===Actions ===-->
   <!-- /Page Content -->
 
+</div>
 </div>
 <script type="text/javascript">
   function onClickEvent(obj, table) {

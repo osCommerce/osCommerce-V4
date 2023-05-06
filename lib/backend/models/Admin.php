@@ -41,19 +41,20 @@ class Admin {
     }
 
     public function getAdditionalInfo() {
-
-        $_info = unserialize($this->info['additional_info'] ?? null);
-
-        if (!$_info) {
-            $_info = [];
-        }
-
-        return $_info;
+        return (isset($this->info['additional_info'])) ? unserialize($this->info['additional_info']) : [];
     }
 
     public function saveAdditionalData($data) {
+        if (!isset($data) || !is_array($data)) {
+            return null;
+        }
         $_info = unserialize($this->info['additional_info'] ?? null);
-        $this->_save('additional_info', serialize(array_merge($_info, $data)));
+        if (isset($_info) && is_array($_info)) {
+            $_data = array_merge($_info, $data);
+        } else {
+            $_data = $data;
+        }
+        $this->_save('additional_info', serialize($_data));
     }
 
     public function getAdditionalData($key) {

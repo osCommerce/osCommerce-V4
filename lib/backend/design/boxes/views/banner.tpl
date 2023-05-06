@@ -390,32 +390,22 @@
         e.stopPropagation();
         const newBanner = $(this).hasClass('new-banner');
         $.get($(this).attr('href'), function (response) {
+            const $popup = alertMessage(`
+                <div class="popup-heading">{$smarty.const.TEXT_BANNER_EDIT}</div>
+                <div class="popup-content">${ response}</div>
+                <div class="popup-buttons"></div>
+            `, 'edit-banner-popup');
 
-            const dialog = bootbox.dialog({
-                message: response,
-                title: "{$smarty.const.TEXT_BANNER_EDIT}",
-                className: 'edit-banner-popup',
-                buttons: {
-                    main: {
-                        label: "{$smarty.const.IMAGE_CANCEL}",
-                        className: "btn",
-                        callback: function() {
-                            selectBanner()
-                        }
-                    },
-                    success: {
-                        label: "{$smarty.const.IMAGE_SAVE}",
-                        className: "btn btn-primary",
-                        callback: function() {
-                            $('#save_banner_form').trigger('submit');
-                            return false
-                        }
-                    }
-                }
-            });
+            const $btnSave = $('<span class="btn btn-save btn-primary">{$smarty.const.IMAGE_SAVE}</span>');
+            const $btnCancel = $('<span class="btn btn-cancel">{$smarty.const.IMAGE_CANCEL}</span>');
+
+            $btnCancel.on('click', selectBanner);
+            $btnSave.on('click', () => $('#save_banner_form').trigger('submit'));
+
+            $('.popup-buttons', $popup).append($btnSave).append($btnCancel);
 
             $('body').on('saved-banner', function () {
-                dialog.find(".bootbox-close-button").trigger("click");
+                $btnCancel.trigger('click')
             })
         })
     }

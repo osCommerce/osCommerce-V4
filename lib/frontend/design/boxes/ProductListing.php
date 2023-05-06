@@ -65,7 +65,7 @@ class ProductListing extends Widget
         Info::includeJsFile('modules/helpers/getUprid');
 
         Info::includeExtensionJsFile('Quotations/js/productListing');
-        Info::includeExtensionJsFile('Samples/js/productListing');
+//        Info::includeExtensionJsFile('Samples/js/productListing');
         Info::addBoxToCss('quantity');
         Info::addBoxToCss('slick');
 
@@ -99,6 +99,12 @@ class ProductListing extends Widget
         foreach ($this->products as $product){
             $productList[$product['products_id']] = [
                 'products_id' => $product['products_id']
+            ];
+            $product['buttonArray'] = [
+                $product['products_id'] => [
+                    'buttonId' => ('b_atc_' . preg_replace('/[^\d]/', '_', $product['products_id'])),
+                    'quantity' => '1',
+                ]
             ];
             $item = '';
             $item .= '<div class="item" data-id="' . $product['products_id'] . '" data-name="' . $product['products_id'] . '">';
@@ -198,6 +204,10 @@ class ProductListing extends Widget
 
         if (!in_array(\common\components\google\widgets\GoogleTagmanger::getEvent(), ['indexPage', 'productPage'])) {
             \common\components\google\widgets\GoogleTagmanger::setEvent('productListing');
+        }
+
+        foreach (\common\helpers\Hooks::getList('box/product-listing') as $filename) {
+            include($filename);
         }
 
         if (isset($this->settings['onlyProducts']) && $this->settings['onlyProducts']) {

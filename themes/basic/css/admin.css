@@ -494,6 +494,12 @@
 .edit-blocks .box-block .box-block .box-block .box-block .box-block:hover {
   z-index: 106;
 }
+.edit-blocks .block .menu-widget {
+  z-index: 110;
+}
+.edit-blocks .block .box .menu-widget {
+  z-index: 111;
+}
 .edit-blocks .box-block .menu-widget {
   z-index: 111;
 }

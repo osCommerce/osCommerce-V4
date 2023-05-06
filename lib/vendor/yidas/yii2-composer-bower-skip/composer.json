@@ -1,0 +1,19 @@
+{
+    "name": "yidas/yii2-composer-bower-skip",
+    "description": "A Composer package that allows you to install or update Yii2 without Bower-Asset",
+    "keywords": ["yii2", "framework", "bower", "bower asset"],
+    "type": "yii2-extension",
+    "license": "MIT",
+    "support": {
+        "issues": "https://github.com/yidas/yii2-composer-bower-skip/issues?state=open",
+        "source": "https://github.com/yidas/yii2-composer-bower-skip"
+    },
+    "provide": {
+        "bower-asset/jquery": "*",
+        "bower-asset/inputmask": "*",
+        "bower-asset/punycode": "*",
+        "bower-asset/yii2-pjax": "*",
+        "bower-asset/bootstrap": "*",
+        "bower-asset/typeahead.js": "*"
+    }
+}

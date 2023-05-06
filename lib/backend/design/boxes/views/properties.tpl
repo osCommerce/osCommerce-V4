@@ -75,6 +75,14 @@
               <option value="no"{if $settings[0].main_property == 'no'} selected{/if}>{$smarty.const.TEXT_BTN_NO}</option>
             </select>
           </div>
+          <div class="setting-row">
+            <label for="">Clickable property filters</label>
+            <select name="setting[0][clickable_property_filters]" id="" class="form-control">
+              <option value=""{if $settings[0].clickable_property_filters == ''} selected{/if}>{$smarty.const.TEXT_BTN_YES} (current category)</option>
+              <option value="all"{if $settings[0].clickable_property_filters == 'all'} selected{/if}>{$smarty.const.TEXT_BTN_YES} (all products range)</option>
+              <option value="no"{if $settings[0].clickable_property_filters == 'no'} selected{/if}>{$smarty.const.TEXT_BTN_NO}</option>
+            </select>
+          </div>
 
           <div class="setting-row">
             <label for="">H tag for name</label>

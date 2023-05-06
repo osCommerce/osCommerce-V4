@@ -32,16 +32,21 @@ class ShoppingCartController extends Sceleton {
         if (GROUPS_DISABLE_CART) {
             tep_redirect(tep_href_link(FILENAME_DEFAULT));
         }
-        
+
         if (Yii::$app->user->isGuest && \common\helpers\PlatformConfig::getFieldValue('platform_please_login')) {
             tep_redirect(tep_href_link(FILENAME_LOGIN));
         }
-        
+
         $customer_groups_id = (int) \Yii::$app->storage->get('customer_groups_id');
         if (\common\helpers\Customer::check_customer_groups($customer_groups_id, 'cart_for_logged_only')) {
             tep_redirect(tep_href_link(FILENAME_LOGIN));
         }
-        
+
+        $popupMode = (Yii::$app->request->isAjax && (int)Yii::$app->request->get('popup') && Info::themeSetting('after_add') == 'popup');
+        if ($cart->notEmpty() && defined("SKIP_CART_PAGE") && SKIP_CART_PAGE == 'True' && !$popupMode) {
+            $this->redirect('checkout');
+        }
+
         //--- I don't know if this is safe enough?
         if (!Yii::$app->user->isGuest) {
             if( $multiCart = \common\helpers\Acl::checkExtension( 'MultiCart', 'allowed' ) ) {
@@ -63,6 +68,12 @@ class ShoppingCartController extends Sceleton {
         $messageStack = \Yii::$container->get('message_stack');
         $currencies = \Yii::$container->get('currencies');
 
+        if (!Yii::$app->user->isGuest) {
+            $this->manager->remove('estimate_ship');
+            $this->manager->remove('estimate_bill');
+            $this->manager->set('shipping', false);
+        }
+
         if (Yii::$app->request->isPost && isset($_POST['ajax_estimate'])) {
             return $this->actionEstimate();
         }
@@ -75,7 +86,6 @@ class ShoppingCartController extends Sceleton {
             'action' => tep_href_link(FILENAME_SHOPPING_CART, 'action=update_product'),
             'manager' => $this->manager
         );
-        $popupMode = (Yii::$app->request->isAjax && (int)Yii::$app->request->get('popup') && Info::themeSetting('after_add') == 'popup');
         if (!$popupMode) {
             $render_data = array_merge($render_data, $this->manager->prepareEstimateData());
         }
@@ -96,8 +106,12 @@ class ShoppingCartController extends Sceleton {
             'message_discount_coupon' => $message_discount_coupon,
             'message_shopping_cart' => ( $messageStack->size('shopping_cart') > 0 ? $messageStack->output('shopping_cart') : '' ),
         );
-        
+
         $render_data = array_merge($render_data, $ot_gv_data);
+
+        foreach (\common\helpers\Hooks::getList('shopping-cart/index') as $filename) {
+            include($filename);
+        }
 
         if ($popupMode) {
             return $this->render('popup.tpl', $render_data);
@@ -105,38 +119,45 @@ class ShoppingCartController extends Sceleton {
             \common\components\google\widgets\GoogleTagmanger::setEvent('shoppingCart');
             return $this->render('index.tpl', $render_data);
         }
-    }   
+    }
 
     public function actionEstimate() {
         $this->layout = false;
         global $cart;
-        
+
         $this->manager->loadCart($cart);
         $this->manager->createOrderInstance('\common\classes\Order');
-        
-        if (Yii::$app->request->isPost){
+
+        if (Yii::$app->request->isPost) {
             $post = Yii::$app->request->post('estimate');
-            
+
             if ($this->manager->isCustomerAssigned()){
                 if ($post['sendto']){
                     $this->manager->changeCustomerAddressSelection('shipping', $post['sendto']);
+                    $this->manager->resetDeliveryAddress();
                     $this->manager->changeCustomerAddressSelection('billing', $post['sendto']);
-                    $this->manager->set('shipping', false);                
+                    $this->manager->resetBillingAddress();
+                    $this->manager->set('shipping', false);
                 }
             } elseif ($post['country_id']) {
-                if ($this->manager->has('estimate_ship')){
+               Yii::$app->storage->set('customer_country_id', $post['country_id']);
+               if ($this->manager->has('estimate_ship')){
                     $estimate = $this->manager->get('estimate_ship');
                     if ($estimate['country_id'] != $post['country_id']){
                         $this->manager->set('estimate_ship', ['country_id' => $post['country_id'], 'postcode' => $post['post_code']]);
+                        $this->manager->resetDeliveryAddress();
                         $this->manager->set('estimate_bill', ['country_id' => $post['country_id'], 'postcode' => $post['post_code']]);
+                        $this->manager->resetBillingAddress();
                         $post['shipping'] = null;
                         $this->manager->set('shipping', false);
                     }
                 } else {
                     $this->manager->set('estimate_ship', ['country_id' => $post['country_id'], 'postcode' => $post['post_code']]);
+                    $this->manager->resetDeliveryAddress();
                     $this->manager->set('estimate_bill', ['country_id' => $post['country_id'], 'postcode' => $post['post_code']]);
+                    $this->manager->resetBillingAddress();
                 }
-            } 
+            }
             if ($post['shipping']??null){
                 $this->manager->setSelectedShipping($post['shipping']);
             }
@@ -196,8 +217,8 @@ class ShoppingCartController extends Sceleton {
                 cus.customers_email_address email,
                 cb.basket_id, cb.platform_id,
                 ci.token,
-                cus.customers_gender, 
-                ci.time_long, 
+                cus.customers_gender,
+                ci.time_long,
                 TIMESTAMPDIFF(HOUR, ci.time_long,NOW() ) as hoursago,
                 cb.language_id,
                 st.offered_discount,
@@ -217,32 +238,32 @@ class ShoppingCartController extends Sceleton {
                 $recovery_carts[] = $recovery_cart;
             }
         }
-        
+
         $currencies = \Yii::$container->get('currencies');
         $admins = [];
-        
+
         $mline = '';
         foreach ($recovery_carts as $recovery_cart) {
             $cid = (int) $recovery_cart['cid'];
             if ($cid === 0) {
                 continue;
             }
-            
+
             $admin_id = (int) $recovery_cart['admin_id'];
             if ($admin_id === 0) {
                 continue;
             }
-            
+
             /*if ($admin_id != 94) {
                 continue;//TODO stub
             }*/
-            
+
             if (!isset($admins[$admin_id])) {
                 $admins[$admin_id] = \common\models\Admin::find()->where(['admin_id' => $admin_id])->asArray()->one();
             }
-            
+
             $platform = new \common\classes\platform_config($recovery_cart['platform_id']);
-            
+
             $sql = "select cb.products_id pid, cb.customers_basket_quantity qty, p.products_price price,
                 p.products_tax_class_id taxclass,p.products_id pidd,
                 p.products_model model,
@@ -255,7 +276,7 @@ class ShoppingCartController extends Sceleton {
                         AND pd.products_id = p.products_id and pd.platform_id = '".(int)Yii::$app->get('platform')->config()->getPlatformToDescription()."' AND pd.language_id = " . (int) $recovery_cart['language_id'];
 
             $query2 = tep_db_query($sql);
-            
+
             $ptoduct = '';
             $ptoductArr = [];
             $columns = 3;
@@ -318,9 +339,9 @@ class ShoppingCartController extends Sceleton {
 
             [$email_subject, $email_text] = \common\helpers\Mail::get_parsed_email_template('Abandoned Cart Notification', $email_params, $recovery_cart['language_id'], $recovery_cart['platform_id']);
             \common\helpers\Mail::send($admins[$admin_id]['admin_firstname'] . ' ' . $admins[$admin_id]['admin_lastname'], $admins[$admin_id]['admin_email_address'], $email_subject, $email_text, $email_params['STORE_OWNER'], $email_params['STORE_OWNER_EMAIL_ADDRESS']);
-            
+
         }
-        
-        
+
+
     }
 }

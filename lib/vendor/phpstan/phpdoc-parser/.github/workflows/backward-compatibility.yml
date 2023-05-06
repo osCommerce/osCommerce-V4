@@ -1,0 +1,40 @@
+# https://help.github.com/en/categories/automating-your-workflow-with-github-actions
+
+name: "Backward Compatibility"
+
+on:
+  pull_request:
+  push:
+    branches:
+      - "1.9.x"
+
+jobs:
+  backward-compatibility:
+    name: "Backward Compatibility"
+
+    runs-on: "ubuntu-latest"
+    timeout-minutes: 30
+
+    steps:
+      - name: "Checkout"
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: "Install PHP"
+        uses: "shivammathur/setup-php@v2"
+        with:
+          coverage: "none"
+          php-version: "7.4"
+
+      - name: "Install dependencies"
+        run: "composer install --no-dev --no-interaction --no-progress --no-suggest"
+
+      - name: "allow composer plugins"
+        run: "composer config --no-plugins --global allow-plugins.ocramius/package-versions true"
+
+      - name: "Install BackwardCompatibilityCheck"
+        run: "composer global require --dev roave/backward-compatibility-check"
+
+      - name: "Check"
+        run: "$(composer global config bin-dir --absolute)/roave-backward-compatibility-check"

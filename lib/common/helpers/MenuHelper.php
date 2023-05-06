@@ -228,7 +228,7 @@ class MenuHelper {
             $item['parent_id'] = $parent;
             $object = self::createAdminMenuItemAndCheckAcl($item);
             //--- update acl
-            if (isset($item['child']) && is_array($item['child']) && (int)$item['box_type'] == 1) {
+            if (isset($item['child']) && is_array($item['child']) && (int)($item['box_type']??0) == 1) {
                 self::importAdminTree($item['child'], $object->box_id);
             }
         }

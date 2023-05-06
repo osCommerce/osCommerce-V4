@@ -1,6 +1,6 @@
 <?php
 
-use PhpOffice\PhpSpreadsheet\Calculation\Functions;
+use PhpOffice\PhpSpreadsheet\Calculation\Information\ExcelError;
 
 return [
     [
@@ -14,12 +14,12 @@ return [
         'Read the Docs',
     ],
     [
-        Functions::REF(),
+        'exception',
         null,
         null,
     ],
     [
-        Functions::REF(),
+        ExcelError::REF(),
         '',
         null,
     ],

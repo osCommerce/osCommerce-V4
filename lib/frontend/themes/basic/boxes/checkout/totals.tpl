@@ -15,6 +15,9 @@
         </div>
     </div>
 {/foreach}
+{if ($ccExt = \common\helpers\Acl::checkExtensionAllowed('CustomerCredit', 'allowed'))}
+    {$ccExt::getCheckoutTotalHtml($manager)}
+{/if}
 
 <script>
     tl(function(){

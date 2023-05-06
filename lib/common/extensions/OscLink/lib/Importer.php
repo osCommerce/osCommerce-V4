@@ -31,7 +31,7 @@ class Importer implements \OscLink\XML\ImportTuningInterface
     private $count_in_batch;
 
     // fat entities have small batch count
-    const BATCH_COUNT = ['categories' => 20, 'products' => 10, 'orders' => 10, 'products_options' => 10];
+    const BATCH_COUNT = ['categories' => 50, 'products' => 20, 'orders' => 20, 'products_options' => 50];
 
     public function __construct($conf)
     {
@@ -163,7 +163,9 @@ class Importer implements \OscLink\XML\ImportTuningInterface
             if ($mirrorIds) {
                 self::updateAutoIncValue($feed);
             }
-            \OscLink\Progress::Log("Finished import for $feed_name! ". \OscLink\Helper::formatArr("Entities downloaded: $this->count_all, added: {new}, updated: {updated}, skipped: {skipped}, error: {error}", $imported_sum) );
+            $finishMsg = "Finished import for $feed_name! ". \OscLink\Helper::formatArr("Entities downloaded: $this->count_all, added: {new}, updated: {updated}, skipped: {skipped}, error: {error}", $imported_sum);
+            \OscLink\Logger::print($finishMsg);
+            \OscLink\Progress::Log($finishMsg);
             if ($imported_sum['skipped'] > 0 || $imported_sum['error'] > 0) {
                 \OscLink\Progress::showLogFile();
             }

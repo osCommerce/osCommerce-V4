@@ -17,6 +17,7 @@ class inst_settings extends install_generic {
     public $next_button = 'update_db';
 
     private $def_lang = '';
+    private $platform_type = 0;
     private $platform_owner = '';
     private $platform_name = '';
     private $platform_url = '';
@@ -62,6 +63,18 @@ class inst_settings extends install_generic {
 						</tr>
                                                 <tr>
                                                   <td width="20%" class="empty_line"></td><td  width="30%" class="empty_line"></td><td width="20%" class="empty_line"></td><td  width="30%" class="empty_line"></td>
+                                                </tr>
+                                                <tr>
+                                                    <td align="right">' . $this->lang['platform_type'] . ':</td>
+                                                    <td colspan="3">
+                                                        <select name="platform_type">
+                                                            <option value="0"' . ($this->platform_type == 0 ? ' selected' : '') . '>Splash page and multi sales channels</option>
+                                                            <option value="7"' . ($this->platform_type == 7 ? ' selected' : '') . '>Furniture</option>
+                                                            <option value="8"' . ($this->platform_type == 8 ? ' selected' : '') . '>Watch</option>
+                                                            <option value="9"' . ($this->platform_type == 9 ? ' selected' : '') . '>b2b supermarket</option>
+                                                            <option value="10"' . ($this->platform_type == 10 ? ' selected' : '') . '>Print Shop</option>
+                                                        </select>
+                                                    </td>
                                                 </tr>
 						<tr>
                                                     <td align="right">' . $this->lang['platform_owner'] . ':<span class="requared">*</span></td>
@@ -167,7 +180,7 @@ class inst_settings extends install_generic {
         include_once $this->root_path . 'includes/local/configure.php';
         $link = mysqli_connect(DB_SERVER, DB_SERVER_USERNAME, DB_SERVER_PASSWORD);
         if (!$link) {
-            $this->log('install_error', 'Cant connect to database server.');
+            $this->log('install_error', 'Cant connect to database server.', mysqli_connect_error());
             return false;
         }
         $db_selected = mysqli_select_db($link, DB_DATABASE);
@@ -206,6 +219,7 @@ class inst_settings extends install_generic {
 
     public function parse_input() {
 
+        $this->platform_type = $_POST['platform_type'];
         $this->platform_owner = $_POST['platform_owner'];
         $this->platform_name = $_POST['platform_name'];
         $this->platform_url = $_POST['platform_url'];
@@ -229,7 +243,7 @@ class inst_settings extends install_generic {
         include_once $this->root_path . 'includes/local/configure.php';
         $link = mysqli_connect(DB_SERVER, DB_SERVER_USERNAME, DB_SERVER_PASSWORD);
         if (!$link) {
-            $this->log('install_error', 'Can\'t connect to database server.');
+            $this->log('install_error', 'Can\'t connect to database server.', mysqli_connect_error());
             return false;
         }
         $db_selected = mysqli_select_db($link, DB_DATABASE);
@@ -251,7 +265,7 @@ class inst_settings extends install_generic {
                 " WHERE platform_id=1;";
         $result = mysqli_query($link, $query);
         if (!$result) {
-            $this->log('install_error', 'Can\'t update database settings.');
+            $this->log('install_error', 'Can\'t update database settings: ' . $link->error, $query);
             return false;
         }
         $query = "UPDATE platforms SET " .
@@ -267,7 +281,7 @@ class inst_settings extends install_generic {
                 " WHERE platform_id=7;";
         $result = mysqli_query($link, $query);
         if (!$result) {
-            $this->log('install_error', 'Can\'t update database settings.');
+            $this->log('install_error', 'Can\'t update database settings: ' . $link->error, $query);
             return false;
         }
         $query = "UPDATE platforms SET " .
@@ -283,7 +297,7 @@ class inst_settings extends install_generic {
                 " WHERE platform_id=8;";
         $result = mysqli_query($link, $query);
         if (!$result) {
-            $this->log('install_error', 'Can\'t update database settings.');
+            $this->log('install_error', 'Can\'t update database settings: ' . $link->error, $query);
             return false;
         }
         $query = "UPDATE platforms SET " .
@@ -299,7 +313,7 @@ class inst_settings extends install_generic {
                 " WHERE platform_id=9;";
         $result = mysqli_query($link, $query);
         if (!$result) {
-            $this->log('install_error', 'Can\'t update database settings.');
+            $this->log('install_error', 'Can\'t update database settings: ' . $link->error, $query);
             return false;
         }
         $query = "UPDATE platforms SET " .
@@ -315,7 +329,7 @@ class inst_settings extends install_generic {
                 " WHERE platform_id=10;";
         $result = mysqli_query($link, $query);
         if (!$result) {
-            $this->log('install_error', 'Can\'t update database settings.');
+            $this->log('install_error', 'Can\'t update database settings: ' . $link->error, $query);
             return false;
         }
 
@@ -333,46 +347,76 @@ class inst_settings extends install_generic {
                 " WHERE platform_id IN (1, 7, 8, 9, 10);";
         $result = mysqli_query($link, $query);
         if (!$result) {
-            $this->log('install_error', 'Can\'t update database settings.');
+            $this->log('install_error', 'Can\'t update database settings: ' . $link->error, $query);
             return false;
         }
 
         $query = "UPDATE configuration SET configuration_value='" . $this->prepare_input($this->platform_email) . "' WHERE configuration_key='STORE_OWNER_EMAIL_ADDRESS';";
         $result = mysqli_query($link, $query);
         if (!$result) {
-            $this->log('install_error', 'Can\'t update database settings.');
+            $this->log('install_error', 'Can\'t update database settings: ' . $link->error, $query);
             return false;
         }
 
         $query = "UPDATE configuration SET configuration_value='" . $this->prepare_input($this->platform_from) . "' WHERE configuration_key='EMAIL_FROM';";
         $result = mysqli_query($link, $query);
         if (!$result) {
-            $this->log('install_error', 'Can\'t update database settings.');
+            $this->log('install_error', 'Can\'t update database settings: ' . $link->error, $query);
             return false;
         }
+        
+        switch ($this->platform_type) {
+            case '7':// Furniture
+            case '8':// Watch
+            case '9':// b2b supermarket
+            case '10':// Print Shop
+                $query = "UPDATE platforms SET is_default='0', status='0', platform_url='".$this->prepare_input($this->platform_url)."' WHERE platform_id IN (1, 7, 8, 9, 10);";
+                $result = mysqli_query($link, $query);
+                if (!$result) {
+                    $this->log('install_error', 'Can\'t update database settings: ' . $link->error, $query);
+                    return false;
+                }
+
+                $query = "UPDATE platforms SET is_default='1', status='1' WHERE platform_id='".$this->platform_type."';";
+                $result = mysqli_query($link, $query);
+                if (!$result) {
+                    $this->log('install_error', 'Can\'t update database settings: ' . $link->error, $query);
+                    return false;
+                }
+                
+                break;
+            case '0':// Splash page and multi sales channels
+            default:
+                break;
+        }
+        
 
         if ($this->enable_ssl == 0) {
+            error_clear_last();
             $content = file_get_contents($this->root_path . 'admin/includes/local/configure.php');
             if ($content === false) {
-                $this->log('install_error', 'Cant read admin config file.');
+                $this->log('install_error', 'Cant read admin config file.', error_get_last()['message']??null);
                 return false;
             }
             $content = str_replace(["define('ENABLE_SSL', true);", "define('ENABLE_SSL_CATALOG', true);"], ["define('ENABLE_SSL', false);", "define('ENABLE_SSL_CATALOG', false);"], $content);
+            error_clear_last();
             $response = file_put_contents($this->root_path . 'admin/includes/local/configure.php', $content);
             if ($response === false) {
-                $this->log('install_error', 'Can\'t save admin config file.');
+                $this->log('install_error', 'Can\'t save admin config file.', error_get_last()['message']??null);
                 return false;
             }
         } else {
+            error_clear_last();
             $content = file_get_contents($this->root_path . 'admin/includes/local/configure.php');
             if ($content === false) {
-                $this->log('install_error', 'Cant read admin config file.');
+                $this->log('install_error', 'Cant read admin config file.', error_get_last()['message']??null);
                 return false;
             }
             $content = str_replace(["define('HTTP_SERVER', 'http:", "define('HTTP_CATALOG_SERVER', 'http:"], ["define('HTTP_SERVER', 'https:", "define('HTTP_CATALOG_SERVER', 'https:"], $content);
+            error_clear_last();
             $response = file_put_contents($this->root_path . 'admin/includes/local/configure.php', $content);
             if ($response === false) {
-                $this->log('install_error', 'Can\'t save admin config file.');
+                $this->log('install_error', 'Can\'t save admin config file.', error_get_last()['message']??null);
                 return false;
             }
         }

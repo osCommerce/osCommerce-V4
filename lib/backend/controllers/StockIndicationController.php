@@ -259,6 +259,7 @@ class StockIndicationController extends Sceleton  {
       $request_for_quote = intval(Yii::$app->request->post('request_for_quote',0));
       $is_hidden = intval(Yii::$app->request->post('is_hidden',0));
       $disable_product_on_oos = intval(Yii::$app->request->post('disable_product_on_oos',0));
+      $limit_cart_qty_by_stock = (int)(Yii::$app->request->post('limit_cart_qty_by_stock',0));
       $reset_status_on_oos = intval(Yii::$app->request->post('reset_status_on_oos',0));
       $display_price_options = intval(Yii::$app->request->post('display_price_options',0));
       $display_virtual_options = intval(Yii::$app->request->post('display_virtual_options',0));
@@ -284,6 +285,7 @@ class StockIndicationController extends Sceleton  {
           'request_for_quote' => $request_for_quote,
           'is_hidden' => $is_hidden,
           'disable_product_on_oos' => $disable_product_on_oos,
+          'limit_cart_qty_by_stock' => $limit_cart_qty_by_stock,
           'reset_status_on_oos' => $reset_status_on_oos,
           'display_price_options' => $display_price_options,
           'display_virtual_options' => $display_virtual_options,
@@ -303,6 +305,7 @@ class StockIndicationController extends Sceleton  {
           'display_price_options' => $display_price_options,
           'display_virtual_options' => $display_virtual_options,
           'disable_product_on_oos' => $disable_product_on_oos,
+          'limit_cart_qty_by_stock' => $limit_cart_qty_by_stock,
           'reset_status_on_oos' => $reset_status_on_oos,
         );
         if ( $is_default ) {

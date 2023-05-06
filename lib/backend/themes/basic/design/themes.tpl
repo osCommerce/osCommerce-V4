@@ -193,7 +193,7 @@ $(function () {
 
     })
 
-    $('.top-buttons .btn-primary').popUp();
+    $('.top-buttons .btn-import-theme').popUp();
     $('.btn-move').popUp();
     $('.create-group').popUp();
     $('.remove-group').popUp();
@@ -318,38 +318,12 @@ $(function () {
     })
 
     function switchDesignerMode(mode, save = false){
-        /*switch (mode) {
-            case 'advanced':
-                $('.create-group').show();
-                $('.btn-add-theme').hide();
-                $('.btn-import-theme').show();
-                $('.btn-backups').show();
-                $('.btn-move').show();
-                $('.btn-copy-t').show();
-                $('.remove-theme').show();
-                break;
-            case 'expert':
-                $('.create-group').show();
-                $('.btn-add-theme').show();
-                $('.btn-import-theme').show();
-                $('.btn-backups').show();
-                $('.btn-move').show();
-                $('.btn-copy-t').show();
-                $('.remove-theme').show();
-                break;
-            default:
-                $('.create-group').hide();
-                $('.btn-add-theme').hide();
-                $('.btn-import-theme').hide();
-                $('.btn-backups').hide();
-                $('.btn-move').hide();
-                $('.btn-copy-t').hide();
-                $('.remove-theme').hide();
-        }*/
         if (save) {
             $.post('design/save-admin-data', { designer_mode: mode})
         }
     }
+
+    $.get('design/check-origin-theme');//create origin and new_theme if they don't exist
 })
 </script>
 

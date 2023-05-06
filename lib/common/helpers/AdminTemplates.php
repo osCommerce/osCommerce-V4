@@ -16,6 +16,7 @@ class AdminTemplates
 {
     public static $pages = [
         'backendOrder' => TABLE_HEADING_ORDER,
+        'backendOrdersList' => ORDERS_LIST,
     ];
 
     public static function templatesList($accessLevelsId)

@@ -450,7 +450,7 @@ class TlUrlRule extends UrlRule
                 }
                 if (preg_match('/([^\(\)]+?)\(([^\[\]]*?)\)/', $seo_path_part, $arr)) {
                     $property = tep_db_fetch_array(tep_db_query("select p.properties_id from " . TABLE_PROPERTIES . " p left join " . TABLE_PROPERTIES_DESCRIPTION . " pd on (p.properties_id = pd.properties_id and pd.language_id = '" . (int)$languages_id . "')  where pd.properties_seo_page_name = '" . tep_db_input($arr[1]) . "' order by p.properties_id limit 1"));
-                    if ($property['properties_id'] > 0) {
+                    if (isset($property['properties_id']) && $property['properties_id'] > 0) {
                         $values_array = array();
                         foreach (explode(',', $arr[2]) as $val) {
                             if (trim($val) == '') continue;

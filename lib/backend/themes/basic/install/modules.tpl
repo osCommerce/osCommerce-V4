@@ -34,13 +34,13 @@
             checkable_list="" data-directory_id="{$currentDirectory->directory_id|default:null}">
             <thead>
             <tr>
-                <th>Application</th>
-                <th>{$smarty.const.HEADING_TYPE}</th>
-                <th>Requirements</th>
-                <th>{$smarty.const.ICON_FILE}</th>
-                <th>{$smarty.const.TABLE_HEADING_FILE_SIZE}</th>
                 <th>{$smarty.const.TEXT_INFO_DATE_ADDED1}</th>
-                <th>State</th>
+                <th>{$smarty.const.ICON_FILE}</th>
+                {*<th>{$smarty.const.TABLE_HEADING_FILE_SIZE}</th>*}
+                <th>{$smarty.const.TEXT_APPLICATION}</th>
+                <th>{$smarty.const.HEADING_TYPE}</th>
+                <th>{$smarty.const.TEXT_REQUIREMENTS}</th>
+                <th>{$smarty.const.TEXT_STATE}</th>
                 <th>{$smarty.const.TABLE_HEADING_ACTION}</th>
             </tr>
             </thead>
@@ -56,6 +56,15 @@ a.job-button:hover{ text-decoration: none; }
 .job-button .icon-play{ color: #006400 }
 </style>
 <script type="text/javascript">
+function createLoader() {
+    console.log('create');
+    $('#content > .container').addClass('hided-box').append('<div class="hided-box-holder" style="position: fixed"><div class="preloader"></div></div>');
+}
+function destroyLoader() {
+    console.log('destroy');
+    $('#content > .container').removeClass('hided-box');
+    $('.hided-box-holder').remove();
+}
 function file_deploy(fileName, chooseType) {
     if (chooseType == 2) { // install new language
         bootbox.dialog({
@@ -66,6 +75,7 @@ function file_deploy(fileName, chooseType) {
                     label: "{$smarty.const.TEXT_BTN_OK|escape:javascript}",
                     className: "btn-cancel",
                     callback: function() {
+                        createLoader();
                         $.ajax({
                             url:'install/deploy-file',
                             type: 'POST',
@@ -79,7 +89,7 @@ function file_deploy(fileName, chooseType) {
                                     $('#tblFiles').trigger('reload');
                                 }
                             }
-                        });
+                        }).always(destroyLoader);
                     }
                 }
             }
@@ -95,6 +105,7 @@ function file_deploy(fileName, chooseType) {
                     label: "{$smarty.const.TEXT_BTN_OK|escape:javascript}",
                     className: "btn-cancel",
                     callback: function() {
+                        createLoader();
                         var locale = $('select[name="locale"]').val();
                         $.ajax({
                             url:'install/deploy-file',
@@ -110,7 +121,7 @@ function file_deploy(fileName, chooseType) {
                                     $('#tblFiles').trigger('reload');
                                 }
                             }
-                        });
+                        }).always(destroyLoader);
                     }
                 }
             }
@@ -126,6 +137,7 @@ function file_deploy(fileName, chooseType) {
                     label: "{$smarty.const.TEXT_BTN_OK}",
                     className: "btn-cancel",
                     callback: function() {
+                        createLoader();
                         var platform = $('select[name="platform"]').val();
                         $.ajax({
                             url:'install/deploy-file',
@@ -141,13 +153,14 @@ function file_deploy(fileName, chooseType) {
                                     $('#tblFiles').trigger('reload');
                                 }
                             }
-                        });
+                        }).always(destroyLoader);
                     }
                 }
             }
         });
         return false;
     }
+    createLoader();
     $.ajax({
         url:'install/deploy-file',
         type: 'POST',
@@ -161,8 +174,7 @@ function file_deploy(fileName, chooseType) {
                 $('#tblFiles').trigger('reload');
             }
         }
-    });
-
+    }).always(destroyLoader);
     return false;
 }
 function file_remove(fileName) {
@@ -219,6 +231,7 @@ $('#tblFiles').on('reload',function(event, resetPage) {
 
 $(document).ready(function(){
     var table = $('#tblFiles').DataTable( {
+        "paging": false,
         "serverSide": true,
         "processing": true,
         "ajax": {

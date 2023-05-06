@@ -147,7 +147,7 @@ class IOAttachment extends Complex
 
         if ( !empty($sourceFile) ) {
             if ( empty($this->value) ) {
-                $this->value = basename($sourceFile);
+                $this->value = IOCore::get()->normalizeLocalFileName(basename($sourceFile));
             }
             if (isset($this->options) && !empty($this->options['importVia']) && $this->options['importVia'] === 'File') {
                 $_fileParams = [
@@ -158,9 +158,16 @@ class IOAttachment extends Complex
                 }
                 return new \common\models\File\Upload($_fileParams);
             } else {
-                $physicalFile = IOCore::get()->getLocalLocation($this->location.'/'.$this->value);
+                $this->value = IOCore::get()->normalizeLocalFileName($this->value);
+                $origin = $physicalFile = IOCore::get()->getLocalLocation($this->location.'/'.$this->value);
 
                 IOCore::get()->download($sourceFile, $physicalFile);
+                if ($origin != $physicalFile) {
+                    \OscLink\Logger::printf('Warning while saving images: originFN=$origin but result=$physicalFile');
+                }
+                if ($pos = strpos($this->location, '/')) {
+                    $this->value = rtrim(substr($this->location, $pos+1), '/') . '/' . $this->value;
+                }
             }
         }
 

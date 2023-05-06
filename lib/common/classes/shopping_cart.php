@@ -181,11 +181,11 @@ class shopping_cart {
     }
 
     public $cc_array = [];
-    
+
     public function clearCcItems() {
         $this->cc_array = [];
     }
-    
+
     public function addCcItem($coupon_code) {
         if (!empty($coupon_code)) {
             if ( !is_array($this->cc_array) ) $this->cc_array = [];
@@ -207,7 +207,7 @@ class shopping_cart {
             }
         }
     }
-    
+
     public function removeCcItem($code) {
         if (is_array($this->cc_array)) {
             foreach ($this->cc_array as $key => $value) {
@@ -235,7 +235,7 @@ class shopping_cart {
                         }
                     }
                 }
-                
+
                 $this->totals[$totals['class']] = array('title' => $totals['title'],
                     'value' => [
                         'in' => $totals['value_inc_tax'],
@@ -608,6 +608,7 @@ class shopping_cart {
  */
     function reset($reset_database = false) {
 
+        $contents = $this->contents;
         $this->contents = array();
         $this->overwrite = array();
         $this->giveaway = array();
@@ -623,7 +624,7 @@ class shopping_cart {
         $this->products_array = [];
 
         $this->clearCcItems();
-        
+
         if (!Yii::$app->user->isGuest && ($reset_database == true)) {
             CustomersBasket::clearBasket(Yii::$app->user->getId());
             //$this->basketID = $this->generate_cart_id();
@@ -649,9 +650,9 @@ class shopping_cart {
         $object_properties = get_object_vars($this);
         unset($object_properties['products_array']);
         $prop_names = array_keys($object_properties);
-        
+
         // php8 compatibility - fix error: serialize(): "prop_name" returned as member variable from __sleep() but does not exist
-        // where "prop_name" - private property of shopping_cart 
+        // where "prop_name" - private property of shopping_cart
         // happens if serialize children:
         // \\extensions\\Samples\\SampleCart
         // \\extensions\\Quotations\\QuoteCart
@@ -945,6 +946,10 @@ class shopping_cart {
             $user = Yii::$app->user->getIdentity();
             if ($user){
                 $customer_groups_id = $user->get('customer_groups_id');
+            }
+
+            foreach (\common\helpers\Hooks::getList('shopping-cart/cleanup') as $filename) {
+                include($filename);
             }
 
             foreach (array_reverse($this->contents, true) as $key => $value) {
@@ -1518,7 +1523,7 @@ class shopping_cart {
         $current_products_array_cache_key = sha1(json_encode(array_merge($this->contents, $this->giveaway, $virtual_gift_cards)));
         if ( empty($selected_products_id) && !empty($this->products_array) ) {
             if ($last_products_array_cache_key == $current_products_array_cache_key && !\frontend\design\Info::isTotallyAdmin()) {
-                return array_values($this->products_array);
+                if (!Yii::$app->params['reset_static_product_prices_cache']) return array_values($this->products_array);
             }
         }
 
@@ -2174,6 +2179,16 @@ class shopping_cart {
         return $this->volume/1000000;
     }
 
+    function show_volume_weight() {
+        $volume_weight = 0;
+        if (defined('VOLUME_WEIGHT_COEFFICIENT') && VOLUME_WEIGHT_COEFFICIENT > 0) {
+            foreach ($this->get_products() as $product) {
+                $volume_weight += max($product['weight'], $product['volume'] / VOLUME_WEIGHT_COEFFICIENT) * $product['quantity'];
+            }
+        }
+        return $volume_weight;
+    }
+
     function showDimensions() {
         if (!$this->products_array && $this->count_contents()){
             $this->calculate();
@@ -2182,9 +2197,9 @@ class shopping_cart {
             $this->max_length = 0;
             $this->max_height = 0;
             foreach($this->products_array as $_product){
-                $this->max_width = max($this->max_width, $_product['width_cm']);
-                $this->max_length = max($this->max_length, $_product['length_cm']);
-                $this->max_height = max($this->max_height, $_product['height_cm']);
+                $this->max_width = max($this->max_width, $_product['width_cm']??0);
+                $this->max_length = max($this->max_length, $_product['length_cm']??0);
+                $this->max_height = max($this->max_height, $_product['height_cm']??0);
             }
         }
         return [
@@ -2689,11 +2704,17 @@ class shopping_cart {
         }
         \common\components\google\widgets\GoogleTagmanger::setEvent('addToCart');
         $this->cartID = $this->generate_cart_id();
+        foreach (\common\helpers\Hooks::getList('shopping-cart/add-cart') as $filename) {
+            include($filename);
+        }
         return $products_id;
     }
 
     function add_configuration(array $post_data, $notify = true, $type = 'update') {
         global $new_products_id_in_cart;
+
+        $bundle_products = array();
+        $bundle_products_attributes = array();
 
         $post_data['id'] = $post_data['id'] ?? null;
         $sub = InventoryHelper::normalize_id(InventoryHelper::get_uprid($post_data['products_id'], $post_data['id']));
@@ -2702,6 +2723,34 @@ class shopping_cart {
         foreach ($post_data['elements'] as $key => $value) {
             if ($value == 'on' || $value == '0')
                 continue;
+// {{
+            if ($ext = \common\helpers\Acl::checkExtension('ProductBundles', 'getBundleProducts')) {
+                $bundle_products[$key . '-' . $value] = $ext::getBundleProducts($value, \common\classes\platform::currentId());
+                if (count($bundle_products[$key . '-' . $value]) > 0) {
+                    $bundle_products_attributes[$key . '-' . $value] = array();
+                    if (is_array($post_data['elements_attr'][$key][$value])) {
+                        $attributes = $post_data['elements_attr'][$key][$value];
+                    } else {
+                        $attributes = $post_data['elements_attr'][$value];
+                    }
+                    if (is_array($attributes)) {
+                        foreach ($attributes as $pk => $pv) {
+                            if (strpos($pk, '-') !== false) {
+                                $temp = explode('-', $pk);
+                                $bundle_products_attributes[$key . '-' . $value][$temp[1]][$temp[0]] = $pv; //products options in bundle
+                            } else {
+                                $bundle_products_attributes[$key . '-' . $value][$value][$pk] = $pv; //main product option
+                            }
+                        }
+                    }
+                    foreach ($bundle_products[$key . '-' . $value] as $prid => $bundle_qty) {
+                        $sub_product_id = InventoryHelper::normalize_id(InventoryHelper::get_uprid($prid, $bundle_products_attributes[$key . '-' . $value][$prid])) . '{sub}' . $sub;
+                        $products_uprid .= ($key + \common\extensions\ProductConfigurator\helpers\Configurator::BUNDLE_ELEMENTS_SHIFT) . '|' . $sub_product_id . '|';
+                    }
+                    continue;
+                }
+            }
+// }}
             $post_data['elements_attr'][$key][$value] = $post_data['elements_attr'][$key][$value] ?? null;
             $post_data['elements_attr'][$value] = $post_data['elements_attr'][$value] ?? null;
             if (is_array($post_data['elements_attr'][$key][$value])) {
@@ -2741,6 +2790,15 @@ class shopping_cart {
             $post_data['elements_qty'][$key] = $post_data['elements_qty'][$key] ?? null;
             $post_data['elements_attr'][$value]['id'] = $post_data['elements_attr'][$value]['id'] ?? null;
             $elements_qty = ($post_data['elements_qty'][$key] > 0 ? $post_data['elements_qty'][$key] : 1);
+// {{
+            if (is_array($bundle_products[$key . '-' . $value]) && count($bundle_products[$key . '-' . $value]) > 0) {
+                foreach ($bundle_products[$key . '-' . $value] as $prid => $bundle_qty) {
+                    $sub_product_id = InventoryHelper::normalize_id(InventoryHelper::get_uprid($prid, $bundle_products_attributes[$key . '-' . $value][$prid])) . '{sub}' . $sub;
+                    $__ids[] = $this->add_cart_cfg($sub_product_id, $qty * $elements_qty * $bundle_qty, $bundle_products_attributes[$key . '-' . $value][$prid], false, $products_uprid, $type);
+                }
+                continue;
+            }
+// }}
             if (is_array($post_data['elements_attr'][$key][$value])) {
                 $sub_product_id = InventoryHelper::normalize_id(InventoryHelper::get_uprid($value, $post_data['elements_attr'][$key][$value])) . '{sub}' . $sub;
                 $__ids[] = $this->add_cart_cfg($sub_product_id, $qty * $elements_qty, $post_data['elements_attr'][$key][$value], false, $products_uprid, $type);

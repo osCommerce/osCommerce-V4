@@ -2,6 +2,7 @@
 
 namespace PHPStan\PhpDocParser\Parser;
 
+use Exception;
 use PHPStan\PhpDocParser\Ast\ConstExpr\ConstExprFloatNode;
 use PHPStan\PhpDocParser\Ast\ConstExpr\ConstExprIntegerNode;
 use PHPStan\PhpDocParser\Ast\ConstExpr\ConstExprStringNode;
@@ -11,17 +12,25 @@ use PHPStan\PhpDocParser\Ast\Type\ArrayShapeNode;
 use PHPStan\PhpDocParser\Ast\Type\ArrayTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\CallableTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\CallableTypeParameterNode;
+use PHPStan\PhpDocParser\Ast\Type\ConditionalTypeForParameterNode;
+use PHPStan\PhpDocParser\Ast\Type\ConditionalTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\ConstTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\GenericTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\IdentifierTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\IntersectionTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\NullableTypeNode;
+use PHPStan\PhpDocParser\Ast\Type\ObjectShapeItemNode;
+use PHPStan\PhpDocParser\Ast\Type\ObjectShapeNode;
+use PHPStan\PhpDocParser\Ast\Type\OffsetAccessTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\ThisTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\TypeNode;
 use PHPStan\PhpDocParser\Ast\Type\UnionTypeNode;
 use PHPStan\PhpDocParser\Lexer\Lexer;
+use PHPUnit\Framework\TestCase;
+use function get_class;
+use const PHP_EOL;
 
-class TypeParserTest extends \PHPUnit\Framework\TestCase
+class TypeParserTest extends TestCase
 {
 
 	/** @var Lexer */
@@ -40,13 +49,11 @@ class TypeParserTest extends \PHPUnit\Framework\TestCase
 
 	/**
 	 * @dataProvider provideParseData
-	 * @param string              $input
-	 * @param TypeNode|\Exception $expectedResult
-	 * @param int                 $nextTokenType
+	 * @param TypeNode|Exception $expectedResult
 	 */
 	public function testParse(string $input, $expectedResult, int $nextTokenType = Lexer::TOKEN_END): void
 	{
-		if ($expectedResult instanceof \Exception) {
+		if ($expectedResult instanceof Exception) {
 			$this->expectException(get_class($expectedResult));
 			$this->expectExceptionMessage($expectedResult->getMessage());
 		}
@@ -141,6 +148,17 @@ class TypeParserTest extends \PHPUnit\Framework\TestCase
 			],
 			[
 				'(string & int)',
+				new IntersectionTypeNode([
+					new IdentifierTypeNode('string'),
+					new IdentifierTypeNode('int'),
+				]),
+			],
+			[
+				'(' . PHP_EOL .
+				'  string' . PHP_EOL .
+				'  &' . PHP_EOL .
+				'  int' . PHP_EOL .
+				')',
 				new IntersectionTypeNode([
 					new IdentifierTypeNode('string'),
 					new IdentifierTypeNode('int'),
@@ -263,6 +281,9 @@ class TypeParserTest extends \PHPUnit\Framework\TestCase
 						new IdentifierTypeNode('Foo'),
 						[
 							new IdentifierTypeNode('Bar'),
+						],
+						[
+							GenericTypeNode::VARIANCE_INVARIANT,
 						]
 					)
 				),
@@ -274,6 +295,10 @@ class TypeParserTest extends \PHPUnit\Framework\TestCase
 					[
 						new IdentifierTypeNode('int'),
 						new IdentifierTypeNode('Foo\\Bar'),
+					],
+					[
+						GenericTypeNode::VARIANCE_INVARIANT,
+						GenericTypeNode::VARIANCE_INVARIANT,
 					]
 				),
 			],
@@ -436,7 +461,7 @@ class TypeParserTest extends \PHPUnit\Framework\TestCase
 			],
 			[
 				'array{',
-				new \PHPStan\PhpDocParser\Parser\ParserException(
+				new ParserException(
 					'',
 					Lexer::TOKEN_END,
 					6,
@@ -445,7 +470,7 @@ class TypeParserTest extends \PHPUnit\Framework\TestCase
 			],
 			[
 				'array{a => int}',
-				new \PHPStan\PhpDocParser\Parser\ParserException(
+				new ParserException(
 					'=>',
 					Lexer::TOKEN_OTHER,
 					8,
@@ -577,6 +602,97 @@ class TypeParserTest extends \PHPUnit\Framework\TestCase
 				]),
 			],
 			[
+				'array{a: int, b: int, ...}',
+				new ArrayShapeNode([
+					new ArrayShapeItemNode(
+						new IdentifierTypeNode('a'),
+						false,
+						new IdentifierTypeNode('int')
+					),
+					new ArrayShapeItemNode(
+						new IdentifierTypeNode('b'),
+						false,
+						new IdentifierTypeNode('int')
+					),
+				], false),
+			],
+			[
+				'array{int, string, ...}',
+				new ArrayShapeNode([
+					new ArrayShapeItemNode(
+						null,
+						false,
+						new IdentifierTypeNode('int')
+					),
+					new ArrayShapeItemNode(
+						null,
+						false,
+						new IdentifierTypeNode('string')
+					),
+				], false),
+			],
+			[
+				'array{...}',
+				new ArrayShapeNode([], false),
+			],
+			[
+				'array{
+				 *	a: int,
+				 *	...
+				 *}',
+				new ArrayShapeNode([
+					new ArrayShapeItemNode(
+						new IdentifierTypeNode('a'),
+						false,
+						new IdentifierTypeNode('int')
+					),
+				], false),
+			],
+			[
+				'array{
+					a: int,
+					...,
+				}',
+				new ArrayShapeNode([
+					new ArrayShapeItemNode(
+						new IdentifierTypeNode('a'),
+						false,
+						new IdentifierTypeNode('int')
+					),
+				], false),
+			],
+			[
+				'array{int, ..., string}',
+				new ParserException(
+					'string',
+					Lexer::TOKEN_IDENTIFIER,
+					16,
+					Lexer::TOKEN_CLOSE_CURLY_BRACKET
+				),
+			],
+			[
+				'list{
+				 	int,
+				 	string
+				 }',
+				new ArrayShapeNode(
+					[
+						new ArrayShapeItemNode(
+							null,
+							false,
+							new IdentifierTypeNode('int')
+						),
+						new ArrayShapeItemNode(
+							null,
+							false,
+							new IdentifierTypeNode('string')
+						),
+					],
+					true,
+					ArrayShapeNode::KIND_LIST
+				),
+			],
+			[
 				'callable(): Foo',
 				new CallableTypeNode(
 					new IdentifierTypeNode('callable'),
@@ -603,6 +719,9 @@ class TypeParserTest extends \PHPUnit\Framework\TestCase
 						new IdentifierTypeNode('Foo'),
 						[
 							new IdentifierTypeNode('Bar'),
+						],
+						[
+							GenericTypeNode::VARIANCE_INVARIANT,
 						]
 					)
 				),
@@ -706,6 +825,10 @@ class TypeParserTest extends \PHPUnit\Framework\TestCase
 								[
 									new IdentifierTypeNode('mixed'),
 									new IdentifierTypeNode('string'),
+								],
+								[
+									GenericTypeNode::VARIANCE_INVARIANT,
+									GenericTypeNode::VARIANCE_INVARIANT,
 								]
 							),
 							new UnionTypeNode([
@@ -716,12 +839,19 @@ class TypeParserTest extends \PHPUnit\Framework\TestCase
 											new IdentifierTypeNode('string'),
 											[
 												new IdentifierTypeNode('foo'),
+											],
+											[
+												GenericTypeNode::VARIANCE_INVARIANT,
 											]
 										),
 										new IdentifierTypeNode('bar'),
 									])
 								),
 							]),
+						],
+						[
+							GenericTypeNode::VARIANCE_INVARIANT,
+							GenericTypeNode::VARIANCE_INVARIANT,
 						]
 					),
 					new IdentifierTypeNode('Lorem'),
@@ -731,6 +861,13 @@ class TypeParserTest extends \PHPUnit\Framework\TestCase
 				'array [ int ]',
 				new IdentifierTypeNode('array'),
 				Lexer::TOKEN_OPEN_SQUARE_BRACKET,
+			],
+			[
+				'array[ int ]',
+				new OffsetAccessTypeNode(
+					new IdentifierTypeNode('array'),
+					new IdentifierTypeNode('int')
+				),
 			],
 			[
 				"?\t\xA009", // edge-case with \h
@@ -746,6 +883,10 @@ class TypeParserTest extends \PHPUnit\Framework\TestCase
 						[
 							new IdentifierTypeNode('array-key'),
 							new IdentifierTypeNode('int'),
+						],
+						[
+							GenericTypeNode::VARIANCE_INVARIANT,
+							GenericTypeNode::VARIANCE_INVARIANT,
 						]
 					)
 				),
@@ -760,6 +901,10 @@ class TypeParserTest extends \PHPUnit\Framework\TestCase
 							[
 								new IdentifierTypeNode('array-key'),
 								new IdentifierTypeNode('int'),
+							],
+							[
+								GenericTypeNode::VARIANCE_INVARIANT,
+								GenericTypeNode::VARIANCE_INVARIANT,
 							]
 						)
 					),
@@ -912,6 +1057,8 @@ class TypeParserTest extends \PHPUnit\Framework\TestCase
 				'list<QueueAttributeName::*>',
 				new GenericTypeNode(new IdentifierTypeNode('list'), [
 					new ConstTypeNode(new ConstFetchNode('QueueAttributeName', '*')),
+				], [
+					GenericTypeNode::VARIANCE_INVARIANT,
 				]),
 			],
 			[
@@ -922,6 +1069,9 @@ class TypeParserTest extends \PHPUnit\Framework\TestCase
 					new IdentifierTypeNode('array'),
 					[
 						new IdentifierTypeNode('Foo'),
+					],
+					[
+						GenericTypeNode::VARIANCE_INVARIANT,
 					]
 				),
 			],
@@ -935,6 +1085,10 @@ class TypeParserTest extends \PHPUnit\Framework\TestCase
 					[
 						new IdentifierTypeNode('Foo'),
 						new IdentifierTypeNode('Bar'),
+					],
+					[
+						GenericTypeNode::VARIANCE_INVARIANT,
+						GenericTypeNode::VARIANCE_INVARIANT,
 					]
 				),
 			],
@@ -947,6 +1101,10 @@ class TypeParserTest extends \PHPUnit\Framework\TestCase
 					[
 						new IdentifierTypeNode('Foo'),
 						new IdentifierTypeNode('Bar'),
+					],
+					[
+						GenericTypeNode::VARIANCE_INVARIANT,
+						GenericTypeNode::VARIANCE_INVARIANT,
 					]
 				),
 			],
@@ -965,8 +1123,15 @@ class TypeParserTest extends \PHPUnit\Framework\TestCase
 							new IdentifierTypeNode('array'),
 							[
 								new IdentifierTypeNode('Bar'),
+							],
+							[
+								GenericTypeNode::VARIANCE_INVARIANT,
 							]
 						),
+					],
+					[
+						GenericTypeNode::VARIANCE_INVARIANT,
+						GenericTypeNode::VARIANCE_INVARIANT,
 					]
 				),
 			],
@@ -985,8 +1150,15 @@ class TypeParserTest extends \PHPUnit\Framework\TestCase
 							new IdentifierTypeNode('array'),
 							[
 								new IdentifierTypeNode('Bar'),
+							],
+							[
+								GenericTypeNode::VARIANCE_INVARIANT,
 							]
 						),
+					],
+					[
+						GenericTypeNode::VARIANCE_INVARIANT,
+						GenericTypeNode::VARIANCE_INVARIANT,
 					]
 				),
 			],
@@ -1001,6 +1173,707 @@ class TypeParserTest extends \PHPUnit\Framework\TestCase
 			[
 				'int|array{}',
 				new UnionTypeNode([new IdentifierTypeNode('int'), new ArrayShapeNode([])]),
+			],
+			[
+				'callable(' . PHP_EOL .
+				'  Foo' . PHP_EOL .
+				'): void',
+				new CallableTypeNode(
+					new IdentifierTypeNode('callable'),
+					[
+						new CallableTypeParameterNode(new IdentifierTypeNode('Foo'), false, false, '', false),
+					],
+					new IdentifierTypeNode('void')
+				),
+			],
+			[
+				'callable(' . PHP_EOL .
+				'  Foo,' . PHP_EOL .
+				'  Bar' . PHP_EOL .
+				'): void',
+				new CallableTypeNode(
+					new IdentifierTypeNode('callable'),
+					[
+						new CallableTypeParameterNode(new IdentifierTypeNode('Foo'), false, false, '', false),
+						new CallableTypeParameterNode(new IdentifierTypeNode('Bar'), false, false, '', false),
+					],
+					new IdentifierTypeNode('void')
+				),
+			],
+			[
+				'callable(' . PHP_EOL .
+				'  Foo, Bar' . PHP_EOL .
+				'): void',
+				new CallableTypeNode(
+					new IdentifierTypeNode('callable'),
+					[
+						new CallableTypeParameterNode(new IdentifierTypeNode('Foo'), false, false, '', false),
+						new CallableTypeParameterNode(new IdentifierTypeNode('Bar'), false, false, '', false),
+					],
+					new IdentifierTypeNode('void')
+				),
+			],
+			[
+				'callable(' . PHP_EOL .
+				'  Foo,' . PHP_EOL .
+				'  callable(' . PHP_EOL .
+				'    Bar' . PHP_EOL .
+				'  ): void' . PHP_EOL .
+				'): void',
+				new CallableTypeNode(
+					new IdentifierTypeNode('callable'),
+					[
+						new CallableTypeParameterNode(new IdentifierTypeNode('Foo'), false, false, '', false),
+						new CallableTypeParameterNode(
+							new CallableTypeNode(
+								new IdentifierTypeNode('callable'),
+								[
+									new CallableTypeParameterNode(new IdentifierTypeNode('Bar'), false, false, '', false),
+								],
+								new IdentifierTypeNode('void')
+							),
+							false,
+							false,
+							'',
+							false
+						),
+					],
+					new IdentifierTypeNode('void')
+				),
+			],
+			[
+				'callable(' . PHP_EOL .
+				'  Foo,' . PHP_EOL .
+				'  callable(' . PHP_EOL .
+				'    Bar,' . PHP_EOL .
+				'  ): void' . PHP_EOL .
+				'): void',
+				new CallableTypeNode(
+					new IdentifierTypeNode('callable'),
+					[
+						new CallableTypeParameterNode(new IdentifierTypeNode('Foo'), false, false, '', false),
+						new CallableTypeParameterNode(
+							new CallableTypeNode(
+								new IdentifierTypeNode('callable'),
+								[
+									new CallableTypeParameterNode(new IdentifierTypeNode('Bar'), false, false, '', false),
+								],
+								new IdentifierTypeNode('void')
+							),
+							false,
+							false,
+							'',
+							false
+						),
+					],
+					new IdentifierTypeNode('void')
+				),
+			],
+			[
+				'(Foo is Bar ? never : int)',
+				new ConditionalTypeNode(
+					new IdentifierTypeNode('Foo'),
+					new IdentifierTypeNode('Bar'),
+					new IdentifierTypeNode('never'),
+					new IdentifierTypeNode('int'),
+					false
+				),
+			],
+			[
+				'(Foo is not Bar ? never : int)',
+				new ConditionalTypeNode(
+					new IdentifierTypeNode('Foo'),
+					new IdentifierTypeNode('Bar'),
+					new IdentifierTypeNode('never'),
+					new IdentifierTypeNode('int'),
+					true
+				),
+			],
+			[
+				'(T is self::TYPE_STRING ? string : (T is self::TYPE_INT ? int : bool))',
+				new ConditionalTypeNode(
+					new IdentifierTypeNode('T'),
+					new ConstTypeNode(new ConstFetchNode('self', 'TYPE_STRING')),
+					new IdentifierTypeNode('string'),
+					new ConditionalTypeNode(
+						new IdentifierTypeNode('T'),
+						new ConstTypeNode(new ConstFetchNode('self', 'TYPE_INT')),
+						new IdentifierTypeNode('int'),
+						new IdentifierTypeNode('bool'),
+						false
+					),
+					false
+				),
+			],
+			[
+				'(Foo is Bar|Baz ? never : int|string)',
+				new ConditionalTypeNode(
+					new IdentifierTypeNode('Foo'),
+					new UnionTypeNode([
+						new IdentifierTypeNode('Bar'),
+						new IdentifierTypeNode('Baz'),
+					]),
+					new IdentifierTypeNode('never'),
+					new UnionTypeNode([
+						new IdentifierTypeNode('int'),
+						new IdentifierTypeNode('string'),
+					]),
+					false
+				),
+			],
+			[
+				'(' . PHP_EOL .
+				'  TRandList is array ? array<TRandKey, TRandVal> : (' . PHP_EOL .
+				'  TRandList is XIterator ? XIterator<TRandKey, TRandVal> :' . PHP_EOL .
+				'  IteratorIterator<TRandKey, TRandVal>|LimitIterator<TRandKey, TRandVal>' . PHP_EOL .
+				'))',
+				new ConditionalTypeNode(
+					new IdentifierTypeNode('TRandList'),
+					new IdentifierTypeNode('array'),
+					new GenericTypeNode(
+						new IdentifierTypeNode('array'),
+						[
+							new IdentifierTypeNode('TRandKey'),
+							new IdentifierTypeNode('TRandVal'),
+						],
+						[
+							GenericTypeNode::VARIANCE_INVARIANT,
+							GenericTypeNode::VARIANCE_INVARIANT,
+						]
+					),
+					new ConditionalTypeNode(
+						new IdentifierTypeNode('TRandList'),
+						new IdentifierTypeNode('XIterator'),
+						new GenericTypeNode(
+							new IdentifierTypeNode('XIterator'),
+							[
+								new IdentifierTypeNode('TRandKey'),
+								new IdentifierTypeNode('TRandVal'),
+							],
+							[
+								GenericTypeNode::VARIANCE_INVARIANT,
+								GenericTypeNode::VARIANCE_INVARIANT,
+							]
+						),
+						new UnionTypeNode([
+							new GenericTypeNode(
+								new IdentifierTypeNode('IteratorIterator'),
+								[
+									new IdentifierTypeNode('TRandKey'),
+									new IdentifierTypeNode('TRandVal'),
+								],
+								[
+									GenericTypeNode::VARIANCE_INVARIANT,
+									GenericTypeNode::VARIANCE_INVARIANT,
+								]
+							),
+							new GenericTypeNode(
+								new IdentifierTypeNode('LimitIterator'),
+								[
+									new IdentifierTypeNode('TRandKey'),
+									new IdentifierTypeNode('TRandVal'),
+								],
+								[
+									GenericTypeNode::VARIANCE_INVARIANT,
+									GenericTypeNode::VARIANCE_INVARIANT,
+								]
+							),
+						]),
+						false
+					),
+					false
+				),
+			],
+			[
+				'($foo is Bar|Baz ? never : int|string)',
+				new ConditionalTypeForParameterNode(
+					'$foo',
+					new UnionTypeNode([
+						new IdentifierTypeNode('Bar'),
+						new IdentifierTypeNode('Baz'),
+					]),
+					new IdentifierTypeNode('never'),
+					new UnionTypeNode([
+						new IdentifierTypeNode('int'),
+						new IdentifierTypeNode('string'),
+					]),
+					false
+				),
+			],
+			[
+				'(' . PHP_EOL .
+				'  $foo is Bar|Baz' . PHP_EOL .
+				'    ? never' . PHP_EOL .
+				'    : int|string' . PHP_EOL .
+				')',
+				new ConditionalTypeForParameterNode(
+					'$foo',
+					new UnionTypeNode([
+						new IdentifierTypeNode('Bar'),
+						new IdentifierTypeNode('Baz'),
+					]),
+					new IdentifierTypeNode('never'),
+					new UnionTypeNode([
+						new IdentifierTypeNode('int'),
+						new IdentifierTypeNode('string'),
+					]),
+					false
+				),
+			],
+			[
+				'?Currency::CURRENCY_*',
+				new NullableTypeNode(
+					new ConstTypeNode(
+						new ConstFetchNode(
+							'Currency',
+							'CURRENCY_*'
+						)
+					)
+				),
+			],
+			[
+				'(T is Foo ? true : T is Bar ? false : null)',
+				new ConditionalTypeNode(
+					new IdentifierTypeNode('T'),
+					new IdentifierTypeNode('Foo'),
+					new IdentifierTypeNode('true'),
+					new ConditionalTypeNode(
+						new IdentifierTypeNode('T'),
+						new IdentifierTypeNode('Bar'),
+						new IdentifierTypeNode('false'),
+						new IdentifierTypeNode('null'),
+						false
+					),
+					false
+				),
+			],
+			[
+				'(T is Foo ? T is Bar ? true : false : null)',
+				new ParserException(
+					'is',
+					Lexer::TOKEN_IDENTIFIER,
+					14,
+					Lexer::TOKEN_COLON
+				),
+			],
+			[
+				'($foo is Foo ? true : $foo is Bar ? false : null)',
+				new ConditionalTypeForParameterNode(
+					'$foo',
+					new IdentifierTypeNode('Foo'),
+					new IdentifierTypeNode('true'),
+					new ConditionalTypeForParameterNode(
+						'$foo',
+						new IdentifierTypeNode('Bar'),
+						new IdentifierTypeNode('false'),
+						new IdentifierTypeNode('null'),
+						false
+					),
+					false
+				),
+			],
+			[
+				'($foo is Foo ? $foo is Bar ? true : false : null)',
+				new ParserException(
+					'$foo',
+					Lexer::TOKEN_VARIABLE,
+					15,
+					Lexer::TOKEN_IDENTIFIER
+				),
+			],
+			[
+				'Foo<covariant Bar, Baz>',
+				new GenericTypeNode(
+					new IdentifierTypeNode('Foo'),
+					[
+						new IdentifierTypeNode('Bar'),
+						new IdentifierTypeNode('Baz'),
+					],
+					[
+						GenericTypeNode::VARIANCE_COVARIANT,
+						GenericTypeNode::VARIANCE_INVARIANT,
+					]
+				),
+			],
+			[
+				'Foo<Bar, contravariant Baz>',
+				new GenericTypeNode(
+					new IdentifierTypeNode('Foo'),
+					[
+						new IdentifierTypeNode('Bar'),
+						new IdentifierTypeNode('Baz'),
+					],
+					[
+						GenericTypeNode::VARIANCE_INVARIANT,
+						GenericTypeNode::VARIANCE_CONTRAVARIANT,
+					]
+				),
+			],
+			[
+				'Foo<covariant>',
+				new ParserException(
+					'>',
+					Lexer::TOKEN_CLOSE_ANGLE_BRACKET,
+					13,
+					Lexer::TOKEN_IDENTIFIER
+				),
+			],
+			[
+				'Foo<typovariant Bar>',
+				new ParserException(
+					'Bar',
+					Lexer::TOKEN_IDENTIFIER,
+					16,
+					Lexer::TOKEN_CLOSE_ANGLE_BRACKET
+				),
+			],
+			[
+				'Foo<Bar, *>',
+				new GenericTypeNode(
+					new IdentifierTypeNode('Foo'),
+					[
+						new IdentifierTypeNode('Bar'),
+						new IdentifierTypeNode('mixed'),
+					],
+					[
+						GenericTypeNode::VARIANCE_INVARIANT,
+						GenericTypeNode::VARIANCE_BIVARIANT,
+					]
+				),
+			],
+			[
+				'object{a: int}',
+				new ObjectShapeNode([
+					new ObjectShapeItemNode(
+						new IdentifierTypeNode('a'),
+						false,
+						new IdentifierTypeNode('int')
+					),
+				]),
+			],
+			[
+				'object{a: ?int}',
+				new ObjectShapeNode([
+					new ObjectShapeItemNode(
+						new IdentifierTypeNode('a'),
+						false,
+						new NullableTypeNode(
+							new IdentifierTypeNode('int')
+						)
+					),
+				]),
+			],
+			[
+				'object{a?: ?int}',
+				new ObjectShapeNode([
+					new ObjectShapeItemNode(
+						new IdentifierTypeNode('a'),
+						true,
+						new NullableTypeNode(
+							new IdentifierTypeNode('int')
+						)
+					),
+				]),
+			],
+			[
+				'object{a: int, b: string}',
+				new ObjectShapeNode([
+					new ObjectShapeItemNode(
+						new IdentifierTypeNode('a'),
+						false,
+						new IdentifierTypeNode('int')
+					),
+					new ObjectShapeItemNode(
+						new IdentifierTypeNode('b'),
+						false,
+						new IdentifierTypeNode('string')
+					),
+				]),
+			],
+			[
+				'object{a: int, b: array{c: callable(): int}}',
+				new ObjectShapeNode([
+					new ObjectShapeItemNode(
+						new IdentifierTypeNode('a'),
+						false,
+						new IdentifierTypeNode('int')
+					),
+					new ObjectShapeItemNode(
+						new IdentifierTypeNode('b'),
+						false,
+						new ArrayShapeNode([
+							new ArrayShapeItemNode(
+								new IdentifierTypeNode('c'),
+								false,
+								new CallableTypeNode(
+									new IdentifierTypeNode('callable'),
+									[],
+									new IdentifierTypeNode('int')
+								)
+							),
+						])
+					),
+				]),
+			],
+			[
+				'object{a: int, b: object{c: callable(): int}}',
+				new ObjectShapeNode([
+					new ObjectShapeItemNode(
+						new IdentifierTypeNode('a'),
+						false,
+						new IdentifierTypeNode('int')
+					),
+					new ObjectShapeItemNode(
+						new IdentifierTypeNode('b'),
+						false,
+						new ObjectShapeNode([
+							new ObjectShapeItemNode(
+								new IdentifierTypeNode('c'),
+								false,
+								new CallableTypeNode(
+									new IdentifierTypeNode('callable'),
+									[],
+									new IdentifierTypeNode('int')
+								)
+							),
+						])
+					),
+				]),
+			],
+			[
+				'?object{a: int}',
+				new NullableTypeNode(
+					new ObjectShapeNode([
+						new ObjectShapeItemNode(
+							new IdentifierTypeNode('a'),
+							false,
+							new IdentifierTypeNode('int')
+						),
+					])
+				),
+			],
+			[
+				'object{',
+				new ParserException(
+					'',
+					Lexer::TOKEN_END,
+					7,
+					Lexer::TOKEN_IDENTIFIER
+				),
+			],
+			[
+				'object{a => int}',
+				new ParserException(
+					'=>',
+					Lexer::TOKEN_OTHER,
+					9,
+					Lexer::TOKEN_COLON
+				),
+			],
+			[
+				'object{int}',
+				new ParserException(
+					'}',
+					Lexer::TOKEN_CLOSE_CURLY_BRACKET,
+					10,
+					Lexer::TOKEN_COLON
+				),
+			],
+			[
+				'object{0: int}',
+				new ParserException(
+					'0',
+					Lexer::TOKEN_END,
+					7,
+					Lexer::TOKEN_IDENTIFIER
+				),
+			],
+			[
+				'object{0?: int}',
+				new ParserException(
+					'0',
+					Lexer::TOKEN_END,
+					7,
+					Lexer::TOKEN_IDENTIFIER
+				),
+			],
+			[
+				'object{"a": int}',
+				new ObjectShapeNode([
+					new ObjectShapeItemNode(
+						new ConstExprStringNode('a'),
+						false,
+						new IdentifierTypeNode('int')
+					),
+				]),
+			],
+			[
+				'object{\'a\': int}',
+				new ObjectShapeNode([
+					new ObjectShapeItemNode(
+						new ConstExprStringNode('a'),
+						false,
+						new IdentifierTypeNode('int')
+					),
+				]),
+			],
+			[
+				'object{\'$ref\': int}',
+				new ObjectShapeNode([
+					new ObjectShapeItemNode(
+						new ConstExprStringNode('$ref'),
+						false,
+						new IdentifierTypeNode('int')
+					),
+				]),
+			],
+			[
+				'object{"$ref": int}',
+				new ObjectShapeNode([
+					new ObjectShapeItemNode(
+						new ConstExprStringNode('$ref'),
+						false,
+						new IdentifierTypeNode('int')
+					),
+				]),
+			],
+			[
+				'object{
+				 *	a: int
+				 *}',
+				new ObjectShapeNode([
+					new ObjectShapeItemNode(
+						new IdentifierTypeNode('a'),
+						false,
+						new IdentifierTypeNode('int')
+					),
+				]),
+			],
+			[
+				'object{
+				 	a: int,
+				 }',
+				new ObjectShapeNode([
+					new ObjectShapeItemNode(
+						new IdentifierTypeNode('a'),
+						false,
+						new IdentifierTypeNode('int')
+					),
+				]),
+			],
+			[
+				'object{
+				 	a: int,
+				 	b: string,
+				 }',
+				new ObjectShapeNode([
+					new ObjectShapeItemNode(
+						new IdentifierTypeNode('a'),
+						false,
+						new IdentifierTypeNode('int')
+					),
+					new ObjectShapeItemNode(
+						new IdentifierTypeNode('b'),
+						false,
+						new IdentifierTypeNode('string')
+					),
+				]),
+			],
+			[
+				'object{
+				 	a: int
+				 	, b: string
+				 	, c: string
+				 }',
+				new ObjectShapeNode([
+					new ObjectShapeItemNode(
+						new IdentifierTypeNode('a'),
+						false,
+						new IdentifierTypeNode('int')
+					),
+					new ObjectShapeItemNode(
+						new IdentifierTypeNode('b'),
+						false,
+						new IdentifierTypeNode('string')
+					),
+					new ObjectShapeItemNode(
+						new IdentifierTypeNode('c'),
+						false,
+						new IdentifierTypeNode('string')
+					),
+				]),
+			],
+			[
+				'object{
+				 	a: int,
+				 	b: string
+				 }',
+				new ObjectShapeNode([
+					new ObjectShapeItemNode(
+						new IdentifierTypeNode('a'),
+						false,
+						new IdentifierTypeNode('int')
+					),
+					new ObjectShapeItemNode(
+						new IdentifierTypeNode('b'),
+						false,
+						new IdentifierTypeNode('string')
+					),
+				]),
+			],
+			[
+				'object{foo: int}[]',
+				new ArrayTypeNode(
+					new ObjectShapeNode([
+						new ObjectShapeItemNode(
+							new IdentifierTypeNode('foo'),
+							false,
+							new IdentifierTypeNode('int')
+						),
+					])
+				),
+			],
+			[
+				'int | object{foo: int}[]',
+				new UnionTypeNode([
+					new IdentifierTypeNode('int'),
+					new ArrayTypeNode(
+						new ObjectShapeNode([
+							new ObjectShapeItemNode(
+								new IdentifierTypeNode('foo'),
+								false,
+								new IdentifierTypeNode('int')
+							),
+						])
+					),
+				]),
+			],
+			[
+				'object{}',
+				new ObjectShapeNode([]),
+			],
+			[
+				'object{}|int',
+				new UnionTypeNode([new ObjectShapeNode([]), new IdentifierTypeNode('int')]),
+			],
+			[
+				'int|object{}',
+				new UnionTypeNode([new IdentifierTypeNode('int'), new ObjectShapeNode([])]),
+			],
+			[
+				'object{attribute:string, value?:string}',
+				new ObjectShapeNode([
+					new ObjectShapeItemNode(
+						new IdentifierTypeNode('attribute'),
+						false,
+						new IdentifierTypeNode('string')
+					),
+					new ObjectShapeItemNode(
+						new IdentifierTypeNode('value'),
+						true,
+						new IdentifierTypeNode('string')
+					),
+				]),
 			],
 		];
 	}

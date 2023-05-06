@@ -41,6 +41,8 @@ class Customers extends ProviderAbstract implements ImportInterface, ExportInter
         $this->fields = array();
         $this->fields[] = array( 'name' => 'customer.customers_email_address', 'value' => 'Customers Email Address', 'is_key_part'=>true, 'is_key'=>true,);
         $dummy = new Customer();
+        $dummy->setModelFlag('credit_amount_delta', true);
+        $dummy->setModelFlag('customers_bonus_points_delta', true);
         $attr = $dummy->getPossibleKeys();
         $columnCover = [
             'customers_firstname' => ['value'=>'Customers Firstname', 'is_key_part'=>true,],
@@ -51,6 +53,8 @@ class Customers extends ProviderAbstract implements ImportInterface, ExportInter
             'departments_id' => false,
             'customers_default_address_id' => false,
             'admin_id' => false,
+            'credit_amount' => ['value'=>'Credit Amount (read only)'],
+            'customers_bonus_points' => ['value'=>'Customers Bonus Points (read only)'],
             'customers_company' => ['value'=>'Account Company'],
             'customers_company_vat' => false,
             'sap_servers_id' => false,
@@ -144,6 +148,7 @@ class Customers extends ProviderAbstract implements ImportInterface, ExportInter
             "SELECT customers_id " .
             "FROM " . TABLE_CUSTOMERS . " " .
             "WHERE 1 {$filter_sql} ".
+            " AND customers_email_address != 'removed' ".
             "ORDER BY customers_id";
 
         $this->export_query = tep_db_query($main_sql);
@@ -243,6 +248,10 @@ class Customers extends ProviderAbstract implements ImportInterface, ExportInter
             $customerModel->loadDefaultValues();
         }
         $this->data['customers_id'] = $customerModel->customers_id;
+        // {{
+        $customerModel->setModelFlag('credit_amount_delta', true);
+        $customerModel->setModelFlag('customers_bonus_points_delta', true);
+        // }}
 
         $update_data_array = array();
         foreach ($main_source['columns'] as $file_column => $db_column) {

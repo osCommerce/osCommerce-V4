@@ -6,23 +6,25 @@ use Doctrine\Common\Annotations\Annotation;
 use Doctrine\Common\Annotations\Annotation\NamedArgumentConstructor;
 use Doctrine\Common\Annotations\Annotation\Target;
 use Doctrine\Common\Annotations\AnnotationException;
-use Doctrine\Common\Annotations\AnnotationRegistry;
 use Doctrine\Common\Annotations\DocParser;
-use Doctrine\Common\Annotations\NamedArgumentConstructorAnnotation;
 use Doctrine\Tests\Common\Annotations\Fixtures\AnnotationTargetAll;
 use Doctrine\Tests\Common\Annotations\Fixtures\AnnotationWithConstants;
 use Doctrine\Tests\Common\Annotations\Fixtures\ClassWithConstants;
 use Doctrine\Tests\Common\Annotations\Fixtures\InterfaceWithConstants;
 use InvalidArgumentException;
+use PHPUnit\Framework\Constraint\ExceptionMessage;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
+use TypeError;
 
 use function array_column;
 use function array_combine;
 use function assert;
 use function class_exists;
 use function extension_loaded;
+use function get_parent_class;
 use function ini_get;
+use function method_exists;
 use function sprintf;
 use function ucfirst;
 
@@ -126,7 +128,7 @@ class DocParserTest extends TestCase
         self::assertEquals('value2', $annot->value[1]['key2']);
 
         // Complete docblock
-        $docblock = <<<DOCBLOCK
+        $docblock = <<<'DOCBLOCK'
 /**
  * Some nifty class.
  *
@@ -170,7 +172,7 @@ DOCBLOCK;
         $parser = new DocParser();
         $parser->setIgnoreNotImportedAnnotations(true);
 
-        $docblock = <<<DOCBLOCK
+        $docblock = <<<'DOCBLOCK'
 /**
  * Some nifty class.
  *
@@ -196,14 +198,14 @@ DOCBLOCK;
     {
         $parser = $this->createTestParser();
 
-        $docblock = <<<DOCBLOCK
+        $docblock = <<<'DOCBLOCK'
 /**
  * Some nifty method.
  *
  * @since 2.0
  * @Doctrine\Tests\Common\Annotations\Name(foo="bar")
- * @param string \$foo This is foo.
- * @param mixed \$bar This is bar.
+ * @param string $foo This is foo.
+ * @param mixed $bar This is bar.
  * @return string Foo and bar.
  * @This is irrelevant
  * @Marker
@@ -225,7 +227,7 @@ DOCBLOCK;
     {
         $parser = $this->createTestParser();
 
-        $docblock = <<<DOCBLOCK
+        $docblock = <<<'DOCBLOCK'
 /**
  * @SomeAnnotationClassNameWithoutConstructor("Some data")
  */
@@ -241,7 +243,7 @@ DOCBLOCK;
         self::assertNotNull($annot->data);
         self::assertEquals($annot->data, 'Some data');
 
-        $docblock = <<<DOCBLOCK
+        $docblock = <<<'DOCBLOCK'
 /**
  * @SomeAnnotationClassNameWithoutConstructor(name="Some Name", data = "Some data")
  */
@@ -257,7 +259,7 @@ DOCBLOCK;
         self::assertEquals($annot->name, 'Some Name');
         self::assertEquals($annot->data, 'Some data');
 
-        $docblock = <<<DOCBLOCK
+        $docblock = <<<'DOCBLOCK'
 /**
  * @SomeAnnotationClassNameWithoutConstructor(data = "Some data")
  */
@@ -270,7 +272,7 @@ DOCBLOCK;
         self::assertEquals($annot->data, 'Some data');
         self::assertNull($annot->name);
 
-        $docblock = <<<DOCBLOCK
+        $docblock = <<<'DOCBLOCK'
 /**
  * @SomeAnnotationClassNameWithoutConstructor(name = "Some name")
  */
@@ -283,7 +285,7 @@ DOCBLOCK;
         self::assertEquals($annot->name, 'Some name');
         self::assertNull($annot->data);
 
-        $docblock = <<<DOCBLOCK
+        $docblock = <<<'DOCBLOCK'
 /**
  * @SomeAnnotationClassNameWithoutConstructor("Some data")
  */
@@ -296,7 +298,7 @@ DOCBLOCK;
         self::assertEquals($annot->data, 'Some data');
         self::assertNull($annot->name);
 
-        $docblock = <<<DOCBLOCK
+        $docblock = <<<'DOCBLOCK'
 /**
  * @SomeAnnotationClassNameWithoutConstructor("Some data",name = "Some name")
  */
@@ -309,7 +311,7 @@ DOCBLOCK;
         self::assertEquals($annot->name, 'Some name');
         self::assertEquals($annot->data, 'Some data');
 
-        $docblock = <<<DOCBLOCK
+        $docblock = <<<'DOCBLOCK'
 /**
  * @SomeAnnotationWithConstructorWithoutParams(name = "Some name")
  */
@@ -322,7 +324,7 @@ DOCBLOCK;
         self::assertEquals($annot->name, 'Some name');
         self::assertEquals($annot->data, 'Some data');
 
-        $docblock = <<<DOCBLOCK
+        $docblock = <<<'DOCBLOCK'
 /**
  * @SomeAnnotationClassNameWithoutConstructorAndProperties()
  */
@@ -886,9 +888,16 @@ ANNOTATION;
         $docblock = '@Doctrine\Tests\Common\Annotations\Fixtures\AnnotationEnumInvalid("foo")';
 
         $parser->setIgnoreNotImportedAnnotations(false);
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('@Enum supports only scalar values "array" given.');
-        $parser->parse($docblock);
+        $this->expectException(AnnotationException::class);
+        try {
+            $parser->parse($docblock);
+        } catch (AnnotationException $exc) {
+            $previous = $exc->getPrevious();
+            $this->assertInstanceOf(InvalidArgumentException::class, $previous);
+            $this->assertThat($previous, new ExceptionMessage('@Enum supports only scalar values "array" given.'));
+
+            throw $exc;
+        }
     }
 
     public function testAnnotationEnumInvalidLiteralDeclarationException(): void
@@ -897,9 +906,19 @@ ANNOTATION;
         $docblock = '@Doctrine\Tests\Common\Annotations\Fixtures\AnnotationEnumLiteralInvalid("foo")';
 
         $parser->setIgnoreNotImportedAnnotations(false);
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Undefined enumerator value "3" for literal "AnnotationEnumLiteral::THREE".');
-        $parser->parse($docblock);
+        $this->expectException(AnnotationException::class);
+        try {
+            $parser->parse($docblock);
+        } catch (AnnotationException $exc) {
+            $previous = $exc->getPrevious();
+            $this->assertInstanceOf(InvalidArgumentException::class, $previous);
+            $this->assertThat(
+                $previous,
+                new ExceptionMessage('Undefined enumerator value "3" for literal "AnnotationEnumLiteral::THREE".')
+            );
+
+            throw $exc;
+        }
     }
 
     /**
@@ -1037,7 +1056,7 @@ ANNOTATION
     public function testWithoutConstructorWhenIsNotDefaultValue(): void
     {
         $parser   = $this->createTestParser();
-        $docblock = <<<DOCBLOCK
+        $docblock = <<<'DOCBLOCK'
 /**
  * @SomeAnnotationClassNameWithoutConstructorAndProperties("Foo")
  */
@@ -1055,7 +1074,7 @@ DOCBLOCK;
     public function testWithoutConstructorWhenHasNoProperties(): void
     {
         $parser   = $this->createTestParser();
-        $docblock = <<<DOCBLOCK
+        $docblock = <<<'DOCBLOCK'
 /**
  * @SomeAnnotationClassNameWithoutConstructorAndProperties(value = "Foo")
  */
@@ -1074,7 +1093,7 @@ DOCBLOCK;
     {
         $parser   = $this->createTestParser();
         $context  = 'class SomeClassName';
-        $docblock = <<<DOCBLOCK
+        $docblock = <<<'DOCBLOCK'
 /**
  * @Doctrine\Tests\Common\Annotations\Fixtures\AnnotationWithTargetSyntaxError()
  */
@@ -1093,34 +1112,54 @@ DOCBLOCK;
     {
         $parser   = $this->createTestParser();
         $context  = 'class SomeClassName';
-        $docblock = <<<DOCBLOCK
+        $docblock = <<<'DOCBLOCK'
 /**
  * @AnnotationWithInvalidTargetDeclaration()
  */
 DOCBLOCK;
 
         $parser->setTarget(Target::TARGET_CLASS);
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage(
-            'Invalid Target "Foo". Available targets: [ALL, CLASS, METHOD, PROPERTY, FUNCTION, ANNOTATION]'
-        );
-        $parser->parse($docblock, $context);
+        $this->expectException(AnnotationException::class);
+        try {
+            $parser->parse($docblock, $context);
+        } catch (AnnotationException $exc) {
+            $previous = $exc->getPrevious();
+            $this->assertInstanceOf(InvalidArgumentException::class, $previous);
+            $this->assertThat(
+                $previous,
+                new ExceptionMessage(
+                    'Invalid Target "Foo". Available targets: [ALL, CLASS, METHOD, PROPERTY, FUNCTION, ANNOTATION]'
+                )
+            );
+
+            throw $exc;
+        }
     }
 
     public function testAnnotationWithTargetEmptyError(): void
     {
         $parser   = $this->createTestParser();
         $context  = 'class SomeClassName';
-        $docblock = <<<DOCBLOCK
+        $docblock = <<<'DOCBLOCK'
 /**
  * @AnnotationWithTargetEmpty()
  */
 DOCBLOCK;
 
         $parser->setTarget(Target::TARGET_CLASS);
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('@Target expects either a string value, or an array of strings, "NULL" given.');
-        $parser->parse($docblock, $context);
+        $this->expectException(AnnotationException::class);
+        try {
+            $parser->parse($docblock, $context);
+        } catch (AnnotationException $exc) {
+            $previous = $exc->getPrevious();
+            $this->assertInstanceOf(InvalidArgumentException::class, $previous);
+            $this->assertThat(
+                $previous,
+                new ExceptionMessage('@Target expects either a string value, or an array of strings, "NULL" given.')
+            );
+
+            throw $exc;
+        }
     }
 
     /**
@@ -1130,7 +1169,7 @@ DOCBLOCK;
     {
         $parser = $this->createTestParser();
 
-        $docblock = <<<DOCBLOCK
+        $docblock = <<<'DOCBLOCK'
 /**
  * @Name
  *
@@ -1142,7 +1181,7 @@ DOCBLOCK;
 
         self::assertInstanceOf(Name::class, $result[0]);
 
-        $docblock = <<<DOCBLOCK
+        $docblock = <<<'DOCBLOCK'
 /**
  * @Name
  * @Marker
@@ -1274,11 +1313,6 @@ DOCBLOCK;
 
         $parser = new DocParser();
 
-        AnnotationRegistry::registerAutoloadNamespace(
-            'Doctrine\Tests\Common\Annotations\Fixtures\Annotation',
-            __DIR__ . '/../../../../'
-        );
-
         $parser->setImports([
             'autoload' => Fixtures\Annotation\Autoload::class,
         ]);
@@ -1318,7 +1352,7 @@ DOCBLOCK;
      */
     public function testSyntaxErrorWithUnknownCharacters(): void
     {
-        $docblock = <<<DOCBLOCK
+        $docblock = <<<'DOCBLOCK'
 /**
  * @test at.
  */
@@ -1343,7 +1377,7 @@ DOCBLOCK;
      */
     public function testIgnorePHPDocThrowTag(): void
     {
-        $docblock = <<<DOCBLOCK
+        $docblock = <<<'DOCBLOCK'
 /**
  * @throws \RuntimeException
  */
@@ -1413,7 +1447,7 @@ DOCBLOCK;
 
     public function testSetValuesException(): void
     {
-        $docblock = <<<DOCBLOCK
+        $docblock = <<<'DOCBLOCK'
 /**
  * @SomeAnnotationClassNameWithoutConstructor(invalidaProperty = "Some val")
  */
@@ -1453,7 +1487,7 @@ Available properties: data, name'
 
     public function testTabPrefixIsAllowed(): void
     {
-        $docblock = <<<DOCBLOCK
+        $docblock = <<<'DOCBLOCK'
 /**
  *	@Name
  */
@@ -1537,7 +1571,7 @@ DOCBLOCK;
             $this->markTestSkipped('This test requires mbstring function overloading is turned on');
         }
 
-        $docblock = <<<DOCBLOCK
+        $docblock = <<<'DOCBLOCK'
         /**
          * Мультибайтовый текст ломал парсер при оверлоадинге строковых функций
          * @Doctrine\Tests\Common\Annotations\Name
@@ -1565,42 +1599,6 @@ DOCBLOCK;
 
         self::assertCount(1, $result);
         self::assertInstanceOf(SomeAnnotationClassNameWithoutConstructorAndProperties::class, $result[0]);
-    }
-
-    public function testNamedArgumentsConstructorInterface(): void
-    {
-        $result = $this
-            ->createTestParser()
-            ->parse('/** @NamedAnnotation(foo="baz", bar=2222) */');
-
-        self::assertCount(1, $result);
-        self::assertInstanceOf(NamedAnnotation::class, $result[0]);
-        self::assertSame('baz', $result[0]->getFoo());
-        self::assertSame(2222, $result[0]->getBar());
-    }
-
-    public function testNamedReorderedArgumentsConstructorInterface(): void
-    {
-        $result = $this
-            ->createTestParser()
-            ->parse('/** @NamedAnnotation(bar=2222, foo="baz") */');
-
-        self::assertCount(1, $result);
-        self::assertInstanceOf(NamedAnnotation::class, $result[0]);
-        self::assertSame('baz', $result[0]->getFoo());
-        self::assertSame(2222, $result[0]->getBar());
-    }
-
-    public function testNamedArgumentsConstructorInterfaceWithDefaultValue(): void
-    {
-        $result = $this
-            ->createTestParser()
-            ->parse('/** @NamedAnnotation(foo="baz") */');
-
-        self::assertCount(1, $result);
-        self::assertInstanceOf(NamedAnnotation::class, $result[0]);
-        self::assertSame('baz', $result[0]->getFoo());
-        self::assertSame(1234, $result[0]->getBar());
     }
 
     public function testNamedArgumentsConstructorAnnotation(): void
@@ -1651,6 +1649,18 @@ DOCBLOCK;
         self::assertSame(1234, $result[0]->getBar());
     }
 
+    public function testNamedArgumentsConstructorAnnotationWithExtraArguments(): void
+    {
+        $docParser = $this->createTestParser();
+
+        $this->expectException(AnnotationException::class);
+        $this->expectExceptionMessageMatches(
+            '/does not have a property named "invalid"\s.*\sAvailable named arguments: foo, bar/'
+        );
+
+        $docParser->parse('/** @AnotherNamedAnnotation(foo="baz", invalid="uh oh") */');
+    }
+
     public function testNamedArgumentsConstructorAnnotationWithDefaultPropertyAsArray(): void
     {
         $result = $this
@@ -1683,30 +1693,145 @@ DOCBLOCK;
         );
         $parser->parse('/** @AnotherNamedAnnotation("foo", bar=666, "hey") */');
     }
-}
 
-/** @Annotation */
-class NamedAnnotation implements NamedArgumentConstructorAnnotation
-{
-    /** @var string */
-    private $foo;
-    /** @var int */
-    private $bar;
-
-    public function __construct(string $foo, int $bar = 1234)
+    public function testNamedArgumentsConstructorAnnotationWithWrongArgumentType(): void
     {
-        $this->foo = $foo;
-        $this->bar = $bar;
+        $context  = 'property SomeClassName::invalidProperty.';
+        $docblock = '@NamedAnnotationWithArray(foo = "no array!")';
+        $parser   = $this->createTestParser();
+        $this->expectException(AnnotationException::class);
+        $this->expectExceptionMessageMatches(
+            '/\[Creation Error\] An error occurred while instantiating the annotation '
+            . '@NamedAnnotationWithArray declared on property SomeClassName::invalidProperty\.: ".*"\.$/'
+        );
+        try {
+            $parser->parse($docblock, $context);
+        } catch (AnnotationException $exc) {
+            $this->assertInstanceOf(TypeError::class, $exc->getPrevious());
+
+            throw $exc;
+        }
     }
 
-    public function getFoo(): string
+    public function testAnnotationWithConstructorWithVariadicParamAndExtraNamedArguments(): void
     {
-        return $this->foo;
+        $parser   = $this->createTestParser();
+        $docblock = <<<'DOCBLOCK'
+/**
+ * @SomeAnnotationWithConstructorWithVariadicParam(name = "Some data", foo = "Foo", bar = "Bar")
+ */
+DOCBLOCK;
+
+        $this->expectException(AnnotationException::class);
+        $this->expectExceptionMessageMatches(
+            '/does not have a property named "foo"\s.*\sAvailable named arguments: name/'
+        );
+
+        $parser->parse($docblock);
     }
 
-    public function getBar(): int
+    public function testAnnotationWithConstructorWithVariadicParamAndExtraNamedArgumentsShuffled(): void
     {
-        return $this->bar;
+        $parser   = $this->createTestParser();
+        $docblock = <<<'DOCBLOCK'
+/**
+ * @SomeAnnotationWithConstructorWithVariadicParam(foo = "Foo", name = "Some data", bar = "Bar")
+ */
+DOCBLOCK;
+
+        $this->expectException(AnnotationException::class);
+        $this->expectExceptionMessageMatches(
+            '/does not have a property named "foo"\s.*\sAvailable named arguments: name/'
+        );
+
+        $parser->parse($docblock);
+    }
+
+    public function testAnnotationWithConstructorWithVariadicParamAndCombinedNamedAndPositionalArguments(): void
+    {
+        $parser   = $this->createTestParser();
+        $docblock = <<<'DOCBLOCK'
+/**
+ * @SomeAnnotationWithConstructorWithVariadicParam("Some data", "Foo", bar = "Bar")
+ */
+DOCBLOCK;
+
+        $this->expectException(AnnotationException::class);
+        $this->expectExceptionMessageMatches(
+            '/does not have a property named "bar"\s.*\sAvailable named arguments: name/'
+        );
+
+        $parser->parse($docblock);
+    }
+
+    public function testAnnotationWithConstructorWithVariadicParamPassOneNamedArgument(): void
+    {
+        $parser   = $this->createTestParser();
+        $docblock = <<<'DOCBLOCK'
+/**
+ * @SomeAnnotationWithConstructorWithVariadicParam(name = "Some data", data = "Foo")
+ */
+DOCBLOCK;
+
+        $this->expectException(AnnotationException::class);
+        $this->expectExceptionMessageMatches(
+            '/does not have a property named "data"\s.*\sAvailable named arguments: name/'
+        );
+
+        $parser->parse($docblock);
+    }
+
+    public function testAnnotationWithConstructorWithVariadicParamPassPositionalArguments(): void
+    {
+        $parser   = $this->createTestParser();
+        $docblock = <<<'DOCBLOCK'
+/**
+ * @SomeAnnotationWithConstructorWithVariadicParam("Some data", "Foo", "Bar")
+ */
+DOCBLOCK;
+
+        $result = $parser->parse($docblock);
+        self::assertCount(1, $result);
+        $annot = $result[0];
+
+        self::assertInstanceOf(SomeAnnotationWithConstructorWithVariadicParam::class, $annot);
+
+        self::assertSame('Some data', $annot->name);
+        // Positional extra arguments will be ignored
+        self::assertSame([], $annot->data);
+    }
+
+    public function testAnnotationWithConstructorWithVariadicParamNoArgs(): void
+    {
+        $parser = $this->createTestParser();
+
+        // Without variadic arguments
+        $docblock = <<<'DOCBLOCK'
+/**
+ * @SomeAnnotationWithConstructorWithVariadicParam("Some data")
+ */
+DOCBLOCK;
+
+        $result = $parser->parse($docblock);
+        self::assertCount(1, $result);
+        $annot = $result[0];
+
+        self::assertInstanceOf(SomeAnnotationWithConstructorWithVariadicParam::class, $annot);
+
+        self::assertSame('Some data', $annot->name);
+        self::assertSame([], $annot->data);
+    }
+
+    /**
+     * Override for BC with PHPUnit <8
+     */
+    public function expectExceptionMessageMatches(string $regularExpression): void
+    {
+        if (method_exists(get_parent_class($this), 'expectExceptionMessageMatches')) {
+            parent::expectExceptionMessageMatches($regularExpression);
+        } else {
+            parent::expectExceptionMessageRegExp($regularExpression);
+        }
     }
 }
 
@@ -1776,6 +1901,25 @@ class NamedAnnotationWithArray
     {
         return $this->bar;
     }
+}
+
+/**
+ * @Annotation
+ * @NamedArgumentConstructor
+ */
+class SomeAnnotationWithConstructorWithVariadicParam
+{
+    public function __construct(string $name, string ...$data)
+    {
+        $this->name = $name;
+        $this->data = $data;
+    }
+
+    /** @var string[] */
+    public $data;
+
+    /** @var string */
+    public $name;
 }
 
 /** @Annotation */

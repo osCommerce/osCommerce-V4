@@ -2,6 +2,9 @@
 {use class="frontend\design\Info"}
 {$content}
 {\common\components\google\widgets\GoogleTagmanger::trigger()}
+{foreach \common\helpers\Hooks::getList('frontend/layouts-ajax') as $filename}
+    {include file=$filename}
+{/foreach}
 <script type="text/javascript">
   if (typeof cssArray === 'undefined') {
     var cssArray = [];

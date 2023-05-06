@@ -197,8 +197,12 @@ class FeaturedTypesController extends Sceleton  {
         \common\helpers\Translation::init('admin/featured-types');
         $featuredTypeId = (int)Yii::$app->request->post('featured_type_id');
 
-        Featured::findAll(['featured_type_id' => $featuredTypeId])->delete();
-        FeaturedTypes::findAll(['featured_type_id' => $featuredTypeId])->delete();
+        foreach(Featured::findAll(['featured_type_id' => $featuredTypeId]) as $featuredModel){
+            $featuredModel->delete();
+        }
+        if ($featuredTypeModel = FeaturedTypes::findOne(['featured_type_id' => $featuredTypeId])){
+            $featuredTypeModel->delete();
+        }
 
 		echo 'reset';
     }

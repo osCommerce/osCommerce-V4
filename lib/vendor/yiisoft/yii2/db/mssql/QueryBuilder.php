@@ -1,8 +1,8 @@
 <?php
 /**
- * @link http://www.yiiframework.com/
+ * @link https://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
- * @license http://www.yiiframework.com/license/
+ * @license https://www.yiiframework.com/license/
  */
 
 namespace yii\db\mssql;
@@ -293,7 +293,7 @@ class QueryBuilder extends \yii\db\QueryBuilder
       * @param string $comment the text of the comment to be added. The comment will be properly quoted by the method.
       * @param string $table the table to be commented or whose column is to be commented. The table name will be
       * properly quoted by the method.
-      * @param string $column optional. The name of the column to be commented. If empty, the command will add the
+      * @param string|null $column optional. The name of the column to be commented. If empty, the command will add the
       * comment to the table instead. The column name will be properly quoted by the method.
       * @return string the SQL statement for adding a comment.
       * @throws InvalidArgumentException if the table does not exist.
@@ -359,7 +359,7 @@ class QueryBuilder extends \yii\db\QueryBuilder
      *
      * @param string $table the table that will have the comment removed or whose column will have the comment removed.
      * The table name will be properly quoted by the method.
-     * @param string $column optional. The name of the column whose comment will be removed. If empty, the command
+     * @param string|null $column optional. The name of the column whose comment will be removed. If empty, the command
      * will remove the comment from the table instead. The column name will be properly quoted by the method.
      * @return string the SQL statement for removing the comment.
      * @throws InvalidArgumentException if the table does not exist.
@@ -415,7 +415,7 @@ class QueryBuilder extends \yii\db\QueryBuilder
     /**
      * Returns an array of column names given model name.
      *
-     * @param string $modelClass name of the model class
+     * @param string|null $modelClass name of the model class
      * @return array|null array of column names
      */
     protected function getAllColumnNames($modelClass = null)
@@ -485,7 +485,7 @@ class QueryBuilder extends \yii\db\QueryBuilder
 
         list($names, $placeholders, $values, $params) = $this->prepareInsertValues($table, $columns, $params);
         $cols = [];
-        $columns = [];
+        $outputColumns = [];
         if ($version2005orLater) {
             /* @var $schema TableSchema */
             $schema = $this->db->getTableSchema($table);
@@ -493,19 +493,26 @@ class QueryBuilder extends \yii\db\QueryBuilder
                 if ($column->isComputed) {
                     continue;
                 }
+
+                $dbType = $column->dbType;
+                if (in_array($dbType, ['char', 'varchar', 'nchar', 'nvarchar', 'binary', 'varbinary'])) {
+                    $dbType .= '(MAX)';
+                }
+                if ($column->dbType === Schema::TYPE_TIMESTAMP) {
+                    $dbType = $column->allowNull ? 'varbinary(8)' : 'binary(8)';
+                }
+
                 $quoteColumnName = $this->db->quoteColumnName($column->name);
-                $cols[] = $quoteColumnName . ' '
-                    . $column->dbType
-                    . (in_array($column->dbType, ['char', 'varchar', 'nchar', 'nvarchar', 'binary', 'varbinary']) ? "(MAX)" : "")
-                    . ' ' . ($column->allowNull ? "NULL" : "");
-                $columns[] = 'INSERTED.' . $quoteColumnName;
+                $cols[] = $quoteColumnName . ' ' . $dbType . ' ' . ($column->allowNull ? "NULL" : "");
+                $outputColumns[] = 'INSERTED.' . $quoteColumnName;
             }
         }
-        $countColumns = count($columns);
+
+        $countColumns = count($outputColumns);
 
         $sql = 'INSERT INTO ' . $this->db->quoteTableName($table)
             . (!empty($names) ? ' (' . implode(', ', $names) . ')' : '')
-            . (($version2005orLater && $countColumns) ? ' OUTPUT ' . implode(',', $columns) . ' INTO @temporary_inserted' : '')
+            . (($version2005orLater && $countColumns) ? ' OUTPUT ' . implode(',', $outputColumns) . ' INTO @temporary_inserted' : '')
             . (!empty($placeholders) ? ' VALUES (' . implode(', ', $placeholders) . ')' : $values);
 
         if ($version2005orLater && $countColumns) {
@@ -519,7 +526,7 @@ class QueryBuilder extends \yii\db\QueryBuilder
     /**
      * {@inheritdoc}
      * @see https://docs.microsoft.com/en-us/sql/t-sql/statements/merge-transact-sql
-     * @see http://weblogs.sqlteam.com/dang/archive/2009/01/31/UPSERT-Race-Condition-With-MERGE.aspx
+     * @see https://weblogs.sqlteam.com/dang/2009/01/31/upsert-race-condition-with-merge/
      */
     public function upsert($table, $insertColumns, $updateColumns, &$params)
     {

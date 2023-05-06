@@ -12,6 +12,7 @@
 
 namespace frontend\design;
 
+use backend\design\Style;
 use Yii;
 use yii\base\Widget;
 use yii\helpers\ArrayHelper;
@@ -43,7 +44,7 @@ class Block extends Widget
     {
         global $block_styles, $allWidgetsOnPage;
         $adminDesign = null;
-        if ($this->params['params']['theme_name']) {
+        if ($this->params['params']['theme_name']?? false) {
             $this->theme_name = $this->params['params']['theme_name'];
         } else {
             $this->theme_name = THEME_NAME;
@@ -111,7 +112,6 @@ class Block extends Widget
             $widgetArray['params']['microtime'] = $widget['microtime'];
             $settings = $widget['settings'];
 
-
             $toPdf = (int)Yii::$app->request->get('to_pdf', 0);
             if ($toPdf) {
                 $settings[0]['p_width'] = Info::blockWidth($widget['id']);
@@ -138,10 +138,17 @@ class Block extends Widget
                 } elseif (($ext_widget = \common\helpers\Acl::runExtensionWidget($widget['widget_name'], $widgetArray)) !== false){
                     $widgetHtml = $ext_widget;
                 } elseif (is_file(Yii::getAlias('@app') . DIRECTORY_SEPARATOR . 'design' . DIRECTORY_SEPARATOR . 'orders' . DIRECTORY_SEPARATOR .  str_replace('\\', DIRECTORY_SEPARATOR, $widget['widget_name']) . '.php')) {
-                    $widgetHtml = $this->params['params']['manager']->render($widget['widget_name'], [
-                        'manager' => $this->params['params']['manager'],
-                        'order' => $this->params['params']['order']
-                    ]);
+                    if ($this->params['params']['manager']?? false) {
+                        $widgetHtml = $this->params['params']['manager']->render($widget['widget_name'], [
+                            'manager' => $this->params['params']['manager'],
+                            'order' => $this->params['params']['order']
+                        ]);
+                    } else {
+                        $widgetHtml = '';
+                    }
+                    $adminDesign = true;
+                } elseif ($this->params['params'][$widget['widget_name']] ?? false) {
+                    $widgetHtml = $this->params['params'][$widget['widget_name']];
                     $adminDesign = true;
                 } else {
                     $widgetHtml = '';
@@ -172,20 +179,20 @@ class Block extends Widget
             if ($widgetHtml != '' || Info::isAdmin()) {
                 $blockHtml .=
                     '<div class="box' .
-                    ($widget['widget_name'] == 'BlockBox' || $widget['widget_name'] == 'Tabs' || $widget['widget_name'] == 'invoice\Container' || $widget['widget_name'] == 'email\BlockBox' ? '-block type-' . (isset($settings[0]['block_type']) ? $settings[0]['block_type'] : '') : '') .
+                    ($widget['widget_name'] == 'BlockBox' || $widget['widget_name'] == 'Tabs' || $widget['widget_name'] == 'invoice\Container' || $widget['widget_name'] == 'email\BlockBox' || $widget['widget_name'] == 'ClosableBox' ? '-block type-' . (isset($settings[0]['block_type']) ? $settings[0]['block_type'] : '') : '') .
                     ($widget['widget_name'] == 'Tabs' ? ' tabs' : '') .
                     (isset($settings[0]['style_class']) ? ' ' . $settings[0]['style_class'] : '') .
                     self::nameToClass($widget['widget_name']) .
                     self::inlineBlockHTags(@$settings[0]['hTagsInline']) .
                     '" ' .
                     ($widget['widget_name'] == 'BlockBox' && $widget['widget_params'] ? ' data-placeholder="' . $widget['widget_params'] . '"' : '') .
-                    ($page_block == 'orders' || $page_block == 'email' || $page_block == 'packingslip' || $page_block == 'invoice' || $page_block == 'pdf' || $page_block == 'pdf_cover' || $page_block == 'gift_card' || $page_block == 'trade_form_pdf' || $page_block == 'trade_form_direct_debit_pdf' || @$this->params['params']['inline_styles'] ? self::styles($settings, true) : '') . ' data-name="' . $widget['widget_name'] . '" id="box-' . $widget['id'] . '">';
+                    ($page_block == 'orders' || $page_block == 'email' || $page_block == 'packingslip' || $page_block == 'invoice' || $page_block == 'pdf' || $page_block == 'pdf_cover' || $page_block == 'gift_card' || $page_block == 'trade_form_pdf' || $page_block == 'trade_form_direct_debit_pdf' || @$this->params['params']['inline_styles'] ? self::styles($settings, true, $this->theme_name) : '') . ' data-name="' . $widget['widget_name'] . '" id="box-' . $widget['id'] . '">';
             }
-            $style = self::styles($settings);
-            $hover = self::styles(@$settings['visibility'][1]);
-            $active = self::styles(@$settings['visibility'][2]);
-            $before = self::styles(@$settings['visibility'][3]);
-            $after = self::styles(@$settings['visibility'][4]);
+            $style = self::styles($settings, false, $this->theme_name);
+            $hover = self::styles(@$settings['visibility'][1], false, $this->theme_name);
+            $active = self::styles(@$settings['visibility'][2], false, $this->theme_name);
+            $before = self::styles(@$settings['visibility'][3], false, $this->theme_name);
+            $after = self::styles(@$settings['visibility'][4], false, $this->theme_name);
             if (!isset($block_styles[0])) {
                 $block_styles[0] = '';
             }
@@ -211,7 +218,7 @@ class Block extends Widget
                 if (!isset($block_styles[$item2['id']])) {
                     $block_styles[$item2['id']] = '';
                 }
-                $style = self::styles(@$settings['visibility'][$item2['id']]);
+                $style = self::styles(@$settings['visibility'][$item2['id']], false, $this->theme_name);
                 if ($style){
                     $block_styles[$item2['id']] .= '#box-' . $widget['id'] . '{' . $style . '}';
                 }
@@ -227,7 +234,17 @@ class Block extends Widget
             }
 
             if ($widgetHtml == ''){
-                if (Info::isAdmin() && (!isset($adminDesign) || !$adminDesign)) $blockHtml .= '<div class="no-widget-name">Here added ' . $widget['widget_name'] . ' widget</div>';
+                if (Info::isAdmin() && !$adminDesign) {
+                    $pos = strripos($widget['widget_name'], '\\') + 1;
+                    $prefix = '<span class="no-widget-prefix">' . substr($widget['widget_name'], 0, $pos) . '</span>';
+                    $widgetName = '<span class="no-widget-title">' .substr($widget['widget_name'], $pos) . '</span>';
+                    $blockHtml .= '
+                    <div class="no-widget-name" title="' . $widget['widget_name'] . '">
+                        <span class="no-widget-text">
+                        ' . sprintf('Here added %s  widget', '</span>' . $prefix . $widgetName . '<span class="no-widget-text">') . '
+                        </span>
+                    </div>';
+                }
             } else {
                 $blockHtml .= $widgetHtml;
             }
@@ -387,11 +404,11 @@ class Block extends Widget
         }
 
         if ((
-                !(
-                    !@$settings[0]['visibility_first_view'] && Yii::$app->user->isGuest && !$cookies->has('was_visit') ||
-                    !@$settings[0]['visibility_more_view'] && Yii::$app->user->isGuest && $cookies->has('was_visit') ||
-                    !@$settings[0]['visibility_logged'] && !Yii::$app->user->isGuest ||
-                    !@$settings[0]['visibility_not_logged'] && Yii::$app->user->isGuest
+                (
+                    @$settings[0]['visibility_first_view'] && Yii::$app->user->isGuest && !$cookies->has('was_visit') ||
+                    @$settings[0]['visibility_more_view'] && Yii::$app->user->isGuest && $cookies->has('was_visit') ||
+                    @$settings[0]['visibility_logged'] && !Yii::$app->user->isGuest ||
+                    @$settings[0]['visibility_not_logged'] && Yii::$app->user->isGuest
                 ) ||
 
                 Yii::$app->controller->id == 'index' && Yii::$app->controller->action->id == 'index' && ($settings[0]['visibility_home'] ?? false) ||
@@ -430,9 +447,19 @@ class Block extends Widget
         return \backend\design\Style::getStylesWrapper($block_styles);
     }
 
-    public static function styles($settings, $teg = false)
+    public static function styles($settings, $teg = false, $theme_name = '')
     {
         $style = '';
+
+        if (isset($settings[0]) && is_array($settings[0]) && $theme_name) {
+            $mainStyles = Style::mainStyles($theme_name);
+
+            foreach ($settings[0] as $key => $val) {
+                if (isset($val) && isset($mainStyles[$val])) {
+                    $settings[0][$key] = $mainStyles[$val];
+                }
+            }
+        }
 
         $style .= \backend\design\Style::getAttributes(@$settings[0]);
 

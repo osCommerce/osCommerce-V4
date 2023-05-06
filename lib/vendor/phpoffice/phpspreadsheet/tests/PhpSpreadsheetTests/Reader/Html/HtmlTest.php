@@ -80,6 +80,7 @@ class HtmlTest extends TestCase
                     <tr>
                         <td style="background-color: #0000FF;color: #FFFFFF">Blue background</td>
                         <td style="background-color: unknown1;color: unknown2">Unknown fore/background</td>
+                        <td style="background-color: antiquewhite2;color: aliceblue">Unknown fore/background</td>
                     </tr>
                 </table>';
         $filename = HtmlHelper::createHtml($html);
@@ -93,6 +94,10 @@ class HtmlTest extends TestCase
         self::assertEquals('000000', $style->getFont()->getColor()->getRGB());
         self::assertEquals('000000', $style->getFill()->getEndColor()->getRGB());
         self::assertEquals('FFFFFF', $style->getFill()->getstartColor()->getRGB());
+        $style = $firstSheet->getCell('C1')->getStyle();
+        self::assertEquals('f0f8ff', $style->getFont()->getColor()->getRGB());
+        self::assertEquals('eedfcc', $style->getFill()->getEndColor()->getRGB());
+        self::assertEquals('eedfcc', $style->getFill()->getstartColor()->getRGB());
     }
 
     public function testCanApplyInlineFontStyles(): void
@@ -313,6 +318,37 @@ class HtmlTest extends TestCase
         $spreadsheet = $reader->loadFromString($html);
         $firstSheet = $spreadsheet->getSheet(0);
         $style = $firstSheet->getStyle('B1:C2');
+
+        $borders = $style->getBorders();
+
+        $totalBorders = [
+            $borders->getTop(),
+            $borders->getLeft(),
+            $borders->getBottom(),
+            $borders->getRight(),
+        ];
+
+        foreach ($totalBorders as $border) {
+            self::assertEquals(Border::BORDER_THIN, $border->getBorderStyle());
+        }
+    }
+
+    public function testBorderWithColspan(): void
+    {
+        $html = '<table>
+                    <tr>
+                        <td style="border: 1px solid black;">NOT SPANNED</td>
+                        <td colspan="2" style="border: 1px solid black;">SPANNED</td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid black;">NOT SPANNED</td>
+                    </tr>
+                </table>';
+
+        $reader = new Html();
+        $spreadsheet = $reader->loadFromString($html);
+        $firstSheet = $spreadsheet->getSheet(0);
+        $style = $firstSheet->getStyle('B1:B2');
 
         $borders = $style->getBorders();
 

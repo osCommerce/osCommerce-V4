@@ -15,6 +15,7 @@ namespace backend\components;
 
 use common\classes\Images;
 use common\helpers\Html;
+use common\models\ProductsDescription;
 use Yii;
 use yii\base\Widget;
 use yii\helpers\ArrayHelper;
@@ -149,7 +150,7 @@ class ProductsCatalog extends Widget {
         if (is_array($branch)){
             foreach($branch as $key => $item){
                 $branch[$key]['selected'] = 0;
-                if ($item['folder']){
+                if ($item['folder'] ?? null){
                     $cid = str_replace("c", "", $item['key']);
                     if ( !in_array($cid, $only) || !\common\helpers\Categories::products_in_category_count($cid)){
                         unset($branch[$key]);
@@ -330,6 +331,18 @@ class ProductsCatalog extends Widget {
           $currencies = new \common\classes\Currencies();
           if ( tep_db_num_rows($get_products_r)>0 ) {
               while ($_product = tep_db_fetch_array($get_products_r)) {
+                  if (!isset($_product['title']) || !$_product['title']) {
+                      $productsDescription = ProductsDescription::find()
+                          ->select('products_name')
+                          ->where([
+                              'products_id' => $_product['products_id']
+                          ])
+                          ->andWhere("products_name <> ''")
+                          ->asArray()->one();
+                      if (isset($productsDescription['products_name'])) {
+                          $_product['title'] = $productsDescription['products_name'];
+                      }
+                  }
                 //$_product['parent'] = (int)$category_id;
                   $price = \common\helpers\Product::get_products_price($_product['products_id']);
                 $_product['selected'] = false;//$category_selected_state && !!$_product['selected'];

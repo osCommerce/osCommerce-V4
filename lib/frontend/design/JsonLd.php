@@ -20,6 +20,12 @@ class JsonLd
 
     private static function organization()
     {
+        foreach (\common\helpers\Hooks::getList('frontend/jsonld-organization') as $filename){
+            $result = include($filename);
+            if ($result === false) {
+                return $result;
+            }
+        }
         if (!self::hasValue(['Organization'])) {
             return false;
         }
@@ -82,7 +88,7 @@ class JsonLd
         self::validateDataByOrganizationType($organization['@type']);
     }
 
-    private static function validateDataByOrganizationType($type)
+    public static function validateDataByOrganizationType($type)
     {
         switch ($type) {
             case 'Organization':
@@ -122,6 +128,12 @@ class JsonLd
 
     private static function product()
     {
+        foreach (\common\helpers\Hooks::getList('frontend/jsonld-product') as $filename){
+            $result = include($filename);
+            if ($result === false) {
+                return $result;
+            }
+        }
         if (!self::hasValue(['Product'])) {
             return false;
         }
@@ -140,6 +152,18 @@ class JsonLd
         if (!self::hasValue($notAddIfExist)) {
             self::$schema = array_merge_recursive(self::$schema, $data);
         }
+    }
+
+    public static function changeData($data)
+    {
+        foreach ($data as $key => $value) {
+            self::$schema[$key] = $data[$key];
+        }
+    }
+
+    public static function getData()
+    {
+        return self::$schema;
     }
 
     public static function hasValue($arr)

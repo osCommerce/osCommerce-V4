@@ -48,9 +48,11 @@ class NamedFormulaTest extends TestCase
         );
 
         self::assertCount(1, $this->spreadsheet->getNamedFormulae());
+        $formula = $this->spreadsheet->getNamedFormula('foo', $this->spreadsheet->getActiveSheet());
+        self::assertNotNull($formula);
         self::assertSame(
             '=16%',
-            $this->spreadsheet->getNamedFormula('foo', $this->spreadsheet->getActiveSheet())->getValue()
+            $formula->getValue()
         );
     }
 
@@ -60,17 +62,21 @@ class NamedFormulaTest extends TestCase
             new NamedFormula('Foo', $this->spreadsheet->getActiveSheet(), '=19%')
         );
         $this->spreadsheet->addNamedFormula(
-            new NamedFormula('FOO', $this->spreadsheet->getSheetByName('Sheet #2'), '=16%', true)
+            new NamedFormula('FOO', $this->spreadsheet->getSheetByNameOrThrow('Sheet #2'), '=16%', true)
         );
 
         self::assertCount(2, $this->spreadsheet->getNamedFormulae());
+        $formula = $this->spreadsheet->getNamedFormula('foo', $this->spreadsheet->getActiveSheet());
+        self::assertNotNull($formula);
         self::assertSame(
             '=19%',
-            $this->spreadsheet->getNamedFormula('foo', $this->spreadsheet->getActiveSheet())->getValue()
+            $formula->getValue()
         );
+        $formula = $this->spreadsheet->getNamedFormula('foo', $this->spreadsheet->getSheetByNameOrThrow('Sheet #2'));
+        self::assertNotNull($formula);
         self::assertSame(
             '=16%',
-            $this->spreadsheet->getNamedFormula('foo', $this->spreadsheet->getSheetByName('Sheet #2'))->getValue()
+            $formula->getValue()
         );
     }
 
@@ -94,15 +100,17 @@ class NamedFormulaTest extends TestCase
             new NamedFormula('Foo', $this->spreadsheet->getActiveSheet(), '=19%')
         );
         $this->spreadsheet->addNamedFormula(
-            new NamedFormula('FOO', $this->spreadsheet->getSheetByName('Sheet #2'), '=16%', true)
+            new NamedFormula('FOO', $this->spreadsheet->getSheetByNameOrThrow('Sheet #2'), '=16%', true)
         );
 
         $this->spreadsheet->removeNamedFormula('Foo', $this->spreadsheet->getActiveSheet());
 
         self::assertCount(1, $this->spreadsheet->getNamedFormulae());
+        $formula = $this->spreadsheet->getNamedFormula('foo', $this->spreadsheet->getSheetByNameOrThrow('Sheet #2'));
+        self::assertNotNull($formula);
         self::assertSame(
             '=16%',
-            $this->spreadsheet->getNamedFormula('foo', $this->spreadsheet->getSheetByName('Sheet #2'))->getValue()
+            $formula->getValue()
         );
     }
 
@@ -112,15 +120,23 @@ class NamedFormulaTest extends TestCase
             new NamedFormula('Foo', $this->spreadsheet->getActiveSheet(), '=19%')
         );
         $this->spreadsheet->addNamedFormula(
-            new NamedFormula('FOO', $this->spreadsheet->getSheetByName('Sheet #2'), '=16%', true)
+            new NamedFormula('FOO', $this->spreadsheet->getSheetByNameOrThrow('Sheet #2'), '=16%', true)
         );
 
-        $this->spreadsheet->removeNamedFormula('Foo', $this->spreadsheet->getSheetByName('Sheet #2'));
+        $this->spreadsheet->removeNamedFormula('Foo', $this->spreadsheet->getSheetByNameOrThrow('Sheet #2'));
 
         self::assertCount(1, $this->spreadsheet->getNamedFormulae());
+        $formula = $this->spreadsheet->getNamedFormula('foo');
+        self::assertNotNull($formula);
         self::assertSame(
             '=19%',
-            $this->spreadsheet->getNamedFormula('foo')->getValue()
+            $formula->getValue()
         );
+    }
+
+    public function testRemoveNonExistentNamedFormula(): void
+    {
+        self::assertCount(0, $this->spreadsheet->getNamedFormulae());
+        $this->spreadsheet->removeNamedFormula('Any');
     }
 }

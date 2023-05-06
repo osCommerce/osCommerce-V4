@@ -30,6 +30,7 @@ class BonusPoints extends Widget
 
     public function run()
     {
+        if (!\common\helpers\Extensions::isAllowed('BonusActions')) return '';
         $groupId = (int) \Yii::$app->storage->get('customer_groups_id');
         $manager = $this->params['manager'];
         $bonus_points = $manager->getBonusesDetails();

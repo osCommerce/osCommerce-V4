@@ -15,9 +15,9 @@
  */
 class PhpResourceTest extends PHPUnit_Smarty
 {
-    public function setUp()
+    public function setUp(): void
     {
-        $this->setUpSmarty(dirname(__FILE__));
+        $this->setUpSmarty(__DIR__);
     }
 
     public function testInit()
@@ -27,7 +27,7 @@ class PhpResourceTest extends PHPUnit_Smarty
 
     protected function relative($path)
     {
-        $path = str_replace(str_replace("\\", "/", dirname(__FILE__)), '.', str_replace("\\", "/", $path));
+        $path = str_replace(str_replace("\\", "/", __DIR__), '.', str_replace("\\", "/", $path));
 
         return $path;
     }
@@ -57,7 +57,7 @@ class PhpResourceTest extends PHPUnit_Smarty
      * public function testGetTemplateSource()
      * {
      * $tpl = $this->smarty->createTemplate('php:phphelloworld.php');
-     * $this->assertContains('php hello world', $tpl->source->getContent());
+     * $this->assertStringContainsString('php hello world', $tpl->source->getContent());
      * }
      * /**
      * test usesCompiler
@@ -110,7 +110,7 @@ class PhpResourceTest extends PHPUnit_Smarty
         $this->smarty->caching = true;
         $this->smarty->cache_lifetime = 1000;
         $tpl = $this->smarty->createTemplate('php:phphelloworld.php');
-        $this->assertContains('php hello world', $this->smarty->fetch($tpl));
+        $this->assertStringContainsString('php hello world', $this->smarty->fetch($tpl));
     }
 
     /**
@@ -161,7 +161,7 @@ class PhpResourceTest extends PHPUnit_Smarty
      *
      * @runInSeparateProcess
      * @preserveGlobalState disabled
-     *
+     * @doesNotPerformAssertions
      */
     public function testIsCachedTouchedSourcePrepare()
     {
@@ -207,11 +207,12 @@ class PhpResourceTest extends PHPUnit_Smarty
     {
         $this->smarty->setAllowPhpTemplates(true);
         $tpl = $this->smarty->createTemplate('php:phphelloworld.php');
-        $this->assertContains('php hello world', $tpl->fetch());
+        $this->assertStringContainsString('php hello world', $tpl->fetch());
     }
 
     /**
      * test $smarty->is_cached
+     * @doesNotPerformAssertions
      */
     public function testSmartyIsCachedPrepare()
     {
@@ -275,7 +276,7 @@ class PhpResourceTest extends PHPUnit_Smarty
     public function testIncludePhpTemplate()
     {
         $this->smarty->setAllowPhpTemplates(true);
-        $this->assertContains('php hello world', $this->smarty->fetch('includephp.tpl'));
+        $this->assertStringContainsString('php hello world', $this->smarty->fetch('includephp.tpl'));
     }
 
     /**
@@ -285,7 +286,7 @@ class PhpResourceTest extends PHPUnit_Smarty
     {
         $this->smarty->caching = true;
         $this->smarty->setAllowPhpTemplates(true);
-        $this->assertContains('php hello world', $this->smarty->fetch('includephp.tpl'));
+        $this->assertStringContainsString('php hello world', $this->smarty->fetch('includephp.tpl'));
     }
 
     /**

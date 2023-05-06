@@ -1,9 +1,7 @@
 <?php
 
 return [
-    [
-        '#N/A',
-    ],
+    'no arguments' => ['exception'],
     [
         1,
         true,

@@ -29,16 +29,25 @@ class CreditAmount extends Widget
     }
 
     public function run()
-    {   $manager = $this->params['manager'];
+    {
+        /** @var \common\services\OrderManager $manager */
+        $manager = $this->params['manager'];
     
         if (!$manager->isCustomerAssigned()) return ;
         
         if (ALLOW_CUSTOMER_CREDIT_AMOUNT != 'true') {
             return '';
         }
-        
+
+        $creditPaymentExists = false;
+        /** @var \common\classes\modules\ModulePayment $creditPayment */
+        if ($creditPayment = $manager->getCreditPayment()) {
+            $creditPaymentExists = $creditPayment->enabled ? 'enabled' : 'disabled';
+        }
+
         return IncludeTpl::widget(['file' => 'boxes/checkout/credit-amount.tpl', 'params' => [
             'credit_modules' => $manager->getCreditModules(),
+            'creditPaymentExists' => $creditPaymentExists,
             'id' => $this->id
         ]]);
     }

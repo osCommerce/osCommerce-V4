@@ -11,25 +11,28 @@ It tokenizes a string to ``T_UPPER``, ``T_LOWER`` and``T_NUMBER`` tokens:
 
     use Doctrine\Common\Lexer\AbstractLexer;
 
+    /**
+     * @extends AbstractLexer<CharacterTypeLexer::T_*, string>
+     */
     class CharacterTypeLexer extends AbstractLexer
     {
         const T_UPPER =  1;
         const T_LOWER =  2;
         const T_NUMBER = 3;
 
-        protected function getCatchablePatterns()
+        protected function getCatchablePatterns(): array
         {
-            return array(
+            return [
                 '[a-bA-Z0-9]',
-            );
+            ];
         }
 
-        protected function getNonCatchablePatterns()
+        protected function getNonCatchablePatterns(): array
         {
-            return array();
+            return [];
         }
 
-        protected function getType(&$value)
+        protected function getType(&$value): int
         {
             if (is_numeric($value)) {
                 return self::T_NUMBER;
@@ -52,19 +55,17 @@ Use ``CharacterTypeLexer`` to extract an array of upper case characters:
 
     class UpperCaseCharacterExtracter
     {
-        private $lexer;
-
-        public function __construct(CharacterTypeLexer $lexer)
+        public function __construct(private CharacterTypeLexer $lexer)
         {
-            $this->lexer = $lexer;
         }
 
-        public function getUpperCaseCharacters($string)
+        /** @return list<string> */
+        public function getUpperCaseCharacters(string $string): array
         {
             $this->lexer->setInput($string);
             $this->lexer->moveNext();
 
-            $upperCaseChars = array();
+            $upperCaseChars = [];
             while (true) {
                 if (!$this->lexer->lookahead) {
                     break;
@@ -72,8 +73,8 @@ Use ``CharacterTypeLexer`` to extract an array of upper case characters:
 
                 $this->lexer->moveNext();
 
-                if ($this->lexer->token['type'] === CharacterTypeLexer::T_UPPER) {
-                    $upperCaseChars[] = $this->lexer->token['value'];
+                if ($this->lexer->token->isA(CharacterTypeLexer::T_UPPER)) {
+                    $upperCaseChars[] = $this->lexer->token->value;
                 }
             }
 

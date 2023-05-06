@@ -16,6 +16,7 @@ use Yii;
 use yii\base\Widget;
 use frontend\design\IncludeTpl;
 use frontend\design\Info;
+use yii\helpers\ArrayHelper;
 
 class CustomerAdditionalField extends Widget
 {
@@ -68,7 +69,7 @@ class CustomerAdditionalField extends Widget
                 ->asArray()
                 ->one();
         }
-        if (!$value['value'] && $this->settings[0]['default_fields_id'] && $this->customersId){
+        if (!($value['value'] ?? false) && ArrayHelper::getValue($this->settings, [0, 'default_fields_id']) && $this->customersId){
             $value = \common\extensions\CustomerAdditionalFields\models\CustomersAdditionalFields::find()
                 ->where([
                     'additional_fields_id' => $this->settings[0]['default_fields_id'],
@@ -91,7 +92,7 @@ class CustomerAdditionalField extends Widget
                 }
             }
         }
-        $this->value = $value['value'];
+        $this->value = ($value['value'] ?? false);
 
 
         $valuesList = [];
@@ -116,7 +117,7 @@ class CustomerAdditionalField extends Widget
 
         if (Info::isTotallyAdmin()) {
             $downloadAction = 'customers/download-customer-file';
-        } elseif ($this->params['downloadUrl']) {
+        } elseif ($this->params['downloadUrl'] ?? false) {
             $downloadAction = $this->params['downloadUrl'];
         } else {
             $downloadAction = 'account/download-customer-file';
@@ -132,7 +133,7 @@ class CustomerAdditionalField extends Widget
                 }
 
                 if ( is_file(DIR_FS_CATALOG . $img) ) {
-                    if ($this->settings[0]['show'] || $this->params['show']) {
+                    if (ArrayHelper::getValue($this->settings, [0, 'show']) || ($this->params['show'] ?? false)) {
                         return '<img src="' . DIR_WS_CATALOG . $img . '" width="20">';
                     } else {
                         return '<img src="@' . base64_encode(file_get_contents(DIR_FS_CATALOG . $img)) . '" width="20">';
@@ -163,7 +164,7 @@ class CustomerAdditionalField extends Widget
                         $img .= 'not-checked.jpg';
                     }
                     if ( is_file(DIR_FS_CATALOG . $img) ) {
-                        if ($this->settings[0]['show'] || $this->params['show']) {
+                        if (($this->settings[0]['show'] ?? false) || ($this->params['show'] ?? false)) {
                             $radio .= '<table width="100%" cellpadding="2"><tr><td style="width: 25px"><img src="' . DIR_WS_CATALOG . $img . '" width="20" style="vertical-align: top;" valign="top"></td><td width="100%">' . $item . '</td></tr></table></div>';
                         } else {
                             $radio .= '<table width="100%" cellpadding="2"><tr><td style="width: 25px"><img src="@' . base64_encode(file_get_contents(DIR_FS_CATALOG . $img)) . '" width="20" style="vertical-align: top;" valign="top"></td><td width="100%">' . $item . '</td></tr></table>';
@@ -207,7 +208,7 @@ class CustomerAdditionalField extends Widget
                 }
                 return $_values;
 
-            } elseif ($this->settings[0]['style_view'] == 'table') {
+            } elseif (ArrayHelper::getValue($this->settings, [0, 'style_view']) == 'table') {
 
                 $cellsRows = explode('*', $this->settings[0]['cells']);
                 $cells = trim($cellsRows[0]) ?? 5;
@@ -243,7 +244,7 @@ class CustomerAdditionalField extends Widget
                 return $table;
 
             } else {
-                if ($this->params['pdf']) {
+                if ($this->params['pdf'] ?? false) {
                     $title = \common\extensions\CustomerAdditionalFields\models\AdditionalFieldsDescription::findOne($this->field['additional_fields_id'])->title;
                     return $this->value ? $this->value : (Info::isAdmin() ? 'field: ' . $title : ' ');
                 } else {

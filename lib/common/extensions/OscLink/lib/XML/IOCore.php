@@ -264,6 +264,11 @@ class IOCore
         }
     }
 
+    public function normalizeLocalFileName($fn)
+    {
+        return str_replace(' ', '_', $fn);
+    }
+
     public function download($sourceFile, &$physicalFile, $prefix = '')
     {
         $prefix = empty($prefix)? '': $prefix . ': ';
@@ -275,7 +280,7 @@ class IOCore
             Assert::assertNotEmpty($sourceFile, 'Source file is empty');
             Assert::assertNotEmpty($physicalFile, 'Destination file is empty');
             $sourceFile = str_replace(' ', '%20', $sourceFile);
-            $physicalFile = str_replace(' ', '_', $physicalFile);
+            $physicalFile = $this->normalizeLocalFileName($physicalFile);
             Assert::assert(
                 @copy($sourceFile, $physicalFile),
                 "Could not download file '$sourceFile': " . (error_get_last()['message'] ?? 'unknown reason')

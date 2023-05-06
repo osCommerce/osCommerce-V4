@@ -42,6 +42,23 @@
                             </select>
                         </div>
                     {/foreach}
+                    {if is_array($element['bundle_products']) and count($element['bundle_products']) > 0}
+                      {foreach $element['bundle_products'] as $bundle_product}
+                        <div class="col-full">
+                            {$bundle_product['num_product'] * $element['elements_qty']} x {$bundle_product['products_name']}
+                        </div>
+                        {foreach $bundle_product.attributes_array as $item}
+                        <div class="col-2">
+                            <select name="elements_attr[{$element['elements_id']}][{$element['selected_id']}][{$item.id}]" data-required="{$smarty.const.PLEASE_SELECT} {$bundle_product.products_name|escape:'html'} - {$item.title}" onchange="update_template_options(this.form);">
+                                <option value="0">{$smarty.const.SELECT} {$item.title}</option>
+                              {foreach $item.options as $option}
+                                <option value="{$option.id}"{if $option.id==$item.selected} selected{/if}{if {strlen($option.params)} > 0} {$option.params}{/if} data-popup="{$option.popup}">{$option.text}</option>
+                              {/foreach}
+                            </select>
+                        </div>
+                        {/foreach}
+                      {/foreach}
+                    {/if}
                   </div>
                   <div class="pc_qty">
                       <div class="pc_qty_wrapper">

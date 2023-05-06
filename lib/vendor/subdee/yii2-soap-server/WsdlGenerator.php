@@ -323,7 +323,7 @@ class WsdlGenerator extends Component
         $params = $method->getParameters();
         $message = array();
         $headers = array();
-        $n = preg_match_all('/^@param\s+([\w\.\\\]+(\[\s*\])?)\s*?(.*)$/im', $comment, $matches);
+        $n = preg_match_all('/^@param\s+([\w\.]+(\[\s*\])?)\s*?(.*)$/im', $comment, $matches);
         if ($n > count($params)) {
             $n = count($params);
         }
@@ -544,7 +544,7 @@ class WsdlGenerator extends Component
                         }
 
                         // We try to created simpleTypes if we have validators defined in the YiiModels
-                        if (array_key_exists($property->getName(), $this->validators[$property->class])) {
+                        if (isset($this->validators[$property->class])&&array_key_exists($property->getName(), $this->validators[$property->class])) {
                             foreach ($this->validators[$property->class][$property->getName()] as $validator) {
                                 $simpleType = [];
                                 if (in_array($validator['validator'], self::$validatorTypeList, true)) {
@@ -675,7 +675,10 @@ class WsdlGenerator extends Component
                     $restriction->setAttribute('base', 'soap-enc:Array');
                     $attribute = $dom->createElement('xsd:attribute');
                     $attribute->setAttribute('ref', 'soap-enc:arrayType');
-                    $attribute->setAttribute('wsdl:arrayType', substr($xmlType, 0, strlen($xmlType) - 5) . '[]');
+                    $attribute->setAttribute(
+                        'wsdl:arrayType',
+                        substr($xmlType, 0, strlen($xmlType) - 5) . '[]'
+                    );
 
                     $restriction->appendChild($attribute);
                     $complexContent->appendChild($restriction);

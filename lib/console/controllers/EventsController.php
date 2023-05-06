@@ -1,4 +1,5 @@
 <?php
+// ignore me
 
 /**
  * /usr/bin/php /home/user/public_html/site/yii.php events - > /dev/null
@@ -165,8 +166,12 @@ class EventsController extends Controller {
 
     /**
      * cron EP import
+     * @param boolean $runNow allowed [1, '1', 'true', 'yes', 'y'] everything else == false
      */
     public function actionDatasource($runNow = false) {
+        if (!in_array(trim($runNow), [1, '1', 'true', 'yes', 'y'])) {
+            $runNow = false;
+        }
 
         echo "cron service Datasource running\n";
 

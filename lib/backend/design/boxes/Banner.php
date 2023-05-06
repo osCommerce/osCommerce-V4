@@ -64,7 +64,7 @@ class Banner extends Widget
       }
       /* /support old versions */
 
-      $microtime = \common\models\DesignBoxesTmp::findOne($this->id)->microtime;
+      $microtime = \common\models\DesignBoxesTmp::findOne($this->id)->microtime ?? '';
       $microtime = substr($microtime, 0, strripos($microtime, '.'));
 
       $content = $this->render('banner.tpl', [

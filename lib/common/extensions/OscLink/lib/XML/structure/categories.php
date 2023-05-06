@@ -21,8 +21,8 @@ return [
                 'categories_level' => false,
                 'categories_left' => false,
                 'categories_right' => false,
-                'categories_image' => ['class'=>'IOAttachment', 'location'=>'@images'],
-                'categories_image_2' => ['class'=>'IOAttachment', 'location'=>'@images'],
+                'categories_image' => ['class'=>'IOAttachment', 'location'=>'@images/categories'],
+                'categories_image_2' => ['class'=>'IOAttachment', 'location'=>'@images/categories'],
             ],
             'withRelated' => [
                 'descriptions' => [

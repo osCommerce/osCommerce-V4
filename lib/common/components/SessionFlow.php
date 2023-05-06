@@ -63,7 +63,7 @@ class SessionFlow implements BootstrapInterface {
       if ($frontendsSession::allowed() ) {
         /// workaround - Yii changes session ID after customer login
         if (!empty($_COOKIE[tep_session_name()]) && $_COOKIE[tep_session_name()] != tep_session_id() ) {
-          \common\helpers\System::setcookie(tep_session_name(), tep_session_id(), 0, $cookie_path, $cookie_domain);
+          //\common\helpers\System::setcookie(tep_session_name(), tep_session_id(), 0, $cookie_path, $cookie_domain);
         }
       }
     }

@@ -10,6 +10,36 @@
  * For the full copyright and license information, please view the LICENSE.TXT file that was distributed with this source code.
  */
 
+class Log {
+
+    private static function getFileName() {
+        return __DIR__ . DIRECTORY_SEPARATOR . 'install.log';
+    }
+
+    private static function getPrefix($type) {
+        return sprintf('%s [%s] ', date('Y-m-d H-i-s'), $type);
+    }
+
+    private static function getSuffix($details) {
+        if (empty($details)) {
+            return '';
+        }
+        if (is_array($details)) {
+            $res = '';
+            foreach ($details as $key=>$value) {
+                $res .= "$key=$value\n";
+            }
+            return $res;
+        }
+        return $details . "\n";
+    }
+
+    public static function write($message, $type = 'info', $details = null) {
+        if (in_array($type, ['info', 'install_success'])) return;
+        file_put_contents(self::getFileName(), self::getPrefix($type) . "$message\n" . self::getSuffix($details), FILE_APPEND);
+    }
+}
+
 class install {
 
     public $log = [];
@@ -22,11 +52,13 @@ class install {
     public $data = array();
     public $langcode = 'english';
 
-    public function log($type, $message) {
+    public function log($type, $message, $details = null) {
         $this->log[] = [
             'type' => $type,
             'message' => $message,
+            'details' => $details,
         ];
+        Log::write($message, $type, $details);
     }
 
     public function init() {
@@ -51,7 +83,8 @@ class install {
                         <div class="ui-widget">
                             <div class="ui-state-error ui-corner-all" style="padding: 0pt 0.7em;">
                                 <p>
-                                <strong>Alert:</strong> Already Installed. Remove the \'install\' folder, or remove your configure.php to install again.</p>
+                                <strong>Alert:</strong> Already Installed. Remove the \'install\' folder, or remove two files (includes/local/configure.php,
+/admin/includes/local/configure.php) to install again.</p>
                             </div>
                         </div>
                         </body>
@@ -205,9 +238,10 @@ class install {
     private function end() {
         $config = file_get_contents($this->root_path . 'includes/local/configure.php');
         $config .= 'define(\'TL_INSTALLED\', true);' . "\n\n";
+        error_clear_last();
         $response = file_put_contents($this->root_path . 'includes/local/configure.php', $config);
         if ($response === false) {
-            $this->log('install_error', 'Cant save config file.');
+            $this->log('install_error', 'Cant save config file.', error_get_last()['message']??null);
             return false;
         }
         @chmod($this->root_path . 'includes/configure.php', 0444);
@@ -340,7 +374,7 @@ class install {
             $error = "<br />";
             foreach ($this->log as $log) {
                 $type = $log['type'];
-                $error .= $this->$type($log['message']);
+                $error .= $this->$type($log['message'], $log['details'] ?? null);
             }
             $content .= '<h1 class="hicon home">' . $this->lang[$_POST['current_step']] . '</h1>' . $error;
         }
@@ -384,15 +418,31 @@ class install {
         echo $content;
     }
 
-    public function install_error($log) {
+    public function htmlFromErrDetails($details)
+    {
+        if (empty($details)) {
+            return '';
+        }
+        if (is_array($details)) {
+            $tooltip = '';
+            foreach ($details as $key=>$value) {
+                $tooltip = "$key = $value\n";
+            }
+        } else {
+            $tooltip = (string) $details;
+        }
+        return '<span title="'. $tooltip .'" style="cursor: help; font-family: Segoe UI, Segoe UI Emoji">&#x2139</span>';
+    }
+
+    public function install_error($log, $details = null) {
         return '<div class="infobox infobox-large infobox-red clearfix">
-		<i class="fa fa-exclamation-triangle fa-4x pull-left"></i><span>' . $this->lang['error'] . '. ' . $log . '</span>
+		<i class="fa fa-exclamation-triangle fa-4x pull-left"></i><span>' . $this->lang['error'] . '. ' . $log . $this->htmlFromErrDetails($details) .'</span>
 	</div>';
     }
 
-    public function install_warning($log) {
+    public function install_warning($log, $details = null) {
         return '<div class="infobox infobox-large infobox-red clearfix">
-			<i class="fa fa-exclamation-triangle fa-4x pull-left"></i><span>' . $this->lang['warning'] . '. ' . $log . '</span>
+			<i class="fa fa-exclamation-triangle fa-4x pull-left"></i><span>' . $this->lang['warning'] . '. ' . $log . $this->htmlFromErrDetails($details) . '</span>
 		</div>';
     }
 
@@ -441,9 +491,9 @@ abstract class install_generic {
         return self::$ajax;
     }
 
-    public function log($type, $message) {
+    public function log($type, $message, $details = null) {
         global $install;
-        $install->log($type, $message);
+        $install->log($type, $message, $details);
     }
 
     public function prepare_input($string) {

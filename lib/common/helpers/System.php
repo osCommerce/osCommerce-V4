@@ -199,13 +199,26 @@ class System {
             'host' => $host,
             'ip' => gethostbyname($host),
             'uptime' => @\common\helpers\Php::exec('uptime'),
-            'http_server' => $_SERVER['SERVER_SOFTWARE'],
+            'http_server' => $_SERVER['SERVER_SOFTWARE'] ?? 'unknown',
             'php' => PHP_VERSION,
             'zend' => (function_exists('zend_version') ? zend_version() : ''),
             'db_server' => DB_SERVER,
             'db_ip' => gethostbyname(DB_SERVER),
             'db_version' => 'MySQL ' . (function_exists('mysqli_get_server_info') ? tep_db_get_server_info() : ''),
             'db_date' => \common\helpers\Date::datetime_short($db['datetime']));
+    }
+
+    public static function getSysInfo() {
+        return [
+            'php' => PHP_VERSION,
+            'db_server' => DB_SERVER,
+            'db_version' => 'MySQL ' . (function_exists('mysqli_get_server_info') ? tep_db_get_server_info() : ''),
+            'osCommerce version' => defined('PROJECT_VERSION')? PROJECT_VERSION : 'unknown',
+            'osCommerce revision' => defined('MIGRATIONS_DB_REVISION')? MIGRATIONS_DB_REVISION : 'unknown',
+            'PLATFORM_ID' => defined('PLATFORM_ID')? PLATFORM_ID : '',
+            'DEFAULT_LANGUAGE' => defined('DEFAULT_LANGUAGE')? DEFAULT_LANGUAGE : '',
+            'DEFAULT_CURRENCY' => defined('DEFAULT_CURRENCY')? DEFAULT_CURRENCY : '',
+        ];
     }
 
     public static function get_timezones() {

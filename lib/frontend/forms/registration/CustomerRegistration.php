@@ -56,6 +56,7 @@ class CustomerRegistration extends Model {
     public $country;
     public $zone_id;
     public $terms;
+    public $customs_number;
     /* for create account */
     public $status;
     public $erp_customer_id;
@@ -308,6 +309,17 @@ class CustomerRegistration extends Model {
 	//static::SCENARIO_CREATE - create customer on edit order
 	//static::SCENARIO_CHECKOUT - customer on checkout & edit order
 	//static::SCENARIO_REGISTER - customer register by himself
+        if ($this->scenario == static::SCENARIO_REGISTER && (defined('FLAG_EMAIL_VERIFICATION') && FLAG_EMAIL_VERIFICATION == 'True')) {
+            $emailValidation = \common\models\CustomersEmailValidation::find()->where(['cev_email' => md5($this->$attribute)])->one();
+            if ($emailValidation instanceof \common\models\CustomersEmailValidation) {
+                $cevCode = trim(filter_var(htmlentities(Yii::$app->request->post('email_verification_code')), FILTER_SANITIZE_STRING));
+                if ( !empty($cevCode) && $emailValidation->cev_code != md5($cevCode) ) {
+                    $this->addError($attribute, ENTRY_VERIFICATION_CODE_ERROR);
+                }
+            } else {
+                $this->addError($attribute, ENTRY_VERIFICATION_CODE_ERROR);
+            }
+        }
         if (in_array($this->scenario, [static::SCENARIO_REGISTER, static::SCENARIO_CREATE, static::SCENARIO_CHECKOUT])) {
             
             if ($this->scenario == static::SCENARIO_CHECKOUT){

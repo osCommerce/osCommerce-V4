@@ -49,6 +49,7 @@ abstract class OrderShadowAbstract implements OrderInterface {
         $this->info = [
             'order_status' => DEFAULT_ORDERS_STATUS_ID,
             'platform_id' => $cart->platform_id,
+            'department_id' => 0,
             'currency' => $cart->currency,
             'currency_value' => $currencies->currencies[$cart->currency]['value'] ?? null,
             'language_id' => $cart->language_id,
@@ -544,21 +545,21 @@ abstract class OrderShadowAbstract implements OrderInterface {
         } else {
           $check_delivery = $this->manager->getBillingAddress();
         }
-        $delivery_tax_values = \common\helpers\Tax::getTaxValues($this->info['platform_id'], $tax_class_id, Address::extractCountryId($check_delivery), $check_delivery['zone_id']);
+        $delivery_tax_values = \common\helpers\Tax::getTaxValues($this->info['platform_id'], $tax_class_id, Address::extractCountryId($check_delivery), $check_delivery['zone_id'] ?? 0);
 
       } elseif (defined('TAX_ADDRESS_OPTION') && (int)TAX_ADDRESS_OPTION == 0) { // by billing address
         $check_billing = $this->manager->getBillingAddress();
-        $delivery_tax_values = \common\helpers\Tax::getTaxValues($this->info['platform_id'], $tax_class_id, Address::extractCountryId($check_billing), $check_billing['zone_id']);
+        $delivery_tax_values = \common\helpers\Tax::getTaxValues($this->info['platform_id'], $tax_class_id, Address::extractCountryId($check_billing), $check_billing['zone_id'] ?? 0);
 
       } else {
         // Seems DAA specific - any of (on checkout only)
 
         $check_delivery = $this->manager->getDeliveryAddress();
-        $delivery_tax_values = \common\helpers\Tax::getTaxValues($this->info['platform_id'], $tax_class_id, Address::extractCountryId($check_delivery), $check_delivery['zone_id']);
+        $delivery_tax_values = \common\helpers\Tax::getTaxValues($this->info['platform_id'], $tax_class_id, Address::extractCountryId($check_delivery), $check_delivery['zone_id'] ?? 0);
         if ($delivery_tax_values['tax'] > 0) {
         } else { 
             $check_billing = $this->manager->getBillingAddress();
-            $delivery_tax_values = \common\helpers\Tax::getTaxValues($this->info['platform_id'], $tax_class_id, Address::extractCountryId($check_billing), $check_billing['zone_id']);
+            $delivery_tax_values = \common\helpers\Tax::getTaxValues($this->info['platform_id'], $tax_class_id, Address::extractCountryId($check_billing), $check_billing['zone_id'] ?? 0);
         }
         
       }

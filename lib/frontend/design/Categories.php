@@ -82,10 +82,16 @@ where
             $p_name = design::pageName($page['page_title']);
 
             if (isset($page['rule']) && $page['rule'] == 'no_filters'){
-                if (isset($get['manufacturers_id']) && $get['manufacturers_id'] > 0) {
-                    $filters = \common\helpers\Manufacturers::get_manufacturer_filters($get['manufacturers_id']);
-                } else {
-                    $filters = \common\helpers\Categories::get_category_filters($categories_id);
+
+                if (\common\helpers\Acl::checkExtensionAllowed('ProductPropertiesFilters'))
+                {
+                    if (isset($get['manufacturers_id']) && $get['manufacturers_id'] > 0) {
+                        $filters = \common\helpers\Manufacturers::get_manufacturer_filters($get['manufacturers_id']);
+                    } else {
+                        $filters = \common\helpers\Categories::get_category_filters($categories_id);
+                    }
+                }else{
+                    $filters = [];
                 }
                 if (count($filters) > 0) {
                     $arr[$p_name] = false;

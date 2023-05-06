@@ -113,10 +113,17 @@
                                 <input type="text" name="security_key" class="form-control" autocomplete="off" placeholder="{$smarty.const.TEXT_SECURITY_KEY}" data-rule-required="true" data-msg-required="{$smarty.const.TEXT_ENTER_SECURITY_KEY}" />
                             </div>
                         </div>
-                        <div class="form-group">
-                            <label>{$smarty.const.TEXT_SECURITY_IS_GUEST}</label>
-                            {tep_draw_checkbox_field('ad_is_guest', '1', '1')}
+                    <div class="row">
+                        <div class="col-xs-6 ">
+                            <div class="form-group">
+                                <label>{$smarty.const.TEXT_SECURITY_IS_GUEST}</label>
+                                {tep_draw_checkbox_field('ad_is_guest', '1', '1')}
+                            </div>
                         </div>
+                        <div class="col-xs-6" style="padding-top: 4px">
+                            <span class="btn" onclick="window.location.reload()">{$smarty.const.RESEND_CODE}</span>
+                        </div>
+                    </div>
                         <script type="text/javascript">
                             $(function() {
                                 $('input[name="security_key"]').password();

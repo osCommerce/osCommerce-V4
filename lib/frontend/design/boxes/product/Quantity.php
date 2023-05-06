@@ -41,6 +41,7 @@ class Quantity extends Widget {
             if (Yii::$app->user->isGuest && \common\helpers\PlatformConfig::getFieldValue('platform_please_login')) {
                 $par['disapear_quantity_input'] = true;
             }
+            $par['show_in_cart_button'] = Info::themeSetting('show_in_cart_button');
             return IncludeTpl::widget(['file' => 'boxes/product/quantity.tpl', 'params' => $par]);
         } else {
             if ($params['products_id'] && !GROUPS_DISABLE_CART) {
@@ -81,6 +82,7 @@ class Quantity extends Widget {
                                 'disapear_quantity_input' => $product['settings']->show_attributes_quantity, //? was cProduct c/p from pack/units always false....
                                 'order_quantity_data' => Product::get_product_order_quantity($params['products_id']),
                                 'product_in_cart' => $cart->in_cart($params['products_id']), //Info::checkProductInCart($params['products_id']),
+                    'show_in_cart_button' => Info::themeSetting('show_in_cart_button'),
                 ]]);
             } else {
                 return '';

@@ -415,6 +415,12 @@ class PriceFormula {
                 self::logAutoUpdateProduct($productId, 'Canceled - product does not meet auto the update conditions');
                 return;
             }
+        } else {
+            $productModel = \common\models\Products::findOne($productId);
+            if (empty($productModel)) {
+                self::logAutoUpdateProduct($productId, 'Product does not exists');
+                return;
+            }
         }
 
         extract( self::autoSelectSupplier($productId) );
@@ -429,51 +435,8 @@ class PriceFormula {
             $log_string .= " DATA=".\json_encode($calculatedPrice);
         }
         self::logAutoUpdateProduct($productId, $log_string );
-        $currencyId = (int) ((USE_MARKET_PRICES == 'True' ? \common\helpers\currencies::getCurrencyId(DEFAULT_CURRENCY) : 0));
 
-        if (strpos($productId, '{') !== false) {
-            $_main_price = $productModel->getAttributes(['products_price', 'products_price_full']);
-
-            //inventory_group_price
-            //inventory_full_price
-            $update_inventory = "price_prefix = '+', inventory_full_price='" . tep_db_input($product_price) . "'";
-            $update_inventory_prices = "price_prefix = '+', inventory_full_price='" . tep_db_input($product_price) . "'";
-            if (!$_main_price['products_price_full']) {
-                $_prefix = $product_price < $_main_price['products_price'] ? '-' : '+';
-                $_price_delta = abs($_main_price['products_price'] - $product_price);
-                $update_inventory = "price_prefix = '{$_prefix}', inventory_full_price='" . tep_db_input($_price_delta) . "'";
-                $update_inventory_prices = "price_prefix = '{$_prefix}', inventory_full_price='" . tep_db_input($_price_delta) . "'";
-            }
-
-            \Yii::$app->db->createCommand(
-                "UPDATE " . TABLE_INVENTORY_PRICES . " " .
-                "SET {$update_inventory_prices} " .
-                "WHERE prid='" . (int)$productId . "' AND products_id='" . tep_db_input($productId) . "' " .
-                " AND groups_id='0' AND currencies_id='" . $currencyId .
-                " AND products_group_price!=-1 "
-            )->execute();
-            //inventory_full_price
-            //inventory_price
-            \Yii::$app->db->createCommand(
-                "UPDATE " . TABLE_INVENTORY . " " .
-                "SET {$update_inventory} " .
-                "WHERE prid='" . (int)$productId . "' AND products_id='" . tep_db_input($productId) . "'"
-            )->execute();
-        } else {
-            \common\models\ProductsPrices::updateAll(['products_group_price' => $product_price],
-        "products_id='" . (int)$productId . "' AND groups_id=0 AND currencies_id='" . $currencyId . "' AND products_group_price!=-1"
-            );
-            $productModel->products_price = $product_price;
-            $productModel->auto_price_modified = (new \DateTime())->format(\DateTime::ATOM);
-            $productModel->save(false);
-
-            /* @var $extP \common\extensions\ProductPriceIndex\ProductPriceIndex */
-            $extP = \common\helpers\Acl::checkExtensionAllowed('ProductPriceIndex', 'allowed');
-            if ($extP && $extP::isEnabled()) {
-                $extP::reindex((int)$productId);
-            }
-        }
-        return true;
+        return self::updateProductPriceByModel($productModel, $product_price, $selected_supplier_id);
     }
 
     public static function batchProductAutoCalcPriceBySupplier($LIMIT_RECORDS = 1000, $LIMIT_TIME = 3000)
@@ -570,24 +533,18 @@ class PriceFormula {
     protected static function correctSupplierPriceByCurrencyRisks($suppliers_id, $data){
         $sCurrency = \common\models\SuppliersCurrencies::find()->alias('s')->where(['suppliers_id' => $suppliers_id, 's.currencies_id' => $data['currencies_id']])
                 ->joinWith('currencies c')->one();
-        if (!$sCurrency){
-            return $data['PRICE'];
-        } else {
-            $risk = 0;
+        if ($sCurrency) {
             if ($sCurrency['use_custom_currency_value']){
-                $risk = $sCurrency['currency_value'];
+                $data['PRICE'] /= $sCurrency['currency_value'];
             } else {
-                $risk = $sCurrency->currencies->value;
+                $data['PRICE'] /= $sCurrency->currencies->value;
             }
             if ($sCurrency['margin_value']){
                 if ($sCurrency['margin_type'] == '%'){
-                    $risk -= ($sCurrency['margin_value'] / 100) * $risk;
+                    $data['PRICE'] += ($sCurrency['margin_value'] / 100) * $data['PRICE'];
                 } else {
-                    $risk -= $sCurrency['margin_value'];
+                    $data['PRICE'] += $sCurrency['margin_value'];
                 }
-            }
-            if ($risk){
-                $data['PRICE'] /= $risk; 
             }
         }
         return $data['PRICE'];
@@ -781,4 +738,73 @@ class PriceFormula {
         }
     }
 
+    /**
+     * @param \common\models\Products $productModel
+     * @param $product_price
+     * @param $supplierId don't used at this moment
+     * @return true
+     * @throws \yii\db\Exception
+     */
+    public static function updateProductPriceByModel($productModel, $product_price, $supplierId = null): bool
+    {
+        $productId = $productModel->products_id;
+
+        $currencyId = (int)((USE_MARKET_PRICES == 'True' ? \common\helpers\currencies::getCurrencyId(DEFAULT_CURRENCY) : 0));
+
+        if (strpos($productId, '{') !== false) {
+            $_main_price = $productModel->getAttributes(['products_price', 'products_price_full']);
+
+            //inventory_group_price
+            //inventory_full_price
+            $update_inventory = "price_prefix = '+', inventory_full_price='" . tep_db_input($product_price) . "'";
+            $update_inventory_prices = "price_prefix = '+', inventory_full_price='" . tep_db_input($product_price) . "'";
+            if (!$_main_price['products_price_full']) {
+                $_prefix = $product_price < $_main_price['products_price'] ? '-' : '+';
+                $_price_delta = abs($_main_price['products_price'] - $product_price);
+                $update_inventory = "price_prefix = '{$_prefix}', inventory_full_price='" . tep_db_input($_price_delta) . "'";
+                $update_inventory_prices = "price_prefix = '{$_prefix}', inventory_full_price='" . tep_db_input($_price_delta) . "'";
+            }
+
+            \Yii::$app->db->createCommand(
+                "UPDATE " . TABLE_INVENTORY_PRICES . " " .
+                "SET {$update_inventory_prices} " .
+                "WHERE prid='" . (int)$productId . "' AND products_id='" . tep_db_input($productId) . "' " .
+                " AND groups_id='0' AND currencies_id='" . $currencyId .
+                " AND products_group_price!=-1 "
+            )->execute();
+            //inventory_full_price
+            //inventory_price
+            \Yii::$app->db->createCommand(
+                "UPDATE " . TABLE_INVENTORY . " " .
+                "SET {$update_inventory} " .
+                "WHERE prid='" . (int)$productId . "' AND products_id='" . tep_db_input($productId) . "'"
+            )->execute();
+        } else {
+            \common\models\ProductsPrices::updateAll(['products_group_price' => $product_price],
+                "products_id='" . (int)$productId . "' AND groups_id=0 AND currencies_id='" . $currencyId . "' AND products_group_price!=-1"
+            );
+            $productModel->products_price = $product_price;
+            $productModel->auto_price_modified = (new \DateTime())->format(\DateTime::ATOM);
+            $productModel->save(false);
+
+            /* @var $extP \common\extensions\ProductPriceIndex\ProductPriceIndex */
+            $extP = \common\helpers\Acl::checkExtensionAllowed('ProductPriceIndex', 'allowed');
+            if ($extP && $extP::isEnabled()) {
+                $extP::reindex((int)$productId);
+            }
+        }
+        self::logAutoUpdateProduct($productId, "Price changed: price={$product_price}; supplierId={$supplierId}");
+        return true;
+    }
+
+    public static function updateProductPriceById($productId, $productPrice, $supplierId = null): bool
+    {
+        if ($productId > 0) {
+            $productModel = \common\models\Products::findOne($productId);
+            if (!empty($productModel)) {
+                return self::updateProductPriceByModel($productModel, $productPrice, $supplierId);
+            }
+        }
+        return false;
+    }
 }

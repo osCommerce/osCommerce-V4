@@ -95,9 +95,13 @@
     </style>
 </head>
 <body{if Info::isAdmin()} class="is-admin"{/if}>
-{Block::widget(['name' => $page_name|cat:'_header', 'params' => ['type' => $type, 'params' => $params]])}
+{if $type != 'backendOrder'}
+    {Block::widget(['name' => $page_name|cat:'_header', 'params' => ['type' => $type, 'params' => $params]])}
+{/if}
 {Block::widget(['name' => $page_name, 'params' => ['type' => $type, 'params' => $params]])}
-{Block::widget(['name' => $page_name|cat:'_footer', 'params' => ['type' => $type, 'params' => $params]])}
+{if $type != 'backendOrder'}
+    {Block::widget(['name' => $page_name|cat:'_footer', 'params' => ['type' => $type, 'params' => $params]])}
+{/if}
 <div style="height: 50px;">&nbsp;</div>
 <script type="text/javascript">
     $(function(){

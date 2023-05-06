@@ -7,7 +7,7 @@
             </div>
         </div>
     </div>
-    <div class="widget-content">
+    <div class="widget-content dashboard-scroll">
         {if defined('SUPERADMIN_ENABLED') && SUPERADMIN_ENABLED == True}
         <table class="table table-striped table-bordered table-hover table-responsive datatable-dashboard table-ordering no-footer" order_list="3" order_by="desc" data-ajax="index/order">
             <thead>
@@ -37,7 +37,9 @@
             <a href="#" class="btn-refresh"><i class="icon-refresh"></i></a>
         </div>
     </div>
+{*
     <div class="divider"></div>
+*}
 </div>
 <script type="text/javascript">
 function onClickEvent(obj, table) {

@@ -2,6 +2,7 @@
 
 namespace PhpOffice\PhpSpreadsheetTests\Calculation\Functions\Engineering;
 
+use PhpOffice\PhpSpreadsheet\Calculation\Calculation;
 use PhpOffice\PhpSpreadsheet\Calculation\Exception as CalcExp;
 use PhpOffice\PhpSpreadsheet\Calculation\Functions;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -41,6 +42,7 @@ class Hex2BinTest extends TestCase
         $sheet->getCell('A1')->setValue("=HEX2BIN($formula)");
         $result = $sheet->getCell('A1')->getCalculatedValue();
         self::assertEquals($expectedResult, $result);
+        $spreadsheet->disconnectWorksheets();
     }
 
     public function providerHEX2BIN(): array
@@ -71,6 +73,7 @@ class Hex2BinTest extends TestCase
         $sheet->getCell('A1')->setValue("=HEX2BIN($formula)");
         $result = $sheet->getCell('A1')->getCalculatedValue();
         self::assertEquals($expectedResult, $result);
+        $spreadsheet->disconnectWorksheets();
     }
 
     public function testHEX2BINFrac(): void
@@ -92,5 +95,28 @@ class Hex2BinTest extends TestCase
         $cell = 'E1';
         $sheet->setCellValue($cell, '=HEX2BIN(10.1)');
         self::assertEquals('#NUM!', $sheet->getCell($cell)->getCalculatedValue());
+        $spreadsheet->disconnectWorksheets();
+    }
+
+    /**
+     * @dataProvider providerHex2BinArray
+     */
+    public function testHex2BinArray(array $expectedResult, string $value): void
+    {
+        $calculation = Calculation::getInstance();
+
+        $formula = "=HEX2BIN({$value})";
+        $result = $calculation->_calculateFormulaValue($formula);
+        self::assertEquals($expectedResult, $result);
+    }
+
+    public function providerHex2BinArray(): array
+    {
+        return [
+            'row/column vector' => [
+                [['100', '111', '111111', '10011001', '11001100', '101010101']],
+                '{"4", "7", "3F", "99", "CC", "155"}',
+            ],
+        ];
     }
 }

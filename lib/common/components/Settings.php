@@ -96,7 +96,7 @@ class Settings extends Component {
     private function load()
     {
         if (Yii::$app instanceof \yii\console\Application) {
-            $this->data = $_SESSION[$this->sessionKey];
+            $this->data = $_SESSION[$this->sessionKey] ?? [];
         } else {
             if (Yii::$app->storage->pointerShifted()){
                 $this->data = Yii::$app->storage->getAll();

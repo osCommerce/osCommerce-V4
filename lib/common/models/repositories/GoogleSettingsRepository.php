@@ -30,7 +30,12 @@ class GoogleSettingsRepository {
     
     public function getSetting($module, $platform_id = 0, $status = null)
     {
-        $query = $this->get()->where(['module' => $module])->platform($platform_id)->status($status);
+        //$query = $this->get()->where(['module' => $module])->platform($platform_id)->status($status);
+        $query = $this->get()->where(['module' => $module])
+                ->andWhere(['platform_id' => $platform_id]);
+        if (!is_null($status)) {
+                $query->andWhere(['status' => $status]);
+        }
         return $query->one();
     }
     

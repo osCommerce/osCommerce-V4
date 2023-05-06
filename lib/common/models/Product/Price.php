@@ -332,7 +332,7 @@ class Price extends BasePrice {
      * @return self
      */
     public static function getInstance($uprid) {
-        if (!isset(self::$instanses[$uprid])) {
+        if (!isset(self::$instanses[$uprid]) || Yii::$app->params['reset_static_product_prices_cache']) {
             self::$instanses[$uprid] = new self($uprid);
         }
         return self::$instanses[$uprid];

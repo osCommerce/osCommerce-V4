@@ -19,6 +19,9 @@ use common\api\models\AR\Customer\Info;
 class Customer extends EPMap
 {
 
+    public $credit_amount_delta;
+    public $customers_bonus_points_delta;
+
     protected $hideFields = [
         'customers_password',
         'last_xml_import',
@@ -32,6 +35,7 @@ class Customer extends EPMap
         'customers_selected_template',
         'customers_fax',
         'dnu_customers_company_vat',
+        'customers_credit_avail',
     ];
 
     protected $childCollections = [
@@ -62,7 +66,35 @@ class Customer extends EPMap
       return min(20, $def);
     }
 
-    
+    public function customFields()
+    {
+        $fields = parent::customFields();
+        $fields[] = 'credit_amount_delta';
+        $fields[] = 'customers_bonus_points_delta';
+        return $fields;
+    }
+
+    public function getPossibleKeys()
+    {
+        $keys  = parent::getPossibleKeys();
+        $keys = array_values($keys);
+        $credit_idx = array_search('credit_amount', $keys);
+        $credit_delta_idx = array_search('credit_amount_delta', $keys);
+        if ( $credit_idx!==false && $credit_delta_idx!==false ) {
+            unset($keys[$credit_delta_idx]);
+            array_splice($keys, $credit_idx+1, 0, ['credit_amount_delta']);
+        }
+        $bonus_points_idx = array_search('customers_bonus_points', $keys);
+        $bonus_points_delta_idx = array_search('customers_bonus_points_delta', $keys);
+        if ( $bonus_points_idx!==false && $bonus_points_delta_idx!==false ) {
+            unset($keys[$bonus_points_delta_idx]);
+            array_splice($keys, $bonus_points_idx+1, 0, ['customers_bonus_points_delta']);
+        }
+
+        return $keys;
+    }
+
+
     public function rules() {
         return array_merge(
             parent::rules(),
@@ -116,6 +148,20 @@ class Customer extends EPMap
             $export['customers_currency'] = \common\helpers\Currencies::getCurrencyCode($this->customers_currency_id);
         }
 
+        if (!defined('ALLOW_CUSTOMER_CREDIT_AMOUNT') || ALLOW_CUSTOMER_CREDIT_AMOUNT == 'false'){
+            unset($export['credit_amount']);
+        }else{
+            if ( (count($fields)==0 || array_key_exists('credit_amount_delta', $fields))) {
+                $export['credit_amount_delta'] = '';
+            }
+        }
+        if (!\common\helpers\Acl::checkExtensionAllowed('BonusActions')){
+            unset($export['customers_bonus_points']);
+        }else{
+            if ( (count($fields)==0 || array_key_exists('customers_bonus_points_delta', $fields))) {
+                $export['customers_bonus_points_delta'] = '';
+            }
+        }
         return $export;
     }
 
@@ -123,6 +169,28 @@ class Customer extends EPMap
     {
         if ( array_key_exists('customers_currency', $data) ) {
             $data['customers_currency_id'] = \common\helpers\Currencies::getCurrencyId($data['customers_currency']);
+        }
+        if (!defined('ALLOW_CUSTOMER_CREDIT_AMOUNT') || ALLOW_CUSTOMER_CREDIT_AMOUNT == 'false'){
+            unset($data['credit_amount']);
+            unset($data['credit_amount_delta']);
+        }else{
+            if ( !empty($this->modelFlags['credit_amount_delta']) ) {
+                unset($data['credit_amount']);
+                if ( array_key_exists('credit_amount_delta', $data) && !empty($data['credit_amount_delta'])) {
+                    $data['credit_amount'] = (float)$this->credit_amount + (float)$data['credit_amount_delta'];
+                }
+            }
+        }
+        if (!\common\helpers\Acl::checkExtensionAllowed('BonusActions')){
+            unset($data['customers_bonus_points']);
+            unset($data['customers_bonus_points_delta']);
+        }else{
+            if ( !empty($this->modelFlags['customers_bonus_points_delta']) ) {
+                unset($data['customers_bonus_points']);
+                if (array_key_exists('customers_bonus_points_delta', $data) && !empty($data['customers_bonus_points_delta'])) {
+                    $data['customers_bonus_points'] = (float)$this->customers_bonus_points + (float)$data['customers_bonus_points_delta'];
+                }
+            }
         }
 
         $importResult = parent::importArray($data);
@@ -136,28 +204,31 @@ class Customer extends EPMap
             $this->childCollections['info'] = [];
             $this->childCollections['info'][] = new Info();
         }
-        /*
-        if ( !$insert ) {
-            $creditChanged = $this->getDirtyAttributes(['credit_amount']);
-            if ( count($creditChanged)>0 ) {
-                $old_credit_amount = $this->getOldAttribute('credit_amount');
-                if ( number_format($old_credit_amount,4,'.','')!=number_format($old_credit_amount,4,'.','') ) {
-                    tep_db_perform(TABLE_CUSTOMERS_CREDIT_HISTORY,[
-| customers_id                | int(11)       | NO     |       |    <null> |                |
-| credit_prefix               | varchar(1)    | NO     |       |    <null> |                |
-| credit_amount               | decimal(11,2) | NO     |       |    <null> |                |
-| currency                    | char(3)       | NO     |       |    <null> |                |
-| currency_value              | decimal(14,6) | NO     |       |    <null> |                |
-| customer_notified           | tinyint(1)    | NO     |       |    <null> |                |
-| comments                    | mediumtext    | NO     |       |    <null> |                |
-| date_added                  | datetime      | NO     |       |    <null> |                |
-| admin_id
-                    ]);
+
+        return parent::beforeSave($insert);
+    }
+
+    public function afterSave($insert, $changedAttributes)
+    {
+        parent::afterSave($insert, $changedAttributes);
+        if ( array_key_exists('credit_amount', $changedAttributes) || array_key_exists('customers_bonus_points', $changedAttributes) ) {
+            static $customer;
+            if (!is_object($customer)) {
+                $customer = new \common\components\Customer();
+            }
+            if (array_key_exists('credit_amount', $changedAttributes)) {
+                $diff = $this->getOldAttribute('credit_amount') - $changedAttributes['credit_amount'];
+                if ((float)$diff != 0) {
+                    $customer->saveCreditHistory($this->customers_id, abs($diff), $diff > 0 ? '+' : '-', DEFAULT_CURRENCY, 1, 'Import update', 0, 0);
+                }
+            }
+            if (array_key_exists('customers_bonus_points', $changedAttributes)) {
+                $diff = $this->getOldAttribute('customers_bonus_points') - $changedAttributes['customers_bonus_points'];
+                if ((float)$diff != 0) {
+                    $customer->saveCreditHistory($this->customers_id, abs($diff), $diff > 0 ? '+' : '-', '', 1, 'Import update', 1, 0);
                 }
             }
         }
-        */
-        return parent::beforeSave($insert);
     }
 
 

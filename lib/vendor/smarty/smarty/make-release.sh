@@ -1,9 +1,9 @@
 #!/bin/bash
 
-if [[ "$1" =~ ^3\.[0-9\.-rc]+$ ]]; then
+if [[ "$1" =~ ^4\.[0-9\.-rc]+$ ]]; then
    printf 'Creating release %s\n' "$1"
 else
-   echo "Invalid version number: $1. This script can only make v3.x.x releases."
+   echo "Invalid version number: $1. This script can only make v4.x.x releases."
    exit 1;
 fi
 
@@ -14,13 +14,11 @@ sed -i "s/const SMARTY_VERSION = '[^']\+';/const SMARTY_VERSION = '$1';/" libs/S
 git add CHANGELOG.md libs/Smarty.class.php
 git commit -m "version bump"
 
-git checkout support/3.1
+git checkout master
 git pull
 git merge --no-ff "release/$1"
 git branch -d "release/$1"
 git tag -a "v$1" -m "Release $1"
 
 printf 'Done creating release %s\n' "$1"
-
-# shellcheck disable=SC2016
 printf 'Run `git push --follow-tags origin` to publish it.\n'

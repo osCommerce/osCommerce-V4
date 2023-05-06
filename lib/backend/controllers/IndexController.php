@@ -195,7 +195,7 @@ class IndexController extends Sceleton {
             }
 
             echo json_encode(array(
-                'to_search' => $to_search,
+                'to_search' => $to_search ?? null,
                 'founded' => $founded,
                 'orders_count' => count($founded),
             ));

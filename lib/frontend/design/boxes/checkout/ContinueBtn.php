@@ -36,11 +36,8 @@ class ContinueBtn extends Widget
             $payment_modules = \common\services\OrderManager::loadManager($cart)->getPaymentCollection();
             $initialize_checkout_methods = $payment_modules->checkout_initialization_method();
         //}
-
-        return IncludeTpl::widget(['file' => 'boxes/checkout/continue-btn.tpl', 'params' => [
-            'link' => tep_href_link('index'),
-            'page_name' => $this->params['page_name']
-            , 'inline' => $initialize_checkout_methods
-        ]]);
+        $this->params['link'] = tep_href_link('index');
+        $this->params['inline'] = $initialize_checkout_methods;
+        return IncludeTpl::widget(['file' => 'boxes/checkout/continue-btn.tpl', 'params' => $this->params]);
     }
 }

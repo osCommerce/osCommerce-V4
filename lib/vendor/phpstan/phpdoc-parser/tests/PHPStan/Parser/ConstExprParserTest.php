@@ -14,8 +14,9 @@ use PHPStan\PhpDocParser\Ast\ConstExpr\ConstExprStringNode;
 use PHPStan\PhpDocParser\Ast\ConstExpr\ConstExprTrueNode;
 use PHPStan\PhpDocParser\Ast\ConstExpr\ConstFetchNode;
 use PHPStan\PhpDocParser\Lexer\Lexer;
+use PHPUnit\Framework\TestCase;
 
-class ConstExprParserTest extends \PHPUnit\Framework\TestCase
+class ConstExprParserTest extends TestCase
 {
 
 	/** @var Lexer */
@@ -28,7 +29,7 @@ class ConstExprParserTest extends \PHPUnit\Framework\TestCase
 	{
 		parent::setUp();
 		$this->lexer = new Lexer();
-		$this->constExprParser = new ConstExprParser();
+		$this->constExprParser = new ConstExprParser(true);
 	}
 
 
@@ -41,9 +42,6 @@ class ConstExprParserTest extends \PHPUnit\Framework\TestCase
 	 * @dataProvider provideStringNodeParseData
 	 * @dataProvider provideArrayNodeParseData
 	 * @dataProvider provideFetchNodeParseData
-	 * @param string        $input
-	 * @param ConstExprNode $expectedExpr
-	 * @param int           $nextTokenType
 	 */
 	public function testParse(string $input, ConstExprNode $expectedExpr, int $nextTokenType = Lexer::TOKEN_END): void
 	{
@@ -357,6 +355,52 @@ class ConstExprParserTest extends \PHPUnit\Framework\TestCase
 		yield [
 			'self::CLASS_CONSTANT',
 			new ConstFetchNode('self', 'CLASS_CONSTANT'),
+		];
+	}
+
+	/**
+	 * @dataProvider provideWithTrimStringsStringNodeParseData
+	 */
+	public function testParseWithTrimStrings(string $input, ConstExprNode $expectedExpr, int $nextTokenType = Lexer::TOKEN_END): void
+	{
+		$tokens = new TokenIterator($this->lexer->tokenize($input));
+		$exprNode = $this->constExprParser->parse($tokens, true);
+
+		$this->assertSame((string) $expectedExpr, (string) $exprNode);
+		$this->assertEquals($expectedExpr, $exprNode);
+		$this->assertSame($nextTokenType, $tokens->currentTokenType());
+	}
+
+	public function provideWithTrimStringsStringNodeParseData(): Iterator
+	{
+		yield [
+			'"foo"',
+			new ConstExprStringNode('foo'),
+		];
+
+		yield [
+			'"Foo \\n\\"\\r Bar"',
+			new ConstExprStringNode("Foo \n\"\r Bar"),
+		];
+
+		yield [
+			'\'bar\'',
+			new ConstExprStringNode('bar'),
+		];
+
+		yield [
+			'\'Foo \\\' Bar\'',
+			new ConstExprStringNode('Foo \' Bar'),
+		];
+
+		yield [
+			'"\u{1f601}"',
+			new ConstExprStringNode("\u{1f601}"),
+		];
+
+		yield [
+			'"\u{ffffffff}"',
+			new ConstExprStringNode("\u{fffd}"),
 		];
 	}
 

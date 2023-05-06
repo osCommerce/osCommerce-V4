@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace Faker\Test\Extension;
 
+use Faker\Container\Container;
 use Faker\Core\File;
-use Faker\Extension\Container;
 use Faker\Extension\Extension;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
 
 /**
- * @covers \Faker\Extension\Container
+ * @covers \Faker\Container\Container
  */
 final class ContainerTest extends TestCase
 {
@@ -58,7 +58,7 @@ final class ContainerTest extends TestCase
         $this->expectExceptionMessage(sprintf(
             'Service resolved for identifier "%s" does not implement the %s" interface.',
             $id,
-            Extension::class
+            Extension::class,
         ));
 
         $container->get($id);

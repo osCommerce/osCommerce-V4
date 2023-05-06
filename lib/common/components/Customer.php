@@ -239,6 +239,9 @@ class Customer  extends \common\models\Customers implements \yii\web\IdentityInt
     public function logoffCustomer(){
         Yii::$app->user->logout(false);
         $this->clearAllParams();
+        foreach (\common\helpers\Hooks::getList('customers/logoff') as $filename) {
+            include($filename);
+        }
     }
 
     public function updateAccess(){

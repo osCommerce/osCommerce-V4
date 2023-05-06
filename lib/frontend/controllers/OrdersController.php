@@ -22,7 +22,9 @@ class OrdersController extends Sceleton
 
     public function actionIndex()
     {
-        define('THEME_NAME', Yii::$app->request->get('theme_name'));
+        if (!defined("THEME_NAME")) {
+            define('THEME_NAME', Yii::$app->request->get('theme_name'));
+        }
         $page_name = Yii::$app->request->get('page_name');
 
         $this->layout = false;
@@ -152,7 +154,7 @@ class OrdersController extends Sceleton
         $this->layout = false;
         $currencies = \Yii::$container->get('currencies');
 
-        $ordersId = \common\models\PurchaseOrders::find()
+        $ordersId = \common\extensions\PurchaseOrders\models\PurchaseOrders::find()
             ->select(['orders_id'])
             ->asArray()
             ->one();
@@ -173,5 +175,19 @@ class OrdersController extends Sceleton
             'currencies' => $currencies,
         ]);
 
+    }
+
+    public function actionList()
+    {
+        if (!defined("THEME_NAME")) {
+            define('THEME_NAME', Yii::$app->request->get('theme_name'));
+        }
+        $page_name = Yii::$app->request->get('page_name');
+
+        $this->layout = false;
+        return $this->render('order-list.tpl', [
+            'page_name' => $page_name,
+            'type' => 'backendOrdersList',
+        ]);
     }
 }

@@ -10,6 +10,7 @@ use JMS\Serializer\Context;
 use JMS\Serializer\DeserializationContext;
 use JMS\Serializer\EventDispatcher\EventDispatcher;
 use JMS\Serializer\EventDispatcher\Subscriber\DoctrineProxySubscriber;
+use JMS\Serializer\EventDispatcher\Subscriber\EnumSubscriber;
 use JMS\Serializer\Exception\ExpressionLanguageRequiredException;
 use JMS\Serializer\Exception\InvalidMetadataException;
 use JMS\Serializer\Exception\NotAcceptableException;
@@ -22,6 +23,7 @@ use JMS\Serializer\GraphNavigatorInterface;
 use JMS\Serializer\Handler\ArrayCollectionHandler;
 use JMS\Serializer\Handler\ConstraintViolationHandler;
 use JMS\Serializer\Handler\DateHandler;
+use JMS\Serializer\Handler\EnumHandler;
 use JMS\Serializer\Handler\FormErrorHandler;
 use JMS\Serializer\Handler\HandlerRegistry;
 use JMS\Serializer\Handler\HandlerRegistryInterface;
@@ -87,8 +89,10 @@ use JMS\Serializer\Tests\Fixtures\NamedDateTimeImmutableArraysObject;
 use JMS\Serializer\Tests\Fixtures\Node;
 use JMS\Serializer\Tests\Fixtures\ObjectUsingTypeCasting;
 use JMS\Serializer\Tests\Fixtures\ObjectWithArrayIterator;
+use JMS\Serializer\Tests\Fixtures\ObjectWithAutoDetectEnums;
 use JMS\Serializer\Tests\Fixtures\ObjectWithEmptyHash;
 use JMS\Serializer\Tests\Fixtures\ObjectWithEmptyNullableAndEmptyArrays;
+use JMS\Serializer\Tests\Fixtures\ObjectWithEnums;
 use JMS\Serializer\Tests\Fixtures\ObjectWithGenerator;
 use JMS\Serializer\Tests\Fixtures\ObjectWithIntListAndIntMap;
 use JMS\Serializer\Tests\Fixtures\ObjectWithIterable;
@@ -132,6 +136,7 @@ use Symfony\Component\Form\Form;
 use Symfony\Component\Form\FormConfigBuilder;
 use Symfony\Component\Form\FormError;
 use Symfony\Component\Form\FormFactoryBuilder;
+use Symfony\Component\Form\FormInterface;
 use Symfony\Component\Translation\IdentityTranslator;
 use Symfony\Component\Uid\Uuid;
 use Symfony\Component\Uid\UuidV4;
@@ -336,6 +341,51 @@ abstract class BaseSerializationTest extends TestCase
 
         $this->assertEquals(1, count($deserialized));
         $this->assertEquals($accountNotExpired->name, $deserialized[0]->name);
+    }
+
+    public function testEnumDisabledByDefault()
+    {
+        if (PHP_VERSION_ID < 80100) {
+            self::markTestSkipped('No ENUM support');
+        }
+
+        $builder = SerializerBuilder::create();
+        $serializer = $builder->build();
+        $o = new ObjectWithAutoDetectEnums();
+        $serialized  = $serializer->serialize($o, $this->getFormat());
+
+        self::assertEquals($this->getContent('object_with_enums_disabled'), $serialized);
+    }
+
+    public function testEnum()
+    {
+        if (PHP_VERSION_ID < 80100) {
+            self::markTestSkipped('No ENUM support');
+        }
+
+        $o = new ObjectWithEnums();
+
+        $serialized  = $this->serialize($o);
+
+        self::assertEquals($this->getContent('object_with_enums'), $serialized);
+
+        if ($this->hasDeserializer()) {
+            $deserialized = $this->deserialize($serialized, ObjectWithEnums::class);
+            self::assertEquals($o, $deserialized);
+        }
+    }
+
+    public function testEnumAutoDetectArrayOfEnums()
+    {
+        if (PHP_VERSION_ID < 80100) {
+            self::markTestSkipped('No ENUM support');
+        }
+
+        $o = new ObjectWithAutoDetectEnums();
+
+        $serialized  = $this->serialize($o);
+
+        self::assertEquals($this->getContent('object_with_autodetect_enums'), $serialized);
     }
 
     public function testExcludeIfOnClassWithParent()
@@ -1192,7 +1242,10 @@ abstract class BaseSerializationTest extends TestCase
         self::assertEquals($this->getContent('form_errors'), $this->serialize($errors));
     }
 
-    public function testNestedFormErrors()
+    /**
+     * @dataProvider initialFormTypeProvider
+     */
+    public function testNestedFormErrors($type)
     {
         $dispatcher = $this->getMockBuilder('Symfony\Component\EventDispatcher\EventDispatcherInterface')->getMock();
 
@@ -1210,13 +1263,17 @@ abstract class BaseSerializationTest extends TestCase
         $child->addError(new FormError('Error of the child form'));
         $form->add($child);
 
-        self::assertEquals($this->getContent('nested_form_errors'), $this->serialize($form));
+        $context = SerializationContext::create();
+        $context->setInitialType($type);
+
+        self::assertEquals($this->getContent('nested_form_errors'), $this->serialize($form, $context));
     }
 
     /**
      * @doesNotPerformAssertions
+     * @dataProvider initialFormTypeProvider
      */
-    public function testFormErrorsWithNonFormComponents()
+    public function testFormErrorsWithNonFormComponents($type)
     {
         if (!class_exists('Symfony\Component\Form\Extension\Core\Type\SubmitType')) {
             $this->markTestSkipped('Not using Symfony Form >= 2.3 with submit type');
@@ -1238,11 +1295,22 @@ abstract class BaseSerializationTest extends TestCase
         $form = new Form($fooConfig);
         $form->add('save', SubmitType::class);
 
+        $context = SerializationContext::create();
+        $context->setInitialType($type);
+
         try {
-            $this->serialize($form);
+            $this->serialize($form, $context);
         } catch (\Throwable $e) {
             self::assertTrue(false, 'Serialization should not throw an exception');
         }
+    }
+
+    public function initialFormTypeProvider()
+    {
+        return [
+            [Form::class],
+            [FormInterface::class],
+        ];
     }
 
     public function testConstraintViolation()
@@ -1495,7 +1563,7 @@ abstract class BaseSerializationTest extends TestCase
         $builder->includeInterfaceMetadata(true);
         $this->serializer = $builder->build();
 
-        $vase = new TypedProperties\ConstructorPromotion\Vase('blue');
+        $vase = new TypedProperties\ConstructorPromotion\Vase('blue', 'big');
         $result = $this->serialize($vase);
         self::assertEquals($this->getContent('typed_props_constructor_promotion_with_default_values'), $result);
         if ($this->hasDeserializer()) {
@@ -1504,6 +1572,8 @@ abstract class BaseSerializationTest extends TestCase
             self::assertEquals($vase->plant, $deserialized->plant);
             self::assertEquals($vase->typeOfSoil, $deserialized->typeOfSoil);
             self::assertEquals($vase->daysSincePotting, $deserialized->daysSincePotting);
+            self::assertEquals('huge', $deserialized->size);
+            self::assertEquals(40, $deserialized->weight);
         }
     }
 
@@ -2067,6 +2137,7 @@ abstract class BaseSerializationTest extends TestCase
         $this->handlerRegistry->registerSubscribingHandler(new ArrayCollectionHandler());
         $this->handlerRegistry->registerSubscribingHandler(new IteratorHandler());
         $this->handlerRegistry->registerSubscribingHandler(new SymfonyUidHandler());
+        $this->handlerRegistry->registerSubscribingHandler(new EnumHandler());
         $this->handlerRegistry->registerHandler(
             GraphNavigatorInterface::DIRECTION_SERIALIZATION,
             'AuthorList',
@@ -2100,8 +2171,14 @@ abstract class BaseSerializationTest extends TestCase
 
         $this->dispatcher = new EventDispatcher();
         $this->dispatcher->addSubscriber(new DoctrineProxySubscriber());
+        $this->dispatcher->addSubscriber(new EnumSubscriber());
 
         $builder = SerializerBuilder::create($this->handlerRegistry, $this->dispatcher);
+
+        if (PHP_VERSION_ID >= 80100) {
+            $builder->enableEnumSupport();
+        }
+
         $this->extendBuilder($builder);
         $this->serializer = $builder->build();
     }

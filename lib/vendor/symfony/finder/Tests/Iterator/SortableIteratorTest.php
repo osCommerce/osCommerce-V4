@@ -68,7 +68,7 @@ class SortableIteratorTest extends RealIteratorTestCase
         }
     }
 
-    public function getAcceptData()
+    public static function getAcceptData()
     {
         $sortByName = [
             '.bar',
@@ -247,13 +247,13 @@ class SortableIteratorTest extends RealIteratorTestCase
         ];
 
         return [
-            [SortableIterator::SORT_BY_NAME, $this->toAbsolute($sortByName)],
-            [SortableIterator::SORT_BY_TYPE, $this->toAbsolute($sortByType)],
-            [SortableIterator::SORT_BY_ACCESSED_TIME, $this->toAbsolute($sortByAccessedTime)],
-            [SortableIterator::SORT_BY_CHANGED_TIME, $this->toAbsolute($sortByChangedTime)],
-            [SortableIterator::SORT_BY_MODIFIED_TIME, $this->toAbsolute($sortByModifiedTime)],
-            [SortableIterator::SORT_BY_NAME_NATURAL, $this->toAbsolute($sortByNameNatural)],
-            [function (\SplFileInfo $a, \SplFileInfo $b) { return strcmp($a->getRealPath(), $b->getRealPath()); }, $this->toAbsolute($customComparison)],
+            [SortableIterator::SORT_BY_NAME, self::toAbsolute($sortByName)],
+            [SortableIterator::SORT_BY_TYPE, self::toAbsolute($sortByType)],
+            [SortableIterator::SORT_BY_ACCESSED_TIME, self::toAbsolute($sortByAccessedTime)],
+            [SortableIterator::SORT_BY_CHANGED_TIME, self::toAbsolute($sortByChangedTime)],
+            [SortableIterator::SORT_BY_MODIFIED_TIME, self::toAbsolute($sortByModifiedTime)],
+            [SortableIterator::SORT_BY_NAME_NATURAL, self::toAbsolute($sortByNameNatural)],
+            [function (\SplFileInfo $a, \SplFileInfo $b) { return strcmp($a->getRealPath(), $b->getRealPath()); }, self::toAbsolute($customComparison)],
         ];
     }
 }

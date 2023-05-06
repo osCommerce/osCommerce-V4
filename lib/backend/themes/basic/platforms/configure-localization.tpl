@@ -22,7 +22,7 @@
                 <div class="widget-content">
                     <div class="w-line-row w-line-row-2-big">
                         <div class="format_wr">
-                            <center><a href="{Yii::$app->urlManager->createUrl(['platforms/define-formats', 'id'=>$pInfo->platform_id, 'no_redirect'=>1])}" class="btn popup">{$smarty.const.TEXT_DEFINE_FORMATS}</a></center>
+                            <center><a href="{Yii::$app->urlManager->createUrl(['platforms/define-formats', 'id'=>$pInfo->platform_id, 'no_redirect'=>1])}" class="btn popup" data-class="define-date-formats">{$smarty.const.TEXT_DEFINE_FORMATS}</a></center>
                         </div>
                     </div>
                 </div>

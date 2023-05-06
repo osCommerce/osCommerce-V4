@@ -52,4 +52,15 @@ class BlogController extends Sceleton
 			'page_name' => 'blog'
 		]);
 	}
+
+    public function beforeAction($action)
+    {
+        global $Blog;
+        if (!\frontend\design\Info::hasBlog() || !is_object($Blog)){
+            throw new \yii\web\NotFoundHttpException();
+        }
+
+        return parent::beforeAction($action);
+    }
+
 }

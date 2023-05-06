@@ -30,6 +30,7 @@ class RestServer extends DatasourceBase
 
     public static function getProviderList()
     {
+        return [];
         return [
             'HolbiSoap\\DownloadProducts' => [
                 'group' => 'Holbi SOAP',

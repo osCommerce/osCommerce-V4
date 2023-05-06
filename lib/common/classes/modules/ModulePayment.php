@@ -19,7 +19,7 @@ use common\helpers\OrderPayment as OrderPaymentHelper;
 
 abstract class ModulePayment extends Module {
 
-  protected $transactionInfo = []; 
+  protected $transactionInfo = [];
   protected $doCheckoutInitializationOnInactive = false; //express modules which requires extra HTML from checkout_initialization_method and could be disabled by zone should set this property to true.
   //access via getStatusBeforeUpdate()
   protected $_transactionDetails = false; //transaction details received from gateway to avoid extra trequests.
@@ -300,7 +300,7 @@ abstract class ModulePayment extends Module {
         }
         tep_redirect(tep_href_link(FILENAME_CHECKOUT_SUCCESS, 'order_id=' . $order->order_id, 'SSL'));
     }
-    
+
     protected function getOrderClassBeforePayment($config_key) {
         if (defined($config_key) && in_array(constant($config_key), ['TmpOrder', 'Order']) ) {
             $orderClass = constant($config_key);
@@ -361,7 +361,7 @@ abstract class ModulePayment extends Module {
 
         return $ret;
     }
-    
+
   /**
    * submit request using Curl and returns header/data
    * @param string $url
@@ -1036,7 +1036,7 @@ EOD;
       $detectedStatus = $this->paid_status;
     } elseif (defined('ORDER_STATUS_FULL_AMOUNT') && (int)ORDER_STATUS_FULL_AMOUNT >0){
       $detectedStatus = constant('ORDER_STATUS_FULL_AMOUNT');
-    } 
+    }
     if (!empty($detectedStatus) && !\common\helpers\Order::isStatusExist($detectedStatus) ){
       $detectedStatus = null;
     }
@@ -1064,7 +1064,7 @@ EOD;
         }
     }
 
-    
+
     return $detectedStatus;
   }
 
@@ -1135,9 +1135,12 @@ EOD;
                 $this->manager->getTotalCollection()->apply_credit();
             } else {
 ///something?? 2do from totals if this is notify without session (ex from tmp order)
-
-                if (is_array($order->totals)) {
-                    foreach ($order->totals as $total) {
+                $orderTotal = $order->totals;
+                if ($ccExt = \common\helpers\Acl::checkExtensionAllowed('CustomerCredit', 'allowed')) {
+                    $ccExt::onOrderSave($this->manager, $orderTotal);
+                }
+                if (is_array($orderTotal)) {
+                    foreach ($orderTotal as $total) {
                         if ($total['code'] == 'ot_coupon') {
                             $res = [];
 

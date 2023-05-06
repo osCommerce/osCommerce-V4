@@ -18,7 +18,7 @@ use function get_class;
 final class FormErrorHandler implements SubscribingHandlerInterface
 {
     /**
-     * @var TranslatorInterface|null
+     * @var TranslatorInterface|TranslatorContract|null
      */
     private $translator;
 
@@ -43,6 +43,7 @@ final class FormErrorHandler implements SubscribingHandlerInterface
                 'direction' => GraphNavigatorInterface::DIRECTION_SERIALIZATION,
                 'type' => FormInterface::class,
                 'format' => $format,
+                'method' => 'serializeFormTo' . ucfirst($format),
             ];
             $methods[] = [
                 'direction' => GraphNavigatorInterface::DIRECTION_SERIALIZATION,

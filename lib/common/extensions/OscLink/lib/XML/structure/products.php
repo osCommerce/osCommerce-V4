@@ -19,6 +19,7 @@ return [
             'xmlCollection' => 'Products>Product',
             'properties' => [
                 'products_tax_class_id' => ['class' => 'IOMap', 'table'=>'tax_class', 'attribute'=>'tax_class_id'],
+                'manufacturers_id' => ['class' => 'IOMap', 'table'=>'manufacturers', 'attribute'=>'manufacturers_id'],
                 'products_image' => ['class'=>'IOAttachment', 'location'=>'@images'],
                 'products_image_lrg' => ['class'=>'IOAttachment', 'location'=>'@images'],
                 'products_image_sm_1' => ['class'=>'IOAttachment', 'location'=>'@images'],
@@ -331,6 +332,7 @@ return [
                             tep_db_query("INSERT IGNORE INTO " . TABLE_WAREHOUSES_PRODUCTS . " (warehouse_id, products_id, prid, products_model, products_quantity, allocated_stock_quantity, temporary_stock_quantity, warehouse_stock_quantity, ordered_stock_quantity, suppliers_id) SELECT '" . (int)\common\helpers\Warehouses::get_default_warehouse() . "', products_id, products_id as prid, products_model, products_quantity, allocated_stock_quantity, temporary_stock_quantity, warehouse_stock_quantity, ordered_stock_quantity, '" . (int)\common\helpers\Suppliers::getDefaultSupplierId() . "' FROM " . TABLE_PRODUCTS . " where products_id = '" . (int)$products_id . "'");
     // }}
 
+                            $removeImages = [];
                             $image_location = $images_path . 'products' . DIRECTORY_SEPARATOR . $product['products_id'] . DIRECTORY_SEPARATOR;
 
                             if (!empty($product['products_image_lrg']) && is_file($images_path . $product['products_image_lrg'])) {
@@ -341,7 +343,7 @@ return [
                                 $orig_file = $product['products_image'];
                             }
 
-                            $check = tep_db_fetch_array(tep_db_query("select pi.products_images_id from " . TABLE_PRODUCTS_IMAGES . " pi, " . TABLE_PRODUCTS_IMAGES_DESCRIPTION . " pid where pi.products_id = '" . (int) $product['products_id'] . "' and pi.products_images_id = pid.products_images_id and pid.language_id = '0' and pid.orig_file_name like '%" . tep_db_input($orig_file) . "'"));
+                            //$check = tep_db_fetch_array(tep_db_query("select pi.products_images_id from " . TABLE_PRODUCTS_IMAGES . " pi, " . TABLE_PRODUCTS_IMAGES_DESCRIPTION . " pid where pi.products_id = '" . (int) $product['products_id'] . "' and pi.products_images_id = pid.products_images_id and pid.language_id = '0' and pid.orig_file_name like '%" . tep_db_input($orig_file) . "'"));
 
                             $tmp_name = $images_path . $orig_file;
 
@@ -350,8 +352,11 @@ return [
                                 file_put_contents($images_path . 'products/missing_img.txt', 'pid:' . $product['products_id'] . ":{$orig_file}\n", FILE_APPEND);
                             }
 
-                            if (!empty($orig_file) && is_file($tmp_name) && !(($check['products_images_id']??null) > 0)) {
+                            if (!empty($orig_file) && is_file($tmp_name) /*&& !(($check['products_images_id']??null) > 0)*/) {
                                 if ($localProduct) {
+                                    $removeImages[] = $tmp_name;
+                                    $fileName = pathinfo($tmp_name, PATHINFO_BASENAME);
+                                    \OscLink\Logger::printf("products(%s): add default image %s", $product['products_id'], $orig_file);
                                     $productImport['images'][] = [
                                         'default_image' => 1,
                                         'image_status' => 1,
@@ -359,7 +364,9 @@ return [
                                         'image_description' => [
                                             '00' => [
                                                 'image_source_url' => $tmp_name,
-                                                'orig_file_name' => pathinfo($tmp_name, PATHINFO_BASENAME),
+                                                'orig_file_name' => $fileName,
+                                                'file_name' => $fileName,
+                                                'alt_file_name' => $fileName,
                                                 'image_title' => (string) $product_name,
                                             ]
                                         ]
@@ -380,12 +387,14 @@ return [
                                     file_put_contents($images_path . 'products/missing_img.txt', 'pid:' . $product['products_id'] . ":{$orig_file}\n", FILE_APPEND);
                                 }
 
-                                $check = tep_db_fetch_array(tep_db_query("select pi.products_images_id from " . TABLE_PRODUCTS_IMAGES . " pi, " . TABLE_PRODUCTS_IMAGES_DESCRIPTION . " pid where pi.products_id = '" . (int) $product['products_id'] . "' and pi.products_images_id = pid.products_images_id and pid.language_id = '0' and pid.orig_file_name like '%" . tep_db_input($orig_file) . "'"));
+                                //$check = tep_db_fetch_array(tep_db_query("select pi.products_images_id from " . TABLE_PRODUCTS_IMAGES . " pi, " . TABLE_PRODUCTS_IMAGES_DESCRIPTION . " pid where pi.products_id = '" . (int) $product['products_id'] . "' and pi.products_images_id = pid.products_images_id and pid.language_id = '0' and pid.orig_file_name like '%" . tep_db_input($orig_file) . "'"));
 
                                 $tmp_name = $images_path . $orig_file;
 
-                                if (!empty($orig_file) && is_file($tmp_name) && !($check['products_images_id'] > 0)) {
+                                if (!empty($orig_file) && is_file($tmp_name) /*&& !($check['products_images_id'] > 0)*/) {
                                     if ($localProduct) {
+                                        $removeImages[] = $tmp_name;
+                                        $fileName = pathinfo($tmp_name, PATHINFO_BASENAME);
                                         $productImport['images'][] = [
                                             'default_image' => 0,
                                             'image_status' => 1,
@@ -393,7 +402,9 @@ return [
                                             'image_description' => [
                                                 '00' => [
                                                     'image_source_url' => $tmp_name,
-                                                    'orig_file_name' => pathinfo($tmp_name, PATHINFO_BASENAME),
+                                                    'orig_file_name' => $fileName,
+                                                    'file_name' => $fileName,
+                                                    'alt_file_name' => $fileName,
                                                     'image_title' => (string) $product_name,
                                                 ]
                                             ]
@@ -412,6 +423,8 @@ return [
                                         $localFile = \OscLink\XML\IOCore::get()->getLocalLocation('@images/'.$originalFile);
                                         $successDownload = \OscLink\XML\IOCore::get()->download($url, $localFile, $logPrefix);
                                         if ($successDownload) {
+                                            $removeImages[] = $localFile;
+                                            $fileName = pathinfo($originalFile, PATHINFO_BASENAME);
                                             $productImport['images'][] = [
                                                 'default_image' => 0,
                                                 'image_status' => 1,
@@ -419,7 +432,9 @@ return [
                                                 'image_description' => [
                                                     '00' => [
                                                         'image_source_url' => $localFile,
-                                                        'orig_file_name' => pathinfo($originalFile, PATHINFO_BASENAME),
+                                                        'orig_file_name' => $fileName,
+                                                        'file_name' => $fileName,
+                                                        'alt_file_name' => $fileName,
                                                         'image_title' => $description ?? (string) $product_name,
                                                     ]
                                                 ]
@@ -436,6 +451,14 @@ return [
                                     $localProduct->save(false);
                                 } catch (\Exception $e) {
                                     \OscLink\Logger::printf('%s: Error while saving ER model: %s', $logPrefix, $e->getMessage());
+                                }
+                                if (is_array($removeImages ?? null)) {
+                                    foreach($removeImages as $fn) {
+                                        if (file_exists($fn)) {
+                                            \OscLink\Logger::printf('File removed: %s', $fn);
+                                            unlink($fn);
+                                        }
+                                    }
                                 }
                             }
                         }

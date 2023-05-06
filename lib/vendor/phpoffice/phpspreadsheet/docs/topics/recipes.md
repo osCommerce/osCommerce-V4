@@ -187,7 +187,7 @@ internal English coding.
 
 ```php
 $formula = $spreadsheet->getActiveSheet()->getCell('B8')->getValue();
-$translatedFormula = \PhpOffice\PhpSpreadsheet\Calculation\Calculation::getInstance()->_translateFormulaToLocale($formula);
+$translatedFormula = \PhpOffice\PhpSpreadsheet\Calculation\Calculation::getInstance()->translateFormulaToLocale($formula);
 ```
 
 You can also create a formula using the function names and argument
@@ -302,6 +302,21 @@ $spreadsheet->getActiveSheet()->getPageSetup()
 
 Note that there are additional page settings available. Please refer to
 the [API documentation](https://phpoffice.github.io/PhpSpreadsheet) for all possible options.
+
+The default papersize is initially PAPERSIZE_LETTER. However, this default
+can be changed for new sheets with the following call:
+```php
+\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::setPaperSizeDefault(
+    \PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::PAPERSIZE_A4
+);
+```
+
+The default orientation is ORIENTATION_DEFAULT, which will be treated as Portrait in Excel. However, this default can be changed for new sheets with the following call:
+```php
+\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::setOrientationDefault(
+    \PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::ORIENTATION_LANDSCAPE
+);
+```
 
 ### Page Setup: Scaling options
 
@@ -462,6 +477,15 @@ row 10.
 
 ```php
 $spreadsheet->getActiveSheet()->setBreak('A10', \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet::BREAK_ROW);
+```
+
+If your print break is inside a defined print area, it may be necessary to add an extra parameter to specify the max column (and this probably won't hurt if the break is not inside a defined print area):
+
+```php
+$spreadsheet->getActiveSheet()
+    ->setBreak('A10',
+        \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet::BREAK_ROW,
+        \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet::BREAK_ROW_MAX_COLUMN);
 ```
 
 The following line of code sets a print break on column D:
@@ -884,6 +908,8 @@ $spreadsheet->getActiveSheet()
     );
 ```
 
+More detailed documentation of the Conditional Formatting options and rules, and the use of Wizards to help create them, can be found in [a dedicated section of the documentation](https://phpspreadsheet.readthedocs.io/en/latest/topics/conditional-formatting/).
+
 ### DataBar of Conditional formatting
 The basics are the same as conditional formatting.
 Additional DataBar object to conditional formatting.
@@ -942,8 +968,25 @@ $spreadsheet->getActiveSheet()
     ->getComment('E11')
     ->getText()->createTextRun('Total amount on the current invoice, excluding VAT.');
 ```
-
 ![08-cell-comment.png](./images/08-cell-comment.png)
+
+## Add a comment with background image to a cell
+
+To add a comment with background image to a cell, use the following code:
+
+```php
+$sheet = $spreadsheet->getActiveSheet();
+$sheet->setCellValue('B5', 'Gibli Chromo');
+// Add png image to comment background
+$drawing = new Drawing();
+$drawing->setName('Gibli Chromo');
+$drawing->setPath('/tmp/gibli_chromo.png');
+$comment = $sheet->getComment('B5');
+$comment->setBackgroundImage($drawing);
+// Set the size of the comment equal to the size of the image 
+$comment->setSizeAsBackgroundImage();
+```
+![08-cell-comment-with-image.png](./images/08-cell-comment-with-image.png)
 
 ## Apply autofilter to a range of cells
 
@@ -993,15 +1036,16 @@ which apply only to change tracking and history for shared workbooks.
 
 ### Worksheet
 
-An example on setting worksheet security:
+An example on setting worksheet security
+(user can sort, insert rows, or format cells without unprotecting):
 
 ```php
 $protection = $spreadsheet->getActiveSheet()->getProtection();
 $protection->setPassword('PhpSpreadsheet');
 $protection->setSheet(true);
-$protection->setSort(true);
-$protection->setInsertRows(true);
-$protection->setFormatCells(true);
+$protection->setSort(false);
+$protection->setInsertRows(false);
+$protection->setFormatCells(false);
 ```
 
 If writing Xlsx files you can specify the algorithm used to hash the password
@@ -1127,19 +1171,21 @@ A column's width can be set using the following code:
 $spreadsheet->getActiveSheet()->getColumnDimension('D')->setWidth(12);
 ```
 
-If you want to set a column width using a different unit of measure,
+If you want to set a column width using a different UoM (Unit of Measure),
 then you can do so by telling PhpSpreadsheet what UoM the width value
 that you are setting is measured in.
 Valid units are `pt` (points), `px` (pixels), `pc` (pica), `in` (inches),
 `cm` (centimeters) and `mm` (millimeters).
+
+Setting the column width to `-1` tells MS Excel to display the column using its default width.  
 
 ```php
 $spreadsheet->getActiveSheet()->getColumnDimension('D')->setWidth(120, 'pt');
 ```
 
 If you want PhpSpreadsheet to perform an automatic width calculation,
-use the following code. PhpSpreadsheet will approximate the column with
-to the width of the widest column value.
+use the following code. PhpSpreadsheet will approximate the column width
+to the width of the widest value displayed in that column.
 
 ```php
 $spreadsheet->getActiveSheet()->getColumnDimension('B')->setAutoSize(true);
@@ -1222,7 +1268,7 @@ Excel measures row height in points, where 1 pt is 1/72 of an inch (or
 about 0.35mm). The default value is 12.75 pts; and the permitted range
 of values is between 0 and 409 pts, where 0 pts is a hidden row.
 
-If you want to set a row height using a different unit of measure,
+If you want to set a row height using a different UoM (Unit of Measure),
 then you can do so by telling PhpSpreadsheet what UoM the height value
 that you are setting is measured in.
 Valid units are `pt` (points), `px` (pixels), `pc` (pica), `in` (inches),
@@ -1231,6 +1277,18 @@ Valid units are `pt` (points), `px` (pixels), `pc` (pica), `in` (inches),
 ```php
 $spreadsheet->getActiveSheet()->getRowDimension('10')->setRowHeight(100, 'pt');
 ```
+
+Setting the row height to `-1` tells MS Excel to display the column using its default height, which is based on the character font size.
+
+If you have wrapped text in a cell, then the `-1` default will only set the row height to display a single line of that wrapped text.
+If you need to calculate the actual height for the row, then count the lines that should be displayed (count the `\n` and add 1); then adjust for the font.
+The adjustment for Calibri 11 is approximately 14.5; for Calibri 12 15.9, etc.
+```php
+$spreadsheet->getActiveSheet()->getRowDimension(1)->setRowHeight(
+    14.5 * (substr_count($sheet->getCell('A1')->getValue(), "\n") + 1)
+);
+```
+
 
 ## Show/hide a row
 
@@ -1284,23 +1342,73 @@ rows (default), or above. The following code adds the summary above:
 $spreadsheet->getActiveSheet()->setShowSummaryBelow(false);
 ```
 
-## Merge/unmerge cells
+## Merge/Unmerge cells
 
-If you have a big piece of data you want to display in a worksheet, you
-can merge two or more cells together, to become one cell. This can be
-done using the following code:
+If you have a big piece of data you want to display in a worksheet, or a
+heading that needs to span multiple sub-heading columns, you can merge
+two or more cells together, to become one cell. This can be done using
+the following code:
 
 ```php
 $spreadsheet->getActiveSheet()->mergeCells('A18:E22');
 ```
 
-Removing a merge can be done using the unmergeCells method:
+Removing a merge can be done using the `unmergeCells()` method:
 
 ```php
 $spreadsheet->getActiveSheet()->unmergeCells('A18:E22');
 ```
 
-## Inserting rows/columns
+MS Excel itself doesn't yet offer the functionality to simply hide the merged cells, or to merge the content of cells into a single cell, but it is available in Open/Libre Office.
+
+### Merge with MERGE_CELL_CONTENT_EMPTY
+
+The default behaviour is to empty all cells except for the top-left corner cell in the merge range; and this is also the default behaviour for the `mergeCells()` method in PhpSpreadsheet.
+When this behaviour is applied, those cell values will be set to null; and if they are subsequently Unmerged, they will be empty cells.
+
+Passing an extra flag value to the `mergeCells()` method in PhpSpreadsheet can change this behaviour.
+
+![12-01-MergeCells-Options.png](./images/12-01-MergeCells-Options.png)
+
+Possible flag values are:
+- Worksheet::MERGE_CELL_CONTENT_EMPTY (the default)
+- Worksheet::MERGE_CELL_CONTENT_HIDE
+- Worksheet::MERGE_CELL_CONTENT_MERGE
+
+### Merge with MERGE_CELL_CONTENT_HIDE
+
+The first alternative, available only in OpenOffice, is to hide those cells, but to leave their content intact.
+When a file saved as `Xlsx` in those applications is opened in MS Excel, and those cells are unmerged, the original content will still be present.
+
+```php
+$spreadsheet->getActiveSheet()->mergeCells('A1:C3', Worksheet::MERGE_CELL_CONTENT_HIDE);
+```
+
+Will replicate that behaviour.
+
+### Merge with MERGE_CELL_CONTENT_MERGE
+
+The second alternative, available in both OpenOffice and LibreOffice is to merge the content of every cell in the merge range into the top-left cell, while setting those hidden cells to empty.
+
+```php
+$spreadsheet->getActiveSheet()->mergeCells('A1:C3', Worksheet::MERGE_CELL_CONTENT_MERGE);
+```
+
+Particularly when the merged cells contain formulae, the logic for this merge seems strange:
+walking through the merge range, each cell is calculated in turn, and appended to the "master" cell, then it is emptied, so any subsequent calculations that reference the cell see an empty cell, not the pre-merge value. 
+For example, suppose our spreadsheet contains
+
+![12-01-MergeCells-Options-2.png](./images/12-01-MergeCells-Options-2.png)
+
+where `B2` is the formula `=5-B1` and `C2` is the formula `=A2/B2`,
+and we want to merge cells `A2` to `C2` with all the cell values merged.
+The result is:
+
+![12-01-MergeCells-Options-3.png](./images/12-01-MergeCells-Options-3.png)
+
+The cell value `12` from cell `A2` is fixed; the value from `B2` is the result of the formula `=5-B1` (`4`, which is appended to our merged value), and cell `B2` is then emptied, so when we evaluate cell `C2` with the formula `=A2/B2` it gives us `12 / 0` which results in a `#DIV/0!` error (so the error `#DIV/0!` is appended to our merged value rather than the original calculation result of `3`).
+
+## Inserting or Removing rows/columns
 
 You can insert/remove rows/columns at a specific position. The following
 code inserts 2 new rows, right before row 7:
@@ -1308,6 +1416,23 @@ code inserts 2 new rows, right before row 7:
 ```php
 $spreadsheet->getActiveSheet()->insertNewRowBefore(7, 2);
 ```
+while
+```php
+$spreadsheet->getActiveSheet()->removeRow(7, 2);
+```
+will remove 2 rows starting at row number 7 (ie. rows 7 and 8).
+
+Equivalent methods exist for inserting/removing columns:
+
+```php
+$spreadsheet->getActiveSheet()->removeColumn('C', 2);
+```
+
+All subsequent rows (or columns) will be moved to allow the insertion (or removal) with all formulae referencing thise cells adjusted accordingly.
+
+Note that this is a fairly intensive process, particularly with large worksheets, and especially if you are inserting/removing rows/columns from near beginning of the worksheet.
+
+If you need to insert/remove several consecutive rows/columns, always use the second argument rather than making multiple calls to insert/remove a single row/column if possible.
 
 ## Add a drawing to a worksheet
 
@@ -1367,6 +1492,22 @@ $drawing->setMimeType(\PhpOffice\PhpSpreadsheet\Worksheet\MemoryDrawing::MIMETYP
 $drawing->setHeight(36);
 $drawing->setWorksheet($spreadsheet->getActiveSheet());
 ```
+
+Note that GD images are memory-intensive.
+
+### Creating a Drawing from string or stream data
+
+If you want to create a drawing from a string containing the binary image data, or from an external datasource such as an S3 bucket, then you can create a new MemoryDrawing from these sources using the `fromString()` or `fromStream()` static methods.
+
+```php
+$drawing = MemoryDrawing::fromString($imageString);
+```
+
+```php
+$drawing = MemoryDrawing::fromStream($imageStreamFromS3Bucket);
+```
+
+Note that this is a memory-intensive process, like all gd images; and also creates a temporary file.
 
 ## Reading Images from a worksheet
 
@@ -1605,7 +1746,7 @@ $spreadsheet->getActiveSheet()->getDefaultColumnDimension()->setWidth(12);
 Excel measures column width in its own proprietary units, based on the number
 of characters that will be displayed in the default font.
 
-If you want to set the default column width using a different unit of measure,
+If you want to set the default column width using a different UoM (Unit of Measure),
 then you can do so by telling PhpSpreadsheet what UoM the width value
 that you are setting is measured in.
 Valid units are `pt` (points), `px` (pixels), `pc` (pica), `in` (inches),
@@ -1628,7 +1769,7 @@ Excel measures row height in points, where 1 pt is 1/72 of an inch (or
 about 0.35mm). The default value is 12.75 pts; and the permitted range
 of values is between 0 and 409 pts, where 0 pts is a hidden row.
 
-If you want to set a row height using a different unit of measure,
+If you want to set a row height using a different UoM (Unit of Measure),
 then you can do so by telling PhpSpreadsheet what UoM the height value
 that you are setting is measured in.
 Valid units are `pt` (points), `px` (pixels), `pc` (pica), `in` (inches),

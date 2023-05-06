@@ -1236,7 +1236,6 @@ class SpecialsController extends Sceleton {
           }
 
           $this->view->groups_m = array_merge(array(array('groups_id' => 0, 'groups_name' => TEXT_MAIN)), array_filter($this->view->groups, function($e) { return $e['per_product_price']; }));
-
           $tmp = [];
           foreach ($this->view->groups_m as $value) {
             $value['id'] = $value['groups_id'];

@@ -624,6 +624,9 @@ class FeaturedController extends Sceleton {
           $pInfo = $sInfo->product;
           unset($sInfo->product);
         }
+      }else{
+          $sInfo = new \common\models\Featured();
+          $sInfo->loadDefaultValues();
       }
       if (empty($sInfo->featured_id) && !empty($productsId)) {
         $pInfo = \common\models\Products::find()->andWhere(['products_id' => $productsId])->with(['backendDescription'])->one();

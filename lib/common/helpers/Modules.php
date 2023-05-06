@@ -198,7 +198,7 @@ class Modules {
     public static function getModuleVerDbInstalled(string $code, string $type = 'extension')
     {
         $row = self::getModuleInstalled($code, $type);
-        if (!empty($row)) {
+        if (!empty($row) && !empty($row->version_db)) {
             return \common\classes\modules\ModuleVer::parseNumber($row->version_db);
         }
     }
@@ -256,6 +256,7 @@ class Modules {
                 break;
             case 'remove_drop':
                 $row->version_db = null;
+                \common\helpers\ModulesMigrations::clear($code, $type);
                 break;
             case 'upgrade':
                 $row->version = $version->toNumber();

@@ -92,7 +92,7 @@ class Language
             $q->andWhere(['hide_in_admin' => 0]);
             $admin = new Admin();
             $adminInfo = $admin->getAdditionalInfo();
-            if (!empty($adminInfo['hidden_admin_language']) && is_array($adminInfo['hidden_admin_language'])) {
+            if ((is_array($adminInfo)) && isset($adminInfo['hidden_admin_language']) && is_array($adminInfo['hidden_admin_language'])) {
                 $q->andWhere(['not in', 'languages_id', $adminInfo['hidden_admin_language']]);
             }
         }

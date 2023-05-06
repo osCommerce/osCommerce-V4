@@ -1,5 +1,8 @@
 {include 'menu.tpl'}
+{use class="backend\assets\DesignAsset"}
+{DesignAsset::register($this)|void}
 
+<div class="style-edit-page">
 <form action="{$action}" method="post" class="form-settings">
   <input type="hidden" name="theme_name" value="{$theme_name}"/>
 
@@ -498,6 +501,7 @@
 
 
 </form>
+</div>
 
 
 <script type="text/javascript">

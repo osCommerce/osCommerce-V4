@@ -91,9 +91,13 @@ class Navigation extends Widget {
                     $response['title'] = $currentName;
                     
                     $response['dis_module'] = false;
+                    $response['disabled'] = false;
                     if (!empty($response['acl_check'])) {
                         list($moduleName, $actionName) = explode(',', $response['acl_check']);
                         if (false === \common\helpers\Acl::checkExtensionAllowed($moduleName, $actionName)) {
+                            $response['disabled'] = true;
+                            $response['dis_module'] = true;
+                        } else if (false === \common\helpers\Acl::checkExtensionAllowed($moduleName, $actionName)) {
                             $response['dis_module'] = true;
                         }
                     }

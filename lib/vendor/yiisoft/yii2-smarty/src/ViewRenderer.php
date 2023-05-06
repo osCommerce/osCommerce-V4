@@ -1,8 +1,8 @@
 <?php
 /**
- * @link http://www.yiiframework.com/
+ * @link https://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
- * @license http://www.yiiframework.com/license/
+ * @license https://www.yiiframework.com/license/
  */
 
 namespace yii\smarty;
@@ -48,7 +48,7 @@ class ViewRenderer extends BaseViewRenderer
      * @var array additional Smarty options
      * @see http://www.smarty.net/docs/en/api.variables.tpl
      */
-    public $options = ['error_reporting' => E_ALL & ~E_WARNING & ~E_DEPRECATED & ~E_NOTICE];
+    public $options = [];
     /**
      * @var string extension class name
      */
@@ -261,9 +261,6 @@ class ViewRenderer extends BaseViewRenderer
 
         $template->assign('app', \Yii::$app);
         $template->assign('this', $view);
-
-        $template->assign('js_mask_type', 'accounting');// accounting or maskMoney
-        $template->assign('js_hide_currency', 1);// 0 1
 
         return $template->fetch();
     }

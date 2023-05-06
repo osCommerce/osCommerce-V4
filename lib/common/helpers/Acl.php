@@ -499,10 +499,13 @@ class Acl
         $extensioins = new \DirectoryIterator(Yii::$aliases['@common'] . '/extensions/');
         foreach($extensioins as $ext){
             $class = $ext->getFilename();
-            if ($_w = self::checkExtension($class, 'getWidgets')){
+            if (($_w = self::checkExtension($class, 'getWidgets')) && $_w::allowed()){
                 $_widgets = $_w::getWidgets($type);
                 if (is_array($_widgets) && count($_widgets)){
                     foreach($_widgets as $wd){
+                        if (empty($wd['type'])) {
+                            $wd['type'] = 'general';
+                        }
                         $widgets[] = $wd;
                     }
                 }
@@ -522,7 +525,7 @@ class Acl
             if ($_w = self::checkExtension($class, 'getEpDataSources')){
                 $_widgets = $_w::getEpDataSources();
                 if (is_array($_widgets)) {
-                    $widgets = $widgets + $_widgets;
+                    $widgets = array_merge($widgets, $_widgets);
                 }
             }
         }

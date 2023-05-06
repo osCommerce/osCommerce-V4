@@ -303,8 +303,8 @@
             <!-- Logo -->
             <a class="navbar-brand" href="{$app->urlManager->createUrl("index")}">
                 {if ((defined('WL_ENABLED') && WL_ENABLED === true) && (defined('WL_COMPANY_LOGO') && WL_COMPANY_LOGO != ''))}
-                    <img src="{$app->view->theme->baseUrl}/img/{$smarty.const.WL_COMPANY_LOGO}"
-                        alt="{$smarty.const.WL_COMPANY_NAME}" />
+                    <img src="{$app->view->theme->baseUrl}/img/powerful_long_super.svg"
+                        alt="{$smarty.const.WL_COMPANY_NAME}" width="300" />
                 {else}
                     {if $smarty.cookies.theme_style|default:null == 'dark'}
 						<img src="{$app->view->theme->baseUrl}/img/oscommerce_logo_white.png" alt="logo" />
@@ -356,7 +356,7 @@
                     <li><a href="{$smarty.const.WL_SUPPORT_WWW}" target="_blank">{$smarty.const.WL_SUPPORT_TEXT}</a></li>
                 {/if}
                 {else}
-                <li><a href="https://forums.oscommerce.com/" target="_blank">{$smarty.const.TEXT_SUPPORT}</a>
+                <li><a href="https://www.oscommerce.com/forums/" target="_blank">{$smarty.const.TEXT_SUPPORT}</a>
                 </li>
                 {/if}
                 {if (defined('WL_ENABLED') && WL_ENABLED === true)}

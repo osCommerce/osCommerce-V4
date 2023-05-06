@@ -5,6 +5,7 @@ namespace PhpOffice\PhpSpreadsheetTests;
 use PhpOffice\PhpSpreadsheet\Comment;
 use PhpOffice\PhpSpreadsheet\RichText\RichText;
 use PhpOffice\PhpSpreadsheet\RichText\TextElement;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Color;
 use PHPUnit\Framework\TestCase;
@@ -65,7 +66,7 @@ class CommentTest extends TestCase
     {
         $comment = new Comment();
         $comment->setFillColor(new Color('RED'));
-        self::assertEquals('RED', $comment->getFillColor()->getARGB());
+        self::assertEquals(Color::COLOR_RED, $comment->getFillColor()->getARGB());
     }
 
     public function testSetAlignment(): void
@@ -82,5 +83,15 @@ class CommentTest extends TestCase
         $test->addText(new TextElement('This is a test comment'));
         $comment->setText($test);
         self::assertEquals('This is a test comment', (string) $comment);
+    }
+
+    public function testRemoveComment(): void
+    {
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->getComment('A2')->getText()->createText('Comment to delete');
+        self::assertArrayHasKey('A2', $sheet->getComments());
+        $sheet->removeComment('A2');
+        self::assertEmpty($sheet->getComments()); // @phpstan-ignore-line
     }
 }

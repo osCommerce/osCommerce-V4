@@ -22,6 +22,7 @@ use common\models\ThemesSettings;
 use common\models\ThemesSteps;
 use common\models\ThemesStyles;
 use common\classes\design as DesignerHelper;
+use common\models\ThemesStylesMain;
 use yii\helpers\ArrayHelper;
 
 class Steps
@@ -155,9 +156,14 @@ class Steps
     {
         $block = explode('-', $blockName);
         if (count($block) > 1) {
-            $blockNameStep = DesignBoxesTmp::findOne(['id' => $block[1], 'theme_name' => $themeName])->microtime;
-            if (isset($block[2])) {
-                $blockNameStep = $blockNameStep . '-' . $block[2];
+            $designBoxes = DesignBoxesTmp::findOne(['id' => $block[1], 'theme_name' => $themeName]);
+            if ($designBoxes) {
+                $blockNameStep = $designBoxes->microtime;
+                if (isset($block[2])) {
+                    $blockNameStep = $blockNameStep . '-' . $block[2];
+                }
+            } else {
+                $blockNameStep = $blockName;
             }
         } else {
             $blockNameStep = $blockName;
@@ -193,14 +199,14 @@ class Steps
         $blockName = self::blockNameToStep($data['block_name'], $data['theme_name']);
 
         $data_s = array(
-            'block_id' => $data['block_id'],
+            'block_id' => $data['id'],
             'microtime' => $data['microtime'],
             'block_name' => $blockName,
-            'page_name' => Theme::getPageName($data['box_id']),
+            'page_name' => Theme::getPageName($data['id']),
             'widget_name' => $data['widget_name'],
             'sort_order' => $data['sort_order'],
         );
-        if ($data['sort_arr']){
+        if (isset($data['sort_arr']) && $data['sort_arr']){
             $data_s = array_merge(
                 $data_s, [
                 'sort_arr' => $data['sort_arr'],
@@ -214,12 +220,14 @@ class Steps
     public static function boxAddUndo($step)
     {
         $data = $step['data'];
-        $blockId = DesignBoxesTmp::findOne(['microtime' => $data['microtime'], 'theme_name' => $step['theme_name']])->id;
+        $designBoxes = DesignBoxesTmp::findOne(['microtime' => $data['microtime'], 'theme_name' => $step['theme_name']]);
 
         DesignBoxesTmp::deleteAll(['microtime' => $data['microtime'], 'theme_name' => $step['theme_name']]);
         DesignBoxesSettingsTmp::deleteAll(['microtime' => $data['microtime'], 'theme_name' => $step['theme_name']]);
 
-        DesignController::deleteBlock($blockId);
+        if ($designBoxes) {
+            DesignController::deleteBlock($designBoxes->id);
+        }
     }
 
     public static function boxAddRedo($step)
@@ -330,7 +338,8 @@ class Steps
     {
         $themeMedia = Style::getThemeMedia($themeName);
         foreach ($settings as $key => $setting) {
-            if ($setting['visibility'] > 10) {
+            if ($setting['visibility'] > 10 && isset($themeMedia[$setting['visibility']])) {
+                if (!isset($settings[$key])) $settings[$key] = [];
                 $settings[$key]['visibility'] = $themeMedia[$setting['visibility']];
             }
         }
@@ -609,7 +618,7 @@ class Steps
     {
         $data = $step['data'];
 
-        if ($data['content']['microtime']) {
+        if ($data['content']['microtime'] ?? false) {
             $content = [$data['content']];
         } else {
             $content = $data['content'];
@@ -754,36 +763,38 @@ class Steps
   }
 
 
-  public static function styleSave($data){
-
-    $data_s = [
-      'styles_old' => $data['styles_old'],
-      'styles' => $data['styles'],
-    ];
-    
-    self::stepSave('styleSave', $data_s, $data['theme_name']);
-
-  }
-
-  public static function styleSaveUndo($step){
-    $data = $step['data'];
-    foreach ($data['styles'] as $item){
-      tep_db_query("delete from " . TABLE_THEMES_STYLES . " where id = '" . (int)$item['id'] . "'");
+    public static function styleSave($data)
+    {
+        $data_s = [
+            'old_styles' => $data['old_styles'],
+            'new_styles' => $data['new_styles'],
+        ];
+        self::stepSave('styleSave', $data_s, $data['theme_name']);
     }
-    foreach ($data['styles_old'] as $item){
-      tep_db_perform(TABLE_THEMES_STYLES, $item);
-    }
-  }
 
-  public static function styleSaveRedo($step){
-    $data = $step['data'];
-    foreach ($data['styles_old'] as $item){
-      tep_db_query("delete from " . TABLE_THEMES_STYLES . " where id = '" . (int)$item['id'] . "'");
+    public static function styleSaveUndo($step)
+    {
+        self::styleSaveChange($step, 'old_styles');
     }
-    foreach ($data['styles'] as $item){
-      tep_db_perform(TABLE_THEMES_STYLES, $item);
+
+    public static function styleSaveRedo($step)
+    {
+        self::styleSaveChange($step, 'new_styles');
     }
-  }
+
+    public static function styleSaveChange($step, $detraction)
+    {
+        ThemesStylesMain::deleteAll(['theme_name' => $step['theme_name']]);
+        foreach ($step['data'][$detraction] as $style){
+            $themesStylesMain = new ThemesStylesMain();
+            $themesStylesMain->theme_name = $step['theme_name'];
+            $themesStylesMain->name = $style['name'];
+            $themesStylesMain->value = $style['value'];
+            $themesStylesMain->type = $style['type'];
+            $themesStylesMain->sort_order = $style['sort_order'];
+            $themesStylesMain->save();
+        }
+    }
 
 
     public static function settings($data)
@@ -1284,7 +1295,7 @@ class Steps
             $limit = ' limit 500';
         }
 
-        $query = tep_db_query("select steps_id, parent_id, event, date_added, admin_id, mode from " . TABLE_THEMES_STEPS . " where theme_name='" . tep_db_input($theme_name) . "'" . $filter . " order by date_added desc " . $limit);
+        $query = tep_db_query("select steps_id, parent_id, event, date_added, admin_id, mode, data from " . TABLE_THEMES_STEPS . " where theme_name='" . tep_db_input($theme_name) . "'" . $filter . " order by date_added desc " . $limit);
 
         $current = $active['steps_id'];
         $count = 0;
@@ -1309,6 +1320,7 @@ class Steps
                 'date_added' => $item['date_added'],
                 'admin_id' => $item['admin_id'],
                 'mode' => $mode,
+                'warning' => str_contains($item['data'], 'extensionWidgets'),
             ];
         }
 
@@ -1353,7 +1365,7 @@ class Steps
         }
 
         foreach ($tree as $key => $item){
-            $tree[$key]['text'] = self::logNames($item['event']);
+            $tree[$key]['text'] = self::logNames($item['event']) . ($item['warning'] ? '<span class="warning">(' . ICON_WARNING . ')</span>' : '');
             $tree[$key]['date_added'] = \common\helpers\Date::date_long($tree[$key]['date_added'], "%d %b %Y / %H:%M:%S");
         }
 
@@ -1428,41 +1440,47 @@ class Steps
             $details['css']['changed'] = Style::getCreateCss($data['attributes_changed'], $mediaSizesArr);
         }
 
+        if (isset($data['extensionWidgets'])) {
+            $details['extensionWidgets'] = $data['extensionWidgets'];
+        }
+
         return $details;
     }
 
 
-  public static function logNames($event){
-    $text = '';
-    switch ($event) {
-      case 'boxAdd': $text = LOG_ADDED_NEW_BLOCK; break;
-      case 'blocksMove': $text = LOG_CHANGED_BLOCK_POSITION; break;
-      case 'boxSave': $text = LOG_CHANGED_BLOCK_SETTINGS; break;
-      case 'boxDelete': $text = LOG_REMOVED_BLOCK; break;
-      case 'importBlock': $text = LOG_IMPORTED_BLOCK; break;
-      case 'elementsSave': $text = LOG_SAVED_EDIT_ELEMENTS_PAGE; break;
-      case 'elementsCancel': $text = LOG_CANCELED_EDIT_ELEMENTS_PAGE; break;
-      case 'styleSave': $text = LOG_CANCELED_THEME_STYLES; break;
-      case 'settings': $text = LOG_CHANGED_THEME_SETTINGS; break;
-      //case 'extendRemove': $text = LOG_REMOVED_EXTEND_FIELD; break;
-      //case 'extendAdd': $text = LOG_ADDED_EXTEND_FIELD; break;
-      case 'cssSave': $text = LOG_SAVED_CSS; break;
-      case 'javascriptSave': $text = LOG_SAVED_JAVASCRIPT; break;
-      case 'backupSubmit': $text = LOG_DID_BACKU; break;
-      case 'backupRestore': $text = LOG_RESTORED_BACKUP; break;
-      case 'themeSave': $text = LOG_SAVED_CUSTOMIZE_THEME_STYLES; break;
-      case 'themeCancel': $text = LOG_CANCELED_CUSTOMIZE_THEME_STYLES; break;
-      case 'addPage': $text = LOG_ADDED_NEW_PAGE; break;
-      case 'removePageTemplate': $text = 'removed page template'; break;
-      case 'addPageSettings': $text = LOG_CHANGED_ADDED_PAGE; break;
-      case 'stylesChange': $text = 'changed styles'; break;
-      case 'copyPage': $text = 'copied page'; break;
-      case 'importTheme': $text = 'imported theme'; break;
-      case 'applyMigration': $text = 'applied migration'; break;
-    }
+    public static function logNames($event){
+        $text = '';
+        switch ($event) {
+            case 'boxAdd': $text = LOG_ADDED_NEW_BLOCK; break;
+            case 'blocksMove': $text = LOG_CHANGED_BLOCK_POSITION; break;
+            case 'boxSave': $text = LOG_CHANGED_BLOCK_SETTINGS; break;
+            case 'boxDelete': $text = LOG_REMOVED_BLOCK; break;
+            case 'importBlock': $text = LOG_IMPORTED_BLOCK; break;
+            case 'elementsSave': $text = LOG_SAVED_EDIT_ELEMENTS_PAGE; break;
+            case 'elementsCancel': $text = LOG_CANCELED_EDIT_ELEMENTS_PAGE; break;
+            case 'styleSave': $text = CHANGED_MAIN_STYLES; break;
+            case 'settings': $text = LOG_CHANGED_THEME_SETTINGS; break;
+            //case 'extendRemove': $text = LOG_REMOVED_EXTEND_FIELD; break;
+            //case 'extendAdd': $text = LOG_ADDED_EXTEND_FIELD; break;
+            case 'cssSave': $text = LOG_SAVED_CSS; break;
+            case 'javascriptSave': $text = LOG_SAVED_JAVASCRIPT; break;
+            case 'backupSubmit': $text = LOG_DID_BACKU; break;
+            case 'backupRestore': $text = LOG_RESTORED_BACKUP; break;
+            case 'themeSave': $text = LOG_SAVED_CUSTOMIZE_THEME_STYLES; break;
+            case 'themeCancel': $text = LOG_CANCELED_CUSTOMIZE_THEME_STYLES; break;
+            case 'addPage': $text = LOG_ADDED_NEW_PAGE; break;
+            case 'removePageTemplate': $text = REMOVED_PAGE_TEMPLATE; break;
+            case 'addPageSettings': $text = LOG_CHANGED_ADDED_PAGE; break;
+            case 'stylesChange': $text = CHANGED_STYLES; break;
+            case 'copyPage': $text = COPIED_PAGE; break;
+            case 'importTheme': $text = IMPORTED_THEME; break;
+            case 'applyMigration': $text = APPLIED_MIGRATION; break;
+            case 'setGroup': $text = SET_WIDGET_GROUP; break;
+            case 'setStyles': $text = SET_MAIN_THEME_STYLES; break;
+        }
 
-    return $text;
-  }
+        return $text;
+    }
   
   
   public static function restore($id){
@@ -1663,6 +1681,71 @@ class Steps
 
     public static function importThemeRedo($step)
     {
+    }
+
+
+    public static function setGroup($data)
+    {
+        self::stepSave('setGroup', $data, $data['theme_name']);
+    }
+
+    public static function setGroupUndo($step)
+    {
+        $boxes = $step['data']['old'];
+        foreach ($boxes as $pageName => $block) {
+            self::deletePage($pageName, $step['theme_name']);
+        }
+        foreach ($boxes as $pageName => $blocks) {
+            foreach ($blocks as $block) {
+                Theme::blocksTreeImport($block, $step['theme_name'], $pageName);
+            }
+        }
+    }
+
+    public static function setGroupRedo($step)
+    {
+        $boxes = $step['data']['new'];
+        foreach ($boxes as $pageName => $block) {
+            self::deletePage($pageName, $step['theme_name']);
+        }
+        foreach ($boxes as $pageName => $blocks) {
+            foreach ($blocks as $block) {
+                Theme::blocksTreeImport($block, $step['theme_name'], $pageName);
+            }
+        }
+    }
+
+
+    public static function setStyles($data)
+    {
+        self::stepSave('setStyles', $data, $data['theme_name']);
+    }
+
+    public static function setStylesUndo($step)
+    {
+        self::setStylesEvent($step, 'old');
+    }
+
+    public static function setStylesRedo($step)
+    {
+        self::setStylesEvent($step, 'new');
+    }
+
+    public static function setStylesEvent($step, $event)
+    {
+        $styles = $step['data'][$event];
+        $type = $step['data']['type'];
+        $themeName = $step['data']['theme_name'];
+        ThemesStylesMain::deleteAll(['theme_name' => $themeName, 'type' => $type]);
+        foreach ($styles as $style) {
+            $themesStyles = new ThemesStylesMain();
+            $themesStyles->theme_name = $themeName;
+            $themesStyles->name = $style['name'];
+            $themesStyles->value = $style['value'];
+            $themesStyles->type = $style['type'];
+            $themesStyles->sort_order = $style['sort_order'];
+            $themesStyles->save();
+        }
     }
 
 

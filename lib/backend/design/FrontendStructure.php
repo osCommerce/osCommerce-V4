@@ -47,7 +47,7 @@ class FrontendStructure
         'account' => [
             'name' => 'account',
             'title' => TEXT_ACCOUNT,
-            'types' => ['account', 'trade_form'],
+            'types' => ['account'],
         ],
         'cart' => [
             'name' => 'cart',
@@ -74,11 +74,6 @@ class FrontendStructure
             'title' => TEXT_QUOTE_CHECKOUT,
             'types' => ['checkout'],
         ],
-        'checkoutSample' => [
-            'name' => 'checkoutSample',
-            'title' => TEXT_SAMPLE_CHECKOUT,
-            'types' => ['checkout'],
-        ],
         'orders' => [
             'name' => 'orders',
             'title' => IMAGE_ORDERS,
@@ -101,6 +96,11 @@ class FrontendStructure
             'name' => 'backendOrder',
             'title' => TABLE_HEADING_ORDER,
             'types' => ['backendOrder'],
+        ],
+        'backendOrdersList' => [
+            'name' => 'backendOrdersList',
+            'title' => ORDERS_LIST,
+            'types' => ['backendOrdersList'],
         ],
     ];
 
@@ -201,9 +201,9 @@ class FrontendStructure
         'backendOrder' => [
             'mainAction' => 'orders',
         ],
-        'trade_form' => [
-            'mainAction' => 'trade-form',
-        ]
+        'backendOrdersList' => [
+            'mainAction' => 'orders/list',
+        ],
     ];
 
     private static $unitedTypes = [
@@ -298,14 +298,6 @@ class FrontendStructure
             'page_name' => 'cart',
             'title' => TEXT_SHOPPING_CART,
             'type' => 'cart',
-            'group' => 'cart',
-        ],
-        'sample' => [
-            'action' => 'sample-cart/index',
-            'name' => 'sample',
-            'page_name' => 'sample',
-            'title' => TEXT_SAMPLE_CART,
-            'type' => 'sample',
             'group' => 'cart',
         ],
         'quote' => [
@@ -518,56 +510,6 @@ class FrontendStructure
             'type' => 'success',
             'group' => 'checkoutQuote2',
         ],
-
-        'login_checkout_s' => [
-            'action' => 'sample-checkout/login',
-            'name' => 'login_checkout_s',
-            'page_name' => 'login_checkout_s',
-            'title' => 'Login',
-            'type' => 'login',
-            'group' => 'checkoutSample',
-        ],
-        'checkout_s' => [
-            'action' => 'sample-checkout/index',
-            'name' => 'checkout_s',
-            'page_name' => 'checkout_s',
-            'title' => TEXT_CHECKOUT,
-            'type' => 'checkout',
-            'group' => 'checkoutSample',
-        ],
-        'confirmation_s' => [
-            'action' => 'sample-checkout/confirmation',
-            'name' => 'confirmation_s',
-            'page_name' => 'confirmation_s',
-            'title' => TEXT_CHECKOUT_CONFIRMATION,
-            'type' => 'confirmation',
-            'group' => 'checkoutSample',
-        ],
-        'checkout_free_s' => [
-            'action' => 'sample-checkout/index',
-            'name' => 'checkout_free_s',
-            'page_name' => 'checkout_free_s',
-            'title' => CHECKOUT_NO_SHIPPING,
-            'type' => 'checkout',
-            'group' => 'checkoutSample',
-        ],
-        'confirmation_free_s' => [
-            'action' => 'sample-checkout/confirmation',
-            'name' => 'confirmation_free_s',
-            'page_name' => 'confirmation_free_s',
-            'title' => CHECKOUT_CONFIRMATION_NO_SHIPPING,
-            'type' => 'confirmation',
-            'group' => 'checkoutSample',
-        ],
-        'success_s' => [
-            'action' => 'sample-checkout/success',
-            'name' => 'success_s',
-            'page_name' => 'success_s',
-            'title' => TEXT_CHECKOUT_SUCCESS,
-            'type' => 'success',
-            'group' => 'checkoutSample',
-        ],
-
         'email' => [
             'action' => 'email-template',
             'name' => 'email',
@@ -683,22 +625,6 @@ class FrontendStructure
             'type' => 'reviews',
             'group' => 'informations',
         ],
-        'trade_form' => [
-            'action' => 'trade-form',
-            'name' => 'trade_form',
-            'page_name' => 'trade_form',
-            'title' => 'Trade form',
-            'type' => 'trade_form',
-            'group' => 'account',
-        ],
-        'trade_form_pdf' => [
-            'action' => 'trade-form/trade-form-pdf',
-            'name' => 'trade_form_pdf',
-            'page_name' => 'trade_form_pdf',
-            'title' => 'Trade form PDF',
-            'type' => 'trade_form_pdf',
-            'group' => 'account',
-        ],
     ];
 
     private static $hasSettings = [
@@ -728,7 +654,7 @@ class FrontendStructure
 
     private static function fieldPageGetParams()
     {
-        $themePlatforms = self::getThemePlatforms();
+        $themePlatforms = \common\classes\platform::getList();
 
         foreach ($themePlatforms as $platform) {
             foreach (self::$pages as $pageKey => $page) {
@@ -839,6 +765,35 @@ class FrontendStructure
 
     private static function fieldPages()
     {
+        foreach (\common\helpers\Acl::getExtensionPages() as $page){
+            $groupName = design::pageName($page['group']??null);
+            self::$pages[$page['name']] = [
+                'action' => $page['action'],
+                'name' => $page['name'],
+                'page_name' => $page['name'],
+                'title' => $page['title'],
+                'type' => $page['type'],
+                'group' => $groupName,
+                'settings' => $page['settings'] ?? false
+            ];
+            if (!ArrayHelper::getValue(self::$groups, $groupName)) {
+                self::$groups[$groupName] = [
+                    'name' => $groupName,
+                    'title' => $page['group'],
+                    'types' => [$page['type']],
+                ];
+            } else {
+                if (!in_array($page['type'], self::$groups[$groupName]['types'])){
+                    self::$groups[$groupName]['types'] = array_merge(self::$groups[$groupName]['types'], [$page['type']]);
+                }
+            }
+            if (!ArrayHelper::getValue(self::$types, $page['type'])) {
+                self::$types[$page['type']] = ['mainAction' => $page['action']];
+            }
+        }
+
+        self::setGroupByType();
+
         $addedPages = \common\models\ThemesSettings::find()
             ->select(['setting_name','setting_value'])
             ->where([
@@ -875,50 +830,13 @@ class FrontendStructure
                 ];
             }
         }
-
-        foreach (\common\helpers\Acl::getExtensionPages() as $page){
-            $groupName = design::pageName($page['group']??null);
-            self::$pages[$page['name']] = [
-                'action' => $page['action'],
-                'name' => $page['name'],
-                'page_name' => $page['name'],
-                'title' => $page['title'],
-                'type' => $page['type'],
-                'group' => $groupName,
-                'settings' => $page['settings'] ?? false
-            ];
-            if (!ArrayHelper::getValue(self::$groups, $groupName)) {
-                self::$groups[$groupName] = [
-                    'name' => $groupName,
-                    'title' => $page['group'],
-                    'types' => [$page['type']],
-                ];
-            } else {
-                if (!in_array($page['type'], self::$groups[$groupName]['types'])){
-                    self::$groups[$groupName]['types'] = array_merge(self::$groups[$groupName]['types'], [$page['type']]);
-                }
-            }
-            if (!ArrayHelper::getValue(self::$types, $page['type'])) {
-                self::$types[$page['type']] = [];
-            }
-        }
-
-        if (\frontend\design\Info::hasBlog()){
-            self::$pages['blog'] = [
-                'action' => 'blog',
-                'name' => 'blog',
-                'page_name' => 'blog',
-                'title' => 'Blog',
-                'type' => 'blog',
-                'group' => 'informations',
-            ];
-        }
     }
 
     public static function getThemePlatforms()
     {
         self::init();
-        $theme = \common\models\Themes::findOne(['theme_name' => self::$theme_name]);
+        $themeName = str_replace('-mobile', '', self::$theme_name);
+        $theme = \common\models\Themes::findOne(['theme_name' => $themeName]);
 
         if (!$theme) {
             return [];

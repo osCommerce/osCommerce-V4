@@ -147,11 +147,59 @@ class Dbg
     {
         if (is_null(self::$time)) {
             self::timeStart($msg);
+            return 0;
         } else {
             $cur = microtime(true);
             $msg = empty($msg)? '' : ($msg . '. ');
-            self::log( sprintf('%sElapsed: %.3f (since start %.3f)', $msg, $cur-self::$time, $cur-self::$timeFirst) );
+            $elapsed = $cur-self::$time;
+            self::log( sprintf('%sElapsed: %.3f (since start %.3f)', $msg, $elapsed, $cur-self::$timeFirst) );
             self::$time = microtime(true);
+            return $elapsed;
         }
     }
+
+    static $timeLoop = [];
+    private const LOOP_GLOBAL =  '__loop-global__';
+
+    public static function timeLoopStart($loopName = 'loop1')
+    {
+        self::$timeLoop[$loopName][self::LOOP_GLOBAL]['cur_time'] = microtime(true);
+    }
+
+    public static function timeLoop($msg, $loopName = 'loop1')
+    {
+        if (isset(self::$timeLoop[$loopName][self::LOOP_GLOBAL]['cur_time'])) {
+            $curInterval = microtime(true) - self::$timeLoop[$loopName][self::LOOP_GLOBAL]['cur_time'];
+        } else {
+            $curInterval = 0;
+            self::log("Interval for $loopName/$msg can't be calculated. Use ::timeLoopStart() befoe ::timeLoop()");
+        }
+        self::$timeLoop[$loopName][$msg]['time'] = (self::$timeLoop[$loopName][$msg]['time']??0) + $curInterval;
+        self::$timeLoop[$loopName][$msg]['count'] = (self::$timeLoop[$loopName][$msg]['count']??0) + 1;
+        self::$timeLoop[$loopName][self::LOOP_GLOBAL]['cur_time'] = microtime(true);
+        return $curInterval;
+    }
+
+    public static function timeLoopLog($loopName = 'loop1')
+    {
+        if (is_array(self::$timeLoop[$loopName] ?? null)) {
+            $s = "Loop $loopName:\n";
+            foreach(self::$timeLoop[$loopName] as $name => $val) {
+                if ($name != self::LOOP_GLOBAL) {
+                    $s .= sprintf("%s=%.3f (%d times)\n", $name, $val['time'], $val['count']);
+                }
+            }
+            self::log($s);
+        } else {
+            self::log("Loop $loopName does not contains items");
+        }
+    }
+
+    public static function timeLoopLogAll()
+    {
+        foreach (self::$timeLoop as $loopName => $val) {
+            self::timeLoopLog($loopName);
+        }
+    }
+
 }

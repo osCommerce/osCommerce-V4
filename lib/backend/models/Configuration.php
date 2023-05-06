@@ -423,13 +423,12 @@ class Configuration {
     return $string;
   }
 
-  public static function tep_cfg_select_user_group(){//$key_value
+  public static function tep_cfg_select_user_group(){//$value, $key
 
     $keys = func_get_args();
-    //eval('list($key_value,) = array(' . $keys[0] . ');');
-
     $vals = str_getcsv($keys[0], ',', '\'');
-    $key_value = $vals[0];
+    list($key_value, $key) = $vals;
+    $name = $key ? 'configuration[' . $key . ']' : 'configuration_value';
 
     $arr = [0 => TEXT_MAIN];
     $tmp = \common\helpers\Group::get_customer_groups_list();
@@ -437,7 +436,7 @@ class Configuration {
       $arr += $tmp;
     }
     if (is_array($arr)) {
-      return \common\helpers\Html::dropDownList('configuration_value', $key_value, $arr);
+      return \common\helpers\Html::dropDownList($name, $key_value, $arr);
     }
 /*
     $status_array = array();

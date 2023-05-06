@@ -24,7 +24,7 @@ class DepartmentsAdminfilesController extends Sceleton {
         \common\helpers\Translation::init('admin/adminfiles');
         
         $this->view->filters = new \stdClass();
-        $this->view->filters->row = (int) $_GET['row'];
+        $this->view->filters->row = (int)Yii::$app->request->get('row', 0);
 
         $selected_department_id = (int)Yii::$app->request->get('department_id');
         
@@ -189,7 +189,7 @@ class DepartmentsAdminfilesController extends Sceleton {
         
         $accessQuery = PDOConnector::query("select * from " . TABLE_ACCESS_LEVELS . " where access_levels_id = '" . $item_id . "'");
         $access = PDOConnector::fetch( $accessQuery );
-        $accessInfo = new \objectInfo( $access );
+        $accessInfo = new \objectInfo( is_array($access)?$access:['access_levels_persmissions'=>''] );
 
         
         $aclTree = \common\helpers\Acl::buildTreePDO($accessInfo->access_levels_persmissions);

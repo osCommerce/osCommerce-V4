@@ -268,7 +268,7 @@ class Translation
 
         $translation_query = tep_db_query("select checked from " . TABLE_TRANSLATION . " where translation_key = '" . tep_db_input($translation_key) . "' and translation_entity = '" . tep_db_input($translation_entity) . "' and language_id = '" . (int)$language_id . "'");
         $translation = tep_db_fetch_array($translation_query);
-        return $translation['checked'];
+        return $translation['checked'] ?? null;
         
     }    
     

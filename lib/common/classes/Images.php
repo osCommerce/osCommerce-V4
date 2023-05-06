@@ -372,6 +372,9 @@ class Images {
             $imageName = $images_description['alt_file_name'];
         }
 
+        if (!file_exists($image_location . $imageName) && file_exists($image_location . $images_description['hash_file_name'])) {
+            $imageName = $images_description['hash_file_name'];
+        }
         if (file_exists($image_location . $imageName)) {
             $target_image_info = getimagesize($image_location . $imageName);
             $platformConfig = \Yii::$app->get('platform')->config();
@@ -844,8 +847,8 @@ class Images {
                     return false;
                 }
 
-                if(function_exists("exif_read_data")){
-                    $exif = exif_read_data($image);
+                if(function_exists("exif_read_data") && $size[2] == 2){
+                    $exif = @exif_read_data($image);
                     if(!empty($exif['Orientation'])) {
                         switch($exif['Orientation']) {
                             case 8:

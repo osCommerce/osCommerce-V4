@@ -159,4 +159,29 @@ class Extensions
         }
     }
 
+
+    public static function getBaseDirRelative($code)
+    {
+        return 'lib/common/extensions/' . $code;
+    }
+
+    /**
+     * Get image file name for extension $code
+     * @param $code - extension class
+     * @param $imageFN - base image file name like 'image1.png'
+     * @param $defImageFN - path to default image
+     * @return null|string
+     */
+    public static function getImageRelative($code, $imageFN, $defImageFN = null)
+    {
+        $baseDir = self::getBaseDirRelative($code) . '/';
+        if (file_exists(\Yii::getAlias('@site_root/' . ($res = $baseDir . 'images/' . $imageFN)))) {
+            return $res;
+        } elseif (file_exists(\Yii::getAlias('@site_root/' . ($res = $baseDir . $imageFN)))) {
+            return $res;
+        } else {
+            return $defImageFN;
+        }
+    }
+
 }

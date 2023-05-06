@@ -41,6 +41,9 @@ class Filters extends Widget {
 
     public function run() {
 
+        if (!\common\helpers\Acl::checkExtensionAllowed('ProductPropertiesFilters')) {
+            return '';
+        }
         \frontend\design\Info::includeJsFile('reducers/filters');
         \frontend\design\Info::includeExtensionJsFile('ProductPropertiesFilters/js/filters');
 

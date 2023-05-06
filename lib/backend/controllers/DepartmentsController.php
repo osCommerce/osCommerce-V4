@@ -193,7 +193,6 @@ class DepartmentsController extends Sceleton {
                 $check_admin = tep_db_fetch_array(tep_db_query("SELECT admin_email_address FROM ".TABLE_ADMIN." WHERE admin_id='".(int)$login_id."'"));
                 tep_db_close();
 
-/*
                 try {
                     if (tep_db_connect($dInfo->departments_db_server_host, $dInfo->departments_db_server_username, $dInfo->departments_db_server_password, $dInfo->departments_db_database)) {
                         $admin = tep_db_fetch_array(tep_db_query("select admin_id, admin_password from " . TABLE_ADMIN . " where admin_email_address = '" . $check_admin['admin_email_address'] . "' order by admin_id limit 1"));
@@ -205,7 +204,6 @@ class DepartmentsController extends Sceleton {
                 } catch (ErrorException $e) {
                     echo '<div align="center">' . TEXT_UNABLE_CONNECT_DEPARTMENTS_DB . '</div>';
                 }
-*/
 
                 tep_db_connect() or die('Unable to connect to database server!');
             }
@@ -213,6 +211,10 @@ class DepartmentsController extends Sceleton {
             echo '<br>' . TEXT_DATE_DEPARTMENTS_CREATED . ' ' . \common\helpers\Date::date_short($dInfo->departments_created);
             if ($dInfo->departments_modified) {
                 echo '<br>' . TEXT_DATE_DEPARTMENTS_LAST_MODIFIED . ' ' . \common\helpers\Date::date_short($dInfo->departments_modified);
+            }
+
+            if (\common\helpers\Acl::checkExtensionAllowed('NetSuite') ) {
+                echo \common\extensions\NetSuite\helpers\NetSuiteHelper::departmentLink($dInfo);
             }
 
             echo '</div>';
@@ -232,7 +234,13 @@ class DepartmentsController extends Sceleton {
         
         $departments['project_codes'] = array_map('trim', preg_split('/[;,]/',$departments['project_code'],-1,PREG_SPLIT_NO_EMPTY));
         $dInfo = new \objectInfo($departments);
-        
+        /*
+          $dInfo->templates_array = array();
+          $template_query = tep_db_query("select template_id, template_name from " . TABLE_TEMPLATE . " order by template_name");
+          while ($template = tep_db_fetch_array($template_query)) {
+          $dInfo->templates_array[$template['template_name']] = $template['template_name'];
+          }
+         */
         $dInfo->packages_array = array('' => TEXT_NONE);
         if ( defined('TABLE_PACKAGES') && tep_db_table_exists('TABLE_PACKAGES') ) {
             $packages_query = tep_db_query("select packages_id, packages_title from " . TABLE_PACKAGES . " order by sort_order, packages_title");
@@ -354,7 +362,7 @@ class DepartmentsController extends Sceleton {
         }
 
         $messageStack = \Yii::$container->get('message_stack');
-        if (isset($messageStack->size) && $messageStack->size > 0) {
+        if ($messageStack->size > 0) {
             $this->view->errorMessage = $messageStack->output(true);
             $this->view->errorMessageType = $messageStack->messageType;
         }
@@ -509,7 +517,7 @@ class DepartmentsController extends Sceleton {
             'api_categories_allow_update' => $api_categories_allow_update,
             'api_products_allow_create' => $api_products_allow_create,
             'api_products_allow_update' => $api_products_allow_update,
-            'api_products_allow_remove_owned' => $api_products_allow_remove_owned,
+            //'api_products_allow_remove_owned' => $api_products_allow_remove_owned,
             'api_outgoing_price_formula' => $api_outgoing_price_formula,
             'api_outgoing_price_discount' => $api_outgoing_price_discount,
             'api_outgoing_price_surcharge' => $api_outgoing_price_surcharge,
@@ -634,9 +642,15 @@ class DepartmentsController extends Sceleton {
         $dInfo = new \objectInfo(array(
             'project_codes' => [],
         ));
-        
+        /*
+          $dInfo->templates_array = array();
+          $template_query = tep_db_query("select template_id, template_name from " . TABLE_TEMPLATE . " order by template_name");
+          while ($template = tep_db_fetch_array($template_query)) {
+          $dInfo->templates_array[$template['template_name']] = $template['template_name'];
+          }
+         */
         $messageStack = \Yii::$container->get('message_stack');
-        if ($messageStack->size > 0) {
+        if ($messageStack->size() > 0) {
             $this->view->errorMessage = $messageStack->output(true);
             $this->view->errorMessageType = $messageStack->messageType;
         }

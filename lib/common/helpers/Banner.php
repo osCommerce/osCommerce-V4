@@ -199,6 +199,9 @@ class Banner {
     {
         foreach ($banner['languages'] as $languageKey => $language) {
             $languageData = Language::get_language_id($languageKey);
+            if (!($languageData['languages_id'] ?? false)) {
+                continue;
+            }
             $bannerData = \common\models\Banners::find()->alias('b')
                 ->select(['b.banners_id'])
                 ->leftJoin(\common\models\BannersGroups::tableName(). ' bg', 'b.group_id = bg.id')
@@ -242,6 +245,9 @@ class Banner {
 
             $bannerImage = \common\classes\Images::moveImage($imagePath . $language['banners_image'], 'banners' . DIRECTORY_SEPARATOR . $bannerId, false);
             $languageData = Language::get_language_id($languageKey);
+            if (!($languageData['languages_id'] ?? false)) {
+                continue;
+            }
             $bannersLanguages = new \common\models\BannersLanguages();
             $bannersLanguages->attributes = [
                 'banners_id' => $bannerId,

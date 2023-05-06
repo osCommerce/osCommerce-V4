@@ -6,7 +6,7 @@
  * @author  Uwe Tews
  */
 
-include_once dirname(__FILE__) . '/../_shared/CacheResourceTestCommon.php';
+include_once __DIR__ . '/../_shared/CacheResourceTestCommon.php';
 
 /**
  * class for cache resource memcache tests
@@ -22,16 +22,12 @@ class CacheResourceCustomMemcacheTest extends CacheResourceTestCommon
      * This method is called before a test is executed.
      *
      */
-    public function setUp()
+    public function setUp(): void
     {
-        if (MemCacheEnable != true) {
-            $this->markTestSkipped('Memcache tests are disabled');
-        } else {
-            if (!class_exists('Memcache')) {
-                $this->markTestSkipped('Memcache not available');
-            }
+        if (!class_exists('Memcache')) {
+            $this->markTestSkipped('Memcache not available');
         }
-        $this->setUpSmarty(dirname(__FILE__));
+        $this->setUpSmarty(__DIR__);
         parent::setUp();
         $this->smarty->setCachingType('memcachetest');
     }

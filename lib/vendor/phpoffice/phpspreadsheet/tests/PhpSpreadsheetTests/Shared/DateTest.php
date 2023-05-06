@@ -3,6 +3,7 @@
 namespace PhpOffice\PhpSpreadsheetTests\Shared;
 
 use DateTimeZone;
+use PhpOffice\PhpSpreadsheet\Exception;
 use PhpOffice\PhpSpreadsheet\Shared\Date;
 use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 use PHPUnit\Framework\TestCase;
@@ -175,9 +176,9 @@ class DateTest extends TestCase
      *
      * @param mixed $expectedResult
      */
-    public function testIsDateTimeFormatCode($expectedResult, ...$args): void
+    public function testIsDateTimeFormatCode($expectedResult, string $format): void
     {
-        $result = Date::isDateTimeFormatCode(...$args);
+        $result = Date::isDateTimeFormatCode($format);
         self::assertEquals($expectedResult, $result);
     }
 
@@ -207,6 +208,15 @@ class DateTest extends TestCase
     public function providerDateTimeExcelToTimestamp1900Timezone(): array
     {
         return require 'tests/data/Shared/Date/ExcelToTimestamp1900Timezone.php';
+    }
+
+    public function testConvertIsoDateError(): void
+    {
+        Date::setExcelCalendar(Date::CALENDAR_WINDOWS_1900);
+
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('Non-string value supplied for Iso Date conversion');
+        Date::convertIsoDate(false);
     }
 
     public function testVarious(): void
@@ -252,5 +262,14 @@ class DateTest extends TestCase
             ->getNumberFormat()
             ->setFormatCode('0.00E+00');
         self::assertFalse(null !== $cella3 && Date::isDateTime($cella3));
+
+        $cella4 = $sheet->getCell('A4');
+        self::assertNotNull($cella4);
+
+        $cella4->setValue('= 44 7510557347');
+        $sheet->getStyle('A4')
+            ->getNumberFormat()
+            ->setFormatCode('yyyy-mm-dd');
+        self::assertFalse(Date::isDateTime($cella4));
     }
 }

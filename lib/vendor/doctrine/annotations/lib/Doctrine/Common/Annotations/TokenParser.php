@@ -46,10 +46,7 @@ class TokenParser
      */
     private $pointer = 0;
 
-    /**
-     * @param string $contents
-     */
-    public function __construct($contents)
+    public function __construct(string $contents)
     {
         $this->tokens = token_get_all($contents);
 
@@ -73,7 +70,7 @@ class TokenParser
      *
      * @return mixed[]|string|null The token if exists, null otherwise.
      */
-    public function next($docCommentIsComment = true)
+    public function next(bool $docCommentIsComment = true)
     {
         for ($i = $this->pointer; $i < $this->numTokens; $i++) {
             $this->pointer++;
@@ -151,7 +148,7 @@ class TokenParser
      *
      * @return array<string, string> A list with all found use statements.
      */
-    public function parseUseStatements($namespaceName)
+    public function parseUseStatements(string $namespaceName)
     {
         $statements = [];
         while (($token = $this->next())) {

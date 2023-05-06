@@ -45,21 +45,7 @@ use common\classes\modules\ModuleSortOrder;
 //      if ( (!strstr($PHP_SELF,'modules.php')) || $cart->show_weight()==0) {
 
         if ( ($this->enabled == true) && ((int)MODULE_SHIPPING_FREESHIPPER_ZONE > 0) ) {
-          $check_flag = false;
-          $check_query = tep_db_query("select zone_id from " . TABLE_ZONES_TO_GEO_ZONES . " where geo_zone_id = '" . MODULE_SHIPPING_FREESHIPPER_ZONE . "' and zone_country_id = '" . $this->delivery['country']['id'] . "' order by zone_id");
-          while ($check = tep_db_fetch_array($check_query)) {
-            if ($check['zone_id'] < 1) {
-              $check_flag = true;
-              break;
-            } elseif ($check['zone_id'] == $this->delivery['zone_id']) {
-              $check_flag = true;
-              break;
-            }
-          }
-
-          if ($check_flag == false) {
-            $this->enabled = false;
-          }
+            $this->enabled = \common\helpers\Zones::isGeoZone(MODULE_SHIPPING_FREESHIPPER_ZONE, $this->delivery['country']['id']??null, $this->delivery['zone_id']??null);
         }
 //      }
 // EOF: WebMakers.com Added: Free Payments and Shipping

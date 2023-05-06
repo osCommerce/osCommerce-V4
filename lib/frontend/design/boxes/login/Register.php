@@ -34,9 +34,11 @@ class Register extends Widget
         if ( !isset($this->params['enterModels']['registration']) || !is_object($this->params['enterModels']['registration']) ){
             return '';
         }
+        $verifyEmail = (defined('FLAG_EMAIL_VERIFICATION') && FLAG_EMAIL_VERIFICATION == 'True');
         return IncludeTpl::widget(['file' => 'boxes/login/register.tpl', 'params' => array_merge($this->params, [
             'settings' => $this->settings,
             'id' => $this->id,
+            'verifyEmail' => $verifyEmail,
             'registerModel' => $this->params['enterModels']['registration']
         ])]);
     }

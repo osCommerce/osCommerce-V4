@@ -1389,11 +1389,13 @@ $s = \Yii::$app->db->createCommand($q->offset(null)->limit(null)->orderBy(null)-
       } else {
       // else - exists in description
         if (defined('MSEARCH_ENABLE') && strtolower(MSEARCH_ENABLE)=='fulltext') {
-          $q->andWhere('match( {{%products_description}}.products_name ) against(:kw) or match( {{%products_description}}.products_description) against(:kw)', [':kw' => $params]);
-
+            $params = explode(' ', reset($params));
+            foreach ($params as $key => $param) {
+                $q->andWhere("match( p.products_model ) against(:kw$key) or match( {{%products_description}}.products_name ) against(:kw$key) or match( {{%products_description}}.products_description) against(:kw$key)", [":kw$key" => $param]);
+            }
         } else {
-          //like by name and description in the description table
-          $f = ['like', 'concat({{%products_description}}.products_name, {{%products_description}}.products_description)', $params];
+          //like by model, name and description in the description table
+          $f = ['like', 'concat(p.products_model, {{%products_description}}.products_name, {{%products_description}}.products_description)', $params];
 
           $q->andWhere($f);
 
@@ -1414,7 +1416,7 @@ $s = \Yii::$app->db->createCommand($q->offset(null)->limit(null)->orderBy(null)-
         }
 
       }
-//echo " <BR><BR>" . $q->createCommand()->rawSql . ' ' . $this->relevanceOrder;
+//echo " <BR><BR>" . $q->createCommand()->rawSql . ' ' . ($this->relevanceOrder??null);
 
       if (self::PRESELECT_PRODUCST_SEARCH_IDS) {
 //echo " <BR><BR> $pk <br>" . $q->offset(null)->limit(null)->orderBy(null)->select("p.products_id")->createCommand()->rawSql;

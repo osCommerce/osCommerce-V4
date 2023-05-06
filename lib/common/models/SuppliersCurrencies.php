@@ -52,7 +52,7 @@ class SuppliersCurrencies extends ActiveRecord
         
         $currency = Yii::$container->get('currencies');
         $rates = \yii\helpers\ArrayHelper::map($currency->currencies, 'id', 'value');
-        
+        $data['use_default'] = $data['use_default']??null;
         $this->setAttributes([            
             'status' => (int)($data['status'] ?? null),
             'use_custom_currency_value' => !(int)$data['use_default'],

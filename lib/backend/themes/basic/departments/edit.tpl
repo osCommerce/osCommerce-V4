@@ -8,7 +8,9 @@
     <li class=""><a data-toggle="tab" href="#tab_1_3">{$smarty.const.CATEGORY_OPTIONS}</a></li>
     <li class=""><a data-toggle="tab" href="#tab_1_4">{$smarty.const.CATEGORY_FTP}</a></li>
     <li class=""><a data-toggle="tab" href="#tab_1_5">{$smarty.const.CATEGORY_DB}</a></li>
-    <li class=""><a data-toggle="tab" href="#tab_1_api">{$smarty.const.CATEGORY_API}</a></li>
+    {if \common\helpers\Acl::checkExtensionAllowed('SoapServer', 'allowed')}
+      <li class=""><a data-toggle="tab" href="#tab_1_api">{$smarty.const.CATEGORY_API}</a></li>
+    {/if}
   </ul>
   <div class="tab-content">
     <div id="tab_1_1" class="tab-pane active">
@@ -218,161 +220,11 @@
         </table>
       </fieldset>
     </div>
+    {if $extSoapServer = \common\helpers\Acl::checkExtensionAllowed('SoapServer', 'allowed')}
     <div id="tab_1_api" class="tab-pane">
-      <fieldset class="main">
-        <legend>{$smarty.const.CATEGORY_API}</legend>
-        <table align="center" border="0" cellspacing="2" cellpadding="2" class="formArea tabl_dep" width="100%">
-          <tr>
-            <td class="main" width="20%"><label>{$smarty.const.TEXT_API_DEPARTMENT_URL}</label></td>
-            <td class="main">
-                <div class="input-group">
-                {Html::textInput('api_url', $dInfo->api['department-service-url'], ['maxlength'=>'64', 'size'=>'32', 'class'=>'form-control', 'readonly'=>'readonly', 'id'=>'txtSiteApiUrl'])}
-                    <div class="input-group-addon js-clipboard-copy" data-clipboard-target="#txtSiteApiUrl"><i class="icon-copy"></i></div>
-                </div>
-            </td>
-          </tr>
-          <tr>
-            <td class="main" width="20%"><label>{$smarty.const.TEXT_API_KEY_DEPARTMENT}</label></td>
-            <td class="main">
-                <div class="input-group">
-                    {Html::textInput('api_key', $dInfo->api_key, ['maxlength'=>'64', 'size'=>'32', 'class'=>'form-control','id'=>'txtSiteApiKey'])}
-                    <div class="input-group-addon" id="lnSiteApiKeyGenerate" title="{$smarty.const.TEXT_GENERATE|escape:'html'}"><i class="icon-refresh"></i></div>
-                    <div class="input-group-addon js-clipboard-copy" data-clipboard-target="#txtSiteApiKey"><i class="icon-copy"></i></div>
-                </div>
-            </td>
-          </tr>
-          <tr>
-            <td class="main" width="20%"><label>{$smarty.const.TEXT_API_CATEGORIES_CREATE}</label></td>
-            <td class="main">{Html::checkbox('api_categories_allow_create', !!$dInfo->api_categories_allow_create, ['value'=>'1', 'class'=>'check_on_off form-control'])}</td>
-          </tr>
-          <tr>
-            <td class="main" width="20%"><label>{$smarty.const.TEXT_API_CATEGORIES_UPDATE}</label></td>
-            <td class="main">{Html::checkbox('api_categories_allow_update', !!$dInfo->api_categories_allow_update, ['value'=>'1', 'class'=>'check_on_off form-control'])}</td>
-          </tr>
-          <tr>
-            <td class="main" width="20%"><label>{$smarty.const.TEXT_API_PRODUCTS_CREATE}</label></td>
-            <td class="main">{Html::checkbox('api_products_allow_create', !!$dInfo->api_products_allow_create, ['value'=>'1', 'class'=>'check_on_off form-control'])}</td>
-          </tr>
-          <tr>
-            <td class="main" width="20%"><label>{$smarty.const.TEXT_API_PRODUCTS_UPDATE}</label></td>
-            <td class="main">{Html::checkbox('api_products_allow_update', !!$dInfo->api_products_allow_update, ['value'=>'1', 'class'=>'check_on_off form-control'])}</td>
-          </tr>
-          <tr>
-            <td class="main" width="20%"><label>{$smarty.const.TEXT_API_PRODUCTS_REMOVE_OWNED}</label></td>
-            <td class="main">{Html::checkbox('api_products_allow_remove_owned', !!$dInfo->api_products_allow_remove_owned, ['value'=>'1', 'class'=>'check_on_off form-control'])}</td>
-          </tr>
-          <tr>
-            <td class="main" width="20%"><label>{$smarty.const.TEXT_SOAP_PRODUCT_CUSTOMIZE_FLAGS}</label></td>
-            <td class="main">{Html::checkbox('api_products_update_custom_flags', !!$dInfo->api_products_update_custom_flags, ['value'=>'1', 'class'=>'default_switcher js-soap_custom_flags','data-rel'=>'js-soap-custom-flags_rel'])}</td>
-          </tr>
-          <tr class="js-soap-custom-flags_rel">
-            <td class="main" width="20%">&nbsp;</td>
-            <td class="main">
-                <table class="table tabl-res table-striped table-hover table-responsive table-bordered table-switch-on-off double-grid">
-                    <thead>
-                    <tr>
-                        <th>{$smarty.const.TEXT_SOAP_PRODUCT_CUSTOM_HEAD_KEY}</th>
-                        <th width="10%">{$smarty.const.TEXT_SOAP_PRODUCT_CUSTOM_HEAD_SERVER}</th>
-                        <th width="10%">{$smarty.const.TEXT_SOAP_PRODUCT_CUSTOM_HEAD_SERVER_OWN}</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    {foreach $dInfo->apiProductFlags as $flagInfo}
-                        <tr>
-                            <td>{$flagInfo['label']}</td>
-                            <td>{if $flagInfo['server'] && !$flagInfo['server_disable']}{Html::checkbox('api_products_update_custom['|cat:$flagInfo['server']|cat:']', !!$dInfo->api_products_update_custom[$flagInfo['server']], ['value'=>'1', 'class' => 'default_switcher'])}{else}&nbsp;{/if}</td>
-                            <td>{if $flagInfo['server_own']}{Html::checkbox('api_products_update_custom['|cat:$flagInfo['server_own']|cat:']', !!$dInfo->api_products_update_custom[$flagInfo['server_own']], ['value'=>'1', 'class' => 'default_switcher'])}{else}&nbsp;{/if}</td>
-                        </tr>
-                    {/foreach}
-                    </tbody>
-                </table>
-            </td>
-          </tr>
-          {if $dInfo->api['shareDepartmentsList'] && count($dInfo->api['shareDepartmentsList']['items'])>0}
-            <tr>
-                <td class="main" valign="top"><label>{$smarty.const.TEXT_API_CREATE_SHARE_ASSIGN}</label></td>
-                <td class="main mmsel">
-                    <label ><input name="api[createShareAll]" {if $dInfo->api['createShareAll']=='all'}checked{/if} value="all" type="radio">{$smarty.const.TEXT_ALL}</label>
-                    <label ><input name="api[createShareAll]" {if $dInfo->api['createShareAll']!='all'}checked{/if} value="selected" type="radio">{$smarty.const.IMAGE_SELECT}</label>
-                    <div class="js-optSelectShareDepartments">
-                      {Html::dropDownList('api[createShare]',$dInfo->api['shareDepartmentsList']['selected'],$dInfo->api['shareDepartmentsList']['items'],$dInfo->api['shareDepartmentsList']['options'])}
-                    </div>
-                </td>
-            </tr>
-          {/if}
-          {if is_array($dInfo->api['client_statuses']) && count($dInfo->api['client_statuses'])>0}
-          <tr>
-            <td class="main" valign="top"><label>{$smarty.const.TEXT_API_SYNCHRONIZATION_ORDER_STATUS_MAPPING}</label></td>
-            <td class="main">
-              <table class="js-status-mapping">
-                <tr>
-                  <th>{$smarty.const.TEXT_API_SYNCHRONIZATION_ORDER_STATUS_MAPPING_CLIENT}</th>
-                  <th>{$smarty.const.TEXT_API_SYNCHRONIZATION_ORDER_STATUS_MAPPING_SERVER}</th>
-                </tr>
-                {foreach $dInfo->api['client_statuses'] as $_idx=>$order_status}
-                    {if strpos($order_status.id,'group')===0}
-                      <tr>
-                        <td><b>{$order_status.text}</b></td>
-                        <td>&nbsp;</td>
-                      </tr>
-                    {else}
-                      <tr>
-                        <td>{$order_status.text}</td>
-                        <td>{Html::dropDownList('api[client_status_map]['|cat:$order_status._id|cat:']',$dInfo->api['order_status_mapped'][$order_status._id],$dInfo->api['local_statuses'],['class'=>'form-control js-status-map'])}</td>
-                      </tr>
-                    {/if}
-                    {if !isset($dInfo->api['client_statuses'][$_idx+1]) or strpos($dInfo->api['client_statuses'][$_idx+1]['id'],'group')===0}
-                      <tr class="js-create-on-client-row">
-                        <td><u>{$smarty.const.TEXT_API_SYNCHRONIZATION_ORDER_STATUS_CREATE_ON_CLIENT}</u></td>
-                        <td>{Html::dropDownList('api[create_on_client]['|cat:$order_status.group_id|cat:'][]',$dInfo->api['client_create_status_map'][$order_status.group_id][0],$dInfo->api['local_statuses_wo_create'],['class'=>'form-control js-status-on-client js-status-map'])}</td>
-                      </tr>
-                      {if isset($dInfo->api['client_create_status_map'][$order_status.group_id]) && is_array($dInfo->api['client_create_status_map'][$order_status.group_id]) && count($dInfo->api['client_create_status_map'][$order_status.group_id])>0}
-                          {for $__idx=1;$__idx<count($dInfo->api['client_create_status_map'][$order_status.group_id]); $__idx++}
-                            <tr class="js-create-on-client-row">
-                              <td><u>{$smarty.const.TEXT_API_SYNCHRONIZATION_ORDER_STATUS_CREATE_ON_CLIENT}</u></td>
-                              <td>{Html::dropDownList('api[create_on_client]['|cat:$order_status.group_id|cat:'][]',$dInfo->api['client_create_status_map'][$order_status.group_id][$__idx],$dInfo->api['local_statuses_wo_create'],['class'=>'form-control js-status-on-client js-status-map'])}</td>
-                            </tr>
-                          {/for}
-                      {/if}
-                    {/if}
-              {/foreach}
-              </table>
-            </td>
-          </tr>
-          {/if}
-          {if 1}
-              <tr>
-                  <td class="main" width="20%"><label>{$smarty.const.TEXT_OUTGOING_PRICE_FORMULA}</label></td>
-                  <td class="main">
-                      <div class="input-group">
-                          {Html::textInput('api_outgoing_price_formula_text', $dInfo->api_outgoing_price_formula_text, ['maxlength'=>'64', 'size'=>'32', 'class'=>'form-control', 'readonly'=>'readonly', 'id'=>'txtSiteApiPriceFormulaText'])}
-                          {Html::hiddenInput('api_outgoing_price_formula', $dInfo->api_outgoing_price_formula, ['id'=>'txtSiteApiPriceFormula'])}
-                          <div class="input-group-addon js-price-formula" data-formula-rel="#txtSiteApiPriceFormula" data-formula-allow-params=""><i class="icon-money"></i></div>
-                      </div>
-                  </td>
-              </tr>
-              <tr>
-                  <td class="main"><label>{$smarty.const.TEXT_OUTGOING_PRICE_DISCOUNT}</label></td>
-                  <td class="main">
-                      {Html::textInput('api_outgoing_price_discount', $dInfo->api_outgoing_price_discount, ['maxlength'=>'64', 'size'=>'32', 'class'=>'form-control'])}
-                  </td>
-              </tr>
-              <tr>
-                  <td class="main"><label>{$smarty.const.TEXT_OUTGOING_PRICE_SURCHARGE}</label></td>
-                  <td class="main">
-                      {Html::textInput('api_outgoing_price_surcharge', $dInfo->api_outgoing_price_surcharge, ['maxlength'=>'64', 'size'=>'32', 'class'=>'form-control'])}
-                  </td>
-              </tr>
-              <tr>
-                  <td class="main"><label>{$smarty.const.TEXT_OUTGOING_PRICE_MARGIN}</label></td>
-                  <td class="main">
-                      {Html::textInput('api_outgoing_price_margin', $dInfo->api_outgoing_price_margin, ['maxlength'=>'64', 'size'=>'32', 'class'=>'form-control'])}
-                  </td>
-              </tr>
-          {/if}
-        </table>
-      </fieldset>
+        {$extSoapServer::onDepartmentSettingsTab($dInfo)}
     </div>
+    {/if}
   </div>
 </div>
 <div class="btn-bar">
@@ -481,11 +333,7 @@
     }
   }
     $(document).ready(function(){
-      $('#lnSiteApiKeyGenerate').on('click',function(){
-        $.getJSON('{\Yii::$app->urlManager->createUrl('api/generate-key')}',function( data ) {
-            if (data.api_key) $('#txtSiteApiKey').val(data.api_key);
-        });
-      });
+
       $('.js-project-codes').on('click','.js-removeRow', function(event){
           $(event.target).parents('tr').remove();
       });
@@ -495,161 +343,11 @@
           $('.js-project-codes tbody input[type="text"]').last().focus();
       });
 
-      $('.js-status-mapping').on('change','.js-status-map',function(event){
-          var $target = $(event.target);
-          var target_value = $target.val() || '';
-          if (target_value!='' && target_value!='0') {
-              $('.js-status-map').not($target).each(function () {
-                  if ($(this).val() == target_value) {
-                      $(this).val('').trigger('change');
-                  }
-              });
-          }
-          if ( $target.hasClass('js-status-on-client') ){
-              var $collection = $('.js-status-on-client').filter('[name="'+$target.attr('name')+'"]');
-              if (target_value=='' || target_value=='0'){
-                  if ( $collection.length>1 ) {
-                      $target.parents('.js-create-on-client-row').remove();
-                  }
-              }else{
-                  var hasEmpty = false;
-                  $collection.each( function(){
-                      var val = $(this).val()||'';
-                      if (val==='' || val==='0'){ hasEmpty = true; }
-                  } );
-                  if ( !hasEmpty ) {
-                      var $selectRow = $target.parents('.js-create-on-client-row');
-                      var $newTr = $selectRow.clone();
-                      $newTr.find('select').val('');
-                      $selectRow.after($newTr);
-                  }
-              }
-          }else{
-              if (target_value.indexOf('new_') === 0) {
-                  var matchId = $target.attr('name').match(/\[(\d+)\]$/);
-                  $.post('{\Yii::$app->urlManager->createUrl(['departments/create-locally-api-client-status', 'dID'=>$dInfo->departments_id])}', {
-                      'clientStatusId': matchId[1],
-                      'localStatusGroupId': $target.val().replace('new_in_group_', '')
-                  }, function (result) {
-                      if (result.dropDownList) {
-                          var newSelectVariants = $(result.dropDownList).html();
-                          $('.js-status-map').each(function () {
-                              var currentValue = $(this).val();
-                              if ($target.attr('name') == $(this).attr('name')) {
-                                  currentValue = '' + result.status_id;
-                              }
-                              $(this).html(newSelectVariants);
-                              $(this).val(currentValue).trigger('change');
-                          });
-                      }
-                  });
-                  return;
-              }
-          }
-      });
-      // -- add blank select after create on client
-      var $additionalI = $('.js-status-on-client').filter(function(i, el){
-          var val = $(el).val()||'';
-          return !(val==='' || val==='0');
-      });
-
-      var __checkCreated = { };
-      $($additionalI.get().reverse()).each(function(){
-          if (__checkCreated[this.name]) return;
-          var $selectRow = $(this).parents('.js-create-on-client-row');
-          var $newTr = $selectRow.clone();
-          $newTr.find('select').val('');
-          $selectRow.after($newTr);
-          __checkCreated[this.name] = this.name;
-      });
-      // -- add blank select after create on client
-
         $(".check_on_off").bootstrapSwitch({
             onText: "{$smarty.const.SW_ON}",
             offText: "{$smarty.const.SW_OFF}"
         });
 
-        $('.js-soap_custom_flags').each(function(){
-            if (!this.checked) $('.'+$(this).attr('data-rel')).hide();
-        });
 
-        $('.default_switcher').bootstrapSwitch({
-            onText: "{$smarty.const.SW_ON}",
-            offText: "{$smarty.const.SW_OFF}",
-            handleWidth: '20px',
-            labelWidth: '24px',
-            onSwitchChange: function () {
-                if($(this).hasClass('js-soap_custom_flags')){
-                    if($(this).is(':checked')){
-                        $('.'+$(this).attr('data-rel')).show();
-                    }else{
-                        $('.'+$(this).attr('data-rel')).hide();
-                    }
-                }
-            }
-        });
     })
 //--></script>
-<script src="plugins/clipboard-js/clipboard.min.js"></script>
-<link href="plugins/multiple-select/multiple-select.css" rel="stylesheet" type="text/css" />
-<script src="plugins/multiple-select/multiple-select.js"></script>
-<script type="text/javascript">
-    $(document).ready( function(){
-        var clipboard = new ClipboardJS('.js-clipboard-copy');
-        clipboard.on('success', function(e) {
-            e.clearSelection();
-            var $tooltipTarget = $(e.trigger);
-            $tooltipTarget.tooltip('show');
-            setTimeout(function(){
-                $tooltipTarget.tooltip('hide');
-            },2000);
-        });
-        $('.js-clipboard-copy').tooltip({
-            title:'{$smarty.const.TEXT_COPIED_TO_CLIPBOARD|escape:'javascript'}',
-            placement:'left',
-            trigger:'manual'
-        });
-
-        $('.js-price-formula').on('click', function(){
-            var field = $(this).data('formula-rel');
-            var allowed_params = $(this).data('formula-allow-params')||'';
-
-            bootbox.dialog({ message: '<iframe src="{$app->urlManager->createUrl(['popups/price-formula-editor','s'=>(float)microtime()])}&formula_input='+encodeURIComponent(field)+'&allowed_params='+encodeURIComponent(allowed_params)+'" width="900px" height="420px" style="border:0"/>' });
-            bootbox.setDefaults( { size:'large', onEscape:true, backdrop:true });
-        });
-
-        window.priceFormulaRetrieve = function (inputSelector){
-            var jsonString = $(inputSelector).val();
-            if ( jsonString ) {
-                return JSON.parse(jsonString);
-            }
-            return { };
-        };
-
-        window.priceFormulaUpdate = function (inputSelector, formulaObject ) {
-            $(inputSelector).val( JSON.stringify(formulaObject) );
-            $('#txtSiteApiPriceFormulaText').val($.trim(formulaObject.text));
-            bootbox.hideAll();
-        };
-
-        $("select.assign-multi-checkbox").multipleSelect({
-            multiple: true,
-            filter: true,
-            selectAll:false,
-            allSelected:'',
-            minimumCountSelected: 10
-        });
-        var onRelSelectShare = function(show)
-        {
-            if (show){
-                $('.js-optSelectShareDepartments').show();
-            }else{
-                $('.js-optSelectShareDepartments').hide();
-            }
-        };
-        $('input[name="api[createShareAll]"]').on('change',function(){
-            onRelSelectShare(this.value=='selected' && $(this).is(':checked'));
-        });
-        onRelSelectShare($('input[name="api[createShareAll]"]').filter('[value="selected"]').is(':checked'));
-    } );
-</script>
