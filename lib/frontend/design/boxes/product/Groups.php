@@ -63,6 +63,7 @@ class Groups extends Widget {
         $products_all = $q->addSelect('p.stock_indication_id')  // extra fields
                 ->addSelect('p.products_price, products_tax_class_id')
                 ->addFrontendDescription()
+                ->orderBy('p.products_groups_sort')
                 ->asArray()
                 ->all();
         foreach($products_all as $products) {
