@@ -215,6 +215,15 @@ class FrontendStructure
     ];
 
     private static $pages = [
+        'contact' => [
+            'action' => '',
+            'name' => 'contact',
+            'page_name' => 'contact',
+            'title' => TEXT_CONTACT,
+            'type' => 'home',
+            'group' => 'informations',
+            'settings' => true,
+        ],        
         'home' => [
             'action' => '',
             'name' => 'home',
