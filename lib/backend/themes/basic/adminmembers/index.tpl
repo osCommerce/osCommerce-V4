@@ -3,6 +3,46 @@
         <h3>{$app->controller->view->headingTitle}</h3>
     </div>
 </div>
+<div class="widget box box-wrapp-blue filter-wrapp" id="admins-filter">
+    <div class="widget-header filter-title">
+        <h4>{$smarty.const.TEXT_FILTER}</h4>
+        <div class="toolbar no-padding">
+            <div class="btn-group">
+                <span class="btn btn-xs widget-collapse"><i class="icon-angle-down"></i></span>
+            </div>
+        </div>
+    </div>
+    <div class="widget-content">
+
+        <form id="filterForm" name="filterForm" onsubmit="return applyFilter();">
+            <input type="hidden" name="row" id="row_id" value="{$app->controller->view->filters->row}" />
+
+            <div class="" style="max-width: 500px; margin: 0 auto">
+                <div class="row align-items-center mb-2">
+                    <div class="col-4 align-right">Group:</div>
+                    <div class="col-8">{$app->controller->view->filterStatusTypes}</div>
+                </div>
+                <div class="row align-items-center mb-2">
+                    <div class="col-4 align-right">Status:</div>
+                    <div class="col-8">
+                        <select name="status" class="form-control">
+                            <option value="0">{$smarty.const.TEXT_ALL}</option>
+                            <option value="1">{$smarty.const.TEXT_ACTIVE}</option>
+                            <option value="2">{$smarty.const.TEXT_DISABLED}</option>
+                        </select>
+                    </div>
+                </div>
+
+
+                <div class="filters_btn">
+                    <a href="javascript:void(0)" onclick="return resetFilter();" class="btn">{$smarty.const.TEXT_RESET}</a>
+                    <button type="submit" class="btn btn-primary">{$smarty.const.TEXT_SEARCH}</button>&nbsp;
+                </div>
+            </div>
+        </form>
+
+    </div>
+</div>
 <div class="order-wrap">
 <!--===Member Groups List ===-->
 <div class="row order-box-list">
@@ -11,11 +51,8 @@
                 <div class="alert fade in" style="display:none;">
                   <span id="message_plce"></span>
                 </div>
-                <div class="ord_status_filter_row">
-                <form id="filterForm" name="filterForm" onsubmit="return applyFilter();">
-                    {$app->controller->view->filterStatusTypes}
-                    <input type="hidden" name="row" id="row_id" value="{$app->controller->view->filters->row}" />
-                </form>
+                <div class="ord_status_filter_row" style="min-height: 27px">
+
               </div>
                 <table class="table table-striped table-bordered table-hover table-responsive table-checkable datatable table-adminmembers" checkable_list="0,1,2" data_ajax="adminmembers/memberlist">
                     <thead>
@@ -271,6 +308,15 @@ function applyFilter() {
     resetStatement();
     return false;    
 }
+
+    function resetFilter() {
+        $('#filterForm').trigger('filters_reset');
+        $('select[name="aclID"]').val(0);
+        $('select[name="status"]').val(0);
+        $("#row_id").val(0);
+        resetStatement();
+        return false;
+    }
 </script>
 
 <!--===Actions ===-->

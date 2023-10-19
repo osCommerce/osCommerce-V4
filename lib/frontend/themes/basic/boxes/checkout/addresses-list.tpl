@@ -16,13 +16,15 @@
             {elseif $settings[0]['address_in'] == 'radio_first'}
                 {foreach $addresses as $address}
                     <label>
-                        <input type="radio" name="{$type|cat:'_ab_id'}"  class="address-item-selector" value="{$address['address_book_id']}" {if $selected_ab_id == $address['address_book_id']} checked{/if}/>
+                       <input type="radio" name="{$type|cat:'_ab_id'}"  class="address-item-selector" value="{$address['address_book_id']}" {if $selected_ab_id == $address['address_book_id']} checked{/if}/>
                         <span></span>
                         <div class="adress-holder">
                             <div class="address">
                                 {\common\helpers\Address::address_format($address['country']['address_format_id'], $address, true, '', '<br> ', true, false, $model->getPrefix())}
                             </div>
+                            {if $can_change_address}
                             <span class="edit-ab" data-id="{$address['address_book_id']}">{$smarty.const.EDIT}</span>
+                            {/if}
                         </div>
 
                     </label>
@@ -30,11 +32,11 @@
             {/if}
 
             <div class="buttons buttons-under-drop">
-                {if $settings[0]['address_in'] == 'dropdown'}
+                {if $settings[0]['address_in'] == 'dropdown' && $can_change_address}
                 <a href="" class="edit-ab" data-id="{$selected_ab_id}">{$smarty.const.EDIT}</a>
                 {/if}
 
-                {if $manager->isCustomerAssigned() && !$manager->getCustomersIdentity()->opc_temp_account && count($manager->getCustomersIdentity()->getAddressBooks()) < MAX_ADDRESS_BOOK_ENTRIES}
+                {if $manager->isCustomerAssigned() && !$manager->getCustomersIdentity()->opc_temp_account && count($manager->getCustomersIdentity()->getAddressBooks()) < MAX_ADDRESS_BOOK_ENTRIES && $can_change_address}
                     <a class="add-ab" href="javascript:void(0);" data-id="0">{$smarty.const.IMAGE_BUTTON_ADD_ADDRESS}</a>
                 {/if}
             </div>
@@ -61,7 +63,7 @@
             <label>
                 {Html::hiddenInput($type|cat:'_ab_id', $selected_ab_id, ['class' => 'address-item-selector'])}
                 {\common\helpers\Address::address_format($address['country']['address_format_id'], $address, true, '', '<br>', true, false, $model->getPrefix())}
-{if $manager->get('is_multi') != 1}
+{if $can_choose_address}
                 <br/>
                 <a href="javascript:void(0);" class="change-ab">{$smarty.const.TEXT_CHANGE}</a>
 {/if}
@@ -92,21 +94,32 @@
                 {foreach $addresses as $address}
                     <div class="address-item">
                         <label>
+                            {if $address['drop_ship'] == 1}({$smarty.const.TEXT_DROP_SHIP_ADDRESS})<br>{/if}
                             {Html::radio($type|cat:'_ab_id', $selected_ab_id == $address['address_book_id'], ['value' => $address['address_book_id'], 'class' => 'address-item-selector'])}
                             {\common\helpers\Address::address_format($address['country']['address_format_id'], $address, true, '', '<br>', true, false, $model->getPrefix())}
                         </label>
+                        {if $can_change_address}
                         <a href="" class="edit-ab" data-id="{$address['address_book_id']}">{$smarty.const.EDIT}</a>
+                        {/if}
                     </div>
                 {/foreach}
 
 
                 <div class="buttons">
                     <a class="btn-cancel" href="javascript:void(0);">{$smarty.const.CANCEL}</a>
-                    {if $manager->isCustomerAssigned() && !$manager->getCustomersIdentity()->opc_temp_account && count($manager->getCustomersIdentity()->getAddressBooks()) < MAX_ADDRESS_BOOK_ENTRIES}
+                    {if $manager->isCustomerAssigned() && !$manager->getCustomersIdentity()->opc_temp_account && $drop_ship}
+                        <a class="add-ab" href="javascript:void(0);" data-id="0">{$smarty.const.TEXT_DROP_SHIP_ADDRESS}</a>
+                    {/if}
+                    {if $manager->isCustomerAssigned() && !$manager->getCustomersIdentity()->opc_temp_account && count($manager->getCustomersIdentity()->getAddressBooks()) < MAX_ADDRESS_BOOK_ENTRIES && $can_add_address}
                         <a class="add-ab" href="javascript:void(0);" data-id="0">{$smarty.const.IMAGE_BUTTON_ADD_ADDRESS}</a>
                     {/if}
                 </div>
-                <script>
+                {if $drop_ship}
+                <div class="drop-ship-notes">
+                    <p>{$smarty.const.TEXT_DROP_SHIP_NOTE1}</span>
+                </div>
+                {/if}
+              <script>
                 tl(function(){
                     $('.{$type}-addresses .address-item-selector').change(function(){
                         let value = $(this).val();
@@ -116,9 +129,9 @@
                         let id = $(this).data('id');
                         e.preventDefault();
                         if ($('.{$type}-addresses').closest('.box').data('address_in') == 'popup') {
-                            checkout.edit_address_popup('{$type}', id);
+                            checkout.edit_address_popup('{$type}', id, '{$drop_ship}');
                         } else {
-                            checkout.edit_address('{$type}', id);
+                            checkout.edit_address('{$type}', id, '{$drop_ship}');
                         }
                     })
                     $('.{$type}-addresses .btn-cancel').click(function(e){
@@ -134,12 +147,19 @@
     <div class="addresses {$type}-addresses address-edit-holder" id="{$type}-addresses">
         <div class="address-edit">
         {include './address-area.tpl' model = $model}
+        {Html::hiddenInput('drop_ship', $drop_ship)}
         {if ($model->address_book_id || $manager->getCustomersIdentity()->hasAddressBooks()) && ($model->customerAddressIsReady() || $model->address_book_id != $manager->get('sendto') || !$model->address_book_id) }
             <a class="btn-cancel" href="javascript:void(0);">{$smarty.const.CANCEL}</a>
         {/if}
         
         {if $manager->isCustomerAssigned()}{*&& (!$model->customerAddressIsReady() || !$model->address_book_id)*}
         <a class="btn-save btn" href="javascript:void(0);" style="float:right;">{$smarty.const.TEXT_SAVE}</a>
+        {/if}
+        {if $drop_ship}
+            <div class="drop-ship-notes">
+                <p>{$smarty.const.TEXT_DROP_SHIP_NOTE2}</p>
+                <p>{$smarty.const.TEXT_DROP_SHIP_NOTE3}</p>
+            </div>
         {/if}
         </div>
         <script>

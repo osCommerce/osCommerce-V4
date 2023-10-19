@@ -176,7 +176,7 @@ $(document).ready(function(){
     $( ".js-table-sortable.datatable tbody" ).sortable({
         axis: 'y',
         update: function( event, ui ) {
-            $(this).find('[role="row"]').each(function() {
+            $('.ui-sortable > tr').each(function() {
                 if ( this.id ) return;
                 var cell_ident = $(this).find('.cell_identify');
                 var cell_type = $(this).find('.cell_type');
@@ -185,7 +185,7 @@ $(document).ready(function(){
                 }
             });
             var post_data = [];
-            $(this).find('[role="row"]').each(function() {
+            $('.ui-sortable > tr').each(function() {
                 var spl = this.id.indexOf('_');
                 if ( spl===-1 ) return;
                 post_data.push({ name:this.id.substring(0, spl)+'[]', value:this.id.substring(spl+1) });

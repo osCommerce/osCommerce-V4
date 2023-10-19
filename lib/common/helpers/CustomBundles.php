@@ -63,15 +63,19 @@ class CustomBundles {
         if (!$check_configurator['products_pctemplates_id'] && !(count($bundle_products) > 0)) {
 
 
-
-            $cW = ['exists', \common\models\ProductsXsell::find()->alias('xp')
-                ->andWhere("p.products_id = xp.xsell_id")
-                ->andWhere([
-                    'xp.products_id' => (int)$params['products_id'],
-                    'xp.xsell_type_id' => $xsell_type_id,
-                ])
-                ->andWhere(['not in', 'p.products_id', array_map('intval', $params['custom_bundles'])])
-            ];
+            if ($xsellModel = \common\helpers\Extensions::getModel('UpSell', 'ProductsXsell'))
+            {
+                $cW = ['exists', $xsellModel::find()->alias('xp')
+                    ->andWhere("p.products_id = xp.xsell_id")
+                    ->andWhere([
+                        'xp.products_id' => (int)$params['products_id'],
+                        'xp.xsell_type_id' => $xsell_type_id,
+                    ])
+                    ->andWhere(['not in', 'p.products_id', array_map('intval', $params['custom_bundles'])])
+                ];
+            }else{
+                $cW = '';
+            }
             $q = new \common\components\ProductsQuery([
                 'limit' => (int)$max,
                 'customAndWhere' => $cW,
@@ -294,12 +298,12 @@ class CustomBundles {
                 $stock_indicators_sorted = \common\classes\StockIndication::sortStockIndicators($stock_indicators_ids);
                 $custom_bundle_stock_indicator = $stock_indicators_array[$stock_indicators_sorted[count($stock_indicators_sorted) - 1]];
             } else {
-                $custom_bundle_stock_indicator = $stock_indicator_public;
+                $custom_bundle_stock_indicator = $stock_indicator_public ?? null;
             }
 
             $return_data = [
                 'product_valid' => (count($all_filled_array) > 1 && min($all_filled_array) ? '1' : '0'),
-                'custom_bundle_products' => $custom_bundle_products,
+                'custom_bundle_products' => $custom_bundle_products ?? null,
                 'all_products' => $all_products,
                 'stock_indicator' => $custom_bundle_stock_indicator,
                 'custom_bundle_full_price' => $currencies->format($custom_bundle_full_price, false),

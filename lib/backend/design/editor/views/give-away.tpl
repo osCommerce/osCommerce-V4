@@ -26,7 +26,7 @@
 					  <div class="ga_attributes">
 						{foreach $product.attributes as $item}
 						  <div>
-							<select class="js_ga_select form-control" name="giveaways[{$product.ga_idx}][id][{$item.id}]" data-required="{$smarty.const.PLEASE_SELECT|escape:'html'} {$item.title|escape:'html'}" data-empty-option="{$smarty.const.SELECT|escape:'html'} {$item.title|escape:'html'}">
+							<select class="js_ga_select form-select" name="giveaways[{$product.ga_idx}][id][{$item.id}]" data-required="{$smarty.const.PLEASE_SELECT|escape:'html'} {$item.title|escape:'html'}" data-empty-option="{$smarty.const.SELECT|escape:'html'} {$item.title|escape:'html'}">
 							  {foreach $item.options as $option}
 								<option value="{$option.id}"{if $option.id==$item.selected} selected{/if}{if {strlen($option.params)} > 0} {$option.params}{/if}>{$option.text}</option>
 							  {/foreach}
@@ -118,7 +118,7 @@
     
     
     $('.btn-apply').click(function(){
-        if ($("input[name^='giveaway_switch']:checked").size()>0){
+        if ($("input[name^='giveaway_switch']:checked").length>0){
             var $divna = $("input[name^='giveaway_switch']:checked").parents('form');            
             var event = jQuery.Event( "submit" );
             $divna.trigger(event);

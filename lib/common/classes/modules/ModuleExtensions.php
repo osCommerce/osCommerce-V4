@@ -13,6 +13,8 @@
 
 namespace common\classes\modules;
 
+use common\classes\platform;
+
 class ModuleExtensions extends Module {
 
     public $isExtension = true;
@@ -140,6 +142,15 @@ class ModuleExtensions extends Module {
         return $res;
     }
 
+    public static function getTranslatedArray(array $translationKeys)
+    {
+        $res = [];
+        foreach ($translationKeys as $val) {
+            $res[$val] = static::getTranslationValue($val);
+        }
+        return $res;
+    }
+
 
     public static function getAdminMenu() {
         if ($setup = static::checkSetup('getAdminMenu')) {
@@ -211,6 +222,14 @@ class ModuleExtensions extends Module {
         }
     }
 
+    public function enable_module($platform_id, $flag)
+    {
+        $res = parent::enable_module($platform_id, $flag);
+        if ($res !== false) {
+            \yii\caching\TagDependency::invalidate(\Yii::$app->cache, 'extension_changed');
+        }
+        return $res;
+    }
     /* Not needed for overriding if Setup::install is implemented */
     public function install($platform_id) {
         try {
@@ -227,7 +246,11 @@ class ModuleExtensions extends Module {
                 $setup::install($platform_id, $migrate);
             }
             \common\helpers\Hooks::registerHooks($this->getAdminHooks(), $this->code);
-            return parent::install($platform_id);
+            \backend\design\Style::validateCache();
+            self::installCronJobs();
+            $res = parent::install($platform_id);
+            \yii\caching\TagDependency::invalidate(\Yii::$app->cache, 'extension_changed');
+            return $res;
         } catch (\Exception $ex) {
             \Yii::warning($ex->getMessage() . ' ' . $ex->getTraceAsString(), "Extensions/$this->code");
             throw $ex;
@@ -244,6 +267,7 @@ class ModuleExtensions extends Module {
             }
             if ($this->userConfirmedDropDatatables && ($setup = static::checkSetup('getDropDatabasesArray'))) {
                 $migrate->dropTables($setup::getDropDatabasesArray());
+                self::removeCronJobs();
                 \common\helpers\Modules::changeModule($this->code, 'remove_drop');
             }
             if ($this->userConfirmedDeleteAcl && ($setup = static::checkSetup('getAclArray'))) {
@@ -253,9 +277,10 @@ class ModuleExtensions extends Module {
             static::removeTranslationArray($platform_id, $migrate, $this->userConfirmedDeleteAcl); // after remove menu
 
             \common\helpers\Hooks::unregisterHooks($this->code);
-            return parent::remove($platform_id);
+            $res = parent::remove($platform_id);
             \common\helpers\Modules::changeModule($this->code, 'remove');
-
+            \yii\caching\TagDependency::invalidate(\Yii::$app->cache, 'extension_changed');
+            return $res;
         } catch (\Exception $ex) {
             \Yii::warning($ex->getMessage() . ' ' . $ex->getTraceAsString(), "Extensions/$this->code");
             throw $ex;
@@ -318,21 +343,36 @@ class ModuleExtensions extends Module {
         $this->add_config_key($platform_id, $key, $data );
     }
 
-    public function getConfigureKeysArea(bool $includeEmptyArea = true, $includeArea = null, $excludeArea = null)
+    public static function getSetupConfigureKeys()
     {
         if ($setup = static::checkSetup('getConfigureKeys')) {
-            $keys = $setup::getConfigureKeys($this->code);
-            if (is_array($keys) && !empty($keys)) {
-                $includeArea = is_array($includeArea) ? $includeArea : explode(',', $includeArea);
-                $excludeArea = is_array($excludeArea) ? $excludeArea : explode(',', $excludeArea);
-                return array_filter($keys, function($value) use ($includeEmptyArea, $includeArea, $excludeArea ) {
-                    if (empty($value['area'])) {
-                        return $includeEmptyArea;
-                    } else {
-                        return in_array($value['area'], $includeArea) && !in_array($value['area'], $excludeArea);
+            $keys = $setup::getConfigureKeys(self::getModuleCode());
+            if (is_array($keys)) {
+                array_walk($keys, function(&$value, $key) {
+                    foreach(['title', 'description'] as $keyItem) {
+                        if (preg_match('/##([\w_\-]*)##/', $value[$keyItem], $match)) {
+                            $value[$keyItem] = static::getTranslationValue($match[1]);
+                        }
                     }
                 });
+                return $keys;
             }
+        }
+    }
+
+    public function getConfigureKeysArea(bool $includeEmptyArea = true, $includeArea = null, $excludeArea = null)
+    {
+        $keys = self::getSetupConfigureKeys();
+        if (is_array($keys) && !empty($keys)) {
+            $includeArea = is_array($includeArea) ? $includeArea : explode(',', $includeArea);
+            $excludeArea = is_array($excludeArea) ? $excludeArea : explode(',', $excludeArea);
+            return array_filter($keys, function($value) use ($includeEmptyArea, $includeArea, $excludeArea ) {
+                if (empty($value['area'])) {
+                    return $includeEmptyArea;
+                } else {
+                    return in_array($value['area'], $includeArea) && !in_array($value['area'], $excludeArea);
+                }
+            });
         }
     }
 
@@ -374,10 +414,45 @@ class ModuleExtensions extends Module {
      */
     public static function getControllerActions($controllerId)
     {
+        // used enabled to prevent init translations
+        if (self::enabled() && ($setup = static::checkSetup('getControllerActions'))) {
+            return $setup::getControllerActions($controllerId);
+        }
         return [];
     }
 
-    private function appendAcl($platform_id, \common\classes\Migration $migrate) {
+
+    public static function getCronJobs(bool $checkAllowed = true)
+    {
+        if ((!$checkAllowed || self::allowed()) && ($setup = static::checkSetup('getCronJobs'))) {
+            return $setup::getCronJobs();
+        }
+        return [];
+    }
+
+    private static function installCronJobs()
+    {
+        if ($cronSheduler = \common\helpers\Extensions::isAllowed('CronScheduler')) {
+            $jobs = \common\helpers\Cron::getExtensionJobs(self::getModuleCode(), false);
+            if (is_array($jobs)) {
+                foreach ($jobs as $job) {
+                    if ($job['active'] ?? false) {
+                        $cronSheduler::addJob($job);
+                    }
+                }
+            }
+        }
+    }
+
+    private static function removeCronJobs()
+    {
+        if ($cronSheduller = \common\helpers\Extensions::isCronScheduler('removeJobsExtension')) {
+            $cronSheduller::removeJobsExtension(static::getModuleCode());
+        }
+    }
+
+
+        private function appendAcl($platform_id, \common\classes\Migration $migrate) {
         if ($setup = static::checkSetup('getAclArray')) {
             $aclArray = $setup::getAclArray();
             if (is_array($aclArray) && count($aclArray) > 0) {
@@ -607,4 +682,53 @@ class ModuleExtensions extends Module {
     {
         return self::render($view, $params);
     }
+
+    /*
+     * If extension store its model in non standard folder.
+     * For example UsersGroups extensions and its models into common/models folder
+     * @return null|string - yii\db\ActiveRecord class
+     */
+    public static function getModel($modelName) {}
+
+    /**
+     * Get Dbg helper if consts DBG_ExtClassName === true
+     * @return \common\helpers\Dbg
+     */
+    public static function dbg()
+    {
+        return \common\helpers\Dbg::ifDefined(self::getModuleCode());
+    }
+
+    /**
+     * Get config value that
+     * @param string $name
+     * @return void|mixed void - in production mode if if config name is not found in Setup::getConfigureKeys
+     * @throws Exception in development mode if config name is not found in Setup::getConfigureKeys
+     */
+    public static function getCfgValue(string $name, $platformId = null)
+    {
+        try {
+            $cfgKeys = self::getSetupConfigureKeys();
+            \common\helpers\Assert::keyExists($cfgKeys, $name, "The config key $name is not found in Setup::getConfigureKeys: %s");
+
+            $platformId = ($cfgKeys[$name]['area']??null) == 'platforms' ? ($platformId ?? platform::currentId()) : 0;
+            $defValue = $cfgKeys[$name]['value']??'';
+
+            return \common\helpers\PlatformConfig::getVal($name, $defValue, $platformId);
+
+        } catch (\Throwable $e) {
+            \common\helpers\Php::handleErrorProd($e);
+        }
+    }
+
+    public static function getCfgValueLower(string $name, $platformId = null)
+    {
+        return strtolower(self::getCfgValue($name, $platformId));
+    }
+
+    public static function beforeAction($action)
+    {
+        return true;
+    }
+
 }

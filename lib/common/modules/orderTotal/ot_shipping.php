@@ -50,6 +50,7 @@ class ot_shipping extends ModuleTotal {
     }
 
     function process($replacing_value = -1, $visible = false) {
+        $this->output = [];
 
         $currencies = \Yii::$container->get('currencies');
         $order = $this->manager->getOrderInstance();
@@ -90,6 +91,7 @@ class ot_shipping extends ModuleTotal {
         }
 
         $shipping_tax_calculated = 0;
+        $shipping_tax_description = null;
         if (tep_not_null($order->info['shipping_method'] ?? null)) {
             $tax_class = 0;
             if ($shipping_module && is_object($shipping_module) && $shipping_module->tax_class > 0 
@@ -146,8 +148,8 @@ class ot_shipping extends ModuleTotal {
                         $order->info['total_exc_tax'] -= $subTax;
                     }
                 } else {
-                    $order->info['total'] += $shipping_tax_calculated; //total must include tax, but correct total if new shipping is posted
-                    $order->info['total_inc_tax'] += $shipping_tax_calculated;
+                    //$order->info['total'] += $shipping_tax_calculated; //total must include tax, but correct total if new shipping is posted
+                    //$order->info['total_inc_tax'] += $shipping_tax_calculated;
                     $order->info['shipping_cost_inc_tax'] = $order->info['shipping_cost'] + $shipping_tax_calculated;
                     if (DISPLAY_PRICE_WITH_TAX == 'true') {
                         $order->info['shipping_cost'] += $shipping_tax_calculated;
@@ -182,7 +184,7 @@ class ot_shipping extends ModuleTotal {
                     $order->info['shipping_cost'] = $order->info['shipping_cost_exc_tax'];
                 }
                 $order->info['tax'] = $order->info['tax'] - $shipping_tax_calculated + ($order->info['shipping_cost_inc_tax'] - $order->info['shipping_cost_exc_tax']);
-                $order->info['tax_groups']["$shipping_tax_description"] = $order->info['tax_groups']["$shipping_tax_description"] - $shipping_tax_calculated + ($order->info['shipping_cost_inc_tax'] - $order->info['shipping_cost_exc_tax']);
+                $order->info['tax_groups']["$shipping_tax_description"] = ($order->info['tax_groups']["$shipping_tax_description"]??0) - $shipping_tax_calculated + ($order->info['shipping_cost_inc_tax'] - $order->info['shipping_cost_exc_tax']);
                 //$order->info['total'] = $order->info['total'] - $shipping_tax_calculated + ($order->info['shipping_cost_inc_tax'] - $order->info['shipping_cost_exc_tax']);
                 $order->info['total'] += $order->info['shipping_cost_inc_tax']; // total always incl shipping tax, but shipping_cost could be w/o tax
                 $order->info['total_inc_tax'] += $order->info['shipping_cost_inc_tax'];

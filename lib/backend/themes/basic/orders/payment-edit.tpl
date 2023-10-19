@@ -19,7 +19,7 @@
                             <label>{$smarty.const.TABLE_HEADING_PAYMENT_STATUS}:&nbsp;</label>
                         </div>
                         <div class="f_td">
-                            {tep_draw_pull_down_menu('orders_payment_status', $orderPaymentStatusArray, $paymentRecord['orders_payment_status'], 'class="form-control"')}
+                            {tep_draw_pull_down_menu('orders_payment_status', $orderPaymentStatusArray, $paymentRecord['orders_payment_status'], 'class="form-select"')}
                         </div>
                     </div>
                     <div class="f_row">
@@ -27,7 +27,7 @@
                             <label>{$smarty.const.TABLE_HEADING_PAYMENT_AMOUNT}:&nbsp;</label>
                         </div>
                         <div class="f_td">
-                            {tep_draw_input_field('orders_payment_amount', $paymentRecord['orders_payment_amount'])}
+                            {tep_draw_input_field('orders_payment_amount', $paymentRecord['orders_payment_amount'], 'class="form-control"')}
                         </div>
                     </div>
                     <div class="f_row">
@@ -51,7 +51,7 @@
                             <label>{$smarty.const.TABLE_HEADING_PAYMENT_TRANSACTION_ID}:&nbsp;</label>
                         </div>
                         <div class="f_td">
-                            {tep_draw_input_field('orders_payment_transaction_id', $paymentRecord['orders_payment_transaction_id'])}
+                            {tep_draw_input_field('orders_payment_transaction_id', $paymentRecord['orders_payment_transaction_id'], 'class="form-control"')}
                         </div>
                     </div>
                     <div class="f_row">
@@ -59,7 +59,7 @@
                             <label>{$smarty.const.TABLE_HEADING_PAYMENT_TRANSACTION_DATE}:&nbsp;</label>
                         </div>
                         <div class="f_td">
-                            {tep_draw_input_field('orders_payment_transaction_date', \common\helpers\Date::formatCalendarDate($paymentRecord['orders_payment_transaction_date']), 'class="datepicker"')}
+                            {tep_draw_input_field('orders_payment_transaction_date', \common\helpers\Date::formatCalendarDate($paymentRecord['orders_payment_transaction_date']), 'class="datepicker form-control"')}
                         </div>
                     </div>
                     <div class="f_row">

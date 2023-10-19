@@ -45,7 +45,7 @@ class WarehouseStock extends ProviderAbstract implements ImportInterface, Export
     protected function initFields()
     {
         $this->fields[] = array('name' => 'p_products_model', 'value' => 'Main Model', 'calculated' => true, 'is_key_part'=>true);
-        $this->fields[] = array('name' => 'products_model', 'value' => 'Inventory Model', 'calculated' => true, 'is_key_part'=>true);
+        $this->fields[] = array('name' => 'products_model', 'value' => 'Inventory Model', 'calculated' => true, /*'is_key_part'=>true*/);
         /*
         $this->fields[] = array('name' => 'products_ean', 'value' => 'EAN', 'calculated' => true,);
         $this->fields[] = array('name' => 'products_upc', 'value' => 'UPC', 'calculated' => true,);
@@ -59,7 +59,7 @@ class WarehouseStock extends ProviderAbstract implements ImportInterface, Export
         $this->fields[] = array('name' => 'p_products_asin', 'value' => 'Main ASIN', 'calculated' => true,);
         $this->fields[] = array('name' => 'p_products_isbn', 'value' => 'Main ISBN', 'calculated' => true,);
         */
-        $this->fields[] = array('name' => 'supplier', 'value' => 'Supplier', 'calculated' => true,'get'=>'get_supplier', 'set'=>'set_supplier', 'is_key_part'=>true);
+        $this->fields[] = array('name' => 'supplier', 'value' => 'Supplier', 'calculated' => true,'get'=>'get_supplier', 'set'=>'set_supplier', /*'is_key_part'=>true*/);
         $this->fields[] = array('name' => 'supplier_model', 'value' => 'Supplier Model', 'calculated' => true,);
 
         foreach (\common\helpers\Warehouses::get_warehouses(false) as $warehouse) {
@@ -184,7 +184,7 @@ class WarehouseStock extends ProviderAbstract implements ImportInterface, Export
         }
 
         $product_model = $this->data['p_products_model'];
-        $inventory_product_model = $this->data['products_model'];
+        $inventory_product_model = $this->data['products_model']??'';
         
         $get_main_data_r = tep_db_query(
             "SELECT " .
@@ -223,7 +223,7 @@ class WarehouseStock extends ProviderAbstract implements ImportInterface, Export
             $suppliersForUprid[\common\helpers\Suppliers::getDefaultSupplierId()] = 'Def';
         }
         
-        if ($this->data['supplier'] == 'Unknown' && count($suppliersForUprid) > 0) {
+        if ((!isset($this->data['supplier']) || $this->data['supplier'] == 'Unknown' || $this->data['supplier'] == '') && count($suppliersForUprid) > 0) {
             if (!function_exists('array_key_first')) {
                 foreach($suppliersForUprid as $key => $unused) {
                     $this->data['suppliers_id'] = $key;

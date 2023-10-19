@@ -53,7 +53,11 @@
         <div class="qty">
           {$product.quantity}
         </div>
-        <div class="price">{if strtolower(\common\helpers\PlatformConfig::getVal('SHOW_PRICE_FOR_QUOTE_PRODUCT', 'false')) == 'true'}{$product.final_price}{/if}</div>
+        {if $ext = \common\helpers\Extensions::isAllowed('Quotations')}
+            <div class="price">{if $ext::optionIsPriceShow()}{$product.final_price}{/if}</div>
+        {else}
+            <div class="price">{$product.final_price}</div>
+        {/if}
     </div>
   {/foreach}
 

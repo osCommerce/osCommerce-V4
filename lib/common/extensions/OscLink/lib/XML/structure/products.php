@@ -421,6 +421,9 @@ return [
                                         $originalFile = $obj->data['image']->value;
                                         $description = $obj->data['htmlcontent'];
                                         $localFile = \OscLink\XML\IOCore::get()->getLocalLocation('@images/'.$originalFile);
+                                        if (file_exists($localFile)) {
+                                            $localFile .= '_' . microtime(); // uniq file name
+                                        }
                                         $successDownload = \OscLink\XML\IOCore::get()->download($url, $localFile, $logPrefix);
                                         if ($successDownload) {
                                             $removeImages[] = $localFile;
@@ -461,6 +464,7 @@ return [
                                     }
                                 }
                             }
+                            unset($localProduct);
                         }
                     }
             },

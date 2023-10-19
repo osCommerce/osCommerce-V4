@@ -93,13 +93,15 @@ class BatchProducts extends Widget
             && preg_match('/xsell_(\d+)/',$this->settings[0]['product_source'], $xsell_match) ) {
             $xsell_type_id = (int)$xsell_match[1];
 
-            $cW[] = ['exists', \common\models\ProductsXsell::find()->alias('xp')
-                ->andWhere("p.products_id = xp.xsell_id")
-                ->andWhere([
-                    'xp.products_id' => (int)$products_id,
-                    'xp.xsell_type_id' => $xsell_type_id,
-                ])
-            ];
+            if ($xsellModel = \common\helpers\Extensions::getModel('UpSell', 'ProductsXsell')) {
+                $cW[] = ['exists', $xsellModel::find()->alias('xp')
+                    ->andWhere("p.products_id = xp.xsell_id")
+                    ->andWhere([
+                        'xp.products_id' => (int)$products_id,
+                        'xp.xsell_type_id' => $xsell_type_id,
+                    ])
+                ];
+            }
 
         }elseif ( isset($this->settings[0]['product_source']) && $this->settings[0]['product_source']=='main_product'){
             $cW[] = ['p.products_id'=>(int)$products_id];

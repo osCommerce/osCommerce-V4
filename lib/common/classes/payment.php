@@ -70,6 +70,9 @@ class payment extends modules\ModuleCollection {
                     continue;
                 }
                 $this->include_modules[$class] = $builder(['class' => $module]);
+                foreach (\common\helpers\Hooks::getList('payment/check-ignored') as $filename) {
+                    include($filename);
+                }
             }
         }
     }
@@ -85,7 +88,7 @@ class payment extends modules\ModuleCollection {
      */
     public function update_status() {
         if (is_array($this->include_modules)) {
-            if (is_object($this->include_modules[$this->selected_module])) {
+            if (is_object($this->include_modules[$this->selected_module]??null)) {
                 if (function_exists('method_exists')) {
                     if (method_exists($this->include_modules[$this->selected_module], 'update_status')) {
                         $this->include_modules[$this->selected_module]->update_status();
@@ -202,22 +205,20 @@ EOD;
     }
 
     private $selectionMode = false;
-    public function selection($opc = false, $onlyOnline = false, $visibility = ['shop_order', 'shop_quote', 'shop_sample', 'admin', 'pos'], $groups_id = 0) {
+    /**
+     * @param string $customerDetails - 'exist'/'optional'/'absent'
+    */
+    public function selection($opc = false, $onlyOnline = false, $visibility = ['shop_order', 'shop_quote', 'shop_sample', 'admin', 'pos'], $groups_id = 0, $customerDetails = 'exist') {
+        $visibility = \common\helpers\Extensions::getVisibilityVariants($visibility);
         $selection_array = [];
         if (!is_array($visibility)) {
             $visibility = [$visibility];
-        }
-        $onlyOffline = false;
-        if (defined('GROUPS_IS_SHOW_PRICE') && GROUPS_IS_SHOW_PRICE == false) {
-            if (in_array('shop_order', $visibility)) {
-                $onlyOnline = false;
-                $onlyOffline = true;
-            }
         }
         if (is_array($this->include_modules)) {
             $haveSubscription = $this->manager->getOrderInstance()->haveSubscription();
             /** @var \common\extensions\CustomerModules\CustomerModules $CustomerModules */
             $CustomerModules = \common\helpers\Acl::checkExtensionAllowed('CustomerModules', 'allowed');
+            /** @var \common\classes\modules\ModulePayment $_payment */
             foreach ($this->include_modules as $class => $_payment) {
                 $forceCustomer = false;
                 if ($CustomerModules && !\Yii::$app->user->isGuest) {
@@ -252,8 +253,16 @@ EOD;
                     if ($onlyOnline && !$_payment->isOnline()) {
                         continue;
                     }
-                    if ($onlyOffline && $_payment->isOnline()) {
-                        continue;
+                    switch ($customerDetails) {
+                        case 'absent':
+                            if ($_payment->customerDetailsRequired()) {
+                                continue 2;
+                            }
+                        case 'optional':
+                            if (!$_payment->customerDetailsOptional()) {
+                                continue 2;
+                            }
+                        case 'exist': ;
                     }
                     if ($opc) {
                         $selection = $_payment->selection();
@@ -434,6 +443,7 @@ EOD;
     }
 
     public function checkout_initialization_method($visibility = ['shop_order', 'shop_quote', 'shop_sample', 'admin', 'pos'], $groups_id = 0) {
+        $visibility = \common\helpers\Extensions::getVisibilityVariants($visibility);
         $initialize_array = array();
 
         if (!is_array($visibility)) {

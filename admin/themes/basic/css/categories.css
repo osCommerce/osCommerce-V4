@@ -149,3 +149,60 @@ li.li-block-top {
     padding-left: 0;
     margin-left: 30px;
 }
+
+.banner-groups-holder {
+    position: relative;
+}
+.banner-groups-holder .select2 {
+    width: 100%!important;
+}
+.adding-tag-row {
+    display: flex;
+    float: left;
+    flex-wrap: wrap;
+}
+.adding-tag {
+    width: 300px;
+    display: flex;
+    margin-right: 20px;
+}
+.adding-tag input {
+    margin: 0 5px 5px 0;
+}
+.h-teg-table .btn-add-more {
+    margin: 0;
+}
+.order-wrap .dataTables_footer {
+    padding: 0;
+    margin: 0;
+}
+
+#categoriesTable .ui-state-disabled {
+    opacity: 1;
+    cursor: auto!important;
+    pointer-events: auto;
+}
+
+.top-buttons .btn.create_bundle,
+.top-buttons .btn.create_product,
+.top-buttons .btn.create_category,
+.top-buttons .btn.create_brand,
+.top-buttons .btn.remove_product {
+    font-size: 0px;
+}
+.top-buttons .btn.create_bundle i,
+.top-buttons .btn.create_product i,
+.top-buttons .btn.create_category i,
+.top-buttons .btn.create_brand i,
+.top-buttons .btn.remove_product i {
+    margin: 0;
+}
+.top-buttons .btn.create_bundle i:before,
+.top-buttons .btn.create_product i:before,
+.top-buttons .btn.create_category i:before,
+.top-buttons .btn.create_brand i:before,
+.top-buttons .btn.remove_product i:before {
+    width: 28px;
+    height: 28px;
+    background-size: 28px;
+}

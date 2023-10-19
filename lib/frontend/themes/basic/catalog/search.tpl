@@ -3,12 +3,14 @@
 {foreach $list as $item}
   {if $type==''}
     <span class="type-block {$item.type_class}">
+	<strong class="items-title">{$item.type}</strong>
   {/if}
 
   {if $item.type != $type}
-    <strong class="items-title">{$item.type}</strong>
+    
     {if $type!=''}
       </span><span class="type-block {$item.type_class}">
+	  <strong class="items-title">{$item.type}</strong>
     {/if}
     {$type = $item.type}
   {/if}
@@ -25,3 +27,20 @@
 
 {/foreach}
 </span>
+<script type="text/javascript">
+  tl(function(){  
+		var box = $('.search');
+	$(window).resize(function(){	  
+		if($(window).width() > 720){			
+			$('.categories,.info-suggest,.brands, .history', box).wrapAll('<div class="wrap"></div>');
+		}else{
+			$('.categories,.info-suggest,.brands', box).wrapAll('<div class="wrap"></div>');
+		}	
+	})
+	if($(window).width() > 720){			
+		$('.categories,.info-suggest,.brands, .history', box).wrapAll('<div class="wrap"></div>');
+	}else{
+		$('.categories,.info-suggest,.brands', box).wrapAll('<div class="wrap"></div>');
+	}
+  })
+ </script>

@@ -173,6 +173,10 @@
                   <input type="checkbox" class="uniform" name="sale" value="1" {if $app->controller->view->filters->sale == 1}checked{/if}>
                   <span>{$smarty.const.TEXT_SALE}</span>
                 </div>
+                  <div>
+                      <input type="checkbox" class="uniform" name="wo_images" value="1" {if $app->controller->view->filters->wo_images == 1}checked{/if}>
+                      <span>{$smarty.const.TEXT_FILTER_WITHOUT_IMAGES}</span>
+                  </div>
               </div>
               </div>
               <div class="filters_buttons">
@@ -195,8 +199,13 @@
             <!-- Tabs-->
             <div class="tabbable tabbable-custom scroll_col">
                     <ul class="nav nav-tabs">
-                        <li{if $app->controller->view->filters->listing_type == 'category'} class="active"{/if}><a href="#tab_1_1" onclick="changeListingCategory()" data-toggle="tab"><i class="icon-folder-open"></i><span>{$smarty.const.TEXT_CATEGORIES}</span></a></li>
-                            <li{if $app->controller->view->filters->listing_type == 'brand'} class="active"{/if}><a href="#tab_1_2" onclick="changeListingBrand()" data-toggle="tab"><i class="icon-tag"></i><span>{$smarty.const.TEXT_BRANDS}</span></a></li>
+                        <li{if $app->controller->view->filters->listing_type == 'category'} class="active"{/if} data-bs-toggle="tab" data-bs-target="#tab_1_1">
+                            <a onclick="changeListingCategory()"><i class="icon-folder-open"></i><span>{$smarty.const.TEXT_CATEGORIES}</span></a>
+                        </li>
+
+                        <li{if $app->controller->view->filters->listing_type == 'brand'} class="active"{/if} data-bs-toggle="tab" data-bs-target="#tab_1_2">
+                            <a onclick="changeListingBrand()"><i class="icon-tag"></i><span>{$smarty.const.TEXT_BRANDS}</span></a>
+                        </li>
                     </ul>
                     <div class="tab-content">
                             <div class="tab-pane{if $app->controller->view->filters->listing_type == 'category'} active{/if}" id="tab_1_1">
@@ -281,7 +290,7 @@
 							<div class="widget-content">
 
                                 <div id="list_bread_crumb"></div>
-								<table id="categoriesTable" class="table table-checkable table-striped table-bordered table-hover table-responsive table-selectable datatable tab-status sortable-grid catelogue-grid" checkable_list="" data_ajax="categories/list">
+								<table id="categoriesTable" class="table table-checkable table-bordered table-hover table-responsive table-selectable datatable tab-status sortable-grid catelogue-grid" checkable_list="" data_ajax="categories/list">
 									<thead>
 										<tr>
                         {foreach $app->controller->view->catalogTable as $tableItem}
@@ -984,16 +993,16 @@ function initCategoryTree(data) {
     head.off('click').on('click', function(){
       _id = $(this).attr('data-id-suffix');
       var content = $('ol#ol-sub-cat-'+_id);
-      var c_data = $.cookie('closed_data');
+      var c_data = localStorage.getItem('closed_data');
       if (!c_data) c_data = '';
       if ($(this).hasClass('c_up')){
         $(this).removeClass('c_up');
         content.slideDown();
-        $.cookie('closed_data', c_data.replace(_id + '|', ''))
+          localStorage.setItem('closed_data', c_data.replace(_id + '|', ''))
       } else {
         $(this).addClass('c_up');
         content.slideUp();
-        $.cookie('closed_data', c_data + _id + '|')
+          localStorage.setItem('closed_data', c_data + _id + '|')
       }
     });
   });
@@ -1779,8 +1788,6 @@ $(document).ready(function() {
 </script>                                               
 
                                 <!--===Actions ===-->
-        <script language="JavaScript" src="{$app->request->baseUrl}/includes/javascript/ajax_load.js"></script>
-        <script language="JavaScript" src="{$app->request->baseUrl}/includes/javascript/utils.js"></script>
         <div class="row right_column" id="catalog_management" style="display: none;">
             <div class="widget box">
                 <div class="widget-content" id="catalog_management_data">

@@ -54,7 +54,7 @@
         {if count($languages) > 1}
         <ul class="nav nav-tabs under_tabs_ul">
           {foreach $languages as $lang}
-            <li{if $lang['code'] == $default_language} class="active"{/if}><a href="#tab_{$lang['code']}" data-toggle="tab">{$lang['logo']}<span>{$lang['name']}</span></a></li>
+            <li{if $lang['code'] == $default_language} class="active"{/if} data-bs-toggle="tab" data-bs-target="#tab_{$lang['code']}"><a>{$lang['logo']}<span>{$lang['name']}</span></a></li>
           {/foreach}
         </ul>
       {/if}
@@ -98,30 +98,16 @@
                     <tr class="properties_descr">
                       <td class="pf_label">{$smarty.const.TEXT_ICON}</td>
                       <td>
-                        <div class="gallery-filedrop-container">
-                          <div class="gallery-filedrop">
-                            <span class="gallery-filedrop-message"><span>{$smarty.const.TEXT_DRAG_DROP}</span><a href="#gallery-filedrop" class="gallery-filedrop-fallback-trigger btn" rel="nofollow">{$smarty.const.TEXT_CHOOSE_FILE}</a><span>{$smarty.const.TEXT_FROM_COMPUTER}</span></span>
-                            <input size="30" id="gallery-filedrop-fallback-{$lang['id']}" name="option_image[{$lang['id']}]" class="elgg-input-file hidden" type="file">
-                            <input type="hidden" name="option_image_loaded[{$lang['id']}]" class="elgg-input-hidden">
 
-                            <div class="gallery-filedrop-queue">
-                              <img style="max-height:200px;{if empty($options[$lang['id']]['option_image'])}display:none;{/if}" src="{$smarty.const.DIR_WS_CATALOG_IMAGES}{$options[$lang['id']]['option_image']}" class="option_image" />
-                            </div>
-
+                          <div class="upload-box upload-box-wrap"
+                               data-name="option_image[{$lang['id']}]"
+                               data-value="{$options[$lang['id']]['option_image']}"
+                               data-upload="option_image_loaded[{$lang['id']}]"
+                               data-delete="option_image_delete[{$lang['id']}]"
+                               data-type="image"
+                               data-acceptedFiles="image/*">
                           </div>
 
-                          <div class="hidden" id="image_wrapper">
-                            <div class="gallery-template">
-                              <div class="gallery-media-summary">
-                                <div class="gallery-album-image-placeholder">
-                                  <img src="">
-                                  <span class="elgg-state-uploaded"></span>
-                                  <span class="elgg-state-failed"></span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
                       </td>
                     </tr>
                       <tr class="properties_descr">
@@ -130,7 +116,7 @@
                             <div class="colors-inp">
                                 <div id="cp3" class="input-group colorpicker-component">
                                   <input type="text" name="option_color[{$lang['id']}]" value="{$options[$lang['id']]['option_color']}" class="form-control" placeholder="{$smarty.const.TEXT_COLOR_}" />
-                                  <span class="input-group-addon"><i></i></span>
+                                  <span class="input-group-append"><span class="input-group-text colorpicker-input-addon"><i></i></span></span>
                                 </div>
                               </div>
                             
@@ -198,57 +184,6 @@ function changeDefaultLang(theInput, default_lang) {
   });
 }
 
-$('.gallery-filedrop-container').each(function() {
-
-  var $filedrop = $(this);
-
-  function createImage (file, $container) {
-    var $preview = $('.gallery-template', $filedrop);
-    $image = $('img', $preview);
-    var reader = new FileReader();
-    $image.height(200);
-    reader.onload = function(e) {
-        $image.attr('src',e.target.result);
-    };
-    reader.readAsDataURL(file);
-    $preview.appendTo($('.gallery-filedrop-queue', $container));
-    $.data(file, $preview);
-  }
-
-  $(function () {
-
-    $('.gallery-filedrop-fallback-trigger', $filedrop)
-      .on('click', function(e) {
-        e.preventDefault();
-        $('#' + $('.elgg-input-file', $filedrop).attr('id')).trigger('click');
-      })
-
-    $filedrop.filedrop({
-      fallback_id : $('.elgg-input-file', $filedrop).attr('id'),
-      url: "{Yii::$app->urlManager->createUrl('upload/index')}",
-      paramname: 'file',
-      maxFiles: 1,
-      maxfilesize : 20,
-      allowedfiletypes: ['image/jpeg','image/png','image/gif'],
-      allowedfileextensions: ['.jpg','.jpeg','.png','.gif'],
-      error: function(err, file) {
-        console.log(err);
-      },
-      uploadStarted: function(i, file, len) {
-        $('.option_image', $filedrop).hide();
-        createImage(file, $filedrop);
-      },
-      progressUpdated: function(i, file, progress) {
-        $.data(file).find('.gallery-filedrop-progress').width(progress);
-      },
-      uploadFinished: function (i, file, response, time) {
-        $('.elgg-input-hidden', $filedrop).val(file.name);
-      }
-    });
-  });
-
-});
-
 $(function() {
     var createColorpicker = function (){
       setTimeout(function(){
@@ -271,5 +206,7 @@ $(function() {
     };
     
     createColorpicker();
+
+    $('.upload-box').fileManager()
 });
 </script>

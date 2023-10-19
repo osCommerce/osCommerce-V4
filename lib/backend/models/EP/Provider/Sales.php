@@ -544,10 +544,8 @@ class Sales extends ProviderAbstract implements ImportInterface, ExportInterface
             ), 'update', "products_id='" . (int)$products_id . "'");
 
             /** @var \common\extensions\ProductPriceIndex\ProductPriceIndex  $ext */
-            if($ext = \common\helpers\Acl::checkExtensionAllowed('ProductPriceIndex', 'allowed')) {
-              if ($ext::isEnabled()) {
+            if($ext = \common\helpers\Extensions::isAllowed('ProductPriceIndex')) {
                 $ext::reindex((int)$products_id);
-              }
             }
 
         }

@@ -17,25 +17,10 @@ use Yii;
 use yii\db\Query;
 use yii\helpers\ArrayHelper;
 
-class ModulesVisibility extends \common\classes\modules\ModuleExtensions {
-
-    /**
-     * General methods
-     */
-    
-    public static function getDescription() {
-        return 'This extension allows the administrator to manage order structure module visibility. ';
-    }
-    
-    public static function allowed() {
-        return self::enabled();
-    }
-
+class ModulesVisibility extends \common\classes\modules\ModuleExtensions
+{
     protected static function getVisibilityId($area)
     {
-        if (!self::allowed()) {
-            return '';
-        }
         static $_fetched = false;
         if ( !is_array($_fetched) ) {
             $_fetched = [];
@@ -54,9 +39,6 @@ class ModulesVisibility extends \common\classes\modules\ModuleExtensions {
 
     protected static function getVisibilityAreaData($platformId, $visibilityId)
     {
-        if (!self::allowed()) {
-            return '';
-        }
         static $areaData = [];
         $key = (int)$platformId.'@'.(int)$visibilityId;
         if ( !isset( $areaData[$key] ) ) {
@@ -76,10 +58,8 @@ class ModulesVisibility extends \common\classes\modules\ModuleExtensions {
         return $areaData[$key];
     }
 
-    public static function visibility($platform_id = 0, $area = '', $module = null) {
-        if (!self::allowed()) {
-            return '';
-        }
+    public static function visibility($platform_id = 0, $area = '', $module = null)
+    {
         if ( (int)$platform_id==0 ) return true;
         if (is_null($module)) return true;
 
@@ -91,10 +71,8 @@ class ModulesVisibility extends \common\classes\modules\ModuleExtensions {
         return false;
     }
 
-    public static function displayText($platform_id = 0, $area = '', $totals = null, $module = null) {
-        if (!self::allowed()) {
-            return '';
-        }
+    public static function displayText($platform_id = 0, $area = '', $totals = null, $module = null)
+    {
         if (is_null($totals) || is_null($module)) return '';
         if ( (int)$platform_id==0 ) return $totals;
 
@@ -131,10 +109,8 @@ class ModulesVisibility extends \common\classes\modules\ModuleExtensions {
         return $totals;
     }
 
-    public static function getVisibility($platform_id = 0, $module = null) {
-        if (!self::allowed()) {
-            return '';
-        }
+    public static function getVisibility($platform_id = 0, $module = null)
+    {
         if (is_null($module)) return '';
         if ((int) $platform_id == 0) {
             return '';
@@ -143,6 +119,7 @@ class ModulesVisibility extends \common\classes\modules\ModuleExtensions {
         $response = '<br><br><table width="70%" id="module_ext_visibility" style="max-height:350px"><thead><tr><th>' . TEXT_VISIBILITY_ON_PAGES . '</th><th style="text-align: center">' . $module->getIncVATTitle() . '</th><th style="text-align: center">' . $module->getExcVATTitle() . '</th><th style="text-align: center">' . $module->getDefaultTitle() . '</th><th style="text-align: center">' . SHOW_TOP_LINE . '</th></tr></thead><tbody>';
         $visibility_query = tep_db_query("SELECT * FROM " . TABLE_VISIBILITY . " where 1 order by visibility_constant");
         while ($visibility = tep_db_fetch_array($visibility_query)) {
+            if (!\common\helpers\Extensions::isVisibility($visibility['visibility_constant'])) continue;
             $visibility_area_query = tep_db_query("SELECT * FROM " . TABLE_VISIBILITY_AREA . " where visibility_id='" . $visibility['visibility_id'] . "' AND visibility_code='" . $module->code . "' AND platform_id = '" . (int) $platform_id . "'");
             $checked = 0;
             if (tep_db_num_rows($visibility_area_query) > 0) {
@@ -170,15 +147,14 @@ class ModulesVisibility extends \common\classes\modules\ModuleExtensions {
         return $response;
     }
 
-    public static function setVisibility($module) {
-        if (!self::allowed()) {
-            return '';
-        }
+    public static function setVisibility($module)
+    {
         $platform_id = (int)\Yii::$app->request->post('platform_id');
         if ( (int)$platform_id==0 ) return false;
 
-        if (\common\helpers\Acl::checkExtensionAllowed('ReportUniversalLog') && \common\extensions\ReportUniversalLog\classes\LogUniversal::isInstance($module->code)) {
-            $logUniversal = \common\extensions\ReportUniversalLog\classes\LogUniversal::getInstance($module->code);
+        /** @var $reportLog \common\extensions\ReportUniversalLog\ReportUniversalLog */
+        if (($reportLog = \common\helpers\Extensions::isAllowed('ReportUniversalLog')) && $reportLog::isInstance($module->code)) {
+            $logUniversal = $reportLog::getInstance($module->code);
             $logUniversal->mergeBeforeArray(['restriction_visibility' => self::getRestrictionVisibilityArray($module->code, $platform_id)]);
         }
 

@@ -18,7 +18,7 @@
                 {/if}
             <button onclick="return copyItemConfirm({$platform->platform_id})" class="btn btn-copy btn-primary btn-process-order ">{$smarty.const.IMAGE_COPY}</button>
             {if $theme_edit_link}
-                <a href="{$theme_edit_link}" class="btn btn-edit btn-primary btn-process-order ">{$smarty.const.BUTTON_CHOOSE_PLATFORM_THEME}</a>
+                <a href="{$theme_edit_link}" class="btn btn-theme btn-primary btn-process-order ">{$smarty.const.BUTTON_CHOOSE_PLATFORM_THEME}</a>
             {/if}
             {if $platform_localization_link}
                 <a href="{$platform_localization_link}" class="btn btn-edit btn-primary btn-process-order ">{$smarty.const.BUTTON_SETUP_PLATFORM_LOCALIZATION}</a>
@@ -31,6 +31,9 @@
             {/if}
             {if $platform_soap_server_link}
                 <a href="{$platform_soap_server_link}" class="btn btn-edit btn-primary btn-process-order ">Configure platform SOAP server</a>
+            {/if}
+            {if $platform_rest_server_link}
+                <a href="{$platform_rest_server_link}" class="btn btn-edit btn-primary btn-process-order ">Configure platform rest server</a>
             {/if}
         </div>
     {/if}

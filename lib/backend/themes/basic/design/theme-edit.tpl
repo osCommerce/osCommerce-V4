@@ -195,10 +195,10 @@
 
       <div class="tabbable tabbable-custom">
         <ul class="nav nav-tabs">
-          <li class="active"><a href="#horizontal" data-toggle="tab">{$smarty.const.TEXT_HORIZONTAL}</a></li>
-          <li><a href="#slide-menu" data-toggle="tab">{$smarty.const.TEXT_MENU_SLIDER}</a></li>
-          <li><a href="#big-dropdown" data-toggle="tab">{$smarty.const.BIG_DROPDOWN_MENU}</a></li>
-          <li><a href="#vertical" data-toggle="tab">{$smarty.const.TEXT_VERTICAL}</a></li>
+          <li class="active" data-bs-toggle="tab" data-bs-target="#horizontal"><a>{$smarty.const.TEXT_HORIZONTAL}</a></li>
+          <li data-bs-toggle="tab" data-bs-target="#slide-menu"><a>{$smarty.const.TEXT_MENU_SLIDER}</a></li>
+          <li data-bs-toggle="tab" data-bs-target="#big-dropdown"><a>{$smarty.const.BIG_DROPDOWN_MENU}</a></li>
+          <li data-bs-toggle="tab" data-bs-target="#vertical"><a>{$smarty.const.TEXT_VERTICAL}</a></li>
         </ul>
         <div class="tab-content">
           <div class="tab-pane active" id="horizontal">
@@ -243,8 +243,8 @@
 
       <div class="tabbable tabbable-custom">
         <ul class="nav nav-tabs">
-          <li class="active"><a href="#horizontal2" data-toggle="tab">{$smarty.const.TEXT_HORIZONTAL}</a></li>
-          <li><a href="#vertical2" data-toggle="tab">{$smarty.const.TEXT_VERTICAL}</a></li>
+          <li class="active" data-bs-toggle="tab" data-bs-target="#horizontal2"><a>{$smarty.const.TEXT_HORIZONTAL}</a></li>
+          <li data-bs-toggle="tab" data-bs-target="#vertical2"><a>{$smarty.const.TEXT_VERTICAL}</a></li>
         </ul>
         <div class="tab-content">
           <div class="tab-pane active" id="horizontal2">
@@ -291,16 +291,16 @@
 
       <div class="tabbable tabbable-custom">
         <ul class="nav nav-tabs">
-          <li class="active"><a href="#columns" data-toggle="tab">{$smarty.const.TEXT_COLUMNS}</a></li>
-          <li><a href="#rows" data-toggle="tab">{$smarty.const.TEXT_ROWS}</a></li>
-          <li><a href="#b2b" data-toggle="tab">{$smarty.const.TEXT_B2B}</a></li>
+          <li class="active" data-bs-toggle="tab" data-bs-target="#columns"><a>{$smarty.const.TEXT_COLUMNS}</a></li>
+          <li data-bs-toggle="tab" data-bs-target="#rows"><a>{$smarty.const.TEXT_ROWS}</a></li>
+          <li data-bs-toggle="tab" data-bs-target="#b2b"><a>{$smarty.const.TEXT_B2B}</a></li>
         </ul>
         <div class="tab-content">
           <div class="tab-pane active" id="columns">
             <div class="tabbable tabbable-custom">
               <ul class="nav nav-tabs">
-                <li class="active"><a href="#type_1" data-toggle="tab">{$smarty.const.HEADING_TYPE} 1</a></li>
-                <li><a href="#type_1_2" data-toggle="tab">{$smarty.const.HEADING_TYPE} 2</a></li>
+                <li class="active" data-bs-toggle="tab" data-bs-target="#type_1"><a>{$smarty.const.HEADING_TYPE} 1</a></li>
+                <li data-bs-toggle="tab" data-bs-target="#type_1_2"><a>{$smarty.const.HEADING_TYPE} 2</a></li>
               </ul>
               <div class="tab-content">
                 <div class="tab-pane active" id="type_1">
@@ -315,8 +315,8 @@
           <div class="tab-pane" id="rows">
             <div class="tabbable tabbable-custom">
               <ul class="nav nav-tabs">
-                <li class="active"><a href="#type_2" data-toggle="tab">{$smarty.const.HEADING_TYPE} 1</a></li>
-                <li><a href="#type_2_2" data-toggle="tab">{$smarty.const.HEADING_TYPE} 2</a></li>
+                <li class="active" data-bs-toggle="tab" data-bs-target="#type_2"><a>{$smarty.const.HEADING_TYPE} 1</a></li>
+                <li data-bs-toggle="tab" data-bs-target="#type_2_2"><a>{$smarty.const.HEADING_TYPE} 2</a></li>
               </ul>
               <div class="tab-content">
                 <div class="tab-pane active" id="type_2">
@@ -354,13 +354,13 @@
 
       <div class="tabbable tabbable-custom">
         <ul class="nav nav-tabs">
-          <li class="active"><a href="#home_1" data-toggle="tab">{$smarty.const.BEST_SELLERS}</a></li>
-          <li><a href="#home_2" data-toggle="tab">{$smarty.const.BOX_CATALOG_REVIEWS}</a></li>
-          <li><a href="#home_3" data-toggle="tab">{$smarty.const.TEXT_SHOPPING_CART}</a></li>
-          <li><a href="#home_4" data-toggle="tab">{$smarty.const.TEXT_ACCOUNT}</a></li>
-          <li><a href="#home_5" data-toggle="tab">{$smarty.const.IMAGE_SEARCH}</a></li>
-          <li><a href="#home_6" data-toggle="tab">{$smarty.const.BOX_LOCALIZATION_LANGUAGES}</a></li>
-          <li><a href="#home_7" data-toggle="tab">{$smarty.const.TITLE_CURRENCY}</a></li>
+          <li class="active" data-bs-toggle="tab" data-bs-target="#home_1"><a>{$smarty.const.BEST_SELLERS}</a></li>
+          <li data-bs-toggle="tab" data-bs-target="#home_2"><a>{$smarty.const.BOX_CATALOG_REVIEWS}</a></li>
+          <li data-bs-toggle="tab" data-bs-target="#home_3"><a>{$smarty.const.TEXT_SHOPPING_CART}</a></li>
+          <li data-bs-toggle="tab" data-bs-target="#home_4"><a>{$smarty.const.TEXT_ACCOUNT}</a></li>
+          <li data-bs-toggle="tab" data-bs-target="#home_5"><a>{$smarty.const.IMAGE_SEARCH}</a></li>
+          <li data-bs-toggle="tab" data-bs-target="#home_6"><a>{$smarty.const.BOX_LOCALIZATION_LANGUAGES}</a></li>
+          <li data-bs-toggle="tab" data-bs-target="#home_7"><a>{$smarty.const.TITLE_CURRENCY}</a></li>
         </ul>
         <div class="tab-content">
           <div class="tab-pane active" id="home_1">
@@ -405,13 +405,13 @@
 
       <div class="tabbable tabbable-custom">
         <ul class="nav nav-tabs">
-          <li class="active"><a href="#catalog_1" data-toggle="tab">{$smarty.const.TEXT_PAGINATION}</a></li>
-          <li><a href="#catalog_2" data-toggle="tab">{$smarty.const.TEXT_PAGE_STYLE}</a></li>
-          <li><a href="#catalog_3" data-toggle="tab">{$smarty.const.TEXT_SORTING}</a></li>
-          <li><a href="#catalog_4" data-toggle="tab">{$smarty.const.TEXT_FILTERS}</a></li>
-          <li><a href="#catalog_5" data-toggle="tab">{$smarty.const.TEXT_ATTRIBUTES}</a></li>
-          <li><a href="#catalog_6" data-toggle="tab">{$smarty.const.TABLE_HEADING_PRODUCTS_PRICE}</a></li>
-          <li><a href="#catalog_7" data-toggle="tab">{$smarty.const.TEXT_QUANTITY_INPUT}</a></li>
+          <li class="active" data-bs-toggle="tab" data-bs-target="#catalog_1"><a>{$smarty.const.TEXT_PAGINATION}</a></li>
+          <li data-bs-toggle="tab" data-bs-target="#catalog_2"><a>{$smarty.const.TEXT_PAGE_STYLE}</a></li>
+          <li data-bs-toggle="tab" data-bs-target="#catalog_3"><a>{$smarty.const.TEXT_SORTING}</a></li>
+          <li data-bs-toggle="tab" data-bs-target="#catalog_4"><a>{$smarty.const.TEXT_FILTERS}</a></li>
+          <li data-bs-toggle="tab" data-bs-target="#catalog_5"><a>{$smarty.const.TEXT_ATTRIBUTES}</a></li>
+          <li data-bs-toggle="tab" data-bs-target="#catalog_6"><a>{$smarty.const.TABLE_HEADING_PRODUCTS_PRICE}</a></li>
+          <li data-bs-toggle="tab" data-bs-target="#catalog_7"><a>{$smarty.const.TEXT_QUANTITY_INPUT}</a></li>
         </ul>
         <div class="tab-content">
           <div class="tab-pane active" id="catalog_1">
@@ -455,12 +455,12 @@
 
       <div class="tabbable tabbable-custom">
         <ul class="nav nav-tabs">
-          <li class="active"><a href="#cart_1" data-toggle="tab">{$smarty.const.TEXT_LISTING}</a></li>
-          <li><a href="#cart_2" data-toggle="tab">{$smarty.const.TEXT_PRICE_BOX}</a></li>
-          <li><a href="#cart_3" data-toggle="tab">{$smarty.const.TEXT_EMPTY}</a></li>
-          <li><a href="#cart_4" data-toggle="tab">{$smarty.const.GIFT_CERTIFICATE}</a></li>
-          <li><a href="#cart_5" data-toggle="tab">{$smarty.const.TEXT_INFO}</a></li>
-          <li><a href="#cart_6" data-toggle="tab">Give away</a></li>
+          <li class="active" data-bs-toggle="tab" data-bs-target="#cart_1"><a>{$smarty.const.TEXT_LISTING}</a></li>
+          <li data-bs-toggle="tab" data-bs-target="#cart_2"><a>{$smarty.const.TEXT_PRICE_BOX}</a></li>
+          <li data-bs-toggle="tab" data-bs-target="#cart_3"><a>{$smarty.const.TEXT_EMPTY}</a></li>
+          <li data-bs-toggle="tab" data-bs-target="#cart_4"><a>{$smarty.const.GIFT_CERTIFICATE}</a></li>
+          <li data-bs-toggle="tab" data-bs-target="#cart_5"><a>{$smarty.const.TEXT_INFO}</a></li>
+          <li data-bs-toggle="tab" data-bs-target="#cart_6"><a>Give away</a></li>
         </ul>
         <div class="tab-content">
           <div class="tab-pane active" id="cart_1">
@@ -544,7 +544,7 @@
       });
 
 
-      $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+      $('[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
         var target = $(e.target).attr("href"); // activated tab
         var _frame = $(target + ' iframe');
         var frame = _frame.contents();

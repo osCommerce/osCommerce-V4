@@ -86,6 +86,11 @@ class MetaCannonical
             self::$cannonicalPageUri = \Yii::$app->urlManager->createAbsoluteUrl($cannonicalPageUri);
             \Yii::$app->urlManager->setOverrideSettings([]);
         }
+
+        foreach (\common\helpers\Hooks::getList('meta-cannonical/set-cannonical') as $filename) {
+            include($filename);
+        }
+
         return $this;
     }
 

@@ -24,6 +24,7 @@
     }
   }
 
+  #[\AllowDynamicProperties]
   class objectInfo {
 
 // class constructor

@@ -144,6 +144,7 @@ class ProductListing extends Widget
                         'products_model' => $product['products_model'],
                         'calculated_price' => $product['calculated_price'],
                         'calculated_price_exc' => $product['calculated_price_exc'],
+                        'products_pctemplates_id' => $product['products_pctemplates_id'],
                     ]
                 ]]);
             }
@@ -187,6 +188,7 @@ class ProductListing extends Widget
                 'fbl' => (isset($this->settings[0]['fbl']) && $this->settings[0]['fbl'] && !Info::isAdmin() ? 1 : 0),
                 'viewAs' => (isset($this->settings[0]['view_as']) ? $this->settings[0]['view_as'] : 0),
                 'showPopup' => (isset($this->settings[0]['show_popup']) ? $this->settings[0]['show_popup'] : 0),
+                'hideAttributes' => ($this->settings[0]['show_attributes'] ?? ''),
         ]]]);
 
         Info::addJsData(['tr' => [
@@ -221,6 +223,9 @@ class ProductListing extends Widget
         } elseif (isset($this->settings['productsInArray']) && $this->settings['productsInArray']) {
             return json_encode($itmsArrey);
         } else {
+            if (!count($this->products)) {
+                $html = '<div class="no-found">' . ITEM_NOT_FOUND . '</div>';
+            }
             return
                 '<div class="' . $cssClass . '" data-listing-name="' . $this->settings['listing_type'] . '" data-listing-type="' . self::$listType . '" '.
                 (!empty($this->settings[0]['listing_param'])?' data-listing-param="'.$this->settings[0]['listing_param'].'"':'').

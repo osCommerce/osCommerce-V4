@@ -22,7 +22,7 @@ use \common\helpers\Assert;
 
 require_once (Yii::$aliases['@common'] . '/extensions/OscLink/lib/autoload.php');
 
-class OscLink extends \common\classes\modules\ModuleExtensions 
+class OscLink extends \common\classes\modules\ModuleExtensions
 {
 
     private static $platformArray = false;
@@ -112,6 +112,7 @@ class OscLink extends \common\classes\modules\ModuleExtensions
         self::allowedOrDie();
         //Assert::assert(Yii::$app->request->isPost, 'Bad request');
         Configuration::createCancelSign();
+        echo "Import process will be canceled soon. Wait for finish message";
     }
 
     public static function adminActionExecute()
@@ -432,6 +433,15 @@ class OscLink extends \common\classes\modules\ModuleExtensions
 
         $xml = simplexml_load_file($filename);
         $statuses_only_en = $xml->xpath("//OrdersStatuses/OrdersStatus[language_id[@language='en']]");
+
+        // if english is not exist - try to find the first
+        if (empty($statuses_only_en)) {
+            $statuses_first = $xml->xpath("//OrdersStatuses/OrdersStatus[language_id]")[0] ?? null;
+            if ($statuses_first instanceof \SimpleXMLElement && $statuses_first->language_id instanceof \SimpleXMLElement && !empty($statuses_first->language_id['language'])) {
+                $otherLang = $statuses_first->language_id['language'][0];
+                $statuses_only_en = $xml->xpath("//OrdersStatuses/OrdersStatus[language_id[@language='$otherLang']]");
+            }
+        }
 
         $result = [];
         foreach ($statuses_only_en as $value) {

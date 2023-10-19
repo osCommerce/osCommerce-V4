@@ -25,17 +25,23 @@ class sage_pay_server extends ModulePayment implements TransactionalInterface, P
 
     var $code, $title, $description, $enabled;
     private $debug = false;
-    private $referrer = 'C74D7B82-E9EB-4FBD-93DB-76F0F551C802'; //osc,  'E57C3C9C-DB7F-4EA1-9AE7-252EEBE28626' PC by holbi;
+    private $referrer = '0014H00004B1ikG'; //osc,  'E57C3C9C-DB7F-4EA1-9AE7-252EEBE28626' PC by holbi;
     protected $defaultTranslationArray = [
       'MODULE_PAYMENT_SAGE_PAY_SERVER_TEXT_TITLE' => 'Opayo Server',
       'MODULE_PAYMENT_SAGE_PAY_SERVER_TEXT_PUBLIC_TITLE' => 'Credit Card or Bank Card (Processed by Opayo)',
         //https://support.sagepay.com/apply/default.aspx?PartnerID=E57C3C9C-DB7F-4EA1-9AE7-252EEBE28626
-      'MODULE_PAYMENT_SAGE_PAY_SERVER_TEXT_DESCRIPTION' => '<img src="images/icon_popup.gif" border="0">&nbsp;<a href="https://www.opayo.co.uk/apply?partner_id=C74D7B82-E9EB-4FBD-93DB-76F0F551C802" target="_blank" style="text-decoration: underline; font-weight: bold;">Visit Opayo Website</a>',
+      'MODULE_PAYMENT_SAGE_PAY_SERVER_TEXT_DESCRIPTION' => '<img src="images/icon_popup.gif" border="0">&nbsp;<a href="https://referrals.elavon.co.uk/?partner_id=0014H00004B1ikG" target="_blank" style="text-decoration: underline; font-weight: bold;">Visit Opayo Website</a>',
       'MODULE_PAYMENT_SAGE_PAY_SERVER_ERROR_TITLE' => 'There has been an error processing your credit card',
       'MODULE_PAYMENT_SAGE_PAY_SERVER_ERROR_GENERAL' => 'Please try again and if problems persist, please try another payment method.'
     ];
     protected $encrypted_keys = ['MODULE_PAYMENT_SAGE_PAY_SERVER_ACCOUNT', 'MODULE_PAYMENT_SAGE_PAY_SERVER_ACCOUNT_PASSWORD'];
 
+    public static function getVersionHistory()
+    {
+        return [
+            '1.0.1' => 'fix missed tracking, new ref code',
+        ];
+    }
 
 // class constructor
     function __construct() {
@@ -788,6 +794,8 @@ EOD;
         if ($this->debug) {
             \Yii::warning(var_export($ret, true));
         }
+
+        $this->no_process_after($order, false);
 
         if ($this->onBehalf()) {
             \Yii::$app->settings->set('from_admin', false);

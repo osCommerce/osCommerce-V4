@@ -69,22 +69,6 @@
     padding: 0;
     margin: 0;
 }
-.popup-buttons {
-    padding: 15px;
-    border-top: 1px solid #d9d9d9;
-}
-.popup-buttons:after {
-    display: block;
-    content: '';
-    clear: both;
-}
-.popup-buttons .btn {
-    margin-right: 20px;
-}
-.popup-buttons .btn:first-child {
-    float: right;
-    margin-right: 0;
-}
 .popup-draggable {
     z-index: 10000;
     background: #fff;

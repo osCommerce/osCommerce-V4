@@ -1,7 +1,7 @@
 {use class="frontend\design\Info"}
 <div class="billing-address-wrap" id="billing_address">
     
-    {if (($manager->isShippingNeeded() && $manager->getShippingChoice()) || $manager->combineShippings) && $smarty.const.BILLING_FIRST!='True'}
+    {if (($manager->isShippingNeeded() && $manager->getShippingChoice()) || $manager->combineShippings) && $smarty.const.BILLING_FIRST!='True' && $showBillAsShip}
         {*<div class="hide-billing-address"></div>*}
         <div class="same-address">
             <input type="checkbox" name="ship_as_bill" id="as-shipping"{if $manager->isBillAsShip()} checked {/if}/>
@@ -11,7 +11,7 @@
     
     {\frontend\design\boxes\checkout\AddressesList::widget(['manager' => $manager, 'type' => 'billing', 'mode' => 'single', 'settings' => $settings])}
 
-{if $smarty.const.BILLING_FIRST!='True'}
+{if $smarty.const.BILLING_FIRST!='True' && $showBillAsShip}
     <script>
      tl([
       '{Info::themeFile('/js/main.js')}',

@@ -53,7 +53,7 @@
 </div>
 
 <div class="right-area">
-{if {$chosenProducts|@count} > 0}
+{if {$chosenProducts|default:array()|@count} > 0}
   <div class="price">
     <span class="separate-text">{$smarty.const.TEXT_TOTAL_PRICE}</span>
     <span class="separate">{$price}</span>
@@ -68,7 +68,7 @@
 </div>
 
 <div class="choose-products">
-{if {$products|@count} > 0}
+{if {$products|default:array()|@count} > 0}
   <div class="heading-3">
     {$smarty.const.CHOOSE_FROM_COLLECTION}
   </div>

@@ -30,6 +30,10 @@ class BillingAddress extends Widget
 
     public function run()
     {
+        $this->params['showBillAsShip'] = true;
+        if ($ext = \common\helpers\Acl::checkExtensionAllowed('SplitCustomerAddresses', 'allowed')) {
+            $this->params['showBillAsShip'] = false;
+        }
         return IncludeTpl::widget(['file' => 'boxes/checkout/billing-address.tpl', 'params' => array_merge($this->params, ['settings' => $this->settings])]);
     }
 }

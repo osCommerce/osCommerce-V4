@@ -13,14 +13,21 @@
 namespace backend\assets;
 
 use yii\web\AssetBundle;
+use yii\web\View;
 
 class Categories extends AssetBundle
 {
     public $basePath = '@webroot';
     public $baseUrl = '@web';
     public $css = [
-        '@web/../themes/basic/css/categories.css',
+        'themes/basic/css/categories.css',
+        'plugins/nestable/nestable.css',
     ];
     public $js = [
+        'plugins/nestable/jquery.nestable.min.js',
+        'plugins/jquery.jcarousel.min.js',
+    ];
+    public $jsOptions = [
+        'position' => View::POS_HEAD,
     ];
 }

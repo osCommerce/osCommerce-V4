@@ -5,7 +5,7 @@
 {if count($app->controller->view->platforms) > 1}
     <ul class="nav nav-tabs platform-tabs">
         {foreach $app->controller->view->platforms as $platform}
-            <li{if $platform->platform_id == $app->controller->view->def_platform_id} class="active"{/if}><a href="#tab_9_{$platform->platform_id}" class="flag-span" data-toggle="tab" data-id="{$platform->platform_id}"><span>{$platform->platform_name}</span>
+            <li{if $platform->platform_id == $app->controller->view->def_platform_id} class="active"{/if} data-bs-toggle="tab" data-bs-target="#tab_9_{$platform->platform_id}"><a class="flag-span" data-id="{$platform->platform_id}"><span>{$platform->platform_name}</span>
             </a></li>
         {/foreach}
     </ul>
@@ -26,7 +26,7 @@
     {if count($languages) > 1}
     <ul class="nav nav-tabs">
       {foreach $languages as $lKey => $lItem}
-        <li{if $lKey == 0} class="active"{/if}><a href="#tab_9_{$platform_id}_{$lItem['id']}" class="flag-span" data-toggle="tab">{$lItem['image']}<span>{$lItem['name']}</span></a></li>
+        <li{if $lKey == 0} class="active"{/if} data-bs-toggle="tab" data-bs-target="#tab_9_{$platform_id}_{$lItem['id']}"><a class="flag-span">{$lItem['image']}<span>{$lItem['name']}</span></a></li>
       {/foreach}
     </ul>
   {/if}
@@ -71,13 +71,13 @@
         <div class="edp-line">
           <label>{$smarty.const.TEXT_H2_TAG}</label>
           <div class="h-teg-table">
-          <span id="products_h2_tag-{$platform_id}-{$lItem['id']}">{if isset($pDescription[$platform_id][$lKey]['products_h2_tag'])}{foreach explode("\n", $pDescription[$platform_id][$lKey]['products_h2_tag']) as $value}<span class="row"><input type="text" name="pDescription[{$platform_id}][{$lItem['id']}][products_h2_tag][]" value="{$value|escape}" class="form-control form-control-small" /><span class="del-pt del-tag"></span></span>{/foreach}{/if}</span><span onclick="addInput('products_h2_tag-{$platform_id}-{$lItem['id']}', '{htmlspecialchars('<span class="row"><input type="text" name="pDescription['|cat:$platform_id|cat:']['|cat:$lItem['id']|cat:'][products_h2_tag][]" value="" class="form-control form-control-small" /><span class="del-pt del-tag"></span></span>')}')" class="btn btn-add-more">{$smarty.const.TEXT_AND_MORE}</span>
+          <span id="products_h2_tag-{$platform_id}-{$lItem['id']}">{if isset($pDescription[$platform_id][$lKey]['products_h2_tag'])}{foreach explode("\n", $pDescription[$platform_id][$lKey]['products_h2_tag']) as $value}<span class="h-teg-row"><input type="text" name="pDescription[{$platform_id}][{$lItem['id']}][products_h2_tag][]" value="{$value|escape}" class="form-control form-control-small" /><span class="del-pt del-tag"></span></span>{/foreach}{/if}</span><span onclick="addInput('products_h2_tag-{$platform_id}-{$lItem['id']}', '{htmlspecialchars('<span class="h-teg-row"><input type="text" name="pDescription['|cat:$platform_id|cat:']['|cat:$lItem['id']|cat:'][products_h2_tag][]" value="" class="form-control form-control-small" /><span class="del-pt del-tag"></span></span>')}')" class="btn btn-add-more">{$smarty.const.TEXT_AND_MORE}</span>
         </div>
         </div>
         <div class="edp-line">
           <label>{$smarty.const.TEXT_H3_TAG}</label>
           <div class="h-teg-table">
-          <span id="products_h3_tag-{$platform_id}-{$lItem['id']}">{if isset($pDescription[$platform_id][$lKey]['products_h3_tag'])}{foreach explode("\n", $pDescription[$platform_id][$lKey]['products_h3_tag']) as $value}<span class="row"><input type="text" name="pDescription[{$platform_id}][{$lItem['id']}][products_h3_tag][]" value="{$value|escape}" class="form-control form-control-small" /><span class="del-pt del-tag"></span></span>{/foreach}{/if}</span><span onclick="addInput('products_h3_tag-{$platform_id}-{$lItem['id']}', '{htmlspecialchars('<span class="row"><input type="text" name="pDescription['|cat:$platform_id|cat:']['|cat:$lItem['id']|cat:'][products_h3_tag][]" value="" class="form-control form-control-small" /><span class="del-pt del-tag"></span></span>')}')" class="btn btn-add-more">{$smarty.const.TEXT_AND_MORE}</span>
+          <span id="products_h3_tag-{$platform_id}-{$lItem['id']}">{if isset($pDescription[$platform_id][$lKey]['products_h3_tag'])}{foreach explode("\n", $pDescription[$platform_id][$lKey]['products_h3_tag']) as $value}<span class="h-teg-row"><input type="text" name="pDescription[{$platform_id}][{$lItem['id']}][products_h3_tag][]" value="{$value|escape}" class="form-control form-control-small" /><span class="del-pt del-tag"></span></span>{/foreach}{/if}</span><span onclick="addInput('products_h3_tag-{$platform_id}-{$lItem['id']}', '{htmlspecialchars('<span class="h-teg-row"><input type="text" name="pDescription['|cat:$platform_id|cat:']['|cat:$lItem['id']|cat:'][products_h3_tag][]" value="" class="form-control form-control-small" /><span class="del-pt del-tag"></span></span>')}')" class="btn btn-add-more">{$smarty.const.TEXT_AND_MORE}</span>
           </div>
         </div>
         <div class="edp-line">

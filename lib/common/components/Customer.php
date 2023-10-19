@@ -106,7 +106,7 @@ class Customer  extends \common\models\Customers implements \yii\web\IdentityInt
 
     public function loginCustomer($email_address, $checkParam) {
 
-        if ( !($this->loginType || $email_address) ) {
+        if ( !$this->loginType || !$email_address ) {
             return false;
         }
 
@@ -133,7 +133,11 @@ class Customer  extends \common\models\Customers implements \yii\web\IdentityInt
         $_user->loginType = $this->loginType;
         $_user->isMulti = $this->isMulti;
 
-        if (($success = $_user->validateCustomer($checkParam)) ) {
+        $success = $_user->validateCustomer($checkParam);
+        foreach (\common\helpers\Hooks::getList('customers/login-customer/after-validate') as $filename) {
+            include($filename);
+        }
+        if ($success) {
 
             if ($this->rememberMe) {
                 $duration = \Yii::$app->user->autoLoginDuration;
@@ -145,13 +149,12 @@ class Customer  extends \common\models\Customers implements \yii\web\IdentityInt
 
             $_user->_afterAuth();
             \common\models\Fraud::cleanAddress();
-            if (is_object(Yii::$app->controller->promoActionsObs)) {
-                Yii::$app->controller->promoActionsObs->triggerAction('login');
-            }
         } elseif ($success === false) {
             \common\models\Fraud::registerAddress();
         }
-
+        foreach (\common\helpers\Hooks::getList('customers/login-customer') as $filename) {
+            include($filename);
+        }
         return $success;
     }
 
@@ -175,11 +178,26 @@ class Customer  extends \common\models\Customers implements \yii\web\IdentityInt
             Yii::$app->user->login($this);
 
             $this->setCustomersData();
-
+            
             if ($this->customers_id) {
                 $addressBook = $this->getDefaultAddress()->one();
-                Yii::$app->get('storage')->set('billto', $addressBook->address_book_id);
-                Yii::$app->get('storage')->set('sendto', $addressBook->address_book_id);
+                if (\common\helpers\Acl::checkExtensionAllowed('SplitCustomerAddresses', 'allowed')) {
+                    $shippingAddressBook = $this->getDefaultShippingAddress()->one();
+                } else {
+                    $shippingAddressBook = $addressBook;
+                }
+                if ( \common\helpers\Acl::checkExtensionAllowed('DealersMultiCustomers', 'allowed')) {
+                    $multi_customer_id = $this->data['multi_customer_id'] ?? 0;
+                    if ($multi_customer_id > 0) {
+                        $user = \common\extensions\DealersMultiCustomers\models\Users::find()->where(['user_id' => $multi_customer_id])->one();
+                        if ($user && $user->customers_shipto > 0) {
+                            $shippingAddressBook = models\AddressBook::findOne($user->customers_shipto);
+                        }
+                        unset($user);
+                    }
+                }
+                Yii::$app->get('storage')->set('billto', $addressBook->address_book_id ?? null);
+                Yii::$app->get('storage')->set('sendto', $shippingAddressBook->address_book_id ?? null);
             }else{
                 Yii::$app->get('storage')->remove('billto');
                 Yii::$app->get('storage')->remove('sendto');
@@ -196,37 +214,6 @@ class Customer  extends \common\models\Customers implements \yii\web\IdentityInt
             // restore cart contents
             if (is_object($cart)) {
                 $cart->restore_contents();
-            }
-
-
-            if ($this->isMulti) {
-                if ($ext = \common\helpers\Acl::checkExtensionAllowed('MultiCart', 'allowed')) {
-                    $uid = $this->cart_uid;
-                    $currentCart = $ext::getCart($uid);
-                    if (!is_object($currentCart)) {
-                        $uid = 0;
-                        if ($ext::createCart($this->customers_firstname . ' ' . $this->customers_lastname)) {
-                            global $multi_cart;
-                            $uid = $multi_cart->getLastCreatedKey();
-                        }
-                    }
-                    if ($uid > 0) {
-                        if ($CustomersMultiEmails = \common\helpers\Acl::checkExtensionAllowed('CustomersMultiEmails', 'allowed')) {
-                            $multi = \common\extensions\CustomersMultiEmails\models\CustomersMultiEmails::findOne($this->multi_customer_id);
-                            if (is_object($multi)) {
-                                $multi->cart_uid = $uid;
-                                $multi->save(false);
-                            }
-                            $currentCart = $ext::getCart($uid);
-                            if (is_object($currentCart)) {
-                                $ext::setCurrentCart($uid);
-                                $cart = $currentCart;
-                            }
-                        }
-                    }
-                    unset($currentCart);
-                    $this->cart_uid = $uid;
-                }
             }
 
             foreach (\common\helpers\Hooks::getList('customers/after-auth') as $filename) {
@@ -260,12 +247,46 @@ class Customer  extends \common\models\Customers implements \yii\web\IdentityInt
         return $gdpr->processGdprChecking();
     }
 
-    public function getAddressBooks($toArray = false){
-        if ($toArray){
-            return parent::getAddressBooks()->asArray()->all();
-        } else {
-            return parent::getAddressBooks()->all();
+    public function getAddressBooks($toArray = false, $woDropShip = false, $type = '') {
+        $ab = parent::getAddressBooks();
+        if ($woDropShip) {
+            $ab->andWhere(['drop_ship' => 0]);
         }
+        $allowMulti = false;
+        if (\common\helpers\Acl::checkExtensionAllowed('SplitCustomerAddresses', 'allowed')) {
+            if (!empty($type)) {
+                switch ($type) {
+                    case 'custom':
+                        $ab->andWhere(['entry_type' => \common\forms\AddressForm::CUSTOM_ADDRESS]);// 1
+                        break;
+                    case 'shipping':
+                        $ab->andWhere(['entry_type' => \common\forms\AddressForm::SHIPPING_ADDRESS]);// 2
+                        $allowMulti = true;
+                        break;
+                    case 'billing':
+                        $ab->andWhere(['entry_type' => \common\forms\AddressForm::BILLING_ADDRESS]);//3
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+        if ($allowMulti &&  \common\helpers\Acl::checkExtensionAllowed('DealersMultiCustomers', 'allowed')) {
+            $multi_customer_id = \Yii::$app->get('storage')->get('multi_customer_id');
+            if ($multi_customer_id > 0) {
+                $shipto = [];
+                $addressQuery = \common\extensions\DealersMultiCustomers\models\UsersToAddressBook::find()->where(['user_id' => $multi_customer_id]);
+                foreach ($addressQuery->each() as $addressRow) {
+                    $shipto[] = $addressRow->address_book_id;
+                }
+                unset($addressQuery);
+                $ab->andWhere(['IN', 'address_book_id', $shipto]);
+            }
+        }
+        if ($toArray) {
+            $ab->asArray();
+        }
+        return $ab->all();
     }
 
     public function getAddressBook($abId, $toArray = false){
@@ -427,10 +448,21 @@ class Customer  extends \common\models\Customers implements \yii\web\IdentityInt
                 if (!empty($telephone)){
                     (new models\CustomersPhones(['customers_phone' => $telephone]))->link('customer', $customer);
                 }
-                (new models\CustomersEmails(['customers_email' => $email_address]))->link('customer', $customer);
+                if (!empty($email_address)){
+                    (new models\CustomersEmails(['customers_email' => $email_address]))->link('customer', $customer);
+                }
                 $customer->addCustomersInfo();
                 $address = $customer->getAddressFromModel($qoModel);
                 $customer->addDefaultAddress($address);
+                
+                if (\common\helpers\Acl::checkExtensionAllowed('SplitCustomerAddresses', 'allowed')) {
+                    $address['entry_type'] = \common\forms\AddressForm::SHIPPING_ADDRESS;
+                    $_address = $customer->addAddress($address);
+                    if ($_address) {
+                        $customer->customers_shipping_address_id = $_address->address_book_id;
+                        $customer->save();
+                    }
+                }
             }
         /*}/**/
 
@@ -464,47 +496,9 @@ class Customer  extends \common\models\Customers implements \yii\web\IdentityInt
     * type = 0 if credit amount, type = 1 if bonus amount
     */
     public function saveCreditHistory($customers_id, $amount, $prefix = '+', $currency = '', $currency_value = '', $comment = '', $type = 0, $customer_notified = 0){
-        global $login_id;
         if (!$customers_id) $customers_id = $this->customers_id;
-        if (intval($customers_id)){
-            $history = new models\CustomersCreditHistory();
-            $history->setAttributes([
-                'customers_id' => (int)$customers_id,
-                'credit_prefix' => $prefix,
-                'credit_amount' => $amount,
-                'currency' => $currency,
-                'currency_value' => $currency_value,
-                'customer_notified' => $customer_notified,
-                'comments' => $comment,
-                'admin_id' => ($login_id?$login_id:0),
-                'credit_type' => $type
-            ], false);
-            $history->save(false);
-        }
+        models\CustomersCreditHistory::saveCreditHistory((int)$customers_id, $amount, $prefix, $currency, $currency_value, $comment, $type, $customer_notified);
         return $this;
-    }
-
-    public function updateBonusPoints($customers_id, $amount, $prefix = '+'){
-
-        if (!$customers_id) {
-            $customers_id = $this->customers_id;
-        }
-
-        $customer = models\Customers::find()->where('customers_id =:cid', [':cid' => (int)$customers_id])->one();
-        if ($customer && !$customer->isGuest()){
-            if ($prefix === '-'){
-                $customer->customers_bonus_points -= (float)$amount;
-            } else {
-                $customer->customers_bonus_points += (float)$amount;
-            }
-            $customer->save(false);
-        }
-        return $this;
-    }
-
-    public function hasBonusHistory($customer_id){
-        return !\common\helpers\Acl::checkExtensionAllowed('BonusActions') ? false :
-            models\CustomersCreditHistory::find()->where('customers_id = :id', [':id' => $customer_id])->count() || \common\extensions\BonusActions\models\PromotionsBonusHistory::getFullHistoryAmount($customer_id);
     }
 
     /*return customers model*/
@@ -619,6 +613,15 @@ class Customer  extends \common\models\Customers implements \yii\web\IdentityInt
                 $address = $this->getAddressFromModel($model);
             }
             $this->addDefaultAddress($address);
+            
+            if (\common\helpers\Acl::checkExtensionAllowed('SplitCustomerAddresses', 'allowed')) {
+                $address['entry_type'] = \common\forms\AddressForm::SHIPPING_ADDRESS;
+                $_address = $this->addAddress($address);
+                if ($_address) {
+                    $this->customers_shipping_address_id = $_address->address_book_id;
+                    $this->save();
+                }
+            }
 
             if ($ext = \common\helpers\Acl::checkExtensionAllowed('PlatformRestrictLogin', 'enabled')) {
                 $loginStatus = $ext::customerRegister($this);
@@ -680,6 +683,15 @@ class Customer  extends \common\models\Customers implements \yii\web\IdentityInt
         $book = $this->getAddressFromModel($addressModel);
         if ($book){
             $newBook = $this->addDefaultAddress($book);
+            
+            if (\common\helpers\Acl::checkExtensionAllowed('SplitCustomerAddresses', 'allowed')) {
+                $book['entry_type'] = \common\forms\AddressForm::SHIPPING_ADDRESS;
+                $_address = $this->addAddress($book);
+                if ($_address) {
+                    $this->customers_shipping_address_id = $_address->address_book_id;
+                    $this->save();
+                }
+            }
         }
 
         $this->_afterAuth();
@@ -766,7 +778,7 @@ class Customer  extends \common\models\Customers implements \yii\web\IdentityInt
                 $addressDetails['entry_street_address'] = $model->street_address;
             }
 
-            if (!empty($model->suburb)){
+            if (isset($model->suburb)){
                 $addressDetails['entry_suburb'] = $model->suburb;
             }
 
@@ -795,6 +807,15 @@ class Customer  extends \common\models\Customers implements \yii\web\IdentityInt
             }
             if (isset($model->telephone)){
                 $addressDetails['entry_telephone'] = $model->telephone;
+            }
+            if (isset($model->email_address)){
+                $addressDetails['entry_email_address'] = $model->email_address;
+            }
+            if (isset($model->drop_ship)){
+                $addressDetails['drop_ship'] = ($model->drop_ship && 1);
+            }
+            if (!empty($model->type)){
+                $addressDetails['entry_type'] = $model->type;
             }
         }
         return $addressDetails;

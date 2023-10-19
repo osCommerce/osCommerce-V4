@@ -12,6 +12,7 @@
 
 namespace common\classes;
 
+#[\AllowDynamicProperties]
   class email {
     var $html;
     var $text;

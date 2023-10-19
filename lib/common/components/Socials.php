@@ -54,11 +54,6 @@ class Socials {
             'class' => 'common\extensions\Amazon\authclient\Amazon',
             'site'  => 'https://sellercentral-europe.amazon.com/',
         ],
-        [
-            'name'  => 'paypal',
-            'class' => 'common\extensions\Paypal\authclient\Paypal',
-            'site'  => 'https://paypal.com/',
-        ]
     ];
     
     private $client;
@@ -68,15 +63,22 @@ class Socials {
     public function __construct(ClientInterface $client)
     {
         $this->client = $client;
-    }    
+    }
     
     public static function getDefinedModules(){
+        static $isHookExecuted = false;
+        if (!$isHookExecuted) {
+            $isHookExecuted = true;
+            foreach (\common\helpers\Hooks::getList('socials/get-defined-modules') as $filename) {
+                include($filename);
+            }
+        }
         return self::$defined_modules;
     }
     
     public static function getSiteUrl($_module){
-        $modules = ArrayHelper::map(self::$defined_modules, 'name', 'site');
-        return $modules[$_module];
+        $modules = ArrayHelper::map(self::getDefinedModules(), 'name', 'site');
+        return $modules[$_module]??null;
     }
     
     public static function loadComponents($platform_id, $default = ''){
@@ -89,7 +91,7 @@ class Socials {
         if (tep_db_num_rows($_modules)){
             $clients = [];
             
-            $_dm = \yii\helpers\ArrayHelper::map(self::$defined_modules, 'name', 'class');
+            $_dm = \yii\helpers\ArrayHelper::map(self::getDefinedModules(), 'name', 'class');
             
             while($row = tep_db_fetch_array($_modules)){
                     $clients[$row['module']] = [ 
@@ -177,7 +179,11 @@ class Socials {
                 return Yii::$app->controller->redirect(['account/login']);
             }
         }
-        
+
+        foreach (\common\helpers\Hooks::getList('frontend/socials/login-success') as $filename) {
+            include($filename);
+        }
+
         global $cart;
         if($cart->count_contents()) {
           return Yii::$app->controller->redirect(['checkout/']);

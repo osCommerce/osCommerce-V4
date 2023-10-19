@@ -1,7 +1,7 @@
 <script type="text/javascript">
     //===== Price and Cost START =====//
     var tax_rates = new Array();
-    {if {$app->controller->view->tax_classes|@count} > 0}
+    {if {$app->controller->view->tax_classes|default:array()|@count} > 0}
     {foreach $app->controller->view->tax_classes as $tax_class_id => $tax_class}
     tax_rates[{$tax_class_id}] = {\common\helpers\Tax::get_tax_rate_value($tax_class_id)};
     {/foreach}
@@ -223,7 +223,7 @@
             e.value = doRound(arrValue[i], 6);
         });
 
-        {if is_array($app->controller->view->groups|default:null) && $app->controller->view->groups|@count > 0}
+        {if is_array($app->controller->view->groups|default:null) && $app->controller->view->groups|default:array()|@count > 0}
         {foreach $app->controller->view->groups as $groups_id => $group}
 
         var fieldValue = document.forms['product_edit'].elements['products_groups_prices_{$groups_id}'].value
@@ -351,7 +351,7 @@
             e.value = doRound(arrValue[i], 6);
         });
 
-        {if is_array($app->controller->view->groups|default:null) && $app->controller->view->groups|@count > 0}
+        {if is_array($app->controller->view->groups|default:null) && $app->controller->view->groups|default:array()|@count > 0}
         {foreach $app->controller->view->groups as $groups_id => $group}
 
         var fieldValue = document.forms['product_edit'].elements['products_groups_prices_gross_{$groups_id}'].value
@@ -608,37 +608,27 @@
         }
         updateVisibleGrossInputs($(el));
 
-        // init new visible bootstrapSwitch
-        tab = $(el).not(".inited");
-        if (tab.length) {
-            tab.addClass('inited');
-
-            $('.check_qty_discount_prod:visible, .check_supplier_price_mode:visible, .attr_file_switch:visible', tab).bootstrapSwitch({
-                onSwitchChange: function (element, argument) {
-                    var t = $(this).attr('data-toswitch');
-                    var tcss = $(this).attr('data-togglecss');
-                    if (typeof(tcss) != 'undefined') { // toggle option
-                        $('.' + tcss).toggle();
+        $('.check_qty_discount_prod, .check_supplier_price_mode, .attr_file_switch').tlSwitch({
+            onSwitchChange: function (element, argument) {
+                var t = $(this).attr('data-toswitch');
+                var tcss = $(this).attr('data-togglecss');
+                if (typeof(tcss) != 'undefined') { // toggle option
+                    $('.' + tcss).toggle();
+                } else {
+                    if (typeof(t) != 'undefined') { //all divs, css class of which is starting with t
+                        sel = '[class*="' + t +'"]';
                     } else {
-                        if (typeof(t) != 'undefined') { //all divs, css class of which is starting with t
-                            sel = '[class*="' + t +'"]';
-                        } else {
-                            sel = '#div_' + $(this).attr('id');
-                        }
-                        if (argument) {
-                            $(sel).show();
-                        } else {
-                            $(sel).hide();
-                        }
+                        sel = '#div_' + $(this).attr('id');
                     }
-                    return true;
-                },
-                onText: "{$smarty.const.SW_ON}",
-                offText: "{$smarty.const.SW_OFF}",
-                handleWidth: '20px',
-                labelWidth: '24px'
-            });
-        }
+                    if (argument) {
+                        $(sel).show();
+                    } else {
+                        $(sel).hide();
+                    }
+                }
+                return true;
+            }
+        });
     }
     /* updates net and gross prices in assigned attributes and inventory blocks (span, currency formatted)
     * if tax rate is specified then only gross price is calculated and updated
@@ -898,39 +888,46 @@
     }
 
     function updatePricesAndProfit(supplierBlock, supplierId) {
-        var landedPrice = $('.js-supplier-landed-price-field', supplierBlock).val();
+        var landedPriceAssigned = !!getSupplierLandedPriceField(supplierBlock).val();
         var supplierTaxRate = parseFloat( $('.js-supplier-tax-rate',supplierBlock).textInputNullableValue() );
         var supplierTaxInCost = $('.js-supplier-tax-rate-flag',supplierBlock).get(0).checked?1:0;
         var supplierDiscount = $('.js-supplier-discount', supplierBlock).textInputNullableValue();
-        var supplierCost = $('.js-supplier-cost', supplierBlock).val();
-        var supplierNetCost = 0;
+        // currency and risk
+        var supplierCost = getConvertedWithCurrencyRisk(getSupplierCostField(supplierBlock));
+        // supplier discount
+        var calcLandedCrossPrice = doRound(supplierCost * (1 - supplierDiscount / 100), 6);
+        // supplier tax
+        var calcLandedNetPrice = 0;
         if (!supplierTaxInCost) {
-            supplierNetCost = supplierCost;
-            supplierCost = supplierCost * ((100 + supplierTaxRate) / 100);
+            calcLandedNetPrice = calcLandedCrossPrice;
+            calcLandedCrossPrice = calcLandedCrossPrice * ((100 + supplierTaxRate) / 100);
         } else {
-            supplierNetCost = supplierTaxRate > 0 ?  supplierCost*(100-supplierTaxRate)/100 : supplierCost;
+            calcLandedNetPrice = supplierTaxRate > 0 ?  calcLandedCrossPrice*(100-supplierTaxRate)/100 : calcLandedCrossPrice;
         }
-        var calcLandedPrice = doRound(supplierCost * (1 - supplierDiscount / 100), 6);
-        $('.js-overridden-mark', supplierBlock).toggle(!!landedPrice);
-        fieldLandedPrice = $('.js-supplier-landed-price-gross-displayed', supplierBlock);
-        if (landedPrice) {
-            supplierNetCost = supplierTaxRate > 0 ?  landedPrice*(100-supplierTaxRate)/100 : landedPrice;
+        // manual landed price
+        $('.js-overridden-mark', supplierBlock).toggle(landedPriceAssigned);
+        fieldLandedPrice = getSupplierLandedOrCalcField(supplierBlock);
+        if (landedPriceAssigned) {
+            finalLandedCrossPrice = getConvertedWithCurrencyRisk(getSupplierLandedPriceField(supplierBlock));
+            finalLandedNetPrice = supplierTaxRate > 0 ?  finalLandedCrossPrice*(100-supplierTaxRate)/100 : finalLandedCrossPrice;
             fieldLandedPrice.addClass('overridden-price');
         } else {
-            landedPrice = calcLandedPrice;
+            finalLandedCrossPrice = calcLandedCrossPrice;
+            finalLandedNetPrice = calcLandedNetPrice
             fieldLandedPrice.removeClass('overridden-price');
         }
-        var supplierCurrency = $('.js-supplier-currency',supplierBlock).val()
-        fieldLandedPrice.html(currencyFormat(landedPrice, supplierCurrency)).data('calc-value', calcLandedPrice);
+        //var supplierCurrency = $('.js-supplier-currency',supplierBlock).val()
+        // Cross Landed
+        fieldLandedPrice.html(currencyFormat(finalLandedCrossPrice/*, supplierCurrency*/)).data('calc-value', finalLandedCrossPrice);
 
         // Net Landed
-        $('.js-supplier-landed-price-net-displayed', supplierBlock).html(currencyFormat(supplierNetCost, supplierCurrency));
+        $('.js-supplier-landed-price-net-displayed', supplierBlock).html(currencyFormat(finalLandedNetPrice/*, supplierCurrency*/));
 
         // Calculated Price and Profit
         var calcNetPrice = $('.js-supplier-calc-net-price', supplierBlock).data('value');
         var taxRate = getTaxRate();
         var calcGrossPrice = calcNetPrice * ((taxRate / 100) + 1);
-        var calcProfit = calcNetPrice - landedPrice;
+        var calcProfit = calcNetPrice - finalLandedCrossPrice;
         $('.js-supplier-calc-gross-price', supplierBlock).html(currencyFormat(calcGrossPrice));
         $('.js-supplier-calc-profit', supplierBlock).html(currencyFormat(calcProfit));
 
@@ -941,7 +938,7 @@
             var curNetPrice = $('input.js-products_group_price:first').val();
         }
         var curGrossPrice =curNetPrice * ((taxRate / 100) + 1);
-        var curProfit = curNetPrice - landedPrice;
+        var curProfit = curNetPrice - finalLandedCrossPrice;
         $('.js-supplier-cur-net-price', supplierBlock).html(currencyFormat(curNetPrice));
         $('.js-supplier-cur-gross-price', supplierBlock).html(currencyFormat(curGrossPrice));
         $('.js-supplier-cur-profit', supplierBlock).html(currencyFormat(curProfit));

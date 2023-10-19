@@ -5,9 +5,9 @@
 <div class="tabbable tabbable-custom box-style-tab">
   <ul class="nav nav-tabs style-tabs">
 
-    <li class="active"><a href="#main_view" data-toggle="tab">{$smarty.const.BOX_HEADING_MAIN_STYLES}</a></li>
-    <li><a href="#responsive" data-toggle="tab">{$smarty.const.RESPONSIVE_DESIGN}</a></li>
-    <li><a href="#pseudo" data-toggle="tab">{$smarty.const.PSEUDO_CLASSES}</a></li>
+    <li class="active" data-bs-toggle="tab" data-bs-target="#main_view"><a>{$smarty.const.BOX_HEADING_MAIN_STYLES}</a></li>
+    <li data-bs-toggle="tab" data-bs-target="#responsive"><a>{$smarty.const.RESPONSIVE_DESIGN}</a></li>
+    <li data-bs-toggle="tab" data-bs-target="#pseudo"><a>{$smarty.const.PSEUDO_CLASSES}</a></li>
 
   </ul>
   <div class="tab-content menu-list  style-tabs-content">
@@ -21,8 +21,8 @@
           {if $styleHide.responsive !== 1}
             <li class="label">{$smarty.const.WINDOW_WIDTH}:</li>
             {foreach $settings.media_query as $item}
-              <li {if $item@index == 0} class="active" {/if}>
-                <a href="#m{$item.id}" data-toggle="tab">
+              <li {if $item@index == 0} class="active" {/if} data-bs-toggle="tab" data-bs-target="#m{$item.id}">
+                <a>
                   {$item.title}
                 </a>
               </li>
@@ -50,16 +50,16 @@
         <ul class="nav nav-tabs style-tabs">
 
           {if $styleHide.hover !== 1}
-            <li class="active"><a href="#hover" data-toggle="tab">hover</a></li>
+            <li class="active" data-bs-toggle="tab" data-bs-target="#hover"><a>hover</a></li>
           {/if}
           {if $styleShow.active == 1}
-            <li><a href="#active" data-toggle="tab">active</a></li>
+            <li data-bs-toggle="tab" data-bs-target="#active"><a>active</a></li>
           {/if}
           {if $styleHide.before !== 1}
-            <li><a href="#before" data-toggle="tab">:before</a></li>
+            <li data-bs-toggle="tab" data-bs-target="#before"><a>:before</a></li>
           {/if}
           {if $styleHide.after !== 1}
-            <li><a href="#after" data-toggle="tab">:after</a></li>
+            <li data-bs-toggle="tab" data-bs-target="#after"><a>:after</a></li>
           {/if}
 
         </ul>

@@ -81,29 +81,17 @@
 				{if isset($product.promo_message) && !empty($product.promo_message)}
 					<br><small class="promo-message">{$product.promo_message}</small>
 				{/if}
-				{if !is_null($bonus_points)}
-					{assign var="bonus" value=$bonus_points['bonuses']}
-				{/if}
-
 			</div>
 
-			{if $product.bonus_points_price && $product.bonus_points_price > 0 && $product.bonus_points_cost && $product.bonus_points_cost > 0}
+			{$BonusActions=\common\helpers\Extensions::isAllowedAnd('BonusActions', 'isProductPointsEnabled')}
+			{if $BonusActions && $product.bonus_points_cost}
 				<div class="points">
-					{if $product.bonus_coefficient === false && $product.bonus_points_price && $product.bonus_points_price > 0}
-						<div class="points-redeem">
-							<b>{number_format($product.bonus_points_price * $product.quantity_virtual, 0)}</b>
-							{$smarty.const.TEXT_POINTS_REDEEM}
-						</div>
-					{/if}
-					{if $product.bonus_points_cost && $product.bonus_points_cost > 0}
-						<div class="points-earn">
-							<b>{number_format(floor($product.bonus_points_cost) * $product.quantity_virtual, 0)}</b>
-							{$smarty.const.TEXT_POINTS_EARN}
-							{if $product.bonus_coefficient !== false}
-								({\common\helpers\Points::getBonusPointsPriceInCurrencyFormatted(floor($product.bonus_points_cost) * $product.quantity_virtual, $groupId)})
-							{/if}
-						</div>
-					{/if}
+					<div class="points-earn">
+                        {if $PremiumAccountClass = \common\helpers\Acl::checkExtensionAllowed('PremiumAccount', 'allowed')}
+                            {$PremiumAccountClass::showRewardPointsCost($product.bonus_points_cost * $product.quantity)}
+                        {/if}
+						{$product.bonus_points_cost_formatted} {$smarty.const.EXT_BONUS_ACTIONS_TEXT_PRODUCT_REWARD_POINTS}
+					</div>
 				</div>
 			{/if}
 		</div>
@@ -113,7 +101,7 @@
 </div>
 <script type="text/javascript">
             tl(['{Info::themeFile('/js/main.js')}'], function(){ 
-			    let counts = $('.hiding-box .checkout-cart-listing .cart-listing .item').size();
+			    let counts = $('.hiding-box .checkout-cart-listing .cart-listing .item').length;
 				  if(counts >= 4) {
 				    $('.checkout-cart-listing').addClass('main-listing');
 					$('.checkout-cart-listing').removeClass('summary-listing');

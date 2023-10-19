@@ -53,7 +53,7 @@ class TmpOrder extends \common\classes\extended\OrderAbstract {
         $order->content_type = $this->content_type;
         $order->tax_address = $this->tax_address;
         
-        $order->update_piad_information();
+        ///all online pre-auth marked as paid  $order->update_piad_information(); set in module itself if required.
         if ($order->content_type != 'virtual'){
             $order->withDelivery = true;
         }
@@ -62,6 +62,7 @@ class TmpOrder extends \common\classes\extended\OrderAbstract {
         $order->save_details();
         $order->info['order_number'] = $insert_id;
         $order->info['orders_id'] = $insert_id;
+        $order->order_id = $insert_id;
         $order->save_products();
         
         $tModel->child_id = $insert_id;

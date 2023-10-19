@@ -8,7 +8,7 @@
         {if $languages|@count > 1}
             <ul class="nav nav-tabs">
                 {foreach $languages as $lKey => $lItem}
-                    <li{if $lKey == 0} class="active"{/if}><a href="#tab_1_14_{$lItem['id']}" class="flag-span" data-toggle="tab">{$lItem['image']}<span>{$lItem['name']}</span></a></li>
+                    <li{if $lKey == 0} class="active"{/if} data-bs-toggle="tab" data-bs-target="#tab_1_14_{$lItem['id']}"><a class="flag-span">{$lItem['image']}<span>{$lItem['name']}</span></a></li>
                 {/foreach}
             </ul>
         {/if}
@@ -77,8 +77,8 @@
     function youtubeVideoTemplate(lngId, video = '', videoId = 0){
         const $template = $(`
         <div class="row">
-            <div class="remove"></div>
             <div class="col-md-12">
+            <div class="remove"></div>
                 <h3>Video#${ videoId }</h3>
                 <textarea name="video[${ lngId}][]" cols="30" rows="2" placeholder="{$smarty.const.PLACE_HERE_CODE}" class="form-control">${ video }</textarea>
                 <input type="hidden" name="video_type[${ lngId }][]" value="0"/>
@@ -96,8 +96,8 @@
     function uploadeVideoTemplate(lngId, video = '', src = '', videoId = 0){
         const $template = $(`
     <div class="row">
-        <div class="remove"></div>
         <div class="product-upload-video col-md-12">
+        <div class="remove"></div>
             <h3>Video#${ videoId }</h3>
             <div class="upload-image">
                 <div class="upload-image-left"${ src ? ' style="display: none"' : '' }>

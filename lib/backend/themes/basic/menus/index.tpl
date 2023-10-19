@@ -59,7 +59,7 @@
                 <div class="nav nav-tabs">
 
                   {foreach $languages as $language}
-                      <div{if $language.id == $languages_id} class="active"{/if}><a href="#{$language.id}" data-toggle="tab">{$language.logo}<span>{$language.name}</span></a></div>
+                      <div{if $language.id == $languages_id} class="active"{/if} data-bs-toggle="tab" data-bs-target="#lan{$language.id}"><a>{$language.logo}<span>{$language.name}</span></a></div>
                   {/foreach}
 
                 </div>
@@ -67,7 +67,7 @@
                 <div class="tab-content {if count($languages) < 2}tab-content-no-lang{/if}">
 
                   {foreach $languages as $language}
-                    <div class="tab-pane{if $language.id == $languages_id} active{/if}" id="{$language.id}" data-language="{$language.id}">
+                    <div class="tab-pane{if $language.id == $languages_id} active{/if}" id="lan{$language.id}" data-language="{$language.id}">
                       <div>
                         <label for="">{$smarty.const.TEXT_TITLE}</label> <input type="text" name="title" value="" class="form-control" />
                       </div>
@@ -122,7 +122,7 @@
                     <div class="nav nav-tabs">
 
                       {foreach $languages as $language}
-                          <div{if $language.id == $languages_id} class="active"{/if}><a href="#{$language.id}" data-toggle="tab">{$language.logo}<span>{$language.name}</span></a></div>
+                          <div{if $language.id == $languages_id} class="active"{/if} data-bs-toggle="tab" data-bs-target="#lan{$language.id}"><a>{$language.logo}<span>{$language.name}</span></a></div>
                       {/foreach}
 
                     </div>
@@ -130,7 +130,7 @@
                     <div class="tab-content {if count($languages) < 2}tab-content-no-lang{/if}">
 
                       {foreach $languages as $language}
-                        <div class="tab-pane{if $language.id == $languages_id} active{/if}" id="{$language.id}" data-language="{$language.id}">
+                        <div class="tab-pane{if $language.id == $languages_id} active{/if}" id="lan{$language.id}" data-language="{$language.id}">
                           <div>
                             <label for="">{$smarty.const.TEXT_TITLE}</label> <input type="text" name="title" value="" class="form-control" />
                           </div>
@@ -207,7 +207,7 @@
                     <div class="nav nav-tabs">
 
                       {foreach $languages as $language}
-                        <div{if $language.id == $languages_id} class="active"{/if}><a href="#{$language.id}" data-toggle="tab">{$language.logo}<span>{$language.name}</span></a></div>
+                        <div{if $language.id == $languages_id} class="active"{/if} data-bs-toggle="tab" data-bs-target="#lan{$language.id}"><a>{$language.logo}<span>{$language.name}</span></a></div>
                       {/foreach}
 
                     </div>
@@ -215,7 +215,7 @@
                     <div class="tab-content {if count($languages) < 2}tab-content-no-lang{/if}">
 
                       {foreach $languages as $language}
-                        <div class="tab-pane{if $language.id == $languages_id} active{/if}" id="{$language.id}" data-language="{$language.id}">
+                        <div class="tab-pane{if $language.id == $languages_id} active{/if}" id="lan{$language.id}" data-language="{$language.id}">
                           <div>
                             <label for="">{$smarty.const.TEXT_TITLE}</label> <input type="text" name="title" value="" class="form-control" />
                           </div>
@@ -269,7 +269,7 @@
                       <div class="nav nav-tabs">
 
                         {foreach $languages as $language}
-                          <div{if $language.id == $languages_id} class="active"{/if}><a href="#{$language.id}" data-toggle="tab">{$language.logo}<span>{$language.name}</span></a></div>
+                          <div{if $language.id == $languages_id} class="active"{/if} data-bs-toggle="tab" data-bs-target="#lan{$language.id}"><a>{$language.logo}<span>{$language.name}</span></a></div>
                         {/foreach}
 
                       </div>
@@ -277,7 +277,7 @@
                       <div class="tab-content {if count($languages) < 2}tab-content-no-lang{/if}">
 
                         {foreach $languages as $language}
-                          <div class="tab-pane{if $language.id == $languages_id} active{/if}" id="{$language.id}" data-language="{$language.id}">
+                          <div class="tab-pane{if $language.id == $languages_id} active{/if}" id="lan{$language.id}" data-language="{$language.id}">
                             <div>
                               <label for="">{$smarty.const.TEXT_TITLE}</label> <input type="text" name="title" value="" class="form-control" />
                             </div>
@@ -346,7 +346,7 @@
                     <div class="nav nav-tabs">
 
                       {foreach $languages as $language}
-                        <div{if $language.id == $languages_id} class="active"{/if}><a href="#{$language.id}" data-toggle="tab">{$language.logo}<span>{$language.name}</span></a></div>
+                        <div{if $language.id == $languages_id} class="active"{/if} data-bs-toggle="tab" data-bs-target="#lan{$language.id}"><a>{$language.logo}<span>{$language.name}</span></a></div>
                       {/foreach}
 
                     </div>
@@ -354,7 +354,7 @@
                   <div class="tab-content {if count($languages) < 2}tab-content-no-lang{/if}">
 
                     {foreach $languages as $language}
-                      <div class="tab-pane{if $language.id == $languages_id} active{/if}" id="{$language.id}" data-language="{$language.id}">
+                      <div class="tab-pane{if $language.id == $languages_id} active{/if}" id="lan{$language.id}" data-language="{$language.id}">
                         <div>
                           <label for="">{$smarty.const.TEXT_TITLE}</label> <input type="text" name="title" value="" class="form-control" />
                         </div>
@@ -405,7 +405,7 @@
                         <div class="nav nav-tabs">
 
                           {foreach $languages as $language}
-                            <div{if $language.id == $languages_id} class="active"{/if}><a href="#{$language.id}" data-toggle="tab">{$language.logo}<span>{$language.name}</span></a></div>
+                            <div{if $language.id == $languages_id} class="active"{/if} data-bs-toggle="tab" data-bs-target="#lan{$language.id}"><a>{$language.logo}<span>{$language.name}</span></a></div>
                           {/foreach}
 
                         </div>
@@ -413,7 +413,7 @@
                       <div class="tab-content {if count($languages) < 2}tab-content-no-lang{/if}">
 
                         {foreach $languages as $language}
-                          <div class="tab-pane{if $language.id == $languages_id} active{/if}" id="{$language.id}" data-language="{$language.id}">
+                          <div class="tab-pane{if $language.id == $languages_id} active{/if}" id="lan{$language.id}" data-language="{$language.id}">
                             <div>
                               <label for="">{$smarty.const.TEXT_TITLE}</label> <input type="text" name="title" value="" class="form-control" />
                             </div>
@@ -467,13 +467,13 @@
                       {if count($languages) > 1}
                     <div class="nav nav-tabs">
                       {foreach $languages as $language}
-                        <div{if $language.id == $languages_id} class="active"{/if}><a href="#{$language.id}" data-toggle="tab">{$language.logo}<span>{$language.name}</span></a></div>
+                        <div{if $language.id == $languages_id} class="active"{/if} data-bs-toggle="tab" data-bs-target="#lan{$language.id}"><a>{$language.logo}<span>{$language.name}</span></a></div>
                       {/foreach}
                     </div>
                     {/if}
                     <div class="tab-content {if count($languages) < 2}tab-content-no-lang{/if}">
                       {foreach $languages as $language}
-                        <div class="tab-pane{if $language.id == $languages_id} active{/if}" id="{$language.id}" data-language="{$language.id}">
+                        <div class="tab-pane{if $language.id == $languages_id} active{/if}" id="lan{$language.id}" data-language="{$language.id}">
                           <div>
                             <label for="">{$smarty.const.TEXT_TITLE}</label> <input type="text" name="title" value="" class="form-control" />
                           </div>
@@ -533,7 +533,7 @@
                       <div class="nav nav-tabs">
 
                         {foreach $languages as $language}
-                          <div{if $language.id == $languages_id} class="active"{/if}><a href="#{$language.id}" data-toggle="tab">{$language.logo}<span>{$language.name}</span></a></div>
+                          <div{if $language.id == $languages_id} class="active"{/if} data-bs-toggle="tab" data-bs-target="#lan{$language.id}"><a>{$language.logo}<span>{$language.name}</span></a></div>
                         {/foreach}
 
                       </div>
@@ -541,7 +541,7 @@
                       <div class="tab-content {if count($languages) < 2}tab-content-no-lang{/if}">
 
                         {foreach $languages as $language}
-                          <div class="tab-pane{if $language.id == $languages_id} active{/if}" id="{$language.id}" data-language="{$language.id}">
+                          <div class="tab-pane{if $language.id == $languages_id} active{/if}" id="lan{$language.id}" data-language="{$language.id}">
                             <div>
                               <label for="">{$smarty.const.TEXT_TITLE}</label> <input type="text" name="title" value="" class="form-control" />
                             </div>
@@ -595,13 +595,13 @@
                         {if count($languages) > 1}
                           <div class="nav nav-tabs">
                               {foreach $languages as $language}
-                                <div{if $language.id == $languages_id} class="active"{/if}><a href="#{$language.id}" data-toggle="tab">{$language.logo}<span>{$language.name}</span></a></div>
+                                <div{if $language.id == $languages_id} class="active"{/if} data-bs-toggle="tab" data-bs-target="#lan{$language.id}"><a>{$language.logo}<span>{$language.name}</span></a></div>
                               {/foreach}
                           </div>
                         {/if}
                       <div class="tab-content {if count($languages) < 2}tab-content-no-lang{/if}">
                           {foreach $languages as $language}
-                            <div class="tab-pane{if $language.id == $languages_id} active{/if}" id="{$language.id}" data-language="{$language.id}">
+                            <div class="tab-pane{if $language.id == $languages_id} active{/if}" id="lan{$language.id}" data-language="{$language.id}">
                               <div>
                                 <label for="">{$smarty.const.TEXT_TITLE}</label> <input type="text" name="title" value="" class="form-control" />
                               </div>
@@ -648,16 +648,62 @@
   <div class="menu-right-list">
 
     <div class="select-menu">
-      <div class="menu-list-heading">{$smarty.const.TEXT_MENU}</div>
       <form id="select-menu" action="{$action_url_select_menu}" method="get">
         {assign var="url" value=\yii\helpers\ArrayHelper::map($platforms, 'id', 'platform_url')}
         <input type="hidden" name="platform_id" value="{$selected_platform_id}" data-href="{$url[$selected_platform_id]}">
         <div class="menu-selects">
-          <select name="menu" class="form-control" data-id="{$current_menu.id}">
-            {foreach $menus as $item}
-              <option value="{$item.id}"{if $item.id == $current_menu.id} selected{/if}>{$item.menu_name}</option>
-            {/foreach}
-          </select>
+          <div class="menu-list-heading">{$smarty.const.TEXT_MENU}</div>
+
+          <div class="menu-name">
+            <select name="menu" class="form-control" data-id="{$current_menu.id}">
+              {foreach $menus as $item}
+                <option value="{$item.id}"{if $item.id == $current_menu.id} selected{/if}>{$item.menu_name}</option>
+              {/foreach}
+            </select>
+            <input type="text" value="{$current_menu.menu_name}" id="txt_menu_name" class="form-control" style="display: none"/>
+
+            <span class="btn-edit" title="{$smarty.const.EDIT}"></span>
+            <span class="btn-save-menu-name" style="display: none" title="{$smarty.const.IMAGE_SAVE}"></span>
+            <span class="btn-cancel-menu-name" style="display: none" title="{$smarty.const.IMAGE_CANCEL}"></span>
+          </div>
+          <script>
+            $(function(){
+              const $edit = $('.menu-name .btn-edit');
+              const $save = $('.menu-name .btn-save-menu-name');
+              const $cancel = $('.menu-name .btn-cancel-menu-name');
+              const $select = $('.menu-name select');
+              const $input = $('.menu-name input');
+              $edit.on('click', function () {
+                $edit.hide();
+                $select.hide();
+                $save.show();
+                $cancel.show();
+                $input.show().val($('option:selected', $select).text())
+              });
+              $cancel.on('click', function () {
+                $edit.show();
+                $select.show();
+                $save.hide();
+                $cancel.hide();
+                $input.hide().val($('option:selected', $select).text())
+              })
+
+              $save.on('click', function(){
+                $.get('{tep_href_link('menus/save-name')}', {
+                  name: $input.val(),
+                  id: $select.val()
+                }, function(){
+                  $edit.show();
+                  $select.show();
+                  $save.hide();
+                  $cancel.hide();
+                  $input.hide();
+                  $('option:selected', $select).text($input.val())
+                }, 'json')
+              });
+            })
+          </script>
+
           <div class="get-from-text">{$smarty.const.TEXT_GET_FROM}: </div>
           <select name="source_platform" class="form-control" data-id="{$current_menu.id}">
             <option value="">{$smarty.const.TEXT_OWN}</option>
@@ -682,22 +728,33 @@
             })
           </script>
         </div>
-        {*<div class="menu-name">{$current_menu.menu_name}</div>*}
-        <span class="edit-name">
-          <input type="text" value="{$current_menu.menu_name}" id="txt_menu_name" class="form-control" placeholder="{$smarty.const.TEXT_ENTER_NEW_MENU}"/>
-          <span class="btn btn-primary btn-save-menu-name">{$smarty.const.IMAGE_SAVE}</span>
-          <span class="btn btn-cancel btn-cancel-menu-name">{$smarty.const.IMAGE_CANCEL}</span>
-        </span>
-        {if $current_menu.menu_name == ''}
 
-        {/if}
-        <a href="{Yii::$app->urlManager->createUrl(['menus/copy-from', 'menu' => $current_menu.id, 'platform_id' => $selected_platform_id])}" class="copy-from">{$smarty.const.TEXT_COPY_FROM}</a>
-        <div class="import" title="{$smarty.const.TEXT_IMPORT}"></div>
-        <div class="export" title="{$smarty.const.TEXT_EXPORT}"></div>
-        {if $current_menu.menu_name != '' && $current_menu.menu_name != 'Categories' && $current_menu.menu_name != 'Header menu' && $current_menu.menu_name != 'Account box'}
-        <div class="edit"></div>
-        <div class="remove"></div>
-        {/if}
+
+        <div class="menu-top-buttons">
+          <span class="swap" title="{$smarty.const.TEXT_SWAP_WITH}"></span>
+          <script>
+              $(function(){
+                  //$('.menu-top-buttons .swap').popUp();
+                  $('.menu-top-buttons .swap').on('click', function () {
+                      $.get('menus/swap', {
+                          menu_id: '{$current_menu.id}', platform_id: '{$selected_platform_id}'
+                      }, function(response){
+                          if (response.error) {
+                              alertMessage(response.error, 'alert-message')
+                          } else if (response.html) {
+                              alertMessage(response.html)
+                          }
+                      }, 'json')
+                  })
+              })
+          </script>
+          <a href="{Yii::$app->urlManager->createUrl(['menus/copy-from', 'menu' => $current_menu.id, 'platform_id' => $selected_platform_id])}" class="copy-from" title="{$smarty.const.TEXT_COPY_FROM}"></a>
+          <div class="import" title="{$smarty.const.TEXT_IMPORT}"></div>
+          <div class="export" title="{$smarty.const.TEXT_EXPORT}"></div>
+          {if $current_menu.menu_name != '' && $current_menu.menu_name != 'Categories' && $current_menu.menu_name != 'Header menu' && $current_menu.menu_name != 'Account box'}
+            <div class="remove"></div>
+          {/if}
+        </div>
       </form>
     </div>
 
@@ -738,7 +795,7 @@
                     <div class="nav nav-tabs">
 
                       {foreach $languages as $language}
-                        <div{if $language.id == $languages_id} class="active"{/if}><a href="#{$item.id}_{$language.id}" data-toggle="tab">{$language.logo}<span>{$language.name}</span></a></div>
+                        <div{if $language.id == $languages_id} class="active"{/if} data-bs-toggle="tab" data-bs-target="#lan{$item.id}_{$language.id}"><a>{$language.logo}<span>{$language.name}</span></a></div>
                       {/foreach}
 
                     </div>
@@ -746,7 +803,7 @@
                     <div class="tab-content {if count($languages) < 2}tab-content-no-lang{/if}">
 
                       {foreach $languages as $language}
-                        <div class="tab-pane{if $language.id == $languages_id} active{/if}" id="{$item.id}_{$language.id}" data-language="{$language.id}">
+                        <div class="tab-pane{if $language.id == $languages_id} active{/if}" id="lan{$item.id}_{$language.id}" data-language="{$language.id}">
                           <div class="current-name">{$smarty.const.TEXT_CURRENT_NAME}
                             {if isset($item.titles[$language.id])}
                               "{$item.titles[$language.id]}"
@@ -865,7 +922,7 @@
   $.fn.tips = function(text){
     return this.each(function() {
       $(this).hover(function(e){
-        if ($.cookie('tips') == 1){
+        if (localStorage.getItem('tips')){
           $('body').append('<div class="tips-wrap"><div class="tips">' + text + '</div></div>');
           $('.tips-wrap').css({ left: e.pageX, top: e.pageY + 20 })
         }
@@ -960,22 +1017,6 @@
 
     var select_menu = $('#select-menu');
 
-    $('.btn-cancel-menu-name').on('click', function(){
-      $('input', select_menu).val($('.menu-name', select_menu).text());
-      $('.edit', select_menu).trigger('click');
-    });
-    $('.btn-save-menu-name').on('click', function(){
-      $.get('{tep_href_link('menus/save-name')}', {
-        name: $('input[id="txt_menu_name"]', select_menu).val(),
-        id: $('select', select_menu).val()
-      }, function(){
-        $('.edit-name', select_menu).hide();
-        $('.menu-name', select_menu).show();
-        $('.edit', select_menu).removeClass('active');
-        $('.menu-name', select_menu).text($('input[id="txt_menu_name"]', select_menu).val());
-        $('select option:selected', select_menu).text($('input[id="txt_menu_name"]', select_menu).val())
-      }, 'json')
-    });
 
     var confirmSaveChangedMenu = function (target_get){
       alertMessage('<div class="confirm"><p>{$smarty.const.TEXT_MENU_CHANGED|replace:"'":"\'"}</p><p>{$smarty.const.TEXT_DO_YOU_WONT_SAVE_THIS_MENU|replace:"'":"\'"}</p><p><span class="btn btn-cancel">{$smarty.const.IMAGE_CANCEL|replace:"'":"\'"}</span> <span class="btn btn-no">{$smarty.const.TEXT_BTN_NO|replace:"'":"\'"}</span> <span class="btn btn-primary btn-yes">{$smarty.const.TEXT_BTN_YES|replace:"'":"\'"}</span></p></div>');
@@ -1055,18 +1096,6 @@
       });
       onLeavePage(param);
       return false;
-    });
-
-    $('.select-menu .edit').on('click', function(){
-      if ($(this).hasClass('active')){
-        $('.select-menu .edit-name').hide();
-        $('.select-menu .menu-name').show();
-        $(this).removeClass('active')
-      } else {
-        $('.select-menu .edit-name').show();
-        $('.select-menu .menu-name').hide();
-        $(this).addClass('active')
-      }
     });
 
     $('.select-menu .remove').on('click', function(){
@@ -1507,19 +1536,17 @@
 
 
     var tips_switcher = $("#tips-switcher");
-    if ($.cookie('tips') == undefined || $.cookie('tips') == 1){
-      $.cookie('tips', 1, { expires: 365 });
+    if (localStorage.getItem('tips')){
       tips_switcher.prop( "checked", true );
     } else {
-      $.cookie('tips', 0, { expires: 365 });
       tips_switcher.prop( "checked", false );
     }
     tips_switcher.bootstrapSwitch({
       onSwitchChange: function (element, arguments) {
         if (arguments == true){
-          $.cookie('tips', 1, { expires: 365 })
+          localStorage.setItem('tips', 1)
         } else {
-          $.cookie('tips', 0)
+          localStorage.removeItem('tips')
         }
 
         return true;
@@ -1557,7 +1584,7 @@
     }
   })
 
-    var menuName = $('.select-menu .menu-name').text();
+    var menuName = $('.select-menu .menu-name  option:selected').text();
     var platformId = $('input[name="platform_id"]').val();
 
     $('.select-menu .export').on('click', function(){

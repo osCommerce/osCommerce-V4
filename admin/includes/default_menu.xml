@@ -736,15 +736,6 @@
                         <filename></filename>
                     </item>
                     <item>
-                        <sort_order>29</sort_order>
-                        <acl_check></acl_check>
-                        <config_check></config_check>
-                        <box_type>0</box_type>
-                        <path>configuration/index?groupid=BOX_CONFIGURATION_EXACT</path>
-                        <title>BOX_CONFIGURATION_EXACT</title>
-                        <filename></filename>
-                    </item>
-                    <item>
                         <sort_order>32</sort_order>
                         <acl_check></acl_check>
                         <config_check></config_check>
@@ -760,15 +751,6 @@
                         <box_type>0</box_type>
                         <path>configuration/index?groupid=BOX_CONFIGURATION_DOWNLOAD</path>
                         <title>BOX_CONFIGURATION_DOWNLOAD</title>
-                        <filename></filename>
-                    </item>
-                    <item>
-                        <sort_order>34</sort_order>
-                        <acl_check></acl_check>
-                        <config_check></config_check>
-                        <box_type>0</box_type>
-                        <path>configuration/index?groupid=BOX_CONFIGURATION_MAINTENANCE</path>
-                        <title>BOX_CONFIGURATION_MAINTENANCE</title>
                         <filename></filename>
                     </item>
                     <item>
@@ -904,15 +886,6 @@
                         <filename></filename>
                     </item>
                 </child>
-            </item>
-            <item>
-                <sort_order>3</sort_order>
-                <acl_check></acl_check>
-                <config_check></config_check>
-                <box_type>0</box_type>
-                <path>xsell-types</path>
-                <title>BOX_LOCALIZATION_XSELL_TYPES</title>
-                <filename></filename>
             </item>
             <item>
                 <sort_order>4</sort_order>

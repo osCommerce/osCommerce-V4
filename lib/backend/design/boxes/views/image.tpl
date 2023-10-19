@@ -10,10 +10,10 @@
     <div class="tabbable tabbable-custom">
       <ul class="nav nav-tabs">
 
-        <li class="active"><a href="#upload" data-toggle="tab">{$smarty.const.IMAGE_UPLOAD}</a></li>
-        <li><a href="#style" data-toggle="tab">{$smarty.const.HEADING_STYLE}</a></li>
-        <li><a href="#align" data-toggle="tab">{$smarty.const.HEADING_WIDGET_ALIGN}</a></li>
-        <li><a href="#visibility" data-toggle="tab">{$smarty.const.TEXT_VISIBILITY_ON_PAGES}</a></li>
+        <li class="active" data-bs-toggle="tab" data-bs-target="#upload"><a>{$smarty.const.IMAGE_UPLOAD}</a></li>
+        <li data-bs-toggle="tab" data-bs-target="#style"><a>{$smarty.const.HEADING_STYLE}</a></li>
+        <li data-bs-toggle="tab" data-bs-target="#align"><a>{$smarty.const.HEADING_WIDGET_ALIGN}</a></li>
+        <li data-bs-toggle="tab" data-bs-target="#visibility"><a>{$smarty.const.TEXT_VISIBILITY_ON_PAGES}</a></li>
 
       </ul>
       <div class="tab-content">
@@ -26,7 +26,7 @@
             <ul class="nav nav-tabs">
 
               {foreach $languages as $language}
-                <li{if $language.id == $languages_id} class="active"{/if}><a href="#{$item.id}_{$language.id}" data-toggle="tab">{$language.logo} {$language.name}</a></li>
+                <li{if $language.id == $languages_id} class="active"{/if} data-bs-toggle="tab" data-bs-target="#{$item.id}_{$language.id}"><a>{$language.logo} {$language.name}</a></li>
               {/foreach}
 
             </ul>
@@ -34,11 +34,13 @@
               {foreach $languages as $language}
                 <div class="tab-pane{if $language.id == $languages_id} active{/if}" id="{$item.id}_{$language.id}" data-language="{$language.id}">
 
-                  <p><img src="../{\frontend\design\Info::themeImage($settings[$language.id].logo)}" alt="" class="show-image" data-name="setting[{$language.id}][logo]"></p>
-                  <div class="from-gallery"></div>
-                  <div style="float: right; margin: 0 0 0 30px"><span class="btn btn-upload" data-name="setting[{$language.id}][logo]">{$smarty.const.UPLOAD_FROM_GALLERY}</span></div>
-
-                  <div class="upload" data-name="setting[{$language.id}][logo]" data-img="{$settings[$language.id].logo}"></div>
+                  {\backend\design\Image::widget([
+                  'name' => 'setting['|cat:$language.id|cat:'][logo]',
+                  'value' => $settings[$language.id].logo,
+                  'upload' => 'setting['|cat:$language.id|cat:'][logo_upload]',
+                  'acceptedFiles' => 'image/*',
+                  'type' => 'image'
+                  ])}
 
                   <div class="setting-row" style="margin-top: 20px">
                     <label for="">{$smarty.const.TEXT_LINK}</label>
@@ -103,8 +105,3 @@
     <span class="btn btn-cancel">{$smarty.const.IMAGE_CANCEL}</span>
   </div>
 </form>
-<script type="text/javascript">
-
-  $('.btn-upload').galleryImage('{$app->request->baseUrl}');
-
-</script>

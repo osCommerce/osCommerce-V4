@@ -30,11 +30,11 @@
 
 <div class="theme-stylesheet">
     <div class="row">
-        <div class="col-xs-9">
+        <div class="col-9">
             <textarea name="css" id="css" cols="30" rows="10">{*$css*}</textarea>
             <div id="code" style="border: 1px solid #ccc"></div>
         </div>
-        <div class="col-xs-3 add-code">
+        <div class="col-3 add-code">
             <h4>Main styles</h4>
 
             {foreach $mainStyles as $mainStyle}
@@ -199,7 +199,7 @@
         Alt-G : Jump to line<br>
     </div>
 
-    <div class="" style="margin: 20px 0">
+    <div class="" style="margin: 20px 0; display: none">
         <input type="checkbox" class="edit-css-in-devtools"{if $css_status} checked{/if}/> css from file
     </div>
 

@@ -37,12 +37,7 @@ class Quantity extends Widget {
 
         /** @var \common\extensions\PackUnits\PackUnits $ext */
         if ($ext = \common\helpers\Acl::checkExtensionAllowed('PackUnits', 'allowed')) {
-            $par = $ext::quantityBoxFrontend($post, $params);
-            if (Yii::$app->user->isGuest && \common\helpers\PlatformConfig::getFieldValue('platform_please_login')) {
-                $par['disapear_quantity_input'] = true;
-            }
-            $par['show_in_cart_button'] = Info::themeSetting('show_in_cart_button');
-            return IncludeTpl::widget(['file' => 'boxes/product/quantity.tpl', 'params' => $par]);
+            return $ext::renderQuantity($post, $params);
         } else {
             if ($params['products_id'] && !GROUPS_DISABLE_CART) {
 
@@ -64,6 +59,9 @@ class Quantity extends Widget {
                     $product->attachDetails([$products::TYPE_STOCK => $stock_info]);
                 } else {
                     $stock_info = $product[$products::TYPE_STOCK];
+                    if (!isset($stock_info['quantity_max'])) {
+                        $stock_info['quantity_max'] = Product::filter_product_order_quantity($params['products_id'], $stock_info['max_qty'], true);
+                    }
                 }
                 if ($stock_info['flags']['request_for_quote'] || !$stock_info['flags']['can_add_to_cart'] || !$stock_info['flags']['add_to_cart'] ) {
                     $show_quantity_input = false;

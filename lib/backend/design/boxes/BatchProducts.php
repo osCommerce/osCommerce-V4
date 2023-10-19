@@ -49,9 +49,13 @@ class BatchProducts extends Widget
             'main_product' => TEXT_PRODUCT,
             'xsell_0' => Translation::getTranslationValue('FIELDSET_ASSIGNED_XSELL_PRODUCTS', 'admin/categories'),
         ];
-        $extra_xsell_lists =\common\models\ProductsXsellType::find()
-            ->where(['language_id'=>(int)\Yii::$app->settings->get('languages_id')])
-            ->asArray()->all();
+
+        $extra_xsell_lists = [];
+        if ($ext = \common\helpers\Acl::checkExtensionAllowed('UpSell'))
+        {
+            $extra_xsell_lists = $ext::getXsellTypeList();
+        }
+
         foreach ($extra_xsell_lists as $extra_xsell_list){
             $product_sources['xsell_'.$extra_xsell_list['xsell_type_id']] = $extra_xsell_list['xsell_type_name'];
         }

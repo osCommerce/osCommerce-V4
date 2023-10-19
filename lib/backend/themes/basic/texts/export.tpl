@@ -8,6 +8,13 @@
               <span><label for="lng_{$sl['id']}">{$sl['name']}</label></span>
             </div>
         {/foreach}
+          <div class="pt-5">
+              <label class="control-label">{$smarty.const.TEXT_FILE_FORMAT}</label>
+              <select name="format" class="form-control">
+                  <option value="XLSX">XLSX</option>
+                  <option value="CSV">CSV</option>
+              </select>
+          </div>
       </div>
 
       <div class="popup-buttons" style="overflow: hidden;">

@@ -15,8 +15,8 @@
     {if count($platforms) > 1}
         <ul class="nav nav-tabs tab-radius-ul tab-radius-ul-white">
             {foreach $platforms as $platform}
-                <li{if $platformId && $platformId == $platform['id'] || !$platformId && $platform@index == 0} class="active"{/if}>
-                    <a href="#tab_{$platform['id']}" data-toggle="tab">
+                <li{if $platformId && $platformId == $platform['id'] || !$platformId && $platform@index == 0} class="active"{/if} data-bs-toggle="tab" data-bs-target="#tab_{$platform['id']}">
+                    <a>
                         <span>{$platform['text']}</span>
                     </a>
                 </li>
@@ -33,8 +33,8 @@
             {if count($languages) > 1}
             <ul class="nav nav-tabs tab-radius-ul tab-radius-ul-white">
                 {foreach $languages as $language}
-                    <li{if $languageId && $languageId == $language['id'] || !$languageId && $language@index == 0} class="active"{/if}>
-                        <a href="#tab_{$platform['id']}_{$language['id']}" data-toggle="tab">
+                    <li{if $languageId && $languageId == $language['id'] || !$languageId && $language@index == 0} class="active"{/if} data-bs-toggle="tab" data-bs-target="#tab_{$platform['id']}_{$language['id']}">
+                        <a>
                             {$language['logo']}<span>{$language['name']}</span>
                         </a>
                     </li>

@@ -12,6 +12,7 @@
 
 namespace frontend\controllers;
 
+use common\classes\platform;
 use Yii;
 use yii\helpers\Url;
 use yii\web\Controller;
@@ -195,9 +196,25 @@ class IndexController extends Sceleton
         $page_name = \common\classes\design::pageName($page_name);
         $this->view->page_name = $page_name;
 
+        // add og: tags
+        $title = \common\models\MetaTags::find()
+            ->select('meta_tags_value')
+            ->where(['platform_id' => platform::currentId(), 'language_id' => \Yii::$app->settings->get('languages_id'), 'affiliate_id' => 0, 'meta_tags_key' => 'HEAD_TITLE_TAG_DEFAULT'])
+            ->scalar() ?? 'Home page';
+        $imageFile = \common\models\Platforms::find()
+            ->select('logo')
+            ->where(['platform_id' => platform::currentId()])
+            ->scalar();
+        \Yii::$app->getView()->registerMetaTag(['property' => 'og:type', 'content' => 'website' ],'og:type');
+        \Yii::$app->getView()->registerMetaTag(['property' => 'og:url', 'content' => tep_href_link('index/index')],'og:url');
+        \Yii::$app->getView()->registerMetaTag(['property' => 'og:title', 'content' => $title],'og:title');
+        if (!empty($imageFile)) {
+            \Yii::$app->getView()->registerMetaTag(['property' => 'og:image', 'content' => Yii::$app->urlManager->createAbsoluteUrl(\common\classes\Images::getWSCatalogImagesPath().$imageFile)], 'og:image');
+        }
+
         \common\components\google\widgets\GoogleTagmanger::setEvent('indexPage');
 
-        foreach (\common\helpers\Hooks::getList('index/index') as $filename) {
+        foreach (\common\helpers\Hooks::getList('frontend/index/index') as $filename) {
             include($filename);
         }
 
@@ -295,7 +312,7 @@ class IndexController extends Sceleton
                 ]);
             } else {
                 $this->layout = false;
-                return "please contact us if you see this page";
+                return (defined('CONTACT_US_ERROR_MESSAGE')?CONTACT_US_ERROR_MESSAGE:"please contact us if you see this page");
             }
         }
     }
@@ -437,6 +454,10 @@ class IndexController extends Sceleton
 
     public function actionSplit()
     {
+        header('Content-Type: text/javascript');
+        header('X-Content-Type-Options: nosniff');
+        header('Cache-Control: no-cache, must-revalidate, max-age=0');
+        exit;
     }
 
     public function actionSetFrontendTranslationTime()

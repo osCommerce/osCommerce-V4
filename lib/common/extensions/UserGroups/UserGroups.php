@@ -13,9 +13,12 @@
 
 namespace common\extensions\UserGroups;
 
+use common\classes\platform as Platform;
 use Yii;
 use common\models\Groups;
 use common\models\GroupsDiscounts;
+use yii\helpers\Html;
+use common\extensions\UserGroups\Render;
 
 // User Groups
 class UserGroups extends \common\classes\modules\ModuleExtensions {
@@ -59,7 +62,7 @@ class UserGroups extends \common\classes\modules\ModuleExtensions {
         }
       $ret = [];
       if (\common\helpers\Extensions::isCustomerGroupsAllowed()) {
-        $q = Groups::find()->orderBy('groups_name')->indexBy('groups_id')->asArray();
+        $q = Groups::find()->orderBy('sort_order, groups_name')->indexBy('groups_id')->asArray();
         /** @var \common\extensions\ExtraGroups\ExtraGroups $ext */
         if ($ext = \common\helpers\Acl::checkExtension('ExtraGroups', 'allowed')) {
           if ($ext::allowed() && !empty($typeCode)) {
@@ -397,14 +400,14 @@ class UserGroups extends \common\classes\modules\ModuleExtensions {
         if (isset($_POST['item_id']))
             $groups_id = tep_db_prepare_input($_POST['item_id']);
         $groups_name = tep_db_prepare_input($_POST['groups_name']);
-        $groups_discount = tep_db_prepare_input($_POST['groups_discount']);
+        $groups_discount = tep_db_prepare_input($_POST['groups_discount'] ?? null);
         $apply_groups_discount_to_specials = isset($_POST['apply_groups_discount_to_specials']) ? 1 : 0;
         $groups_is_reseller = tep_db_prepare_input($_POST['groups_is_reseller'] ?? null);
         $new_approve = tep_db_prepare_input($_POST['new_approve'] ?? null);
         $bonusPointsCurrencyRate = (float)\Yii::$app->request->post('bonus_points_currency_rate', 0.0);
         $groups_default = $_POST['default'] ?? null;
         $groups_use_more_discount = $_POST['groups_use_more_discount'] ?? null;
-        $superdiscount_summ = tep_db_prepare_input($_POST['superdiscount_summ']);
+        $superdiscount_summ = tep_db_prepare_input($_POST['superdiscount_summ']??null);
         $per_product_price = (int)Yii::$app->request->post('per_product_price', 0);
         $default_landing_page = trim(Yii::$app->request->post('default_landing_page', ''));
         $sql_data_array = [
@@ -422,8 +425,9 @@ class UserGroups extends \common\classes\modules\ModuleExtensions {
             'per_product_price' => $per_product_price,
             'default_landing_page' => $default_landing_page,
         ];
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('BusinessToBusiness', 'allowed')) {
-            $sql_data_array = array_merge($sql_data_array, $ext::showGroupSave());
+
+        foreach (\common\helpers\Hooks::getList('customergroups/groupedit/before-save') as $filename) {
+            include($filename);
         }
         /* NOT FIXED
         $image_active = new \upload('image_active');
@@ -473,26 +477,20 @@ class UserGroups extends \common\classes\modules\ModuleExtensions {
         } else {
             GroupsDiscounts::deleteAll('groups_id =:id', [':id' => $groups_id]);
         }
-        
-        /** @var \common\extensions\ExtraGroups\ExtraGroups $extraGroups */
-        if ($extraGroups = \common\helpers\Acl::checkExtension('ExtraGroups', 'allowed')) {
-          if ($extraGroups::allowed()) {
-            $group_type_id = $extraGroups::saveGroup($groups_id);
-          }
-        }
 
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('UserGroupsExtraDiscounts', 'allowed')) {
+        /** @var \common\extensions\UserGroupsExtraDiscounts\UserGroupsExtraDiscounts $ext */
+        if ($ext = \common\helpers\Extensions::isAllowed('UserGroupsExtraDiscounts')) {
             $ext::adminSubmitGroups($groups_id);
         }
 
         if ($popup == 1) {
-          $q = Groups::find()->orderBy('groups_name')->asArray()->select('groups_name, groups_id')->indexBy('groups_id');
+            $q = Groups::find()->orderBy('groups_name')->asArray()->select('groups_name, groups_id')->indexBy('groups_id');
 
-          if ($extraGroups = \common\helpers\Acl::checkExtension('ExtraGroups', 'allowed')) {
-            if ($extraGroups::allowed()) {
-              $q->andWhere(['groups_type_id' => $group_type_id]);
+            /** @var \common\extensions\ExtraGroups\ExtraGroups $extraGroups */
+            if ($extraGroups = \common\helpers\Extensions::isAllowed('ExtraGroups')) {
+                $group_type_id = $extraGroups::saveGroup($groups_id);
+                $q->andWhere(['groups_type_id' => $group_type_id]);
             }
-          }
             echo '<option value=""></option>';
             
             foreach ($q->all() as $status ) {
@@ -508,6 +506,7 @@ class UserGroups extends \common\classes\modules\ModuleExtensions {
             return '';
         }
         $groups_id = (int) Yii::$app->request->post('item_id');
+        \common\components\CategoriesCache::getCPC()::invalidateGroups($groups_id);
 
         if (DEFAULT_USER_GROUP == $groups_id) {
             tep_db_query("update " . TABLE_CONFIGURATION . " set configuration_value = '0' where configuration_key = 'DEFAULT_USER_GROUP'");
@@ -611,6 +610,109 @@ class UserGroups extends \common\classes\modules\ModuleExtensions {
     {
         $row = \common\models\Groups::findOne($group_id);
         return !empty($row) && $row->per_product_price > 0;
+    }
+
+    public static function addBannerData($bannerData, $banners_id)
+    {
+        \common\helpers\Translation::init('extensions/user-groups');
+        $platformUserGroups = [];
+
+        $platforms = \common\models\BannersToPlatform::find()
+            ->where(['banners_id' => $banners_id])->asArray()->all();
+
+        $groupsArray = self::getGroupsArray();
+
+        if (is_array($platforms) && isset($platforms[0]['user_groups'])) {
+            foreach ($platforms as $platform) {
+                if ($platform['user_groups'] === '#0#') {
+                    $platformUserGroups[$platform['platform_id']][] = 0;
+                    foreach ($groupsArray as $group) {
+                        $platformUserGroups[$platform['platform_id']][] = (int)$group['groups_id'];
+                    }
+                } else {
+                    $groups = explode(',', $platform['user_groups']);
+                    foreach ($groups as $group) {
+                        $platformUserGroups[$platform['platform_id']][] = (int)trim($group, '# ');
+                    }
+                }
+            }
+        }
+
+        $bannerData['platformUserGroups'] = $platformUserGroups;
+        $bannerData['groupsArray'] = $groupsArray;
+        return $bannerData;
+    }
+
+    public static function platformTableCell($bannerData, $platformId)
+    {
+        return Render::widget([
+            'template' => 'platform-table-cell.tpl',
+            'params' => [
+                'bannerData' => $bannerData,
+                'platformId' => $platformId,
+            ]
+        ]);
+    }
+
+    public static function getModel($modelName)
+    {
+        if ($modelName == 'Groups') {
+            return \common\models\Groups::class;
+        }
+    }
+
+    public static function saveBannerUserGroup()
+    {
+        $bannerId = (int)Yii::$app->request->post('banners_id', 0);
+        $userGroups = Yii::$app->request->post('user_group', []);
+
+
+        $bannersToPlatform = \common\models\BannersToPlatform::find()->where([
+            'banners_id' => $bannerId,
+        ])->asArray()->all();
+
+        $usersToPlatforms = [];
+        foreach ($bannersToPlatform as $bannerToPlatform) {
+            if (isset($userGroups[$bannerToPlatform['platform_id']]) &&
+                is_array($userGroups[$bannerToPlatform['platform_id']]) &&
+                count($userGroups[$bannerToPlatform['platform_id']])
+            ) {
+                $ids = [];
+                foreach ($userGroups[$bannerToPlatform['platform_id']] as $userId => $flag) {
+                    $ids[] = '#' . $userId . '#';
+                }
+                $usersToPlatforms[$bannerToPlatform['platform_id']] = implode(',', $ids);
+            } else {
+                $usersToPlatforms[$bannerToPlatform['platform_id']] = '';
+            }
+        }
+
+        foreach ($usersToPlatforms as $platformId => $groups) {
+            $bannersToPlatform = \common\models\BannersToPlatform::findOne([
+                'banners_id' => $bannerId,
+                'platform_id' => $platformId
+            ]);
+            if ($bannersToPlatform) {
+                $bannersToPlatform->user_groups = $groups;
+                $bannersToPlatform->save();
+            }
+        }
+    }
+
+    public static function useWithBanners()
+    {
+        static $status = null;
+        if ($status === null) {
+            $btp = \common\models\BannersToPlatform::find()->asArray()->one();
+            if (isset($btp['user_groups']) &&
+                \common\helpers\PlatformConfig::getVal('USER_GROUPS_WITH_BANNERS', 'false') == 'true'
+            ) {
+                $status = true;
+            } else {
+                $status = false;
+            }
+        }
+        return $status;
     }
 
 }

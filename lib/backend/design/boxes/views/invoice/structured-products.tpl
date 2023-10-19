@@ -23,8 +23,8 @@ ul.sortable li div.name{ width:40%; display: inline-block;  }}
         <div class="tabbable tabbable-custom">
             <ul class="nav nav-tabs">
 
-                <li class="active"><a href="#type" data-toggle="tab">{$smarty.const.TEXT_SETTINGS}</a></li>
-                <li><a href="#style" data-toggle="tab">{$smarty.const.HEADING_STYLE}</a></li>
+                <li class="active" data-bs-toggle="tab" data-bs-target="#type"><a>{$smarty.const.TEXT_SETTINGS}</a></li>
+                <li data-bs-toggle="tab" data-bs-target="#style"><a>{$smarty.const.HEADING_STYLE}</a></li>
 
             </ul>
             <div class="tab-content">

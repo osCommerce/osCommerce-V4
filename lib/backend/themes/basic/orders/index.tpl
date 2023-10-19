@@ -14,7 +14,7 @@
                 <button type="submit" class="btn">{$smarty.const.TEXT_GO}</button>
             </form>
             <form id="filterFormHead" name="filterFormHead" class="filterFormHead" onsubmit="return applyFilter();"><label>{$smarty.const.TEXT_SEARCH_BY}</label>
-                <select class="form-control" name="by">
+                <select class="form-select" name="by">
                     {foreach $app->controller->view->filters->by as $Item}
                         <option {$Item['selected']} value="{$Item['value']}">{$Item['name']}</option>
                     {/foreach}
@@ -39,14 +39,14 @@
             <div class="pull-right">
                 <form action="{$app->urlManager->createUrl('orders/index',$app->request->get())}" method="get" id="filterModeForm" class="filterFormHead" onsubmit="return applyFilter();">
                     <label>{$smarty.const.SHOW}</label>
-                    {\yii\helpers\Html::dropDownList('', $app->controller->view->filters->mode, [''=>ORDER_FILTER_MODE_ALL, 'need_process'=>ORDER_FILTER_MODE_NEED_PROCESS], ['class'=>'form-control', 'onchange'=>"\$('#hMode').val(\$(this).val());applyFilter()"])}
+                    {\yii\helpers\Html::dropDownList('', $app->controller->view->filters->mode, [''=>ORDER_FILTER_MODE_ALL, 'need_process'=>ORDER_FILTER_MODE_NEED_PROCESS], ['class'=>'form-select', 'onchange'=>"\$('#hMode').val(\$(this).val());applyFilter()"])}
                 </form>
             </div>
             {if $smarty.const.ADMIN_ORDERS_QUICK_STATUS_FILTER=='True'}
             <div class="pull-right">
                 <form action="{$app->urlManager->createUrl('orders/index',$app->request->get())}" method="get" id="filterStatusForm" class="filterFormHead" onsubmit="return applyFilter();">
                     <label>{$smarty.const.TABLE_HEADING_STATUS}</label>
-                    {Html::dropDownList('status[]', $app->controller->view->filters->status_selected, array_merge(array(''=>''), $app->controller->view->filters->status), ['class' => 'form-control', 'onchange'=>"\$('#orderStatuses').val(\$(this).val());applyFilter()"])}
+                    {Html::dropDownList('status[]', $app->controller->view->filters->status_selected, array_merge(array(''=>''), $app->controller->view->filters->status), ['class' => 'form-select', 'onchange'=>"\$('#orderStatuses').val(\$(this).val());applyFilter()"])}
                 </form>
             </div>
             {/if}
@@ -81,8 +81,8 @@
 <!-- always available batch actions -->
             <div class="after batch-actions batch-actions-always" style="padding: 10px 10px 5px">
                 <div> <span class="batch-actions-label">{$smarty.const.TEXT_BATCH_ACTIONS}:</span>
-{if \common\helpers\Acl::checkExtensionAllowed('PackingList', 'allowed')}
-    {\common\extensions\PackingList\PackingList::getBulkButtonsHtmlAlways()}
+{if $PackingList = \common\helpers\Acl::checkExtensionAllowed('PackingList', 'allowed')}
+    {$PackingList::getBulkButtonsHtmlAlways()}
 {/if}
                 </div>
             </div>
@@ -102,11 +102,11 @@
                     <a href="javascript:void(0)" onclick="flagSelectedOrders();" class="btn">{$smarty.const.TEXT_FLAG}</a>
                     <a href="javascript:void(0)" onclick="markerSelectedOrders();" class="btn">{$smarty.const.TEXT_MARKER}</a>
 {/if}
-{if \common\helpers\Acl::checkExtensionAllowed('PackingList', 'allowed')}
-    {\common\extensions\PackingList\PackingList::getBulkButtonsHtml()}
+{if $PackingList = \common\helpers\Acl::checkExtensionAllowed('PackingList', 'allowed')}
+    {$PackingList::getBulkButtonsHtml()}
 {/if}
             </div>   
-            <table class="table table-striped table-selectable table-checkable table-hover table-responsive table-bordered datatable tabl-res double-grid table-orders table-colored" data_ajax="orders/orderlist" checkable_list="">
+            <table class="table table-selectable table-checkable table-hover table-responsive responsive table-bordered datatable tabl-res double-grid table-orders table-colored" data_ajax="orders/orderlist" checkable_list="">
                 <thead>
                     <tr>
                     {if $tableHeading}
@@ -123,8 +123,8 @@
 <!-- always available batch actions -->
             <div class="after batch-actions batch-actions-always" style="padding: 10px 10px 5px">
                 <div> <span class="batch-actions-label">{$smarty.const.TEXT_BATCH_ACTIONS}:</span>
-{if \common\helpers\Acl::checkExtensionAllowed('PackingList', 'allowed')}
-    {\common\extensions\PackingList\PackingList::getBulkButtonsHtml()}
+{if $PackingList = \common\helpers\Acl::checkExtensionAllowed('PackingList', 'allowed')}
+    {$PackingList::getBulkButtonsHtml()}
 {/if}
                 </div>
             </div>
@@ -184,7 +184,7 @@
   <form role="form">
     <div class="form-group">
       <label>{$smarty.const.ENTRY_STATUS}</label>
-      {Html::dropDownList('change_status', '', $ordersStatuses, ['class'=>'form-control', 'options' => $ordersStatusesOptions, 'onChange' => 'return doCheckOrderStatus();', 'id' => 'order-status'])}
+      {Html::dropDownList('change_status', '', $ordersStatuses, ['class'=>'form-select', 'options' => $ordersStatusesOptions, 'onChange' => 'return doCheckOrderStatus();', 'id' => 'order-status'])}
     </div>
 
     <div class="form-group">
@@ -601,8 +601,8 @@ function applyFilter() {
     return false;    
 }
 
-{if \common\helpers\Acl::checkExtensionAllowed('PackingList', 'allowed')}
-    {\common\extensions\PackingList\PackingList::getBulkButtonsJS()}
+{if $PackingList = \common\helpers\Acl::checkExtensionAllowed('PackingList', 'allowed')}
+    {$PackingList::getBulkButtonsJS()}
 {/if}
 
 {if \common\helpers\Acl::checkExtensionAllowed('OrderMarkers', 'allowed')}
@@ -926,8 +926,16 @@ $(document).ready(function(){
                   }
         });
         $("select[data-role=multiselect]").multipleSelect({
+            formatSelectAll: () => '[Select all]',
+            formatAllSelected: () => 'All selected',
+            formatCountSelected: (count, total) => `${ count} of ${ total}`,
+            formatNoMatchesFound: () => 'No matches found',
             multiple: true,
             filter: true,
+            multipleWidth: '80%',
+            onAfterCreate: function () {
+                $('.ms-drop input').addClass('form-check-input')
+            }
         });
 		
 		$('[data-role=multiselect-radio]').multipleSelect({
@@ -1028,8 +1036,7 @@ $(document).ready(function(){
 });
 
 </script>
-{if \common\helpers\Acl::checkExtensionAllowed('ShippingCarrierPick', 'allowed')}
-    {assign var="ext" value=\common\helpers\Acl::checkExtensionAllowed('ShippingCarrierPick', 'allowed')}
+{if $ext = \common\helpers\Extensions::isAllowed('ShippingCarrierPick')}
     {$ext::orderIndexJs()}
 {/if}
 <!--===Actions ===-->

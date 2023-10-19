@@ -96,7 +96,7 @@
 
 var selected_product;
 var selected_product_name;
-var tree_data = {json_encode($category_tree_array)};
+var tree_data = '{json_encode($category_tree_array)}';
 var tree;
 var adata;
 var loaded_products = [];
@@ -258,7 +258,7 @@ function clearTree(){
         }
         
         getIndex = function (currentIndex){
-            return $('.product-details').size() - 1 - currentIndex;
+            return $('.product-details').length - 1 - currentIndex;
         }
         
         getDetails = function(obj){

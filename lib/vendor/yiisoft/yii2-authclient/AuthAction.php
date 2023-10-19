@@ -166,16 +166,14 @@ class AuthAction extends Action
     public function run()
     {
         if (!empty($_GET[$this->clientIdGetParamName]) || Yii::$app->storage->has('social_guid')) {
-            $clientId = ( $_GET[$this->clientIdGetParamName]? $_GET[$this->clientIdGetParamName] : Yii::$app->storage->get('social_guid'));
+            $clientId = ($_GET[$this->clientIdGetParamName] ? $_GET[$this->clientIdGetParamName] : Yii::$app->storage->get('social_guid'));
             /* @var $collection \yii\authclient\Collection */
             $collection = Yii::$app->get($this->clientCollection);
             if (!$collection->hasClient($clientId)) {
                 throw new NotFoundHttpException("Unknown auth client '{$clientId}'");
             }
             $client = $collection->getClient($clientId);
-            if (!Yii::$app->storage->has('social_guid')){
-                Yii::$app->storage->set('social_guid', $clientId);
-            }
+            Yii::$app->storage->set('social_guid', $clientId);
             return $this->auth($client);
         }
         Yii::$app->storage->remove('social_guid');

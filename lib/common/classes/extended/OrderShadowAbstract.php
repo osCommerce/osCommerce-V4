@@ -21,6 +21,7 @@ use yii\web\Session;
 use common\classes\platform;
 use common\helpers\Address;
 
+#[\AllowDynamicProperties]
 abstract class OrderShadowAbstract implements OrderInterface {
 
     public function prepareOrderInfo() {
@@ -62,7 +63,7 @@ abstract class OrderShadowAbstract implements OrderInterface {
             'shipping_cost' => @$shipping['cost'] + $delivery_option_inc,
             'shipping_no_cost' => @$shipping['no_cost'],
             'shipping_cost_inc_tax' => @$shipping['cost_inc_tax'] + $delivery_option_inc,
-            'shipping_cost_exc_tax' => @$shipping['cost'] + $delivery_option_ex,
+            'shipping_cost_exc_tax' => (isset($shipping['cost_exc_tax'])?$shipping['cost_exc_tax']:@$shipping['cost']) + $delivery_option_ex,
             'subtotal' => 0,
             'subtotal_inc_tax' => 0,
             'subtotal_exc_tax' => 0,
@@ -129,10 +130,8 @@ abstract class OrderShadowAbstract implements OrderInterface {
 
         $index = 0;
         $normilizeSP = false;
-        if ($extSP = \common\helpers\Acl::checkExtension('SupplierPurchase', 'allowed')) {
-            if ($extSP::allowed()) {
-                $normilizeSP = true;
-            }
+        if ($extSP = \common\helpers\Extensions::isAllowed('SupplierPurchase')) {
+            $normilizeSP = true;
         }
         $products = $cart->get_products();
 
@@ -238,6 +237,7 @@ abstract class OrderShadowAbstract implements OrderInterface {
                         $attributes = tep_db_fetch_array($attributes_query);
                         $attributes['options_values_price'] = \common\helpers\Attributes::get_options_values_price($attributes['products_attributes_id']??null, $products[$i]['quantity'] ?? 0);
 
+                        if (isset($attributes['products_options_name']))
                         $this->products[$index]['attributes'][$subindex] = array('option' => $attributes['products_options_name'],
                             'value' => ((isset($attrText[$option]) && !empty($attrText[$option])) ? $attrText[$option] : ($attributes['products_options_values_name']??null)),
                             'option_id' => $option,
@@ -273,41 +273,141 @@ abstract class OrderShadowAbstract implements OrderInterface {
 
     public function _setAddress($address) {
 
-        $vat_status = 0;
+        $vat_status = self::getAddressItem($address, 'company_vat');
         /** @var \common\extensions\VatOnOrder\VatOnOrder $ext */
         if ($ext = \common\helpers\Acl::checkExtensionAllowed('VatOnOrder', 'allowed')) {
             $vat_status = $ext::check_vat_status($address);
             if ($vat_status > 1) {
-              $address['entry_company_vat'] = \common\helpers\Validations::sanitizeVatId($address['entry_company_vat']);
+              $address['entry_company_vat'] = \common\helpers\Validations::sanitizeVatId(self::getAddressItem($address, 'company_vat'));
             }
         }
         
-        $customs_number_status = (!empty($address['entry_customs_number']) || empty($address['entry_company']));
+        $customs_number_status = (!empty(self::getAddressItem($address, 'customs_number')) || empty(self::getAddressItem($address, 'company')));
 
-        if ($this->manager->get('is_multi') == 1) {
-            $address['entry_firstname'] = $this->manager->get('customer_first_name');
-            $address['entry_lastname'] = $this->manager->get('customer_last_name');
+        if ($ext = \common\helpers\Acl::checkExtensionAllowed('CustomersMultiEmails', 'allowed')) {
+            if ($this->manager->get('is_multi') == 1) {
+                $address['entry_firstname'] = $this->manager->get('customer_first_name');
+                $address['entry_lastname'] = $this->manager->get('customer_last_name');
+            }
         }
+        // fix bug: $address may be in 2 formats: ['entry_firstname'] and ['firstname']
+        // the second comes from manager->get('sendto'). Example:
+        //                $sendto = $this->manager->get('sendto');
+        //                if (is_array($sendto)) {
+        //                    $address = $sendto;
+        //                } else {
+        //                    $address = $customer->getAddressBook($sendto, true);
+        //                }
+        //                if ($address) {
+        //                    $this->delivery = $this->_setAddress($address);
+        //                }
+        //        var1 = [
+        //            'address_book_id' => 208801,
+        //            'customers_id' => 2215,
+        //            'entry_gender' => 'm',
+        //            'entry_company' => '',
+        //            'entry_firstname' => 'Eee',
+        //            'entry_lastname' => 'Hhhhhhhh',
+        //            'entry_street_address' => '',
+        //            'entry_suburb' => '',
+        //            'entry_postcode' => '',
+        //            'entry_city' => '',
+        //            'entry_state' => 'Illinois',
+        //            'entry_country_id' => 150,
+        //            'entry_zone_id' => 0,
+        //            'entry_company_vat' => '',
+        //            'entry_telephone' => '',
+        //            '_api_time_modified' => '2023-10-10 15:35:06',
+        //            'entry_company_vat_date' => null,
+        //            'entry_company_vat_status' => 0,
+        //            'entry_customs_number' => null,
+        //            'entry_customs_number_status' => 0,
+        //            'entry_customs_number_date' => null,
+        //            'entry_email_address' => '',
+        //            'drop_ship' => 0,
+        //            'country' => [
+        //                'countries_id' => 150,
+        //                'countries_name' => 'Netherlands',
+        //                'countries_iso_code_2' => 'NL',
+        //                'countries_iso_code_3' => 'NLD',
+        //                'address_format_id' => 5,
+        //                'language_id' => 1,
+        //                'status' => 1,
+        //                'sort_order' => 1,
+        //                'lat' => 52.2093658,
+        //                'lng' => 4.158453,
+        //                'zoom' => '8.0000',
+        //                'vat_code_type' => 1,
+        //                'vat_code_prefix' => 'NL',
+        //                'vat_code_chars' => '12',
+        //                'dialling_prefix' => '+31',
+        //                'currency_code' => '',
+        //                'minimum_order_value' => '0.00',
+        //            ],
+        //        var2 = [
+        //            'name' => 'Eee Hhhhhhh',
+        //            'gender' => 'm',
+        //            'firstname' => 'Eee',
+        //            'lastname' => 'Hhhhhhhh',
+        //            'company' => '',
+        //            'company_vat' => '',
+        //            'company_vat_status' => '0',
+        //            'customs_number' => '',
+        //            'customs_number_status' => 1,
+        //            'telephone' => '',
+        //            'email_address' => '',
+        //            'street_address' => '',
+        //            'suburb' => '',
+        //            'city' => '',
+        //            'postcode' => '',
+        //            'state' => 'Illinois',
+        //            'country' => [
+        //                'id' => '150',
+        //                'title' => 'Netherlands',
+        //                'iso_code_2' => 'NL',
+        //                'iso_code_3' => 'NLD',
+        //                'address_format_id' => '5',
+        //                'dialling_prefix' => '+31',
+        //                'zoom' => '8.0000',
+        //                'lng' => '4.1584530',
+        //                'lat' => '52.2093658',
+        //            ],
+        //            'address_book_id' => 208801,
+        //            'format_id' => 5,
+        //            'zone_id' => 0,
+        //            'country_id' => '150',
+        //        ]
+        $state = trim(self::getAddressItem($address, 'state'));
         return array(
             'address_book_id' => $address['address_book_id'] ?? null,
-            'gender' => $address['entry_gender'] ?? null,
-            'firstname' => $address['entry_firstname'] ?? null,
-            'lastname' => $address['entry_lastname'] ?? null,
-            'telephone' => ($address['entry_telephone'] ?? null) == '' ? $this->customer['telephone'] : $address['entry_telephone'],
-            'company' => $address['entry_company'] ?? null,
-            'company_vat' => $address['entry_company_vat'] ?? null,
+            'gender' => self::getAddressItem($address, 'gender'),
+            'firstname' => self::getAddressItem($address, 'firstname'),
+            'lastname' => self::getAddressItem($address, 'lastname'),
+            'telephone' => self::getAddressItem($address, 'telephone') ?? ($this->customer['telephone'] ?? null),
+            'email_address' => self::getAddressItem($address, 'email_address') ?? ($this->customer['email_address'] ?? null),
+            'company' => self::getAddressItem($address, 'company'),
+            'company_vat' => self::getAddressItem($address, 'company_vat'),
             'company_vat_status' => $vat_status,
-            'customs_number' => $address['entry_customs_number'] ?? null,
+            'customs_number' => self::getAddressItem($address, 'customs_number'),
             'customs_number_status' => $customs_number_status,
-            'street_address' => $address['entry_street_address'] ?? null,
-            'suburb' => $address['entry_suburb'] ?? null,
-            'city' => $address['entry_city'] ?? null,
-            'postcode' => $address['entry_postcode'] ?? null,
-            'state' => ((tep_not_null($address['entry_state'] ?? null)) ? $address['entry_state'] : \common\helpers\Zones::get_zone_name($address['entry_country_id'] ?? null, $address['entry_zone_id'] ?? null, '')),
-            'zone_id' => $address['entry_zone_id'] ?? null,
-            'country' => array('id' => $address['country']['countries_id'] ?? null, 'title' => $address['country']['countries_name'] ?? null, 'iso_code_2' => $address['country']['countries_iso_code_2'] ?? null, 'iso_code_3' => $address['country']['countries_iso_code_3'] ?? null),
-            'country_id' => $address['entry_country_id'] ?? null,
+            'street_address' => self::getAddressItem($address, 'street_address'),
+            'suburb' => self::getAddressItem($address, 'suburb'),
+            'city' => self::getAddressItem($address, 'city'),
+            'postcode' => self::getAddressItem($address, 'postcode'),
+            'state' => empty($state) ? \common\helpers\Zones::get_zone_name(self::getAddressItem($address, 'country_id'), self::getAddressItem($address, 'zone_id'), '') : $state,
+            'zone_id' => self::getAddressItem($address, 'zone_id'),
+            'country' => array(
+                'id' => $address['country']['countries_id'] ?? ($address['country']['id'] ?? null),
+                'title' => $address['country']['countries_name'] ?? ($address['country']['title'] ?? null),
+                'iso_code_2' => $address['country']['countries_iso_code_2'] ?? ($address['country']['iso_code_2'] ?? null),
+                'iso_code_3' => $address['country']['countries_iso_code_3'] ?? ($address['country']['so_code_3'] ?? null)
+            ),
+            'country_id' => self::getAddressItem($address, 'country_id'),
             'format_id' => $address['country']['address_format_id'] ?? null);
+    }
+
+    private static function getAddressItem($array, $itemKey) {
+        return $array['entry_' . $itemKey] ?? ($array[$itemKey] ?? null);
     }
 
     public function prepareOrderAddresses() {
@@ -465,7 +565,7 @@ abstract class OrderShadowAbstract implements OrderInterface {
                 }
 
                 $products_tax = abs($this->products[$index]['tax']);
-                $products_tax_description = $this->products[$index]['tax_description'];
+                $products_tax_description = $this->products[$index]['tax_description'] ?? '';
                 if (self::isPricesWithTax()) {
                     if ($_tax>0) {
                         $this->info['tax'] += \common\helpers\Tax::roundTax($shown_price - ($shown_price / (($products_tax < 10) ? "1.0" . str_replace('.', '', $products_tax) : "1." . str_replace('.', '', $products_tax))));
@@ -490,7 +590,7 @@ abstract class OrderShadowAbstract implements OrderInterface {
             }
 
 
-            $this->info['total_inc_tax'] = $this->info['subtotal_inc_tax'] + $this->info['shipping_cost_exc_tax']; //$this->info['shipping_cost_exc_tax'];
+            $this->info['total_inc_tax'] = $this->info['subtotal_inc_tax'] + $this->info['shipping_cost_inc_tax']; //$this->info['shipping_cost_exc_tax'];
             $this->info['total_exc_tax'] = $this->info['subtotal_exc_tax'] + $this->info['shipping_cost_exc_tax'];
 
             /* if (($values = $cart->getTotalKey('ot_paid')) !== false) {

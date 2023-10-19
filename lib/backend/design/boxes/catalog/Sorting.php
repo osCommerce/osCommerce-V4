@@ -31,7 +31,7 @@ class Sorting extends Widget
   public function run()
   {
 
-    $sorting = \common\helpers\Sorting::getSorting($this->settings[0], true);
+    $sorting = \common\helpers\Sorting::getSorting(($this->settings[0] ?? []), true);
 //vl2do  set default sort id  $item.id === $sorting_id}
 
 

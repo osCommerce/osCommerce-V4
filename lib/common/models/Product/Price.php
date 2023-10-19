@@ -71,6 +71,7 @@ class Price extends BasePrice {
             'vars' => [],
 //                'type' => 'unit',
         ];
+        self::$iList = [];
     }
 
     /**
@@ -79,7 +80,7 @@ class Price extends BasePrice {
      */
     private function loadInstance($params) {
       //save current state
-      $key = md5(json_encode($this->stateParams));
+      $key = md5($this->uprid . json_encode($this->stateParams));
       if (!isset(self::$iList[$key])) {
         $tmp = clone $this;
         unset($tmp->calculatedPrices);
@@ -87,7 +88,7 @@ class Price extends BasePrice {
       }
 
       //find saved or create new
-      $key = md5(json_encode($params));
+      $key = md5($this->uprid . json_encode($params));
       if (isset(self::$iList[$key])) {
         $tmp = self::$iList[$key];
       } else {
@@ -332,7 +333,7 @@ class Price extends BasePrice {
      * @return self
      */
     public static function getInstance($uprid) {
-        if (!isset(self::$instanses[$uprid]) || Yii::$app->params['reset_static_product_prices_cache']) {
+        if (!isset(self::$instanses[$uprid]) || (Yii::$app->params['reset_static_product_prices_cache'] ?? false)) {
             self::$instanses[$uprid] = new self($uprid);
         }
         return self::$instanses[$uprid];

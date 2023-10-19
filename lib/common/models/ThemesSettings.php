@@ -30,7 +30,8 @@ class ThemesSettings extends \yii\db\ActiveRecord
     {
         return [
             [['theme_name'], 'string', 'max' => 128],
-            [['setting_group', 'setting_name'], 'string', 'max' => 255]
+            [['setting_group', 'setting_name'], 'string', 'max' => 255],
+            [['setting_value'], 'string']
         ];
     }
 

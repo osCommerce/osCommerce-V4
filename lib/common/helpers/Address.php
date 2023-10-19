@@ -32,6 +32,7 @@ class Address {
         'company_vat',
         'customs_number',
         'telephone',
+        'email_address',
         '(',
         ')',
         ',',       
@@ -259,6 +260,7 @@ class Address {
             $state = Output::output_string_protected(@$address['state']);
             $reg_number = Output::output_string_protected(@$address['reg_number']);
             $telephone = Output::output_string_protected(@$address['telephone']);
+            $email_address = Output::output_string_protected(@$address['email_address']);
             if (isset($address['country_id']) && tep_not_null($address['country_id'])) {
                 $country = \common\helpers\Country::get_country_name($address['country_id']);
 

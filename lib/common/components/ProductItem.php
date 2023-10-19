@@ -133,7 +133,7 @@ class ProductItem extends \ArrayObject
         $virtual_attributes = [];
 
         $inventoryUprid = \common\helpers\Inventory::normalizeInventoryId($uprid, $inventory_attributes, $virtual_attributes);
-        if (\common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed') && !$without_inventory) {
+        if (\common\helpers\Extensions::isAllowed('Inventory') && !$without_inventory) {
             $attributes = $virtual_attributes;
             $inventory_weight = \common\models\Inventory::find()
                 ->where(['products_id'=>strval($inventoryUprid), 'prid'=>(int)$inventoryUprid])

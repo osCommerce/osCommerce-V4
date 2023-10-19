@@ -247,7 +247,7 @@ class CountriesController extends Sceleton  {
       echo '<div class="main_value">' . tep_draw_input_field('currency_code', $cInfo->currency_code ?? null) . '</div>';
       echo '</div>';
 
-      if (\common\helpers\Acl::checkExtensionAllowed('UploadCustomerId', 'allowed')) {
+      if (\common\helpers\Extensions::isAllowed('UploadCustomerId')) {
         echo '<div class="check_linear">';
         echo tep_draw_checkbox_field('is_customer_id_required', 1, $cInfo->is_customer_id_required ?? null) . '<span>' . TEXT_CUSTOMER_ID_REQUIRED . '</span>';
         echo '</div>';
@@ -313,7 +313,7 @@ class CountriesController extends Sceleton  {
                     tep_db_query("insert into " . TABLE_COUNTRIES . " (countries_id, countries_name, countries_iso_code_2, countries_iso_code_3, currency_code, address_format_id, language_id, status, sort_order, lat, lng, zoom, vat_code_prefix, vat_code_type, vat_code_chars, dialling_prefix) values (" . $id . ", '" . tep_db_input($countries_name) . "', '" . tep_db_input($countries_iso_code_2) . "', '" . tep_db_input($countries_iso_code_3) . "', '" . tep_db_input($currency_code) . "', '" . (int) $address_format_id . "', '" . $language_id . "', '" . (int) $status . "', '" . (int) $sort_order . "', '" . (float) $lat . "', '" . (float) $lng . "', '" . (float) $zoom . "', '" . $vat_code_prefix . "', '" . (float) $vat_code_type . "', '" .  $vat_code_chars . "', '" . tep_db_input($dialling_prefix) . "')");
                 }
             }
-            if ($extClass = \common\helpers\Acl::checkExtensionAllowed('UploadCustomerId', 'allowed')) {
+            if ($extClass = \common\helpers\Extensions::isAllowed('UploadCustomerId')) {
               $extClass::countrySave($id);
             }
             $action = sprintf(defined('COMMON_CREATED')?COMMON_CREATED:'%s has been created', TABLE_HEADING_COUNTRY_NAME);
@@ -327,7 +327,7 @@ class CountriesController extends Sceleton  {
                 $countries_name = tep_db_prepare_input($countries_name_array[$language_id]);
                 tep_db_query("update " . TABLE_COUNTRIES . " set countries_name = '" . tep_db_input($countries_name) . "', countries_iso_code_2 = '" . tep_db_input($countries_iso_code_2) . "', countries_iso_code_3 = '" . tep_db_input($countries_iso_code_3) . "', currency_code = '" . tep_db_input($currency_code) . "', address_format_id = '" . (int) $address_format_id . "', status='" . $status . "', sort_order='" . $sort_order . "', lat = '" . tep_db_input($lat) . "', lng = '" . tep_db_input($lng) . "', zoom ='" . tep_db_input($zoom) . "', vat_code_prefix ='" . $vat_code_prefix . "', vat_code_type ='" . $vat_code_type . "', vat_code_chars ='" . $vat_code_chars . "', dialling_prefix = '" . tep_db_input($dialling_prefix) . "' where countries_id = '" . (int) $countries_id . "' and language_id='" . $language_id . "'");
             }
-            if ($extClass = \common\helpers\Acl::checkExtensionAllowed('UploadCustomerId', 'allowed')) {
+            if ($extClass = \common\helpers\Extensions::isAllowed('UploadCustomerId')) {
               $extClass::countrySave($countries_id);
             }
             $action = sprintf(defined('COMMON_UPDATED')?COMMON_UPDATED:'%s has been updated', TABLE_HEADING_COUNTRY_NAME);

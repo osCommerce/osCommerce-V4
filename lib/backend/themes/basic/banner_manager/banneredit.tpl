@@ -1,6 +1,7 @@
 {use class="yii\helpers\Html"}
 {\backend\assets\BDTPAsset::register($this)|void}
 {use class="backend\assets\BannersAsset"}
+{use class="common\helpers\Hooks"}
 {BannersAsset::register($this)|void}
 
 {\backend\design\Data::addJsData(['tr' => \common\helpers\Translation::translationsForJs([
@@ -13,20 +14,20 @@
     <div class="tabbable tabbable-custom">
         <ul class="nav nav-tabs">
             {if $isMultiPlatforms }
-                <li>
-                    <a href="#platform" data-toggle="tab">{$smarty.const.TEXT_COMMON_PLATFORM_TAB}</a>
+                <li data-bs-toggle="tab" data-bs-target="#platform">
+                    <a>{$smarty.const.TEXT_COMMON_PLATFORM_TAB}</a>
                 </li>
             {/if}
-            <li class="active">
-                <a href="#main" data-toggle="tab">{$smarty.const.TEXT_MAIN_DETAILS}</a>
+            <li class="active" data-bs-toggle="tab" data-bs-target="#main">
+                <a>{$smarty.const.TEXT_MAIN_DETAILS}</a>
             </li>
-            <li>
-                <a href="#settings" data-toggle="tab">{$smarty.const.TEXT_SETTINGS}</a>
+            <li data-bs-toggle="tab" data-bs-target="#settings">
+                <a>{$smarty.const.TEXT_SETTINGS}</a>
             </li>
         </ul>
         <div class="tab-content">
 
-            {if $isMultiPlatforms }
+            {if $isMultiPlatforms}
                 <div class="tab-pane" id="platform">
                     <div class="filter_pad">
                         <table class="table tabl-res table-striped table-hover table-responsive table-bordered table-switch-on-off double-grid platform_statuses">
@@ -34,6 +35,9 @@
                                 <tr>
                                     <th>{$smarty.const.TABLE_HEAD_PLATFORM_NAME}</th>
                                     <th>{$smarty.const.TABLE_HEAD_PLATFORM_BANNER_ASSIGN}</th>
+                                    {foreach Hooks::getList('banner_manager/banneredit', 'platform-table-heading-cell') as $filename}
+                                        {include file=$filename}
+                                    {/foreach}
                                 </tr>
                             </thead>
                             <tbody>
@@ -41,6 +45,9 @@
                                     <tr>
                                         <td>{$platform['text']}</td>
                                         <td>{$banners_data['platform_statuses'][$platform['id']]}</td>
+                                        {foreach Hooks::getList('banner_manager/banneredit', 'platform-table-cell') as $filename}
+                                            {include file=$filename}
+                                        {/foreach}
                                     </tr>
                                 {/foreach}
                             </tbody>
@@ -55,7 +62,7 @@
                 {if count($languages) > 1}
                     <ul class="nav nav-tabs under_tabs_ul">
                         {foreach $languages as $lKey => $lItem}
-                            <li{if $lKey == 0} class="active"{/if}><a href="#tab_{$lItem['code']}" data-toggle="tab" data-id="{$lItem['id']}">{$lItem['logo']}<span>{$lItem['name']}</span></a></li>
+                            <li{if $lKey == 0} class="active"{/if} data-bs-toggle="tab" data-bs-target="#tab_{$lItem['code']}"><a data-id="{$lItem['id']}">{$lItem['logo']}<span>{$lItem['name']}</span></a></li>
                         {/foreach}
                     </ul>
                 {/if}
@@ -107,7 +114,8 @@
                                              data-upload="{$mItem['upload']}"
                                              data-delete="{$mItem['delete']}"
                                              data-type="{$mItem['type']}"
-                                             data-acceptedFiles="image/*,video/*"
+                                             data-accepted-files="image/*,video/*"
+                                             data-edit="1"
                                                 {*data-width="1200"
                                                 data-height="400"*}>
                                         </div>
@@ -117,11 +125,11 @@
                                 <div class="col-md-6">
 
                                     <div class="row align-items-center">
-                                        <label class="col-xs-5"><h4>{$smarty.const.TEXT_TEXT}</h4></label>
-                                        <div class="col-xs-7">
+                                        <label class="col-5"><h4>{$smarty.const.TEXT_TEXT}</h4></label>
+                                        <div class="col-7">
                                             <div class="row align-items-center">
-                                                <label class="col-xs-6 align-right">{$smarty.const.TEXT_POSITION}<span class="colon">:</span></label>
-                                                <div class="col-xs-6">
+                                                <label class="col-6 align-right">{$smarty.const.TEXT_POSITION}<span class="colon">:</span></label>
+                                                <div class="col-6">
                                                     <select name="{$mItem['text_position_name']}" class="form-control">
                                                         <option value="0"{if $mItem['text_position'] == '0'} selected{/if}>{$smarty.const.TEXT_TOP_LEFT}</option>
                                                         <option value="1"{if $mItem['text_position'] == '1'} selected{/if}>{$smarty.const.TEXT_TOP_CENTER}</option>
@@ -155,9 +163,9 @@
             <div class="tab-pane" id="settings">
 
                 <div class="row align-items-center m-b-2">
-                    <label class="col-xs-3 align-right">{$smarty.const.TEXT_BANNERS_GROUP}</label>
-                    <div class="col-xs-4 col-lg-3">{$banners_data['banners_group']}</div>
-                    <div class="col-xs-3">
+                    <label class="col-3 align-right">{$smarty.const.TEXT_BANNERS_GROUP}</label>
+                    <div class="col-4 col-lg-3">{$banners_data['banners_group']}</div>
+                    <div class="col-3">
                         {*<span href="{Yii::$app->urlManager->createUrl(['banner_manager/newgroup'])}" class="btn btn-add-group">
                             {$smarty.const.TEXT_ADD_NEW_BANNER}
                         </span>*}
@@ -167,29 +175,42 @@
                 <div class="group-settings"></div>
 
                 <div class="row align-items-center m-b-2">
-                    <label class="col-xs-3 align-right">{$smarty.const.TEXT_BANNER_STATUS}</label>
-                    <div class="col-xs-4">{$banners_data['status']}</div>
+                    <label class="col-3 align-right">{$smarty.const.TEXT_BANNER_STATUS}</label>
+                    <div class="col-4">{$banners_data['status']}</div>
                 </div>
 
                 <div class="row align-items-center m-b-2">
-                    <label class="col-xs-3 align-right">{$smarty.const.TEXT_BANNER_SORT_ORDER}</label>
-                    <div class="col-xs-3 col-lg-2">{$banners_data['sort_order']}</div>
+                    <label class="col-3 align-right">{$smarty.const.TEXT_BANNER_SORT_ORDER}</label>
+                    <div class="col-3 col-lg-2">{$banners_data['sort_order']}</div>
                 </div>
 
                 <div class="row align-items-center m-b-2">
-                    <label class="col-xs-3 align-right">{$smarty.const.TEXT_BANNERS_SCHEDULED_AT}</label>
-                    <div class="col-xs-3 col-lg-2">{$banners_data['date_scheduled']}</div>
+                    <label class="col-3 align-right">{$smarty.const.TEXT_BANNERS_SCHEDULED_AT}</label>
+                    <div class="col-3 col-lg-2">{$banners_data['date_scheduled']}</div>
                 </div>
 
                 <div class="row align-items-center m-b-2">
-                    <label class="col-xs-3 align-right">{$smarty.const.TEXT_BANNERS_EXPIRES_ON}</label>
-                    <div class="col-xs-3 col-lg-2">{$banners_data['expires_date']}</div>
+                    <label class="col-3 align-right">{$smarty.const.TEXT_BANNERS_EXPIRES_ON}</label>
+                    <div class="col-3 col-lg-2">{$banners_data['expires_date']}</div>
                 </div>
 
                 <div class="row align-items-center m-b-2">
-                    <label class="col-xs-3 align-right">{$smarty.const.TEXT_REL_NOFOLLOW}</label>
-                    <div class="col-xs-3 col-lg-2">{$banners_data['nofollow']}</div>
+                    <label class="col-3 align-right">{$smarty.const.TEXT_REL_NOFOLLOW}</label>
+                    <div class="col-3 col-lg-2">{$banners_data['nofollow']}</div>
                 </div>
+
+                {if !$isMultiPlatforms}
+                    {$platformTableCells = Hooks::getList('banner_manager/banneredit', 'platform-table-cell')}
+                    {foreach Hooks::getList('banner_manager/banneredit', 'platform-table-heading-cell') as $key => $filename}
+                        <div class="row m-b-2">
+                            <label class="col-3 align-right pt-1">{include file=$filename}</label>
+                            <div class="col-3 col-lg-2">
+                                {$platform = $platforms[0]}
+                                {include file=$platformTableCells[$key]}
+                            </div>
+                        </div>
+                    {/foreach}
+                {/if}
 
             </div>
         </div>
@@ -235,7 +256,7 @@
             return null;
         }
 
-        if ($('.platform_statuses input[type="checkbox"]').length && !$('.platform_statuses input:checked').length) {
+        if ($('.platform_statuses input.check_on_off[type="checkbox"]').length && !$('.platform_statuses input:checked').length) {
             $('a[href="#platform"]').trigger('click');
             alertMessage('Please choose Sales Channel', 'alert-message');
             return null;
@@ -270,9 +291,18 @@
             {if !$popup}
             if (data.html) {
                 $('.content-container').html(data.html);
-                if (location.hash) {
-                    $(`.nav a[href="${ location.hash }"]`).click();
+                if (location.hash.length) {
+                    let urlHashArr = location.hash.substr(1).split('/');
+                    urlHashArr.forEach(function(hash){
+                        const triggerTabList = document.querySelectorAll('[data-bs-target="#' + hash + '"]');
+                        if (triggerTabList.length){
+                            const tab = new bootstrap.Tab(triggerTabList[0]);
+                            tab.show();
+                            setTimeout(() => $(triggerTabList).trigger('shown.bs.tab'), 100)
+                        }
+                    })
                 }
+                $('body').trigger('saved-page')
             }
             {/if}
         }, "json");
@@ -330,19 +360,19 @@
                 if (!data.length) {
                     $groupSettings.html(`
                     <div class="row m-b-2">
-                        <label class="col-xs-3 align-right">{$smarty.const.GROUP_RESOLUTIONS}</label>
-                        <div class="col-xs-4 col-lg-3">
+                        <label class="col-3 align-right">{$smarty.const.GROUP_RESOLUTIONS}</label>
+                        <div class="col-4 col-lg-3">
                             {$smarty.const.NO_RESOLUTIONS}
                         </div>
-                        <div class="col-xs-4"><span class="btn btn-edit-group">{$smarty.const.EDIT_GROUP}</span></div>
+                        <div class="col-4"><span class="btn btn-edit-group">{$smarty.const.EDIT_GROUP}</span></div>
                     </div>
                 `);
                     return
                 }
                 $groupSettings.html(`
                     <div class="row m-b-2">
-                        <label class="col-xs-3 align-right">{$smarty.const.GROUP_RESOLUTIONS}</label>
-                        <div class="col-xs-4 col-lg-3">
+                        <label class="col-3 align-right">{$smarty.const.GROUP_RESOLUTIONS}</label>
+                        <div class="col-4 col-lg-3">
                             <table class="group-resolutions" width="100%">
                                 <tr>
                                     <td><label>{$smarty.const.WINDOW_WIDTH}</label></td>
@@ -350,7 +380,7 @@
                                 </tr>
                             </table>
                         </div>
-                        <div class="col-xs-4"><span class="btn btn-edit-group">{$smarty.const.EDIT_GROUP}</span></div>
+                        <div class="col-4"><span class="btn btn-edit-group">{$smarty.const.EDIT_GROUP}</span></div>
                     </div>
                 `);
 
@@ -447,13 +477,13 @@
                             return '';
                         }
                         $('select[name="group_id"]').trigger('change')
-                        $popup.remove()
+                        $popup.remove();
                     }, 'json')
                 }
             })
         })
 
-        $('.upload-box-wrap').fileManager()
+        $('.main-image .upload-box-wrap').fileManager()
     })
 </script>
 <script type="text/javascript" src="{$app->view->theme->baseUrl}/js/banner-editor.js"></script>

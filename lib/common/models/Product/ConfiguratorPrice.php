@@ -47,7 +47,7 @@ class ConfiguratorPrice extends Price {
      * @return self
      */
     public static function getInstance($uprid) {
-        if (!isset(self::$instanses[$uprid]) || Yii::$app->params['reset_static_product_prices_cache']) {
+        if (!isset(self::$instanses[$uprid]) || (Yii::$app->params['reset_static_product_prices_cache'] ?? false)) {
             self::$instanses[$uprid] = new self();
             self::$instanses[$uprid]->uprid = $uprid;
             self::$instanses[$uprid]->products_price_configurator = [

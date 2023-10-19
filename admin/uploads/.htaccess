@@ -3,7 +3,7 @@ Options -Indexes
 Order Deny,Allow
 Deny from all
 </Files>
-<Files ~ "\.(gif|jpe?g|png|ico|GIF|JPE?G|PNG|ICO|mp4|MP4|mov|MOV|zip|ZIP)$">
+<Files ~ "\.(gif|jpe?g|png|ico|GIF|JPE?G|PNG|ICO|mp4|MP4|mov|MOV|zip|ZIP|webp|svg)$">
 Order Allow,Deny
 Allow from all
 </Files>

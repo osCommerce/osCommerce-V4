@@ -1,6 +1,6 @@
 <html>
   <head>
-    <script type="text/javascript" src="{$app->request->baseUrl}/js/ckeditor/ckeditor.js"></script>
+    <script type="text/javascript" src="{$app->request->baseUrl}/plugins/ckeditor/ckeditor.js"></script>
   </head>
   <body>
     <div class="popupEditorArea">

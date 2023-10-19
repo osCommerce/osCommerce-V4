@@ -46,6 +46,10 @@
     }
 
     function write($message, $type) {
+      $f=null;
+      if (!defined('STORE_PAGE_PARSE_TIME_LOG') || !(is_file(STORE_PAGE_PARSE_TIME_LOG) || ($f = @fopen(STORE_PAGE_PARSE_TIME_LOG, 'w+')))) { return; }
+      if ($f) @fclose($f);
+
       if(STORE_PAGE_PARSE_IP == '*') {
         error_log(strftime(STORE_PARSE_DATE_TIME_FORMAT) . ' [' . $type . '] ' . $message . "\n", 3, STORE_PAGE_PARSE_TIME_LOG);
       }

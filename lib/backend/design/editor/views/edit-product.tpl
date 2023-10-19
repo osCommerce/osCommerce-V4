@@ -3,16 +3,16 @@
     <input type="hidden" name="currentCart" value="{$currentCart}">
     <div class="widget box box-no-shadow" style="border: none;">
         <div class="popup-heading">{$smarty.const.T_EDIT_PROD}</div>
-        <div class="widget-content">				
+        <div class="popup-content">
 			<div >
                {$manager->render('Product', ['product' => $product, 'manager' => $manager, 'edit' => true])}
             </div>								
         </div>
         {tep_draw_hidden_field('action', 'add_products')}
-		<div class="noti-btn three-btn">
-		  <div><span class="btn btn-cancel">{$smarty.const.IMAGE_CANCEL}</span></div>
-          <div><input type="submit" class="btn btn-confirm btn-save" value="{$smarty.const.IMAGE_SAVE}"></div>
-          <div class="btn-center"><span class="btn btn-default btn-reset" >{$smarty.const.TEXT_RESET}</span></div>		  
+		<div class="popup-buttons">
+            <div><span class="btn btn-cancel">{$smarty.const.IMAGE_CANCEL}</span></div>
+            <div class="btn-center"><span class="btn btn-default btn-reset" >{$smarty.const.TEXT_RESET}</span></div>
+            <div><input type="submit" class="btn btn-confirm btn-save" value="{$smarty.const.IMAGE_SAVE}"></div>
 		</div>		
 
     </div>
@@ -20,10 +20,11 @@
 <script>
     
     order.activate_plus_minus('.edit_product_popup');
+
     
     $('form[name=cart_quantity]').submit(function(e){
         if (checkproducts([ { 'product':product } ])){
-            var params = [];            
+            var params = [];
             params.push({ 'name': 'action', 'value': 'add_products'});
             params = params.concat(product.getProducts());
             
@@ -38,6 +39,13 @@
         }
         return false;
     })
+
+    entryData.tr.TEXT_EXC_VAT = '{$smarty.const.TEXT_EXC_VAT}';
+    entryData.tr.TEXT_INC_VAT = '{$smarty.const.TEXT_INC_VAT}';
+    entryData.tr.QUANTITY_DISCOUNT_DIFFERENT = '{$smarty.const.QUANTITY_DISCOUNT_DIFFERENT}';
+    entryData.tr.ATTRIBUTE_PRICE_DIFFERENT = '{$smarty.const.ATTRIBUTE_PRICE_DIFFERENT}';
+    entryData.tr.TEXT_CHANGE_TO = '{$smarty.const.TEXT_CHANGE_TO}';
+    entryData.tr.TEXT_LEAVE = '{$smarty.const.TEXT_LEAVE}';
 
     getOrderRates = function(){
         var rates = [];
@@ -88,9 +96,12 @@
     })
     
     $('.btn-reset').click(function(){
-        product.resetDetails();        
+        $.get('{$currentUrl}', function (response) {
+            $('.pop-up-content:last').html(response)
+        })
     })
-    
-    
+
+
+
 </script>
 </div>

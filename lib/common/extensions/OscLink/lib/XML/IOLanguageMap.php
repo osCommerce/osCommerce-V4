@@ -46,7 +46,7 @@ class IOLanguageMap extends IOMap
                 $newId = \common\helpers\Language::get_language_id($this->language);
                 if ( $newId ) {
                     $this->value = $newId;
-                    $this->internalId = $newId;
+                    $this->internalId = $newId['languages_id'];
                     IOCore::get()->getAttributeMapper()->mapIds($this, $this->internalId, $this->externalId);
                 }
             }

@@ -17,7 +17,7 @@
         {if $isMultiPlatform}
             <div class="tl_filters_title">{$smarty.const.TEXT_COMMON_PLATFORM_FILTER}</div>
             <div class="f_td wl-td ftd_block tl_fron_or">
-                {$count_platform = $platforms|@count}
+                {$count_platform = $platforms|default:array()|@count}
                 {if $count_platform < 3}
                     {foreach $platforms as $platform}
                         <div><label class="radio_label"><input type="checkbox" name="platform[]" class="js_platform_checkboxes" value="{$platform['id']}" {if in_array($platform['id'], $app->controller->view->filters->platform)} checked="checked"{/if}> {$platform['text']}</label></div>

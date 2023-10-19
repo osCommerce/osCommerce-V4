@@ -46,7 +46,7 @@ class SocialLinks extends Widget
 
             \frontend\design\JsonLd::addData(['Organization' => [
                 'sameAs' => [$social['link']]
-            ]]);
+            ]], ['Organization', 'sameAs']);
 
             if (is_file(Images::getFSCatalogImagesPath() . $socials[$key]['image'])) {
                 $socials[$key]['image'] = DIR_WS_IMAGES . \common\classes\Images::getWebp($social['image']);

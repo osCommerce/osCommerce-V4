@@ -113,7 +113,7 @@
                             <div class="w-line-row w-line-row-1">
                                 <div class="wl-td">
                                     <label>{field_label const="ENTRY_DATE_OF_BIRTH" configuration="ACCOUNT_DOB"}</label>
-                                    {Html::activeTextInput($customerForm, 'dobTmp', ['class' => 'datepicker form-control', 'required' => false, 'value' => \common\helpers\Date::date_short($customerForm->dob)])}
+                                    {Html::activeTextInput($customerForm, 'dobTmp', ['class' => 'datepicker form-control', 'required' => false, 'value' => \common\helpers\Date::date_short($customerForm->dob), 'autocomplete' => 'bday'])}
                                     {Html::activeHiddenInput($customerForm, 'dob', ['class' => 'dob-res', 'required' => false])}
                                 </div>
                             </div>
@@ -168,7 +168,7 @@
                         <div class="w-line-row w-line-row-1">
                             <div class="wl-td">
                                 <label>{field_label const="TEXT_PIN" configuration="ACCOUNT_PIN"}</label>
-                                {Html::activePasswordInput($customerForm, 'pin', ['class' => 'form-control', 'required' => false])}
+                                {Html::activePasswordInput($customerForm, 'pin', ['class' => 'form-control', 'required' => false, 'autocomplete' => 'new-password'])}
                             </div>
                         </div>
                         {/if}
@@ -258,9 +258,15 @@
                 {/foreach}
                 </div>
                 <div class="cbox-right">
+{if $SplitCustomerAddresses = \common\helpers\Acl::checkExtensionAllowed('SplitCustomerAddresses', 'allowed')}
+    {$SplitCustomerAddresses::viewCustomerEdit($cInfo, $customerForm)}
+{else}
                     <div class="widget-no-btn box-no-btn box-no-shadow box-no-close">
                         <div class="widget-header widget-header-address"><h4>{$smarty.const.CATEGORY_ADDRESS}</h4></div>
                         <div class="widget-content-no-slider">
+                            <div class="widget-header">
+                                {Html::activeCheckBox($customerForm, 'can_use_drop_ship', ['class' => 'check_bot_switch_on_off', 'label' => $smarty.const.TEXT_USE_DROP_SHIP])}
+                            </div>
                             {foreach $addresses as $keyvar => $address}
                             <div class="widget box box-no-shadow">
                                 <div class="widget-header">
@@ -268,7 +274,7 @@
                                         <div class="btn-default-add">{$smarty.const.ENTRY_DEFAULT}</div>
                                         {Html::radio('customers_default_address_id', $address.address_book_id == $cInfo->customers_default_address_id, ['class' => 'check_bot_switch', 'value' => $keyvar])}
                                     </div>
-                                    <h4>{$address->suburb|escape:'html'} {$address->city|escape:'html'} {$address->state|escape:'html'} {$address->postcode|escape:'html'} {\common\helpers\Country::get_country_name($address->country)}</h4>
+                                    <h4>{$address->suburb|escape:'html'} {$address->city|escape:'html'} {$address->state|escape:'html'} {$address->postcode|escape:'html'} {\common\helpers\Country::get_country_name($address->country)}{if $address.drop_ship} ({$smarty.const.TEXT_DROP_SHIP}){/if}</h4>
                                     <div class="toolbar no-padding">
                                         <div class="btn-group btn-group-no-bg">
                                             {if $address->address_book_id}
@@ -279,9 +285,9 @@
                                     </div>
                                 </div>
                                 <div class="widget-content">
-                                    <div class="w-line-row w-line-row-2">
+                                    <div class="w-line-row row">
                                     {if $address->has('FIRSTNAME')}
-                                        <div>
+                                        <div class="col-6 mb-3">
                                            <div class="wl-td">
                                                 <label>{field_label const="ENTRY_FIRST_NAME" configuration=$address->get('FIRSTNAME')}</label>
                                                 {Html::activeTextInput($address, '['|cat:$keyvar|cat:']firstname', ['class' => 'form-control'])}
@@ -290,7 +296,7 @@
                                     {/if}
 
                                     {if $address->has('LASTNAME')}
-                                        <div>
+                                        <div class="col-6 mb-3">
                                            <div class="wl-td">
                                                 <label>{field_label const="ENTRY_LAST_NAME" configuration=$address->get('LASTNAME')}</label>
                                                 {Html::activeTextInput($address, '['|cat:$keyvar|cat:']lastname', ['class' => 'form-control'])}
@@ -298,10 +304,8 @@
                                         </div>
                                     {/if}
 
-                                    </div>
-                                    <div class="w-line-row w-line-row-2">
                                     {if $address->has('POSTCODE')}
-                                        <div>
+                                        <div class="col-6 mb-3">
                                            <div class="wl-td">
                                                 <label>{field_label const="ENTRY_POST_CODE" configuration=$address->get('POSTCODE')}</label>
                                                 {Html::activeTextInput($address, '['|cat:$keyvar|cat:']postcode', ['class' => 'form-control'])}
@@ -310,7 +314,7 @@
                                     {/if}
 
                                     {if $address->has('STREET_ADDRESS')}
-                                        <div>
+                                        <div class="col-6 mb-3">
                                            <div class="wl-td">
                                                 <label>{field_label const="ENTRY_STREET_ADDRESS" configuration=$address->get('STREET_ADDRESS')}</label>
                                                 {Html::activeTextInput($address, '['|cat:$keyvar|cat:']street_address', ['class' => 'form-control'])}
@@ -318,10 +322,8 @@
                                         </div>
                                     {/if}
 
-                                    </div>
-                                    <div class="w-line-row w-line-row-2">
                                     {if $address->has('SUBURB')}
-                                        <div>
+                                        <div class="col-6 mb-3">
                                            <div class="wl-td">
                                                 <label>{field_label const="ENTRY_SUBURB" configuration=$address->get('SUBURB')}</label>
                                                 {Html::activeTextInput($address, '['|cat:$keyvar|cat:']suburb', ['class' => 'form-control'])}
@@ -329,17 +331,16 @@
                                         </div>
                                     {/if}
                                     {if $address->has('CITY')}
-                                        <div class="address-wrap city-wrap">
+                                        <div class="col-6 mb-3">
                                             <div class="wl-td">
                                                 <label>{field_label const="ENTRY_CITY" configuration=$address->get('CITY')}</label>
                                                 {Html::activeTextInput($address, '['|cat:$keyvar|cat:']city', ['class' => 'form-control'])}
                                             </div>
                                        </div>
                                     {/if}
-                                    </div>
-                                    <div class="w-line-row w-line-row-2">
+
                                     {if $address->has('STATE')}
-                                        <div class="address-wrap state-wrap">
+                                        <div class="col-6 mb-3">
                                             <div class="wl-td">
                                                 <label>{field_label const="ENTRY_STATE" configuration=$address->get('STATE')}</label>
                                                 <div class="f_td2 f_td_state">
@@ -349,18 +350,16 @@
                                         </div>
                                     {/if}
                                     {if $address->has('COUNTRY')}
-                                        <div>
+                                        <div class="col-6 mb-3">
                                            <div class="wl-td">
                                                 <label>{field_label const="ENTRY_COUNTRY" configuration=$address->get('COUNTRY')}</label>
                                                 {Html::activeDropDownList($address, '['|cat:$keyvar|cat:']country', $address->getAllowedCountries(), ['id' => "selectCountry$keyvar", 'class' => 'form-control', 'required' => true])}
                                             </div>
                                         </div>
                                     {/if}
-                                    </div>
 
-                                    <div class="w-line-row w-line-row-2">
                                     {if $address->has('COMPANY')}
-                                        <div>
+                                        <div class="col-6 mb-3">
                                            <div class="wl-td">
                                                 <label>{field_label const="ENTRY_COMPANY" configuration=$address->get('COMPANY')}</label>
                                                  {Html::activeTextInput($address, '['|cat:$keyvar|cat:']company', ['class' => 'form-control'])}
@@ -368,23 +367,33 @@
                                         </div>
                                     {/if}
                                     {if $address->has('COMPANY_VAT')}
-                                        <div>
+                                        <div class="col-6 mb-3">
                                            <div class="wl-td">
                                                 <label>{field_label const="ENTRY_BUSINESS" configuration=$address->get('COMPANY_VAT')}</label>
                                                 {Html::activeTextInput($address, '['|cat:$keyvar|cat:']company_vat', ['class' => 'form-control'])}
                                             </div>
                                         </div>
                                     {/if}
-                                    </div>
-                                    <div class="w-line-row w-line-row-2">
+
                                     {if $address->has('TELEPHONE')}
-                                        <div>
+                                        <div class="col-6 mb-3">
                                             <div class="wl-td">
                                                 <label>{field_label const="ENTRY_TELEPHONE_ADRESS_BOOK"}</label>
                                                  {Html::activeTextInput($address, '['|cat:$keyvar|cat:']telephone', ['class' => 'form-control'])}
                                             </div>
                                         </div>
                                     {/if}
+                                    {if $address->has('EMAIL_ADDRESS')}
+                                        <div class="col-6 mb-3">
+                                            <div class="wl-td">
+                                                <label>{field_label const="ENTRY_EMAIL_ADDRESS_ADRESS_BOOK"}</label>
+                                                 {Html::activeTextInput($address, '['|cat:$keyvar|cat:']email_address', ['class' => 'form-control'])}
+                                            </div>
+                                        </div>
+                                    {/if}
+                                    {foreach \common\helpers\Hooks::getList('customers/customeredit', 'address-form-bottom') as $filename}
+                                        {include file=$filename}
+                                    {/foreach}
                                     </div>
                                 </div>
                             </div>
@@ -432,6 +441,7 @@ $('#selectState{$keyvar}').autocomplete({
                             {/foreach}
                         </div>
                     </div>
+{/if}
 
                     {foreach \common\helpers\Hooks::getList('customers/customeredit', 'right-column') as $filename}
                         {include file=$filename}
@@ -517,9 +527,6 @@ $(document).ready(function(){
     $('.credit_amount_history').popUp({
         box: "<div class='popup-box-wrap'><div class='around-pop-up'></div><div class='popup-box popupCredithistory'><div class='popup-heading credit-head'>{$smarty.const.ENTRY_CREDIT_HISTORY}</div><div class='pop-up-close'></div><div class='pop-up-content'><div class='preloader'></div></div></div></div>"
     });
-    $('.bonus_amount_history').popUp({
-        box: "<div class='popup-box-wrap'><div class='around-pop-up'></div><div class='popup-box popupCredithistory'><div class='popup-heading credit-head'>{$smarty.const.ENTRY_BONUS_HISTORY}</div><div class='pop-up-close'></div><div class='pop-up-content'><div class='preloader'></div></div></div></div>"
-    });
     $(".check_bot_switch").bootstrapSwitch(
         {
             onText: "{$smarty.const.SW_ON}",
@@ -553,54 +560,13 @@ $(document).ready(function(){
     $('.js-add-platform-location').on('click',function(){
         $('.js-platform-locations').trigger('add_row');
     });
-    var defaultText = "{$smarty.const.TRANSFER_BONUS_POINTS_TO_CREDIT_AMOUNT_TEXT}";
-    var warningText = '<span style="color:#ee4225;">{sprintf($smarty.const.TRANSFER_BONUS_POINTS_WARNING, $cInfo->customers_bonus_points)}';
-    $('#customerBonusPoints').on('keyup', function () {
-        if (/\D/g.test(this.value)) {
-            this.value = this.value.replace(/\D/g, '');
-        }
-    });
-    $('#moveToCreditAmount').on('mouseenter', function (e) {
-        var selectedPoints = parseInt($('#customerBonusPoints').val());
-        var allPoints = {if is_int($cInfo->customers_bonus_points)}{$cInfo->customers_bonus_points};{else}0;{/if};
-        if (selectedPoints > 0 && selectedPoints<= allPoints) {
-            $('#customerBonusPoints').css('border-color', '#00a858');
-            $('#bonusInfoText').html(defaultText);
-            return false;
-        }
-        $('#customerBonusPoints').css('border-color', '#ee4225');
-        $('#bonusInfoText').html(warningText);
-    });
-    $('#moveToCreditAmount').on('mouseleave', function (e) {
-        $('#customerBonusPoints').css('border-color', '');
-        $('#bonusInfoText').html(defaultText);
-        $('#bonusPointsWarning').hide();
-    });
-
-    $('#moveToCreditAmount').on('click', function (e) {
-        e.preventDefault();
-        $.post("{\Yii::$app->urlManager->createUrl(['customers/move-bonus-points-to-amount'])}", {
-                _csrf: $('meta[name="csrf-token"]').attr('content'),
-                customerId: $('#customersId').val(),
-                bonus: $('#customerBonusPoints').val(),
-                notifyBonus: $('input[name="bonus_notify"]').val(),
-                notifyAmount: $('input[name="notify"]').val(),
-            },
-            function (response) {
-                if (response.hasOwnProperty('result')) {
-                    if (response.result === true) {
-                        window.location.reload();
-                        return false;
-                    }
-                    alertMessage(response.result);
-                }
-            });
-    });
 });
 {if $app->controller->view->showDOB}
     $( ".datepicker" ).datepicker({
         changeMonth: true,
         changeYear: true,
+        yearRange: "-100y:-9y",
+        defaultDate: '-40y',
         showOtherMonths:true,
         autoSize: false,
         dateFormat: '{$smarty.const.DATE_FORMAT_DATEPICKER}',

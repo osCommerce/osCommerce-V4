@@ -1,3 +1,4 @@
+{\backend\assets\PlatformAsset::register($this)|void}
 <!--=== Page Header ===-->
 <div class="page-header">
     <div class="page-title">

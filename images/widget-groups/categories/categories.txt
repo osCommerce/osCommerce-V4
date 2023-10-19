@@ -1,0 +1,60 @@
+Header - header.png
+Footer - footer.png
+Pages - pages.png
+   Home page - home.png
+      Home page
+   Catalog - catalog.png
+      Product
+      Category listing
+      Product listing
+      Brands
+      Compare
+   Product Listing Items - productListing.png
+      Product
+   Informations - informations.png
+      Information
+      404
+      Sitemap
+      Reviews
+   Account - account.png
+      Account
+      Login
+      Logoff
+      Account Deleted
+      Password forgot
+   Cart - cart.png
+      Shopping Cart
+      Quotations
+      Wishlist
+   Steps Checkout - checkout2.png
+      Login
+      Checkout
+      Checkout confirmation
+      Checkout (no shipping)
+      Checkout confirmation (no shipping)
+      Checkout Success
+   Checkout - checkout.png
+      Login
+      Checkout
+      Checkout confirmation
+      Checkout confirmation (no shipping)
+      Checkout Success
+   Orders - orders.png
+      Invoice
+      Packingslip
+      Credit Note
+   Email/Gift Card - emails.png
+      Email
+      Gift Page
+      Gift Card
+      Gift Card PDF
+   Components
+      Login
+      Checkout
+      Checkout confirmation
+      Checkout (no shipping)
+      Checkout confirmation (no shipping)
+      Checkout Success
+Color scheme - color.png
+Fonts - fonts.png 
+Trade form - Trade form.png

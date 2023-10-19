@@ -20,8 +20,8 @@
 
     <div class="tabbable tabbable-custom">
       <div class="nav nav-tabs">
-        <div class="active"><a href="#comp" data-toggle="tab">{$smarty.const.TEXT_FROM_COMPUTER}</a></div>
-        <div><a href="#gallery" data-toggle="tab">{$smarty.const.UPLOAD_FROM_GALLERY}</a></div>
+        <div class="active" data-bs-toggle="tab" data-bs-target="#comp"><a>{$smarty.const.TEXT_FROM_COMPUTER}</a></div>
+        <div data-bs-toggle="tab" data-bs-target="#gallery"><a>{$smarty.const.UPLOAD_FROM_GALLERY}</a></div>
       </div>
       <div class="tab-content">
 

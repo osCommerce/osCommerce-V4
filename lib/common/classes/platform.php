@@ -148,6 +148,11 @@ class platform
         return self::getList();
     }
 
+    public static function realDefaultId() {
+        $defaultPlatform = \common\models\Platforms::findOne(['is_default' => 1]);
+        return $defaultPlatform->platform_id ?? 0;
+    }
+
     public static function defaultId() {
         $default_id = 0;
         $platforms = self::getList();

@@ -125,7 +125,7 @@
     }
 
 function backStatement() {
-  window.location.href = "{$app->urlManager->createUrl(['texts/'])}?" + ($('input[name=selected_entity]').size()>0 && $('input[name=selected_entity]').val().length > 0? 'by=translation_entity&search='+ encodeURIComponent($('input[name=selected_entity]').val()) + '&': ($('input[name=search]').size()>0 && $('input[name=search]').val().length>0 ? 'by='+$('select[name=by]').val()+'&search='+encodeURIComponent($('input[name=search]').val())+'&' : '')) + ($('input[name=sensitive]').prop('checked')? 'sensitive=1&': '') + 'row='+localStorage.lastRow;
+  window.location.href = "{$app->urlManager->createUrl(['texts/'])}?" + ($('input[name=selected_entity]').length>0 && $('input[name=selected_entity]').val().length > 0? 'by=translation_entity&search='+ encodeURIComponent($('input[name=selected_entity]').val()) + '&': ($('input[name=search]').length>0 && $('input[name=search]').val().length>0 ? 'by='+$('select[name=by]').val()+'&search='+encodeURIComponent($('input[name=search]').val())+'&' : '')) + ($('input[name=sensitive]').prop('checked')? 'sensitive=1&': '') + 'row='+localStorage.lastRow;
   return false;
 }
 

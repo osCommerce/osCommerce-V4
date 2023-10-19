@@ -31,6 +31,16 @@
           {/if}
       </td>
     </tr>
+    {if $settings[0]['show_landline']|default}
+      <tr>
+        <td class="phone">
+            <strong>{$smarty.const.ENTRY_LANDLINE}</strong>
+        </td>
+        <td>
+            {$data.landline}
+        </td>
+      </tr>
+    {/if}
     <tr>
       <td class="email">
           {if $settings[0]['tag_email_label']}

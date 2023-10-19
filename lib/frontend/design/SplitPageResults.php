@@ -12,6 +12,7 @@
 
 namespace frontend\design;
 
+#[\AllowDynamicProperties]
   class splitPageResults {
     var $sql_query, $number_of_rows, $current_page_number, $number_of_pages, $page_name;
     public $number_of_rows_per_page = 0;

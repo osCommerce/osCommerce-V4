@@ -36,7 +36,13 @@ final class tagmanger extends AbstractGoogle {
                         'name' => 'collect_measuring',
                         'value' => '1',
                         'type' => 'checkbox',
-                        'comment' => '<div class="ord-total" style="text-align:left!important;float: right;"><div class="ord-total-info" style="left:0!important;">Collect Measuring products, checkout funnel, promo</div></div>',
+                        'comment' => '<div class="ord-total" style="text-align:left!important;float: right;"><div class="ord-total-info" style="left:0!important;">LEGACY DATALAYER format. Collect Measuring products, checkout funnel, promo</div></div>',
+                    ],
+                    [
+                        'name' => 'collect_measuring_ga4',
+                        'value' => '1',
+                        'type' => 'checkbox',
+                        'comment' => '<div class="ord-total" style="text-align:left!important;float: right;"><div class="ord-total-info" style="left:0!important;">Pass Details in GA-4 format</div></div>',
                     ],
                     [
                         'name' => 'auto_update',
@@ -79,7 +85,7 @@ EOD;
         if ($part === 2) {
             return <<<EOD
 <!-- Google Tag Manager (noscript) -->
-<noscript><iframe src="{$localScriptPath}"
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id={$gtm_code}"
 height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <!-- End Google Tag Manager (noscript) -->
 EOD;

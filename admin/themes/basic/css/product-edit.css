@@ -131,7 +131,7 @@
 .overallocated-quantity-holder,
 .links,
 .buttons {
-    background: #ececec;
+    background: var(--background-color-4);
     font-size: 13px;
     text-align: center;
     display: flex;
@@ -582,6 +582,46 @@ div.js-edit-supplier-product-popup-container .col-md-12.bind-text label {
     padding: 3px 5px;
     width: 100%;
 }
+
+.scrtabs-tab-scroll-arrow {
+    border: none;
+    height: auto;
+    width: auto;
+}
+.inventory-popup-link {
+    white-space: nowrap;
+}
+.inventory-table .popup-box-page, .popup-box-page {
+    top: 100px;
+}
+@media(max-width:1450px){
+    td .popup-box-page {
+        left: 125px;
+    }
+    .fixed-header.sidebar-closed td .popup-box-page {
+        left: 0;
+    }
+}
+@media(max-width:1075px){
+    td .popup-box-page {
+        left: 0;
+    }
+}
+.popup-content {
+    max-height: calc(100vh - 262px) !important;
+}
+.nav-tabs.flex-column {
+    flex-wrap: nowrap;
+}
+.nav-tabs-left-scroll {
+    padding-top: 10px;
+}
+.tabs-left .slimScrollDiv {
+    margin-right: -1px;
+    position: relative;
+    z-index: 1;
+}
+
 @media(max-width:768px){
     .stock-block{
         grid-template-columns: repeat(3, 1fr);

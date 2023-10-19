@@ -239,7 +239,7 @@ class TlUrlRule extends UrlRule
                       if ( $key=='action' ) continue;
                       if (is_array($value)) {
                         for ($i=0,$n=sizeof($value); $i<$n; $i++) {
-                          $params_array[] = $key . urlencode('[]') . '='. urlencode($value[$i]);
+                          $params_array[] = $key . urlencode('[]') . '='. urlencode($value[$i]??'');
                         }
                       } else {
                         $params_array[] = $key . '=' . urlencode($value);
@@ -296,6 +296,10 @@ class TlUrlRule extends UrlRule
 
     public function parseRequest($manager, $request)
     {
+        foreach (\common\helpers\Hooks::getList('url-rule/parse-request/before') as $filename) {
+            $result = include($filename);
+            if ($result && is_array($result)) return $result;
+        }
         $languages_id = \Yii::$app->settings->get('languages_id');
         if (!tep_session_is_registered('cart') && session_status() === PHP_SESSION_ACTIVE) {//first run
             $ipAddress = \common\helpers\System::get_ip_address();

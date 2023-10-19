@@ -16,7 +16,7 @@
             {if count($app->controller->view->platforms) > 1}
                 <ul class="nav nav-tabs platform-tabs">
                     {foreach $app->controller->view->platforms as $platform}
-                        <li{if $platform->platform_id == $app->controller->view->def_platform_id} class="active"{/if}><a href="#tab_{$platform->platform_id}" class="flag-span" data-toggle="tab" data-id="{$platform->platform_id}"><span>{$platform->platform_name}</span>
+                        <li{if $platform->platform_id == $app->controller->view->def_platform_id} class="active"{/if} data-bs-toggle="tab" data-bs-target="#tab_{$platform->platform_id}"><a class="flag-span" data-id="{$platform->platform_id}"><span>{$platform->platform_name}</span>
                         </a></li>
                     {/foreach}
                 </ul>
@@ -39,7 +39,7 @@
     {if count($languages) > 1}
         <ul class="nav nav-tabs">
             {foreach $languages as $lKey => $lItem}
-                <li{if $lKey == 0} class="active"{/if}><a href="#tab_{$platform_id}_{$lItem['id']}" class="flag-span" data-toggle="tab">{$lItem['image']}<span>{$lItem['name']}</span></a></li>
+                <li{if $lKey == 0} class="active"{/if} data-bs-toggle="tab" data-bs-target="#tab_{$platform_id}_{$lItem['id']}"><a class="flag-span">{$lItem['image']}<span>{$lItem['name']}</span></a></li>
                         {/foreach}
         </ul>
         {/if}
@@ -67,7 +67,7 @@
                 <div class="tabbable tabbable-custom tabbable-ep">
                     <ul class="nav nav-tabs">
                         {foreach $currenciesTabs as $currId => $curr}
-                        <li{if $defaultCurrenciy == $currId} class="active"{/if}><a href="#markettab_{$currId}" data-toggle="tab"><span>{$curr['title']}</span></a></li>
+                        <li{if $defaultCurrenciy == $currId} class="active"{/if} data-bs-toggle="tab" data-bs-target="#markettab_{$currId}"><a><span>{$curr['title']}</span></a></li>
                         {/foreach}
                     </ul>
                     <div class="tab-content tab-content1 tab-content-vgc-pr">

@@ -100,6 +100,7 @@ class ot_gift_wrap extends ModuleTotal {
                 }
                 $cart->setTotalKey($this->code, $replacing_value);
             }
+            \common\helpers\Php8::nullArrProps($order->info['tax_groups'], ["$tax_description"]);
             $order->info['tax'] += $gift_wrap_tax_amount;
             $order->info['tax_groups']["$tax_description"] += $gift_wrap_tax_amount;
             $order->info['total'] += ($gift_wrap_amount+$gift_wrap_tax_amount);
@@ -230,18 +231,5 @@ class ot_gift_wrap extends ModuleTotal {
             ),
         );
     }
-    
-    public function extra_params(){
-        if (\Yii::$app->request->isPost){
-            $platform_id = (int)\Yii::$app->request->post('platform_id', 0);
-            if ($platform_id){
-                if ($this->get_config_key($platform_id, 'MODULE_ORDER_TOTAL_GIFT_WRAP_MESSAGE')== 'True'){
-                    if ($gistMessageExt = \common\helpers\Acl::checkExtensionAllowed('GiftWrapMessage','allowed')){
-                        $gistMessageExt::instance()->install($platform_id);
-                    }
-                }
-            }
-        }
-    }
-    
+
 }

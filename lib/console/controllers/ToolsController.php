@@ -22,7 +22,7 @@ use yii\helpers\FileHelper;
 /**
  * Tools
  */
-class ToolsController extends Controller
+class ToolsController extends Sceleton
 {
 
     public function actionUpdateCurrenciesRate()

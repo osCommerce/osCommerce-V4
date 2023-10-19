@@ -576,34 +576,40 @@ class Category extends AbstractClass
             unset($key);
             // EOF PRODUCT
             // OLD SEO REDIRECT
-            foreach ($this->oldSeoRedirectArray as $seoRedirectArray) {
-                try {
-                    $platformId = (int)(isset($seoRedirectArray['platform_id']) ? $seoRedirectArray['platform_id'] : 0);
-                    if ($platformId >= 0) {
-                        $languageId = (int)(isset($seoRedirectArray['language_id']) ? $seoRedirectArray['language_id'] : 0);
-                        if (isset($seoRedirectArray['language_code'])) {
-                            $languageId = $this->getLanguageIdByCode($seoRedirectArray['language_code'], $languageId);
+            $seoModel = \common\helpers\Extensions::getModel('SeoRedirectsNamed', 'SeoRedirectsNamed');
+            if (!empty($seoModel)) {
+                foreach ($this->oldSeoRedirectArray as $seoRedirectArray) {
+                    try {
+                        $platformId = (int)(isset($seoRedirectArray['platform_id']) ? $seoRedirectArray['platform_id'] : 0);
+                        if ($platformId >= 0) {
+                            $languageId = (int)(isset($seoRedirectArray['language_id']) ? $seoRedirectArray['language_id'] : 0);
+                            if (isset($seoRedirectArray['language_code'])) {
+                                $languageId = $this->getLanguageIdByCode($seoRedirectArray['language_code'], $languageId);
+                            }
+                            $searchArray = [
+                                'platform_id' => $platformId,
+                                'language_id' => $languageId,
+                                'redirects_type' => 'category',
+                                'owner_id' => $this->categoryId,
+                                'old_seo_page_name' => $seoRedirectArray['old_seo_page_name']
+                            ];
+                            $seoRedirectRecord = $seoModel::findOne($searchArray);
+                            if (!($seoRedirectRecord instanceof $seoModel)) {
+                                $seoRedirectRecord = new $seoModel();
+                                $seoRedirectRecord->loadDefaultValues();
+                                $seoRedirectRecord->setAttributes($searchArray);
+                                $seoRedirectRecord->save();
+                            }
                         }
-                        $searchArray = [
-                            'platform_id' => $platformId,
-                            'language_id' => $languageId,
-                            'redirects_type' => 'category',
-                            'owner_id' => $this->categoryId,
-                            'old_seo_page_name' => $seoRedirectArray['old_seo_page_name']
-                        ];
-                        $seoRedirectRecord = \common\models\SeoRedirectsNamed::findOne($searchArray);
-                        if (!($seoRedirectRecord instanceof \common\models\SeoRedirectsNamed)) {
-                            $seoRedirectRecord = new \common\models\SeoRedirectsNamed();
-                            $seoRedirectRecord->loadDefaultValues();
-                            $seoRedirectRecord->setAttributes($searchArray);
-                            $seoRedirectRecord->save();
-                        }
+                    } catch (\Exception $exc) {
+                        \Yii::warning($exc->getMessage().' '.$exc->getTraceAsString(), 'SeoRedirectNammed');
                     }
-                } catch (\Exception $exc) {}
-                unset($seoRedirectRecord);
-                unset($searchArray);
-                unset($languageId);
-                unset($platformId);
+                    unset($seoRedirectRecord);
+                    unset($searchArray);
+                    unset($languageId);
+                    unset($platformId);
+                }
+
             }
             unset($seoRedirectArray);
             // EOF OLD SEO REDIRECT

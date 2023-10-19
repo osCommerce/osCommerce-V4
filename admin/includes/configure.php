@@ -18,12 +18,13 @@ defined('HTTPS_SERVER') or define('HTTPS_SERVER', 'http://localhost'); // eg, ht
 defined('HTTP_CATALOG_SERVER') or define('HTTP_CATALOG_SERVER', 'http://localhost');
 defined('HTTPS_CATALOG_SERVER') or define('HTTPS_CATALOG_SERVER', 'http://localhost');
 defined('ENABLE_SSL_CATALOG') or define('ENABLE_SSL_CATALOG', false); // secure webserver for catalog module
+defined('ENABLE_SSL') or define('ENABLE_SSL', false);
 defined('DIR_FS_DOCUMENT_ROOT') or define('DIR_FS_DOCUMENT_ROOT', $_SERVER['DOCUMENT_ROOT']); // where the pages are located on the server
 defined('DIR_WS_ADMIN') or define('DIR_WS_ADMIN', '/trueloaded/admin/'); // absolute path required
 defined('DIR_FS_ADMIN') or define('DIR_FS_ADMIN', DIR_FS_DOCUMENT_ROOT . DIR_WS_ADMIN); // absolute pate required
 defined('DIR_WS_CATALOG') or define('DIR_WS_CATALOG', '/trueloaded/'); // absolute path required
 defined('DIR_FS_CATALOG') or define('DIR_FS_CATALOG', DIR_FS_DOCUMENT_ROOT . DIR_WS_CATALOG); // absolute path required
-defined('DIR_WS_HTTP_ADMIN_CATALOG') or define('DIR_WS_HTTP_ADMIN_CATALOG', 'admin/');
+defined('DIR_WS_HTTP_ADMIN_CATALOG') or define('DIR_WS_HTTP_ADMIN_CATALOG', ltrim(DIR_WS_ADMIN, '/'));
 defined('DIR_WS_IMAGES') or define('DIR_WS_IMAGES', 'images/');
 defined('DIR_WS_ICONS') or define('DIR_WS_ICONS', DIR_WS_IMAGES . 'icons/');
 defined('DIR_WS_CATALOG_IMAGES') or define('DIR_WS_CATALOG_IMAGES', DIR_WS_CATALOG . 'images/');

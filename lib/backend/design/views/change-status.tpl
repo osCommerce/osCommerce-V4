@@ -64,7 +64,7 @@
 
             setPeriod();
             $period.on('change', function(){
-                $('.datetimepicker', $switcherFormRow).data("DateTimePicker").destroy();
+                $('.datetimepicker', $switcherFormRow).dispose();
                 if ($period.val() === 'week') {
                     $dateSelector.html(`
 {Html::dropDownList('page_status[day][]', 0, $weekDays, ['class' => 'form-control page-status-week-day'])}
@@ -85,26 +85,29 @@
 
                 const defaultDate = new Date();
                 let settings = { };
-                settings.debug = false;
+                settings.locale = 'en';
+                //settings.debug = false;
                 //settings.defaultDate = new Date(defaultDate.getFullYear(), defaultDate.getMonth(), defaultDate.getDate(), 0, 0);
 
                 if ($period.val() === 'day') {
-                    settings.format = 'h:mm A';
+                    settings.format = 'h:mm T';
                 } else if ($period.val() === 'week') {
-                    settings.format = 'h:mm A';
+                    settings.format = 'h:mm T';
                 } else if ($period.val() === 'month') {
-                    settings.format = 'DD h:mm A';
-                    settings.defaultDate = new Date('2020-03-01T00:00:00');
-                    settings.minDate = new Date('2020-03-01T00:00:00');
-                    settings.maxDate = new Date('2020-03-31T23:59:00');
+                    settings.format = 'dd h:mm T';
+                    //settings.defaultDate = new Date('2020-03-01T00:00:00');
+                    //settings.minDate = new Date('2020-03-01T00:00:00');
+                    //settings.maxDate = new Date('2020-03-31T23:59:00');
                 } else if ($period.val() === 'year') {
-                    settings.format = 'DD MMM h:mm A';
-                    settings.dayViewHeaderFormat = 'MMMM';
+                    settings.format = 'dd MMM h:mm T';
+                    //settings.dayViewHeaderFormat = 'MMMM';
                 } else {
-                    settings.format = 'DD MMM YYYY h:mm A';
+                    settings.format = 'dd MMM yyyy h:mm T';
                 }
 
-                $('.datetimepicker', $switcherFormRow).datetimepicker(settings);
+                $('.datetimepicker', $switcherFormRow).tempusDominus({
+                    localization: settings
+                });
             };
         }
     })

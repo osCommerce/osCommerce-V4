@@ -38,6 +38,7 @@ class AuthContainer {
                 $this->_forms = [
                     'login' => new CustomerRegistration(['scenario' => $cLogin, 'shortName' => $cLogin, 'captha_enabled' => $loginCaptcha]),
                     'registration' => new CustomerRegistration(['scenario' => $cRegisrt, 'shortName' => $cRegisrt, 'captha_enabled' => $registrationCaptcha]),
+                    'login_top' => new CustomerRegistration(['scenario' => CustomerRegistration::SCENARIO_LOGIN_TOP, 'shortName' => CustomerRegistration::SCENARIO_LOGIN_TOP, 'captha_enabled' => $loginCaptcha]),
                 ];
                 break;
             case 'account/login-box':

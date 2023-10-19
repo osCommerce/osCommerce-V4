@@ -8,7 +8,7 @@
   <div class="or_box_head">{$smarty.const.TEXT_INFO_HEADING_NEW_LANGUAGE}</div>
 {/if}
 *}
-			  {if {$messages|@count} > 0}
+			  {if {$messages|default:array()|@count} > 0}
 			   {foreach $messages as $type => $message}
               <div class="alert alert-{$type} fade in">
                   <i data-dismiss="alert" class="icon-remove close"></i>
@@ -21,8 +21,8 @@
     <input type="hidden" name="row_id" value="{$row}">
     <div class="tabbable tabbable-custom">
               <ul class="nav nav-tabs top_tabs_ul main_tabs">
-                <li class="active"><a href="#tab_main" data-toggle="tab"><span>{$smarty.const.TEXT_MAIN_DETAILS}</span></a></li>
-                <li class=""><a href="#tab_formats" data-toggle="tab"><span>Formats</span></a></li>
+                <li class="active" data-bs-toggle="tab" data-bs-target="#tab_main"><a><span>{$smarty.const.TEXT_MAIN_DETAILS}</span></a></li>
+                <li class="" data-bs-toggle="tab" data-bs-target="#tab_formats"><a><span>Formats</span></a></li>
               </ul>
               <input type="hidden" name="tab" value="">
               <div class="tab-content">
@@ -87,7 +87,7 @@
                       <div class="tabbable tabbable-custom">
                           <!--<ul class="nav nav-tabs top_tabs_ul">
                             {foreach $languages as $_l}
-                            <li class="active"><a href="#tab_lang_{$_l['code']}" data-toggle="tab"><span>{$_l['image']}&nbsp;{$_l['name']}</span></a></li>
+                            <li class="active" data-bs-toggle="tab" data-bs-target="#tab_lang_{$_l['code']}"><a><span>{$_l['image']}&nbsp;{$_l['name']}</span></a></li>
                             {/foreach}
                           </ul>-->
                           <div class="tab-inserted">
@@ -132,7 +132,7 @@
                       
                             <ul class="nav nav-tabs top_tabs_ul">
                             {foreach $languages as $_l}
-                              <li class="{if $_l['code'] == $smarty.const.DEFAULT_LANGUAGE}active{/if}"><a href="#tab_temp_{$_l['code']}" data-toggle="tab"><span>{$_l['image']}&nbsp;{$_l['name']}</span></a></li>
+                              <li class="{if $_l['code'] == $smarty.const.DEFAULT_LANGUAGE}active{/if}" data-bs-toggle="tab" data-bs-target="#tab_temp_{$_l['code']}"><a><span>{$_l['image']}&nbsp;{$_l['name']}</span></a></li>
                             {/foreach}
                             </ul>
                              <div class="tab-content">

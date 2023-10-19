@@ -323,7 +323,7 @@ class WsdlGenerator extends Component
         $params = $method->getParameters();
         $message = array();
         $headers = array();
-        $n = preg_match_all('/^@param\s+([\w\.]+(\[\s*\])?)\s*?(.*)$/im', $comment, $matches);
+        $n = preg_match_all('/^@param\s+([\w\.\\\]+(\[\s*\])?)\s*?(.*)$/im', $comment, $matches);
         if ($n > count($params)) {
             $n = count($params);
         }

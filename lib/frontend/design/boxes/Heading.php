@@ -469,7 +469,7 @@ class Heading extends Widget
             }
         }
 
-        if ($this->settings[0]['heading_item']) {
+        if ($this->settings[0]['heading_item']??null) {
 
             if ($this->settings[0]['heading_type'] == 'h2') {
                 if ($h2) {
@@ -491,7 +491,7 @@ class Heading extends Widget
             if ($this->settings[0]['heading_type'] == 'h2') {
 
                 foreach ($h2 as $key => $heading) {
-                    if (!$sowed['h2'][$key]){
+                    if (!($sowed['h2'][$key]??null)){
                         $sowed['h2'][$key] = true;
                         return '<h2 class="heading-2">' . $h2[$key] . '</h2>';
                     }

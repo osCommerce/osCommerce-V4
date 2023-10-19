@@ -31,8 +31,8 @@
              data-position-value="{$img.position}"
              data-fit-name="fit[{$language_id}][{$img.image_width}]"
              data-fit-value="{$img.fit}"
+             data-edit="1"
         >
-            <textarea name="svg[{$language_id}][{$img.image_width}]" hidden>{$img.svg}</textarea>
         </div>
     </div>
 {/foreach}

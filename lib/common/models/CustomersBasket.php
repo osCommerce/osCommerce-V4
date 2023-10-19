@@ -15,7 +15,6 @@ namespace common\models;
 
 use yii\db\ActiveRecord;
 use yii\behaviors\TimestampBehavior;
-use common\extensions\MultiCart\MultiCart;
 /**
  * This is the model class for table "customers_basket".
  *
@@ -117,11 +116,8 @@ class CustomersBasket extends ActiveRecord {
                 $productBasket_query->andWhere(['is_giveaway' => 0]);
             }
             
-            if( $multiCart = \common\helpers\Acl::checkExtension( 'MultiCart', 'allowed' ) ) {
-                if ($multiCart::allowed()){
-                    $multiCart::productsOfCart($productBasket_query, $cart->basketID);
-                    //$qty = 0;
-                }
+            if( $multiCart = \common\helpers\Extensions::isAllowed('MultiCart') ) {
+                $multiCart::productsOfCart($productBasket_query, $cart->basketID);
             }
             $productBasket = $productBasket_query->one();
             
@@ -195,10 +191,8 @@ class CustomersBasket extends ActiveRecord {
             }
 
             /** @var \common\extensions\MultiCart\MultiCart  $multiCart */
-            if( $multiCart = \common\helpers\Acl::checkExtension( 'MultiCart', 'allowed' ) ) {
-                if ($multiCart::allowed()){
-                    $multiCart::productsOfCart($productBasket_query, $basket_id);                    
-                }
+            if( $multiCart = \common\helpers\Extensions::isAllowed('MultiCart') ) {
+                $multiCart::productsOfCart($productBasket_query, $basket_id);
             }
             
             $productBasket = $productBasket_query->with('productAttributes')
@@ -249,10 +243,8 @@ class CustomersBasket extends ActiveRecord {
             if ($is_giveaway){
                 $productBasket_query->andWhere(['is_giveaway' => 1]);
             }
-            if( $multiCart = \common\helpers\Acl::checkExtension( 'MultiCart', 'allowed' ) ) {
-                if ($multiCart::allowed()){
-                    $multiCart::productsOfCart($productBasket_query);                    
-                }
+            if( $multiCart = \common\helpers\Extensions::isAllowed('MultiCart') ) {
+                $multiCart::productsOfCart($productBasket_query);
             }
             $productBasket = $productBasket_query->one();
             if ($productBasket){
@@ -285,10 +277,8 @@ class CustomersBasket extends ActiveRecord {
                 $productBasket_query->andWhere(['is_giveaway' => 1]);
             }
 
-            if( $multiCart = \common\helpers\Acl::checkExtension( 'MultiCart', 'allowed' ) ) {
-                if ($multiCart::allowed()){
-                    $multiCart::productsOfCart($productBasket_query, $basket_id);
-                }
+            if( $multiCart = \common\helpers\Extensions::isAllowed('MultiCart') ) {
+                $multiCart::productsOfCart($productBasket_query, $basket_id);
             }
 
             $productBasket = $productBasket_query->all();

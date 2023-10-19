@@ -13,6 +13,8 @@
 namespace backend\controllers;
 
 use Yii;
+use common\classes\Images;
+use yii\helpers\FileHelper;
 /**
  *
  */
@@ -21,27 +23,32 @@ class UploadController extends Sceleton
   /**
    *
    */
-  public function actionIndex()
-  {
-    if (isset($_FILES['file'])) {
-      $path = \Yii::getAlias('@webroot');
-      $path .= DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR;
-      $uploadfile = $path . $this->basename($_FILES['file']['name']);
+    public function actionIndex()
+    {
+        if (false === \common\helpers\Acl::rule(['FILE_UPLOAD'])) {
+            header('HTTP/1.0 403 Forbidden');
+            die('File upload not allowed');
+        }
+        if (isset($_FILES['file'])) {
+            $folder = Yii::$app->request->get('folder');
+          $path = \Yii::getAlias('@webroot');
+          $path .= DIRECTORY_SEPARATOR . ($folder == 'images' ? '../images' : 'uploads') . DIRECTORY_SEPARATOR;
+          $uploadfile = $path . $this->basename($_FILES['file']['name']);
 
-      if ( !is_writeable(dirname($uploadfile)) ) {
-          $response = ['status' => 'error', 'text'=> 'Directory "'.$this->basename(\Yii::getAlias('@webroot')).DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR.'" not writeable'];
-      }elseif(!is_uploaded_file($_FILES['file']['tmp_name']) || filesize($_FILES['file']['tmp_name'])==0){
-          $response = ['status' => 'error', 'text'=> 'File upload error'];
-      }else
-      if (move_uploaded_file($_FILES['file']['tmp_name'], $uploadfile)) {
-        $text = '';
-        $response = ['status' => 'ok', 'text' => $text];
-      } else {
-        $response = ['status' => 'error'];
-      }
+          if ( !is_writeable(dirname($uploadfile)) ) {
+              $response = ['status' => 'error', 'text'=> 'Directory "'.$this->basename(\Yii::getAlias('@webroot')).DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR.'" not writeable'];
+          }elseif(!is_uploaded_file($_FILES['file']['tmp_name']) || filesize($_FILES['file']['tmp_name'])==0){
+              $response = ['status' => 'error', 'text'=> 'File upload error'];
+          }else
+          if (move_uploaded_file($_FILES['file']['tmp_name'], $uploadfile)) {
+            $text = '';
+            $response = ['status' => 'ok', 'text' => $text];
+          } else {
+            $response = ['status' => 'error'];
+          }
+        }
+        echo json_encode($response);
     }
-    echo json_encode($response);
-  }
 
     public function actionScreenshot()
     {
@@ -97,7 +104,8 @@ class UploadController extends Sceleton
 
         $pos = strripos($destination, '.');
         $ext = strtolower(substr($destination, $pos+1));
-        $name = substr($destination, 0, $pos);
+        $name = substr($destination, 0, $pos) . '-crop';
+        $destination = $name . '.' . $ext;
         $from = 1;
         $pos2 = strripos($destination, '-');
         $end = strtolower(substr($destination, $pos2+1));
@@ -119,4 +127,32 @@ class UploadController extends Sceleton
         }
     }
 
+    public function actionRemove()
+    {
+        $file = Yii::$app->request->get('file');
+
+        if (dirname($file) == '.') {
+            unlink(Images::getFSCatalogImagesPath() . $file);
+            unlink(Images::getFSCatalogImagesPath() . 'thumbnails/' . $file);
+
+            return json_encode(['text' => 'Removed']);
+        }
+
+        return json_encode(['error' => 'Wrong file location']);
+    }
+
+    public function actionSaveSvg()
+    {
+        $svg = Yii::$app->request->post('svg');
+        $fileName = Yii::$app->request->post('name');
+        $fileName = pathinfo($fileName, PATHINFO_FILENAME);
+
+        file_put_contents(DIR_FS_ADMIN . 'uploads/' . $fileName . '.svg', $svg);
+
+        return json_encode([
+            'text' => 'Saved',
+            'file' => DIR_WS_ADMIN . 'uploads/' . $fileName . '.svg',
+            'fileName' => $fileName . '.svg',
+        ]);
+    }
 }

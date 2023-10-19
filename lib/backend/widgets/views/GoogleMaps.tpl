@@ -217,28 +217,22 @@ function geocodeAddress(geocoder, map, data) {
   </script>
   {/if}
    <br/>
-      {$enabled_map['configuration_title']}&nbsp;<input type="checkbox" name="enabled_map" class="check_on_off" value="1" {if SHOW_GOOGLE_MAPS == 'true'} checked="checked" {/if}/>
+    <div class="form-check form-switch form-check-reverse d-sm-inline-block">
+        <input type="checkbox" name="enabled_map" class="form-check-input" role="switch" value="1" {if SHOW_GOOGLE_MAPS == 'true'} checked="checked" {/if}/>
+        {$enabled_map['configuration_title']}
+    </div>
       <script>
-        $(document).ready(function(){
-          $("input[name=enabled_map]").bootstrapSwitch(
-          {
-            onSwitchChange: function (element, arguments) {
-              $.get('index/enable-map',{
-                'configuration_id' : '{$enabled_map['configuration_id']}',
-                'status' : arguments
-              }, function(data, status){
-                if (status == 'success'){ 
-                  window.location.reload();
-                }
-              })
-              return true;
-            },
-            onText: "{$smarty.const.SW_ON}",
-            offText: "{$smarty.const.SW_OFF}",
-            handleWidth: '38px',
-            labelWidth: '24px'
-          }
-        )
+        $(function(){
+            $("input[name=enabled_map]").on('change', function(){
+                $.get('index/enable-map',{
+                    'configuration_id' : '{$enabled_map['configuration_id']}',
+                    'status' : $(this).prop('chacked')
+                }, function(data, status){
+                    if (status == 'success'){
+                        window.location.reload();
+                    }
+                })
+            })
         })
       </script>  
   {/if } 

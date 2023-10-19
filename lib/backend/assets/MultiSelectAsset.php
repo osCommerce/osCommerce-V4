@@ -13,15 +13,19 @@
 namespace backend\assets;
 
 use yii\web\AssetBundle;
+use yii\web\View;
 
 class MultiSelectAsset extends AssetBundle
 {
     public $basePath = '@webroot';
     public $baseUrl = '@web';
     public $css = [
-        '@web/../plugins/multiple-select/multiple-select.css',
+        'plugins/multiple-select/multiple-select.css',
     ];
     public $js = [
-        '@web/../plugins/multiple-select/multiple-select.js',
+        'plugins/multiple-select/multiple-select.js',
+    ];
+    public $jsOptions = [
+        'position' => View::POS_HEAD,
     ];
 }

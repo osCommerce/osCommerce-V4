@@ -6,7 +6,7 @@
 {if count($languages) > 1}
     <ul class="nav nav-tabs under_tabs_ul">
         {foreach $languages as $lang}
-            <li{if $lang->code == $default_language} class="active"{/if}><a href="#seo_tab_{$lang->code}" data-toggle="tab">{$lang->svgSrc}<span>{$lang->name}</span></a></li>
+            <li{if $lang->code == $default_language} class="active"{/if} data-bs-toggle="tab" data-bs-target="#seo_tab_{$lang->code}"><a>{$lang->svgSrc}<span>{$lang->name}</span></a></li>
         {/foreach}
     </ul>
 {/if}

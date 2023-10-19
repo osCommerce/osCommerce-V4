@@ -792,6 +792,7 @@ class Steps
             $themesStylesMain->value = $style['value'];
             $themesStylesMain->type = $style['type'];
             $themesStylesMain->sort_order = $style['sort_order'];
+            $themesStylesMain->main_style = $style['main_style'];
             $themesStylesMain->save();
         }
     }
@@ -912,7 +913,7 @@ class Steps
                 'theme_name' => $data['theme_name'],
                 'selector' => $item['selector'],
                 'attribute' => $item['attribute'],
-                'value' => $item['value_old'],
+                'value' => $item['value_old'] ?? '',
                 'visibility' => $item['visibility'],
                 'media' => $item['media'],
                 'accessibility' => $item['accessibility']
@@ -1744,6 +1745,7 @@ class Steps
             $themesStyles->value = $style['value'];
             $themesStyles->type = $style['type'];
             $themesStyles->sort_order = $style['sort_order'];
+            $themesStyles->main_style = $style['main_style'];
             $themesStyles->save();
         }
     }

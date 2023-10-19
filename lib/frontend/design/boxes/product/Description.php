@@ -61,7 +61,7 @@ class Description extends Widget
 
             \frontend\design\JsonLd::addData(['Product' => [
                 'description' => $ogDescription
-            ]]);
+            ]], ['Product', 'description']);
         }
 
         if (!$product['products_description']) {

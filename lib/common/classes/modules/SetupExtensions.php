@@ -27,27 +27,34 @@ class SetupExtensions {
     {
 //        return [
 //           'osCommerce' => ['version' => '121211', 'version_applicable' => 'equal' or 'greater-equal' or 'less-equal'],
-//            MODULE_TYPE => [
-//                REQUIRE_TYPE => [
+//            REQUIRE_TYPE => [
+//                MODULE_TYPE => [
 //                    /* simple variant: */ 'ModuleClass1', 'ModuleClass2',
 //                    /* variant with conditions min */ 'ModuleClass' => ['version_min' => '1.1.0']
 //                    /* variant with conditions min+max*/ 'ModuleClass' => ['version_min' => '1.1.0', 'version_max' => '2.0.0']
 //                ],
 //            ]
 //        ];
-//        MODULE_TYPE: 'ext'/'payment'/'shipping'
+//        MODULE_TYPE: 'ext'/'payment'/'shipping'/'label'/'analytic'
 //        REQUIRE_TYPE:
 //          'hard'   - extention can't work without classes
 //          'soft'   - extention can work without classes, but has additional features it they installed
 //          'usedby' - extension used by classes
 //
 //        Sample:
-//        return [ 'osCommerce' => ['version' => '54127', "version_applicable" => "greater-equal"],
-//            'ext' => [
-//                'hard' => [
+//        return ['osCommerce' => ['version' => '54127', "version_applicable" => "greater-equal"],
+//            'used' => [
+//                'ext' => ['Rma'],
+//            ],
+//            'soft' => [
+//                'ext' => ['Sample'],
+//            ],
+//            'hard' => [
+//                'ext' => [
 //                    'Quotations' => ['version_min' => '1.1.0'],
 //                ],
-//            ]
+//                'payment' => ['Quotations'],
+//            ],
 //        ];
     }
 
@@ -95,7 +102,8 @@ class SetupExtensions {
 //                'description' => 'Limited by Asset Indicator',
 //                'value' => 'False',
 //                'set_function' => 'tep_cfg_select_option(array(\'True\', \'False\'), ',
-//            ];
+//            ]
+//        ];
 //    }
 
 // return array with translations keys

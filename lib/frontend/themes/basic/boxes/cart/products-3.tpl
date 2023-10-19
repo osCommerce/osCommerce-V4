@@ -56,23 +56,16 @@
       </div>
       <div class="right-area">
         <div class="price">{$product.final_price}{if $product.standard_price !== false}<br/><small><i>(<strike>{$product.standard_price}</strike>)</i></small>{/if}
-            {if !is_null($bonus_points)}
-                {assign var="bonus" value=$bonus_points['bonuses']}
-                {if $product.bonus_coefficient === false && $bonus_points.can_use_bonuses && $bonus->products_bonus_list[$product.id]['redeem'] && $bonus->products_bonus_list[$product.id]['redeem'] > 0}
-                    {if $bonus->products_bonus_list[$product.id]['redeem_partly']}
-                    <div>{$bonus->products_bonus_list[$product.id]['redeem_text']}</div>
-                    {else}
-                    <div>{number_format($bonus->products_bonus_list[$product.id]['redeem'], 0)} {$smarty.const.TEXT_POINTS_REDEEM}</div>
-                    {/if}
-                {/if}
-                {if $product.bonus_points_cost && $product.bonus_points_cost > 0 && !$bonus->products_bonus_list[$product.id]['redeem']}
-                    <div>
-                        {number_format(floor($product.bonus_points_cost) * $product.quantity, 0)} {$smarty.const.TEXT_POINTS_EARN}
-                        {if $product.bonus_coefficient !== false}
-                            ({\common\helpers\Points::getBonusPointsPriceInCurrencyFormatted(floor($product.bonus_points_cost) * $product.quantity, $groupId)})
+            {$BonusActions=\common\helpers\Extensions::isAllowedAnd('BonusActions', 'isProductPointsEnabled')}
+            {if $BonusActions && $product.bonus_points_cost}
+                <div class="points">
+                    <div class="points-earn">
+                        {if $PremiumAccountClass = \common\helpers\Acl::checkExtensionAllowed('PremiumAccount', 'allowed')}
+                            {$PremiumAccountClass::showRewardPointsCost($product.bonus_points_cost * $product.quantity)}
                         {/if}
+                        {$product.bonus_points_cost_formatted} {$smarty.const.EXT_BONUS_ACTIONS_TEXT_PRODUCT_REWARD_POINTS}
                     </div>
-                {/if}
+                </div>
             {/if}
         </div>
       </div>

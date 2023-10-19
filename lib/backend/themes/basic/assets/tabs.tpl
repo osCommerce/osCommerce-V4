@@ -15,14 +15,14 @@ Released under the GNU General Public License
   {*id_prefix, gloabal $app *}
   <script type="text/javascript">
     $(document).ready(function () {
-      $('#{$id_prefix}_ul a[data-toggle="tab"]').on('shown.bs.tab', function () {
+      $('#{$id_prefix}_ul [data-bs-toggle="tab"]').on('shown.bs.tab', function () {
         localStorage.setItem('{$app->controller->id}_{$app->controller->action->id}_{$id_prefix}_lastTab', $(this).attr('href'));
       });
       var lastTab = localStorage.getItem('{$app->controller->id}_{$app->controller->action->id}_{$id_prefix}_lastTab');
       if (lastTab) {
-        $('#{$id_prefix}_tabbable_custom a[href=' + lastTab + ']').tab('show');
+        $('#{$id_prefix}_tabbable_custom [data-bs-target=' + lastTab + ']').tab('show');
       } else {
-        $('#{$id_prefix}_tabbable_custom a[data-toggle="tab"]:first').tab('show');
+        $('#{$id_prefix}_tabbable_custom [data-bs-toggle="tab"]:first').tab('show');
       }
     });
   </script>
@@ -44,7 +44,7 @@ Released under the GNU General Public License
             {$fieldSuffix="`$fieldSuffixParent`[`$data['id']`]"}
             {$idSuffix="`$idSuffixParent`_`$data['id']`"}
           {/if}
-          {if isset($data['data']) && $data['data']|@count>0}
+          {if isset($data['data']) && $data['data']|default:array()|@count>0}
             {$fieldsData = $data['data']}
           {elseif isset($data['id']) && isset($fData.{$data['id']})}
               {$fieldsData=$fData.{$data['id']}}
@@ -59,10 +59,10 @@ Released under the GNU General Public License
           {else}
             {$fieldsDataDef = $defData}
           {/if}
-          {if !isset($fieldsData['tabdata']) || $fieldsData['tabdata']|@count==0}
+          {if !isset($fieldsData['tabdata']) || $fieldsData['tabdata']|default:array()|@count==0}
             {$fieldsData['tabdata']=$data}
             {if isset($fieldsData['tabdata']['data'])}
-              {if $fieldsData['tabdata']['data']|@count>0}
+              {if $fieldsData['tabdata']['data']|default:array()|@count>0}
                 {$fieldsData['tabdata']['data']=[]}
               {/if}
             {else}
@@ -79,7 +79,7 @@ Released under the GNU General Public License
           {if $data['callback']!=''}
             {call {$data['callback']} data=$fieldsData fieldSuffix=$fieldSuffix idSuffix=$idSuffix}
           {/if}
-          {if isset($data['children']) && $data['children']|@count>0}
+          {if isset($data['children']) && $data['children']|default:array()|@count>0}
             {if !isset($data['children_callback']) || $data['children_callback']==''}
               {$data['children_callback']=$tabsType}
             {/if}
@@ -110,7 +110,7 @@ Released under the GNU General Public License
     <div class="tl-all-pages-block" id="{$id_prefix}_tl_all_pages_block">
       <ul class="" id="{$id_prefix}_ul_scr">
         {foreach $tabData as $data}
-          <li class="{if {$data@iteration}==1} active{/if} {$data['cssClass']}"><a href="#{$id}_{$data@iteration}" data-toggle="tab"><span>{$data['title']}</span></a></li>
+          <li class="{if {$data@iteration}==1} active{/if} {$data['cssClass']}" data-bs-toggle="tab" data-bs-target="#{$id}_{$data@iteration}" data-bs-toggle="tab" data-bs-target="#{$id}_{$data@iteration}"><a><span>{$data['title']}</span></a></li>
         {/foreach}
       </ul>
     </div>
@@ -119,7 +119,7 @@ Released under the GNU General Public License
   <!-- Tabs -->
   <ul class="nav nav-tabs nav-tabs-scroll" id="{$id_prefix}_ul">
     {foreach $tabData as $data}
-      <li class="{if {$data@iteration}==1} active{/if} {$data['cssClass']}" id="{$id}_{$data@iteration}_li"><a href="#{$id}_{$data@iteration}" data-toggle="tab"><span>{$data['title']}</span></a></li>
+      <li class="{if {$data@iteration}==1} active{/if} {$data['cssClass']}" id="{$id}_{$data@iteration}_li" data-bs-toggle="tab" data-bs-target="#{$id}_{$data@iteration}" data-bs-toggle="tab" data-bs-target="#{$id}_{$data@iteration}"><a><span>{$data['title']}</span></a></li>
     {/foreach}
   </ul>
   <!-- Tabs eof -->
@@ -134,11 +134,11 @@ Released under the GNU General Public License
     {if count($data) > 1}
       {call hTabScrollTabs id=$id_prefix tabData=$data}
     {/if}
-    {if $data|@count>0}
+    {if $data|default:array()|@count>0}
       {call tabData tabsType='hTabScroll' id=$id_prefix  tabData=$data fData=$fieldsData}
     {/if}
   </div>
-  {if $data|@count>0 && (!isset($data[0]['tabsSkipState']) || !$data[0]['tabsSkipState']) }
+  {if $data|default:array()|@count>0 && (!isset($data[0]['tabsSkipState']) || !$data[0]['tabsSkipState']) }
     {call saveStateInLocalStorage id_prefix=$id_prefix}
   {/if}
 {/function}
@@ -147,9 +147,9 @@ Released under the GNU General Public License
 {* LEFT VERTICAL TABS *}
 {function lTabTabs}
   <!-- Tabs -->
-  <ul class="nav nav-tabs nav-tabs-left {if !empty($tabData[0]['maxHeight'])}nav-tabs-left-scroll{/if}" id="{$id_prefix}_ul" {if !empty($tabData[0]['maxHeight'])}style="max-height:{$tabData[0]['maxHeight']}; overflow:auto;"{/if}>
+  <ul class="nav nav-tabs nav-tabs-left {if !empty($tabData[0]['maxHeight'])}nav-tabs-left-scroll flex-column{/if}" id="{$id_prefix}_ul" {if !empty($tabData[0]['maxHeight'])}style="max-height:{$tabData[0]['maxHeight']}; overflow:auto;"{/if}>
     {foreach $tabData as $data}
-      <li class="{if {$data@iteration}==1} active{/if} {$data['cssClass']}" id="{$id}_{$data@iteration}_li"><a href="#{$id}_{$data@iteration}" data-toggle="tab"><span>{$data['title']}</span></a></li>
+      <li class="{if {$data@iteration}==1} active{/if} {$data['cssClass']}" id="{$id}_{$data@iteration}_li" data-bs-toggle="tab" data-bs-target="#{$id}_{$data@iteration}" data-bs-toggle="tab" data-bs-target="#{$id}_{$data@iteration}"><a><span>{$data['title']}</span></a></li>
           {/foreach}
   </ul>
   <!-- Tabs eof -->
@@ -160,7 +160,7 @@ Released under the GNU General Public License
   {if $id_prefix==''}
     {assign var="id_prefix" value={"tab`$_assetsTabsCount++`"} }
   {/if}
-  {if $data|@count > 0 && !empty($data[0]['aboveTabs'])}
+  {if $data|default:array()|@count > 0 && !empty($data[0]['aboveTabs'])}
     <div class="nav-tabs-left-above p-t-1">
       {$all_hidden=$data[0]['all_hidden']}
       {include file={$data[0]['aboveTabs']}}
@@ -168,14 +168,14 @@ Released under the GNU General Public License
   {/if}
   <div class="tabbable tabs-left" id="{$id_prefix}_tabbable_custom">
 
-    {if $data|@count > 1}
+    {if $data|default:array()|@count > 1}
       {call lTabTabs id=$id_prefix tabData=$data}
     {/if}
-    {if $data|@count > 0}
+    {if $data|default:array()|@count > 0}
       {call tabData tabsType='lTab' id=$id_prefix  tabData=$data fData=$fieldsData}
     {/if}
   </div>
-  {if $data|@count>0 && (!isset($data[0]['tabsSkipState']) || !$data[0]['tabsSkipState']) }
+  {if $data|default:array()|@count>0 && (!isset($data[0]['tabsSkipState']) || !$data[0]['tabsSkipState']) }
     {call saveStateInLocalStorage id_prefix=$id_prefix}
   {/if}
 {/function}
@@ -187,7 +187,7 @@ Released under the GNU General Public License
   <!-- Tabs -->
   <ul class="nav nav-tabs tabs-h{if !empty($tabData[0]['maxWidth'])}tabs-h-scroll{/if}" id="{$id_prefix}_ul" {if !empty($tabData[0]['maxWidth'])}style="max-width:{$tabData[0]['maxWidth']}; overflow:auto;"{/if}>
     {foreach $tabData as $data}
-      <li class="{if {$data@iteration}==1} active{/if} {$data['cssClass']}" id="{$id}_{$data@iteration}_li"><a href="#{$id}_{$data@iteration}" data-toggle="tab"><span>{$data['title']}</span></a></li>
+      <li class="{if {$data@iteration}==1} active{/if} {$data['cssClass']}" id="{$id}_{$data@iteration}_li" data-bs-toggle="tab" data-bs-target="#{$id}_{$data@iteration}" data-bs-toggle="tab" data-bs-target="#{$id}_{$data@iteration}"><a><span>{$data['title']}</span></a></li>
     {/foreach}
   </ul>
   <!-- Tabs eof -->
@@ -199,17 +199,17 @@ Released under the GNU General Public License
     {assign var="id_prefix" value={"tab`$_assetsTabsCount++`"} }
   {/if}
   <div class="tabbable tabbable-custom tabs-h" id="{$id_prefix}_tabbable_custom">
-    {if $data|@count > 1}
+    {if $data|default:array()|@count > 1}
       {call hTabTabs id=$id_prefix tabData=$data}
     {/if}
-    {if $data|@count > 0}
+    {if $data|default:array()|@count > 0}
         {if empty($fieldsData)}
             {$fieldsData=[]}
         {/if}
       {call tabData tabsType='hTab' id=$id_prefix  tabData=$data fData=$fieldsData}
     {/if}
   </div>
-  {if $data|@count>0 && (!isset($data[0]['tabsSkipState']) || !$data[0]['tabsSkipState']) }
+  {if $data|default:array()|@count>0 && (!isset($data[0]['tabsSkipState']) || !$data[0]['tabsSkipState']) }
     {call saveStateInLocalStorage id_prefix=$id_prefix}
   {/if}
 {/function}
@@ -232,12 +232,12 @@ Released under the GNU General Public License
   'children' => [],
   *}
   {for $i={$tabs|@count-1} to 0 step -1}
-    {if $tabs[$i]|@count }
+    {if $tabs[$i]|default:array()|@count }
       {$d=$tabs[$i]}
     {else}
       {$d=[]}
     {/if}
-    {if $tabparams[$i]|@count }
+    {if $tabparams[$i]|default:array()|@count }
       {$p=$tabparams[$i]}
     {else}
       {$p=[]}
@@ -274,7 +274,7 @@ Released under the GNU General Public License
 
   {** }
   <div class="col-md-4" style="width:50%; float:left"><pre>
-    {$type} tabs  {$tabs|@count}<br>
+    {$type} tabs  {$tabs|default:array()|@count}<br>
   {print_r($tabs)}
     </pre></div>
   <div class="col-md-4" style="width:50%; float:left">tabparams<pre>

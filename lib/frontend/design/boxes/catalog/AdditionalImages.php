@@ -37,7 +37,7 @@ class AdditionalImages extends Widget
         Info::addBoxToCss('slick');
         Info::addBoxToCss('fancybox');
 		if($current_category_id > 0){
-			$allImages = \common\helpers\Image::getCategorisAdditionlImages($current_category_id);
+			$allImages = \common\helpers\Image::getCategoriesAdditionalImages($current_category_id);
 	
 			if (is_array($allImages[$platformId]) && count($allImages[$platformId])) {
 				$images = $allImages[$platformId];
@@ -52,7 +52,7 @@ class AdditionalImages extends Widget
 			foreach ($images as $key => $image) {
 				$images[$key]['img'] = \common\classes\Images::getImageSet(
 					$image['image'],
-					'Category galery small',
+					'Category gallery add',
 					[
 						'alt' => '',
 						'title' => '',

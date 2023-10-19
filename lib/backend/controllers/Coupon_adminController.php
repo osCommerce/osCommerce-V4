@@ -419,6 +419,15 @@ class Coupon_adminController extends Sceleton {
     }
     $coupon_name_query = tep_db_query("select coupon_description from " . TABLE_COUPONS_DESCRIPTION . " where coupon_id = '" . $cInfo->coupon_id . "' and language_id = '" . $languages_id . "'");
     $coupon_name = tep_db_fetch_array($coupon_name_query);
+
+    if ($cInfo->tax_class_id == -1) {
+        $taxcClass = TEXT_BY_ORDER_TAXES;
+    } elseif ($cInfo->tax_class_id) {
+        $taxcClass = \common\helpers\Tax::get_tax_class_title($cInfo->tax_class_id);
+    } else {
+        $taxcClass = TEXT_NONE;
+    }
+
     echo '<div class="row_or_wrapp">';
     echo '<div class="row_or"><div>' . COUPON_DESC . ':</div><div>' . $coupon_name['coupon_description'] . '</div></div>';
     echo '<div class="row_or"><div>' . COUPON_AMOUNT . ':</div><div>' . $amount . '</div></div>';
@@ -432,7 +441,7 @@ class Coupon_adminController extends Sceleton {
     echo '<div class="row_or"><div>' . TEXT_EXCLUDE_PRODUCTS . ':</div><div>' . $prodExDetails . '</div></div>';
     echo '<div class="row_or"><div>' . TEXT_EXCLUDE_CATEGORIES . ':</div><div>' . $catExDetails . '</div></div>';
     echo '<div class="row_or"><div>' . COUPON_USES_SHIPPING . ':</div><div>' . ($cInfo->uses_per_shipping ? TEXT_BTN_YES : TEXT_BTN_NO) . '</div></div>';
-    echo '<div class="row_or"><div>' . TEXT_PRODUCTS_TAX_CLASS . ':</div><div>' . ($cInfo->tax_class_id ? \common\helpers\Tax::get_tax_class_title($cInfo->tax_class_id) : TEXT_NONE) . '</div></div>';
+    echo '<div class="row_or"><div>' . TEXT_PRODUCTS_TAX_CLASS . ':</div><div>' . $taxcClass . '</div></div>';
     echo '<div class="row_or"><div>' . DATE_CREATED . ':</div><div>' . \common\helpers\Date::date_short($cInfo->date_created) . '</div></div>';
     echo '<div class="row_or"><div>' . DATE_MODIFIED . ':</div><div>' . \common\helpers\Date::date_short($cInfo->date_modified) . '</div></div>';
     echo '</div>';
@@ -498,6 +507,8 @@ class Coupon_adminController extends Sceleton {
         'products_max_allowed_qty' => '',
         'products_id_per_coupon' => '',
         'restrict_to_categories' => '',
+        'restrict_to_manufacturers' => '',
+        'coupon_groups' => '',
         'restrict_to_countries' => '',
         'tax_class_id' => 0,
         'coupon_start_date' => date('Y-m-d'),
@@ -595,6 +606,9 @@ class Coupon_adminController extends Sceleton {
           'coupon_expire_date' => ($coupon['coupon_expire_date'] > 0 ? \common\helpers\Date::date_short($coupon['coupon_expire_date']) : ''),
         'has_csv_data' => $csvImportedData ? true : false,
         'customers_coupons_csv' => \common\helpers\Coupon::getCustomersCouponsEmailsList($cid),
+        'coupon_taxes' => [-1 => TEXT_BY_ORDER_TAXES, 0 => TEXT_NONE] + \common\models\TaxClass::find()
+                ->select('tax_class_title, tax_class_id')->orderBy('tax_class_title')
+                ->asArray()->indexBy('tax_class_id')->column(),
     ]);
   }
 
@@ -671,6 +685,8 @@ class Coupon_adminController extends Sceleton {
       'coupon_expire_date' => $coupon_finishdate,
       'date_created' => 'now()',
       'date_modified' => 'now()',
+      'restrict_to_manufacturers' => implode(',', tep_db_prepare_input(\Yii::$app->request->post('restrict_to_manufacturers') ?? [])),
+      'coupon_groups' => implode(',', tep_db_prepare_input(\Yii::$app->request->post('coupon_groups') ?? [])),
       'restrict_to_countries' => implode(",", tep_db_prepare_input(\Yii::$app->request->post('restrict_to_countries') ?? [])),
       'tax_class_id' => tep_db_prepare_input(\Yii::$app->request->post('configuration_value')),
       'flag_with_tax' => tep_db_prepare_input(\Yii::$app->request->post('flag_with_tax')),);
@@ -745,6 +761,10 @@ class Coupon_adminController extends Sceleton {
 
         } catch ( \Exception $e) {
             \Yii::warning(" #### " .print_r($e->getMessage(), true), 'TLDEBUG');
+        }
+
+        foreach (\common\helpers\Hooks::getList('coupon_admin/voucher-submit') as $filename) {
+          include($filename);
         }
 
         if ( $batch_mode ) {
@@ -1286,8 +1306,8 @@ class Coupon_adminController extends Sceleton {
     $this->layout = false;
     ob_start();
     ?>
-    <link rel="stylesheet" type="text/css" href="<?= DIR_WS_ADMIN . DIR_WS_INCLUDES ?>javascript/dtree/dtree.css" />
-    <script language="javascript" type="text/javascript" src="<?= DIR_WS_ADMIN . DIR_WS_INCLUDES ?>/javascript/dtree/dtree.js"></script>
+    <link rel="stylesheet" type="text/css" href="<?= DIR_WS_ADMIN ?>plugins/dtree/dtree.css" />
+    <script language="javascript" type="text/javascript" src="<?= DIR_WS_ADMIN ?>plugins/dtree/dtree.js"></script>
     <div class="dtree" style="padding: 10px;"><form>
         <p><a href="javascript: d.openAll();"><?= TEXT_OPEN_ALL ?></a> | <a href="javascript: d.closeAll();"><?= TEXT_CLOSE_ALL ?></a></p>
         <div class="holder" style="overflow-y: scroll;"></div>
@@ -1315,7 +1335,21 @@ class Coupon_adminController extends Sceleton {
       echo "d.add(" . $products['products_id'] . "0000," . $products['categories_id'] . "," . \json_encode((string)$products['products_name']) . ",'', '<input type=checkbox name=products value=" . $products['products_id'] . ">');\n"; //,," . $products['products_id'] . ",,,); \n";
         echo "productsArray[" . $products['products_id'] . "] = '" . addslashes($products['products_name']) . "';\n";
     }//end while
-    if (\Yii::$app->request->get('input', '') == 'exclude') {
+
+    if (\Yii::$app->request->get('id', '') != '' && \Yii::$app->request->get('input', '') == 'exclude') {
+      $catJsEl = "document.querySelector('[data-id=exclude_categories_'+".\Yii::$app->request->get('id', '')."+']').value";
+      $catJsElNames = "document.querySelector('[data-id=exclude_categories_names_'+".\Yii::$app->request->get('id', '')."+']').value";
+      $prodJsEl = "document.querySelector('[data-id=exclude_products_'+".\Yii::$app->request->get('id', '')."+']').value";
+      $prodJsElNames = "document.querySelector('[data-id=exclude_products_names_'+".\Yii::$app->request->get('id', '')."+']').value";
+    }
+    else if (\Yii::$app->request->get('id', '') != '') {
+      $catJsEl = "document.querySelector('[data-id=restrict_to_categories_'+".\Yii::$app->request->get('id', '')."+']').value";
+      $catJsElNames = "document.querySelector('[data-id=restrict_to_categories_names_'+".\Yii::$app->request->get('id', '')."+']').value";
+      $prodJsEl = "document.querySelector('[data-id=restrict_to_products_'+".\Yii::$app->request->get('id', '')."+']').value";
+      $prodJsElNames = "document.querySelector('[data-id=restrict_to_products_names_'+".\Yii::$app->request->get('id', '')."+']').value";
+    }
+
+     else if (\Yii::$app->request->get('input', '') == 'exclude') {
       $catJsEl = 'document.new_voucher.exclude_categories.value';
       $catJsElNames = 'document.new_voucher.exclude_categories_names.value';
       $prodJsEl = 'document.new_voucher.exclude_products.value';
@@ -1329,9 +1363,8 @@ class Coupon_adminController extends Sceleton {
     ?>
         $('.dtree .holder').append(d.toString());
 
-            const catIds = <?php echo $catJsEl;?>.split(',').map(id => id.trim())
-            const prodIds = <?php echo $prodJsEl;?>.split(',').map(id => id.trim())
-
+            catIds = <?php echo $catJsEl;?>.split(',').map(id => id.trim());//processed multiple times in threads
+            prodIds = <?php echo $prodJsEl;?>.split(',').map(id => id.trim());//processed multiple times in threads
             catIds.forEach(id => {
                 $('.dtree input[name="categories"][value="' + id + '"]').prop('checked', true)
             })

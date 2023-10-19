@@ -36,9 +36,9 @@ class WarehousesProducts  extends EPMap
     {
         if ( isset($config['keyCode']) ){
             $params = explode('_',$config['keyCode']);
-            if ( $params[0] ) $this->warehouse_id = (int)$params[0];
-            if ( $params[1] ) $this->suppliers_id = (int)$params[1];
-            if ( $params[2] ) $this->location_id = (int)$params[2];
+            if ( $params[0]??null ) $this->warehouse_id = (int)$params[0];
+            if ( $params[1]??null ) $this->suppliers_id = (int)$params[1];
+            if ( $params[2]??null ) $this->location_id = (int)$params[2];
         }
         parent::__construct($config);
     }

@@ -171,11 +171,13 @@ if (!file_exists('lib/common/extensions/VatOnOrder/VatOnOrder.php')) {
     */
   }
   tep_db_free_result($configuration_query);
+  require_once('lib/common/helpers/Dbg.php');
+  \common\helpers\Dbg::defineConsts();
 
   if (!defined("DEFAULT_USER_GROUP")) {
     define("DEFAULT_USER_GROUP", 0);
   }
-
+/* Moved to InitFactory
 if (defined('PURCHASE_OFF_STOCK')) {
     if (PURCHASE_OFF_STOCK == 'true'){
         define('STOCK_CHECK', 'false');
@@ -185,7 +187,7 @@ if (defined('PURCHASE_OFF_STOCK')) {
         define('STOCK_ALLOW_CHECKOUT', 'false');
     }
 }
-
+*/
   // {{ time zones
   if ( !class_exists('\common\helpers\Date') ) {
     include_once('lib/common/helpers/Date.php');

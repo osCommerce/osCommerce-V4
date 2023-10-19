@@ -758,7 +758,17 @@ a.blue, a.blue:hover, a.button, a.button:hover {
 	cursor: pointer;
 }
 #installer .table-db-access td select{
+	display: block;
+	float: left;
+	margin-left: 10px;
+	margin-top: -3px;
+}
+#installer .table-db-access.table-settings td select{
+	float: none;
+	margin-left: 3px;
+	margin-top: 0;
 	width: 100%;
+	height: 30px;
 }
 #installer .table-db-access td:nth-child(3){
 	padding-left: 30px;
@@ -775,4 +785,76 @@ a.blue, a.blue:hover, a.button, a.button:hover {
 .eye{
 	cursor: pointer;
 	margin: 0 0 -5px -30px;
+}
+input[type="radio"] {
+	position: relative;
+	top: 1px;
+}
+
+.platform-types {
+	display: flex;
+	justify-content: space-between;
+	padding: 10px 0;
+}
+.platform-types img {
+	max-width: 100%;
+	height: auto;
+	border-radius: 10px;
+}
+.platform-types label {
+	width: 23%;
+	cursor: pointer;
+}
+.platform-types input {
+	visibility: hidden;
+	position: absolute;
+	left: -100px;
+	top: -100px;
+}
+.platform-image {
+	position: relative;
+}
+.platform-image:before {
+	width: 26px;
+	height: 26px;
+	position: absolute;
+	border-radius: 50%;
+	left: 5px;
+	top: 5px;
+	background: #c3c3c3;
+	content: '';
+	text-align: center;
+	line-height: 26px;
+	font-size: 18px;
+	border: 2px solid #fff;
+}
+input:checked + .platform-image:before {
+	background: #665cac;
+	content: '\f00c';
+	font-family: FontAwesome;
+	text-align: center;
+	color: #fff;
+}
+input:checked + .platform-image img {
+	box-shadow: 0 0 0 3px #665cac;
+}
+.float-image {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	opacity: 0;
+	transition: top 0.5s, left 0.5s, width 0.5s, height 0.5s, opacity 0.5s;
+}
+.platform-types label:hover .float-image {
+	top: -310px;
+	left: -100px;
+	width: 300px;
+	height: 300px;
+	opacity: 1;
+	transition: top 0.5s, left 0.5s, width 0.5s, height 0.5s, opacity 0.5s;
+}
+.platform-types label:hover .float-image img {
+	box-shadow: 0 0 10px #000;
 }

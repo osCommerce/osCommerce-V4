@@ -436,7 +436,7 @@
             if (this.multi_qty){
                 var summ = 0;
                 $.each(this.multi_qty_data, function(i, e){
-                    if($('input[data-type='+i+']').size()){
+                    if($('input[data-type='+i+']').length){
                         if ($('input[data-type='+i+']').val() == '') $('input[data-type='+i+']').val(1);
                         summ += parseInt($('input[data-type='+i+']').val()) * e;
                     }
@@ -451,7 +451,7 @@
                 var correct = true;
                 var summ = 0;
                 $.each(this.multi_qty_data, function(i, e){
-                    if($('input[data-type='+i+']').size()){
+                    if($('input[data-type='+i+']').length){
                         if ($('input[data-type='+i+']').val() == '') $('input[data-type='+i+']').val(0);
                         summ += parseInt($('input[data-type='+i+']').val()) * e;
                     }

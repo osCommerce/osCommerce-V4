@@ -30,8 +30,15 @@ class Totals extends Widget
 
     public function run()
     {
+        $totals = [];
+        if ($this->params['order_totals'] ?? false) {
+            $totals = $this->params['order_totals'];
+        } elseif ($this->params['manager'] ?? false) {
+            $totals = $this->params['manager']->getTotalOutput(true, 'TEXT_CHECKOUT');
+        }
+
         return IncludeTpl::widget(['file' => 'boxes/order/totals.tpl', 'params' => [
-            'order_totals' => $this->params['order_totals'],
+            'order_totals' => $totals,
         ]]);
     }
 }

@@ -57,19 +57,6 @@ class CartFactory {
         include($filename);
     }
 
-    // TODO: move to hook
-    if( $ext = \common\helpers\Acl::checkExtension( 'MultiCart', 'initCarts' ) ) {
-        if ($ext::allowed() && !$preventProcess){
-            $ext::initCarts();
-        }
-    }
-
-    if( $ext = \common\helpers\Acl::checkExtension( 'Newsletters', 'initCarts' ) ) {
-        if ($ext::allowed()){
-            $ext::initCarts();
-        }
-    }
-
     if (count($cart->contents) > 0 && ($cart->currency != $currency || $cart->language_id != $languages_id) && method_exists($cart, 'update_basket_info')) $cart->update_basket_info();
 
     static $manager = null;
@@ -174,7 +161,7 @@ class CartFactory {
 
                   $attributes = ($_POST['id'][$posted_uprid] ?? false) ? $_POST['id'][$posted_uprid] : '';
                   $re_uprid = \common\helpers\Inventory::get_prid($_POST['products_id'][$i]);
-                  if ($ext = \common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed')) {
+                  if ($ext = \common\helpers\Extensions::isAllowed('Inventory')) {
                     $re_uprid = \common\helpers\Inventory::get_uprid(\common\helpers\Inventory::get_prid($_POST['products_id'][$i]),$attributes);
                   }
                   $_qty = $_POST['cart_quantity'][$i];
@@ -189,9 +176,9 @@ class CartFactory {
                           continue;
                       }
                   }
-                  
-                  if ($ext = \common\helpers\Acl::checkExtension('SupplierPurchase', 'allowed')){
-                      if ($ext::allowed() && $ext::getSupplierFromUprid($_POST['products_id'][$i])){
+                  /** @var \common\extensions\SupplierPurchase\SupplierPurchase $ext */
+                  if ($ext = \common\helpers\Extensions::isAllowed('SupplierPurchase')){
+                      if ($ext::getSupplierFromUprid($_POST['products_id'][$i])) {
                           $ext::updateCartProduct($_POST['products_id'][$i], $_qty, $attributes);
                           continue;
                       }
@@ -215,7 +202,8 @@ class CartFactory {
                             'pack_unit' => (int)$_POST['cart_quantity_'][$_POST['products_id'][$i]][1],
                             'packaging' => (int)$_POST['cart_quantity_'][$_POST['products_id'][$i]][2],
                         ];
-                        if ($ext = \common\helpers\Acl::checkExtensionAllowed('PackUnits', 'allowed')) {
+                        /** @var \common\extensions\PackUnits\PackUnits $ext */
+                        if ($ext = \common\helpers\Extensions::isAllowed('PackUnits')) {
                             $packQty['qty'] = $ext::recalcQauntity(\common\helpers\Inventory::get_prid($_POST['products_id'][$i]), $packQty);
                         }
                   } else {
@@ -231,8 +219,8 @@ class CartFactory {
                 }
               }
         }
-
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('CouponsAndVauchers', 'allowed')) {
+        /** @var \common\extensions\CouponsAndVauchers\CouponsAndVauchers $ext */
+        if ($ext = \common\helpers\Extensions::isAllowed('CouponsAndVauchers')) {
           $ext::updateCartFactory($goto);
         }
         tep_redirect(tep_href_link($goto, \common\helpers\Output::get_all_get_params($parameters)));
@@ -244,8 +232,8 @@ class CartFactory {
             $customer = new \common\components\Customer(\common\components\Customer::LOGIN_RECOVERY);
             if ($customer->loginCustomer($email_address, $token)){
               if (isset($_GET['utmgclid'])) \common\helpers\System::setcookie('__utmz','utmgclid=' . $_GET['utmgclid'],time()+3600);
-
-              if ($ext = \common\helpers\Acl::checkExtensionAllowed('CouponsAndVauchers', 'allowed')) {
+              /** @var \common\extensions\CouponsAndVauchers\CouponsAndVauchers $ext */
+              if ($ext = \common\helpers\Extensions::isAllowed('CouponsAndVauchers')) {
                 $ext::restoreCartFactory($goto);
               }
 
@@ -283,14 +271,6 @@ class CartFactory {
 
                       //$customer_groups_id = DEFAULT_USER_GROUP;
                       $cart->reset();
-
-                      if ($ext = \common\helpers\Acl::checkExtension('Quotations', 'resetCart')) {
-                          $ext::resetCart();
-                      }
-
-                      if( $ext = \common\helpers\Acl::checkExtension( 'MultiCart', 'resetCarts' ) ) {
-                          $ext::resetCarts();
-                      }
                   }
                   $manager->assignCustomer($customer->customers_id);
                   $customer->updateUserToken();//or not
@@ -320,12 +300,8 @@ class CartFactory {
 
 
 // {{
-          if ($ext = \common\helpers\Acl::checkExtension('SupplierPurchase', 'allowed')){
-              if ($ext::allowed() && isset($_POST['wh_product'])){
-                  $ext::addToCart($_POST, $goto_link);
-              }
-          }
-          $_qty = (is_array($_POST['qty']) ? array_sum($_POST['qty']): $_POST['qty']);
+          $qtyTmp = \Yii::$app->request->post('qty', 1);
+          $_qty = (is_array($qtyTmp) ? array_sum($qtyTmp): $qtyTmp);
           $_qty = (int)($_qty * \common\helpers\Product::getVirtualItemQuantityValue($_POST['products_id']));
           // Inventory widget bof
           if (isset($_POST['inv_uprid']) && strpos($_POST['inv_uprid'], '{') !== false) {
@@ -336,7 +312,7 @@ class CartFactory {
                 $attrib[$ar[$i]] = $ar[$i+1];
               }
             }
-            if (is_array($_POST['id'])){
+            if (is_array($_POST['id']??null)){
                 $_POST['id'] = $_POST['id'] + $attrib;
             } else {
                 $_POST['id'] = $attrib;
@@ -345,7 +321,7 @@ class CartFactory {
           $jsonRequest = [];
           // Inventory widget eof
           if (\common\helpers\Attributes::has_product_attributes((int)$_POST['products_id'])) {
-              if (is_array($_POST['id'])){
+              if (is_array($_POST['id']??null)){
                 foreach ($_POST['id'] as $attr) {
                   if (!$attr) {
                     $_SESSION['product_info'] = PLEASE_CHOOSE_ATTRIBUTES;
@@ -361,10 +337,7 @@ class CartFactory {
               }
           }
 
-          $_uprid = $_POST['products_id'];
-          if ($ext = \common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed')) {
-            $_uprid = \common\helpers\Inventory::get_uprid($_uprid, (isset($_POST['id']) ? $_POST['id']: false) );
-          }
+          $_uprid = \common\helpers\Inventory::get_uprid($_POST['products_id'], $_POST['id']??null );
           $add_qty = $cart->get_quantity($_uprid)+$_qty;
           if (defined('MAX_PRODUCT_PRICE') && MAX_PRODUCT_PRICE > 0) {
                 $currencies = \Yii::$container->get('currencies');
@@ -391,7 +364,7 @@ class CartFactory {
             ));
             if ($add_qty>$product_qty && !$stock_indicator['allow_out_of_stock_add_to_cart']) {
               $_SESSION['product_info'] = TEXT_PRODUCT_OUT_STOCK;
-                if ($_POST['json']){
+                if (!empty($_POST['json'])){
                     $jsonRequest['error'] = 'not in stock';
                 } elseif (!Yii::$app->request->isAjax){
                     tep_redirect(tep_href_link(FILENAME_PRODUCT_INFO, 'products_id=' . $_POST['products_id'] . '&qty=' . (is_numeric($_qty) ? $_qty : 1)));
@@ -415,6 +388,14 @@ class CartFactory {
               $packQty = $add_qty;
           }
           $props = Yii::$app->get('PropsHelper')::ParamsToXml($_POST, (int)$_POST['products_id']);
+// {{
+        $skip_add_cart = false;
+        foreach (\common\helpers\Hooks::getList('cart-factory/add-product') as $filename) {
+            $skip_add_cart = include($filename);
+            if ($skip_add_cart === true) break;
+        }
+        if ($skip_add_cart !== true) {
+// }}
           // Collections addon
           if (isset($_POST['collections']) && is_array($_POST['collections']) && count($_POST['collections']) > 1) {
             foreach ($_POST['collections'] as $products_id) {
@@ -454,6 +435,7 @@ class CartFactory {
             }
             /* PC configurator addon end */
           }
+        }
 
           (new \common\components\Popularity())->updateProductVisit($_POST['products_id']);
 
@@ -590,7 +572,7 @@ class CartFactory {
             }
 // }}
             if (isset($_GET['products_id']) && \common\helpers\Product::check_product((int)$_GET['products_id'])) {
-                $qty = (is_numeric($_GET['qty']) ? $_GET['qty'] : 1);
+                $qty = \Yii::$app->request->get('qty', 1);
                 $qty = (int)($qty * \common\helpers\Product::getVirtualItemQuantityValue($_GET['products_id']));
                 if (\common\helpers\Attributes::has_product_attributes($_GET['products_id'])) {
                     if (!Yii::$app->request->isAjax){

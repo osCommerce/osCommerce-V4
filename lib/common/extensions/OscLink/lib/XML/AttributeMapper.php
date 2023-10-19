@@ -92,10 +92,9 @@ class AttributeMapper
                 if (tep_db_num_rows($getReference_r) > 0) {
                     $getReference = tep_db_fetch_array($getReference_r);
                     $internalId = $getReference['internal_id'];
-                }
-
-                if ( isset($this->known[$mapName]) ) {
-                    $this->cache[(int)$entityId.$mapName][intval($ref->externalId)] = $internalId;
+                    if ( isset($this->known[$mapName]) ) {
+                        $this->cache[(int)$entityId.$mapName][intval($ref->externalId)] = $internalId;
+                    }
                 }
 
             }

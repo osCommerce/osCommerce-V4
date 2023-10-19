@@ -14,7 +14,7 @@
                       <div class="tabbable tabbable-custom">
                         <ul class="nav nav-tabs tab-radius-ul tab-radius-ul-white">
                           {foreach $platforms as $platform}
-                          <li {if $first_platform_id==$platform['id']} class="active"{/if}><a href="#platform{$platform['id']}" data-toggle="tab"><span>{$platform['text']}</span></a></li>
+                          <li {if $first_platform_id==$platform['id']} class="active"{/if} data-bs-toggle="tab" data-bs-target="#platform{$platform['id']}"><a><span>{$platform['text']}</span></a></li>
                           {/foreach}
                         </ul>
                           <div class="tab-content" id="google_list_data">

@@ -3,7 +3,7 @@
     <div class="tabbable-custom" style="margin-top: 20px">
         <ul class="nav nav-tabs ">
             {foreach $languages as $lKey => $lItem}
-                <li{if $lKey == 0} class="active"{/if}><a href="#tab_{$lItem['code']}" data-toggle="tab">{$lItem['logo']}<span>{$lItem['name']}</span></a></li>
+                <li{if $lKey == 0} class="active"{/if} data-bs-toggle="tab" data-bs-target="#tab_{$lItem['code']}"><a>{$lItem['logo']}<span>{$lItem['name']}</span></a></li>
             {/foreach}
         </ul>
         <div class="tab-content">
@@ -34,7 +34,7 @@
             <div class="colors-inp">
                 <div id="cp3" class="input-group colorpicker-component">
                     <input type="text" name="orders_products_status_colour" value="{$orders_products_status_colour}" class="form-control" placeholder="{$smarty.const.TEXT_INFO_ORDERS_PRODUCTS_STATUS_COLOUR}" />
-                    <span class="input-group-addon"><i></i></span>
+                    <span class="input-group-append"><span class="input-group-text colorpicker-input-addon"><i></i></span></span>
                 </div>
             </div>
         </div>

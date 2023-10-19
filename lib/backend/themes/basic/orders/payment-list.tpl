@@ -321,7 +321,7 @@
 
 
 
-      $('#popup-pay-now').on('click', function () {
+      $('#popup-pay-now').on('click', function (event) {
         event.preventDefault();
         $('.mail-sending.noti-btn').hide();
 

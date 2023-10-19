@@ -159,69 +159,6 @@ class SaveMarketingData
         /**
          * Marketing xsell, UpSell
          */
-        $xsell_array = Yii::$app->request->post('xsell_id');
-        tep_db_query("delete from " . TABLE_PRODUCTS_XSELL . " where products_id  = '" . (int) $products_id . "'");
-        if (is_array($xsell_array)) {
-            $xsell_sort_order_array = Yii::$app->request->post('xsell_sort_order');
-            foreach( $xsell_array as $xsell_type_id=>$xsell ) {
-                $xsell_sort_order = isset($xsell_sort_order_array[$xsell_type_id])?$xsell_sort_order_array[$xsell_type_id]:'';
-                $xsell_sort = [];
-                if (!empty($xsell_sort_order)) {
-                    parse_str($xsell_sort_order, $xsell_sort);
-                    if (isset($xsell_sort['xsell-box']) && is_array($xsell_sort['xsell-box'])) {
-                        $xsell_sort = $xsell_sort['xsell-box'];
-                        $xsell_sort = array_flip($xsell_sort);
-                    }
-                }
-
-                foreach ($xsell as $pointer => $xsell_id) {
-                    if ($products_id != $xsell_id) {
-                        $sql_data_array = [];
-                        $sql_data_array['products_id'] = (int) $products_id;
-                        $sql_data_array['xsell_type_id'] = (int)$xsell_type_id;
-                        $sql_data_array['xsell_id'] = (int) $xsell_id;
-                        if (isset($xsell_sort[$xsell_id])) {
-                            $sql_data_array['sort_order'] = (int) $xsell_sort[$xsell_id];
-                        }
-                        tep_db_perform(TABLE_PRODUCTS_XSELL, $sql_data_array);
-                    }
-                }
-            }
-        }
-
-        $xsell_backlink_array = (array)Yii::$app->request->post('xsell_backlink');
-        $xsell_backlink_ref_array = (array)Yii::$app->request->post('xsell_backlink_c');
-        $xsell_types = array_unique(array_merge(array_keys($xsell_backlink_ref_array), array_keys($xsell_backlink_array)));
-
-        foreach ($xsell_types as $xsell_type_id){
-            $old_pids = isset($xsell_backlink_ref_array[$xsell_type_id])?$xsell_backlink_ref_array[$xsell_type_id]:[];
-            $posted_pids = isset($xsell_backlink_array[$xsell_type_id])?$xsell_backlink_array[$xsell_type_id]:[];
-            foreach (array_diff($old_pids,$posted_pids) as $_remove_link_back_id){
-                if ( isset($reverseXsells[$_remove_link_back_id]) ){
-                    $reverseXsell = \common\models\ProductsXsell::find()
-                        ->where(['xsell_type_id'=>$xsell_type_id, 'xsell_id'=>$products_id])
-                        ->andWhere(['products_id'=>$_remove_link_back_id])
-                        ->one();
-                    if ( $reverseXsell ) $reverseXsell->delete();
-                }
-            }
-            foreach (array_diff($posted_pids,$old_pids) as $_new_link_back_id){
-                $check_exist = \common\models\ProductsXsell::find()
-                    ->where(['xsell_type_id'=>$xsell_type_id, 'xsell_id'=>$products_id])
-                    ->andWhere(['products_id'=>$_new_link_back_id])
-                    ->count();
-                if ($check_exist) continue;
-
-                $linkbackXsell = new \common\models\ProductsXsell([
-                    'xsell_type_id' => $xsell_type_id,
-                    'xsell_id' => $products_id,
-                    'products_id' => $_new_link_back_id,
-                    'sort_order' => 1 + (int)\common\models\ProductsXsell::find()->where(['products_id'=>$_new_link_back_id, 'xsell_type_id' => $xsell_type_id])->max('sort_order'),
-                ]);
-                $linkbackXsell->loadDefaultValues();
-                $linkbackXsell->save(false);
-            }
-        }
 
         if ($ext = \common\helpers\Acl::checkExtensionAllowed('UpSell', 'allowed')) {
             $ext::productSave($products_id);

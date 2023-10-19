@@ -5,6 +5,11 @@
     <div class="price-row {$order_total.code} ot_code_{$order_total.code}{if $order_total.code=='ot_total'} total{/if} {if isset($order_total.class)}{$order_total.class}{/if}{if $order_total.show_line} totals-line{/if}">
         <div class="title">{$order_total.title}</div>
         <div class="price">
+            {if $order_total.code == 'ot_shipping'}
+                {if $PremiumAccountClass = \common\helpers\Acl::checkExtensionAllowed('PremiumAccount', 'allowed')}
+                    {$PremiumAccountClass::showShippingCost($order_total.value)}
+                {/if}
+            {/if}
             {$order_total.text}
             {if $order_total.code == 'ot_coupon' && !empty($order_total.coupon)}
                 <span class="remove-discount" data-code="{$order_total.coupon}"></span>

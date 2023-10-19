@@ -35,7 +35,7 @@
                 <div class="nav nav-tabs">
 
                   {foreach $languages as $language}
-                    <div{if $language.id == $languages_id} class="active"{/if}><a href="#{$docs.products_documents_id}_{$language.id}" data-toggle="tab">{$language.logo} {$language.name}</a></div>
+                    <div{if $language.id == $languages_id} class="active"{/if} data-bs-toggle="tab" data-bs-target="#{$docs.products_documents_id}_{$language.id}"><a>{$language.logo} {$language.name}</a></div>
                   {/foreach}
 
                 </div>

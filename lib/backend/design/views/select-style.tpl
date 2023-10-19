@@ -70,15 +70,17 @@ $(function(){
                         <div class="popup-heading">{$smarty.const.TEXT_ADD_STYLE}</div>
                         <div class="popup-content">
                             <div class="row align-items-center m-b-2">
-                                <div class="col-xs-4 align-right">{$smarty.const.STYLE_NAME}</div>
-                                <div class="col-xs-6 align-right"><input type="text" name="name" class="form-control"></div>
+                                <div class="col-4 align-right">{$smarty.const.STYLE_NAME}</div>
+                                <div class="col-6 align-right"><input type="text" name="name" class="form-control"></div>
                             </div>
                             <div class="row align-items-center">
-                                <div class="col-xs-4 align-right">{$smarty.const.STYLE_VALUE}</div>
-                                <div class="col-xs-6 align-right">
+                                <div class="col-4 align-right">{$smarty.const.STYLE_VALUE}</div>
+                                <div class="col-6 align-right">
                                     <div class="input-group colorpicker-component">
                                         <input type="text" name="value" class="form-control" />
-                                        <span class="input-group-addon"><i></i></span>
+                                         <span class="input-group-append">
+                                            <span class="input-group-text colorpicker-input-addon"><i></i></span>
+                                         </span>
                                     </div>
                                 </div>
                             </div>

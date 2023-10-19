@@ -1,6 +1,5 @@
 {use class="\common\helpers\Html"}
 <style>
-.row_fields { width:100%; display: inline-block; }
 .buttons_hours { border-top:none; }
 {if $popup == 1}
 .popup-box { width:850px; }
@@ -14,14 +13,14 @@
 {if $ext = \common\helpers\Acl::checkExtensionAllowed('UserGroupsExtraDiscounts', 'allowed')}
 <div class="tabbable tabbable-custom">
   <ul class="nav nav-tabs">
-    <li class="active"><a href="#tab_0" class="flag-span" data-toggle="tab"><span>{$smarty.const.TEXT_MAIN}</span></a></li>
+    <li class="active" data-bs-toggle="tab" data-bs-target="#tab_0"><a class="flag-span"><span>{$smarty.const.TEXT_MAIN}</span></a></li>
     {$ext::showTabHeading()}
   </ul>
   <div class="tab-content">
     <div class="tab-pane active" id="tab_0">
 {/if}
 
-    <div class="col-md-12" style="display:inline-block;">
+    <div class="row">
         <div class="col-md-6">
             <div class="widget box box-no-shadow">
                 <div class="widget-header">
@@ -44,10 +43,6 @@
                     <div class="row_fields">
                         <div class="row_fields_text">{$smarty.const.TEXT_GROUPS_COMMISSION}:&nbsp;%</div>
                         <div class="row_fields_value">{tep_draw_input_field('groups_commission', $mInfo->groups_commission, 'size="5" class="form-control"')}</div>
-                    </div>
-                    <div class="row_fields" {if \common\helpers\Points::getCurrencyCoefficient(0) === false}style="display: none;" {/if}>
-                        <div class="row_fields_text">{$smarty.const.BONUS_POINTS_CURRENCY_RATE}&nbsp</div>
-                        <div class="row_fields_value">{Html::input('text', 'bonus_points_currency_rate', $mInfo->bonus_points_currency_rate, ['class' => 'form-control'])}</div>
                     </div>
                     <div class="row_fields">
                       {Html::checkbox('per_product_price', $mInfo->per_product_price, ['value' => 1])}<label for="perProductPrice">{$smarty.const.TEXT_PER_PRODUCT_PRICE}</label>
@@ -106,14 +101,14 @@
                 </div>
                 <div class="widget-content">
                     <div class="additional-discount-holder" {if !$mInfo->groups_use_more_discount}style="display:none"{/if}>
-                        <div class="row_fields">
+                        <div class="row_fields row">
                             <div class="row_fields_text col-md-8">{$smarty.const.TEXT_SUPERSUM}</div>
                             <div class="row_fields_value col-md-2">{tep_draw_input_field('superdiscount_summ', $mInfo->superdiscount_summ, 'size=8 class="form-control"')}</div>
                         </div>
                         <div class="d-list">
                         {if is_array($mInfo->additionalDiscounts)}
                             {foreach $mInfo->additionalDiscounts as $aDiscount}
-                                <div class="row_fields">
+                                <div class="row_fields row">
                                     <div class="row_fields_text col-md-2">{$smarty.const.TEXT_AMOUNT}</div>
                                     <div class="row_fields_value col-md-3">{tep_draw_input_field('groups_discounts_amount[]',$aDiscount->groups_discounts_amount, 'size=8 class="form-control"')}</div>
                                     <div class="row_fields_text col-md-2">{$smarty.const.TEXT_DISCOUNT}</div>
@@ -128,7 +123,7 @@
                         {/if}
                         </div>
                         <div class="hid" style="display:none;">
-                            <div class="row_fields">
+                            <div class="row_fields row">
                                     <div class="row_fields_text col-md-2">{$smarty.const.TEXT_AMOUNT}</div>
                                     <div class="row_fields_value col-md-3">{tep_draw_input_field('groups_discounts_amount[]', '', 'size=8 class="form-control"')}</div>
                                     <div class="row_fields_text col-md-2">{$smarty.const.TEXT_DISCOUNT}</div>
@@ -174,9 +169,9 @@
     {tep_draw_hidden_field('row_id', $row_id)}
     {tep_draw_hidden_field('item_id', $item_id)}
     {tep_draw_hidden_field('popup', $popup)}
-    {if \common\helpers\Acl::checkExtensionAllowed('ExtraGroups', 'allowed')}
+    {if $ext = \common\helpers\Acl::checkExtensionAllowed('ExtraGroups', 'allowed')}
         {if $showOtherGroups}
-          {\common\extensions\ExtraGroups\ExtraGroups::typeIdHidden( $item_id )}
+          {$ext::typeIdHidden( $item_id )}
         {/if}
     {/if}
 </form>

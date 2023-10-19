@@ -410,19 +410,7 @@ class Acl
      */
     public static function checkExtensionTableExist($class, $relativeModelName, $allowedFunc = 'allowed')
     {
-        /** @var \common\classes\modules\ModuleExtensions $ext */
-        if ($ext = self::checkExtension($class, 'enabled')) {
-            if (!empty($allowedFunc) && !(method_exists($ext, $allowedFunc) && call_user_func([$ext, $allowedFunc]))) return null;
-            $reflection_class = new \ReflectionClass($ext);
-            $namespace = $reflection_class->getNamespaceName();
-            $modelClass = $namespace . "\\$relativeModelName";
-            if (!class_exists($modelClass)) {
-                $modelClass = $namespace . "\\models\\$relativeModelName";
-            }
-            if (class_exists($modelClass) && \Yii::$app->db->schema->getTableSchema($modelClass::tablename()) !==null) {
-                return $modelClass;
-            }
-        }
+        return \common\helpers\Extensions::getModel($class, $relativeModelName, $allowedFunc);
     }
 
     /**
@@ -631,7 +619,7 @@ class Acl
         // admin's permissions override AL permissions (>0 allow <0 forbid)
         $admin = tep_db_fetch_array($checkAdmin);
         $ALIds = explode(",", $admin['access_levels_persmissions']);
-        $adminPersmissions = explode(",", $admin['admin_persmissions']);
+        $adminPersmissions = (!empty($admin['admin_persmissions'])) ? explode(",", $admin['admin_persmissions']) : [];
         $a = $r = [];
         foreach ($adminPersmissions as $v) {
             if (!empty($v)) {

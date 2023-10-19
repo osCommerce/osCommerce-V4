@@ -92,7 +92,8 @@ class WidgetsList
         $widgets[] = array('name' => 'product\Images', 'title' => TEXT_PRODUCTS_IMAGES, 'description' => '', 'type' => 'product', 'class' => 'images');
         $widgets[] = array('name' => 'product\ImagesAdditional', 'title' => TEXT_ADDITIONAL_IMAGES, 'description' => '', 'type' => 'product', 'class' => 'images');
         $widgets[] = array('name' => 'product\Attributes', 'title' => TEXT_PRODUCTS_ATTRIBUTES, 'description' => '', 'type' => 'product', 'class' => 'attributes');
-        $widgets[] = array('name' => 'product\Inventory', 'title' => BOX_CATALOG_INVENTORY, 'description' => '', 'type' => 'product', 'class' => 'attributes');
+//        $widgets[] = array('name' => 'product\Inventory', 'title' => BOX_CATALOG_INVENTORY, 'description' => '', 'type' => 'product', 'class' => 'attributes'); // not work
+//        $widgets[] = array('name' => 'product\MultiInventory', 'title' => 'Multi Inventory', 'description' => '', 'type' => 'product', 'class' => 'multi-inventory-products'); // not work
         $widgets[] = array('name' => 'product\Bundle', 'title' => TEXT_PRODUCTS_BUNDLE, 'description' => '', 'type' => 'product', 'class' => 'bundle');
         $widgets[] = array('name' => 'product\InBundles', 'title' => TEXT_PRODUCTS_IN_BUNDLE, 'description' => '', 'type' => 'product', 'class' => 'in-bundles');
         $widgets[] = array('name' => 'product\Price', 'title' => TEXT_PRODUCTS_PRICE, 'description' => '', 'type' => 'product', 'class' => 'price');
@@ -106,20 +107,18 @@ class WidgetsList
         $widgets[] = array('name' => 'product\Reviews', 'title' => TEXT_PRODUCTS_REVIEWS, 'description' => '', 'type' => 'product', 'class' => 'reviews');
         $widgets[] = array('name' => 'product\Properties', 'title' => TEXT_PRODUCTS_PROPERTIES, 'description' => '', 'type' => 'product', 'class' => 'properties');
         $widgets[] = array('name' => 'product\Model', 'title' => TABLE_HEADING_PRODUCTS_MODEL, 'description' => '', 'type' => 'product', 'class' => 'properties');
+        $widgets[] = array('name' => 'product\Weight', 'title' => TEXT_WEIGHT, 'description' => '', 'type' => 'product', 'class' => 'properties');
         $widgets[] = array('name' => 'product\PropertiesIcons', 'title' => TEXT_PROPERTIES_ICONS, 'description' => '', 'type' => 'product', 'class' => 'properties');
         $widgets[] = array('name' => 'product\AlsoPurchased', 'title' => TEXT_ALSO_PURCHASED, 'description' => '', 'type' => 'product', 'class' => 'also-purchased');
-        $widgets[] = array('name' => 'product\CrossSell', 'title' => TEXT_CROSS_SELL_PRODUCTS, 'description' => '', 'type' => 'product', 'class' => 'cross-sell');
         $widgets[] = array('name' => 'product\Brand', 'title' => TEXT_LABEL_BRAND, 'description' => '', 'type' => 'product', 'class' => 'brands');
         $widgets[] = array('name' => 'product\Video', 'title' => TEXT_VIDEO, 'description' => '', 'type' => 'product', 'class' => 'video');
         $widgets[] = array('name' => 'product\Documents', 'title' => TAB_DOCUMENTS, 'description' => '', 'type' => 'product', 'class' => 'description');
         $widgets[] = array('name' => 'product\Configurator', 'title' => TEXT_CONFIGURATOR, 'description' => '', 'type' => 'product', 'class' => 'configurator');
-        $widgets[] = array('name' => 'product\ImageMapProduct', 'title' => 'Image Map Product', 'description' => '', 'type' => 'product', 'class' => '');
         $widgets[] = array('name' => 'product\CustomersActivity', 'title' => TEXT_ACTIVE_CUSTOMERS, 'description' => '', 'type' => 'product', 'class' => '');
         $widgets[] = array('name' => 'product\AvailableInWarehouses', 'title' => TEXT_AVAILABLE_AT_WAREHOUSES, 'description' => '', 'type' => 'product', 'class' => '');
         $widgets[] = array('name' => 'product\Dimensions', 'title' => TEXT_DIMENSION, 'description' => '', 'type' => 'product', 'class' => '');
         $widgets[] = array('name' => 'DeliveryDay', 'title' => DELIVERY_DAY, 'description' => '', 'type' => 'product', 'class' => '');
         $widgets[] = array('name' => 'cart\FreeDelivery', 'title' => TEXT_FREE_DELIVERY, 'description' => '', 'type' => 'product', 'class' => '');
-        $widgets[] = array('name' => 'product\Flexifi', 'title' => TEXT_FLEXIFI_CREDIT_PLAN_BUTTON, 'description' => '', 'type' => 'product', 'class' => '');
         $widgets[] = array('name' => 'product\BazaarvoiceRatingSummary', 'title' => TEXT_BAZAARVOICE_RATING_SUMMARY, 'description' => '', 'type' => 'product', 'class' => '');
         $widgets[] = array('name' => 'product\BazaarvoiceReview', 'title' => TEXT_BAZAARVOICE_REVIEWS, 'description' => '', 'type' => 'product', 'class' => '');
         $widgets[] = array('name' => 'product\CompareButton', 'title' => TEXT_COMPARE_BUTTON, 'description' => '', 'type' => 'product', 'class' => '');
@@ -139,8 +138,6 @@ class WidgetsList
         $widgets[] = array('name' => 'contact\ContactForm', 'title' => CONTACT_FORM, 'description' => '', 'type' => 'general', 'class' => 'contact-form');
         $widgets[] = array('name' => 'info\Image', 'title' => TEXT_IMAGE_, 'description' => '', 'type' => 'inform', 'class' => 'images');
         $widgets[] = array('name' => 'info\DescriptionShort', 'title' => TEXT_PRODUCTS_DESCRIPTION_SHORT, 'description' => '', 'type' => 'inform', 'class' => 'description');
-        $widgets[] = array('name' => 'info\ImageMapInfo', 'title' => TEXT_IMAGE_MAP_INFO, 'description' => '', 'type' => 'inform', 'class' => '');
-
         $widgets[] = array('name' => 'contact\Map', 'title' => TEXT_MAP, 'description' => '', 'type' => 'inform', 'class' => 'map');
         $widgets[] = array('name' => 'contact\Contacts', 'title' => TEXT_CONTACTS, 'description' => '', 'type' => 'inform', 'class' => 'contacts');
         $widgets[] = array('name' => 'contact\StreetView', 'title' => GOOGLE_STREET_VIEW, 'description' => '', 'type' => 'inform', 'class' => 'street-view');
@@ -181,10 +178,8 @@ class WidgetsList
         $widgets[] = array('name' => 'catalog\ItemsOnPage', 'title' => TEXT_ITEMS_ON_PAGE, 'description' => '', 'type' => 'catalog', 'class' => 'listing-functionality');
         $widgets[] = array('name' => 'Categories', 'title' => TEXT_CATEGORIES, 'description' => '', 'type' => 'catalog', 'class' => 'categories');
         $widgets[] = array('name' => 'Filters', 'title' => TEXT_FILTERS, 'description' => '', 'type' => 'catalog', 'class' => 'filters');
-        $widgets[] = array('name' => 'catalog\ImageMapCategory', 'title' => TEXT_IMAGE_MAP_CATEGORY, 'description' => '', 'type' => 'catalog', 'class' => '');
         $widgets[] = array('name' => 'catalog\B2bAddButton', 'title' => B2B_ADD_BUTTON, 'description' => '', 'type' => 'catalog', 'class' => '');
         $widgets[] = array('name' => 'catalog\AdditionalImages', 'title' => TEXT_ADDITIONAL_IMAGES, 'description' => '', 'type' => 'catalog', 'class' => '');
-        $widgets[] = array('name' => 'catalog\CrossSell', 'title' => TEXT_CROSS_SELL_PRODUCTS, 'description' => '', 'type' => 'catalog', 'class' => '');
 
         return $widgets;
     }
@@ -202,12 +197,10 @@ class WidgetsList
         $widgets[] = array('name' => 'cart\DiscountCoupon', 'title' => DISCOUNT_COUPON, 'description' => '', 'type' => 'cart', 'class' => 'discount-coupon');
         $widgets[] = array('name' => 'cart\OrderReference', 'title' => TEXT_ORDER_REFERENCE, 'description' => '', 'type' => 'cart', 'class' => 'order-reference');
         $widgets[] = array('name' => 'cart\GiveAway', 'title' => BOX_CATALOG_GIVE_AWAY, 'description' => '', 'type' => 'cart', 'class' => 'give-away');
-        $widgets[] = array('name' => 'cart\UpSell', 'title' => FIELDSET_ASSIGNED_UPSELL_PRODUCTS, 'description' => '', 'type' => 'cart', 'class' => 'up-sell');
         $widgets[] = array('name' => 'cart\ShippingEstimator', 'title' => SHOW_SHIPPING_ESTIMATOR_TITLE, 'description' => '', 'type' => 'cart', 'class' => 'shipping-estimator');
         $widgets[] = array('name' => 'cart\OrderTotal', 'title' => ORDER_PRICE_TOTAL, 'description' => '', 'type' => 'cart', 'class' => 'order-total');
         $widgets[] = array('name' => 'cart\CartTabs', 'title' => TEXT_CART_TABS, 'description' => '', 'type' => 'cart', 'class' => '');
         $widgets[] = array('name' => 'cart\CreditAmount', 'title' => CREDIT_AMOUNT, 'description' => '', 'type' => 'cart', 'class' => '');
-        $widgets[] = array('name' => 'cart\BonusPoints', 'title' => TEXT_BONUS_POINTS, 'description' => '', 'type' => 'cart', 'class' => '');
         $widgets[] = array('name' => 'cart\FreeDelivery', 'title' => TEXT_FREE_DELIVERY, 'description' => '', 'type' => 'cart', 'class' => '');
         $widgets[] = array('name' => 'DeliveryDay', 'title' => DELIVERY_DAY, 'description' => '', 'type' => 'cart', 'class' => '');
         $widgets[] = array('name' => 'cart\DependedProducts', 'title' => TEXT_DEPENDED_PRODUCTS, 'description' => '', 'type' => 'cart', 'class' => '');
@@ -258,7 +251,6 @@ class WidgetsList
         $widgets[] = array('name' => 'checkout\BillingAddress', 'title' => TEXT_BILLING_ADDRESS, 'description' => '', 'type' => 'checkout', 'class' => '');
         $widgets[] = array('name' => 'checkout\PaymentMethod', 'title' => TEXT_SELECT_PAYMENT_METHOD, 'description' => '', 'type' => 'checkout', 'class' => '');
         $widgets[] = array('name' => 'checkout\CreditAmount', 'title' => CREDIT_AMOUNT, 'description' => '', 'type' => 'checkout', 'class' => '');
-        $widgets[] = array('name' => 'checkout\BonusPoints', 'title' => TEXT_BONUS_POINTS, 'description' => '', 'type' => 'checkout', 'class' => '');
         $widgets[] = array('name' => 'checkout\ContactInformation', 'title' => CATEGORY_CONTACT, 'description' => '', 'type' => 'checkout', 'class' => '');
         $widgets[] = array('name' => 'checkout\Comments', 'title' => TABLE_HEADING_COMMENTS, 'description' => '', 'type' => 'checkout', 'class' => '');
         $widgets[] = array('name' => 'checkout\Totals', 'title' => TEXT_TOTALS, 'description' => '', 'type' => 'checkout', 'class' => '');
@@ -303,6 +295,18 @@ class WidgetsList
         $widgets[] = array('name' => 'success\ContinueBtn', 'title' => CONTINUE_BUTTON, 'description' => '', 'type' => 'success', 'class' => 'continue-button');
         $widgets[] = array('name' => 'success\PrintBtn', 'title' => PRINT_BUTTON, 'description' => '', 'type' => 'success', 'class' => 'print-button');
         $widgets[] = array('name' => 'success\Download', 'title' => IMAGE_DOWNLOAD, 'description' => '', 'type' => 'success', 'class' => 'download-button');
+        $widgets[] = array('name' => 'order\Products', 'title' => 'Products', 'description' => '', 'type' => 'success', 'class' => '');
+        $widgets[] = array('name' => 'order\BillingAddress', 'title' => 'BillingAddress', 'description' => '', 'type' => 'success', 'class' => '');
+        $widgets[] = array('name' => 'order\DeliveryAddress', 'title' => 'DeliveryAddress', 'description' => '', 'type' => 'success', 'class' => '');
+        $widgets[] = array('name' => 'order\Email', 'title' => 'Customer Email', 'description' => '', 'type' => 'success', 'class' => '');
+        $widgets[] = array('name' => 'order\Name', 'title' => 'Customer Name', 'description' => '', 'type' => 'success', 'class' => '');
+        $widgets[] = array('name' => 'order\Telephone', 'title' => 'Customer Phone', 'description' => '', 'type' => 'success', 'class' => '');
+        $widgets[] = array('name' => 'order\OrderDate', 'title' => 'OrderDate', 'description' => '', 'type' => 'success', 'class' => '');
+        $widgets[] = array('name' => 'order\OrderDateTime', 'title' => 'OrderDateTime', 'description' => '', 'type' => 'success', 'class' => '');
+        $widgets[] = array('name' => 'order\PaymentMethod', 'title' => 'PaymentMethod', 'description' => '', 'type' => 'success', 'class' => '');
+        $widgets[] = array('name' => 'order\ShippingMethod', 'title' => 'ShippingMethod', 'description' => '', 'type' => 'success', 'class' => '');
+        $widgets[] = array('name' => 'order\Totals', 'title' => 'Totals', 'description' => '', 'type' => 'success', 'class' => '');
+        $widgets[] = array('name' => 'order\OrderNumber', 'title' => 'Order Number', 'description' => '', 'type' => 'success', 'class' => '');
 
         return $widgets;
     }
@@ -512,7 +516,6 @@ class WidgetsList
                 $widgets[] = array('name' => 'TrustPilotReviews', 'title' => EXT_TRUSTPILOT_TRUSTPILOT_REVIEWS, 'description' => '', 'type' => 'general', 'class' => 'content');
             }
         }
-        $widgets[] = array('name' => 'ImageMap', 'title' => IMAGE_MAP, 'description' => '', 'type' => 'general', 'class' => '');
         $widgets[] = array('name' => 'SocialLinks', 'title' => TEXT_SOCIAL_LINKS, 'description' => '', 'type' => 'general', 'class' => '');
         $widgets[] = array('name' => 'FiltersSimple', 'title' => FILTERS_SIMPLE, 'description' => '', 'type' => 'general', 'class' => '');
         //$widgets[] = array('name' => 'CartPopUp', 'title' => 'CartPopUp', 'description' => '', 'type' => 'general', 'class' => '');
@@ -572,8 +575,6 @@ class WidgetsList
         $widgets[] = array('name' => 'account\TotalOrdered', 'title' => TOTAL_ORDERED, 'description' => '', 'type' => 'account', 'class' => '');
         $widgets[] = array('name' => 'account\CreditAmount', 'title' => CREDIT_AMOUNT, 'description' => '', 'type' => 'account', 'class' => '');
         $widgets[] = array('name' => 'account\CreditAmountHistory', 'title' => CREDIT_AMOUNT_HISTORY, 'description' => '', 'type' => 'account', 'class' => '');
-        $widgets[] = array('name' => 'account\PointsEarnt', 'title' => TEXT_POINTS_EARNT, 'description' => '', 'type' => 'account', 'class' => '');
-        $widgets[] = array('name' => 'account\PointsEarntHistory', 'title' => POINTS_EARNT_HISTORY, 'description' => '', 'type' => 'account', 'class' => '');
         $widgets[] = array('name' => 'account\ApplyCertificate', 'title' => APPLY_CERTIFICATE_FORM, 'description' => '', 'type' => 'account', 'class' => '');
         $widgets[] = array('name' => 'account\CustomerData', 'title' => TEXT_CUSTOMER_DATA, 'description' => '', 'type' => 'account', 'class' => '');
         $widgets[] = array('name' => 'account\AccountEdit', 'title' => EDIT_MAIN_DETAILS, 'description' => '', 'type' => 'account', 'class' => '');
@@ -713,7 +714,6 @@ class WidgetsList
         $widgets[] = array('name' => 'productListing\ratingCounts', 'title' => TEXT_RATING_COUNTS, 'description' => '', 'type' => 'productListing', 'class' => '');
         $widgets[] = array('name' => 'productListing\price', 'title' => TABLE_HEADING_PRODUCTS_PRICE, 'description' => '', 'type' => 'productListing', 'class' => '');
         $widgets[] = array('name' => 'productListing\priceFrom', 'title' => 'Price From', 'description' => '', 'type' => 'productListing', 'class' => '');
-        $widgets[] = array('name' => 'productListing\bonusPoints', 'title' => TEXT_BONUS_POINTS, 'description' => '', 'type' => 'productListing', 'class' => '');
         $widgets[] = array('name' => 'productListing\buyButton', 'title' => TEXT_BUY_BUTTON, 'description' => '', 'type' => 'productListing', 'class' => '');
         $widgets[] = array('name' => 'productListing\quoteButton', 'title' => REQUEST_FOR_QUOTE_BUTTON, 'description' => '', 'type' => 'productListing', 'class' => '');
         $widgets[] = array('name' => 'productListing\qtyInput', 'title' => TEXT_QUANTITY_INPUT, 'description' => '', 'type' => 'productListing', 'class' => '');
@@ -727,7 +727,6 @@ class WidgetsList
         $widgets[] = array('name' => 'batchSelect', 'title' => 'batchSelect', 'description' => '', 'type' => 'productListing', 'class' => '');
         $widgets[] = array('name' => 'batchRemove', 'title' => 'batchRemove', 'description' => '', 'type' => 'productListing', 'class' => '');
         $widgets[] = array('name' => 'productListing\productGroup', 'title' => 'Product Group', 'description' => '', 'type' => 'productListing', 'class' => '');
-        $widgets[] = array('name' => 'productListing\flexifi', 'title' => 'Flexi-Fi credit plan button', 'description' => '', 'type' => 'productListing', 'class' => '');
         $widgets[] = array('name' => 'productListing\BazaarvoiceRatingInline', 'title' => 'Bazaarvoice Rating Inline', 'description' => '', 'type' => 'productListing', 'class' => '');
         //$widgets[] = array('name' => 'productListing\amazonButton', 'title' => 'amazon button', 'description' => '', 'type' => 'productListing', 'class' => '');
         $widgets[] = array('name' => 'productListing\brand', 'title' => 'Brand', 'description' => '', 'type' => 'productListing', 'class' => '');

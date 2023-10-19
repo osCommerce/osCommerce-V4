@@ -11,7 +11,7 @@
                           <ul class="nav nav-tabs top_tabs_ul">
                             {assign var=i value=0}
                             {foreach $languages as $_l}
-                            <li class="{if $i == 0}active{/if}"><a href="#tab_lang_{$_l['code']}" data-toggle="tab"><span>{$_l['image']}&nbsp;{$_l['name']}</span></a></li>
+                            <li class="{if $i == 0}active{/if}" data-bs-toggle="tab" data-bs-target="#tab_lang_{$_l['code']}"><a><span>{$_l['image']}&nbsp;{$_l['name']}</span></a></li>
                             {$i = $i+1}
                             {/foreach}
                           </ul>

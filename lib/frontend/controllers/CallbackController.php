@@ -43,6 +43,11 @@ class CallbackController extends Sceleton {
         if (!Yii::$app->user->isGuest && !$this->manager->isCustomerAssigned()) {
             $this->manager->assignCustomer(Yii::$app->user->getId());
         }
+        if (!method_exists($this->manager, 'getCombineShippingsDefault')) { // for old projects
+        Yii::configure($this->manager, [
+            'combineShippings' => ((!defined('SHIPPING_SEPARATELY') || defined('SHIPPING_SEPARATELY') && SHIPPING_SEPARATELY == 'false') ? true : false),
+        ]);
+        }
     }
 /**/
     public static function allowedDomains()

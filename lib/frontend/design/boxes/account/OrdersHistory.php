@@ -33,10 +33,17 @@ class OrdersHistory extends Widget
     public function run()
     {
         $is_multi = \Yii::$app->get('storage')->get('is_multi');
-        if ($is_multi && $CustomersMultiEmails = \common\helpers\Acl::checkExtensionAllowed('CustomersMultiEmails', 'allowed')) {
-          if (!$CustomersMultiEmails::checkLink('order_history')) {
-            return TEXT_NOT_ALLOWED;
-          }
+        if ($is_multi) {
+            if ($CustomersMultiEmails = \common\helpers\Acl::checkExtensionAllowed('CustomersMultiEmails', 'allowed')) {
+              if (!$CustomersMultiEmails::checkLink('order_history')) {
+                return TEXT_NOT_ALLOWED;
+              }
+            }
+            if ($DealersMultiCustomers = \common\helpers\Acl::checkExtensionAllowed('DealersMultiCustomers', 'allowed')) {
+              if (!$DealersMultiCustomers::checkLink('order_history')) {
+                return TEXT_NOT_ALLOWED;
+              }
+            }
         }
         
         global $cart, $languages_id, $language, $navigation, $breadcrumb;
@@ -69,14 +76,18 @@ class OrdersHistory extends Widget
         $orderStatus = \common\models\OrdersStatus::getDefaultByOrderEvaluationState(\common\helpers\Order::OES_CANCELLED);
         
         $customers_id = (int)Yii::$app->user->getId();
-        if ($GroupAdministrator = \common\helpers\Acl::checkExtensionAllowed('GroupAdministrator', 'allowed')) {
+
+        /**
+         * @var $GroupAdministrator \common\extensions\GroupAdministrator\GroupAdministrator
+         */
+        if ($GroupAdministrator = \common\helpers\Extensions::isAllowed('GroupAdministrator')) {
             $cIds = $GroupAdministrator::getCustomerIdsByAdministrator($customers_id);
         } else {
             $cIds = [$customers_id];
         }
         
         //$orders_total = \common\helpers\Customer::count_customer_orders();
-        $history_query_raw = "select o.orders_id, o.order_number, o.date_purchased, o.delivery_name, o.billing_name, ot.text as order_total, s.orders_status_name, o.orders_status from " . TABLE_ORDERS . " o, " . TABLE_ORDERS_TOTAL . " ot, " . TABLE_ORDERS_STATUS . " s where o.customers_id IN (" . implode(", ", $cIds) . ") and o.orders_id = ot.orders_id and ot.class = 'ot_total' and o.orders_status = s.orders_status_id and s.language_id = '" . (int) $languages_id . "' order by orders_id DESC";
+        $history_query_raw = "select o.orders_id, o.order_number, o.date_purchased, o.delivery_name, o.billing_name, ot.text as order_total, s.orders_status_name, o.orders_status from " . TABLE_ORDERS . " o, " . TABLE_ORDERS_TOTAL . " ot, " . TABLE_ORDERS_STATUS . " s where o.customers_id IN (" . implode(", ", $cIds) . ") and o.orders_id = ot.orders_id and ot.class = 'ot_total' and o.orders_status = s.orders_status_id and s.language_id = '" . (int) $languages_id . "' order by o.date_purchased DESC";
         $history_split = new splitPageResults($history_query_raw, $max_orders);
         $history_query = tep_db_query($history_split->sql_query);
         $history_links = $history_split->display_links(MAX_DISPLAY_PAGE_LINKS, \common\helpers\Output::get_all_get_params(array('page', 'info', 'x', 'y')), 'account');

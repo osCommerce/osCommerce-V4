@@ -52,11 +52,13 @@ class CatalogArchive extends ProviderAbstract implements ImportInterface, Export
             'feedname' => 'catalog_product_attributes.csv',
         ];
 
-        $this->archiveProviders[] =[
-            'format' => 'CSV',
-            'provider' => 'product\inventory',
-            'feedname' => 'catalog_inventory.csv',
-        ];
+        if (\common\helpers\Extensions::isAllowed('Inventory')) {
+            $this->archiveProviders[] =[
+                'format' => 'CSV',
+                'provider' => 'Inventory\Product',
+                'feedname' => 'catalog_inventory.csv',
+            ];
+        }
 
         $this->archiveProviders[] =[
             'format' => 'CSV',
@@ -75,22 +77,27 @@ class CatalogArchive extends ProviderAbstract implements ImportInterface, Export
             'provider' => 'product\warehousestock',
             'feedname' => 'catalog_warehouse_stock.csv',
         ];
-
-        $this->archiveProviders[] =[
-            'format' => 'CSV',
-            'provider' => 'product\bundles',
-            'feedname' => 'catalog_bundles.csv',
-        ];
-        $this->archiveProviders[] =[
-            'format' => 'CSV',
-            'provider' => 'product\linked_products',
-            'feedname' => 'catalog_linked_products.csv',
-        ];
-        $this->archiveProviders[] =[
-            'format' => 'CSV',
-            'provider' => 'product\xsell',
-            'feedname' => 'catalog_xsell_products.csv',
-        ];
+        if (\common\helpers\Extensions::isAllowed('ProductBundles')) {
+            $this->archiveProviders[] = [
+                'format' => 'CSV',
+                'provider' => 'ProductBundles\ProductBundles',
+                'feedname' => 'catalog_bundles.csv',
+            ];
+        }
+        if (\common\helpers\Extensions::isAllowed('LinkedProducts')) {
+            $this->archiveProviders[] = [
+                'format' => 'CSV',
+                'provider' => 'LinkedProducts\LinkedProducts',
+                'feedname' => 'catalog_linked_products.csv',
+            ];
+        }
+        if (\common\helpers\Extensions::isAllowed('UpSell')) {
+            $this->archiveProviders[] = [
+                'format' => 'CSV',
+                'provider' => 'UpSell\CrossSell',
+                'feedname' => 'catalog_xsell_products.csv',
+            ];
+        }
         $this->archiveProviders[] =[
             'format' => 'CSV',
             'provider' => 'product\properties',

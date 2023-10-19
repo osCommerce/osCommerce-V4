@@ -8,7 +8,7 @@
 </div>
 <!-- /Page Header -->
 <div class="texts_block">
-                {if {$messages|@count} > 0}
+                {if {$messages|default:array()|@count} > 0}
                     {foreach $messages as $messageType=> $message}
                         <div class="alert fade in alert-{$messageType}">
                             <i data-dismiss="alert" class="icon-remove close"></i>
@@ -403,7 +403,7 @@
       $(':checkbox.shown').change(function(){
         if ($(this).data('language') > 0  ){
           obj = this;
-          if ($(':checkbox.shownlang:checked').size() >0 ){
+          if ($(':checkbox.shownlang:checked').length >0 ){
             
             $.post('{Url::to(["texts/set-shown"])}',
             {

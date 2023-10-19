@@ -3,7 +3,7 @@
     <div class="tabbable tabbable-custom">
         <ul class="nav nav-tabs">
             {foreach $objImportExport->tabList() as $id=>$tab}
-            <li class="{if $id==0} active{/if} {$data['cssClass']}" id="{$id}__li"><a href="#ieEP_{$id}" data-toggle="tab"><span title="{$tab['title']|escape:'html'}">{$tab['directory_name']}</span></a></li>
+            <li class="{if $id==0} active{/if} {$data['cssClass']}" id="{$id}__li" data-bs-toggle="tab" data-bs-target="#ieEP_{$id}"><a><span title="{$tab['title']|escape:'html'}">{$tab['directory_name']}</span></a></li>
             {/foreach}
         </ul>
         <div class="tab-content">

@@ -913,14 +913,28 @@ MERCHANT.ONBOARDING.COMPLETED
       if (!empty($res->status_details->reason)) {
         $comment =  $res->status_details->reason;
       } else {
-        $comment =  $res->status . ' ' . $this->transactionType($transactionDetails) . ' ' . $res->amount->value . $res->amount->currency_code;
+        $comment =  $res->status . ' ' . ucfirst($this->transactionType($transactionDetails)) . ' ' . $res->amount->value . $res->amount->currency_code;
       }
+
+        if (strtolower($this->transactionType($transactionDetails)) != 'refund') {
+            $ppOrder = new \stdClass();
+            if (!empty($transactionDetails->result->supplementary_data->related_ids->order_id) ) {
+                $ppId = $transactionDetails->result->supplementary_data->related_ids->order_id;
+            }
+            if (!empty($ppId)) {
+                $ppOrder = $this->getOrder($ppId);
+            }
+            $pp_result = $this->extractComments($ppOrder, $transactionDetails);
+            $comment .= "\n" . implode("\n", $pp_result);
+        }
+
       $this->transactionInfo['status'] = $res->status;
       $this->transactionInfo['status_code'] = $this->getStatusCode($transactionDetails);
       $this->transactionInfo['transaction_id'] = $res->id;
       $this->transactionInfo['amount'] = $res->amount->value;
       $this->transactionInfo['fulljson'] = json_encode($transactionDetails);
       //$this->transactionInfo['last_updated'] = str_replace(['T', 'Z'], [' ', ''], $res->update_time);
+      $this->transactionInfo['last_updated'] = date(\common\helpers\Date::DATABASE_DATETIME_FORMAT, strtotime($res->update_time));
 
       $this->transactionInfo['comments'] = $comment;
     }
@@ -1168,6 +1182,9 @@ and "capabilities[name==SEND_MONEY].limits" is anything but undefinited
     }
 
     protected function _getIntent() {
+        if (method_exists($this, 'forcePreAuthorizeMethod') && $this->forcePreAuthorizeMethod()) {
+            return 'authorize';
+        }
         if (defined('MODULE_PAYMENT_PAYPAL_PARTNER_TRANSACTION_METHOD')) {
             $ret = MODULE_PAYMENT_PAYPAL_PARTNER_TRANSACTION_METHOD;
         } else {
@@ -1326,12 +1343,14 @@ and "capabilities[name==SEND_MONEY].limits" is anything but undefinited
                 }
             }
         }
-        
+
         if ($tmp['zone_id'] > 0) {
-            if ($tmp['country']['iso_code_2'] == 'US') {
-                $_state = \common\helpers\Zones::get_zone_code($tmp['country']['id'], $tmp['zone_id'], '');
+            $country_iso = $tmp['country']['countries_iso_code_2']??$tmp['country']['iso_code_2'];
+            $country_id = ($tmp['country']['countries_id']??$tmp['country']['id'])??$tmp['country_id'];
+            if ($country_iso == 'US') {
+                $_state = \common\helpers\Zones::get_zone_code($country_id, $tmp['zone_id'], '');
             } else {
-                $_state = \common\helpers\Zones::get_zone_name($tmp['country']['id'], $tmp['zone_id'], $tmp['state']);
+                $_state = \common\helpers\Zones::get_zone_name($country_id, $tmp['zone_id'], $tmp['state']);
             }
             if (!empty($_state)) {
                 $tmp['state'] = $_state;
@@ -1352,14 +1371,15 @@ and "capabilities[name==SEND_MONEY].limits" is anything but undefinited
             ];
         }
         $seller = $this->getSeller($this->manager->getPlatformId());
-        $contingencies = 'SCA_WHEN_REQUIRED';
+        //$contingencies = 'SCA_WHEN_REQUIRED';
         if (!empty($seller->three_ds_settings)) {
             $tmp = json_decode($seller->three_ds_settings, true);
-            if (!empty($tmp['contingencies'])) {
-                $contingencies = $tmp['contingencies'];
+            if (!empty($tmp['status']) && !empty($tmp['contingencies'])) {
+                //$contingencies = $tmp['contingencies'];
+                $ret['contingencies'] = [$tmp['contingencies']];
+                //$ret['contingencies'] = [$contingencies];
             }
         }
-        $ret['contingencies'] = [$contingencies];
 
         return $ret;
     }

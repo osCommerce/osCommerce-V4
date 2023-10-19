@@ -6,8 +6,8 @@
     <input type="hidden" name="group_id" value="{$group_id}"/>
 
     <div class="row align-items-center" style="max-width: 500px">
-        <label class="col-xs-3">{$smarty.const.GROUP_NAME}:</label>
-        <div class="col-xs-6">
+        <label class="col-3">{$smarty.const.GROUP_NAME}:</label>
+        <div class="col-6">
             <input type="text" name="banners_group" value="{$groupName}" class="form-control"/>
         </div>
     </div>

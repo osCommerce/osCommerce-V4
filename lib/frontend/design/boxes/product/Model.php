@@ -43,22 +43,22 @@ class Model extends Widget
         if ($data['model'] && ArrayHelper::getValue($this->settings, [0,'show_model']) != 'no') {
             \frontend\design\JsonLd::addData(['Product' => [
                 'sku' => $data['model']
-            ]]);
+            ]], ['Product', 'sku']);
         }
         if ($data['ean'] && ArrayHelper::getValue($this->settings, [0,'show_ean']) != 'no') {
             \frontend\design\JsonLd::addData(['Product' => [
                 'gtin13' => $data['ean']
-            ]]);
+            ]], ['Product', 'gtin13']);
         }
         if ($data['isbn'] && ArrayHelper::getValue($this->settings, [0,'show_isbn']) != 'no') {
             \frontend\design\JsonLd::addData(['Product' => [
                 'isbn' => $data['isbn']
-            ]]);
+            ]], ['Product', 'isbn']);
         }
         if ($data['upc'] && ArrayHelper::getValue($this->settings, [0,'show_upc']) != 'no') {
             \frontend\design\JsonLd::addData(['Product' => [
                 'upc' => $data['upc']
-            ]]);
+            ]], ['Product', 'upc']);
         }
 
         return IncludeTpl::widget(['file' => 'boxes/product/model.tpl', 'params' => [

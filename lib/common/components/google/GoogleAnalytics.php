@@ -14,20 +14,26 @@
 namespace common\components\google;
 
 use Yii;
-use Google\Google_Client;
-use Google\Google_Service_Resource;
-use Google\Google_Service_TagManager;
-use Google\Google_Service_TagManager_Account;
-use Google\Google_Service_Analytics;
-use Google\Google_Service_AnalyticsReporting;
-use Google\Google_Service_AnalyticsReporting_DateRange;
-use Google\Google_Service_AnalyticsReporting_Metric;
-use Google\Google_Service_AnalyticsReporting_ReportRequest;
-use Google\Google_Service_AnalyticsReporting_GetReportsRequest;
-use Google\Google_Service_AnalyticsReporting_GetReportsResponse;
-use Google\Google_Service_AnalyticsReporting_Dimension;
-use Google\Google_Service_AnalyticsReporting_DimensionFilter;
-use Google\Google_Service_AnalyticsReporting_DimensionFilterClause;
+
+/**
+ * @note Google namespaces changed since library update
+ * @see lib/vendor/google/apiclient/src/aliases.php
+ */
+
+use /*Google\*/ Google_Client;
+use /*Google\*/ Google_Service_Resource;
+use /*Google\*/ Google_Service_TagManager;
+use /*Google\*/ Google_Service_TagManager_Account;
+use /*Google\*/ Google_Service_Analytics;
+use /*Google\*/ Google_Service_AnalyticsReporting;
+use /*Google\*/ Google_Service_AnalyticsReporting_DateRange;
+use /*Google\*/ Google_Service_AnalyticsReporting_Metric;
+use /*Google\*/ Google_Service_AnalyticsReporting_ReportRequest;
+use /*Google\*/ Google_Service_AnalyticsReporting_GetReportsRequest;
+use /*Google\*/ Google_Service_AnalyticsReporting_GetReportsResponse;
+use /*Google\*/ Google_Service_AnalyticsReporting_Dimension;
+use /*Google\*/ Google_Service_AnalyticsReporting_DimensionFilter;
+use /*Google\*/ Google_Service_AnalyticsReporting_DimensionFilterClause;
 
 class GoogleAnalytics {
 
@@ -117,7 +123,7 @@ class GoogleAnalytics {
 
         $request->setDateRanges($dateRange);
 
-        if (is_array($metrics)) {
+        if (is_array($metrics??null)) {
             $request->setMetrics($metrics);
         }
 

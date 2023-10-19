@@ -14,7 +14,7 @@
             <div class="tabbable tabbable-custom">
                 <ul class="nav nav-tabs">
                     {foreach $value['description'] as $DKey => $DItem}
-                    <li{if $DKey == 0} class="active"{/if}><a href="#tab_6_{$value['properties_id']}_{$DItem['id']}" class="flag-span" data-toggle="tab">{$DItem['logo']}<span>{$DItem['name']}</span></a></li>
+                    <li{if $DKey == 0} class="active"{/if} data-bs-toggle="tab" data-bs-target="#tab_6_{$value['properties_id']}_{$DItem['id']}"><a class="flag-span">{$DItem['logo']}<span>{$DItem['name']}</span></a></li>
                     {/foreach}
                 </ul>
                 <div class="tab-content">

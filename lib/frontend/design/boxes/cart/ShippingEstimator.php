@@ -49,8 +49,18 @@ class ShippingEstimator extends Widget
           ]]);
       };
 
+      $params = $manager->prepareEstimateData();
+      $optWU = $this->settings[0]['display_weight'] ?? null;
+      $params['display_weight'] = 'no' != $optWU;
+      $params['weight_unit'] = defined('TEXT_WEIGHT_UNIT_KG') ? TEXT_WEIGHT_UNIT_KG : 'Kgs';
+      $params['weight'] = $params['cart_weight'];
+      if ($optWU == 'lb' || ($optWU == '' && defined('WEIGHT_UNIT_DEFAULT') && WEIGHT_UNIT_DEFAULT == 'LB')) {
+          $params['weight_unit'] = defined('TEXT_WEIGHT_UNIT_LB') ? TEXT_WEIGHT_UNIT_LB : 'Lbs';
+          $params['weight'] = round( $params['cart_weight'] * 2.20462262, 2);
+      };
+
       return IncludeTpl::widget(['file' => 'boxes/cart/shipping-estimator.tpl', 'params' => [
-          'params' => $manager->prepareEstimateData(),
+          'params' => $params,
           'estimate_ajax_server_url' => tep_href_link(FILENAME_SHOPPING_CART, '', $request_type)]
       ]);
   }

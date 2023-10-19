@@ -58,7 +58,7 @@ class Information_managerController extends Sceleton  {
         );
       }else{
         $this->view->infoTable[] = array(
-          'title' => PUBLIC_INFORMATION,
+          'title' => TABLE_HEADING_STATUS,
           'not_important' => 0,
         );
       }
@@ -338,9 +338,13 @@ class Information_managerController extends Sceleton  {
     }
 
       $hidePage = tep_db_fetch_array(tep_db_query("select hide from " . TABLE_INFORMATION . " where information_id = '" . (int)$info_id . "'"));
-      if ($ext = \common\helpers\Acl::checkExtensionAllowed('ImageMaps', 'allowed')) {
-        if ($mapsId) {
-            $map = \common\extensions\ImageMaps\models\ImageMaps::findOne($mapsId);
+
+      /**
+       * @var $imageMaps \common\extensions\ImageMaps\models\ImageMaps
+       */
+      if ($imageMaps = \common\helpers\Extensions::getModel('ImageMaps', 'ImageMaps')) {
+        if ($mapsId && !empty($imageMaps)) {
+            $map = $imageMaps::findOne($mapsId);
             $mapImage = $map->image;
             $mapTitle = $map->getTitle($languages_id);
         }

@@ -9,7 +9,10 @@
     <div class="messages"></div>
     {assign var=re1 value='.{'}
     {assign var=re2 value='}'}
+    {Html::hiddenInput('type', $type)}
     {Html::activeHiddenInput($model, 'address_book_id')}
+    {Html::activeHiddenInput($model, 'type')}
+	<div class="formWrapBox">
     {if $model->has('GENDER')}
         <div class="col-full col-gender">
             <div class="">{field_label const="ENTRY_GENDER" configuration=$model->get('GENDER')}</div>
@@ -146,16 +149,28 @@
             </label>
         </div>
     {/if}
-    {if $model->has('TELEPHONE') || $modelShipping->has('TELEPHONE')}
+    {if $model->has('TELEPHONE')}
         <div class="col-left">
             <label>
-                <span>{field_label const="ENTRY_TELEPHONE_ADRESS_BOOK" configuration=$phoneFieldRequired}</span>
-                {if $model->has('TELEPHONE', false) || $modelShipping->has('TELEPHONE', false)}
+                <span>{field_label const="ENTRY_TELEPHONE_ADRESS_BOOK" configuration=$model->get('TELEPHONE')}</span>
+                {if $model->has('TELEPHONE', false)}
                     {Html::activeTextInput($model, 'telephone', ['data-pattern' => "{$re1}1{$re2}", 'data-required' => "{$smarty.const.ENTRY_TELEPHONE_ADRESS_BOOK_ERROR}"])}
                 {else}
                     {Html::activeTextInput($model, 'telephone')}
                 {/if}
                 <i class="telephone_status"></i>
+            </label>
+        </div>
+    {/if}
+    {if $model->has('EMAIL_ADDRESS')}
+        <div class="col-right">
+            <label>
+                <span>{field_label const="ENTRY_EMAIL_ADDRESS_ADRESS_BOOK" configuration=$model->get('TELEPHONE')}</span>
+                {if $model->has('EMAIL_ADDRESS', false)}
+                    {Html::activeTextInput($model, 'email_address', ['data-pattern' => "{$re1}1{$re2}", 'data-required' => "{$smarty.const.ENTRY_EMAIL_ADDRESS_ADRESS_BOOK_ERROR}"])}
+                {else}
+                    {Html::activeTextInput($model, 'email_address')}
+                {/if}
             </label>
         </div>
     {/if}
@@ -166,6 +181,7 @@
     {/if}
     <div class="center-buttons">{$links.update}</div>
     {Html::endForm()}
+	</div>
 </div>
     {if !empty($postcoder)}
     {$postcoder->drawAccountPostcodeHelper($model)}

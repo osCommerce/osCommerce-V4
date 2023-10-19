@@ -16,8 +16,8 @@ var groups = new Array();
         <div class="widget-content-cleaner">
          <div class="tabbable tabbable-custom" id="tab_1">
                 <ul class="nav nav-tabs">
-                    <li class="active"><a href="#main_tab" data-toggle="tab"><span>Main Configuration</span></a></li>
-                    <li><a href="#trash_tab" data-toggle="tab"><span>Trash Configuration</span></a></li>
+                    <li class="active" data-bs-toggle="tab" data-bs-target="#main_tab"><a><span>Main Configuration</span></a></li>
+                    <li data-bs-toggle="tab" data-bs-target="#trash_tab"><a><span>Trash Configuration</span></a></li>
                 </ul>          
            <div class="tab-content">
               <div  class="tab-pane active" id="main_tab">

@@ -76,6 +76,7 @@ class Order
         \common\models\OrdersTransactionsChildren::deleteAll(['orders_id' => (int)$order_id]);
         \common\models\OrdersTransactions::deleteAll(['orders_id' => (int)$order_id]);
         \common\models\EcommerceTracking::deleteAll(['orders_id' => (int)$order_id]);
+        \common\models\OrdersPayment::deleteAll(['orders_payment_order_id' => (int)$order_id]);
 
         tep_db_query("delete from tracking_numbers where orders_id = '" . (int) $order_id . "'");
         tep_db_query("delete from tracking_numbers_to_orders_products where orders_id = '" . (int) $order_id . "'");
@@ -895,6 +896,10 @@ class Order
             unset($isHistory);
             unset($comments);
             self::doRefresh($orderRecord, $isAlternativeBehaviour, $return);
+
+            foreach (\common\helpers\Hooks::getList('orders/after-setstatus') as $filename) {
+                include($filename);
+            }
         }
         unset($isIgnoreBindEvaluationState);
         unset($isAlternativeBehaviour);
@@ -902,18 +907,6 @@ class Order
         unset($orderStatus);
         unset($orderRecord);
 
-        if ( $__orders_id ) {
-            if ($ext = \common\helpers\Acl::checkExtensionAllowed('OrderStatusRules', 'allowed')) {
-                $ext::process($__orders_id, '\\common\\classes\\Order');
-            }
-        }
-
-        if ( $__orders_id ) {
-            /** @var \common\extensions\InvoiceNumberFormat\InvoiceNumberFormat $iext */
-            if ($iext = \common\helpers\Acl::checkExtensionAllowed('InvoiceNumberFormat', 'allowed')) {
-                $iext::onStatusUpdated($__orders_id);
-            }
-        }
 
         return $return;
     }

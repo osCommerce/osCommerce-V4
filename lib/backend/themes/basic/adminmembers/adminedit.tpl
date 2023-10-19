@@ -5,6 +5,10 @@
 
 <div class="or_box_head">{$smarty.const.CATEGORY_PERSONAL}</div>
 
+{foreach \common\helpers\Hooks::getList('adminmembers/adminedit', 'form-top') as $filename}
+    {include file=$filename}
+{/foreach}
+
 <div class="main_row">
     <div class="main_title">{$smarty.const.ENTRY_FIRST_NAME}</div>
     <div class="main_value">{tep_draw_input_field('admin_firstname', $mInfo->admin_firstname|default, 'maxlength="32" class="form-control"', true)}</div>
@@ -24,6 +28,10 @@
     <div class="main_title">{$smarty.const.ENTRY_TELEPHONE_NUMBER}</div>
     <div class="main_value">{tep_draw_input_field('admin_phone_number', $mInfo->admin_phone_number|default, 'maxlength="100" class="form-control"')}</div>
 </div>
+
+{foreach \common\helpers\Hooks::getList('adminmembers/adminedit', 'form-middle') as $filename}
+    {include file=$filename}
+{/foreach}
 
 <div class="main_row">
     <div class="main_title">{$smarty.const.TEXT_INFO_GROUP}</div>
@@ -45,6 +53,10 @@
         <input type="checkbox" name="frontend_translation" class="translate-frontend" {if $mInfo->frontend_translation|default}checked{/if}/>
     </div>
 </div>
+
+{foreach \common\helpers\Hooks::getList('adminmembers/adminedit', 'form-bottom') as $filename}
+    {include file=$filename}
+{/foreach}
 
 <div class="btn-toolbar btn-toolbar-order">
     {if $admin_id > 0}

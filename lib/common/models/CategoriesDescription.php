@@ -45,10 +45,10 @@ class CategoriesDescription extends \yii\db\ActiveRecord
             [['categories_id', 'language_id', 'categories_name', 'categories_head_title_tag', 'categories_head_desc_tag', 'categories_head_keywords_tag', 'affiliate_id', 'categories_seo_page_name', 'noindex_option', 'nofollow_option', 'rel_canonical', 'categories_h1_tag', 'categories_h2_tag', 'categories_h3_tag', 'categories_image_alt_tag_mask', 'categories_image_title_tag_mask'], 'required'],
             [['categories_id', 'language_id', 'affiliate_id', 'noindex_option', 'nofollow_option'], 'integer'],
             [['categories_description', 'categories_head_desc_tag', 'categories_head_keywords_tag', 'categories_h2_tag', 'categories_h3_tag'], 'string'],
-            [['categories_name', 'categories_heading_title'], 'string', 'max' => 64],
+            [['categories_name', 'categories_heading_title'], 'string', 'max' => 255],
             [['categories_head_title_tag'], 'string', 'max' => 125],
             [['categories_seo_page_name', 'categories_h1_tag', 'categories_image_alt_tag_mask', 'categories_image_title_tag_mask'], 'string', 'max' => 255],
-            [['rel_canonical'], 'string', 'max' => 128]
+            [['rel_canonical'], 'string', 'max' => 255]
         ];
     }
 

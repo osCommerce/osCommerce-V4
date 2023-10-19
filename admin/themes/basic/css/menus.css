@@ -275,10 +275,15 @@ ul ul .item-handle {
 .menu-right-list {
   overflow: hidden;
 }
+
+.menu-selects {
+  display: flex;
+  white-space: nowrap;
+}
 .select-menu {
-  background: #e8e1ff;
-  border: 1px solid #ccc;
-  padding: 5px 10px 10px;
+  background: var(--background-color-2);
+  border: 1px solid var(--border-color-midle);
+  padding: 10px 10px 8px;
   margin: 0;
   overflow: hidden;
   font-size: 16px;
@@ -298,8 +303,9 @@ ul ul .item-handle {
   width: 200px;
 }
 .select-menu .menu-list-heading {
-  padding: 5px 5px 10px;
+  padding: 4px 20px 0 5px;
   background: none;
+  line-height: 1;
 }
 .select-menu select {
   width: 49%;
@@ -310,13 +316,13 @@ ul ul .item-handle {
 }
 .select-menu .edit,
 .select-menu .import,
-.select-menu .export {
-  position: absolute;
-  right: 56px;
-  top: 44px;
+.select-menu .export,
+.select-menu .copy-from,
+.select-menu .remove,
+.select-menu .swap {
   cursor: pointer;
   font-size: 20px;
-  color: #7952b3;
+  color: var(--primary-color);
   font-weight: normal;
   width: 29px;
   height: 29px;
@@ -325,21 +331,8 @@ ul ul .item-handle {
   border-radius: 3px;
   font-family: FontAwesome;
 }
-.select-menu .import {
-  right: 100px;
-}
-.select-menu .export {
-  right: 144px;
-  top: 42px;
-}
-.select-menu .copy-from {
-  position: absolute;
-  right: 200px;
-  top: 47px;
-  cursor: pointer;
-  font-size: 14px;
-  color: #7952b3;
-  font-weight: 600;
+.select-menu .remove {
+  color: var(--color-danger)
 }
 .select-menu .edit:before {
   content: '\f040';
@@ -350,29 +343,80 @@ ul ul .item-handle {
 .select-menu .export:before {
   content: '\f093';
 }
-.select-menu .edit.active {
-  background: #8d98a7;
-  color: #fff;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-}
-.select-menu .remove {
-  position: absolute;
-  right: 22px;
-  top: 44px;
-  cursor: pointer;
-  font-size: 20px;
-  color: #f52f1b;
-  font-weight: normal;
-}
 .select-menu .remove:before {
   content: '\f014';
-  font-family: FontAwesome;
+}
+.select-menu .copy-from:before {
+  content: '\f0c5';
+}
+.select-menu .swap:before {
+  content: '\f0ec';
 }
 .select-menu .btn-cancel {
   padding: 4px 14px;
 }
 .select-menu .btn-primary {
   padding: 5px 14px;
+}
+.select-menu form {
+  display: flex;
+}
+.select-menu .menu-top-buttons {
+  display: flex;
+  justify-content: end;
+  flex-grow: 1;
+  padding-right: 5px;
+  font-family: FontAwesome;
+}
+.select-menu .menu-top-buttons > * {
+  width: 30px;
+  height: 30px;
+  text-align: center;
+  line-height: 30px;
+  margin-left: 10px;
+}
+.select-menu .menu-name {
+  display: flex;
+}
+.select-menu .menu-name input,
+.select-menu .menu-name select {
+  flex-grow: 1;
+}
+.select-menu .menu-name .btn-edit,
+.select-menu .menu-name .btn-save-menu-name,
+.select-menu .menu-name .btn-cancel-menu-name {
+  width: 28px;
+  min-width: 28px;
+  height: 28px;
+  border-top: 1px solid var(--border-color-midle);
+  border-right: 1px solid var(--border-color-midle);
+  border-bottom: 1px solid var(--border-color-midle);
+  text-align: center;
+  line-height: 26px;
+  font-size: 16px;
+  font-family: FontAwesome;
+  background: var(--background-color);
+  cursor: pointer;
+}
+.select-menu .menu-name .btn-edit:before {
+  content: '\f040';
+  color: var(--primary-color)
+}
+.select-menu .menu-name .btn-save-menu-name:before {
+  content: '\f00c';
+  color: var(--color-success)
+}
+.select-menu .menu-name .btn-cancel-menu-name:before {
+  content: '\f00d';
+  color: var(--color-warning)
+}
+.select-menu .menu-name select.form-control {
+  width: 150px;
+  min-width: 150px;
+}
+.select-menu .menu-name input.form-control {
+  width: 123px;
+  min-width: 123px;
 }
 
 .menu-list-heading {
@@ -959,10 +1003,6 @@ div.around-widget-settings {
   width: 100px;
   display: inline-block;
   vertical-align: top;
-}
-.setting-row input[type="radio"],
-.setting-row input[type="checkbox"] {
-  width: auto;
 }
 .setting-row input[type="file"] {
   width: auto;
@@ -2461,7 +2501,7 @@ tr.new-file {
   width: 565px;
   background: #fff;
   box-shadow: 0 0 10px 5px #999;
-  z-index: 999;
+  z-index: 99999 !important;
 }
 .popup-draggable .popup-heading {
   cursor: move;
@@ -2973,11 +3013,6 @@ table.wraper td {
 }
 
 
-.menu-selects {
-  width: calc(100% - 270px);
-  display: flex;
-  white-space: nowrap;
-}
 .get-from-text {
   padding: 2px 5px 0 10px;
 

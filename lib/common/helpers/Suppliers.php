@@ -213,7 +213,7 @@ class Suppliers {
     public static function getDiscountValuesTable($suppliers_price_discount_post)
     {
         $suppliers_price_discount = '';
-        if (is_array($suppliers_price_discount_post) && $suppliers_price_discount_post['status']) {
+        if (is_array($suppliers_price_discount_post) && ($suppliers_price_discount_post['status'] ?? false)) {
             $suppliers_price_discount_array = array();
             $discount_qty = $suppliers_price_discount_post['qty'];
             $discount_price = $suppliers_price_discount_post['price'];

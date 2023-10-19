@@ -96,6 +96,14 @@ where
                                 $selected[$page] = false;
                             }
                             break;
+
+                        case 'popup_product':
+                            if (Yii::$app->request->isAjax) {
+                                $selected[$page] ++;
+                            } else {
+                                $selected[$page] = false;
+                            }
+                            break;
                     }
                 }
             }

@@ -163,7 +163,7 @@ class IOAttachment extends Complex
 
                 IOCore::get()->download($sourceFile, $physicalFile);
                 if ($origin != $physicalFile) {
-                    \OscLink\Logger::printf('Warning while saving images: originFN=$origin but result=$physicalFile');
+                    \OscLink\Logger::print("Warning while saving images: originFN=$origin but result=$physicalFile");
                 }
                 if ($pos = strpos($this->location, '/')) {
                     $this->value = rtrim(substr($this->location, $pos+1), '/') . '/' . $this->value;

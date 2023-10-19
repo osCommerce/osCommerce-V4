@@ -2,12 +2,20 @@
 <style>
   .address-format-rows .row.address-row{ min-height:50px; position:relative;border: 2px dotted #ccc;padding-top: 3px; }  
   .item, .teplate-item{ border: 1px solid #ccc;padding: 10px;display:inline-block!important; }
-  .item{ margin: 0 5px 0 5px; }
+  .item{
+      margin: 0 5px 0 5px;
+      cursor: pointer;
+  }
   .rows{ padding: 10px; }
   #formatsList{ padding-top:10px; }
   .remove:before { content:'\f014';font-family:FontAwesome;position: absolute; top: -10px;right: -5px; }
   .add-row { float:right; }
   .address-holder .rows{  }
+  .btn-remove {
+      margin-right: 20px;
+      cursor: pointer;
+      color: var(--color-danger)
+  }
 </style>
 <!--=== Page Header ===-->
 <div class="page-header">
@@ -54,7 +62,7 @@
             let box = $(this).prev();
             let row = document.createElement('div');
             row.className = 'rows';
-            row.setAttribute('data-row', $('.rows',  box).size());
+            row.setAttribute('data-row', $('.rows',  box).length);
             setHoverRow($(row));
             let subrow = document.createElement('div');
             subrow.className = 'row address-row';
@@ -172,7 +180,7 @@
             }            
         })
         
-        $('body').on('click', '.icon-remove', function(){
+        $('body').on('click', '.btn-remove', function(){
             let holder = $(this).closest('.format-box ');
             bootbox.confirm({
                 message: "{$smarty.const.CONFIRMATION_DELETE_FORMAT}",

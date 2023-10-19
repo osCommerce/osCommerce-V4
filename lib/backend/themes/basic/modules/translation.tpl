@@ -8,7 +8,7 @@
                 <div class="tabbable tabbable-custom">
                     <ul class="nav nav-tabs">
                         {foreach $languages as $lKey => $lItem}
-                        <li{if $lKey == 0} class="active"{/if}><a href="#tab_2_{$lItem['id']}" class="flag-span" data-toggle="tab">{$lItem['logo']}<span>{$lItem['name']}</span></a></li>
+                        <li{if $lKey == 0} class="active"{/if} data-bs-toggle="tab" data-bs-target="#tab_2_{$lItem['id']}"><a class="flag-span">{$lItem['logo']}<span>{$lItem['name']}</span></a></li>
                         {/foreach}
                     </ul>
                     <div class="tab-content">

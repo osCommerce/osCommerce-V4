@@ -18,7 +18,7 @@
 {if $pageName}
 
     <link href="{$app->view->theme->baseUrl}/css/admin-design.css" rel="stylesheet" type="text/css" />
-    {\frontend\design\Block::widget(['name' => $pageName, 'params' => ['params' => ['type' => 'backendOrder', 'manager' => $manager, 'order' => $order], 'type' => 'backendOrder', 'manager' => $manager, 'order' => $order]])}
+    {\frontend\design\Block::widget(['name' => $pageName, 'params' => ['params' => ['type' => 'backendOrder', 'manager' => $manager, 'order' => $order, 'theme_name' => 'backend'], 'type' => 'backendOrder', 'manager' => $manager, 'order' => $order]])}
     <style type="text/css">{\frontend\design\Info::minifyCss(\frontend\design\Block::getStyles())}</style>
 
 {else}

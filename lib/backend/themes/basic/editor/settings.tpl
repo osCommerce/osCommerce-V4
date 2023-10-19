@@ -5,13 +5,13 @@
         <div class="lc">
             <div class="">
                 <label>{$smarty.const.TITLE_CURRENCY}<span class="fieldRequired">*</span></label>
-                {Html::dropDownList('currency', $entry->defualt_platform_currency, $entry->platform_currencies, ['class' => 'form-control'])}                                            
+                {Html::dropDownList('currency', $entry->defualt_platform_currency, $entry->platform_currencies, ['class' => 'form-select'])}
             </div>                              
         </div>	
         <div class="lc">
             <div class="">
                 <label>{$smarty.const.TEXT_LANGUAGES}<span class="fieldRequired">*</span></label>
-                {Html::dropDownList('language_id', $entry->defualt_platform_language, $entry->platform_languages, ['class' => 'form-control'])}                                                                                        
+                {Html::dropDownList('language_id', $entry->defualt_platform_language, $entry->platform_languages, ['class' => 'form-select'])}
             </div>                              
         </div>
     </div>
@@ -24,7 +24,7 @@
                 <div>
                     <div class="wbmbp1">
                         <label>{$smarty.const.TABLE_HEAD_PLATFORM_NAME}:<span class="fieldRequired">*</span></label>
-                        {Html::dropDownList('platform_id', $entry->default_platform, $entry->platforms, ['class' => 'form-control', 'onchange' => 'reloadPdetails(this.value)'])}                                          
+                        {Html::dropDownList('platform_id', $entry->default_platform, $entry->platforms, ['class' => 'form-select', 'onchange' => 'reloadPdetails(this.value)'])}
                     </div> 
                 </div>
                 {call lc entry = $entry}

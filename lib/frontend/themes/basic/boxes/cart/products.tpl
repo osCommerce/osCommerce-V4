@@ -19,7 +19,7 @@
         </div>
 
         {foreach $products as $product}
-            <div class="item{if strlen($product.parent) > 0} subitem{/if}">
+            <div class="item{if strlen($product.parent) > 0} subitem{/if}" data-id="{$product.id}">
 
                 {if $popupMode || !$multiCart['enabled']}
                     <div class="remove">
@@ -106,7 +106,7 @@
                                 <input type="hidden" name="cart_quantity[]" value="{$product.quantity}"/>
                                 <div class="qty_cart_colors">
                                     <span class="qc_title">{$smarty.const.UNIT_QTY}: </span>
-                                    <input type="text" name="cart_quantity_[{$product.id}][0]" value="{$product.units}" class="qty-inp-s" data-min="0"{if $product.stock_info.quantity_max != false} data-max="{$product.stock_info.quantity_max}"{/if}{if \common\helpers\Acl::checkExtensionAllowed('OrderQuantityStep', 'allowed')}{\common\extensions\OrderQuantityStep\OrderQuantityStep::setLimit($product.order_quantity_data)}{/if}/>
+                                    <input type="text" name="cart_quantity_[{$product.id}][0]" value="{$product.units}" class="qty-inp-s" data-min="0"{if $product.stock_info.quantity_max != false} data-max="{$product.stock_info.quantity_max}"{/if}{if $oqs = \common\helpers\Extensions::isAllowed('OrderQuantityStep')}{$oqs::setLimit($product.order_quantity_data)}{/if}/>
                                 </div>
                                 {if $product.order_quantity_data.pack_unit > 0}
                                 <div class="qty_cart_colors">
@@ -123,8 +123,8 @@
                             {else}
                                 <input type="text" name="cart_quantity[]" value="{$product.quantity_virtual}" class="qty-inp-s"{if $product.stock_info.quantity_max != false} data-max="{$product.stock_info.quantity_max}"{/if}
                                     data-value-real="{$product.quantity}"
-                                    {if \common\helpers\Acl::checkExtensionAllowed('MinimumOrderQty', 'allowed')}{\common\extensions\MinimumOrderQty\MinimumOrderQty::setLimit($product.order_quantity_data)}{/if}
-                                    {if \common\helpers\Acl::checkExtensionAllowed('OrderQuantityStep', 'allowed')}{\common\extensions\OrderQuantityStep\OrderQuantityStep::setLimit($product.order_quantity_data)}{/if}
+                                    {if $moq = \common\helpers\Extensions::isAllowed('MinimumOrderQty')}{$moq::setLimit($product.order_quantity_data)}{/if}
+                                    {if $oqs = \common\helpers\Extensions::isAllowed('OrderQuantityStep')}{$oqs::setLimit($product.order_quantity_data)}{/if}
                                 />
                             {/if}
                         {/if}
@@ -143,23 +143,22 @@
                     {/if}
                 </div>
 
-                {if $product.bonus_points_price && $product.bonus_points_price > 0 && $product.bonus_points_cost && $product.bonus_points_cost > 0}
+                {$BonusActions=\common\helpers\Extensions::isAllowedAnd('BonusActions', 'isProductPointsEnabled')}
+                {if $BonusActions && $product.bonus_points_cost}
                 <div class="points">
-                {if $product.bonus_coefficient === false && $product.bonus_points_price && $product.bonus_points_price > 0}
+                {if false}
                     <div class="points-redeem">
                         <b>{number_format($product.bonus_points_price * $product.quantity, 0)}</b>
-                        {$smarty.const.TEXT_POINTS_REDEEM}
+                        {$smarty.const.TEXT_POINTS_REDEEM_NOT_USED}
                     </div>
                 {/if}
-                {if $product.bonus_points_cost && $product.bonus_points_cost > 0}
                     <div class="points-earn">
-                        <b>{number_format(floor($product.bonus_points_cost) * $product.quantity, 0)}</b>
-                        {$smarty.const.TEXT_POINTS_EARN}
-                        {if $product.bonus_coefficient !== false}
-                            ({\common\helpers\Points::getBonusPointsPriceInCurrencyFormatted(floor($product.bonus_points_cost) * $product.quantity, $groupId)})
+                        {if $PremiumAccountClass = \common\helpers\Acl::checkExtensionAllowed('PremiumAccount', 'allowed')}
+                            {$PremiumAccountClass::showRewardPointsCost($product.bonus_points_cost * $product.quantity)}
                         {/if}
+                        {*$BonusActions::formatPointAndCurrency($product.bonus_points_cost*$product.quantity, $product.bonus_points_cost_currency*$product.quantity)*}
+                        {$product.bonus_points_cost_formatted} {$smarty.const.EXT_BONUS_ACTIONS_TEXT_PRODUCT_REWARD_POINTS}
                     </div>
-                {/if}
                 </div>
                 {/if}
 
@@ -313,4 +312,6 @@
         </script>
     {/if}
 </div>
-
+{foreach \common\helpers\Hooks::getList('box/cart/products', 'bottom') as $filename}
+    {include file=$filename}
+{/foreach}

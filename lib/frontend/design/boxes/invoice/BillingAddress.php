@@ -36,6 +36,6 @@ class BillingAddress extends Widget
       if (isset($this->params["order"]->customer['company_vat'])) {
         $this->params["order"]->billing['company_vat'] = $this->params["order"]->customer['company_vat'];
       }*/
-    return \common\helpers\Address::address_format($this->params["order"]->billing['format_id'], $this->params["order"]->billing, 1, '', '<br>');
+    return \common\helpers\Address::address_format($this->params["order"]->billing['format_id'] ?? null, $this->params["order"]->billing ?? null, 1, '', '<br>');
   }
 }

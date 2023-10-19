@@ -32,8 +32,8 @@
                                                class="qty-inp"
                                                data-min = "0"
                                                data-max="{$quantity_max}"
-                                               {if \common\helpers\Acl::checkExtensionAllowed('OrderQuantityStep', 'allowed')}
-                                                   {\common\extensions\OrderQuantityStep\OrderQuantityStep::setLimit($order_quantity_data)}
+                                               {if $oqs = \common\helpers\Extensions::isAllowed('OrderQuantityStep')}
+                                                   {$oqs::setLimit($order_quantity_data)}
                                                {/if} />
                                     </div>
                                 </div>

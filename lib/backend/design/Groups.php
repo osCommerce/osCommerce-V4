@@ -20,6 +20,7 @@ use common\models\DesignBoxesGroupsCategory;
 use common\models\DesignBoxesGroupsImages;
 use common\models\DesignBoxesGroupsLanguages;
 use backend\design\Theme;
+use common\models\ThemesSettings;
 use Yii;
 use yii\helpers\FileHelper;
 use yii\helpers\ArrayHelper;
@@ -227,7 +228,7 @@ class Groups
                 'title' => TEXT_COLOR_SCHEME
             ],
             'font' => [
-                'name' => 'fonts',
+                'name' => 'font',
                 'title' => TEXT_FONTS
             ],
         ];
@@ -409,6 +410,7 @@ class Groups
             return json_encode(['error' => CHOOSE_PAGES]);
         }
 
+        $addedPages = [];
         $boxes = [];
         foreach ($group['pages'] as $page) {
             $designBoxes = \common\models\DesignBoxesTmp::find()->where([
@@ -420,6 +422,19 @@ class Groups
                 $boxTree = Theme::blocksTree($box['id']);
                 $boxTree['sort_order'] = $key;
                 $boxes[$page] =$boxTree;
+            }
+
+            $themeAddedPages = ThemesSettings::find()
+                ->where(['theme_name' => $themeName, 'setting_group' => 'added_page'])
+                ->asArray()->all();
+
+            foreach ($themeAddedPages as $addedPage) {
+                if (\common\classes\design::pageName($addedPage['setting_value']) == $page) {
+                    $addedPages[] = [
+                        'setting_name' => $addedPage['setting_name'],
+                        'setting_value' => $addedPage['setting_value']
+                    ];
+                }
             }
         }
         $json = json_encode($boxes);
@@ -435,6 +450,7 @@ class Groups
         }
 
         $zip->addFromString ('files.json', json_encode($files));
+        $zip->addFromString ('addedPages.json', json_encode($addedPages));
 
         $zip->close();
 

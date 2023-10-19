@@ -11,11 +11,11 @@
     <div class="tabbable tabbable-custom">
       <ul class="nav nav-tabs">
 
-        <li class="active"><a href="#set" data-toggle="tab">{$smarty.const.TEXT_CUSTOMER_DATA}</a></li>
-        <li><a href="#style" data-toggle="tab">{$smarty.const.HEADING_STYLE}</a></li>
-        <li><a href="#align" data-toggle="tab">{$smarty.const.HEADING_WIDGET_ALIGN}</a></li>
-        <li><a href="#visibility" data-toggle="tab">{$smarty.const.TEXT_VISIBILITY_ON_PAGES}</a></li>
-        <li><a href="#ajax" data-toggle="tab">{$smarty.const.TEXT_AJAX}</a></li>
+        <li class="active" data-bs-toggle="tab" data-bs-target="#set"><a>{$smarty.const.TEXT_CUSTOMER_DATA}</a></li>
+        <li data-bs-toggle="tab" data-bs-target="#style"><a>{$smarty.const.HEADING_STYLE}</a></li>
+        <li data-bs-toggle="tab" data-bs-target="#align"><a>{$smarty.const.HEADING_WIDGET_ALIGN}</a></li>
+        <li data-bs-toggle="tab" data-bs-target="#visibility"><a>{$smarty.const.TEXT_VISIBILITY_ON_PAGES}</a></li>
+        <li data-bs-toggle="tab" data-bs-target="#ajax"><a>{$smarty.const.TEXT_AJAX}</a></li>
 
       </ul>
       <div class="tab-content">

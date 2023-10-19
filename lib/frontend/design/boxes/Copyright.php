@@ -35,6 +35,11 @@ class Copyright extends Widget
         $languages_id = \Yii::$app->settings->get('languages_id');
         $data = Info::platformData();
 
+        if (Yii::$app->id == 'app-console'){
+            $text = \common\helpers\Translation::getTranslationValue('TEXT_COPYRIGHT', 'main', \common\classes\language::defaultId());
+            return '<div>' . strip_tags(sprintf($text, date("Y"), @$data['company'])) . '</div>';
+        }
+
         $info_id = (int)Yii::$app->request->get('info_id');
 
         $information = \common\models\Information::find()
@@ -55,7 +60,7 @@ class Copyright extends Widget
 
         self::$page_block = (isset($this->params['params']['page_block']) ? $this->params['params']['page_block'] : '');
 
-        $text = preg_replace_callback('/href=\"([^"]{0,})\"/', 'self::createUrl', $text);
+        $text = preg_replace_callback('/href=\"([^"]{0,})\"/', self::class . '::createUrl', $text);
 
         return '<div>' . sprintf($text, date("Y"), @$data['company']) . '</div>';
     }

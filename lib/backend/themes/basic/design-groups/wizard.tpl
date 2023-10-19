@@ -2,10 +2,10 @@
 {backend\assets\DesignAsset::register($this)|void}
 {backend\assets\SliderAsset::register($this)|void}
 
-{if $themeName}
+<div class="designer-buttons"{if !$themeName} style="display: none" {/if}>
     {include '../design/menu.tpl'}
-{/if}
-<div class="design-wizard"{if $themeName} style="padding-top: 40px" {/if}>
+</div>
+<div class="design-wizard" style="padding-top: 40px">
 
     <div class="wizard-step{if !$themeName} active{else} past{/if}" data-step="name">
         <div class="step-heading">{$smarty.const.TEXT_THEME_NAME}<span class="theme-name">{if $themeTitle}: {$themeTitle}{/if}</span></div>
@@ -15,7 +15,7 @@
                 <input type="hidden" name="group_id" value="{$group_id}">
             </div>
             <div class="buttons">
-                <span class="btn btn-primary btn-continue">{$smarty.const.TEXT_CONTINUE}</span>
+                <span class="btn btn-primary btn-continue{if !count($groupLists)} btn-finish{/if}">{$smarty.const.TEXT_CONTINUE}</span>
             </div>
         </div>
     </div>
@@ -28,12 +28,17 @@
                     {foreach $step.list as $group}
                         <label class="group-item">
                             {if $step.multiSelect}
-                                <input type="checkbox" name="{$step.category}{$group.id}" value="{$group.id}"/>
+                                <input type="checkbox" name="{$step.category}{$group.id}" value="{$group.id}"
+                                       {if in_array($group.file, $step.files)}checked{/if}/>
                             {else}
-                                <input type="radio" name="{$step.category}" value="{$group.id}"/>
+                                <input type="radio" name="{$step.category}" value="{$group.id}"
+                                       {if in_array($group.file, $step.files)}checked{/if}/>
                             {/if}
                             <div class="group-item-holder">
                                 <div class="radio-box"></div>
+                                {if $step.multiSelect}
+                                    <div class="handle"></div>
+                                {/if}
                                 <div class="images">
                                     {foreach $group.images as $image}
                                         <div class="image"><img src="{$image.image}"></div>
@@ -42,6 +47,18 @@
                                 <div class="">
                                     <div class="title">{$group.name}</div>
                                     <div class="description">{$group.comment}</div>
+
+                                    {if $step.category == 'color' && $group['colors'] && $group['colors']|count}
+                                        <div class="main-colors">
+                                            <div class="title-colors">{$smarty.const.CHANGE_MAIN_COLORS}:</div>
+                                            {foreach $group['colors'] as $color => $names}
+                                                    <div class="input-group colorpicker-component">
+                                                        <input type="text" name="color" value="{$color}" class="form-control" data-old-color="{$color}" />
+                                                        <span class="input-group-append"><span class="input-group-text colorpicker-input-addon"><i></i></span></span>
+                                                    </div>
+                                            {/foreach}
+                                        </div>
+                                    {/if}
                                 </div>
                             </div>
                         </label>
@@ -64,6 +81,21 @@
     $(function(){
         $('.wizard-step:not(.active) .step-content').hide();
 
+        $('.colorpicker-component').colorpicker({ sliders: {
+                saturation: { maxLeft: 200, maxTop: 200 },
+                hue: { maxTop: 200 },
+                alpha: { maxTop: 200 }
+            }})
+
+        $('.multi-select .groups-list').sortable({
+            handle: ".handle",
+            axis: "y"
+        });
+
+        $('.group-item input:checked').each(function () {
+            $(this).closest('.wizard-step').addClass('past');
+        });
+
         $('.btn-continue').on('click', function () {
             const finish = $(this).hasClass('btn-finish');
             const $step = $(this).closest('.wizard-step');
@@ -81,11 +113,17 @@
                     if (response.error) {
                         alertMessage(response.error, 'alert-message')
                     } else {
+                        $.get('design-groups/copy-new-theme')
                         $('.theme-name', $step).html(': ' + title);
                         const url = new URL(window.location.href)
                         url.searchParams.set('theme_name', response.theme_name);
-                        window.history.pushState({ },"", url.toString())
-                        goToNext()
+                        window.history.pushState({ },"", url.toString());
+                        goToNext(finish && response.theme_name);
+                        $('.designer-buttons').slideDown();
+                        $('.designer-buttons a').each(function () {
+                            const href = $(this).attr('href').replace(/theme_name=$/, 'theme_name='+response.theme_name);
+                            $(this).attr('href', href);
+                        })
                     }
                 }, 'json')
             } else {
@@ -109,7 +147,13 @@
                     if ($step.data('step') == 'color' || $step.data('step') == 'font') {
                         action = 'set-styles';
                     }
-                    $.post('design-groups/' + action, { theme_name, group_id, category }, function (response) {
+                    const colors = [];
+                    if ($step.data('step') == 'color') {
+                        $('input:checked + .group-item-holder input', $step).each(function () {
+                            colors.push({ 'old': $(this).data('old-color'), 'new': $(this).val() })
+                        })
+                    }
+                    $.post('design-groups/' + action, { theme_name, group_id, category, colors }, function (response) {
                         $('.step-content', $step).removeClass('hided-box');
                         $('.hided-box-holder', $step).remove();
                         if (response.error) {
@@ -148,12 +192,15 @@
                                 });
                                 alertMessage($message)
                             }
-                            goToNext(finish)
+                            goToNext(finish && theme_name)
                         }
                     }, 'json')
                 }
             }
-            function goToNext(finish) {
+            function goToNext(theme_name) {
+                if (theme_name) {
+                    window.location = 'design/elements?theme_name=' + theme_name;
+                }
                 $step.removeClass('active');
                 $step.addClass('past');
                 $('.step-content', $step).slideUp();

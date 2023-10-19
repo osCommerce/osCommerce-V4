@@ -18,12 +18,12 @@
 <input type="hidden" name="information_id" value="{$information_id}">
 <div class="tabbable tabbable-custom tabbable-ep">
     <ul class="nav nav-tabs nav-tabs-big {if $isMultiPlatform}tab-radius-ul{/if}">
-        {if $isMultiPlatforms}<li><a href="#platforms" data-toggle="tab"><span>{$smarty.const.TEXT_COMMON_PLATFORM_TAB}</span></a></li>{/if}
-        <li class="active"><a href="#main" data-toggle="tab"><span>{$smarty.const.TEXT_MAIN_DETAILS}</span></a></li>
-        <li><a href="#seo" data-toggle="tab"><span>{$smarty.const.TEXT_SEO}</span></a></li>
-        <li><a href="#template" data-toggle="tab"><span>{$smarty.const.TEXT_TEMPLATE}</span></a></li>
-        <li><a href="#imageTab" data-toggle="tab"><span>{$smarty.const.TEXT_IMAGE_}</span></a></li>
-        <li><a href="#settings" data-toggle="tab"><span>{$smarty.const.BOX_PROMOTIONS_SETTINGS}</span></a></li>
+        {if $isMultiPlatforms}<li data-bs-toggle="tab" data-bs-target="#platforms"><a><span>{$smarty.const.TEXT_COMMON_PLATFORM_TAB}</span></a></li>{/if}
+        <li class="active" data-bs-toggle="tab" data-bs-target="#main"><a><span>{$smarty.const.TEXT_MAIN_DETAILS}</span></a></li>
+        <li data-bs-toggle="tab" data-bs-target="#seo"><a><span>{$smarty.const.TEXT_SEO}</span></a></li>
+        <li data-bs-toggle="tab" data-bs-target="#template"><a><span>{$smarty.const.TEXT_TEMPLATE}</span></a></li>
+        <li data-bs-toggle="tab" data-bs-target="#imageTab"><a><span>{$smarty.const.TEXT_IMAGE_}</span></a></li>
+        <li data-bs-toggle="tab" data-bs-target="#settings"><a><span>{$smarty.const.BOX_PROMOTIONS_SETTINGS}</span></a></li>
     </ul>
     <div class="tab-content {if $isMultiPlatform}tab-content1{/if}">
         {if $isMultiPlatforms}
@@ -65,7 +65,7 @@
             {if $isMultiPlatforms}
                 <ul class="nav nav-tabs {if $isMultiPlatform}tab-radius-ul tab-radius-ul-white{/if}">
                     {foreach $platforms as $pKey => $platform}
-                        <li{if $platform['id'] == $first_platform_id} class="active"{/if}><a href="#tab_{$platform['id']}" data-toggle="tab"><span>{$platform['logo']}<span>{$platform['text']}</span></span></a></li>
+                        <li{if $platform['id'] == $first_platform_id} class="active"{/if} data-bs-toggle="tab" data-bs-target="#tab_{$platform['id']}"><a><span>{$platform['logo']}<span>{$platform['text']}</span></span></a></li>
                     {/foreach}
                 </ul>
             {/if}
@@ -78,7 +78,7 @@
                 {if count($languages) > 1}
             <ul class="nav nav-tabs {if $isMultiPlatform}nav-tabs3{/if}">
                 {foreach $languages as $lKey => $lItem}
-                    <li{if $lKey == 0} class="active"{/if}><a href="#tab_{$page_data['platform_id']}_{$lItem['code']}" data-toggle="tab">{$lItem['logo']}<span>{$lItem['name']}</span></a></li>
+                    <li{if $lKey == 0} class="active"{/if} data-bs-toggle="tab" data-bs-target="#tab_{$page_data['platform_id']}_{$lItem['code']}"><a>{$lItem['logo']}<span>{$lItem['name']}</span></a></li>
                 {/foreach}
             </ul>
             {/if}
@@ -140,7 +140,7 @@
             {if $isMultiPlatforms}
                 <ul class="nav nav-tabs {if $isMultiPlatform}tab-radius-ul tab-radius-ul-white{/if}">
                     {foreach $platforms as $pKey => $platform}
-                        <li{if $platform['id'] == $first_platform_id} class="active"{/if}><a href="#seo_tab_{$platform['id']}" data-toggle="tab"><span>{$platform['logo']}<span>{$platform['text']}</span></span></a></li>
+                        <li{if $platform['id'] == $first_platform_id} class="active"{/if} data-bs-toggle="tab" data-bs-target="#seo_tab_{$platform['id']}"><a><span>{$platform['logo']}<span>{$platform['text']}</span></span></a></li>
                     {/foreach}
                 </ul>
             {/if}
@@ -154,7 +154,7 @@
                 {if count($languages) > 1}
             <ul class="nav nav-tabs {if $isMultiPlatform}nav-tabs3{/if}">
                 {foreach $languages as $lKey => $lItem}
-                    <li{if $lKey == 0} class="active"{/if}><a href="#seo_tab_{$page_data['platform_id']}_{$lItem['code']}" data-toggle="tab">{$lItem['logo']}<span>{$lItem['name']}</span></a></li>
+                    <li{if $lKey == 0} class="active"{/if} data-bs-toggle="tab" data-bs-target="#seo_tab_{$page_data['platform_id']}_{$lItem['code']}"><a>{$lItem['logo']}<span>{$lItem['name']}</span></a></li>
                 {/foreach}
             </ul>
             {/if}
@@ -561,23 +561,25 @@ $(document).ready(function() {
 });
 </script>
 <script>
-$(window).load(function(){
-    $( ".datepicker" ).datepicker({
-        changeMonth: true,
-        changeYear: true,
-        showOtherMonths:true,
-        autoSize: false,
-        dateFormat: 'd MM yy',
-        altFormat: "yy-mm-dd",
-        altField: "#altDate"
-    });
-    $('.popupLinks').popUp({		
-			box: "<div class='popup-box-wrap'><div class='around-pop-up'></div><div class='popup-box'><div class='popup-heading cat-head'>{$smarty.const.TEXT_PAGE_LINKS}</div><div class='pop-up-close'></div><div class='pop-up-content'><div class='preloader'></div></div></div></div>"		
-		});
-		$('.popupLinks').on('click', function(){
-			$('.popup-heading').text($(this).text());
-		})
-})
+    $(function () {
+        $(window).on('load', function(){
+            $( ".datepicker" ).datepicker({
+                changeMonth: true,
+                changeYear: true,
+                showOtherMonths:true,
+                autoSize: false,
+                dateFormat: 'd MM yy',
+                altFormat: "yy-mm-dd",
+                altField: "#altDate"
+            });
+            $('.popupLinks').popUp({
+                box: "<div class='popup-box-wrap'><div class='around-pop-up'></div><div class='popup-box'><div class='popup-heading cat-head'>{$smarty.const.TEXT_PAGE_LINKS}</div><div class='pop-up-close'></div><div class='pop-up-content'><div class='preloader'></div></div></div></div>"
+            });
+            $('.popupLinks').on('click', function(){
+                $('.popup-heading').text($(this).text());
+            })
+        })
+    })
 function addInput (id, input) {
   $('#' + id).append(input);
 }

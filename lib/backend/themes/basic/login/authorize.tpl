@@ -1,50 +1,31 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
-    <head>
-        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Login | Trueloaded Admin</title>
-
-        <!--=== CSS ===-->
-
+<!DOCTYPE html>
+<html lang="{str_replace("_", "-", Yii::$app->language)}">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{$this->title}</title>
         <!-- Bootstrap -->
-        <link href="{$app->request->baseUrl}/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
+        <link href="{$app->request->baseUrl}/plugins/bootstrap/bootstrap.min.css" rel="stylesheet" type="text/css" />
 
         <!-- Theme -->
         <link href="{$app->view->theme->baseUrl}/css/main.css" rel="stylesheet" type="text/css" />
-        <link href="{$app->view->theme->baseUrl}/css/plugins.css" rel="stylesheet" type="text/css" />
         <link href="{$app->view->theme->baseUrl}/css/responsive.css" rel="stylesheet" type="text/css" />
-        <link href="{$app->view->theme->baseUrl}/css/icons.css" rel="stylesheet" type="text/css" />
 
         <!-- Login -->
         <link href="{$app->view->theme->baseUrl}/css/login.css" rel="stylesheet" type="text/css" />
 
         <link rel="stylesheet" href="{$app->view->theme->baseUrl}/css/fontawesome/font-awesome.min.css">
-        <!--[if IE 7]>
-            <link rel="stylesheet" href="{$app->view->theme->baseUrl}/css/fontawesome/font-awesome-ie7.min.css">
-        <![endif]-->
-
-        <!--[if IE 8]>
-            <link href="{$app->view->theme->baseUrl}/css/ie8.css" rel="stylesheet" type="text/css" />
-        <![endif]-->
         <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,600,700' rel='stylesheet' type='text/css'>
 
-        <link href="{$app->view->theme->baseUrl}/css/plugins/bootstrap-switch.css" rel="stylesheet" />
-        <!--=== JavaScript ===-->
+        <link href="{$app->request->baseUrl}/plugins/bootstrap-switch/bootstrap-switch.css" rel="stylesheet" />
 
-        <script type="text/javascript" src="{$app->view->theme->baseUrl}/js/libs/jquery-1.10.2.min.js"></script>
-
-        <script type="text/javascript" src="{$app->request->baseUrl}/js/bootstrap.min.js"></script>
-        <script type="text/javascript" src="{$app->view->theme->baseUrl}/js/bootstrap-switch.js"></script>
-        <script type="text/javascript" src="{$app->view->theme->baseUrl}/js/libs/lodash.compat.min.js"></script>
+        <script type="text/javascript" src="{$app->request->baseUrl}/plugins/jquery.min.js"></script>
+        <script type="text/javascript" src="{$app->request->baseUrl}/plugins/bootstrap/bootstrap.min.js"></script>
+        <script type="text/javascript" src="{$app->request->baseUrl}/plugins/bootstrap-switch/bootstrap-switch.js"></script>
+        <script type="text/javascript" src="{$app->request->baseUrl}/plugins/lodash.compat.min.js"></script>
 
         <!-- Bootstrap password -->
-        <script type="text/javascript" src="{$app->view->theme->baseUrl}/js/bootstrap-show-password.min.js"></script>
-
-        <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
-        <!--[if lt IE 9]>
-            <script src="{$app->view->theme->baseUrl}/js/libs/html5shiv.js"></script>
-        <![endif]-->
+        <script type="text/javascript" src="{$app->request->baseUrl}/plugins/bootstrap-show-password.min.js"></script>
 
         <!-- Beautiful Checkboxes -->
         <script type="text/javascript" src="{$app->request->baseUrl}/plugins/uniform/jquery.uniform.min.js"></script>
@@ -114,13 +95,13 @@
                             </div>
                         </div>
                     <div class="row">
-                        <div class="col-xs-6 ">
+                        <div class="col-6 ">
                             <div class="form-group">
                                 <label>{$smarty.const.TEXT_SECURITY_IS_GUEST}</label>
                                 {tep_draw_checkbox_field('ad_is_guest', '1', '1')}
                             </div>
                         </div>
-                        <div class="col-xs-6" style="padding-top: 4px">
+                        <div class="col-6" style="padding-top: 4px">
                             <span class="btn" onclick="window.location.reload()">{$smarty.const.RESEND_CODE}</span>
                         </div>
                     </div>

@@ -13,7 +13,6 @@
 
 namespace frontend\controllers;
 
-use common\extensions\MultiCart\MultiCart;
 use common\models\repositories\CouponRepository;
 use frontend\design\boxes\cart\OrderTotal;
 use frontend\design\boxes\cart\ShippingEstimator;
@@ -49,16 +48,14 @@ class ShoppingCartController extends Sceleton {
 
         //--- I don't know if this is safe enough?
         if (!Yii::$app->user->isGuest) {
-            if( $multiCart = \common\helpers\Acl::checkExtension( 'MultiCart', 'allowed' ) ) {
-                if ($multiCart::allowed()){
-                    $customer_id = Yii::$app->user->getId();
-                    $multiCart::restoreCarts($cart, $customer_id);
-                    $uid = MultiCart::getCurrentCartKey();
-                    $currentCart = MultiCart::getCart($uid);
-                    if (is_object($currentCart)) {
-                        MultiCart::setCurrentCart($uid);
-                        $cart = $currentCart;
-                    }
+            if( $multiCart = \common\helpers\Extensions::isAllowed('MultiCart') ) {
+                $customer_id = Yii::$app->user->getId();
+                $multiCart::restoreCarts($cart, $customer_id);
+                $uid = $multiCart::getCurrentCartKey();
+                $currentCart = $multiCart::getCart($uid);
+                if (is_object($currentCart)) {
+                    $multiCart::setCurrentCart($uid);
+                    $cart = $currentCart;
                 }
             }
         }
@@ -174,19 +171,22 @@ class ShoppingCartController extends Sceleton {
         return $ndate;
     }
 
-    public function actionSaveCart() {
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('MultiCart', 'allowed')) {
-            MultiCart::saveCart();
-        }
-        return $this->redirect('index');
-    }
-
-    public function actionApplyCart($uid) {
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('MultiCart', 'allowed')) {
-            MultiCart::applyCart($uid);
-        }
-        return $this->redirect('index');
-    }
+    /**
+     * @note Not used. This actions from MiltiCart extension frontend controller
+     */
+//    public function actionSaveCart() {
+//        if ($ext = \common\helpers\Extensions::isAllowed('MultiCart')) {
+//            $ext::saveCart();
+//        }
+//        return $this->redirect('index');
+//    }
+//
+//    public function actionApplyCart($uid) {
+//        if ($ext = \common\helpers\Extensions::isAllowed('MultiCart')) {
+//            $ext::applyCart($uid);
+//        }
+//        return $this->redirect('index');
+//    }
 
     public $manager;
 

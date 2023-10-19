@@ -281,8 +281,15 @@ class IOCore
             Assert::assertNotEmpty($physicalFile, 'Destination file is empty');
             $sourceFile = str_replace(' ', '%20', $sourceFile);
             $physicalFile = $this->normalizeLocalFileName($physicalFile);
+            $context = stream_context_create([
+                'ssl' => [
+                    'verify_peer' => false,
+                    'verify_peer_name' => false,
+                    'allow_self_signed' => true
+                ]
+            ]);
             Assert::assert(
-                @copy($sourceFile, $physicalFile),
+                @copy($sourceFile, $physicalFile, $context),
                 "Could not download file '$sourceFile': " . (error_get_last()['message'] ?? 'unknown reason')
             );
 

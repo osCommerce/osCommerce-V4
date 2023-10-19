@@ -21,10 +21,10 @@
       {/foreach}
         
       <div class="tax-cl row align-items-center" style="max-width: 500px">
-          <div class="col-xs-12">
+          <div class="col">
               <label>{$smarty.const.TEXT_PRODUCTS_TAX_CLASS}</label>
           </div>
-          <div class="col-xs-12">
+          <div class="col">
               {Html::dropDownList('products_tax_class_id', $pInfo->products_tax_class_id, $app->controller->view->tax_classes, ['onchange'=>'updateGrossVisible(); $(\'.js-inventory-tax-class[disabled]\').val($(this).val());',  'class'=>'form-control', 'disabled' => !empty($hideSuppliersPart)  ])}
               {if \Yii::$app->controller->action->id=='specialedit'}
                   {Html::hiddenInput('specials_id', $pInfo->specials_id|default:null)}
@@ -76,6 +76,17 @@ if !\common\helpers\Extensions::isCustomerGroupsAllowed() || substr($idSuffix, -
 {/if}
 {if !$app->controller->view->useMarketPrices }
   {$data['currencies_id']=$default_currency['id']}
+{/if}
+
+{if $ext = \common\helpers\Acl::checkExtensionAllowed('ProductBundles', 'allowed')}
+        <div class="edp-line products_sets_discounts">
+            <label>{$smarty.const.TEXT_SET_DISCOUNT}</label>
+          {if {$data['groups_id']} > 0}
+            <input name="products_group_sets_discount[{$data['groups_id']}]" value="{$data['products_sets_discount']}" type="text" class="form-control form-control-small" placeholder="0.00%" />
+          {else}
+            <input name="products_sets_discount" value="{$pInfo->products_sets_discount}" type="text" class="form-control form-control-small" placeholder="0.00%" />
+          {/if}
+        </div>
 {/if}
 
 {if {$data['groups_id']}>0 }
@@ -302,7 +313,7 @@ if !\common\helpers\Extensions::isCustomerGroupsAllowed() || substr($idSuffix, -
             <input id="gift_wrap_price_gross{$idSuffix}" value='{$data['gift_wrap_price_gross']|escape}' onKeyUp="updateNetPrice(this);" class="form-control"/>
           </div>
         </div>
-{if \common\helpers\Acl::checkExtensionAllowed('DeliveryOptions', 'allowed')}
+{if \common\helpers\Acl::checkExtensionAllowed('DeliveryOptions', 'allowed')} {* todo: move to hook 'categories/productedit', 'prices-priceblock-bottom' *}
         <div class="our-pr-line after our-pr-line-check-box dfullcheck">
           <div>
             <label>{$smarty.const.EXT_DELIVERY_OPTIONS_TEXT_ALLOW_DELIVERY_OPTIONS}</label>
@@ -327,24 +338,6 @@ if !\common\helpers\Extensions::isCustomerGroupsAllowed() || substr($idSuffix, -
             <input id="shipping_surcharge_price_gross{$idSuffix}" value='{$data['shipping_surcharge_price_gross']|escape}' onKeyUp="updateNetPrice(this);" class="form-control"/>
           </div>
         </div>
-        {if \common\helpers\Acl::checkExtensionAllowed('BonusActions')}
-        <div class="our-pr-line after our-pr-line-check-box dfullcheck">
-          <div>
-            <label class="points_prod">{$smarty.const.TEXT_ENABLE_POINTSE}</label>
-              <input type="checkbox" value="1"  id="bonus_points{$idSuffix}" name="bonus_points_status{$fieldSuffix|escape}" class="check_points_prod" {if {max($data['bonus_points_price'], $data['bonus_points_cost']) > 0}} checked="checked" {/if} />
-          </div>
-        </div>
-        <div class="our-pr-line after div_points_prod points_prod" id="div_bonus_points{$idSuffix}" {if not {max($data['bonus_points_price'], $data['bonus_points_cost']) > 0}} style="display:none;" {/if}>
-          <div>
-            <label>{$smarty.const.TEXT_BONUS_POINT}</label>
-            <input id="bonus_points_price{$idSuffix}" name="bonus_points_price{$fieldSuffix|escape}" value='{$data['bonus_points_price']|escape}' class="form-control"/>
-          </div>
-          <div class="disable-btn" {if \common\helpers\Points::getCurrencyCoefficient(0) !== false} style="display: none;" {/if}>
-            <label>{$smarty.const.TEXT_POINTS_COST}</label>
-            <input id="bonus_points_cost{$idSuffix}" name="bonus_points_cost{$fieldSuffix|escape}" value='{$data['bonus_points_cost']|escape}' class="form-control"/>
-          </div>
-        </div>
-        {/if}
 <!-- q-ty discount -->
         <div class="our-pr-line after our-pr-line-check-box dfullcheck">
           <div>
@@ -369,6 +362,9 @@ if !\common\helpers\Extensions::isCustomerGroupsAllowed() || substr($idSuffix, -
         </div>
       </div>
     </div>
+    {foreach \common\helpers\Hooks::getList('categories/productedit', 'prices-priceblock-bottom') as $filename}
+        {include file=$filename}
+    {/foreach}
     <!-- disable any promo/discounts-->
     {if (!\common\helpers\Extensions::isCustomerGroupsAllowed() || $data['groups_id']==0)
         && ($app->controller->view->useMarketPrices != true || $default_currency['id']==$data['currencies_id'])
@@ -386,7 +382,7 @@ if !\common\helpers\Extensions::isCustomerGroupsAllowed() || substr($idSuffix, -
               <div class="quant-discount-line after div_qty_discount_prod">
                 <div>
                   <label>{$smarty.const.TEXT_PRODUCTS_QUANTITY_INFO}</label>
-                  <input id="discount_qty{$idSuffix}_{if isset($prices@iteration)}{$prices@iteration}{/if}" name="discount_qty{$fieldSuffix|escape}[{if isset($price@index)}{$price@index}{/if}]" value="{if isset($qty)}{$qty}{/if}" {if \common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed')}onchange="updateInventoryBox(this);"{/if} class="form-control"/>
+                  <input id="discount_qty{$idSuffix}_{if isset($prices@iteration)}{$prices@iteration}{/if}" name="discount_qty{$fieldSuffix|escape}[{if isset($price@index)}{$price@index}{/if}]" value="{if isset($qty)}{$qty}{/if}" {if \common\helpers\Extensions::isAllowed('Inventory')}onchange="updateInventoryBox(this);"{/if} class="form-control"/>
                 </div><div>
                   <label>{$smarty.const.TEXT_NET}</label>
                   <input id="discount_price{$idSuffix}_{if isset($prices@iteration)}{$prices@iteration}{/if}" name="discount_price{$fieldSuffix|escape}[{if isset($price@index)}{$price@index}{/if}]" value="{if isset($prices['price'])}{$prices['price']}{/if}" onKeyUp="updateGrossPrice(this);" data-roundTo="{if isset($data['round_to'])}{$data['round_to']}{/if}" class="form-control"/>
@@ -529,6 +525,10 @@ var bsPriceParams = {
                 
                     
           $(document).ready(function() {
+              $('.nav-tabs-left-scroll').slimScroll({
+                  height: '100%',
+                  scrollTo: '0px'
+              })
 /*
             $('#special_start_date{$idSuffix}').tlDatetimepicker();
             $('#special_expires_date{$idSuffix}').tlDatetimepicker();
@@ -548,17 +548,12 @@ var bsPriceParams = {
             });
             /// if group == 0 update all
             $('input.default_price[name^="products_group_price"]').on('change', updateGrossVisible);
-            $('a[href="#tab_1_3"]').on('shown.bs.tab', function() {
-              $('.check_sale_prod:visible, .check_points_prod:visible, .check_qty_discount_prod:visible, .check_gift_wrap:visible, .check_shipping_surcharge:visible, .check_disable_discount:visible, .check_delivery_option:visible').bootstrapSwitch(bsPriceParams);
-            });
-            //$('a[href="#tab_1_3"]').on('shown.bs.tab', function() {
-            //  $('.check_sale_prod, .check_points_prod, .check_qty_discount_prod, .check_supplier_price_mode:visible, .check_gift_wrap, .check_shipping_surcharge, .check_disable_discount, .check_delivery_option').bootstrapSwitch(bsPriceParams);
-            //});
+              $('.check_sale_prod, .check_points_prod, .check_qty_discount_prod, .check_gift_wrap, .check_shipping_surcharge, .check_disable_discount, .check_delivery_option').tlSwitch(bsPriceParams);
             $('.r_check_sale_prod').on('click', rPriceSwitch);
             $('.r_check_sale_prod').on('vswitch', bsPriceSwitch);
 
               /// late/lazy update gross price (only on visible tabs)
-            $('ul[id^={$id_prefix}] a[data-toggle="tab"]').on('shown.bs.tab', function () {
+            $('ul[id^={$id_prefix}] [data-bs-toggle="tab"]').on('shown.bs.tab', function () {
               // 2do update gross price inputs
               updateVisibleGrossInputs($($(this).attr('href')));
               // init new visible bootstrapSwitch
@@ -566,7 +561,6 @@ var bsPriceParams = {
               if (tab.length) {
                 tab.addClass('inited');
 
-                $('.check_sale_prod:visible, .check_points_prod:visible, .check_qty_discount_prod:visible, .check_gift_wrap:visible, .check_shipping_surcharge:visible, .check_disable_discount:visible, .check_delivery_option:visible', tab).bootstrapSwitch(bsPriceParams);
                 $('.r_check_sale_prod', tab).on('click', rPriceSwitch);
                 $('.r_check_sale_prod', tab).on('vswitch', bsPriceSwitch);
               }

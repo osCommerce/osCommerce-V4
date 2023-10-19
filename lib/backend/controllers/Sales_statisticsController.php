@@ -206,6 +206,25 @@ class Sales_statisticsController extends Sceleton {
         exit();
     }
 
+    public function actionDeleteFilter() {
+        $params = Yii::$app->request->getBodyParams();
+        $message = '';
+
+        if (is_array($params)) {
+            $params['filter_vals'] = str_replace(\yii\helpers\Url::to(['sales_statistics/index']) . '?', '', $params['filter_vals']);
+            if (isset($params['filter_vals']) && !empty($params['filter_vals'])) {
+                tep_db_query("delete from " . TABLE_SALES_FILTERS . " where sales_filter_vals = '" . tep_db_input($params['filter_vals']) . "'");
+                $message = TEXT_MESSEAGE_SUCCESS;
+            } else {
+                $message = TEXT_MESSAGE_ERROR;
+            }
+        } else {
+            $message = TEXT_MESSAGE_ERROR;
+        }
+        echo json_encode(['message' => $message]);
+        exit();
+    }
+
     public function actionMapShow() {
         $origPlace = array(0, 0, 2);
         $country_info = tep_db_fetch_array(tep_db_query("select ab.entry_country_id from " . TABLE_PLATFORMS_ADDRESS_BOOK . " ab inner join " . TABLE_PLATFORMS . " p on p.is_default = 1 and p.platform_id = ab.platform_id where ab.is_default = 1"));

@@ -48,6 +48,7 @@ class Currencies {
             $this->currencies[$currencies['code']] = array('title' => $currencies['title'],
                 'id' => $currencies['currencies_id'],
                 'code' => $currencies['code'],
+                'code_number' => $currencies['code_number']??'',
                 'symbol_left' => $currencies['symbol_left'],
                 'symbol_right' => $currencies['symbol_right'],
                 'decimal_point' => $currencies['decimal_point'],
@@ -204,11 +205,11 @@ class Currencies {
             $format_string = "-" . preg_replace("/\-/", "", $format_string);
         }
 
-// BOF: WebMakers.com Added: Down for Maintenance
-        if (DOWN_FOR_MAINTENANCE == 'true' && DOWN_FOR_MAINTENANCE_PRICES_OFF == 'true') {
-            $format_string = '';
+        if ($ext =\common\helpers\Extensions::isAllowed('Maintenance')) {
+            if ($ext::optionPricesOff()) {
+                $format_string = '';
+            }
         }
-// BOF: WebMakers.com Added: Down for Maintenance
 
         if ($ext = \common\helpers\Acl::checkExtensionAllowed('BusinessToBusiness', 'allowed')) {
             $customer_groups_id = (int) \Yii::$app->storage->get('customer_groups_id');
@@ -242,8 +243,11 @@ class Currencies {
         } else {
             $format_string = number_format(round($number, $this->currencies[$currency_type]['decimal_places']), $this->currencies[$currency_type]['decimal_places'], '.', '');
         }
-        if (DOWN_FOR_MAINTENANCE == 'true' && DOWN_FOR_MAINTENANCE_PRICES_OFF == 'true') {
-            $format_string = '';
+
+        if ($ext =\common\helpers\Extensions::isAllowed('Maintenance')) {
+            if ($ext::optionPricesOff()) {
+                $format_string = 0;
+            }
         }
         /*
         if ($ext = \common\helpers\Acl::checkExtensionAllowed('BusinessToBusiness', 'allowed')) {
@@ -304,8 +308,10 @@ class Currencies {
             }
         }
 
-        if (DOWN_FOR_MAINTENANCE == 'true' && DOWN_FOR_MAINTENANCE_PRICES_OFF == 'true') {
-            $format_string = '';
+        if ($ext =\common\helpers\Extensions::isAllowed('Maintenance')) {
+            if ($ext::optionPricesOff()) {
+                $format_string = '';
+            }
         }
 
         if ($ext = \common\helpers\Acl::checkExtensionAllowed('BusinessToBusiness', 'allowed')) {
@@ -513,5 +519,24 @@ class Currencies {
             $currency_type = $currency;
         }
         return (tep_not_null($currency_value)) ? $currency_value : $this->currencies[$currency_type]['value'];
+    }
+
+/**
+ * returns ISO 4217 currency codes (numeric)
+ * @param string $currency_type
+ * @return numeric
+ */
+    public function getCodeNumber($currency_type = '') {
+        $currency = \Yii::$app->settings->get('currency');
+
+        if (\frontend\design\Info::isTotallyAdmin() && empty($currency)) {
+            $currency = DEFAULT_CURRENCY;
+            \Yii::$app->settings->set('currency', $currency);
+        }
+
+        if (empty($currency_type)) {
+            $currency_type = $currency;
+        }
+        return $this->currencies[$currency_type]['code_number'];
     }
 }

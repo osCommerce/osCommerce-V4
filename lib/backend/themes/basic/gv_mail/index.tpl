@@ -11,7 +11,7 @@
 <div class="popup-heading popup-heading-coup">{$smarty.const.IMAGE_SEND_EMAIL}</div>
     <div class="col-md-12" style="padding:10px;">
         <div class="widget-content ">
-            {if {$messages|@count} > 0}
+            {if {$messages|default:array()|@count} > 0}
 			   {foreach $messages as $type => $message}
               <div class="alert alert-{$type} fade in">
                   <i data-dismiss="alert" class="icon-remove close"></i>
@@ -148,9 +148,9 @@
                 noerror = false;
             }
         }
-        if (($('select[name=coupon_id]').size() > 0 && !$('select[name=coupon_id]').val())
+        if (($('select[name=coupon_id]').length > 0 && !$('select[name=coupon_id]').val())
             ||
-            ($('input[name=coupon_id]').size() > 0 && !$('input[name=coupon_id]').val())
+            ($('input[name=coupon_id]').length > 0 && !$('input[name=coupon_id]').val())
         ){
             if (mes != 1) bootbox.alert('please select coupon');
             noerror = false;

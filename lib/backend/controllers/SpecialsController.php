@@ -82,8 +82,8 @@ class SpecialsController extends Sceleton {
         $this->ProductEditTabAccess = new \backend\models\ProductEdit\TabAccess();
     }
 
-  public function actionIndex() {
-
+  public function actionIndex()
+  {
     $this->selectedMenu = array('marketing', 'specials');
     $this->navigation[] = array('link' => Yii::$app->urlManager->createUrl('specials/index'), 'title' => HEADING_TITLE);
     $this->topButtons[] = '<a href="' . Yii::$app->urlManager->createUrl(['specials/specialedit']) . '" class="btn btn-primary" >' . IMAGE_INSERT . '</a>';

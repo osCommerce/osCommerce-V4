@@ -295,7 +295,7 @@ class PriceFormula {
                     'categories_id' => preg_split('/,/',$product_data['assigned_categories'],-1,PREG_SPLIT_NO_EMPTY),
                     'manufacturers_id' => $product_data['manufacturers_id'],
                     'currencies_id' => $product_data['currencies_id'],
-                    'PRICE' => $product_data['suppliers_price'] * $currencies->get_market_price_rate(\common\helpers\Currencies::getCurrencyCode($product_data['currencies_id']), \common\helpers\Currencies::systemCurrencyCode()),
+                    'PRICE' => $product_data['suppliers_price'],// * $currencies->get_market_price_rate(\common\helpers\Currencies::getCurrencyCode($product_data['currencies_id']), \common\helpers\Currencies::systemCurrencyCode()),
                     'DISCOUNT' => $product_data['supplier_discount'],
                     'SURCHARGE' => $product_data['suppliers_surcharge_amount'],
                     'MARGIN' => $product_data['suppliers_margin_percentage'],
@@ -390,7 +390,7 @@ class PriceFormula {
     {
         $productQuery = \common\models\Products::find()
             ->select(['products_price', 'products_id', 'supplier_price_manual', 'products_price_full'])
-            ->where(['products_id' => (int)$productId, 'products_id_price' => (int)$productId]);
+            ->where(['products_id' => (int)$productId, 'products_id_price' => [(int)$productId, 0]]);
         return self::addAutoUpdateWhere($productQuery)->one();
     }
 
@@ -492,7 +492,7 @@ class PriceFormula {
                 'formula' => $formula,
             ];
             if (!empty($rule->category_id)) {
-                if ( !is_array($rules['category'][$rule->category_id]) ) $rules['category'][$rule->category_id] = [];
+                if ( !is_array($rules['category'][$rule->category_id] ?? null) ) $rules['category'][$rule->category_id] = [];
                 $ruleArray['appliedToCategories'] = [];
 
                 $subcategoriesQuery = \common\models\Categories::find()
@@ -529,25 +529,29 @@ class PriceFormula {
 
         return $rules;
     }
-    
-    protected static function correctSupplierPriceByCurrencyRisks($suppliers_id, $data){
-        $sCurrency = \common\models\SuppliersCurrencies::find()->alias('s')->where(['suppliers_id' => $suppliers_id, 's.currencies_id' => $data['currencies_id']])
-                ->joinWith('currencies c')->one();
+
+    public static function correctSupplierValueByCurrencyRisks($suppliers_id, $currencyId, $value){
+        $sCurrency = \common\models\SuppliersCurrencies::find()->alias('s')->where(['suppliers_id' => $suppliers_id, 's.currencies_id' => $currencyId])
+            ->joinWith('currencies c')->one();
         if ($sCurrency) {
             if ($sCurrency['use_custom_currency_value']){
-                $data['PRICE'] /= $sCurrency['currency_value'];
+                $value /= $sCurrency['currency_value'];
             } else {
-                $data['PRICE'] /= $sCurrency->currencies->value;
+                $value /= $sCurrency->currencies->value;
             }
             if ($sCurrency['margin_value']){
                 if ($sCurrency['margin_type'] == '%'){
-                    $data['PRICE'] += ($sCurrency['margin_value'] / 100) * $data['PRICE'];
+                    $value += ($sCurrency['margin_value'] / 100) * $value;
                 } else {
-                    $data['PRICE'] += $sCurrency['margin_value'];
+                    $value += $sCurrency['margin_value'];
                 }
             }
         }
-        return $data['PRICE'];
+        return $value;
+    }
+
+    protected static function correctSupplierPriceByCurrencyRisks($suppliers_id, $data) {
+        return self::correctSupplierValueByCurrencyRisks($suppliers_id, $data['currencies_id'], $data['PRICE']);
     }
 
     protected static function addTaxRate($amount, $taxRate=0)
@@ -562,11 +566,11 @@ class PriceFormula {
 
         $params = [
             'PRICE' => static::correctSupplierPriceByCurrencyRisks($onlySupplierId, $data),
-            'MARGIN' => !empty($data['MARGIN'])?$data['MARGIN']:$priceRule['MARGIN'],
-            'SURCHARGE' => !empty($data['SURCHARGE'])?$data['SURCHARGE']:$priceRule['SURCHARGE'],
-            'DISCOUNT' => !empty($data['DISCOUNT'])?$data['DISCOUNT']:$priceRule['DISCOUNT'],
-            'tax_rate' => !empty($data['tax_rate'])?$data['tax_rate']:$priceRule['tax_rate'],
-            'price_with_tax' => !empty($data['price_with_tax'])?$data['price_with_tax']:$priceRule['price_with_tax'],
+            'MARGIN' => isset($data['MARGIN'])?$data['MARGIN']:$priceRule['MARGIN'],
+            'SURCHARGE' => isset($data['SURCHARGE'])?$data['SURCHARGE']:$priceRule['SURCHARGE'],
+            'DISCOUNT' => isset($data['DISCOUNT'])?$data['DISCOUNT']:$priceRule['DISCOUNT'],
+            'tax_rate' => isset($data['tax_rate'])?$data['tax_rate']:$priceRule['tax_rate'],
+            'price_with_tax' => isset($data['price_with_tax'])?$data['price_with_tax']:$priceRule['price_with_tax'],
         ];
         if ( isset($params['tax_rate']) && !$params['price_with_tax'] ) {
             $params['PRICE'] = static::addTaxRate($params['PRICE'], $params['tax_rate']);
@@ -720,6 +724,7 @@ class PriceFormula {
                                 array_values($params['vars']),
                                 $params['formula']
                             );
+                            $response = str_replace('--', '+', $response);
                             
                             try{
                                 eval("\$result=$response;");
@@ -787,9 +792,8 @@ class PriceFormula {
             $productModel->auto_price_modified = (new \DateTime())->format(\DateTime::ATOM);
             $productModel->save(false);
 
-            /* @var $extP \common\extensions\ProductPriceIndex\ProductPriceIndex */
-            $extP = \common\helpers\Acl::checkExtensionAllowed('ProductPriceIndex', 'allowed');
-            if ($extP && $extP::isEnabled()) {
+            /** @var $extP \common\extensions\ProductPriceIndex\ProductPriceIndex */
+            if ($extP = \common\helpers\Extensions::isAllowed('ProductPriceIndex')) {
                 $extP::reindex((int)$productId);
             }
         }

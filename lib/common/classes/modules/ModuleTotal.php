@@ -75,6 +75,7 @@ abstract class ModuleTotal extends Module {
         $response = '<br><br><table width="50%" class="dis_module"><thead><tr><th>' . TEXT_VISIBILITY_ON_PAGES . '</th><th style="text-align: center">' . $this->getIncVATTitle() . '</th><th style="text-align: center">' . $this->getExcVATTitle() . '</th><th style="text-align: center">' . $this->getDefaultTitle() . '</th><th style="text-align: center">' . SHOW_TOP_LINE . '</th></tr></thead><tbody>';
         $visibility_query = tep_db_query("SELECT * FROM " . TABLE_VISIBILITY . " where 1 order by visibility_constant");
         while ($visibility = tep_db_fetch_array($visibility_query)) {
+            if (!\common\helpers\Extensions::isVisibility($visibility['visibility_constant'])) continue;
             $response .= '<tr><td><input type="checkbox" disabled>';
             $response .= '&nbsp;' . constant($visibility['visibility_constant']) . '<br>';
             $response .= '</td><td style="text-align: center"><input type="radio" disabled>';

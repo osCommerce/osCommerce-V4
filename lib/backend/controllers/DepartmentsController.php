@@ -189,6 +189,19 @@ class DepartmentsController extends Sceleton {
                 echo $multiplatform;
             }
             echo '<button class="btn btn-delete btn-no-margin btn-process-order" onclick="deleteItemConfirm(' . $departments_id . ')">' . IMAGE_DELETE . '</button>';
+            
+            if (\common\helpers\Acl::checkExtensionAllowed('SoapServer', 'allowed')) {
+                if ( \common\helpers\Acl::rule(['BOX_HEADING_FRONENDS', 'BOX_SOAP_SERVER_SETTINGS']) ) {
+                    echo  '<a href="' . \yii\helpers\Url::toRoute(['departments/soap-server-configure', 'id' => $dInfo->departments_id]) . '"><button class="btn btn-edit btn-primary btn-process-order ">Configure department SOAP server</button></a>';
+                }
+            }
+            
+            if (\common\helpers\Acl::checkExtensionAllowed('RestServer', 'allowed')) {
+                if ( \common\helpers\Acl::rule(['BOX_HEADING_FRONENDS', 'BOX_REST_SERVER_SETTINGS']) ) {
+                    echo  '<a href="' . \yii\helpers\Url::toRoute(['departments/rest-server-configure', 'id' => $dInfo->departments_id]) . '"><button class="btn btn-edit btn-primary btn-process-order ">Configure department rest server</button></a>';
+                }
+            }
+            
             if ($dInfo->departments_status) {
                 $check_admin = tep_db_fetch_array(tep_db_query("SELECT admin_email_address FROM ".TABLE_ADMIN." WHERE admin_id='".(int)$login_id."'"));
                 tep_db_close();

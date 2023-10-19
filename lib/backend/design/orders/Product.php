@@ -58,11 +58,12 @@ class Product extends Widget {
         if (isset($this->opsArray[$this->product['status']])) {
             $opsmArray = $this->opsArray[$this->product['status']]->getMatrixArray();
         }
-        if (\common\helpers\Acl::checkExtensionAllowed('Handlers', 'allowed')) {
-            $_check = tep_db_fetch_array(tep_db_query("SELECT COUNT(*) AS c FROM handlers_products WHERE products_id='" . (int) $this->product['id'] . "' AND handlers_id IN (" . implode(", ", $this->handlers_array) . ") "));
-            if ($_check['c'] == 0) {
-                return;
-            }
+
+        /**
+         * @var $ext \common\extensions\Handlers\Handlers
+         */
+        if ( ($ext = \common\helpers\Acl::checkExtensionAllowed('Handlers', 'allowed')) && !$ext::checkAccess((int) $this->product['id'], $this->handlers_array) ) {
+            return ;
         }
 
         $rowClass = '';

@@ -17,6 +17,7 @@ use common\helpers\PriceFormula;
 use Yii;
 use common\models\Suppliers;
 
+#[\AllowDynamicProperties]
 class SupplierService implements \IteratorAggregate {
     /* change @var $status */
 

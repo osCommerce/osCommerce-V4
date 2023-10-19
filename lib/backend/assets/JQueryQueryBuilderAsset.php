@@ -20,10 +20,10 @@ class JQueryQueryBuilderAsset extends AssetBundle
     public $basePath = '@webroot';
     public $baseUrl = '@web';
     public $css = [
-        '@web/../plugins/jQuery-QueryBuilder/css/query-builder.default.min.css',
+        'plugins/jQuery-QueryBuilder/css/query-builder.default.min.css',
     ];
     public $js = [
-         '@web/../plugins/jQuery-QueryBuilder/js/query-builder.standalone.js',//query-builder.min.js',
-         '@web/../plugins/jQuery-QueryBuilder/js/sql-parser.js',//query-builder.min.js',
+         'plugins/jQuery-QueryBuilder/js/query-builder.standalone.js',//query-builder.min.js',
+         'plugins/jQuery-QueryBuilder/js/sql-parser.js',//query-builder.min.js',
     ];
 }

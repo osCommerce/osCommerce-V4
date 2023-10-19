@@ -168,8 +168,16 @@
                                 <input type="checkbox" name="cart_button" value="1" readonly="readonly" disabled="disabled" class="check_bot_switch_on_off"{if $pInfo->cart_button == 1} checked{/if} />
                             </div>
                             {* /add block with product behavior/ *}
+
+                            {foreach \common\helpers\Hooks::getList('categories/productedit', 'details-actions-subproduct') as $filename}
+                                {include file=$filename}
+                            {/foreach}
                         </div>
                     </div>
+                    {foreach \common\helpers\Hooks::getList('categories/productedit', 'details-after-actions-subproduct') as $filename}
+                        {include file=$filename}
+                    {/foreach}
+
                 </div>
 
 
@@ -256,6 +264,9 @@
         </div>
 
     </div>
+    {foreach \common\helpers\Hooks::getList('categories/productedit', 'details-left-column-subproduct') as $filename}
+        {include file=$filename}
+    {/foreach}
     <div class="cbox-right">
         <div class="widget box box-no-shadow" style="background: #fff;">
             <div class="widget-header">
@@ -266,22 +277,30 @@
                     <label>{$smarty.const.TEXT_MODEL_SKU}</label>
                     {tep_draw_input_field('products_model', $pInfo->products_model, 'class="form-control form-control-small"')}
                 </div>
+                {if $smarty.const.SHOW_EAN=='True'}
                 <div class="edp-line">
                     <label>{$smarty.const.TEXT_EAN}</label>
                     {tep_draw_input_field('products_ean', $pInfo->products_ean, 'class="form-control form-control-small"')}
                 </div>
+                {/if}
+                {if $smarty.const.SHOW_ASIN=='True'}
                 <div class="edp-line">
                     <label>{$smarty.const.TEXT_ASIN}</label>
                     {tep_draw_input_field('products_asin', $pInfo->products_asin, 'class="form-control form-control-small"')}
                 </div>
+                {/if}
+                {if $smarty.const.SHOW_ISBN=='True'}
                 <div class="edp-line">
                     <label>{$smarty.const.TEXT_ISBN}</label>
                     {tep_draw_input_field('products_isbn', $pInfo->products_isbn, 'class="form-control form-control-small"')}
                 </div>
+                {/if}
+                {if $smarty.const.SHOW_UPC=='True'}
                 <div class="edp-line">
                     <label>{$smarty.const.TEXT_UPC}</label>
                     {tep_draw_input_field('products_upc', $pInfo->products_upc, 'class="form-control form-control-small"')}
                 </div>
+                {/if}
             </div>
         </div>
         <div class="widget box box-no-shadow" style="margin-bottom: 5px;">
@@ -289,25 +308,12 @@
                 <h4>{$smarty.const.IMAGE_DETAILS}</h4>
             </div>
             <div class="widget-content">
-                <div class="t-row">
-                    {if \common\helpers\Acl::checkExtensionAllowed('MinimumOrderQty', 'allowed')}
-                        {\common\extensions\MinimumOrderQty\MinimumOrderQty::productBlock($pInfo)}
-                    {/if}
-                    {if \common\helpers\Acl::checkExtensionAllowed('MaxOrderQty', 'allowed')}
-                        {\common\extensions\MaxOrderQty\MaxOrderQty::productBlock($pInfo)}
-                    {/if}
-                </div>
-                {if \common\helpers\Acl::checkExtensionAllowed('OrderQuantityStep', 'allowed')}
-                    {\common\extensions\OrderQuantityStep\OrderQuantityStep::productBlock($pInfo)}
-                {/if}
+
                 <div class="edp-line">
                     <label>{$smarty.const.TEXT_DATE_AVAILABLE}</label>
                     {tep_draw_input_field('products_date_available', $pInfo->products_date_available, 'class="datepicker form-control form-control-small"' )}
                 </div>
 
-                {if \common\helpers\Acl::checkExtensionAllowed('NotifyProductsDate')}
-                    {\common\extensions\NotifyProductsDate\NotifyProductsDate::renderCheckBox($pInfo->products_id)}
-                {/if}
                 <div class="edp-line edp-line-heig">
                     <label>{$smarty.const.TEXT_FEATURED_PRODUCT}</label>
                     <input type="checkbox" name="featured" value="1"
@@ -317,17 +323,7 @@
                                            value="{$app->controller->view->featured_expires_date}"
                                            class="datepicker form-control form-control-small"></span>
                 </div>
-                {if \common\helpers\Acl::checkExtensionAllowed('Subscriptions', 'allowed')}
-                    {\common\extensions\Subscriptions\Subscriptions::productBlock($pInfo)}
-                {else}
-                <div class="edp-line edp-line-heig dis_module">
-                    <label>{$smarty.const.TEXT_SUBSCRIPTION}:</label>
-                    <input type="checkbox" class="check_subscription" disabled />
-                    <span class="edp-ex edp-ex-sp edp-ex-s9">
-                        <label>{$smarty.const.TEXT_SUBSCRIPTION_CODE}:</label><input type="text" class="form-control form-control-small" disabled>
-                    </span>
-                </div>
-                {/if}
+
                 {if ($ext = \common\helpers\Acl::checkExtensionAllowed('ProductConfigurator'))}
                     <div class="edp-line">
                         <label>{$smarty.const.TEXT_PRODUCTS_PCTEMPLATE}</label>
@@ -339,31 +335,15 @@
 
         {if \common\helpers\Acl::checkExtensionAllowed('ProductTemplates', 'allowed')}
             {\common\extensions\ProductTemplates\ProductTemplates::productBlock()}
-        {else}
-        <div class="widget box box-no-shadow product-frontend-box">
-            <div class="widget-header">
-                <h4>{$smarty.const.CHOOSE_PRODUCT_TEMPLATE}</h4>
-            </div>
-            <div class="widget-content widget-content-center dis_module">
-                {foreach $app->controller->view->templates.list as $frontend}
-                    <div class="product-frontend frontend-disable">
-                        <h4>{$frontend.text}</h4>
-                        <div>
-                            <label>
-                                Default
-                                <input type="radio" name="product_template[]" value="" class="check_give_wrap" checked disabled>
-                            </label>
-                        </div>
-                    </div>
-                {/foreach}
-            </div>
-        </div>
         {/if}
 
         {* Implements Product Design constructor *}
         {if \common\helpers\Acl::checkExtensionAllowed('ProductDesigner', 'allowed')}
             {\common\extensions\ProductDesigner\ProductDesigner::designBlock($Key, $pInfo)}
         {/if}
+        {foreach \common\helpers\Hooks::getList('categories/productedit', 'details-right-column-subproduct') as $filename}
+            {include file=$filename}
+        {/foreach}
     </div>
 </div>
 <script type="text/javascript">

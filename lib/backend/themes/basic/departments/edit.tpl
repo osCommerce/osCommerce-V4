@@ -3,13 +3,13 @@
 {tep_draw_hidden_field('dID', $dInfo->departments_id)}
 <div class="tabbable tabbable-custom">
   <ul class="nav nav-tabs">
-    <li class="active"><a data-toggle="tab" href="#tab_1_1">{$smarty.const.CATEGORY_WEBSITE}</a></li>
-    <li class=""><a data-toggle="tab" href="#tab_1_2">{$smarty.const.CATEGORY_CONTACTS}</a></li>
-    <li class=""><a data-toggle="tab" href="#tab_1_3">{$smarty.const.CATEGORY_OPTIONS}</a></li>
-    <li class=""><a data-toggle="tab" href="#tab_1_4">{$smarty.const.CATEGORY_FTP}</a></li>
-    <li class=""><a data-toggle="tab" href="#tab_1_5">{$smarty.const.CATEGORY_DB}</a></li>
+    <li class="active" data-bs-toggle="tab" data-bs-target="#tab_1_1"><a>{$smarty.const.CATEGORY_WEBSITE}</a></li>
+    <li class="" data-bs-toggle="tab" data-bs-target="#tab_1_2"><a>{$smarty.const.CATEGORY_CONTACTS}</a></li>
+    <li class="" data-bs-toggle="tab" data-bs-target="#tab_1_3"><a>{$smarty.const.CATEGORY_OPTIONS}</a></li>
+    <li class="" data-bs-toggle="tab" data-bs-target="#tab_1_4"><a>{$smarty.const.CATEGORY_FTP}</a></li>
+    <li class="" data-bs-toggle="tab" data-bs-target="#tab_1_5"><a>{$smarty.const.CATEGORY_DB}</a></li>
     {if \common\helpers\Acl::checkExtensionAllowed('SoapServer', 'allowed')}
-      <li class=""><a data-toggle="tab" href="#tab_1_api">{$smarty.const.CATEGORY_API}</a></li>
+      <li class="" data-bs-toggle="tab" data-bs-target="#tab_1_api"><a>{$smarty.const.CATEGORY_API}</a></li>
     {/if}
   </ul>
   <div class="tab-content">

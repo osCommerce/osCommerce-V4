@@ -11,10 +11,10 @@
 <div class="tabbable tabbable-custom box-style-tab">
   <div class="nav nav-tabs">
 
-    <div class="active"><a href="#font" data-toggle="tab">{$smarty.const.TEXT_FONT}</a></div>
-    <div><a href="#background" data-toggle="tab">{$smarty.const.TEXT_BACKGROUND}</a></div>
-    <div><a href="#padding" data-toggle="tab">{$smarty.const.TEXT_PADDING}</a></div>
-    <div><a href="#border" data-toggle="tab">{$smarty.const.TEXT_BORDER}</a></div>
+    <div class="active" data-bs-toggle="tab" data-bs-target="#font"><a>{$smarty.const.TEXT_FONT}</a></div>
+    <div data-bs-toggle="tab" data-bs-target="#background"><a>{$smarty.const.TEXT_BACKGROUND}</a></div>
+    <div data-bs-toggle="tab" data-bs-target="#padding"><a>{$smarty.const.TEXT_PADDING}</a></div>
+    <div data-bs-toggle="tab" data-bs-target="#border"><a>{$smarty.const.TEXT_BORDER}</a></div>
 
   </div>
   <div class="tab-content menu-list">
@@ -46,7 +46,7 @@
         <div class="colors-inp">
           <div id="cp3" class="input-group colorpicker-component">
             <input type="text" name="setting[color]" value="{$settings.color}" class="form-control" placeholder="{$smarty.const.TEXT_COLOR_}" />
-            <span class="input-group-addon"><i></i></span>
+            <span class="input-group-append"><span class="input-group-text colorpicker-input-addon"><i></i></span></span>
           </div>
         </div>
         <span style="display:inline-block; padding: 7px 0 0 10px">{$smarty.const.TEXT_CLICK_RIGHT_FIELD}</span>
@@ -87,7 +87,7 @@
           <div class="colors-inp">
             <div id="cp3" class="input-group colorpicker-component">
               <input type="text" name="setting[text_shadow_color]" value="{$settings.text_shadow_color}" class="form-control" placeholder="{$smarty.const.TEXT_COLOR_}" />
-              <span class="input-group-addon"><i></i></span>
+              <span class="input-group-append"><span class="input-group-text colorpicker-input-addon"><i></i></span></span>
             </div>
           </div>
         </div>
@@ -101,7 +101,7 @@
         <div class="colors-inp">
           <div id="cp2" class="input-group colorpicker-component">
             <input type="text" name="setting[background_color]" value="{$settings.background_color}" class="form-control" placeholder="{$smarty.const.TEXT_COLOR_}" />
-            <span class="input-group-addon"><i></i></span>
+            <span class="input-group-append"><span class="input-group-text colorpicker-input-addon"><i></i></span></span>
           </div>
         </div>
         <span style="display:inline-block; padding: 7px 0 0 10px">{$smarty.const.TEXT_CLICK_RIGHT_FIELD}</span>
@@ -209,7 +209,7 @@
         <div class="colors-inp">
           <div class="input-group colorpicker-component">
             <input type="text" name="setting[border_top_color]" value="{$settings.border_top_color}" class="form-control" placeholder="Color" />
-            <span class="input-group-addon"><i></i></span>
+            <span class="input-group-append"><span class="input-group-text colorpicker-input-addon"><i></i></span></span>
           </div>
         </div>
         <span style="display:inline-block; padding: 0 0 0 1px">{$smarty.const.TEXT_CLICK_CHOOSE_COLOR}</span>
@@ -220,7 +220,7 @@
         <div class="colors-inp">
           <div class="input-group colorpicker-component">
             <input type="text" name="setting[border_left_color]" value="{$settings.border_left_color}" class="form-control" placeholder="Color" />
-            <span class="input-group-addon"><i></i></span>
+            <span class="input-group-append"><span class="input-group-text colorpicker-input-addon"><i></i></span></span>
           </div>
         </div>
       </div>
@@ -230,7 +230,7 @@
         <div class="colors-inp">
           <div class="input-group colorpicker-component">
             <input type="text" name="setting[border_right_color]" value="{$settings.border_right_color}" class="form-control" placeholder="Color" />
-            <span class="input-group-addon"><i></i></span>
+            <span class="input-group-append"><span class="input-group-text colorpicker-input-addon"><i></i></span></span>
           </div>
         </div>
       </div>
@@ -240,7 +240,7 @@
         <div class="colors-inp">
           <div class="input-group colorpicker-component">
             <input type="text" name="setting[border_bottom_color]" value="{$settings.border_bottom_color}" class="form-control" placeholder="Color" />
-            <span class="input-group-addon"><i></i></span>
+            <span class="input-group-append"><span class="input-group-text colorpicker-input-addon"><i></i></span></span>
           </div>
         </div>
       </div>
@@ -472,7 +472,7 @@
       $('.box-style-tab input, .box-style-tab select').each(changeStyle).on('change', changeStyle);
 
 
-      $('.colorpicker-component').colorpicker({ sliders: {
+      $('.colorpicker-component').colorpicker({ popover: false, sliders: {
         saturation: { maxLeft: 200, maxTop: 200 },
         hue: { maxTop: 200 },
         alpha: { maxTop: 200 }

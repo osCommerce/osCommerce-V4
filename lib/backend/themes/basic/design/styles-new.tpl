@@ -13,6 +13,8 @@
                     <th class="">{$smarty.const.STYLE_NAME}</th>
                     <th class="">{$smarty.const.STYLE_VALUE}</th>
                     <th class="">{$smarty.const.HEADING_TYPE}</th>
+                    <th class="">Main styles</th>
+                    <th class=""></th>
                     <th class=""></th>
                 </tr>
                 </thead>
@@ -22,7 +24,7 @@
             </table>
 
             <div class="row">
-                <div class="col-xs-12 align-right p-t-2">
+                <div class="col-12 align-right p-t-2">
                     <span class="btn btn-primary btn-add-style">{$smarty.const.TEXT_ADD_STYLE}</span>
                 </div>
             </div>
@@ -68,11 +70,12 @@
                     name: $('input[name="name"]', this).val(),
                     value: $('*[name="value"]', this).val(),
                     type: $('*[name="type"]', this).val(),
+                    main_style: +$('*[name="main_style"]', this).prop('checked'),
                 })
             });
             $.post('design/style-main-save', { styles, theme_name: '{$theme_name}' }, function (response) {
-                const $popup = alertMessage(response, 'alert-message')
-                setTimeout(() => $popup.remove(), 1000)
+                const $popup = alertMessage(response.text, 'alert-message')
+                setTimeout(() => $popup.remove(), 2000)
             }, 'json')
         });
 
@@ -83,34 +86,34 @@
                         <div class="popup-heading">{$smarty.const.EXPORT_STYLES}</div>
                         <div class="popup-content pop-mess-cont">
                             <div class="row align-items-center m-b-2 block-name">
-                                <div class="col-xs-5 align-right">
+                                <div class="col-5 align-right">
                                     <label>{$smarty.const.TEXT_NAME}<span class="colon">:</span></label>
                                 </div>
-                                <div class="col-xs-7">
+                                <div class="col-7">
                                     <input name="name" type="text" class="form-control" autofocus="">
                                 </div>
                             </div>
                             <div class="row align-items-center m-b-2 save-to-groups">
-                                <div class="col-xs-5 align-right">
+                                <div class="col-5 align-right">
                                     <label>{$smarty.const.SAVE_TO_THEME_WIZARD}<span class="colon">:</span></label>
                                 </div>
-                                <div class="col-xs-7">
+                                <div class="col-7">
                                     <input name="save-to-groups" type="checkbox" class="form-control" checked>
                                 </div>
                             </div>
                             <div class="row align-items-center m-b-2 download">
-                                <div class="col-xs-5 align-right">
+                                <div class="col-5 align-right">
                                     <label>{$smarty.const.DOWNLOAD_ON_MY_COMPUTER}<span class="colon">:</span></label>
                                 </div>
-                                <div class="col-xs-7">
+                                <div class="col-7">
                                     <input name="download" type="checkbox" class="form-control" checked>
                                 </div>
                             </div>
                             <div class="row m-b-2">
-                                <div class="col-xs-5 align-right">
+                                <div class="col-5 align-right">
                                     <label>{$smarty.const.TEXT_COMMENTS}<span class="colon">:</span></label>
                                 </div>
-                                <div class="col-xs-7">
+                                <div class="col-7">
                                     <textarea name="comment" class="form-control"></textarea>
                                 </div>
                             </div>
@@ -136,7 +139,7 @@
                     }
                     if (response.text){
                         const $message = alertMessage(response.text, 'alert-message');
-                        setTimeout(() => $message.remove(), 1000);
+                        setTimeout(() => $message.remove(), 2000);
                         if ($('input[name="download"]', $form).prop('checked') && response.filename) {
 
                             const url = new URL(window.entryData.mainUrl + '/design/download-block');
@@ -155,7 +158,7 @@
     })
 
     function styleRow(data = { }){
-        console.log(data.type);
+        console.log(data);
         const $row = $(`
             <tr class="">
                 <td class="sort-handle"></td>
@@ -170,7 +173,9 @@
                         <option value="font"${ data.type == 'font' && ' selected'}>{$smarty.const.TEXT_FONT}</option>
                     </select>
                 </td>
+                <td class="main-styles"><input type="checkbox" name="main_style"${ data.main_style && ' checked'} class="form-controll"></td>
                 <td class="remove-style"></td>
+                <td class="count">${ data.count || 0 }</td>
             </tr>
         `);
 
@@ -259,7 +264,7 @@
             const $component = $(`
                     <div class="input-group colorpicker-component">
                         <input type="text" name="value" value="${ data.value || ''}" class="form-control" />
-                        <span class="input-group-addon"><i></i></span>
+                        <span class="input-group-append"><span class="input-group-text colorpicker-input-addon"><i></i></span></span>
                     </div>
             `);
 

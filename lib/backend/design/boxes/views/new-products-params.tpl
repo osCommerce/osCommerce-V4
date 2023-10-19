@@ -13,11 +13,11 @@
     <div class="tabbable tabbable-custom">
       <ul class="nav nav-tabs">
 
-        <li class="active"><a href="#type" data-toggle="tab" accesskey="1">{$smarty.const.TEXT_SETTINGS}</a></li>
-        <li><a href="#product" data-toggle="tab" accesskey="2">{$smarty.const.TEXT_PRODUCT_ITEM}</a></li>
-        <li><a href="#style" data-toggle="tab" accesskey="3">{$smarty.const.HEADING_STYLE}</a></li>
-        <li><a href="#align" data-toggle="tab">{$smarty.const.HEADING_WIDGET_ALIGN}</a></li>
-        <li><a href="#visibility" data-toggle="tab">{$smarty.const.TEXT_VISIBILITY_ON_PAGES}</a></li>
+        <li class="active" data-bs-toggle="tab" data-bs-target="#type"><a accesskey="1">{$smarty.const.TEXT_SETTINGS}</a></li>
+        <li data-bs-toggle="tab" data-bs-target="#product"><a accesskey="2">{$smarty.const.TEXT_PRODUCT_ITEM}</a></li>
+        <li data-bs-toggle="tab" data-bs-target="#style"><a accesskey="3">{$smarty.const.HEADING_STYLE}</a></li>
+        <li data-bs-toggle="tab" data-bs-target="#align"><a>{$smarty.const.HEADING_WIDGET_ALIGN}</a></li>
+        <li data-bs-toggle="tab" data-bs-target="#visibility"><a>{$smarty.const.TEXT_VISIBILITY_ON_PAGES}</a></li>
 
       </ul>
 

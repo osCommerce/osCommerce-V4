@@ -31,7 +31,7 @@ class SaveMainDetails
 
         if (Yii::$app->request->post('without_inventory', false)!==false){
             $sql_data_array['without_inventory'] = (int) Yii::$app->request->post('without_inventory',0);
-        } elseif (!\common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed')) {
+        } elseif (!\common\helpers\Extensions::isAllowed('Inventory')) {
             $sql_data_array['without_inventory'] = 1;
         }
 
@@ -40,7 +40,8 @@ class SaveMainDetails
         }
         $sql_data_array['products_status'] = (int) Yii::$app->request->post('products_status');
         //$sql_data_array['products_status_bundle'] = (int) Yii::$app->request->post('products_status_bundle');
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('AutomaticallyStatus', 'allowed')) {
+        /** @var \common\extensions\AutomaticallyStatus\AutomaticallyStatus $ext */
+        if ($ext = \common\helpers\Extensions::isAllowed('AutomaticallyStatus')) {
             $_sql_data = $ext::onProductSave();
             if ( is_array($_sql_data) ) $sql_data_array = array_merge($sql_data_array,$_sql_data);
         }
@@ -74,10 +75,6 @@ class SaveMainDetails
         $sql_data_array['subscription'] = (int) Yii::$app->request->post('subscription');
         $sql_data_array['subscription_code'] = Yii::$app->request->post('subscription_code');
 
-        if ($extClass = \common\helpers\Acl::checkExtensionAllowed('UploadCustomerId', 'allowed')) {
-            $extClass::productSave($this->product);
-        }
-
         // save product behavior buttons
         $sql_data_array['request_quote'] = Yii::$app->request->post('request_quote', 0);
         $sql_data_array['request_quote_out_stock'] = Yii::$app->request->post('request_quote_out_stock', 0);
@@ -90,16 +87,6 @@ class SaveMainDetails
         $sql_data_array['manual_stock_unlimited'] = (int)Yii::$app->request->post('manual_stock_unlimited', 0);
 
         $sql_data_array['product_unit_label'] = \common\helpers\Product::getUnitLabelList(true, Yii::$app->request->post('product_unit_label', ''), false);
-
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('MinimumOrderQty', 'allowed')) {
-            $sql_data_array = array_replace($sql_data_array, $ext::saveProduct());
-        }
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('MaxOrderQty', 'allowed')) {
-            $sql_data_array = array_replace($sql_data_array, $ext::saveProduct());
-        }
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('OrderQuantityStep', 'allowed')) {
-            $sql_data_array = array_replace($sql_data_array, $ext::saveProduct());
-        }
 
         $products_date_available = Yii::$app->request->post('products_date_available');
         if (!empty($products_date_available)) {
@@ -115,19 +102,12 @@ class SaveMainDetails
             $sql_data_array['products_new_until'] = '';
         }
 
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('Rma', 'allowed')) {
-            $ext::setProductReturnTime($this->product->products_id, Yii::$app->request->post('productReturnTime'));
-        }
-
         $sql_data_array['products_pctemplates_id'] = Yii::$app->request->post('products_pctemplates_id');
 
         // product designer template
         $sql_data_array['product_designer_template_id'] = Yii::$app->request->post('product_designer_template_id');
 
         $this->product->setAttributes(['stock_control' => 0], false);
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('StockControl', 'allowed')) {
-            $ext::saveProduct($this->product);
-        }
 
         $sql_data_array['stock_reorder_level'] = (int)Yii::$app->request->post('stock_reorder_level', -1);
         $sql_data_array['stock_reorder_quantity'] = (int)Yii::$app->request->post('stock_reorder_quantity', -1);
@@ -135,10 +115,6 @@ class SaveMainDetails
         $sql_data_array['stock_limit'] = (int)Yii::$app->request->post('stock_limit', -1);
 
         $sql_data_array['jsonld_product_type'] = (int)Yii::$app->request->post('jsonld_product_type', 0);
-
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('TypicalOperatingTemp', 'allowed')) {
-            $ext::saveProduct($this->product);
-        }
 
         $sql_data_array['out_stock_action'] = (int)Yii::$app->request->post('out_stock_action', 0);
         $sql_data_array['is_demo'] = (int)Yii::$app->request->post('is_demo', 0);

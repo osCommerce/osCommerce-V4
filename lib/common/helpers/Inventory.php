@@ -61,10 +61,8 @@ class Inventory {
         list($uprid,) = explode('{tpl}', $uprid);
         list($uprid,) = explode('{sub}', $uprid);
         /* PC configurator addon end */
-        if ($ext = \common\helpers\Acl::checkExtension('SupplierPurchase', 'allowed')) {
-            if ($ext::allowed()) {
-                $uprid = $ext::get_uprid($uprid);
-            }
+        if ($ext = \common\helpers\Extensions::isAllowed('SupplierPurchase')) {
+            $uprid = $ext::get_uprid($uprid);
         }
         if (preg_match("/^\d+$/", $uprid)) {
             return $uprid;
@@ -97,6 +95,10 @@ class Inventory {
         } else {
             return false;
         }
+    }
+
+    public static function isPrid($uprid) {
+        return strpos($uprid, '{') === false;
     }
 
     public static function get_uprid($prid, $params) {
@@ -317,7 +319,7 @@ class Inventory {
     public static function getDetails($products_id, $current_uprid, $params = array()) {
         global $languages_id;
         $currencies = \Yii::$container->get('currencies');
-        if ( !($params['qty'] > 0) ) $params['qty'] = 1;
+        if ( !( ($params['qty']??0) > 0) ) $params['qty'] = 1;
         if (strpos($current_uprid, '{') === false ) $current_uprid = $products_id;
 
         $products_id = \common\helpers\Inventory::normalizeInventoryId($products_id);
@@ -333,7 +335,8 @@ class Inventory {
                 $inventory_query = tep_db_query("select * from " . TABLE_INVENTORY . " i where non_existent = '0' " . \common\helpers\Inventory::get_sql_inventory_restrictions(array('i', 'ip')) . " and prid = '" . (int)$product['products_id'] . "' order by " . ($product['products_price_full'] ? " inventory_full_price" : " inventory_price"));
                 while ($inventory = tep_db_fetch_array($inventory_query)) {
                     $priceInstance = \common\models\Product\Price::getInstance($inventory['products_id']);
-                    $inventory_price = $priceInstance->getInventoryPrice(['qty' => $params['qty'], 'id' => $params['id']]);
+//                    $inventory_price = $priceInstance->getInventoryPrice(['qty' => $params['qty'], 'id' => $params['id']]);
+                    $inventory_price = $priceInstance->getInventoryPrice($params);
 
                     //$inventory['inventory_price'] = \common\helpers\Inventory::get_inventory_price_by_uprid($inventory['products_id'], $params['qty'], $inventory['inventory_price']);
                     //$inventory['inventory_full_price'] = \common\helpers\Inventory::get_inventory_full_price_by_uprid($inventory['products_id'], $params['qty'], $inventory['inventory_full_price']);
@@ -440,6 +443,7 @@ class Inventory {
             }
 
             if (is_null($product_price)){
+                $priceInstance = \common\models\Product\Price::getInstance($product['products_id']);
                 $product_price = $priceInstance->getProductPrice(['qty' => $params['qty']]);
                 $special_price = $priceInstance->getProductSpecialPrice(['qty' => $params['qty']]);
             }
@@ -662,7 +666,7 @@ class Inventory {
     public static function isInventory($inventoryId = 0)
     {
         $return = false;
-        if (\common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed')) {
+        if (\common\helpers\Extensions::isAllowed('Inventory')) {
             $inventoryRecord = self::getRecord($inventoryId);
             if ($inventoryRecord instanceof \common\models\Inventory) {
                 $productAttributeArray = \common\models\ProductsAttributes::find()->where(['products_id' => (int)$inventoryId])
@@ -729,20 +733,19 @@ class Inventory {
 
         \Yii::$app->getDb()->createCommand($raw)->execute();
 
-        if (\common\helpers\Acl::checkExtensionAllowed('UserGroupsRestrictions')) {
-            $copyModelClass = '\common\extensions\UserGroupsRestrictions\models\GroupsInventory';
-            call_user_func_array([$copyModelClass, 'deleteAll'], [['prid' => $toProductId]]);
-            $sourceCollection = call_user_func_array([$copyModelClass, 'findAll'], [['prid' => $fromProductId]]);
+        /** @var \common\extensions\UserGroupsRestrictions\models\GroupsInventory $modelClass */
+        $modelClass = \common\helpers\Extensions::getModel('UserGroupsRestrictions', 'GroupsInventory');
+        if (!empty($modelClass)) {
+            $modelClass::deleteAll(['prid' => $toProductId]);
+            $sourceCollection = $modelClass::findAll(['prid' => $fromProductId]);
             foreach ($sourceCollection as $originModel) {
                 $__data = $originModel->getAttributes();
                 $__data['products_id'] = preg_replace("/^" . preg_quote((int)$fromProductId) . "(\{.+)$/", (int)$toProductId . "$1", $__data['products_id']);
                 $__data['prid'] = (int)$toProductId;
-                $copyModel = \Yii::createObject($copyModelClass);
-                if ($copyModel instanceof \yii\db\ActiveRecord) {
-                    $copyModel->setAttributes($__data, false);
-                    $copyModel->loadDefaultValues(true);
-                    $copyModel->save(false);
-                }
+                $copyModel = new $modelClass();
+                $copyModel->setAttributes($__data, false);
+                $copyModel->loadDefaultValues(true);
+                $copyModel->save(false);
             }
         }
     }

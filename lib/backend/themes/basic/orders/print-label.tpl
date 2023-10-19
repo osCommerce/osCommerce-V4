@@ -8,7 +8,7 @@
     <table width="100%" border="0" cellpadding="0" cellspacing="0" class="table-font">
         <tr>
             <td>
-    {if {$app->controller->view->errors|@count} > 0}
+    {if {$app->controller->view->errors|default:array()|@count} > 0}
         {foreach $app->controller->view->errors as $error}
             <div class="error">{$error}</div>
         {/foreach}
@@ -18,7 +18,7 @@
         You already have tracking number: <b>{$hypashipTracking.tracking_number}</b>
     {elseif isset($hypashipTracking.exist) && $hypashipTracking.exist == 0}
         Your tracking number: <b>{$hypashipTracking.tracking_number}</b>
-    {elseif $app->controller->view->methods|@count > 0}
+    {elseif $app->controller->view->methods|default:array()|@count > 0}
             <form id="select_method_form" name="select_method" onSubmit="return selectMethod();">
                 <input type="hidden" name="orders_id" value="{$orders_id}">
                 <input type="hidden" name="orders_label_id" value="{$orders_label_id}">
@@ -31,7 +31,7 @@
             <div class="panel panel-default">
                     <div class="panel-heading">
                             <h3 class="panel-title">
-                            <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#collapse{$key}">{$methods.title}</a>
+                            <a class="accordion-toggle" data-bs-toggle="collapse" data-bs-parent="#accordion" href="#collapse{$key}">{$methods.title}</a>
                             </h3>
                     </div>
                     <div id="collapse{$key}" class="panel-collapse collapse{if $methods.accordion} in{/if}">

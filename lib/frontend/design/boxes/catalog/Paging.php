@@ -32,8 +32,7 @@ class Paging extends Widget
 
     public function run()
     {
-
-        if (Info::widgetSettings('Listing', 'fbl')){
+        if (Info::widgetSettings('Listing', 'fbl', ($this->params['page_name'] ?? false))){
             return '';
         }
 

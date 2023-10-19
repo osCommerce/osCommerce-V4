@@ -230,18 +230,7 @@ class InitFactory {
     }
 
   if (!isset($PHP_SELF)) $PHP_SELF = @$_SERVER['PHP_SELF'];
-    
-  // BOF: Down for Maintenance except for admin ip
-  if (EXCLUDE_ADMIN_IP_FOR_MAINTENANCE != getenv('REMOTE_ADDR')) {
-    if (DOWN_FOR_MAINTENANCE == 'true' and !strstr($PHP_SELF, DOWN_FOR_MAINTENANCE_FILENAME)) { 
-      tep_redirect(tep_href_link(DOWN_FOR_MAINTENANCE_FILENAME)); 
-    }
-  }
-  // do not let people get to down for maintenance page if not turned on
-  if (DOWN_FOR_MAINTENANCE=='false' and strstr($PHP_SELF,DOWN_FOR_MAINTENANCE_FILENAME)) {
-      tep_redirect(tep_href_link(FILENAME_DEFAULT));
-  }
-  // EOF: WebMakers.com Added: Down for Maintenance
+
 
   /***
   * actions moved to \frontend\models\Cartfactory
@@ -289,13 +278,17 @@ class InitFactory {
         include($filename);
     }
 
-    // TODO: move to hooks
-    if ($ext = \common\helpers\Acl::checkExtension('SupplierPurchase', 'allowed')){
-        if ($ext::allowed()){
-            $ext::recalculateTotal();
+    // After hook to allow extensions overwrite these constants
+    if (defined('PURCHASE_OFF_STOCK')) {
+        if (PURCHASE_OFF_STOCK == 'true') {
+            defined('STOCK_CHECK') or define('STOCK_CHECK', 'false');
+            defined('STOCK_ALLOW_CHECKOUT') or define('STOCK_ALLOW_CHECKOUT', 'true');
+        } else {
+            defined('STOCK_CHECK') or define('STOCK_CHECK', 'true');
+            defined('STOCK_ALLOW_CHECKOUT') or define('STOCK_ALLOW_CHECKOUT', 'false');
         }
     }
-    
+
 // {{ Show out of stock switcher
     if (!tep_session_is_registered('SHOW_OUT_OF_STOCK')) {
       tep_session_register('SHOW_OUT_OF_STOCK');

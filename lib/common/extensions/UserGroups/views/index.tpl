@@ -12,7 +12,7 @@
 <!--===groups list===-->
 <div class="row order-box-list">
 {if \common\helpers\Acl::checkExtensionAllowed('ExtraGroups', 'allowed')}
-  {\common\extensions\ExtraGroups\ExtraGroupsTabs::widget()}
+  {\common\extensions\ExtraGroups\widgets\ExtraGroupsTabs\ExtraGroupsTabs::widget()}
 {/if}
     <div class="col-md-12">
             <div class="widget-content" id="groups_list_data">
@@ -26,8 +26,8 @@
                 {/if}
               <form id="filterForm" name="filterForm" onsubmit="return applyFilter();">
                 <input type="hidden" name="row" id="row_id" value="{$row}" />
-                {if \common\helpers\Acl::checkExtensionAllowed('ExtraGroups', 'allowed')}
-                  {\common\extensions\ExtraGroups\ExtraGroups::typeIdHidden()}
+                {if $ext = \common\helpers\Acl::checkExtensionAllowed('ExtraGroups', 'allowed')}
+                  {$ext::typeIdHidden()}
                 {/if}
               </form>
                 <table class="table table-striped table-bordered table-hover table-responsive table-checkable datatable table-groups double-grid"

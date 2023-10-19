@@ -107,7 +107,7 @@ class Products extends EPMap
 
     public function __construct(array $config = [])
     {
-        $this->inventoryPresent = (\common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed'));
+        $this->inventoryPresent = (\common\helpers\Extensions::isAllowed('Inventory'));
 
         if (!$this->inventoryPresent) {
             unset($this->childCollections['inventory']);
@@ -331,7 +331,7 @@ class Products extends EPMap
     public function initCollectionByLookupKey_WarehousesProducts($lookupKeys)
     {
         $this->childCollections['warehouses_products'] = [];
-        if ( $this->inventoryPresent && !$this->hasAssignedProductAttributes() ) {
+        if (!$this->hasAssignedProductAttributes()) {
             $loadAll = in_array('*', $lookupKeys);
 
             if ( false ) {
@@ -798,12 +798,15 @@ class Products extends EPMap
                     try {
                         $groupService = \Yii::createObject(\backend\services\GroupsService::class);
                         $groupService->addProductToAllGroups($this->products_id);
-                    }catch (\Exception $ex){}
+                        unset($groupService);
+                    }catch (\Exception $ex){
+                        \common\helpers\Php::logError($ex);
+                    }
                 }
             }
         }
 
-        if ( isset($this->auto_status) && $ext = \common\helpers\Acl::checkExtensionAllowed('AutomaticallyStatus', 'allowed') ) {
+        if ( isset($this->auto_status) && ($ext = \common\helpers\Acl::checkExtensionAllowed('AutomaticallyStatus')) ) {
             $ext::setAutoStatusProduct($this->products_id, $this->auto_status, true);
             unset($this->auto_status);
         }

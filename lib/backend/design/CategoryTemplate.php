@@ -37,13 +37,13 @@ class CategoryTemplate
                 where
                     theme_name = '" . $platform['theme_name'] . "' and
                     setting_group = 'added_page' and
-                    (setting_name = 'product' or setting_name = 'categories')
+                    (setting_name = 'product' or setting_name = 'categories' or setting_name = 'products')
             ");
             if (tep_db_num_rows($templates) > 0) {
                 while ($item = tep_db_fetch_array($templates)) {
                     if ($item['setting_name'] == 'product') {
                         $platform['themes'][] = $item['setting_value'];
-                    } elseif ($item['setting_name'] == 'categories') {
+                    } elseif ($item['setting_name'] == 'categories' || $item['setting_name'] == 'products') {
                         $platform['themes_categories'][] = $item['setting_value'];
                     }
                 }

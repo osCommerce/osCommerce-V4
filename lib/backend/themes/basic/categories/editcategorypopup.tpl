@@ -8,15 +8,15 @@
 <div class="popupCategory">
     <div class="tabbable tabbable-custom">
         <ul class="nav nav-tabs">
-            <li class="active"><a href="#tab_2" data-toggle="tab">Name and description</a></li>
-            <li><a href="#tab_3" data-toggle="tab">Main details</a></li>
-            <li><a href="#tab_4" data-toggle="tab">SEO</a></li>
+            <li class="active" data-bs-toggle="tab" data-bs-target="#tab_2"><a>Name and description</a></li>
+            <li data-bs-toggle="tab" data-bs-target="#tab_3"><a>Main details</a></li>
+            <li data-bs-toggle="tab" data-bs-target="#tab_4"><a>SEO</a></li>
         </ul>
         <div class="tab-content">
             <div class="tab-pane active topTabPane tabbable-custom" id="tab_2">
                <ul class="nav nav-tabs">
-                    <li class="active"><a href="#tab_en" data-toggle="tab"><img src="{$app->view->theme->baseUrl}/img/en.png"><span>English</span></a></li>
-                    <li><a href="#tab_de" data-toggle="tab"><img src="{$app->view->theme->baseUrl}/img/de.png"><span>Germany</span></a></li>
+                    <li class="active" data-bs-toggle="tab" data-bs-target="#tab_en"><a><img src="{$app->view->theme->baseUrl}/img/en.png"><span>English</span></a></li>
+                    <li data-bs-toggle="tab" data-bs-target="#tab_de"><a><img src="{$app->view->theme->baseUrl}/img/de.png"><span>Germany</span></a></li>
                 </ul> 
                 <div class="tab-content">
                     <div class="tab-pane active" id="tab_en">
@@ -65,8 +65,8 @@
             </div>
             <div class="tab-pane topTabPane tabbable-custom" id="tab_4">
                 <ul class="nav nav-tabs">
-                    <li class="active"><a href="#tab_en" data-toggle="tab"><img src="{$app->view->theme->baseUrl}/img/en.png"><span>English</span></a></li>
-                    <li><a href="#tab_de" data-toggle="tab"><img src="{$app->view->theme->baseUrl}/img/de.png"><span>Germany</span></a></li>
+                    <li class="active" data-bs-toggle="tab" data-bs-target="#tab_en"><a><img src="{$app->view->theme->baseUrl}/img/en.png"><span>English</span></a></li>
+                    <li data-bs-toggle="tab" data-bs-target="#tab_de"><a><img src="{$app->view->theme->baseUrl}/img/de.png"><span>Germany</span></a></li>
                 </ul> 
                 <div class="tab-content seoTab">
                     <div class="tab-pane active" id="tab_en">

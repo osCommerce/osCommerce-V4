@@ -87,7 +87,7 @@ class ProductsCatalog extends Widget {
         $productsQuery = \common\models\Products::find()
                 ->distinct()->alias('p')
                 ->select(['p.*', 'pd.*'])
-                ->addSelect(['products_name' => new \yii\db\Expression(\backend\models\ProductNameDecorator::instance()->listingQueryExpression('pd1','pd'))] )
+                ->addSelect(['products_name_res' => new \yii\db\Expression(\backend\models\ProductNameDecorator::instance()->listingQueryExpression('pd1','pd'))] )
                 ->joinWith('manufacturer m')
                 ->wDescription('pd', \common\helpers\Language::get_default_language_id())
                 ->wDescription('pd1')
@@ -101,7 +101,7 @@ class ProductsCatalog extends Widget {
         $searchBuilder->addProductsRestriction($productsQuery);
 
         $tree = [];
-        if (!$this->post['suggest']){ //search for tree
+        if (!($this->post['suggest']??null)){ //search for tree
             $products = $productsQuery->all();
             if ($products){
                 $pathes = [0];
@@ -112,15 +112,16 @@ class ProductsCatalog extends Widget {
                 }
                 $products = \yii\helpers\ArrayHelper::getColumn($products, 'products_id');
                 $pathes = array_unique($pathes);
-                $tree = $this->getChildrend(0, $pathes, $products);
+                $tree = $this->getChildren(0, $pathes, $products);
             }
         } else { //search for suggest
             $currencies = Yii::$container->get('currencies');
-            foreach($productsQuery->limit(20)->all() as $product){
-                $ins = \common\models\Product\Price::getInstance($product->products_id);
+            foreach($productsQuery->limit(20)->asArray()->all() as $product){
+                $ins = \common\models\Product\Price::getInstance($product['products_id']);
                 $tree[] = [
-                  'id' => $product->products_id,
-                  'text' => $product->productsDescriptions[0]->getBackendListingName(),
+                  'id' => $product['products_id'],
+                  //'text' => $product->productsDescriptions[0]->getBackendListingName(),
+                  'text' => $product['products_name_res'] ?? '',
                   'image' => '',
                   'price' => $currencies->display_price($ins->getProductPrice(['qty' => 1]), 0, 1)
                   ];
@@ -130,14 +131,14 @@ class ProductsCatalog extends Widget {
         return json_encode($tree);
     }
     
-    public function getChildrend($top, $pathes, $products){
+    public function getChildren($top, $pathes, $products){
         if (!$pathes) return;
         $level = $this->buildTree($top);//children for $path
         
         $trees = $this->skip($level, $pathes, $products, $top);//clear level for n
         foreach($trees as &$tree){
-            if ($tree['folder']){
-                $children = $this->getChildrend(substr($tree['key'], 1), $pathes, $products);
+            if ($tree['folder'] ?? null){
+                $children = $this->getChildren(substr($tree['key'], 1), $pathes, $products);
                 if ($children){
                     $tree['children'] = $children;
                 }
@@ -274,7 +275,7 @@ class ProductsCatalog extends Widget {
             $response_data['selected_data'] = $selected_data;
         }
 
-        return json_encode($response_data);
+        return json_encode($response_data, JSON_INVALID_UTF8_IGNORE );
     }
     
     private function tep_get_category_children(&$children, $categories_id) {
@@ -357,10 +358,10 @@ class ProductsCatalog extends Widget {
                 if (strlen($description) > 500) {
                     $description = strip_tags($description);
                     if (strlen($description) > 500) {
-                        $description = substr($description, 0, 500) . '...';
+                        $description = mb_substr($description, 0, 500) . '...';
                     }
                 }
-                $_product['description'] = $description;
+                $_product['description'] = trim($description);
 
                 $thumbnail = \common\classes\Images::getImage($_product['products_id']);
                 if ($thumbnail) {
@@ -369,6 +370,9 @@ class ProductsCatalog extends Widget {
                     $thumbnail = '<span style="display: none;" class="product-thumbnail-ico fancytree-icon icon-cubes"></span> ';
                 }
                 $_product['stock'] = \common\helpers\Product::get_products_stock($_product['products_id']);
+                if (empty($_product['title'])){
+                    $_product['title'] = \common\helpers\Product::get_products_name($_product['products_id']);
+                }
                 if (ArrayHelper::getValue($this->settings, 'add_sku') && !empty($_product['products_model'])) {
                   $_product['title'] .= ' (' . $_product['products_model'] . ')';
                 }

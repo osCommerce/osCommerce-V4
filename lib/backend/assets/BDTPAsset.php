@@ -13,17 +13,21 @@
 namespace backend\assets;
 
 use yii\web\AssetBundle;
+use yii\web\View;
 
 class BDTPAsset extends AssetBundle
 {
     public $basePath = '@webroot';
     public $baseUrl = '@web';
     public $css = [
-        '@web/../plugins/bootstrap-datepicker/bootstrap-datetimepicker.min.css',
+        'plugins/tempus-dominus/css/tempus-dominus.css',
     ];
     public $js = [
-        '@web/../plugins/moment/moment.js',
-        '@web/../plugins/bootstrap-datepicker/bootstrap-datetimepicker.min.js',
-        '@web/../plugins/bootstrap-datepicker/moment-with-locales.js',
+        'plugins/popperjs/popper.js',
+        'plugins/tempus-dominus/js/tempus-dominus.js',
+        'plugins/tempus-dominus/js/jQuery-provider.min.js',
+    ];
+    public $jsOptions = [
+        'position' => View::POS_HEAD,
     ];
 }

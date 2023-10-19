@@ -4,7 +4,7 @@
 
 <div class="js-product-image-set main-image-box">
     <div class="images{if $settings[0].align_position === 'horizontal'} additional-horizontal{else} additional-vertical{/if}">
-        <div class="produst-image">
+        <div class="product-image">
         <div class="img-holder">
             <img
                     src="{$img}"

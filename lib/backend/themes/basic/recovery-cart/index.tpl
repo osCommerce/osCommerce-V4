@@ -14,7 +14,7 @@
             {if $isMultiPlatform}
                 <ul class="nav nav-tabs -tab-light-gray">
                     {foreach $forms as $form}
-                        <li {if $selected_platform_id==$form->platform_id} class="active"{/if}><a class="js_link_platform_select" href="#pl_{$form->platform_id}" data-toggle="tab" data-platform_id="{$form->platform_id}" {if $from->platform_id==$selected_platform_id} onclick="return false" {/if}><span>{$form->platform->platform_name}</span></a></li>
+                        <li {if $selected_platform_id==$form->platform_id} class="active"{/if} data-bs-toggle="tab" data-bs-target="#pl_{$form->platform_id}"><a class="js_link_platform_select" data-platform_id="{$form->platform_id}" {if $from->platform_id==$selected_platform_id} onclick="return false" {/if}><span>{$form->platform->platform_name}</span></a></li>
                     {/foreach}
                 </ul>
             {/if}

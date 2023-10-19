@@ -37,7 +37,7 @@ var table;
 var event_id;
   
 function checkSelected(){
-  if ($('.language_new input[name=languages_id]:checked').size() == 0){
+  if ($('.language_new input[name=languages_id]:checked').length == 0){
     $('.language_new .alert').html('Please select language').show();
     return false;
   }

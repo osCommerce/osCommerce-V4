@@ -92,8 +92,8 @@ class Html extends \yii\helpers\Html
     }
 
     public static function checkbox($name, $checked = false, $options = array()) {
-      if (!isset($options['class']) || (strpos($options['class'], 'uniform')===false && strpos($options['class'], '_on_off')===false )) { // check|switch| etc _on_off O_O
-        $options['class'] = 'uniform ' . (isset($options['class'])?$options['class']:'');
+      if (!isset($options['class']) || (strpos($options['class'], 'multiOption')===false && strpos($options['class'], 'uniform')===false && strpos($options['class'], '_on_off')===false )) { // check|switch| etc _on_off O_O
+        $options['class'] = 'multiOption ' . (isset($options['class'])?$options['class']:'');
       }
       return parent::checkbox($name, $checked, $options);
     }

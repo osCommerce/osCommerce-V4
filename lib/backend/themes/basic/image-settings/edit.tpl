@@ -77,7 +77,11 @@
                 }
                 setTimeout(function () {
                     $('.popup-box-wrap').remove()
-                }, 1000)
+                }, 1000);
+
+                $.get(window.location.href, function (response) {
+                    $('.content-container').html(response);
+                })
             })
         });
 

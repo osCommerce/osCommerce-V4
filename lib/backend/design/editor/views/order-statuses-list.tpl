@@ -12,7 +12,7 @@
                     <label>{$smarty.const.ENTRY_STATUS}</label>
                 </div>
                 <div class="f_td">
-                    {Html::dropDownList('status', $status, $orders_statuses, ['class' => 'form-control'])}
+                    {Html::dropDownList('status', $status, $orders_statuses, ['class' => 'form-select'])}
                 </div>
             </div>
             <div class="f_row">

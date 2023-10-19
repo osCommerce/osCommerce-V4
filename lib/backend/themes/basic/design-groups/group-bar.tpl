@@ -1,7 +1,7 @@
 <div class="or_box_head">{$group.name}</div>
 
 <div class="row">
-    <div class="col-xs-12 align-center"></div>
+    <div class="col-12 align-center"></div>
 </div>
 
 <div class="btn-toolbar-col main-buttons">

@@ -115,7 +115,7 @@ class RelatedSerialize /*extends \yii\base\Component*/
                         $lookupByPk[$property] = self::getPropertyData($property, $data, $processConfigure)->toImportModel();
                         if ($data->data[$property] instanceof IOLanguageMap && empty($lookupByPk[$property])) {
                             $data->skipped = true;
-                            $data->skipReasons[] = 'The language ' . $data->data[$property]->language . ' does not exists (attribute=' . $data->data[$property]->attribute . ')';
+                            $data->skipReasons[] = 'The language "' . $data->data[$property]->language . '" is not installed (externalId=' . $data->data[$property]->externalId . ')';
                         }
                     }elseif ( is_object($data->data[$property]) && $data->data[$property] instanceof Complex){
                         $lookupByPk[$property] = $data->data[$property]->toImportModel();

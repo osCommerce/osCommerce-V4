@@ -62,40 +62,33 @@
                         </div>
                         {if \common\helpers\Acl::checkExtensionAllowed('BusinessToBusiness', 'allowed')}
                           {\common\extensions\BusinessToBusiness\BusinessToBusiness::frontendBlock($pInfo)}
-                        {else}
-                        <div class="w-line-row w-line-row-1 dis_module">
-                            <div class="wl-td">
-                                <label>{$smarty.const.ENTRY_NEED_LOGIN}</label>
-                                <input class="js_check_need_login" type="checkbox" disabled>
-                            </div>
-                        </div>
                         {/if}
 
                         <div class="row align-items-center m-b-2">
-                            <label class="col-xs-5 align-right">{$smarty.const.ENTRY_PLATFORM_PLEASE_LOGIN}</label>
-                            <div class="col-xs-7">
+                            <label class="col-5 align-right">{$smarty.const.ENTRY_PLATFORM_PLEASE_LOGIN}</label>
+                            <div class="col-7">
                                 {Html::checkbox('platform_please_login', !!($pInfo->platform_please_login|default:null), ['value'=>'1', 'class' => 'js_check_need_login'])}
                             </div>
                         </div>
 
                         <div class="row align-items-center m-b-2">
-                            <label class="col-xs-5 align-right">{$smarty.const.CHECKOUT_ONLY_FOR_LOGGED_CUSTOMERS}</label>
-                            <div class="col-xs-7">
+                            <label class="col-5 align-right">{$smarty.const.CHECKOUT_ONLY_FOR_LOGGED_CUSTOMERS}</label>
+                            <div class="col-7">
                                 {Html::checkbox('checkout_logged_customer', !!($pInfo->checkout_logged_customer|default:null), ['value'=>'1', 'class' => 'js_check_use_social_login'])}
                             </div>
                         </div>
 
                         <div class="row align-items-center m-b-2">
-                            <label class="col-xs-5 align-right">{$smarty.const.USE_SOCIAL_LOGIN}</label>
-                            <div class="col-xs-7">
+                            <label class="col-5 align-right">{$smarty.const.USE_SOCIAL_LOGIN}</label>
+                            <div class="col-7">
                                 {Html::checkbox('use_social_login', !!($pInfo->use_social_login|default:null), ['value'=>'1', 'class' => 'js_check_use_social_login'])}
                             </div>
                         </div>
 
                         {if $have_more_then_one_platform}
                             <div class="row align-items-center m-b-2">
-                                <label class="col-xs-5 align-right">{$smarty.const.ENTRY_IS_DEFAULT_PLATFORM}</label>
-                                <div class="col-xs-7">
+                                <label class="col-5 align-right">{$smarty.const.ENTRY_IS_DEFAULT_PLATFORM}</label>
+                                <div class="col-7">
                                     {Html::checkbox('is_default', !!($pInfo->is_default|default:null), array_merge(['value'=>'1', 'class' => 'js_check_default_platform'],$checkbox_default_platform_attr))}
                                     {Html::hiddenInput('present_is_default','1')}
                                 </div>
@@ -261,9 +254,6 @@
             {Html::input('hidden', 'platforms_address_book_id[]', $addresses->platforms_address_book_id|default:null)}
 
             {include $pass|cat: '/themes/basic/platforms/edit/organization.tpl'}
-            {if (\common\helpers\Acl::checkExtensionAllowed('InvoiceNumberFormat', 'allowed'))}
-              {\common\extensions\InvoiceNumberFormat\InvoiceNumberFormat::onInvoiceNumberFormatEditView($pInfo)}
-            {/if}
 
 
         </div>        
@@ -297,11 +287,6 @@
             </div>
         </div>
     </div>
-            {if $ext = \common\helpers\Acl::checkExtensionAllowed('PlatformRestrictLogin', 'allowed')}
-            {$ext::onPlatformEditView($pInfo)}
-            {/if}
-            
-
 
     <div class="widget box box-no-shadow">
         <div class="widget-header widget-header-theme"><h4>{$smarty.const.GROUP_PLATFORM_URLS}</h4></div>
@@ -365,6 +350,10 @@
         </div>
     </div>
 
+    {foreach \common\helpers\Hooks::getList('platforms/edit', 'left-column') as $filename}
+        {include file=$filename}
+    {/foreach}
+
   </div>
   <div class="cbox-right">
 
@@ -403,6 +392,9 @@
           </div>
       </div>
       {include $pass|cat: '/themes/basic/platforms/edit/warehouses.tpl'}
+      {foreach \common\helpers\Hooks::getList('platforms/edit', 'right-column') as $filename}
+          {include file=$filename}
+      {/foreach}
       </div>
   </div>
 </div>
@@ -602,15 +594,7 @@ $(document).ready(function(){
         }
     })
 
-    $("select[data-role=multiselect]").multiselect({
-        selectedList: 1, // 0-based index
-        click: function(e, ui){ 
-            console.log($(this).multiselect("widget").find("input:checked"));
-            if(ui['value'] > 0){ 
-                
-            }
-        }
-    });
+    $("select[data-role=multiselect]").multipleSelect();
 
     var platformEmailUpdated = function(){
         var email = $(this).val();

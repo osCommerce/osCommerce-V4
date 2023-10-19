@@ -86,7 +86,26 @@ class Customers extends ActiveRecord
     {
         return 'customers';
     }
-    
+
+    public static function findByVar($customerOrModelOrId)
+    {
+        if ($customerOrModelOrId instanceof self) {
+            return $customerOrModelOrId;
+        } elseif($customerOrModelOrId instanceof \common\components\Customer)
+            return self::findIdentity($customerOrModelOrId->customers_id);
+        elseif (is_numeric($customerOrModelOrId)) {
+            return self::findIdentity($customerOrModelOrId);
+        }
+    }
+
+    public static function findByVarCheck($customerOrModelOrId)
+    {
+        $res = self::findByVar($customerOrModelOrId);
+        \common\helpers\Assert::instanceOf($res, self::class);
+        \common\helpers\Assert::assert($res->customers_id > 0, 'Not valid customer id: ' . $res->customers_id);
+        return $res;
+    }
+
     public static function findIdentity($id){
         return static::findOne(['customers_id' => $id]);
     }
@@ -225,6 +244,9 @@ class Customers extends ActiveRecord
      * @return Customers
      */
     public static function findByMultiEmail($email) {
+        if ($ext = \common\helpers\Acl::checkExtensionAllowed('DealersMultiCustomers', 'allowed')) {
+            return $ext::findByMultiEmail($email);
+        }
       if ($CustomersMultiEmails = \common\helpers\Acl::checkExtensionAllowed('CustomersMultiEmails', 'allowed')) {
         //2do same agent (email) of several customers
         $multi = \common\extensions\CustomersMultiEmails\models\CustomersMultiEmails::find()
@@ -331,6 +353,14 @@ class Customers extends ActiveRecord
     public function getDefaultAddress(){
     	return $this->hasOne(AddressBook::className(), ['address_book_id' => 'customers_default_address_id'])
                 ->joinWith('country');
+    }
+    
+    public function getDefaultShippingAddress() {
+        if (\common\helpers\Acl::checkExtensionAllowed('SplitCustomerAddresses', 'allowed')) {
+            return $this->hasOne(AddressBook::className(), ['address_book_id' => 'customers_shipping_address_id'])
+                ->joinWith('country');
+        }
+        return $this->getDefaultAddress();
     }
 
     public function getInfo(){

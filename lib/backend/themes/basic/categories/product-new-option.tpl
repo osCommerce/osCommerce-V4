@@ -120,12 +120,12 @@ $(document).ready(function() {
       $(this).addClass('inited');
     });
 
-    $('ul[id^="invPrice"] a[data-toggle="tab"]').on('shown.bs.tab', invPriceTabsShown);
-    $('ul[id^="attr_popup"] a[data-toggle="tab"]').on('shown.bs.tab', invPriceTabsShown);
+    $('ul[id^="invPrice"] [data-bs-toggle="tab"]').on('shown.bs.tab', invPriceTabsShown);
+    $('ul[id^="attr_popup"] [data-bs-toggle="tab"]').on('shown.bs.tab', invPriceTabsShown);
     $('.inventory-popup-link').off('click').on('click', function(){
       var popup = $($(this).attr('href'));
       //save all vals for cancel button functionality
-      var _vals = {};
+      var _vals = { };
       popup.find("input").each(function() {
         if (this.type == 'text' && !this.disabled && typeof(this.name) !== 'undefined' && this.name != '') {
           if ( this.name.substr(-2,2) == '[]') {

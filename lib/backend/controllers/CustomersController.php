@@ -17,7 +17,6 @@ use common\helpers\Html;
 use common\models\Customers;
 use common\extensions\Subscribers\models\CustomersToLists;
 use common\extensions\Subscribers\models\SubscribersLists;
-use common\services\BonusPointsService\DTO\TransferData;
 use Yii;
 use common\models\repositories\CustomersRepository;
 use common\components\Customer;
@@ -31,6 +30,16 @@ use common\helpers\Affiliate;
 class CustomersController extends Sceleton {
 
     public $acl = ['BOX_HEADING_CUSTOMERS', 'BOX_CUSTOMERS_CUSTOMERS'];
+
+    private $default_currency = DEFAULT_CURRENCY;
+
+    public function __construct($id, $module = null) {
+        $this->default_currency = \Yii::$app->get('platform')->config()->getDefaultCurrency();
+        if ($this->default_currency) {
+            \Yii::$app->settings->set('currency', $this->default_currency);
+        }
+        parent::__construct($id, $module);
+    }
 
     /**
      * Index action is the default action in a controller.
@@ -1031,15 +1040,14 @@ class CustomersController extends Sceleton {
             include($filename);
         }
 
-        $check_dev_admin = tep_db_fetch_array(tep_db_query("SELECT COUNT(*) AS c FROM ".TABLE_ADMIN." WHERE admin_id='".(int)$_SESSION['login_id']."' AND admin_email_address LIKE '%@holbi%'"));
-        if ( extension_loaded('openssl') && $check_dev_admin['c']>0 ) {
-            $aup = \common\helpers\Password::encryptAuthUserParam($cInfo->customers_id, $cInfo->customers_email_address, 'login');
+        if ( extension_loaded('openssl') && (\common\helpers\Acl::rule(['SUPERUSER']) || \common\helpers\Acl::rule(['ACL_CUSTORER', 'T_SUPER_LOGIN'])) ) {
+            $aup = \common\helpers\Password::encryptAuthUserParam($cInfo->customers_id, $cInfo->customers_email_address, 'login', $cInfo->auth_key);
             $_activePlatformId = Yii::$app->get('platform')->config()->getId();
             $perPlatformLoginList = [];
             foreach(\common\classes\platform::getList(false) as $platform){
                 Yii::$app->get('platform')->config($platform['id']);
                 $perPlatformLoginList[] = [
-                    'href' => tep_catalog_href_link('account/login-me', 'aup='.$aup),
+                    'href' => tep_catalog_href_link('account/login-me', 'aup='.$aup.'&idf='.(int)$_SESSION['login_id']),
                     'name' => $platform['text'],
                 ];
             }
@@ -1049,10 +1057,10 @@ class CustomersController extends Sceleton {
                 if (count($perPlatformLoginList)==1){
                     $superLoginButton = Html::a('Super login',$perPlatformLoginList[0]['href'],['target'=>'_blank','class'=>'btn btn-no-margin btn-coup-cus']);
                 }else{
-                    $superLoginButton = '<div class="dropdown"><button class="btn btn-pass-cus dropdown-toggle" type="button" id="customerSuperLoginMenu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">Super login <span class="icon-caret-down"></span></button>';
+                    $superLoginButton = '<div class="dropdown"><button class="btn btn-pass-cus dropdown-toggle" type="button" id="customerSuperLoginMenu" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="true">' . T_SUPER_LOGIN . '</button>';
                     $superLoginButton .= '<ul class="dropdown-menu" aria-labelledby="customerSuperLoginMenu">';
                     foreach ($perPlatformLoginList as $perPlatformLogin){
-                        $superLoginButton .= '<li>'.Html::a($perPlatformLogin['name'], $perPlatformLogin['href'], ['target'=>'_blank']).'</li>';
+                        $superLoginButton .= '<li>'.Html::a($perPlatformLogin['name'], $perPlatformLogin['href'], ['target'=>'_blank', 'class' => 'dropdown-item']).'</li>';
                     }
                     $superLoginButton .= '</ul>';
                     $superLoginButton .= '</div>';
@@ -1088,8 +1096,8 @@ class CustomersController extends Sceleton {
         }
     }
 
-    public function actionCustomeredit() {
-
+    public function actionCustomeredit()
+    {
         \common\helpers\Translation::init('admin/customers');
 
         $currencies = Yii::$container->get('currencies');
@@ -1207,11 +1215,28 @@ class CustomersController extends Sceleton {
                 }
             }
 
+            $data = Yii::$app->request->post('Custom_address');
+                    
+            if ($ext = \common\helpers\Acl::checkExtensionAllowed('SplitCustomerAddresses', 'allowed')) {
+                $customers_shipping_address_id = Yii::$app->request->post('customers_shipping_address_id', null);
+                $data2 = Yii::$app->request->post('Billing_address');
+                if (is_array($data2)) {
+                    foreach ($data2 as $idx => $dta) {
+                        $data[$idx] = $dta;
+                    }
+                }
+                $data3 = Yii::$app->request->post('Shipping_address');
+                if (is_array($data3)) {
+                    foreach ($data3 as $idx => $dta) {
+                        $data[$idx] = $dta;
+                    }
+                }
+            }
+            
             if ($addresses) {
                 $remove = [];
                 $customers_default_address_id = Yii::$app->request->post('customers_default_address_id', null);
                 foreach ($addresses as $aBookId => $address) {
-                    $data = Yii::$app->request->post($address->formName());
                     if (isset($data[$aBookId])) {
                         $address->load($data, $aBookId);
                         if ($address->notEmpty()) {
@@ -1221,9 +1246,19 @@ class CustomersController extends Sceleton {
                                 if ($aBookId) {
                                     $aBook = $cInfo->updateAddress($aBookId, $attributes);
                                 } else {
+                                    
                                     $aBook = $cInfo->addAddress($attributes);
-                                    if (!is_null($customers_default_address_id) && !$customers_default_address_id) {
-                                        $customers_default_address_id = $aBook->address_book_id;
+                                    if ($ext = \common\helpers\Acl::checkExtensionAllowed('SplitCustomerAddresses', 'allowed')) {
+                                        if (!is_null($customers_default_address_id) && !$customers_default_address_id && $aBook->entry_type == \common\forms\AddressForm::BILLING_ADDRESS) {
+                                            $customers_default_address_id = $aBook->address_book_id;
+                                        }
+                                        if (!is_null($customers_shipping_address_id) && !$customers_shipping_address_id && $aBook->entry_type == \common\forms\AddressForm::SHIPPING_ADDRESS) {
+                                            $customers_shipping_address_id = $aBook->address_book_id;
+                                        }
+                                    } else {
+                                        if (!is_null($customers_default_address_id) && !$customers_default_address_id) {
+                                            $customers_default_address_id = $aBook->address_book_id;
+                                        }
                                     }
                                 }
                             } else {
@@ -1253,7 +1288,18 @@ class CustomersController extends Sceleton {
                 $cInfo->customers_default_address_id = $abIds[0];
                 $cInfo->save(false);
             }
-
+            
+            if ($ext = \common\helpers\Acl::checkExtensionAllowed('SplitCustomerAddresses', 'allowed')) {
+                if ($customers_shipping_address_id && in_array($customers_shipping_address_id, $abIds) && $abIds) {
+                    $cInfo->customers_shipping_address_id = $customers_shipping_address_id;
+                    $cInfo->save(false);
+                }
+                if (!in_array($cInfo->customers_shipping_address_id, $abIds) && $abIds) {
+                    $cInfo->customers_shipping_address_id = $abIds[0];
+                    $cInfo->save(false);
+                }
+            }
+            
             if ($cInfo->customers_id) {
                 $platform_config = \Yii::$app->get('platform')->config($cInfo->platform_id);
                 $STORE_OWNER_EMAIL_ADDRESS = $platform_config->const_value('STORE_OWNER_EMAIL_ADDRESS');
@@ -1279,27 +1325,6 @@ class CustomersController extends Sceleton {
                     }
                     $cInfo->saveCreditHistory($cInfo->customers_id, $credit_amount, $credit_prefix, DEFAULT_CURRENCY, $currencies->currencies[DEFAULT_CURRENCY]['value'], $comments, 0, $customer_notified);
                     tep_db_query("update " . TABLE_CUSTOMERS . " set credit_amount = credit_amount " . $credit_prefix . " " . $credit_amount . " where customers_id =" . (int) $customers_id);
-                }
-
-                $bonus_points = number_format(floatval(tep_db_prepare_input(\Yii::$app->request->post('bonus_points'))), 5, '.', '');
-                if ($bonus_points > 0) {
-
-                    $bonus_prefix = tep_db_prepare_input(\Yii::$app->request->post('bonus_prefix'));
-                    $comments = tep_db_prepare_input(\Yii::$app->request->post('bonus_comments'));
-                    $customer_notified = '0';
-                    if (\Yii::$app->request->post('bonus_notify') == 'on') {
-                        $customer_notified = '1';
-
-                        $email_params['BONUS_POINTS'] = $bonus_prefix . number_format($bonus_points, 2);
-                        $email_params['BONUS_POINTS_COMMENTS'] = $comments;
-
-                        [$emailSubject, $emailContent] = \common\helpers\Mail::get_parsed_email_template('Bonus points notification', $email_params, $cInfo->language_id, $cInfo->platform_id);
-
-                        \common\helpers\Mail::send($cInfo->customers_firstname . ' ' . $cInfo->customers_lastname, $cInfo->customers_email_address, $emailSubject, $emailContent, $STORE_OWNER, $STORE_OWNER_EMAIL_ADDRESS, [], '', '', ['add_br' => 'no']);
-                    }
-
-                    $cInfo->updateBonusPoints($cInfo->customers_id, $bonus_points, $bonus_prefix);
-                    $cInfo->saveCreditHistory($cInfo->customers_id, $bonus_points, $bonus_prefix, '', 1, $comments, 1, $customer_notified);
                 }
 
                 // may be called customers/customer-after-save
@@ -1991,64 +2016,4 @@ class CustomersController extends Sceleton {
       return $ret;
     }
 
-    public function actionMoveBonusPointsToAmount()
-    {
-        $result = true;
-        try {
-            /** @var \common\classes\Currencies $currencies */
-            $currencies = \Yii::$container->get('currencies');
-            /** @var \common\classes\MessageStack $messageStack */
-            $messageStack = \Yii::$container->get('message_stack');
-            $transferPoints = (int)\Yii::$app->request->post('bonus', 0);
-            $customerId = (int)\Yii::$app->request->post('customerId', 0);
-            $notifyBonus = \Yii::$app->request->post('notifyBonus', '') === 'on';
-            $notifyAmount = \Yii::$app->request->post('notifyAmount', '') === 'on';
-            /** @var \common\services\CustomersService $customerService */
-            $customersService = \Yii::createObject(\common\services\CustomersService::class);
-            /** @var Customer $customer */
-            $customer = $customersService->getIdentityById($customerId);
-            /** @var \common\services\BonusPointsService\BonusPointsService $bonusPointsService */
-            $bonusPointsService = \Yii::createObject(\common\services\BonusPointsService\BonusPointsService::class);
-            if ($customer === false) {
-                throw new \DomainException('Operation not allowed');
-            }
-            $bonusPointsCosts = \common\helpers\Points::getCurrencyCoefficient($customer->groups_id);
-            if ($bonusPointsCosts === false) {
-                throw new \DomainException('Operation not allowed');
-            }
-            if ($transferPoints < 1 || $transferPoints > $customer->customers_bonus_points) {
-                $transferPoints = $customer->customers_bonus_points;
-            }
-            $transfer = TransferData::create($customer, $bonusPointsCosts, $transferPoints, $notifyBonus, $notifyAmount);
-            $amount = null;
-            if (\common\helpers\Acl::checkExtensionAllowed('BonusActions')) {
-                //$amount = $customersService->bonusPointsToAmount($transfer);
-            }
-            $platform_config = \Yii::$app->get('platform')->config($customer->platform_id);
-            $STORE_OWNER_EMAIL_ADDRESS = $platform_config->const_value('STORE_OWNER_EMAIL_ADDRESS');
-            $STORE_OWNER = $platform_config->const_value('STORE_OWNER');
-            $email_params['STORE_NAME'] = $STORE_OWNER;
-            $email_params['CUSTOMER_FIRSTNAME'] = $customer->customers_firstname;
-            $email_params['CUSTOMER_LASTNAME']= $customer->customers_lastname;
-            if ($notifyAmount) {
-                $email_params['CREDIT_AMOUNT'] = '+' . $currencies->format($amount, false);
-                $email_params['CREDIT_AMOUNT_COMMENTS'] = TEXT_CONVERT_FROM_BONUS_POINTS;
-                [$emailSubject, $emailContent] = \common\helpers\Mail::get_parsed_email_template('Credit amount notification', $email_params, $customer->language_id, $customer->platform_id);
-                \common\helpers\Mail::send($customer->customers_firstname . ' ' . $customer->customers_lastname, $customer->customers_email_address, $emailSubject, $emailContent, $STORE_OWNER, $STORE_OWNER_EMAIL_ADDRESS, [], '', '', ['add_br' => 'no']);
-            }
-
-            if ($notifyBonus) {
-                $email_params['BONUS_POINTS'] = '-' . $transferPoints;
-                $email_params['BONUS_POINTS_COMMENTS'] = TEXT_CONVERT_TO_AMOUNT;
-                [$emailSubject, $emailContent] = \common\helpers\Mail::get_parsed_email_template('Bonus points notification', $email_params, $customer->language_id, $customer->platform_id);
-                \common\helpers\Mail::send($customer->customers_firstname . ' ' . $customer->customers_lastname, $customer->customers_email_address, $emailSubject, $emailContent, $STORE_OWNER, $STORE_OWNER_EMAIL_ADDRESS, [], '', '', ['add_br' => 'no']);
-            }
-            $messageStack->add_session(sprintf(TRANSFER_BONUS_SUCCESS, $transfer->getBonusPoints(), $currencies->format($amount, false)), 'account', 'success');
-        } catch (\Exception $e) {
-            $result = $e->getMessage();
-        }
-        $this->asJson([
-            'result' => $result,
-        ]);
-    }
 }

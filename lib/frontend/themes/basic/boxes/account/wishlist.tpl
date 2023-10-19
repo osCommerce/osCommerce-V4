@@ -81,8 +81,8 @@
                 {if $product.stock_info.max_qty > 0 }
                     data-max="{$product.stock_info.max_qty}"
                 {/if}
-                {if \common\helpers\Acl::checkExtensionAllowed('MinimumOrderQty', 'allowed')}{\common\extensions\MinimumOrderQty\MinimumOrderQty::setLimit($product.order_quantity_data)}{/if}
-                {if \common\helpers\Acl::checkExtensionAllowed('OrderQuantityStep', 'allowed')}{\common\extensions\OrderQuantityStep\OrderQuantityStep::setLimit($product.order_quantity_data)}{/if}
+                {if $moq = \common\helpers\Extensions::isAllowed('MinimumOrderQty')}{$moq::setLimit($product.order_quantity_data)}{/if}
+                {if $oqs = \common\helpers\Extensions::isAllowed('OrderQuantityStep')}{$oqs::setLimit($product.order_quantity_data)}{/if}
         />
     </div>
     <button type="submit" class="btn-1 btn-buy add-to-cart" title="{$smarty.const.ADD_TO_CART}"{if $product.product_in_cart} style="display: none"{/if}>{$smarty.const.ADD_TO_CART}</button>

@@ -18,15 +18,15 @@
             {if is_array($providers)}
                 {if is_array($providers['independed']) && count($providers['independed'])}
                     {foreach $providers['independed'] as $key => $provider}
-                        <li {if $provider->getCode() == $providers['selected'] || (!$key && !$providers['selected'])} class="active"{/if}>
-                            <a href="#{$provider->getCode()}" data-toggle="tab"><span>{$provider->getName()}</span></a>
+                        <li {if $provider->getCode() == $providers['selected'] || (!$key && !$providers['selected'])} class="active"{/if} data-bs-toggle="tab" data-bs-target="#{$provider->getCode()}">
+                            <a><span>{$provider->getName()}</span></a>
                         </li>
                     {/foreach}
                 {/if}
                 {if is_array($providers['platformed']) && count($providers['platformed'])}
                     {foreach $providers['platformed'] as $key => $provider}
-                        <li {if $provider->getCode() == $providers['selected'] || (!$key && !$providers['selected'] && !$providers['independed'])} class="active"{/if}>
-                            <a href="#{$provider->getCode()}" data-toggle="tab"><span>{$provider->getName()}</span></a>
+                        <li {if $provider->getCode() == $providers['selected'] || (!$key && !$providers['selected'] && !$providers['independed'])} class="active"{/if} data-bs-toggle="tab" data-bs-target="#{$provider->getCode()}">
+                            <a><span>{$provider->getName()}</span></a>
                         </li>
                     {/foreach}
                 {/if}
@@ -56,8 +56,8 @@
                                     <ul class="nav nav-tabs tab-radius-ul tab-radius-ul-white">
                                         {foreach $provider->platforms as $pkey => $platform}
                                             {$tab = $provider->getCode()|cat:$platform['id']}
-                                            <li {if $tab == $providers['selected'] || (!$pkey && !$providers['selected'])} class="active"{/if}>
-                                                <a href="#{$tab}" data-toggle="tab"><span>{$platform['text']}</span></a>
+                                            <li {if $tab == $providers['selected'] || (!$pkey && !$providers['selected'])} class="active"{/if} data-bs-toggle="tab" data-bs-target="#{$tab}">
+                                                <a><span>{$platform['text']}</span></a>
                                             </li>
                                         {/foreach}
                                     </ul>

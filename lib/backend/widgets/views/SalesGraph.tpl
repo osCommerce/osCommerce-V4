@@ -1,3 +1,4 @@
+{\backend\assets\ChartAsset::register($this)|void}
 <div class="widget box">
     <div class="widget-header">
         <h4><i class="icon-area-chart"></i> {$smarty.const.TEXT_SALES_MONTH}</h4>

@@ -31,7 +31,8 @@ class FastOrder extends Widget
 
     public function run()
     {
-        if (\common\helpers\Acl::checkExtensionAllowed('Quotations') && strtolower(\common\helpers\PlatformConfig::getVal('USE_QUOTE_FAST_ORDER', 'true'))  == 'true'){
+        /** @var \common\extensions\Quotations\Quotations $ext */
+        if ( ($ext = \common\helpers\Extensions::isAllowed('Quotations')) && $ext::optionUseQuoteFastOrder() ){
             return IncludeTpl::widget(['file' => 'boxes/quote/fast-order.tpl', 'params' => array_merge($this->params, [
                 'settings' => $this->settings,
                 'id' => $this->id,

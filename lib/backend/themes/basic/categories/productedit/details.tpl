@@ -467,39 +467,48 @@
             </div>
             <div class="widget-content widget-content-center">
                 <div class="row align-items-center m-b-2">
-                    <div class="col-xs-3 align-right p-r-0">
+                    <div class="col-3 align-right p-r-0">
                         <label>{$smarty.const.TEXT_MODEL_SKU}<span class="colon">:</span></label>
                     </div>
-                    <div class="col-xs-3">
+                    <div class="col-3">
                         {tep_draw_input_field('products_model', $pInfo->products_model, 'class="form-control form-control-small"')}
                     </div>
-                    <div class="col-xs-3 align-right">
+                    {if $smarty.const.SHOW_EAN=='True'}
+                    <div class="col-3 align-right">
                         <label>{$smarty.const.TEXT_EAN}<span class="colon">:</span></label>
                     </div>
-                    <div class="col-xs-3 p-l-0">
+                    <div class="col-3 p-l-0">
                         {tep_draw_input_field('products_ean', $pInfo->products_ean, 'class="form-control form-control-small"')}
                     </div>
+                    {/if}
                 </div>
                 <div class="row align-items-center m-b-2">
-                    <div class="col-xs-3 align-right p-r-0">
+                    {if $smarty.const.SHOW_ASIN=='True'}
+                    <div class="col-3 align-right p-r-0">
                         <label>{$smarty.const.TEXT_ASIN}<span class="colon">:</span></label>
                     </div>
-                    <div class="col-xs-3">
+                    <div class="col-3">
                         {tep_draw_input_field('products_asin', $pInfo->products_asin, 'class="form-control form-control-small"')}
                     </div>
-                    <div class="col-xs-3 align-right">
+                    {/if}
+                    {if $smarty.const.SHOW_UPC == "True"}
+                    <div class="col-3 align-right">
                         <label>{$smarty.const.TEXT_UPC}<span class="colon">:</span></label>
                     </div>
-                    <div class="col-xs-3 p-l-0">
+                    <div class="col-3 p-l-0">
                         {tep_draw_input_field('products_upc', $pInfo->products_upc, 'class="form-control form-control-small"')}
                     </div>
+                    {/if}
                 </div>
+                {foreach \common\helpers\Hooks::getList('categories/productedit', 'product-identifiers') as $filename}
+                    {include file=$filename}
+                {/foreach}
                 {if $smarty.const.SHOW_ISBN == "True"}
                 <div class="row align-items-center">
-                    <div class="col-xs-3 align-right p-r-0">
+                    <div class="col-3 align-right p-r-0">
                         <label>{$smarty.const.TEXT_ISBN}<span class="colon">:</span></label>
                     </div>
-                    <div class="col-xs-3">
+                    <div class="col-3">
                         {tep_draw_input_field('products_isbn', $pInfo->products_isbn, 'class="form-control form-control-small"')}
                     </div>
                 </div>
@@ -525,26 +534,11 @@
                     </div>
                 </div>
                 <div class="t-row">
-                    {if \common\helpers\Acl::checkExtensionAllowed('MinimumOrderQty', 'allowed')}
-                        {\common\extensions\MinimumOrderQty\MinimumOrderQty::productBlock($pInfo)}
-                    {/if}
-
-                    {if \common\helpers\Acl::checkExtensionAllowed('MaxOrderQty', 'allowed')}
-                        {\common\extensions\MaxOrderQty\MaxOrderQty::productBlock($pInfo)}
-                    {/if}
-                </div>
-                {if \common\helpers\Acl::checkExtensionAllowed('OrderQuantityStep', 'allowed')}
-                    {\common\extensions\OrderQuantityStep\OrderQuantityStep::productBlock($pInfo)}
-                {/if}
-                <div class="t-row">
                   <div class="t-col-2 ">
                     <div class="edp-line">
                         <label>{$smarty.const.TEXT_DATE_AVAILABLE}:</label>
                         {tep_draw_input_field('products_date_available', $pInfo->products_date_available, 'class="datepicker form-control form-control-small"' )}
                     </div>
-                {if \common\helpers\Acl::checkExtensionAllowed('NotifyProductsDate', 'allowed')}
-                    {\common\extensions\NotifyProductsDate\NotifyProductsDate::renderCheckBox($pInfo->products_id)}
-                {/if}
                   </div>
                   <div class="t-col-2 ">
                     <div class="edp-line">
@@ -580,20 +574,7 @@
                         </div>
                     </div>
                 </div>
-                {if \common\helpers\Acl::checkExtensionAllowed('UploadCustomerId', 'allowed')}
-                    <div class="t-row">
-                        <div class="t-col-2 ">
-                            {\common\extensions\UploadCustomerId\UploadCustomerId::productBlock($pInfo)}
-                        </div>
-                    </div>
-                {/if}
-                {if ($ext = \common\helpers\Acl::checkExtensionAllowed('Rma', 'allowed'))}
-                    <div class="t-row">
-                        <div class="t-col-2 ">
-                            {$ext::getProductReturnTimeHtml($pInfo->products_id)}
-                        </div>
-                    </div>
-                {/if}
+
                 {if ($ext = \common\helpers\Acl::checkExtensionAllowed('ProductConfigurator'))}
                     <div class="t-row">
                         <div class="t-col-2 ">

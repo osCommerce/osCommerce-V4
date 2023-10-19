@@ -10,9 +10,9 @@
 			<label>
 				<span>{field_label const="ENTRY_EMAIL_ADDRESS" configuration="ACCOUNT_EMAIL"}</span>
 				{if in_array(ACCOUNT_EMAIL, ['required', 'required_register'])}
-					{Html::activeInput('email', $model, 'email_address', ['data-required' => "{$smarty.const.EMAIL_REQUIRED}", 'data-pattern' => "email"])}
+					{Html::activeInput('email', $model, 'email_address', ['data-required' => "{$smarty.const.EMAIL_REQUIRED}", 'data-pattern' => "email", 'autocomplete' => 'email'])}
 				{else}
-					{Html::activeInput('email', $model, 'email_address', ['data-pattern' => "email"])}
+					{Html::activeInput('email', $model, 'email_address', ['data-pattern' => "email", 'autocomplete' => 'email'])}
 				{/if}
 			</label>
 		</div>
@@ -22,9 +22,9 @@
             <label>
                 <span>{field_label const="ENTRY_TELEPHONE_NUMBER" configuration="ACCOUNT_TELEPHONE"}</span>
                 {if in_array(ACCOUNT_TELEPHONE, ['required', 'required_register'])}
-                    {Html::activeTextInput($model, 'telephone', ['data-required' => "{sprintf($smarty.const.ENTRY_TELEPHONE_NUMBER_ERROR, $smarty.const.ENTRY_TELEPHONE_MIN_LENGTH)}", 'data-pattern' => "{$re1}{$smarty.const.ENTRY_TELEPHONE_MIN_LENGTH}{$re2}"])}
+                    {Html::activeTextInput($model, 'telephone', ['data-required' => "{sprintf($smarty.const.ENTRY_TELEPHONE_NUMBER_ERROR, $smarty.const.ENTRY_TELEPHONE_MIN_LENGTH)}", 'data-pattern' => "{$re1}{$smarty.const.ENTRY_TELEPHONE_MIN_LENGTH}{$re2}", 'autocomplete' => 'tel'])}
                 {else}
-                    {Html::activeTextInput($model, 'telephone')}
+                    {Html::activeTextInput($model, 'telephone', ['autocomplete' => 'tel'])}
                 {/if}
             </label>
         </div>
@@ -34,9 +34,9 @@
             <label>
                 <span>{field_label const="ENTRY_LANDLINE" configuration="ACCOUNT_LANDLINE"}</span>
                 {if in_array(ACCOUNT_LANDLINE, ['required', 'required_register'])}
-                    {Html::activeTextInput($model, 'landline', ['data-required' => "{sprintf($smarty.const.ENTRY_LANDLINE_NUMBER_ERROR, $smarty.const.ENTRY_LANDLINE_MIN_LENGTH)}", 'data-pattern' => "{$re1}{$smarty.const.ENTRY_LANDLINE_MIN_LENGTH}{$re2}"])}
+                    {Html::activeTextInput($model, 'landline', ['data-required' => "{sprintf($smarty.const.ENTRY_LANDLINE_NUMBER_ERROR, $smarty.const.ENTRY_LANDLINE_MIN_LENGTH)}", 'data-pattern' => "{$re1}{$smarty.const.ENTRY_LANDLINE_MIN_LENGTH}{$re2}", 'autocomplete' => 'landline'])}
                 {else}
-                    {Html::activeTextInput($model, 'landline')} 
+                    {Html::activeTextInput($model, 'landline', ['autocomplete' => 'landline'])}
                 {/if}
             </label>
         </div>

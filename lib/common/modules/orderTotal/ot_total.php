@@ -47,6 +47,7 @@ class ot_total extends ModuleTotal {
     }
 
     function process() {
+        $this->output = [];
         $order = $this->manager->getOrderInstance();
         \common\helpers\Php8::nullArrProps($order->info, ['total_exc_tax', 'total_inc_tax', 'currency', 'currency_value', 'total']);
         $currencies = \Yii::$container->get('currencies');

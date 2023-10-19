@@ -73,7 +73,7 @@ class CutOffTime {
         if (empty($date)) {
             $date = date('Y-m-d H:i:s');
         }
-        if ($platform_id == 0) {
+        if ($platform_id == 0 && defined('PLATFORM_ID')) {
             $platform_id = (int)PLATFORM_ID;
         }
         if ($platform_id == 0) {
@@ -95,7 +95,7 @@ class CutOffTime {
         if (empty($date)) {
             $date = date('Y-m-d H:i:s');
         }
-        if ($platform_id == 0) {
+        if ($platform_id == 0 && defined('PLATFORM_ID')) {
             $platform_id = (int)PLATFORM_ID;
         }
         if ($platform_id == 0) {

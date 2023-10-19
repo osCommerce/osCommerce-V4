@@ -154,39 +154,6 @@ class IndexController extends Sceleton {
             }
         } else {
             $date_from = date('Y-m-d H:i:s', mktime(0, 0, 0, date('m') + 1, 1, date('Y') - 1));
-            // disable google coding search - paid service now no error handling (pay for error messages)
-            // use geo location extension enstead
-            if (false && !\common\helpers\Acl::checkExtensionAllowed('GeoLocation', 'allowed')) {
-                $orders_query = tep_db_query("select o.customers_postcode as pcode, c.countries_iso_code_2 as isocode, o.orders_id, concat(o.customers_postcode, ' ', o.customers_street_address, ' ', o.customers_city, ' ', o.customers_country) as address, concat(o.customers_street_address, ' ', o.customers_city, ' ', o.customers_country) as addressnocode from " . TABLE_ORDERS . " o left join " . TABLE_COUNTRIES . " c on o.customers_country = c.countries_name and c.language_id = '" . (int) $languages_id . "'  where o.date_purchased >= '" . tep_db_input($date_from) . "' and o.lat = 0 and o.lng = 0 limit 100");
-                $to_search = [];
-                $manager = \common\services\OrderManager::loadManager(new \common\classes\shopping_cart);
-                while ($orders = tep_db_fetch_array($orders_query)) {
-                    $order = $manager->getOrderInstanceWithId('\common\classes\Order', (int)$orders['orders_id']);
-                    \Yii::$app->get('platform')->config($order->info['platform_id'])->constant_up();
-                    $manager->set('platform_id', $order->info['platform_id']);
-                    [$class, $method] = explode('_', $order->info['shipping_class']);
-                    $shipping = $manager->getShippingCollection()->get($class);
-                    if (is_object($shipping)) {
-                        $collect = $shipping->toCollect($method);
-                        if ($collect !== false) {
-                            /** @var \common\classes\VO\CollectAddress $collect */
-                            $orders['pcode'] = $collect->getPostcode();
-                            $orders['isocode'] = $collect->getCountryISO2();
-                            $orders['addressnocode'] = trim(trim(sprintf(
-                                '%s, %s, %s, %s, %s',
-                                $collect->getPostcode(),
-                                $collect->getStreetAddress(),
-                                $collect->getState(),
-                                $collect->getCity(),
-                                $collect->getCountryName()
-                            ), ','));
-                            $orders['address'] = empty($orders['pcode']) ? $orders['addressnocode'] : $collect->getStreetAddress();
-                        }
-                    }
-                    $to_search[] = $orders;
-                }
-            }
-
             $orders_query = tep_db_query("select o.lat, o.lng, o.customers_street_address, o.customers_suburb, o.customers_city, o.customers_postcode, o.customers_state, o.customers_country from " . TABLE_ORDERS . " o where o.date_purchased >= '" . tep_db_input($date_from) . "' and o.lat not in (0 , 9999) and o.lng not in (0 , 9999)");
             $founded = [];
             while ($orders = tep_db_fetch_array($orders_query)) {
@@ -535,7 +502,7 @@ class IndexController extends Sceleton {
             $from_str = "select c.categories_id, if(length(cd1.categories_name), cd1.categories_name, cd.categories_name) as categories_name,  (if(length(cd1.categories_name), if(position('" . $search . "' IN cd1.categories_name), position('" . $search . "' IN cd1.categories_name), 100), if(position('" . $search . "' IN cd.categories_name), position('" . $search . "' IN cd.categories_name), 100))) as pos, 1 as is_category  from " . TABLE_CATEGORIES . " c " . ($useAffiliate ? " LEFT join " . TABLE_CATEGORIES_TO_AFFILIATES . " c2a on c.categories_id = c2a.categories_id  and c2a.affiliate_id = '" . (int) $_SESSION['affiliate_ref'] . "' " : '') . " left join " . TABLE_CATEGORIES_DESCRIPTION . " cd1 on cd1.categories_id = c.categories_id and cd1.language_id='" . $lang_id . "' and cd1.affiliate_id = '" . ($useAffiliate ? (int)$_SESSION['affiliate_ref'] : 0) . "', " . TABLE_CATEGORIES_DESCRIPTION . " cd where c.categories_status = 1 " . ($useAffiliate ? " and c2a.affiliate_id is not null " : '') . " and cd.affiliate_id = 0 and cd.categories_id = c.categories_id and cd.language_id = '" . $lang_id . "' " . $where_str_categories . " and c.quick_find = 1 order by pos limit 0, 3";
 
             $gapi_enabled = false;
-            if ( $ext = \common\helpers\Acl::checkExtensionAllowed('GoogleAnalyticsTools') ){
+            if (\common\helpers\Extensions::isAllowed('GoogleAnalyticsTools') ){
                 $gapi_enabled = true;
             }
             $sql = "

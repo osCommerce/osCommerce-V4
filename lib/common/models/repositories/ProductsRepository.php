@@ -105,48 +105,57 @@ class ProductsRepository {
  * @return array
  */
   public function getSearchDetails($ids) {
-    $products = Products::find()->alias('p')->select('p.products_id, p.manufacturers_id')
-        ->addSelect(array_map(function ($el) { return 'p.' . $el; }, Products::$searchFields))
-        ->where(['p.products_id' => $ids])
-        ->joinWith(['searchDescriptions']);
+        $products = Products::find()->alias('p')->select('p.products_id, p.manufacturers_id')
+            ->addSelect(array_map(function ($el) { return 'p.' . $el; }, Products::$searchFields))
+            ->where(['p.products_id' => $ids])
+            ->joinWith(['searchDescriptions']);
 
-    $fields = $useFields = [];
-    if (defined('SEARCH_BY_ELEMENTS') && !empty(trim(SEARCH_BY_ELEMENTS))){
-      $fields = explode( ", ", strtolower(SEARCH_BY_ELEMENTS));
-      $fields = array_unique($fields);
-      foreach( $fields as $field) {
-        switch ($field) {
-          case 'asin':
-          case 'ean':
-          case 'isbn':
-          case 'sku':
-          case 'upc':
-            $useFields[] = 'searchInventories';
-            break;
-          case 'description':
-            $useFields[] = 'searchDescriptions';
-            break;
-          case 'categories':
-            $useFields[] = 'searchCategories';
-            break;
-          case 'attributes':
-            $useFields[] = 'searchAttributes';
-            break;
-          case 'properties':
-            $useFields[] = 'searchProperties';
-            break;
-          case 'manufacturer':
-            $useFields[] = 'manufacturer';
-            break;
+        $fields = $fieldsFe = $fieldsBe = $useFields = [];
 
+        /** @var \common\extensions\PlainProductsDescription\PlainProductsDescription $ppd */
+        if ($ppd = \common\helpers\Extensions::isAllowedAnd('PlainProductsDescription', 'optionSearchByElements')) {
+            $fieldsFe = array_unique(array_map('strtolower', $ppd::optionSearchByElements()));
+            if (method_exists($ppd, 'optionSearchByElementsBe')) {
+                $fieldsBe = array_unique(array_map('strtolower', $ppd::optionSearchByElementsBe()));
+            }
+            $fields = array_unique(array_merge($fieldsFe, $fieldsBe));
+
+            foreach( $fields as $field) {
+                switch ($field) {
+                    case 'asin':
+                    case 'ean':
+                    case 'isbn':
+                    case 'sku':
+                    case 'upc':
+                      $useFields[] = 'searchInventories';
+                      break;
+                    case 'description':
+                      $useFields[] = 'searchDescriptions';
+                      break;
+                    case 'categories':
+                      $useFields[] = 'searchCategories';
+                      break;
+                    case 'attributes':
+                      $useFields[] = 'searchAttributes';
+                      break;
+                    case 'properties':
+                      $useFields[] = 'searchProperties';
+                      break;
+                    case 'manufacturer':
+                      $useFields[] = 'manufacturer';
+                      break;
+
+                }
+            }
+            $useFields = array_unique($useFields);
+            if (count($useFields)) {
+                $products->joinWith($useFields);
+            }
         }
-      }
-      $useFields = array_unique($useFields);
-      if (count($useFields)) {
-        $products->joinWith($useFields);
-      }
-    }
-      if ( $ext = \common\helpers\Acl::checkExtensionAllowed('GoogleAnalyticsTools') ){
+      /**
+       * @var $ext \common\extensions\GoogleAnalyticsTools\GoogleAnalyticsTools
+       */
+      if ( $ext = \common\helpers\Extensions::isAllowed('GoogleAnalyticsTools') ){
           $ext::attachJoin($products);
       }
 
@@ -154,12 +163,13 @@ class ProductsRepository {
 
     $ret = $products->all();
 
+    $sameSearch = ($fieldsFe == $fieldsBe);
     //echo "#### <PRE>" .print_r($ret, 1) ."</PRE>";
 
     if (is_array($ret)) {
       foreach ($ret as $key => $value) {
         //merge inventory fields into products field
-        
+
         foreach (['asin' => 'products_asin', 'ean' => 'products_ean', 'isbn' => 'products_isbn', 'sku' => 'products_model', 'upc' => 'products_upc'] as $k => $v) {
           if (in_array($k, $fields)) {
             if (!empty($ret[$key]['searchInventories'])) {
@@ -178,11 +188,11 @@ class ProductsRepository {
           foreach ($ret[$key]['searchAttributes'] as $k => $aValues) {
             if (!empty($aValues) && is_array($aValues['searchProductsOptions'])) {
               foreach ($aValues['searchProductsOptions'] as $languageId => $v) {
-                $ret[$key]['searchAttributes']['_' . $languageId] .=  ' ' . $v['products_options_name'] 
+                $ret[$key]['searchAttributes']['_' . $languageId] .=  ' ' . $v['products_options_name']
                     . ' ' . $aValues['searchProductsOptionsValues'][$languageId]['products_options_values_name']
                     . ' ' . $aValues['products_attributes_filename'];
               }
-              
+
             }
             unset($ret[$key]['searchAttributes'][$k]);
           }
@@ -215,7 +225,15 @@ class ProductsRepository {
 
         }
 
-        //unset description if no search in description flag, 
+        // call new function
+        if (!empty($ppd) && method_exists($ppd, 'fillInDescriptionField') ) {
+            $ppd::fillInDescriptionField($ret[$key], $sameSearch, $fieldsFe, $fieldsBe);
+            continue;
+        }
+
+//// 2check and remove below
+
+        //unset description if no search in description flag,
         //
         //merge all feilds into (search) description field.
         $so = array_flip($fields);
@@ -234,12 +252,12 @@ class ProductsRepository {
                   continue;
                 } elseif ($merge) {
                   $ret[$key]['searchDescriptions'][$dcode]['products_description'] .= ' ' . $ret[$key]['searchDescriptions'][$dcode][$dk];
-                } 
+                }
                 unset($ret[$key]['searchDescriptions'][$dcode][$dk]);
-                
+
               }
             }
-            if ($merge) { 
+            if ($merge) {
               $ret[$key]['searchDescriptions'][$dcode]['products_description'] .= ' ' . $ret[$key]['products_seo_page_name']; // old one from products not description
             } else {
               $ret[$key]['searchDescriptions'][$dcode]['products_description'] = '';
@@ -303,9 +321,11 @@ class ProductsRepository {
             if (!empty($prepandStr)){
               $ret[$key]['searchDescriptions'][$dcode]['products_description'] = $prepandStr . ' ' . $ret[$key]['searchDescriptions'][$dcode]['products_description'];
             }
-
-            if ( $ext = \common\helpers\Acl::checkExtensionAllowed('GoogleAnalyticsTools') ){
-                if ($ext::searchDetailsConcat()){
+              /**
+               * @var $ext \common\extensions\GoogleAnalyticsTools\GoogleAnalyticsTools
+               */
+            if ( $ext = \common\helpers\Extensions::isAllowed('GoogleAnalyticsTools') ){
+                if ($ext::optionUseInSearch()){
                     if (!empty($ret[$key]['searchGapi']) && is_array($ret[$key]['searchGapi'])){
                         $ret[$key]['searchDescriptions'][$dcode]['products_description'] .= ' ' .
                             implode(' ',\yii\helpers\ArrayHelper::getColumn($ret[$key]['searchGapi'], 'gapi_keyword'));

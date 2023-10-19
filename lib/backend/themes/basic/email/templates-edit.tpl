@@ -27,8 +27,8 @@
       <div class="tabbable tabbable-custom">
         <ul class="nav nav-tabs">
           {foreach $platforms as $platform}
-            <li class="{if $platform['id']==$default_platform_id}active {/if}">
-              <a href="#platform_{$platform['id']}" data-toggle="tab">{$platform['text']}</a>
+            <li class="{if $platform['id']==$default_platform_id}active {/if}" data-bs-toggle="tab" data-bs-target="#platform_{$platform['id']}">
+              <a>{$platform['text']}</a>
             </li>
           {/foreach}
         </ul>
@@ -59,15 +59,15 @@
 
             <div class="tabbable tabbable-custom">
               <ul class="nav nav-tabs">
-                <li class="active"><a href="#tab_{$platform['id']}_2" data-toggle="tab">{$smarty.const.TEXT_EMAIL_TEMPLATE_HTML}</a></li>
-                <li><a href="#tab_{$platform['id']}_3" data-toggle="tab">{$smarty.const.TEXT_EMAIL_TEMPLATE_TEXT}</a></li>
+                <li class="active" data-bs-toggle="tab" data-bs-target="#tab_{$platform['id']}_2"><a>{$smarty.const.TEXT_EMAIL_TEMPLATE_HTML}</a></li>
+                <li data-bs-toggle="tab" data-bs-target="#tab_{$platform['id']}_3"><a>{$smarty.const.TEXT_EMAIL_TEMPLATE_TEXT}</a></li>
               </ul>
               <div class="tab-content">
                 <div class="tab-pane active topTabPane tabbable-custom" id="tab_{$platform['id']}_2">
                     {if count($languages) > 1}
                   <ul class="nav nav-tabs under_tabs_ul">
                     {foreach $languages as $lKey => $lItem}
-                      <li{if $lKey == 0} class="active"{/if}><a href="#tab_{$platform['id']}_html_{$lItem['code']}" data-toggle="tab">{$lItem['logo']}<span>{$lItem['name']}</span></a></li>
+                      <li{if $lKey == 0} class="active"{/if} data-bs-toggle="tab" data-bs-target="#tab_{$platform['id']}_html_{$lItem['code']}"><a>{$lItem['logo']}<span>{$lItem['name']}</span></a></li>
                     {/foreach}
                   </ul>
                   {/if}
@@ -97,7 +97,7 @@
 
                   <ul class="nav nav-tabs under_tabs_ul">
                     {foreach $languages as $lKey => $lItem}
-                      <li{if $lKey == 0} class="active"{/if}><a href="#tab_{$platform['id']}_text_{$lItem['code']}" data-toggle="tab">{$lItem['logo']}<span>{$lItem['name']}</span></a></li>
+                      <li{if $lKey == 0} class="active"{/if} data-bs-toggle="tab" data-bs-target="#tab_{$platform['id']}_text_{$lItem['code']}"><a>{$lItem['logo']}<span>{$lItem['name']}</span></a></li>
                     {/foreach}
                   </ul>
                   <div class="tab-content">
@@ -268,7 +268,7 @@
     window.history.back();
     return false;
   }
-  $(window).load(function(){
+  $(window).on('load', function(){
     $('.popupLinks').popUp({		
         box: "<div class='popup-box-wrap'><div class='around-pop-up'></div><div class='popup-box'><div class='popup-heading cat-head'>{$smarty.const.TEXT_TEMPLATES_KEYS}</div><div class='pop-up-close'></div><div class='pop-up-content'><div class='preloader'></div></div></div></div>"		
     });

@@ -295,8 +295,20 @@ class WarehousesController extends Sceleton {
         } else {
             $item_id = (int) Yii::$app->request->get('id');
         }
+        $warehouse_owner = '';
+        if ($es = \common\helpers\Extensions::isAllowed('EventSystem')) {
+            $exhibitor = Yii::$app->request->post('exhibitors_id', false);
+            if ($exhibitor) {
+                $model = $es::venue()->exec('getExhibtor', [(int)$exhibitor]);
+                if (!empty($model))
+                {
+                    $warehouse_owner = tep_db_prepare_input($model->exhibitors_name);
+                }
+            }
+        } else {
+            $warehouse_owner = tep_db_prepare_input(Yii::$app->request->post('warehouse_owner'));
+        }
 
-        $warehouse_owner = tep_db_prepare_input(Yii::$app->request->post('warehouse_owner'));
         $warehouse_name = tep_db_prepare_input(Yii::$app->request->post('warehouse_name'));
 
         $warehouse_email_address = tep_db_prepare_input(Yii::$app->request->post('warehouse_email_address'));
@@ -469,6 +481,7 @@ class WarehousesController extends Sceleton {
             $google = new \common\components\GoogleTools();
             $activeaddress_book_ids = [];
             foreach ($address_book_ids as $address_book_key => $address_book_id) {
+                $entry_zone_id[$address_book_key] = $entry_zone_id[$address_book_key] ?? null;
                 if ($entry_zone_id[$address_book_key] > 0)
                     $entry_state[$address_book_key] = '';
 
@@ -551,7 +564,7 @@ class WarehousesController extends Sceleton {
             tep_db_query("UPDATE " . TABLE_WAREHOUSES_TO_PLATFORMS . " SET status = '" . (int) $status . "' WHERE warehouse_id = '" . (int) $item_id . "' AND platform_id = '" . (int) \common\classes\platform::defaultId() . "'");
         }
         
-        if ($es = \common\helpers\Acl::checkExtensionAllowed('EventSystem', 'allowed')){
+        if ($es = \common\helpers\Extensions::isAllowed('EventSystem')) {
             $es::venue()->exec('saveVenueAdditionalFields', [$item_id, Yii::$app->request->post()]);
         }
 

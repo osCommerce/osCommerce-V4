@@ -229,11 +229,19 @@
                 $('#filterForm').serialize(),
                 function(data, status, e){
                         var filename = 'export.csv';
+                        var disposition = e.getResponseHeader('Content-Disposition');
+                        if (disposition && disposition.indexOf('attachment') !== -1) {
+                            var filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+                            var matches = filenameRegex.exec(disposition);
+                            if (matches != null && matches[1]) {
+                                filename = matches[1].replace(/['"]/g, '');
+                            }
+                        }
                         var reader = new FileReader();
                         reader.onload = function(e) {
                           $('<a></a>').attr({ "href": e.target.result, "download": filename }).get(0).click();
                         }                
-                        reader.readAsDataURL(new Blob([data]));
+                        reader.readAsDataURL(new Blob([data], { type: 'application/vnd.ms-excel' }));
                 });
                 return false;
     }

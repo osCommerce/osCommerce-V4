@@ -8,7 +8,7 @@
                 </div>
                 <div class="f_td">
                     <label>{$smarty.const.ENTRY_STATUS}</label>
-                    {Html::dropDownList('status', $order->info['order_status'], $ordersStatuses, ['class'=>'form-control', 'options' => $ordersStatusesOptions, 'onChange' => 'return doCheckOrderStatus();', 'id' => 'order-status'])}
+                    {Html::dropDownList('status', $order->info['order_status'], $ordersStatuses, ['class'=>'form-select', 'options' => $ordersStatusesOptions, 'onChange' => 'return doCheckOrderStatus();', 'id' => 'order-status'])}
                     <a id="order_status_more_options_link" href="#order_status_more_options">{$smarty.const.TEXT_MORE_OPTIONS}</a>
                 </div>
             </div>
@@ -117,9 +117,9 @@
             <div class="f_row">
                 <div class="f_td"></div>
                 <div class="f_td">
-                    {Html::checkbox('notify', true, ['class' => 'uniform'])}
+                    {Html::checkbox('notify', true, ['class' => 'form-check-input'])}
                     <b>{$smarty.const.ENTRY_NOTIFY_CUSTOMER}</b>
-                    {Html::checkbox('notify_comments', true, ['class' => 'uniform'])}
+                    {Html::checkbox('notify_comments', true, ['class' => 'form-check-input'])}
                     <b>{$smarty.const.ENTRY_NOTIFY_COMMENTS}</b>                    
                     <div>
                     {*if \common\helpers\Order::is_stock_updated((int) $order->order_id)}

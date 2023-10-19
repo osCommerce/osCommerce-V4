@@ -1,14 +1,23 @@
+
 <div class="btn-box-inv-price after">
-  <span class="full-attr-price dis_module" data-value="1">{$smarty.const.TEXT_FULL_PRICE}</span><span class="add-attr-price active" data-value="0">{$smarty.const.TEXT_ADDITIONAL_PRICE}</span>
+    <span class="full-attr-price dis_module" data-value="1">{$smarty.const.TEXT_FULL_PRICE}</span>
+    <span class="add-attr-price active" data-value="0">{$smarty.const.TEXT_ADDITIONAL_PRICE}</span>
 </div>
+
 <input type="hidden" name="products_price_full" id="full_add_price" value="0"/>
-<div class="product-attribute-setting" {if !($app->controller->view->selectedAttributes|default:null) || $pInfo->is_bundle} style="display:none;"{/if}><span>{$smarty.const.TEXT_ATTRIBUTES_W_QUANTITY}</span> {\yii\helpers\Html::checkbox('show_attributes_quantity', $pInfo->settings->show_attributes_quantity, ['value' => 1, 'class' => "check_bot_switch_on_off"])}</div>
+
+{*Doesn't work*}
+{*<div class="product-attribute-setting" {if !($app->controller->view->selectedAttributes|default:null) || $pInfo->is_bundle} style="display:none;"{/if}>*}
+{*    <span>{$smarty.const.TEXT_ATTRIBUTES_W_QUANTITY}</span>*}
+{*    {\yii\helpers\Html::checkbox('show_attributes_quantity', $pInfo->settings->show_attributes_quantity, ['value' => 1, 'class' => "check_bot_switch_on_off"])}*}
+{*</div>*}
+
 <div class="attr-box-wrap after">
   <div class="attr-box attr-box-1">
     <div class="widget widget-attr-box box box-no-shadow" style="margin-bottom: 0;">
       <div class="widget-header">
         <h4>{$smarty.const.TAB_ATTRIBUTES}</h4>
-        <div class="box-head-serch after">
+        <div class="box-head-serch after mb-2">
           <input type="search" value="" id="search-by-attributes" placeholder="{$smarty.const.TAB_SEARCH_ATTR}" class="form-control" />
           <button onclick="return false"></button>
         </div>
@@ -40,7 +49,7 @@
     <div class="widget-new widget-attr-box box box-no-shadow" style="margin-bottom: 0;">
       <div class="widget-header">
         <h4>{$smarty.const.TEXT_ASSIGNED_ATTR}</h4>
-        <div class="box-head-serch after">
+        <div class="box-head-serch after mb-2">
           <input type="search" placeholder="{$smarty.const.TEXT_SEARCH_ASSIGNED_ATTR}" class="form-control" id="attribute_search"/>
           <button onclick="return false"></button>
         </div>
@@ -56,7 +65,7 @@
 {if $app->controller->view->showInventory == true}
   <div class="widget box box-no-shadow inventory-box" style="margin-bottom: 0;">
     <div class="widget-header"><h4>{$smarty.const.BOX_CATALOG_INVENTORY}</h4></div>
-    {if \common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed')}
+    {if \common\helpers\Extensions::isAllowed('Inventory')}
     <div class="widget-content widget-inv" id="product-inventory-box">
     {else}
     <div class="widget-content widget-inv dis_module" id="product-inventory-box">
@@ -159,14 +168,14 @@
                 }
               }
               ajax_attribute_add_in_progress -= 1;
-              {if \common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed')}
+              {if \common\helpers\Extensions::isAllowed('Inventory')}
               //inventory or not
                 updateInventoryBox();
               {else}
                 //or not
                 if (ajax_attribute_add_in_progress == 0 ){
-                  $('ul[id^="invPrice"] a[data-toggle="tab"]').off('shown.bs.tab').on('shown.bs.tab', invPriceTabsShown);
-                  $('ul[id^="attr_popup"] a[data-toggle="tab"]').off('shown.bs.tab').on('shown.bs.tab', invPriceTabsShown);
+                  $('ul[id^="invPrice"] [data-bs-toggle="tab"]').off('shown.bs.tab').on('shown.bs.tab', invPriceTabsShown);
+                  $('ul[id^="attr_popup"] [data-bs-toggle="tab"]').off('shown.bs.tab').on('shown.bs.tab', invPriceTabsShown);
                   $('.js_inventory_group_price input.price-options').off('click').on('click', priceOptionsClick);
                 }
               {/if}
@@ -215,18 +224,20 @@
                 if ( $(".attr-option-"+products_options+" tbody").find('.js-option-value').length>1 ) {
                   $(".attr-option-"+products_options+" tbody").sortable('enable');
                 }else{
-                  $(".attr-option-"+products_options+" tbody").sortable('disable');
+                    if ($(".attr-option-"+products_options+" tbody").data('uiSortable')) {
+                        $(".attr-option-"+products_options+" tbody").sortable('disable');
+                    }
                 }
               }
               ajax_attribute_add_in_progress -= 1;
-              {if \common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed')}
+              {if \common\helpers\Extensions::isAllowed('Inventory')}
              //inventory or not
                updateInventoryBox();
              {else}
                //or not
                if (ajax_attribute_add_in_progress == 0 ){
-                 $('ul[id^="invPrice"] a[data-toggle="tab"]').off('shown.bs.tab').on('shown.bs.tab', invPriceTabsShown);
-                 $('ul[id^="attr_popup"] a[data-toggle="tab"]').off('shown.bs.tab').on('shown.bs.tab', invPriceTabsShown);
+                 $('ul[id^="invPrice"] [data-bs-toggle="tab"]').off('shown.bs.tab').on('shown.bs.tab', invPriceTabsShown);
+                 $('ul[id^="attr_popup"][data-bs-toggle="tab"]').off('shown.bs.tab').on('shown.bs.tab', invPriceTabsShown);
                  $('.js_inventory_group_price input.price-options').off('click').on('click', priceOptionsClick);
                }
              {/if}
@@ -253,7 +264,7 @@
     if ( $(".attr-option-"+option_id +" tbody").find('.js-option-value').length==1 ) {
       $(".attr-option-"+option_id +" tbody").sortable('disable');
     }
-    {if \common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed')}
+    {if \common\helpers\Extensions::isAllowed('Inventory')}
       updateInventoryBox();
     {/if}
     return false;
@@ -261,7 +272,7 @@
 
   function updateInventoryBox() {
     if (ajax_attribute_add_in_progress != 0 ) return; // not all ajax requests are finished - inventory not allowed
-{if \common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed')}
+{if \common\helpers\Extensions::isAllowed('Inventory')}
       if ( $('#productInventorySwitch').val()!='1' ) {
           ///inventory allowed
           //VL2check18 - no function found?? $('#save_product_form').trigger('attributes_changed');
@@ -288,14 +299,14 @@
               });
           }
       }else{
-          $('ul[id^="invPrice"] a[data-toggle="tab"]').off('shown.bs.tab').on('shown.bs.tab', invPriceTabsShown);
-          $('ul[id^="attr_popup"] a[data-toggle="tab"]').off('shown.bs.tab').on('shown.bs.tab', invPriceTabsShown);
+          $('ul[id^="invPrice"] [data-bs-toggle="tab"]').off('shown.bs.tab').on('shown.bs.tab', invPriceTabsShown);
+          $('ul[id^="attr_popup"] [data-bs-toggle="tab"]').off('shown.bs.tab').on('shown.bs.tab', invPriceTabsShown);
       }
 {else}
         //or not
         if (ajax_attribute_add_in_progress == 0 ){
-          $('ul[id^="invPrice"] a[data-toggle="tab"]').off('shown.bs.tab').on('shown.bs.tab', invPriceTabsShown);
-          $('ul[id^="attr_popup"] a[data-toggle="tab"]').off('shown.bs.tab').on('shown.bs.tab', invPriceTabsShown);
+          $('ul[id^="invPrice"] [data-bs-toggle="tab"]').off('shown.bs.tab').on('shown.bs.tab', invPriceTabsShown);
+          $('ul[id^="attr_popup"] [data-bs-toggle="tab"]').off('shown.bs.tab').on('shown.bs.tab', invPriceTabsShown);
         }
 {/if}
   }

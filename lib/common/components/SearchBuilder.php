@@ -35,8 +35,11 @@ class SearchBuilder {
     public $relevance_order = false; //faster
 
     public function __construct($typeSeach = 'simple') {
-        if (defined('SEARCH_BY_ELEMENTS')) {
-            $this->_addtionalSearch = array_map('trim', explode(",", SEARCH_BY_ELEMENTS));
+        /**
+         * @var $ext \common\extensions\PlainProductsDescription\PlainProductsDescription
+         */
+        if ($ext = \common\helpers\Extensions::isAllowedAnd('PlainProductsDescription', 'optionSearchByElements')) {
+            $this->_addtionalSearch = $ext::optionSearchByElements();
         }
         $this->_typeSearch = $typeSeach;
     }
@@ -94,6 +97,9 @@ class SearchBuilder {
       if($sp = \common\helpers\Acl::checkExtensionAllowed('SearchPlus')) {
         $keywords = $sp::replaceKeywords($keywords);
       }
+        foreach (\common\helpers\Hooks::getList('products-search/alter-keywords') as $filename) {
+            include($filename);
+        }
       if($ext = \common\helpers\Acl::checkExtensionAllowed('PlainProductsDescription', 'allowed')){
         if (tep_not_null($keywords)) {
 
@@ -136,7 +142,13 @@ class SearchBuilder {
  * @return type
  */
     public function addProductsRestriction(\common\models\queries\ProductsQuery &$q, $params = []){
-      /* @var $ext \common\extensions\PlainProductsDescription\PlainProductsDescription */
+
+      /** @var \common\extensions\GoogleAnalyticsTools\GoogleAnalyticsTools $ext */
+      if ( $ext = \common\helpers\Extensions::isAllowed('GoogleAnalyticsTools') ) {
+          $ext::attachJoin($q);
+      }
+
+        /** @var \common\extensions\PlainProductsDescription\PlainProductsDescription $ext */
       $ext = \common\helpers\Acl::checkExtensionAllowed('PlainProductsDescription', 'allowed');
       if ($ext && $ext::isEnabled()) {
         $kws = $this->getParsedKeywords();
@@ -149,6 +161,15 @@ class SearchBuilder {
           // all keywords too short or common
           return;
         }
+        
+        if (\frontend\design\Info::isTotallyAdmin() && version_compare($ext::getVersion(), '1.0.3', '>=')) {
+            $_searchField = '{{%plain_products_name_search}}.search_details_be';
+            $_searchFieldSoundEx = '{{%plain_products_name_search}}.search_soundex_be';
+
+        } else {
+            $_searchField = '{{%plain_products_name_search}}.search_details';
+            $_searchFieldSoundEx = '{{%plain_products_name_search}}.search_soundex';
+        }
 
         $q->joinWith('anyListingName', false);
         $params = $kws;
@@ -156,7 +177,7 @@ class SearchBuilder {
         if (defined('MSEARCH_ENABLE') && strtolower(MSEARCH_ENABLE)=='fulltext') {
 
           if (is_array($params)) {
-            $q->andWhere('match( {{%plain_products_name_search}}.search_details ) against(:kw)', [':kw' => implode(' ', $params)]);
+            $q->andWhere('match( ' . $_searchField . ' ) against(:kw)', [':kw' => implode(' ', $params)]);
           }
 
         } else {
@@ -164,7 +185,7 @@ class SearchBuilder {
           $params = \common\extensions\PlainProductsDescription\PlainProductsDescription::validateKeywords($params);
 
           if (is_array($params)) {
-            $f = ['like', '{{%plain_products_name_search}}.search_details', $params];
+            $f = ['like', '' . $_searchField . '', $params];
             //highest/extra relevance by name (all keywords in the name)
 
             if ($this->relevance_order) {
@@ -178,13 +199,13 @@ class SearchBuilder {
 
             if (defined('MSEARCH_ENABLE')  && (strtolower(MSEARCH_ENABLE)=='true' || strtolower(MSEARCH_ENABLE)=='soundex')) {
               //+ or like by soundex field
-              $fs = ['like', '{{%plain_products_name_search}}.search_soundex', $params];
+              $fs = ['like', $_searchFieldSoundEx, $params];
               $tmps = \common\extensions\PlainProductsDescription\PlainProductsDescription::getSoundex(implode(' ', $params), false);
               if (is_array($tmps )) {
                 $tmps = array_map(function ($el) {return ',' . $el . ',';}, $tmps );
                 $f = ['or',
                       $f,
-                      ['like', '{{%plain_products_name_search}}.search_soundex', $tmps]
+                      ['like', $_searchFieldSoundEx, $tmps]
                      ];
                 if ($this->relevance_order) {
                     foreach ($tmps as $param) {
@@ -208,7 +229,6 @@ class SearchBuilder {
         $filters_where = $this->getProductsArray(false);
         $q->andWhere($filters_where);
       }
-      
     }
 
     public function prepareKeywordsRequest(){
@@ -255,7 +275,10 @@ class SearchBuilder {
 
                         $this->_checkProductAdditionalFileds($pArray, $keyword);
 
-                        if ( $ext = \common\helpers\Acl::checkExtensionAllowed('GoogleAnalyticsTools') ){
+                        /**
+                         * @var $ext \common\extensions\GoogleAnalyticsTools\GoogleAnalyticsTools
+                         */
+                        if ( $ext = \common\helpers\Extensions::isAllowed('GoogleAnalyticsTools') ){
                             $__condition = $ext::searchBuilderCondition($keyword);
                             if ( $__condition ) {
                                 $pArray[] = $__condition;
@@ -282,7 +305,9 @@ class SearchBuilder {
                         $this->productsArray[] = $pArray;
 
                         if ($this->_typeSearch != 'simple') {
-                            $this->gapisArray[] = ['like', 'gs.gapi_keyword', $keyword];
+                            if ( $ext = \common\helpers\Extensions::isAllowed('GoogleAnalyticsTools') ) {
+                                $this->gapisArray[] = ['like', 'gs.gapi_keyword', $keyword];
+                            }
 
                             $this->categoriesArray[] = ['or',
                                 ['like', 'if(length(cd1.categories_name), cd1.categories_name, cd.categories_name)', $keyword],
@@ -335,7 +360,7 @@ class SearchBuilder {
                         $pArray[] = ['like', 'p.products_isbn', $keyword];
                         break;
                 }
-                if (\common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed')) {
+                if (\common\helpers\Extensions::isAllowed('Inventory')) {
                     $_ids = $this->getInventoryIds($keyword, $item);
                     if (is_array($_ids) && count($_ids))
                         $pArray[] = ['in', 'p.products_id', $_ids];

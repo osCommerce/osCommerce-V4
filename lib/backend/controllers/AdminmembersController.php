@@ -50,7 +50,7 @@ class AdminmembersController extends Sceleton {
             $access_array[$access['access_levels_id']] = $access['access_levels_name'];
         }
 
-        $this->view->filterStatusTypes = \yii\helpers\Html::dropDownList('aclID', (int)\Yii::$app->request->get('aclID', 0), $access_array, ['class'=>'form-control', 'onchange' => 'return applyFilter();']);
+        $this->view->filterStatusTypes = \yii\helpers\Html::dropDownList('aclID', (int)\Yii::$app->request->get('aclID', 0), $access_array, ['class'=>'form-control']);
 
         return $this->render('index');
     }
@@ -87,6 +87,12 @@ class AdminmembersController extends Sceleton {
         parse_str($formFilter, $filter);
         if ($filter['aclID'] > 0) {
             $search .= " and a.access_levels_id = '" . (int) $filter['aclID'] . "'";
+        }
+        if (isset($filter['status']) && $filter['status'] == 1) {
+            $search .= " and a.login_failture < '3'";
+        }
+        if (isset($filter['status']) && $filter['status'] == 2) {
+            $search .= " and a.login_failture > '2'";
         }
         $search_condition .= $search;
 
@@ -207,7 +213,10 @@ class AdminmembersController extends Sceleton {
                 echo '<button class="btn btn-primary btn-process-order" onclick="disableUser(' . $mInfo->admin_id . ')">' . TEXT_DISABLE_USER . '</button>';
             }
         }
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('GoogleAuthenticator', 'allowed')) {
+        /**
+         * @var $ext \common\extensions\GoogleAuthenticator\GoogleAuthenticator
+         */
+        if ($ext = \common\helpers\Extensions::isAllowed('GoogleAuthenticator')) {
             echo $ext::manageButtons($mInfo);
         }
 
@@ -600,6 +609,10 @@ class AdminmembersController extends Sceleton {
               }
             }
 
+            foreach (\common\helpers\Hooks::getList('adminmembers/before-save', '') as $filename) {
+                include($filename);
+            }
+
             if ($error === false) {
                 $sql_data_array['admin_email_token'] = \common\helpers\Password::encrypt_password($sql_data_array['admin_email_address'], 'backend');
                 if ((int) $admin_id > 0) {
@@ -904,7 +917,10 @@ class AdminmembersController extends Sceleton {
 
     function actionResetAdminGa() {
         $this->layout = false;
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('GoogleAuthenticator', 'allowed')) {
+        /**
+         * @var $ext \common\extensions\GoogleAuthenticator\GoogleAuthenticator
+         */
+        if ($ext = \common\helpers\Extensions::isAllowed('GoogleAuthenticator')) {
             $admin_id = \Yii::$app->request->post('admin_id');
             echo $ext::resetGaSecret($admin_id);
         }

@@ -53,18 +53,20 @@ if(isset($mysql_error_dump) && is_array($mysql_error_dump) && count($mysql_error
     $time_start = explode(' ', PAGE_PARSE_START_TIME);
     $time_end = explode(' ', microtime());
     $parse_time = number_format(($time_end[1] + $time_end[0] - ($time_start[1] + $time_start[0])), 3);
-    if(STORE_PAGE_PARSE_IP == '*') {
-      error_log('Trans total: ' . $trans_count . "\n", 3, STORE_PAGE_PARSE_TIME_LOG);
-      error_log(strftime(STORE_PARSE_DATE_TIME_FORMAT) . ' - ' . getenv('REQUEST_URI') . ' (' . $parse_time . 's)' . "\n", 3, STORE_PAGE_PARSE_TIME_LOG);
+    $f = null;
+    if (defined('STORE_PAGE_PARSE_TIME_LOG') && (is_file(STORE_PAGE_PARSE_TIME_LOG) || ($f = @fopen(STORE_PAGE_PARSE_TIME_LOG, 'w+')))) {
+      if ($f) @fclose($f);
+
+      if (STORE_PAGE_PARSE_IP == '*') {
+          error_log('Trans total: ' . $trans_count . "\n", 3, STORE_PAGE_PARSE_TIME_LOG);
+          error_log(strftime(STORE_PARSE_DATE_TIME_FORMAT) . ' - ' . getenv('REQUEST_URI') . ' (' . $parse_time . 's)' . "\n", 3, STORE_PAGE_PARSE_TIME_LOG);
+      } elseif (ip2long(STORE_PAGE_PARSE_IP) !== false && STORE_PAGE_PARSE_IP == \common\helpers\System::get_ip_address()) {
+          error_log('Trans total: ' . $trans_count . "\n", 3, STORE_PAGE_PARSE_TIME_LOG);
+          error_log(strftime(STORE_PARSE_DATE_TIME_FORMAT) . ' - ' . getenv('REQUEST_URI') . ' (' . $parse_time . 's)' . "\n", 3, STORE_PAGE_PARSE_TIME_LOG);
+      } else {
+          error_log(STORE_PAGE_PARSE_IP . TEXT_INVALID_IP . "\n", 3, STORE_PAGE_PARSE_TIME_LOG);
+      }
     }
-    elseif(ip2long(STORE_PAGE_PARSE_IP) !== false && STORE_PAGE_PARSE_IP == \common\helpers\System::get_ip_address()) {
-      error_log('Trans total: ' . $trans_count . "\n", 3, STORE_PAGE_PARSE_TIME_LOG);
-      error_log(strftime(STORE_PARSE_DATE_TIME_FORMAT) . ' - ' . getenv('REQUEST_URI') . ' (' . $parse_time . 's)' . "\n", 3, STORE_PAGE_PARSE_TIME_LOG);
-    }
-    else {
-      error_log(STORE_PAGE_PARSE_IP . TEXT_INVALID_IP . "\n", 3, STORE_PAGE_PARSE_TIME_LOG);
-    }
-    
     
 
     if (DISPLAY_PAGE_PARSE_TIME == 'true') {

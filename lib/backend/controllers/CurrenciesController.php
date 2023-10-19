@@ -193,13 +193,14 @@ class CurrenciesController extends Sceleton  {
         $currencies_id = Yii::$app->request->post('currencies_id', 0);
         $this->layout = false;
         if ($currencies_id) {
-            $currency = tep_db_fetch_array(tep_db_query("select currencies_id, title, code, symbol_left, symbol_right, decimal_point, thousands_point, decimal_places, last_updated, value, status from " . TABLE_CURRENCIES . " where currencies_id ='" . (int) $currencies_id . "'"));
+            $currency = tep_db_fetch_array(tep_db_query("select * from " . TABLE_CURRENCIES . " where currencies_id ='" . (int) $currencies_id . "'"));
             $cInfo = new \objectInfo($currency, false);
 
             echo '<div class="or_box_head">' . $cInfo->title . '</div>';
             echo '<div class="row_or_wrapp">';
             echo '<div class="row_or"><div>' . TEXT_INFO_CURRENCY_TITLE . '</div><div>' . $cInfo->title . '</div></div>';
             echo '<div class="row_or"><div>' . TEXT_INFO_CURRENCY_CODE . '</div><div>' . $cInfo->code . '</div></div>';
+            echo '<div class="row_or"><div>' . TEXT_INFO_CURRENCY_CODE_NUMERIC . '</div><div>' . $cInfo->code_number . '</div></div>';
             echo '<div class="row_or"><div>' . TEXT_INFO_CURRENCY_SYMBOL_LEFT . '</div><div>' . $cInfo->symbol_left . '</div></div>';
             echo '<div class="row_or"><div>' . TEXT_INFO_CURRENCY_SYMBOL_RIGHT . '</div><div>' . $cInfo->symbol_right . '</div></div>';
             echo '<div class="row_or"><div>' . TEXT_INFO_CURRENCY_DECIMAL_POINT . '</div><div>' . $cInfo->decimal_point . '</div></div>';
@@ -468,7 +469,7 @@ class CurrenciesController extends Sceleton  {
         \common\helpers\Translation::init('admin/currencies');
 
         $currencies_id = Yii::$app->request->get('currencies_id', 0);
-        $currency = tep_db_fetch_array(tep_db_query("select currencies_id, title, code, symbol_left, symbol_right, decimal_point, thousands_point, decimal_places, last_updated, value, status from " . TABLE_CURRENCIES . " where currencies_id ='" . (int) $currencies_id . "'"));
+        $currency = tep_db_fetch_array(tep_db_query("select * from " . TABLE_CURRENCIES . " where currencies_id ='" . (int) $currencies_id . "'"));
         $cInfo = new \objectInfo($currency, false);
         $cInfo->currencies_id = $cInfo->currencies_id ?? null;
         $cInfo->status = $cInfo->status ?? null;
@@ -482,6 +483,7 @@ class CurrenciesController extends Sceleton  {
         echo '<div class="col_desc">' . TEXT_INFO_EDIT_INTRO . '</div>';
         echo '<div class="main_row"><div class="main_title">' . TEXT_INFO_CURRENCY_TITLE . '</div><div class="main_value">' . tep_draw_input_field('title', $cInfo->title ?? null, 'class="form-control"') . '</div></div>';
         echo '<div class="main_row"><div class="main_title">' . TEXT_INFO_CURRENCY_CODE . '</div><div class="main_value">' . tep_draw_input_field('code', $cInfo->code ?? null, 'class="form-control"') . '</div></div>';
+        echo '<div class="main_row"><div class="main_title">' . TEXT_INFO_CURRENCY_CODE_NUMERIC . '</div><div class="main_value">' . tep_draw_input_field('code_number', $cInfo->code_number ?? null, 'class="form-control"') . '</div></div>';
         echo '<div class="main_row"><div class="main_title">' . TEXT_INFO_CURRENCY_SYMBOL_LEFT . '</div><div class="main_value">' . tep_draw_input_field('symbol_left', $cInfo->symbol_left ?? null, 'class="form-control"') . '</div></div>';
         echo '<div class="main_row"><div class="main_title">' . TEXT_INFO_CURRENCY_SYMBOL_RIGHT . '</div><div class="main_value">' . tep_draw_input_field('symbol_right', $cInfo->symbol_right ?? null, 'class="form-control"') . '</div></div>';
         echo '<div class="main_row"><div class="main_title">' . TEXT_INFO_CURRENCY_DECIMAL_POINT . '</div><div class="main_value">' . tep_draw_input_field('decimal_point', $cInfo->decimal_point ?? null, 'class="form-control"') . '</div></div>';
@@ -504,6 +506,7 @@ class CurrenciesController extends Sceleton  {
 
         $title = tep_db_prepare_input(\Yii::$app->request->post('title'));
         $code = tep_db_prepare_input(\Yii::$app->request->post('code'));
+        $code_number = tep_db_prepare_input(\Yii::$app->request->post('code_number'));
         $symbol_left = tep_db_prepare_input(\Yii::$app->request->post('symbol_left'), false);
         $symbol_right = tep_db_prepare_input(\Yii::$app->request->post('symbol_right'), false);
         $decimal_point = tep_db_prepare_input(\Yii::$app->request->post('decimal_point'));
@@ -527,6 +530,7 @@ class CurrenciesController extends Sceleton  {
 
         $sql_data_array = array('title' => $title,
                                 'code' => $code,
+                                'code_number' => $code_number,
                                 'symbol_left' => $symbol_left,
                                 'symbol_right' => $symbol_right,
                                 'decimal_point' => $decimal_point,

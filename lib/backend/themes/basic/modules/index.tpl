@@ -251,6 +251,7 @@
               title: "{$smarty.const.IMAGE_INSTALL|escape:javascript}",
               locale: 'custom',
               inputType: 'select',
+              value: 'my',
               inputOptions: [{
                     text: "{$smarty.const.TEXT_SET_ACL_ALL}",
                     value: 'all'

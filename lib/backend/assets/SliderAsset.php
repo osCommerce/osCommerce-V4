@@ -13,15 +13,19 @@
 namespace backend\assets;
 
 use yii\web\AssetBundle;
+use yii\web\View;
 
 class SliderAsset extends AssetBundle
 {
     public $basePath = '@webroot';
-    public $baseUrl = '@web/themes/basic';
+    public $baseUrl = '@web';
     public $css = [
-        'css/slick.css',
+        'plugins/slick/slick.css',
     ];
     public $js = [
-      'js/slick.min.js',
+      'plugins/slick/slick.min.js',
+    ];
+    public $jsOptions = [
+        'position' => View::POS_HEAD,
     ];
 }

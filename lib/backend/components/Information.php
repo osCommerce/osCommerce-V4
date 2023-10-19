@@ -197,28 +197,20 @@ class Information {
         $maps_id = (int)Yii::$app->request->post('maps_id',0);
         $type = (int)Yii::$app->request->post('type',0);
         $hide_on_xml = Yii::$app->request->post('hide_on_xml') ? 1 : 0;
+
         $image = Yii::$app->request->post('image','');
         $imageGallery = Yii::$app->request->post('imageGallery','');
         $imageDelete = (int)Yii::$app->request->post('image_delete',0);
-        $imageName = \common\models\Information::find()->select(['image'])->where(['information_id'=>$info_id])->limit(1)->column();
-        $imageName = $imageName[0] ?? null;
+        $oldImage = \common\models\Information::find()->select(['image'])->where(['information_id'=>$info_id])->limit(1)->column();
+        $oldImage = $oldImage[0] ?? null;
 
-        if ($imageDelete) {
-            @unlink(Images::getFSCatalogImagesPath().$imageName);
-        }
-
-        if($image){
-
-            $newImage = self::moveFile(
-                Yii::getAlias('@webroot'). DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . $image ,
-                Images::getFSCatalogImagesPath().self::imagesLocation().$image
-            );
-
-        } else {
-
-            $newImage = $imageGallery;
-
-        }
+        $newImage = \common\helpers\Image::prepareSavingImage(
+            $oldImage,
+            $imageGallery,
+            $image,
+            trim(self::imagesLocation(), DIRECTORY_SEPARATOR),
+            $imageDelete
+        );
 
         \common\models\Information::updateAll([
             'image' => $newImage,
@@ -229,41 +221,18 @@ class Information {
             ['information_id' => $info_id]
         );
     }
+
     public static function slugify($string) {
         $string = transliterator_transliterate("Any-Latin; NFD; [:Nonspacing Mark:] Remove; NFC; [:Punctuation:] Remove; Lower();", $string);
         $string = preg_replace('/[-\s]+/', '-', $string);
         return trim($string, '-');
     }
-    public static function moveFile($originalFileName,$newFileName,bool $copy = false){
-        $pathParts = pathinfo($newFileName);
-        if(is_dir($originalFileName) || is_dir($newFileName)){
-            throw new NotFoundException('File not found.');
-        }
-        if(!is_dir($pathParts['dirname'])){
-            FileHelper::createDirectory($pathParts['dirname'],0777,true);
-        }
-        $name = self::slugify($pathParts['filename']);
-        $ext = '';
-        if(isset($pathParts['extension'])){
-            $ext = '.'.$pathParts['extension'];
-        }
-        $tmpName = $name.$ext;
-        $i = 1;
-        while (is_file($pathParts['dirname'].DIRECTORY_SEPARATOR.$tmpName)) {
-            $tmpName = $name . '-' . $i . $ext;
-            $i++;
-        }
-        if($copy){
-            @copy($originalFileName,$pathParts['dirname'].DIRECTORY_SEPARATOR.$tmpName);
-        }else{
-            @rename($originalFileName,$pathParts['dirname'].DIRECTORY_SEPARATOR.$tmpName);
-        }
-        return self::imagesLocation() . $tmpName;
-    }
+
     public static function imagesLocation()
     {
         return 'information'.DIRECTORY_SEPARATOR;
     }
+
   public static function update_no_logged ($data, $language_id, $platform_id, $info_id, $affiliate_id = 0) {
 
     $sql_data = array();
@@ -395,7 +364,7 @@ class Information {
         $list[$key]['theme_name'] = $themes[$item['id']]['theme_name'];
         $list[$key]['theme_title'] = $themes[$item['id']]['title'];
 
-        $list[$key]['templates'] = $themes[$item['id']]['themes'];
+        $list[$key]['templates'] = $themes[$item['id']]['themes'] ?? '';
 
         $setTemplate = tep_db_fetch_array(tep_db_query("
                       select template_name

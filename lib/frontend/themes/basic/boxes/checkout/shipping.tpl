@@ -27,7 +27,12 @@
                                 {else}
                                     <input value="{$shipping_quote_item_method.code}" type="hidden" name="shipping"/>
                                 {/if}
-                                <div class="cost">{$shipping_quote_item_method.cost_f}</div>
+                                <div class="cost">
+                                    {if $PremiumAccountClass = \common\helpers\Acl::checkExtensionAllowed('PremiumAccount', 'allowed')}
+                                        {$PremiumAccountClass::showShippingCost($shipping_quote_item_method.cost, $shipping_quote_item.tax)}
+                                    {/if}
+                                    {$shipping_quote_item_method.cost_f}
+                                </div>
                                 <div class="sub-title">{$shipping_quote_item_method.title}{if isset($shipping_quote_item_method.description)}{$shipping_quote_item_method.description}{/if}</div>
                             </label>
                             {if isset($shipping_quote_item_method.widget) && $shipping_quote_item_method.widget}

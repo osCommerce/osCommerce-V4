@@ -13,6 +13,8 @@
 
 namespace common\classes\modules;
 
+#[\AllowDynamicProperties]
+
 class WidgetExtensions extends \yii\base\Widget
 {
     public $name;
@@ -22,6 +24,9 @@ class WidgetExtensions extends \yii\base\Widget
 
     public $extName = null;
     public $extDir = null;
+    /**
+     * @var \common\classes\modules\ModuleExtensions
+     */
     public $extClass = null;
 
     private static $ext = [];
@@ -36,6 +41,12 @@ class WidgetExtensions extends \yii\base\Widget
         self::allowed(); //init translations for settings
     }
 
+    public function getTranslation($key, $entity = '')
+    {
+        if (self::allowed()) {
+            return $this->extClass::getTranslationValue($key, $entity);
+        }
+    }
 
     /**
      * For auto check into Acl::runExtensionWidget()
@@ -44,6 +55,11 @@ class WidgetExtensions extends \yii\base\Widget
     public static function allowed()
     {
         return \common\helpers\Extensions::isAllowed(self::initExtensionClass()['name']);
+    }
+
+    public function beforeRun()
+    {
+        return static::allowed() && parent::beforeRun();
     }
 
     private static function initExtensionClass()
@@ -56,8 +72,9 @@ class WidgetExtensions extends \yii\base\Widget
             $count = 0;
             while (basename(dirname($dir)) != 'extensions') {
                 $dir = dirname($dir);
-                \common\helpers\Assert::assert(!empty($dir) && $dir != '/' && ++$count <= 4, "Can't find extension class. Current dir: $dir. Count: $count");
-                \common\helpers\Assert::assert(++$count <= 4, "Can't find extension class. Directory nesting is too deeply. Current dir: $dir. Count: $count");
+                \common\helpers\Assert::assert(!empty($dir) && $dir != '/' && $count <= 4, "Can't find extension class. Current dir: $dir. Count: $count");
+                \common\helpers\Assert::assert($count <= 4, "Can't find extension class. Directory nesting is too deeply. Current dir: $dir. Count: $count");
+                $count++;
             }
 
             $extName = basename($dir);

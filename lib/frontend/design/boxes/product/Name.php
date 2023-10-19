@@ -53,11 +53,11 @@ class Name extends Widget
 
         \frontend\design\JsonLd::addData(['Product' => [
             'name' => $name
-        ]]);
+        ]], ['Product', 'name']);
         if ($name2 && $name != $name2) {
             \frontend\design\JsonLd::addData(['Product' => [
                 'alternateName' => $name2
-            ]]);
+            ]], ['Product', 'alternateName']);
         }
         return IncludeTpl::widget(['file' => 'boxes/product/name.tpl', 'params' => [
             'name' => \common\helpers\Html::fixHtmlTags($product['products_name']),

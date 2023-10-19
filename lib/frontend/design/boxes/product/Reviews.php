@@ -55,7 +55,7 @@ class Reviews extends Widget
             \frontend\design\JsonLd::addData(['Product' => [
                 'aggregateRating' => [
                     '@type' => 'AggregateRating',
-                    'ratingValue' => round($rating['average']),
+                    'ratingValue' => round($rating['average']??0),
                     'ratingCount' => $rating['count'],
                 ]
             ]], ['Product', 'aggregateRating']);

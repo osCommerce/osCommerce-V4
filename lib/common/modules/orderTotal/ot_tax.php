@@ -63,6 +63,7 @@ class ot_tax extends ModuleTotal {
     }
 
     function process($replacing_value = -1) {
+        $this->output = [];
         $currencies = \Yii::$container->get('currencies');
         $order = $this->manager->getOrderInstance();
 

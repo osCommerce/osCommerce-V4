@@ -157,7 +157,7 @@ class Attributes extends ProviderAbstract implements ImportInterface, ExportInte
         $this->fields[] = array( 'name' => 'products_attributes_weight', 'value' => 'Attributes Weight' );
         $this->fields[] = array( 'name' => 'default_option_value', 'value' => 'Select default' );
         $this->fields[] = array( 'name' => 'products_options_sort_order', 'value' => 'Product options sort order');
-        if (\common\helpers\Acl::checkExtensionAllowed('TypicalOperatingTemp', 'allowed')){
+        if (\common\helpers\Extensions::isAllowed('TypicalOperatingTemp')) {
             $this->fields[] = array( 'name' => 'tot_prefix', 'value' => 'TOT Prefix' );
             $this->fields[] = array( 'name' => 'tot_value', 'value' => 'TOT Value' );
         }
@@ -527,7 +527,7 @@ class Attributes extends ProviderAbstract implements ImportInterface, ExportInte
     protected function get_price_info($field_data, $products_id)
     {
         $this->data[$field_data['name']] = '';
-        if (\common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed')){
+        if (\common\helpers\Extensions::isAllowed('Inventory')){
             $this->data[$field_data['name']] = 'Inventory Price';
             if ($this->data['without_inventory'] || EP\Tools::getInstance()->is_option_virtual($this->data['options_id']) ) {
                 $this->data[$field_data['name']] = 'Attribute Price';

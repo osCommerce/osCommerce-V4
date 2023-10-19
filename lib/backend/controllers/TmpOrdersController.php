@@ -618,9 +618,9 @@ class TmpOrdersController extends Sceleton {
         if ((isset($_GET['in_stock']) && $_GET['in_stock'] != '')){
             $_orders_products_joined = true;
             $orders_query_raw->leftJoin("tmp_orders_products op", "(op.orders_id = o.orders_id)");
-            $orders_query_raw->addSelect("BIT_AND(" . (\common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed') ? "if(i.products_quantity is not null,if((i.products_quantity>=op.products_quantity),1,0),if((p.products_quantity>=op.products_quantity),1,0))" : "if((p.products_quantity>=op.products_quantity),1,0)") . ") as in_stock");
+            $orders_query_raw->addSelect("BIT_AND(" . (\common\helpers\Extensions::isAllowed('Inventory') ? "if(i.products_quantity is not null,if((i.products_quantity>=op.products_quantity),1,0),if((p.products_quantity>=op.products_quantity),1,0))" : "if((p.products_quantity>=op.products_quantity),1,0)") . ") as in_stock");
             $orders_query_raw->leftJoin(TABLE_PRODUCTS . " p", "(p.products_id = op.products_id)");
-            if (\common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed')){
+            if (\common\helpers\Extensions::isAllowed('Inventory')){
                 $orders_query_raw->leftJoin(TABLE_INVENTORY . " i", "(i.prid = op.products_id and i.products_id = op.uprid)");
             }
         }
@@ -681,13 +681,14 @@ class TmpOrdersController extends Sceleton {
             $orders_query_raw->andWhere(['in', 'o.platform_id', $filter_by_platform]);
         }
 
-        if (\common\helpers\Acl::checkExtensionAllowed('Handlers', 'allowed')) {
+        /**
+         * @var $ext \common\extensions\Handlers\Handlers
+         */
+        if ($ext = \common\helpers\Extensions::isAllowed('Handlers')) {
             global $access_levels_id;
             $handlers_array = [];
-            $handlers_query = tep_db_query("select handlers_id from handlers_access_levels where access_levels_id='" . (int)$access_levels_id . "'");
-            while ($handlers = tep_db_fetch_array($handlers_query)) {
-                $handlers_array[] = $handlers['handlers_id'];
-            }
+            $handlers_array = $ext::getHandlersQuery((int)$access_levels_id);
+
             $orders_query_raw->andWhere(['in', 'hp.handlers_id', $handlers_array]);
         }
 

@@ -42,8 +42,8 @@
                         <div class="tabbable tabbable-custom">
                             <ul class="nav nav-tabs">
                                 {foreach $languages as $lKey => $lItem}
-                                <li{if $lKey == 0} class="active"{/if}>
-                                    <a href="#tab_2_{$lItem['id']}" class="flag-span" data-toggle="tab">{$lItem['image']}<span>{$lItem['name']}</span></a>
+                                <li{if $lKey == 0} class="active"{/if} data-bs-toggle="tab" data-bs-target="#tab_2_{$lItem['id']}">
+                                    <a class="flag-span">{$lItem['image']}<span>{$lItem['name']}</span></a>
                                 </li>
                                 {/foreach}
                             </ul>

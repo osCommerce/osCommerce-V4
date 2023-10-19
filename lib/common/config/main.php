@@ -48,6 +48,9 @@ return [
           $event->sender->createCommand("SET SESSION time_zone = '".date('P')."'")->execute();
         },
       ],
+        'mutex' => [
+            'class' => 'yii\mutex\FileMutex',
+        ], 
         /*'cache' => [
             'class' => 'yii\caching\FileCache',
         ],*/

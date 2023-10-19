@@ -35,9 +35,24 @@ class Setup extends \common\classes\modules\SetupExtensions
         ];
     }
 
+    public static function getAdminHooks()
+    {
+        return [
+            ['page_name' => 'categories/productedit-beforesave'],
+        ];
+    }
+
+    public static function getRequiredModules()
+    {
+        return [
+            'osCommerce' => ['version' => /*4.13*/'999999', 'version_applicable' => 'greater-equal'],
+        ];
+    }
+
     public static function getVersionHistory()
     {
         return [
+            '1.0.1' => 'Added hook',
             '1.0.0' => ['whats_new' => "Basic version"],
         ];
     }

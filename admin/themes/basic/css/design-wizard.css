@@ -1,15 +1,18 @@
 .wizard-step {
-    border-top: 1px solid var(--border-color-strong);
+    border: 1px solid var(--border-color-strong);
+    margin-bottom: 10px;
 }
 .step-heading {
     font-size: 16px;
     font-weight: bold;
-    padding: 10px 30px 10px 60px;
+    padding: 15px 30px 15px 60px;
     background: var(--background-color);
     position: relative;
+    cursor: pointer;
 }
 .active .step-heading {
     background: var(--background-color-3);
+    cursor: default;
 }
 .past:not([data-step="name"]) .step-heading {
     cursor: pointer;
@@ -18,13 +21,28 @@
     position: absolute;
     content: '\2714';
     left: 27px;
-    top: 10px;
+    top: 15px;
     font-size: 24px;
     line-height: 24px;
     color: var(--color-success);
 }
 .step-heading .theme-name {
     font-weight: normal;
+}
+.step-heading:after {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    content: '\f067';
+    width: 50px;
+    text-align: center;
+    line-height: 50px;
+    font-family: FontAwesome;
+    font-weight: 400;
+}
+.active .step-heading:after {
+    content: '\f068';
 }
 .step-content {
     padding: 10px 10px 20px;
@@ -38,7 +56,7 @@
 .group-item {
     display: block;
 }
-.group-item input {
+.group-item input[type="radio"], .group-item input[type="checkbox"] {
     position: absolute;
     left: -100px;
     top: -100px;
@@ -52,6 +70,18 @@
     display: flex;
     width: 100%;
     align-items: center;
+}
+.group-item-holder .handle {
+    position: relative;
+    background: none;
+    border: none;
+    margin-right: 10px;
+    font-weight: normal;
+    font-size: 20px;
+}
+.group-item-holder .handle:before {
+    content: '\f256';
+    font-family: FontAwesome;
 }
 input:checked + .group-item-holder {
     border: 1px solid var(--border-color-strong);
@@ -242,4 +272,74 @@ input:checked + .group-item-holder .radio-box:before {
 }
 .slick-dots {
     display: none!important;
+}
+
+.group-view-content .image + .image {
+    display: block;
+}
+.group-view-content .slick-prev,
+.group-view-content .slick-next {
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    border: none;
+    font-size: 0;
+    top: calc(50% - 15px);
+    line-height: 50px;
+    text-align: center;
+    background: none;
+    z-index: 1;
+    border-radius: 50%;
+}
+.group-view-content .slick-prev:hover,
+.group-view-content .slick-next:hover {
+    background: rgba(0, 0, 0, 0.3);
+}
+.group-view-content .slick-prev {
+    left: 0;
+}
+.group-view-content .slick-next {
+    right: 0;
+}
+.group-view-content .slick-prev:before,
+.group-view-content .slick-next:before {
+    font-size: 30px;
+    font-family: FontAwesome;
+}
+.group-view-content .slick-prev:before {
+    content: '\f053';
+}
+.group-view-content .slick-next:before {
+    content: '\f054';
+}
+.group-view-content .slider-nav .image.slick-current span {
+    border-color: var(--border-color-selected);
+    box-shadow: 0 0 0 1px var(--border-color-selected);
+}
+
+.group-view-content {
+    min-height: calc(100vh - 220px);
+    background: #fff;
+    padding: 30px;
+    margin: 0px 0px 20px;
+    border: 1px solid var(--border-color-tiny)
+}
+
+.design-wizard {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+.main-colors {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+.main-colors .input-group {
+    width: 120px;
+    margin-left: 10px;
+}
+.title-colors {
+    white-space: nowrap;
 }

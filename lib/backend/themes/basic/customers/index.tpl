@@ -42,7 +42,7 @@
     {$cfExt::customerBatchButtons()}
 {/if}
                 </div>
-                <table class="table table-striped table-colored table-selectable table-checkable table-ordering table-hover table-responsive table-bordered datatable tab-cust tabl-res double-grid"
+                <table class="table table-colored table-checkable table-ordering table-hover table-responsive table-bordered datatable tab-cust tabl-res double-grid"
                        checkable_list="1,2,3,4,6,7,8" order_list="4" order_by="desc" data_ajax="customers/customerlist">
                     <thead>
                         <tr>
@@ -51,7 +51,6 @@
                                 {/foreach}
                         </tr>
                     </thead>
-
                 </table>
                 <div class="btn-wr after disable-btn">
                     <div>
@@ -357,10 +356,16 @@ $(document).ready(function() {
         }
     });  
   
-  $('th.checkbox-column .uniform').click(function() { 
+    $('th.checkbox-column .uniform').click(function() {
         if($(this).is(':checked')){
+            $('input:checkbox.uniform').each(function(j, cb) {
+                $(this).prop('checked', true).uniform('refresh');
+            });
             $('.order-box-list .btn-wr').removeClass('disable-btn');
         }else{
+            $('input:checkbox:checked.uniform').each(function(j, cb) {
+                $(this).prop('checked', false).uniform('refresh');
+            });
             $('.order-box-list .btn-wr').addClass('disable-btn');
         }
     });

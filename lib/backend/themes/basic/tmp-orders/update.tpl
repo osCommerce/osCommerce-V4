@@ -56,8 +56,8 @@
 </div>
 <!-- /Page Header -->
 <!--=== Page Content ===-->
-<link href="{{$smarty.const.DIR_WS_ADMIN}}/css/fancybox.css" rel="stylesheet" type="text/css" />
-<script type="text/javascript" src="{$smarty.const.DIR_WS_ADMIN}/js/jquery.fancybox.pack.js"></script>
+<link href="{{$smarty.const.DIR_WS_ADMIN}}/plugins/fancybox/fancybox.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="{$smarty.const.DIR_WS_ADMIN}/plugins/fancybox/jquery.fancybox.pack.js"></script>
 
 <!--===Process Order ===-->
 <div class="row w-or-prev-next">

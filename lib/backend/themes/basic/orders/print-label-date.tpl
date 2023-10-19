@@ -3,7 +3,7 @@
     <table width="100%" border="0" cellpadding="0" cellspacing="0" class="table-font">
         <tr>
             <td>
-    {if {$app->controller->view->errors|@count} > 0}
+    {if {$app->controller->view->errors|default:array()|@count} > 0}
         {foreach $app->controller->view->errors as $error}
             <div class="error">{$error}</div>
         {/foreach}

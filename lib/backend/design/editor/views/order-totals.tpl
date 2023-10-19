@@ -1,9 +1,11 @@
 {use class="Yii"}
 {use class="yii\helpers\Html"}
 {use class="yii\helpers\Url"}
-<div class="order_totals">
+<div class="order_totals widget box">
+    <div class="widget-header"><h4>{$smarty.const.ORDER_SUMMARY}</h4></div>
+
 	<table class="p-or-t-tab">
-        <tr class="row">
+        <tr class="p-or-t-tab-row">
             <td></td>
             <td align="right"><strong>{$smarty.const.TEXT_EXC_VAT}</strong></td>
             <td align="right"><strong>{$smarty.const.TEXT_INC_VAT}</strong></td>
@@ -11,7 +13,7 @@
         </tr>
         {if is_array($lines)}
             {foreach $lines  as $line}
-            <tr class="row total-row">
+            <tr class="p-or-t-tab-row total-row">
                 <td><strong>{$line[0]}</strong></td>
                 <td><b>{$line[1]}</b></td>
                 <td><b>{$line[2]}</b></td>
@@ -21,20 +23,18 @@
         {/if}
     </table>
     <div class="btn-tools-box">            
-        <div class="btn-right"><button class="btn totals_reset">{$smarty.const.TEXT_RESET_RECALCULATION}</button></div>
-{if \common\helpers\Acl::rule(['ACL_ORDER', 'HEADER_ADD_TOTAL_ELEMENT'])}
-        <div class="btn-right"><button class="btn add-more">{$smarty.const.HEADER_ADD_TOTAL_ELEMENT}</button></div>
-{/if}
-        <div class="confirm-order-btn-box">
-            <a href="javascript:void(0)" onclick="return saveCheckoutForm();" id="save_checkout" class="btn btn-primary btn-save-checkout">Save changes</a>
-        <button class="btn btn-right btn-confirm" data-class="popup-update-pay" onclick="return updatePay(this);" {*if !$manager->isCustomerAssigned()}disabled{/if*}>{$smarty.const.IMAGE_UPDATE_PAY}</button>
-        </div>
+        <button class="btn totals_reset">{$smarty.const.TEXT_RESET_RECALCULATION}</button>
+
+        {if \common\helpers\Acl::rule(['ACL_ORDER', 'HEADER_ADD_TOTAL_ELEMENT'])}
+            <button class="btn add-more">{$smarty.const.HEADER_ADD_TOTAL_ELEMENT}</button>
+        {/if}
+
     </div>
     <div style="display:none;" class="save-paid-box">
         <div style="padding:5px;">
             <label>{$smarty.const.TEXT_PAID_AMOUNT} ({$currency})</label>
             <div class="paid-amount-box">
-            {Html::dropDownList('paid_prefix', '+', ['+' => '+', '-' => '-'], ['class' => 'form-control'])}
+            {Html::dropDownList('paid_prefix', '+', ['+' => '+', '-' => '-'], ['class' => 'form-select'])}
             {Html::textInput('paid_amount', number_format($proposeToPaid,2,'.',''), ['class' => 'form-control mask-money'])}
             </div>
             <label>{$smarty.const.TABLE_HEADING_COMMENTS}</label>
@@ -72,7 +72,7 @@
             if ($(this).hasClass('btn')){
                 $(this).removeClass('btn');
                 var control = $(this).parents('tr').find('input.use-recalculation:first').data('control');
-                order.recalculateTotals(control, $(this).parents('.tab-pane.active'), setPlugin);
+                order.recalculateTotals(control, $(this).parents('.order_totals'), setPlugin);
                 //addModule(control);
 				//localStorage.orderChanged = true;
             } else {
@@ -87,7 +87,7 @@
                 });
                 $('.use-recalculation:visible').focusout(function(){
                     var control = $(this).data('control');
-                    order.recalculateTotals(control, $(this).parents('.tab-pane.active'), setPlugin);
+                    order.recalculateTotals(control, $(this).parents('.order_totals'), setPlugin);
                 });
             }
         });
@@ -173,38 +173,62 @@
                 var value = $(this).val() / _diff;
                 $('input[name="update_totals['+control+'][ex]"]').val(value.toFixed(2) );
             }
-		})
-            $(window).resize(function(){
-            setTimeout(function(){ 
-                var shopBox = $('.order_totals');
-                if(shopBox.length) { 
-                  $(window).scroll(function() { 
-                    var topPos = shopBox.offset().top;
-                    var currentTop = $(this).scrollTop();
-                    var fx = 50;
-                    var scrollEl = $('.content-container');
-                    var scrollHeight = scrollEl.innerHeight();
-                    var headerHeight = scrollEl.offset().top;
-                    var smallHeader = 20;
-                    var footerHeight = $('body').height() - headerHeight - scrollHeight;
+		});
 
 
-                    if(scrollHeight <= shopBox.height()) return false;
-                    if(($('body').height() - currentTop - footerHeight - fx) <= shopBox.height()) {
-                      shopBox.css('top', scrollHeight - shopBox.height() - fx)
-                      return false;
-                    } 
-                    if(currentTop > headerHeight) {
-                      shopBox.css('top', currentTop - headerHeight + smallHeader)
-                    } else {
-                      shopBox.css('top', 0)
-                    }
-                  }); 
+        $('.order_totals').each(function () {
+            const $scrollBox = $(this);
+            const $scrollBar = $scrollBox.parent();
+            $scrollBox.css('position', 'relative');
+            $scrollBar.css('position', 'relative');
+            let scrollTopOld = 0;
+            const topGap = 170;
+
+            boxPosition();
+            $(window).scroll(boxPosition);
+
+            function boxPosition(){
+                let absTop, boxHeight, barHeight, windowHeight, scrollTop, fromTopBar,
+                    fromBottomBar, fromTopWindow, fromBottomWindow, barTop;
+
+                recalculateSizes();
+                if (boxHeight+10 > barHeight || boxHeight + topGap > windowHeight) {
+                    $scrollBox.css('top', 0);
+                    return null;
                 }
-                $(window).trigger('scroll');
-            }, 500);
-          });
-          $(window).resize();
+                if (fromTopWindow < topGap) {
+                    $scrollBox.css('top', topGap - (barTop - scrollTop))
+                }
+
+                recalculateSizes();
+                if (scrollTop) {
+                    $scrollBox.css('top', scrollTop)
+                } else {
+                    $scrollBox.css('top', 0)
+                }
+                recalculateSizes();
+                if (fromBottomBar < 0) {
+                    $scrollBox.css('top', barHeight - boxHeight)
+                }
+                recalculateSizes();
+                if (fromTopBar < 0) {
+                    $scrollBox.css('top', barHeight - boxHeight)
+                }
+
+                function recalculateSizes() {
+                    absTop = $scrollBox.offset().top;
+                    boxHeight = $scrollBox.height();
+                    barHeight = $scrollBar.height();
+                    windowHeight = $(window).height();
+                    scrollTop = $(window).scrollTop();
+                    fromTopBar = $scrollBox.position().top;
+                    fromBottomBar = barHeight - boxHeight - fromTopBar;
+                    fromTopWindow = absTop - scrollTop;
+                    fromBottomWindow = windowHeight - (absTop + boxHeight - scrollTop);
+                    barTop = $scrollBar.offset().top;
+                }
+            }
+        })
 
 	})(jQuery);
 </script>

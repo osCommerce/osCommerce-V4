@@ -13,6 +13,7 @@
 namespace OscLink\XML;
 
 
+#[\AllowDynamicProperties]
 class IOData
 {
     public $exportPK = [];

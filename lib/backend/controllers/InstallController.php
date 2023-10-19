@@ -46,6 +46,7 @@ class InstallController extends Sceleton {
             echo 'Further system upgrade requires a PHP version ">= 7.4.0". You are running ' . PHP_VERSION . '.';
             die();
         }
+        ini_set('memory_limit', '512M'); // for large updates
     }
 
     private static function isKnownRequireModule($filename)
@@ -1020,8 +1021,8 @@ class InstallController extends Sceleton {
                                 $entry = $zip->getNameIndex($i);
                                 if (strpos($entry, $dst) === 0) {
                                     if (!$zip->extractTo($pathP, $entry)) {
-                                        \Yii::warning($errorMsg);
                                         $errorMsg = sprintf('Error extracting %s: %s', $entry, $zip->getStatusString() );
+                                        \Yii::warning($errorMsg);
                                         if ($echo) echo "<font color='red'>$errorMsg</font><br>\n";
                                     }
                                 }
@@ -1054,7 +1055,10 @@ class InstallController extends Sceleton {
                         break;
                 }
             }
-            $zip->close();
+            if (!@$zip->close()) {
+                $errorMsg = sprintf('Error closing zip: %s', $zip->getStatusString() );
+                \Yii::warning($errorMsg);
+            }
         }
         unset($zip);
     }
@@ -1347,8 +1351,12 @@ class InstallController extends Sceleton {
         if (!isset(\Yii::$app->params['secKey.global']) OR (\Yii::$app->params['secKey.global'] != $secKeyGlobal)) {
             $message = (defined('MESSAGE_KEY_DOMAIN_WANING')
                 ? constant('MESSAGE_KEY_DOMAIN_WANING')
-                : 'Warning: Security keys were generated for a different domain! Update required. Please update \'security store key\' before continue.'
+                : 'Warning: Security keys were generated for a different domain! Update required. Please change \'security store key\' to the actual value: %s.'
             );
+            if (strpos($message, '%s') === false) {
+                $message .= ' (%s)';
+            }
+            $message = sprintf($message, $secKeyGlobal);
             $messages[] = $message;
         } elseif (empty($storageKey)) {
             
@@ -1385,7 +1393,7 @@ class InstallController extends Sceleton {
                                 If your already registered with us and %3$s, approved your storage key, please insert \'storage\' key value. If you do not remember your \'storage\' key - please login at <a target="_blank" href="%1$s">application shop</a> with your credentials and copy it from there.<br>
                                 If you not registered with us, please visit <a target="_blank" href="%1$s">application shop</a>, register your account and put there your \'security store key\'.<br>
                                 You \'secutiry store key\' for this shop is [%2$s].<br>
-                                After registration, wait for confirmation by %3$s. If this approuve take a lot, you may e-mail him directly. After confirmation insert the received \'storage\' key (<a href="javascript:void(0);" onclick="$(\'.create_item_popup\').click();">use button on this page</a>) value.'
+                                After registration, wait for confirmation by %3$s. If this approve take a lot, you may e-mail him directly. After confirmation insert the received \'storage\' key (<a href="javascript:void(0);" onclick="$(\'.create_item_popup\').click();">use button on this page</a>) value.'
                         );
                         $messages[] = sprintf($message, $storageUrl . 'account?return', $secKeyGlobal, $ownerName);
                         $showEmptyKeyIntro = false;
@@ -1897,7 +1905,7 @@ class InstallController extends Sceleton {
                             if (isset($distribution->require->modules) && is_array($distribution->require->modules)) {
                                 foreach ($distribution->require->modules as $subfile) {
                                     $record = \common\models\Installer::find()->where(['filename' => $subfile])->one();
-                                    if ($record instanceof \common\models\Installer) {
+                                    if ($record instanceof \common\models\Installer || self::isKnownRequireModule($subfile)) {
                                         $req .= '<p style="color:green">'.$subfile.'</p>';
                                     } elseif (is_file($path . $subfile)) {
                                         $req .= '<p style="color:yellow">'.$subfile.'</p>';
@@ -1973,6 +1981,7 @@ class InstallController extends Sceleton {
                         case 'extension':
                         case 'design':
                         case 'translate':
+                        case 'analytic':
                         case 'payment':
                         case 'shipping':
                         case 'totals':
@@ -2179,6 +2188,10 @@ class InstallController extends Sceleton {
                     case 'shipping':// Shipping
                         if (empty($moduleDir)) {
                             $moduleDir = 'orderShipping';
+                        }
+                    case 'analytic':// Payment
+                        if (empty($moduleDir)) {
+                            $moduleDir = 'analytic';
                         }
                     case 'totals':// Order structure
                         if (empty($moduleDir)) {
@@ -2755,9 +2768,11 @@ class InstallController extends Sceleton {
                                 file_put_contents($path . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . $filename, $content);
                                 $this->sendEcho(TEXT_FOUND_UPDATE . ". " . TEXT_FILE . " $filename " . TEXT_DOWNLOADED . ".<br>\n");
                             }
+                            unset($content);
                         } else {
                             $this->sendEcho(TEXT_FOUND_UPDATE . ". " . TEXT_FILE . " $filename " . TEXT_ALREADY_DOWNLOADED . ".<br>\n");
                         }
+                        unset($result);
                         try {
                             $status = $this->installFileWithDependencies($filename, ['force' => $force], true);
                         } catch (\Exception $exc) {

@@ -27,7 +27,7 @@
 
             <div class="banner-filter">
                 <div class="row">
-                    <div class="col-xs-5">
+                    <div class="col-5">
 
                         <h4 class="show-empty-groups">
                             {$smarty.const.SHOW_EMPTY_GROUPS} <input type="checkbox" name="empty_groups" class="empty-groups" />
@@ -36,47 +36,47 @@
                         <div class="show-banner-columns">
                             <h4>{$smarty.const.SHOW_COLUMNS}</h4>
                             <div class="row">
-                                <div class="col-xs-6">
+                                <div class="col-6">
                                     <div class="m-b-1">
                                         <label class="radio_label">
-                                            <input type="checkbox" name="show_batch" class="uniform" value=""> {$smarty.const.BATCH_CHECKBOXES}
+                                            <input type="checkbox" name="show_batch" value=""> {$smarty.const.BATCH_CHECKBOXES}
                                         </label>
                                     </div>
                                     <div class="m-b-1">
                                         <label class="radio_label">
-                                            <input type="checkbox" name="show_sort" class="uniform" value=""> {$smarty.const.SORTING_HANDLE}
+                                            <input type="checkbox" name="show_sort" value=""> {$smarty.const.SORTING_HANDLE}
                                         </label>
                                     </div>
                                     <div class="m-b-1">
                                         <label class="radio_label">
-                                            <input type="checkbox" name="show_image" class="uniform" value=""> {$smarty.const.TAB_IMAGES}
+                                            <input type="checkbox" name="show_image" value=""> {$smarty.const.TAB_IMAGES}
                                         </label>
                                     </div>
                                     <div class="m-b-1">
                                         <label class="radio_label">
-                                            <input type="checkbox" name="show_title" class="uniform" value=""> {$smarty.const.TEXT_TITLE}
+                                            <input type="checkbox" name="show_title" value=""> {$smarty.const.TEXT_TITLE}
                                         </label>
                                     </div>
                                 </div>
-                                <div class="col-xs-6">
+                                <div class="col-6">
                                     <div class="m-b-1">
                                         <label class="radio_label">
-                                            <input type="checkbox" name="show_file" class="uniform" value=""> {$smarty.const.FILE_NAME}
+                                            <input type="checkbox" name="show_file" value=""> {$smarty.const.FILE_NAME}
                                         </label>
                                     </div>
                                     <div class="m-b-1">
                                         <label class="radio_label">
-                                            <input type="checkbox" name="show_text" class="uniform" value=""> {$smarty.const.TEXT_TEXT}
+                                            <input type="checkbox" name="show_text" value=""> {$smarty.const.TEXT_TEXT}
                                         </label>
                                     </div>
                                     <div class="m-b-1">
                                         <label class="radio_label">
-                                            <input type="checkbox" name="show_platform" class="uniform" value=""> {$smarty.const.TEXT_PLATFORM}
+                                            <input type="checkbox" name="show_platform" value=""> {$smarty.const.TEXT_PLATFORM}
                                         </label>
                                     </div>
                                     <div class="m-b-1">
                                         <label class="radio_label">
-                                            <input type="checkbox" name="show_status" class="uniform" value=""> {$smarty.const.TABLE_HEADING_STATUS}
+                                            <input type="checkbox" name="show_status" value=""> {$smarty.const.TABLE_HEADING_STATUS}
                                         </label>
                                     </div>
                                 </div>
@@ -84,10 +84,10 @@
                         </div>
 
                     </div>
-                    <div class="col-xs-7">
+                    <div class="col-7">
                         <h4>Search by</h4>
                         <div class="row">
-                            <div class="col-xs-6">
+                            <div class="col-6">
                                 <div class="m-b-2">
                                     <input type="text" name="search_title" value="{$search_title}" class="form-control" placeholder="{$smarty.const.TEXT_TITLE}"/>
                                 </div>
@@ -95,22 +95,22 @@
                                     <input type="text" name="search_file" value="{$search_file}" class="form-control" placeholder="{$smarty.const.FILE_NAME}"/>
                                 </div>
                             </div>
-                            <div class="col-xs-6">
+                            <div class="col-6">
                                 <div class="m-b-2">
                                     <input type="text" name="search_text" value="{$search_text}" class="form-control" placeholder="{$smarty.const.TEXT_TEXT}"/>
                                 </div>
                                 <div class="select-status">
                                     {$smarty.const.ENTRY_STATUS}:
                                     <label>
-                                        <input type="radio" name="search_status" value=""{if $search_status == ''} checked{/if} class="uniform"/>
+                                        <input type="radio" name="search_status" value=""{if $search_status == ''} checked{/if}/>
                                         {$smarty.const.TEXT_ALL}
                                     </label>
                                     <label>
-                                        <input type="radio" name="search_status" value="on"{if $search_status == 'on'} checked{/if} class="uniform"/>
+                                        <input type="radio" name="search_status" value="on"{if $search_status == 'on'} checked{/if}/>
                                         {$smarty.const.TEXT_ON}
                                     </label>
                                     <label>
-                                        <input type="radio" name="search_status" value="off"{if $search_status == 'off'} checked{/if} class="uniform"/>
+                                        <input type="radio" name="search_status" value="off"{if $search_status == 'off'} checked{/if}/>
                                         {$smarty.const.TEXT_OFF}
                                     </label>
                                 </div>
@@ -137,7 +137,7 @@
                 <table class="table table-selectable table-striped table-hover table-responsive table-bordered datatable double-grid table-banner_manager" data_ajax="banner_manager/list">
                     <thead>
                     <tr>
-                        <th class="batch-heading-cell"><input type="checkbox" name="batch" class="uniform"/></th>
+                        <th class="batch-heading-cell"><input type="checkbox" name="batch"/></th>
                         <th class="sort-heading-cell"></th>
                         <th class="image-heading-cell">{$smarty.const.TAB_IMAGES}</th>
                         <th class="title-heading-cell">{$smarty.const.TEXT_TITLE}</th>
@@ -405,20 +405,20 @@
                     $('.scroll_col').show();
                 }
                 if (checkedLength == $inputs.length) {
-                    $allBatch.prop('checked', true).uniform('refresh')
+                    $allBatch.prop('checked', true)
                 } else {
-                    $allBatch.prop('checked', false).uniform('refresh')
+                    $allBatch.prop('checked', false)
                 }
             }
         });
         $allBatch.on('change', function () {
             const $inputs = $('.batch-cell input');
             if ($(this).prop('checked')) {
-                $inputs.prop('checked', true).uniform('refresh');
+                $inputs.prop('checked', true);
                 $('.batchCol').show();
                 $('.scroll_col').hide();
             } else {
-                $inputs.prop('checked', false).uniform('refresh');
+                $inputs.prop('checked', false);
                 $('.batchCol').hide();
                 $('.scroll_col').show();
             }
@@ -580,19 +580,19 @@
         });
 
         $('input[name="search_title"]').on('keyup change', function () {
-            $('input[name="show_title"]').prop('checked', true).uniform('refresh').trigger('change')
+            $('input[name="show_title"]').prop('checked', true).trigger('change')
             resetStatement()
         })
         $('input[name="search_file"]').on('keyup change', function () {
-            $('input[name="show_file"]').prop('checked', true).uniform('refresh').trigger('change')
+            $('input[name="show_file"]').prop('checked', true).trigger('change')
             resetStatement()
         })
         $('input[name="search_text"]').on('keyup change', function () {
-            $('input[name="show_text"]').prop('checked', true).uniform('refresh').trigger('change')
+            $('input[name="show_text"]').prop('checked', true).trigger('change')
             resetStatement()
         })
         $('input[name="search_status"]').on('change', function () {
-            $('input[name="show_status"]').prop('checked', true).uniform('refresh').trigger('change')
+            $('input[name="show_status"]').prop('checked', true).trigger('change')
             resetStatement()
         })
     })

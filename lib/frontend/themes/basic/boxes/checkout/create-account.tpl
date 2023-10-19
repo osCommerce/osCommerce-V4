@@ -71,6 +71,7 @@
         <div class="account-benefits">{$smarty.const.BENEFITS_FROM_CREATING}</div>
 
     </div>
+    {$manager->captcha_widget}
 </div>
 
 <script type="text/javascript">

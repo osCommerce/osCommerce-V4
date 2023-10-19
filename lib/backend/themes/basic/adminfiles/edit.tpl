@@ -1,5 +1,17 @@
 {use class="yii\helpers\Html"}
-
+<style type="text/css">
+    #access_management_data ol {
+        list-style: none;
+    }
+    .dd-nodrag {
+        display: flex;
+        align-items: center;
+        padding-left: 10px;
+    }
+    input[type="checkbox"] {
+        margin-right: 10px;
+    }
+</style>
 <div id="access_management_data">
 <form name="save_item_form" id="save_item_form" onSubmit="return saveItem();">
     <div class="box-wrap">

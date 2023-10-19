@@ -75,7 +75,7 @@ class AddressForm extends Model {
     
     public function rules() {
         return [
-            [['address_book_id', 'company', 'company_vat', 'customs_number', 'gender', 'firstname', 'lastname', 'telephone', 'postcode', 'street_address', 'suburb', 'city', 'state', 'country', 'zone_id'], 'stronglyRequired', 'skipOnEmpty' => false],
+            [['address_book_id', 'company', 'company_vat', 'customs_number', 'gender', 'firstname', 'lastname', 'telephone', 'email_address', 'postcode', 'street_address', 'suburb', 'city', 'state', 'country', 'zone_id', 'drop_ship', 'type'], 'stronglyRequired', 'skipOnEmpty' => false],
             [['country', 'zone_id'], 'defaultGeoValues', 'skipOnEmpty' => false],
             ['as_preferred', 'default', 'value' => 0]
             //['postcode', 'inExtensions', 'skipOnEmpty' => false, 'on' => [static::SHIPPING_ADDRESS]],
@@ -96,6 +96,14 @@ class AddressForm extends Model {
         return $this->isLightCheck;
     }
 
+    private function checkSpamHack($val, $capitals=false){
+        return (//$capitals || 
+                strpos($val, '<')!==false ||
+                strpos($val, 'https://')!==false ||
+                strpos($val, 'http://')!==false ||
+                strip_tags($val) != $val
+            );
+    }
     public function stronglyRequired($attribute, $params){
         if (!$this->isLightCheck && $this->has($attribute, false)){
             switch ($attribute){
@@ -105,22 +113,22 @@ class AddressForm extends Model {
                     }
                     break;
                 case 'firstname':
-                    if (strlen($this->$attribute) < ENTRY_FIRST_NAME_MIN_LENGTH) {
+                    if ($this->checkSpamHack($this->$attribute, true) || strlen($this->$attribute) < ENTRY_FIRST_NAME_MIN_LENGTH) {
                         $this->addError($attribute, sprintf($this->getEntryLabel('FIRST_NAME_ERROR'), ENTRY_FIRST_NAME_MIN_LENGTH));
                     }
                     break;
                 case 'lastname':
-                    if (strlen($this->$attribute) < ENTRY_LAST_NAME_MIN_LENGTH) {
+                    if ($this->checkSpamHack($this->$attribute, true) || strlen($this->$attribute) < ENTRY_LAST_NAME_MIN_LENGTH) {
                         $this->addError($attribute, sprintf($this->getEntryLabel('LAST_NAME_ERROR'), ENTRY_LAST_NAME_MIN_LENGTH));
                     }
                     break;
                 case 'company':
-                    if (empty($this->$attribute)){
+                    if ($this->checkSpamHack($this->$attribute) || empty($this->$attribute)){
                         $this->addError($attribute, ENTRY_COMPANY_ERROR);
                     }
                     break;
                 case 'company_vat':
-                    if ((empty($this->$attribute) || !\common\helpers\Validations::checkVAT($this->$attribute))){
+                    if ($this->checkSpamHack($this->$attribute) || (empty($this->$attribute) || !\common\helpers\Validations::checkVAT($this->$attribute))){
                         $this->addError($attribute, ENTRY_VAT_ID_ERROR);
                     }
                     break;
@@ -134,22 +142,22 @@ class AddressForm extends Model {
                     }
                     break;
                 case 'postcode':
-                    if (strlen($this->$attribute) < ENTRY_POSTCODE_MIN_LENGTH){
+                    if ($this->checkSpamHack($this->$attribute) || strlen($this->$attribute) < ENTRY_POSTCODE_MIN_LENGTH){
                         $this->addError($attribute, sprintf($this->getEntryLabel('POST_CODE_ERROR'), ENTRY_POSTCODE_MIN_LENGTH));
                     }
                     break;
                 case 'street_address':
-                    if (strlen($this->$attribute) < ENTRY_STREET_ADDRESS_MIN_LENGTH){
+                    if ($this->checkSpamHack($this->$attribute) || strlen($this->$attribute) < ENTRY_STREET_ADDRESS_MIN_LENGTH){
                         $this->addError($attribute, sprintf($this->getEntryLabel('STREET_ADDRESS_ERROR'), ENTRY_STREET_ADDRESS_MIN_LENGTH));
                     }
                     break;
                 case 'suburb':
-                    if (empty($this->$attribute)){
+                    if ($this->checkSpamHack($this->$attribute) || empty($this->$attribute)){
                         $this->addError($attribute, $this->getEntryLabel('SUBURB_ERROR'));
                     }
                     break;
                 case 'city':
-                    if (strlen($this->$attribute) < ENTRY_CITY_MIN_LENGTH){
+                    if ($this->checkSpamHack($this->$attribute) || strlen($this->$attribute) < ENTRY_CITY_MIN_LENGTH){
                         $this->addError($attribute, sprintf($this->getEntryLabel('CITY_ERROR'), ENTRY_STREET_ADDRESS_MIN_LENGTH));
                     }
                     break;
@@ -213,6 +221,7 @@ class AddressForm extends Model {
     public $firstname;
     public $lastname;    
     public $telephone;
+    public $email_address;
     public $postcode;
     public $street_address;
     public $suburb;
@@ -220,6 +229,8 @@ class AddressForm extends Model {
     public $state;
     public $country;
     public $zone_id;
+    public $drop_ship;
+    public $type;
     
     public $as_preferred;
     
@@ -228,7 +239,14 @@ class AddressForm extends Model {
     }
     
     public function collectConfigurableFields($includeVisible = true){
-        $fields = [];
+        if ($includeVisible) {
+            $fields = ['telephone', 'email_address', 'drop_ship'];
+            if (\common\helpers\Acl::checkExtensionAllowed('SplitCustomerAddresses', 'allowed')) {
+                $fields[] = 'type';
+            }
+        } else {
+            $fields = [];
+        }
         $publicFields = $this->reflector->getProperties(\ReflectionProperty::IS_PUBLIC);
         if (is_array($publicFields)){
             foreach($publicFields as $_field){
@@ -241,7 +259,10 @@ class AddressForm extends Model {
     }
 
     public function collectFields(){
-        $fields = ['address_book_id', 'as_preferred'];
+        $fields = ['address_book_id', 'as_preferred', 'telephone', 'email_address', 'drop_ship'];
+        if (\common\helpers\Acl::checkExtensionAllowed('SplitCustomerAddresses', 'allowed')) {
+            $fields[] = 'type';
+        }
         
         $fields = array_merge($fields, $this->collectConfigurableFields(true));
         

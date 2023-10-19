@@ -48,7 +48,23 @@ class EditAddress extends Widget
         $editAction = (int)Yii::$app->request->get('edit', 0);
         
         $customer = Yii::$app->user->getIdentity();
-        $bookModel = new AddressForm(['scenario' => AddressForm::BILLING_ADDRESS]);
+        
+        $type = Yii::$app->request->get('type', '');
+        switch ($type) {
+            case 'billing':
+                $scenario = AddressForm::BILLING_ADDRESS;
+                break;
+            case 'shipping':
+                $scenario = AddressForm::SHIPPING_ADDRESS;
+                break;
+            default:
+                $scenario = AddressForm::CUSTOM_ADDRESS;
+                $type = '';
+                break;
+        }
+        
+        $bookModel = new AddressForm(['scenario' => $scenario]);
+        $bookModel->type = $bookModel->addressType;
 
         if ($editAction > 0) {
             $entry = $customer->getAddressBook((int) $editAction);
@@ -63,12 +79,6 @@ class EditAddress extends Widget
             $bookModel->preloadDefault();
         }
 
-        $bookModelShipping = clone $bookModel;
-        $bookModelShipping->addressType = AddressForm::SHIPPING_ADDRESS;
-        $bookModelShipping->definePrefix();
-        $phoneFieldRequiredShipping = constant($bookModelShipping->get('TELEPHONE'));
-        $phoneFieldRequiredBilling = constant($bookModel->get('TELEPHONE'));
-        $phoneFieldRequired = ($phoneFieldRequiredShipping === $phoneFieldRequiredBilling) ? $bookModelShipping->get('TELEPHONE') : '';
 
         $action = tep_href_link('account/address-book-process', ($editAction > 0 ? 'edit=' . $editAction : ''), 'SSL');
         $title = ($editAction > 0 ? HEADING_TITLE_MODIFY_ENTRY : ($deleteAction > 0 ? HEADING_TITLE_DELETE_ENTRY : HEADING_TITLE_ADD_ENTRY));
@@ -120,12 +130,11 @@ class EditAddress extends Widget
             'link_address_book' => $link_address_book,
             'link_address_delete' => $link_address_delete,
             'model' => $bookModel,
-            'modelShipping' => $bookModelShipping,
-            'phoneFieldRequired' => $phoneFieldRequired,
             'set_primary' => $bookModel->address_book_id != $customer->customers_default_address_id,
             'links' => $links,
             'message' => $message,
             'postcoder' => $postcoder,
+            'type' => $type,
         ]]);
     }
 }

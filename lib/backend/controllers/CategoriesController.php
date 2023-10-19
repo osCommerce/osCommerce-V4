@@ -22,6 +22,8 @@ use common\classes\Images;
 use common\helpers\Html;
 use common\helpers\Seo;
 use common\helpers\Categories;
+use common\models\CategoriesImages;
+use common\models\ImageTypes;
 use common\models\Product\ProductsNotes;
 use common\services\ProductsDocumentsService;
 use common\services\ProductsNotesService;
@@ -473,6 +475,7 @@ class CategoriesController extends Sceleton {
         $this->view->filters->type_not_listing = (int)Yii::$app->request->get('type_not_listing', 0);
         $this->view->filters->sub_children = (int)Yii::$app->request->get('sub_children', 0);
         $this->view->filters->sale = (int)Yii::$app->request->get('sale', 0);
+        $this->view->filters->wo_images = (int)Yii::$app->request->get('wo_images', 0);
 
         $this->view->filters->platform = array();
         if (isset($_GET['platform']) && is_array($_GET['platform'])) {
@@ -710,7 +713,8 @@ class CategoriesController extends Sceleton {
                         $filter_prod .= " or pd.products_head_keywords_tag like '%" . tep_db_input($search) . "%' ";
 
                         $filter_prod .= " or p.products_model like '%" . tep_db_input($search) . "%' ";
-                        if (\common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed')) {
+                        /** @var \common\extensions\Inventory\Inventory $inv */
+                        if ($inv = \common\helpers\Extensions::isAllowed('Inventory')) {
                             $use_iventory = true;
                             $filter_prod .= " or i.products_model like '%" . tep_db_input($search) . "%' ";
                             // add search in suppliers
@@ -925,6 +929,32 @@ class CategoriesController extends Sceleton {
                 $filter_prod .= " and p.products_id = -1";
             }
             */
+        }
+
+        if (isset($output['wo_images'])) {
+            $_wo_images_pids = Yii::$app->getDb()->createCommand(
+                "SELECT p.products_id ".
+                "FROM ".TABLE_PRODUCTS." p ".
+                " LEFT JOIN ".TABLE_PRODUCTS_IMAGES." pi ON (p.products_id = pi.products_id) ".
+                "WHERE pi.products_id IS NULL"
+            )->queryColumn();
+            if ( count($_wo_images_pids)>0 ) {
+                $platform_filter_products .= " and p.products_id IN (" . implode(", ", $_wo_images_pids) . ")";
+
+                $_wo_images_categories = Yii::$app->getDb()->createCommand(
+                    "SELECT DISTINCT p2c.categories_id ".
+                    "FROM " . TABLE_PRODUCTS_TO_CATEGORIES . " p2c ".
+                    "WHERE p2c.products_id IN (" . implode(", ", $_wo_images_pids) . ")"
+                )->queryColumn();
+                foreach ($_wo_images_categories as $_cat_id){
+                    \common\helpers\Categories::get_parent_categories($_wo_images_categories, $_cat_id, false);
+                }
+                $platform_filter_categories = " AND c.categories_id IN (" . implode(", ", $_wo_images_categories) . ")";
+
+            }else{
+                $platform_filter_products .= " AND 1=0 /*wo images empty*/ ";
+                $platform_filter_categories .= " AND 1=0 /*wo images empty*/ ";
+            }
         }
 
         if (false === \common\helpers\Acl::rule(['TEXT_CATEGORIES', 'IMAGE_EDIT'])) {
@@ -1336,7 +1366,7 @@ class CategoriesController extends Sceleton {
           $cInfo->hasGrouppedProducts = Categories::hasGrouppedProducts($categories_id, true);
 
         $cInfo->eventInfo = null;
-        if ($es = \common\helpers\Acl::checkExtensionAllowed('EventSystem', 'allowed')){
+        if ($es = \common\helpers\Extensions::isAllowed('EventSystem')) {
             $cInfo->eventInfo = $es::event()->exec('getEventInformation',[$categories_id]);
         }
           return $this->render('categoryactions.tpl', ['cInfo' => $cInfo]);
@@ -1417,7 +1447,7 @@ class CategoriesController extends Sceleton {
         }
         echo '<div class="row_or">
                     <div>' . TEXT_PRODUCTS_AVERAGE_RATING . '</div>
-                    <div>' . number_format($pInfo->localRating[0]->average_rating ?? null, 2) . '%</div>
+                    <div>' . number_format($pInfo->localRating[0]->average_rating ?? 0, 2) . '%</div>
              </div>';
         echo '<div class="row_or">
                     <div>' . TEXT_SORT_ORDER . '</div>
@@ -1605,7 +1635,7 @@ class CategoriesController extends Sceleton {
         $this->view->categoriesTree = $this->getCategoryTree();
         if ($categories_id>0) {
           $this->view->categoriesOpenedTree = \common\helpers\Categories::getCategoryParentsIds($categories_id);
-            \common\helpers\Categories::createCategoriesCache(\common\helpers\Categories::getCategoryParentsIds($categories_id));
+          \common\components\CategoriesCache::getCPC()::invalidateCategories($categories_id);
         } else {
           $this->view->categoriesOpenedTree = [];
         }
@@ -1704,7 +1734,7 @@ class CategoriesController extends Sceleton {
             if ($duplicate_check['total'] < 1)
                 tep_db_query("update " . TABLE_PRODUCTS_TO_CATEGORIES . " set categories_id = '" . (int) $new_parent_id . "' where products_id = '" . (int) $products_id . "' and categories_id = '" . (int) $current_category_id . "'");
 
-            \common\helpers\Categories::createCategoriesCache(\common\helpers\Product::getCategoriesIdListWithParents($products_id));
+            \common\components\CategoriesCache::getCPC()::invalidateCategories([(int) $new_parent_id, (int) $current_category_id]);
 
             if (USE_CACHE == 'true') {
                 \common\helpers\System::reset_cache_block('categories');
@@ -1993,7 +2023,8 @@ class CategoriesController extends Sceleton {
               $sdn::deleteProductLinks($key);
             }
           }
-            \common\helpers\Categories::createCategoriesCache($catList);
+          \common\components\CategoriesCache::getCPC()::invalidateCategories($catList);
+
         }
 
         if (USE_CACHE == 'true') {
@@ -2068,7 +2099,7 @@ class CategoriesController extends Sceleton {
                 unset($afterObject);
                 $logger->run();
             }
-            \common\helpers\Categories::createCategoriesCache($listCatId);
+            \common\components\CategoriesCache::getCPC()::invalidateCategories($listCatId);
         }
     }
 
@@ -2167,7 +2198,7 @@ class CategoriesController extends Sceleton {
                 'products_popularity' => 0, 'popularity_simple' => 0, 'popularity_bestseller' => 0,
                 'use_sets_discount' => 0,
                 'is_bundle' => Yii::$app->request->get('bundle', 0),
-                'without_inventory' => (\common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed'))?0:1,
+                'without_inventory' => (int) (!\common\helpers\Extensions::isAllowed('Inventory')),
                 'products_tax_class_id' => \common\helpers\Tax::getDefaultTaxClassIdForProducts(),
                 'products_sets_discount' => 0,
                 'products_name' => '',
@@ -2240,12 +2271,6 @@ class CategoriesController extends Sceleton {
             $ext::getGroups();
         }
 
-        $upsellProducts = [];
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('UpSell', 'allowed')) {
-            $upsellProducts = $ext::getProducts($pInfo);
-        }
-        $this->view->upsellProducts = $upsellProducts;
-
         $bundlesProducts = [];
         if ($ext = \common\helpers\Acl::checkExtensionAllowed('ProductBundles', 'allowed')) {
             $bundlesProducts = $ext::getProducts($pInfo);
@@ -2253,12 +2278,13 @@ class CategoriesController extends Sceleton {
         $this->view->bundlesProducts = $bundlesProducts;
 
         $documents = [];
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('ProductDocuments', 'allowed')) {
+        /** @var \common\extensions\ProductDocuments\ProductDocuments $ext */
+        if ($ext = \common\helpers\Extensions::isAllowed('ProductDocuments')) {
             $documents = $ext::getDocuments($products_id);
         }
         $this->view->documents = $documents;
-
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed')) {
+        /** @var \common\extensions\Inventory\Inventory $ext */
+        if ($ext = \common\helpers\Extensions::isAllowed('Inventory')) {
             $ext::getInventory($products_id, $languages_id);
         } else {
             $this->view->showInventory = false;
@@ -2268,7 +2294,8 @@ class CategoriesController extends Sceleton {
             'list' => \common\classes\platform::getList(false),
             'show_block' => 1
         ];
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('ProductTemplates', 'allowed')) {
+        /** @var \common\extensions\ProductTemplates\ProductTemplates $ext */
+        if ($ext = \common\helpers\Extensions::isAllowed('ProductTemplates')) {
             $this->view->templates = $ext::productedit($products_id);
         }
 
@@ -2491,18 +2518,6 @@ class CategoriesController extends Sceleton {
             }
         }
 
-
-        $xsellProducts = [0=>[]];
-        $this->view->xsellTypes = [];
-        $get_xsell_types_r = tep_db_query("SELECT xsell_type_id, xsell_type_name FROM ".TABLE_PRODUCTS_XSELL_TYPE." WHERE language_id='".$languages_id."' ORDER BY xsell_type_name");
-        if ( tep_db_num_rows($get_xsell_types_r)>0 ) {
-            while ( $_xsell_type = tep_db_fetch_array($get_xsell_types_r) ) {
-                $this->view->xsellTypes[$_xsell_type['xsell_type_id']] = $_xsell_type['xsell_type_name'];
-                $xsellProducts[$_xsell_type['xsell_type_id']] = [];
-            }
-        }
-        $this->view->xsellProducts = $xsellProducts;
-
         $this->view->platform_activate_categories = [];
         $this->view->department_activate_categories = [];
         $this->view->price_tabs_data = null;
@@ -2713,7 +2728,7 @@ class CategoriesController extends Sceleton {
           $this->view->suppliers = [];
           $service->get('\common\models\SuppliersProducts', 'sProduct');
 
-          if (!\common\helpers\Attributes::has_product_attributes($pInfo->products_id ) || $pInfo->without_inventory || ((\common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed')) ? 0 : 1) ){
+          if (!\common\helpers\Attributes::has_product_attributes($pInfo->products_id ) || $pInfo->without_inventory || !\common\helpers\Extensions::isAllowed('Inventory') ){
               //$sProducts = \common\models\SuppliersProducts::getSupplierProducts((int)$pInfo->products_id)->all();
               $sProducts = \common\models\SuppliersProducts::find()->alias('sp')
                   ->joinWith('supplier s')
@@ -2740,32 +2755,6 @@ class CategoriesController extends Sceleton {
                   $this->view->suppliers[$sProduct->suppliers_id] = $sProduct;
               }
           }
-
-          $query = tep_db_query(
-              "select cpxs.xsell_id, cpxs.xsell_type_id, cpxs.sort_order, ".ProductNameDecorator::instance()->listingQueryExpression('pd','')." AS products_name, p.products_status, xsback.products_id as backlink ".
-              "from  " . TABLE_PRODUCTS_XSELL . " cpxs ".
-              " left join ".TABLE_PRODUCTS_XSELL." xsback ON xsback.products_id=cpxs.xsell_id AND xsback.xsell_id='" . (int) $pInfo->products_id . "' AND xsback.xsell_type_id=cpxs.xsell_type_id ".
-              ", " . TABLE_PRODUCTS . " p, " . TABLE_PRODUCTS_DESCRIPTION . " pd ".
-              "where cpxs.xsell_id = p.products_id and cpxs.xsell_id = pd.products_id and pd.language_id = '" . $languages_id . "' and pd.platform_id = '".intval(\common\classes\platform::defaultId())."' and cpxs.products_id = '" . (int) $pInfo->products_id . "' ".
-              "order by cpxs.xsell_type_id, cpxs.sort_order"
-          );
-          while ($data = tep_db_fetch_array($query)) {
-              if ( !isset($xsellProducts[$data['xsell_type_id']]) ) continue;
-              if (empty($data['products_name'])) {
-                  $data['products_name'] = \common\helpers\Product::get_products_name($data['xsell_id']);
-              }
-              $xsellProducts[$data['xsell_type_id']][] = [
-                  'xsell_id' => $data['xsell_id'],
-                  'id' => $data['xsell_id'],
-                  'products_name' => $data['products_name'],
-                  'name' => $data['products_name'],
-                  'image' => \common\classes\Images::getImage($data['xsell_id'], 'Small'),
-                  'price' => $currencies->format(\common\helpers\Product::get_products_price($data['xsell_id'])),
-                  'status_class' => ($data['products_status'] == 0 ? 'dis_prod' : ''),
-                  'backlink' => $data['backlink'],
-              ];
-          }
-          $this->view->xsellProducts = $xsellProducts;
 
           $this->view->properties_hiddens = '';
           $this->view->properties_array = array();
@@ -2891,19 +2880,6 @@ class CategoriesController extends Sceleton {
 
         foreach (\common\helpers\Hooks::getList('categories/productedit/before-render') as $filename) {
             include($filename);
-        }
-
-        //// image map
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('ImageMaps', 'allowed')) {
-            if ($pInfo->maps_id) {
-                $map = \common\extensions\ImageMaps\models\ImageMaps::findOne($pInfo->maps_id);
-                $mapImage = $map->image;
-                $mapTitle = $map->getTitle($languages_id);
-
-                $this->view->mapsId = $pInfo->maps_id;
-                $this->view->mapsTitle = $mapTitle;
-                $this->view->mapsImage = $mapImage;
-            }
         }
 
         if ($pdExt = \common\helpers\Acl::checkExtensionAllowed('ProductDesigner', 'allowed')){
@@ -3181,7 +3157,8 @@ class CategoriesController extends Sceleton {
           if ($products_options_id != $values['products_options_id']) {
             if ($products_options_id) {
               $is_virtual_option = \common\helpers\Attributes::is_virtual_option($products_options_id);
-              if (!$inventoryDisable && ($ext = \common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed')) && !$is_virtual_option) {
+              /** @var \common\extensions\Inventory\Inventory $ext */
+              if (!$inventoryDisable && ($ext = \common\helpers\Extensions::isAllowed('Inventory')) && !$is_virtual_option) {
                 $ret[] = ['data' => $ext::getProductNewOption($products_id, $attributes),
                         'is_virtual_option' => $is_virtual_option,
                         'products_options_id' => $attributes[0]['products_options_id'],
@@ -3223,7 +3200,8 @@ class CategoriesController extends Sceleton {
         }
         if ($products_options_id) {
           $is_virtual_option = \common\helpers\Attributes::is_virtual_option($products_options_id);
-          if (!$inventoryDisable && ($ext = \common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed')) && !$is_virtual_option) {
+          /** @var \common\extensions\Inventory\Inventory $ext */
+          if (!$inventoryDisable && ($ext = \common\helpers\Extensions::isAllowed('Inventory')) && !$is_virtual_option) {
             $ret[] = ['data' => $ext::getProductNewOption($products_id, $attributes),
                     'is_virtual_option' => $is_virtual_option,
                     'products_options_id' => $attributes[0]['products_options_id'],
@@ -3259,7 +3237,7 @@ class CategoriesController extends Sceleton {
         }
 
         /* @var $ext  \common\extensions\Inventory\Inventory */
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed')) {
+        if ($ext = \common\helpers\Extensions::isAllowed('Inventory')) {
             return $ext::productInventoryBox();
         }
     }
@@ -3283,7 +3261,8 @@ class CategoriesController extends Sceleton {
         ]));
 
         $this->view->groups = [];
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('UserGroups', 'allowed')) {
+        /** @var \common\extensions\UserGroups\UserGroups $ext */
+        if ($ext = \common\helpers\Extensions::isAllowed('UserGroups')) {
             $ext::getGroups();
         }
 
@@ -3338,7 +3317,8 @@ class CategoriesController extends Sceleton {
         $attributes = new ViewAttributes($pInfo);
         $attributes->populateView($this->view);
 
-        if (!$inventoryDisable && $ext = (\common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed')) ) {
+        /** @var \common\extensions\Inventory\Inventory $ext */
+        if (!$inventoryDisable && $ext = (\common\helpers\Extensions::isAllowed('Inventory')) ) {
             return $ext::productAttributesBox($pInfo);
         }else{
             return $this->render('product-new-option.tpl', [
@@ -3442,7 +3422,8 @@ class CategoriesController extends Sceleton {
             $values['gross_price_formatted'] =  $currencies->display_price(0, 0, 1 ,false);
             $option[0] = $values;
             $is_virtual_option = \common\helpers\Attributes::is_virtual_option($values['products_options_id']);
-            if (!$inventoryDisable && ($ext = \common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed')) && !$is_virtual_option) {
+            /** @var \common\extensions\Inventory\Inventory */
+            if (!$inventoryDisable && ($ext = \common\helpers\Extensions::isAllowed('Inventory')) && !$is_virtual_option) {
               $ret[] = ['data' => $ext::getProductNewAttribute($products_id, $option, $values['products_options_id']),
                         'is_virtual_option' => $is_virtual_option,
                         'products_options_values_id' => $values['products_options_values_id'],
@@ -3926,6 +3907,7 @@ class CategoriesController extends Sceleton {
                                    'currencies_id' => (int)$currencies_id,
                   ];
                 $fields = [
+                            ['db' => 'products_sets_discount', 'dbdef' => 0, 'post' => 'products_group_sets_discount'],
                             ['db' => 'products_group_price', 'dbdef' => ($groups_id==0?0:-2), 'post' => 'products_group_price'],
                             ['db' => 'bonus_points_price', 'dbdef' => 0, 'post' => 'bonus_points_price', 'flag' => 'bonus_points_status'],
                             ['db' => 'bonus_points_cost', 'dbdef' => 0, 'post' => 'bonus_points_cost', 'flag' => 'bonus_points_status'],
@@ -4128,12 +4110,6 @@ class CategoriesController extends Sceleton {
         }
 ////////////////////////////////
 
-
-        /** @var \common\extensions\NotifyProductsDate\NotifyProductsDate $npd */
-        if ($npd = \common\helpers\Acl::checkExtensionAllowed('NotifyProductsDate', 'allowed')) {
-            $npd::productSave($all_inventory_uprids_array);
-        }
-
         //suppliers
         if  ($TabAccess->tabDataSave('TEXT_PRICE_COST_W') && $TabAccess->allowSuppliersData()) {
             $suppliers_data = Yii::$app->request->post('suppliers_data', []);
@@ -4175,6 +4151,11 @@ class CategoriesController extends Sceleton {
                         $sProduct->load($data, null);
                         $sProduct->sort_order = is_null($sort_order) ? null : $sort_order++;
                         $sProduct->saveSupplierProduct($data);
+                        if ($ext = \common\helpers\Acl::checkExtensionAllowed('SupplierPurchase', 'allowed')) {
+                            if (method_exists($ext, 'checkWSProductStock')) {
+                                $ext::checkWSProductStock($products_id, \common\helpers\Warehouses::get_default_warehouse(), $suppliers_id);
+                            }
+                        }
                     }
                     foreach($sProducts as $sProduct) $sProduct->delete();
                 } else {
@@ -4182,7 +4163,7 @@ class CategoriesController extends Sceleton {
                     (new SuppliersProducts)->saveDefaultSupplierProduct(['products_id' => $products_id]);
                 }
             } else { //inv
-                if (\common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed')) {
+                if (\common\helpers\Extensions::isAllowed('Inventory')) {
                     //{{delete single sup_prid
                     foreach(SuppliersProducts::getSupplierProducts($products_id)->all() as $sP) $sP->delete();
                     //}}end
@@ -4213,6 +4194,12 @@ class CategoriesController extends Sceleton {
                                     $data['suppliers_price_discount'] = \common\helpers\Suppliers::getDiscountValuesTable($suppliers_discount[$inventory->products_id][$suppliers_id] ?? null);
                                     $sProduct->load($data, null);
                                     $sProduct->saveSupplierProduct($data);
+                                    /** @var \common\extensions\SupplierPurchase\SupplierPurchase $ext */
+                                    if ($ext = \common\helpers\Extensions::isAllowed('SupplierPurchase')) {
+                                        if (method_exists($ext, 'checkWSProductStock')) {
+                                            $ext::checkWSProductStock($inventory->products_id, \common\helpers\Warehouses::get_default_warehouse(), $suppliers_id);
+                                        }
+                                    }
                                 }
                                 foreach($sProducts as $sProduct) $sProduct->delete();
                             } else { //
@@ -4289,7 +4276,7 @@ class CategoriesController extends Sceleton {
 
         \common\components\Popularity::calculatePopularity($productModel->products_id);
 
-        \common\helpers\Categories::createCategoriesCache(\common\helpers\Product::getCategoriesIdListWithParents($products_id));
+        \common\components\CategoriesCache::getCPC()::invalidateProducts((int)$products_id);
 
         $message = TEXT_PRODUCT_UPDATED_NOTICE;
         $messageType = 'success';
@@ -4578,65 +4565,65 @@ class CategoriesController extends Sceleton {
         }
     }
 
-    public function actionProductNewXsell() {
+//    public function actionProductNewXsell() {
+//
+//        $this->layout = false;
+//
+//        $currencies = Yii::$container->get('currencies');
+//
+//        $products_id = (int) Yii::$app->request->post('products_id');
+//        $xsell_type_id = (int) Yii::$app->request->post('xsell_type');
+//        $data = self::getProductsDetails($products_id);
+//
+//        if (count($data) > 0) {
+//            $backlink = 0;
+//            if ($parent_products_id = (int) Yii::$app->request->post('parent_products_id')) {
+//                $backlink = \common\models\ProductsXsell::find()
+//                    ->where(['xsell_type_id' => $xsell_type_id, 'xsell_id' => $parent_products_id, 'products_id' => $data['products_id']])
+//                    ->select(['xsell_id'])->scalar();
+//            }
+//
+//            $xsellProduct = [
+//                'xsell_id' => $data['products_id'],
+//                'xsell_type_id' => $xsell_type_id,
+//                'products_name' => $data['products_name'],
+//                'image' => \common\classes\Images::getImage($data['products_id'], 'Small'),
+//                'price' => $currencies->format(\common\helpers\Product::get_products_price($data['products_id'])),
+//                'status_class' => ($data['products_status'] == 0 ? 'dis_prod' : ''),
+//                'backlink' => $backlink,
+//            ];
+//
+//            return $this->render('product-new-xsell.tpl', [
+//                'xsell_type_id' => $xsell_type_id,
+//                'xsell' => $xsellProduct,
+//            ]);
+//        }
+//    }
 
-        $this->layout = false;
-
-        $currencies = Yii::$container->get('currencies');
-
-        $products_id = (int) Yii::$app->request->post('products_id');
-        $xsell_type_id = (int) Yii::$app->request->post('xsell_type');
-        $data = self::getProductsDetails($products_id);
-
-        if (count($data) > 0) {
-            $backlink = 0;
-            if ($parent_products_id = (int) Yii::$app->request->post('parent_products_id')) {
-                $backlink = \common\models\ProductsXsell::find()
-                    ->where(['xsell_type_id' => $xsell_type_id, 'xsell_id' => $parent_products_id, 'products_id' => $data['products_id']])
-                    ->select(['xsell_id'])->scalar();
-            }
-
-            $xsellProduct = [
-                'xsell_id' => $data['products_id'],
-                'xsell_type_id' => $xsell_type_id,
-                'products_name' => $data['products_name'],
-                'image' => \common\classes\Images::getImage($data['products_id'], 'Small'),
-                'price' => $currencies->format(\common\helpers\Product::get_products_price($data['products_id'])),
-                'status_class' => ($data['products_status'] == 0 ? 'dis_prod' : ''),
-                'backlink' => $backlink,
-            ];
-
-            return $this->render('product-new-xsell.tpl', [
-                'xsell_type_id' => $xsell_type_id,
-                'xsell' => $xsellProduct,
-            ]);
-        }
-    }
-
-    public function actionProductNewUpsell() {
-
-        $this->layout = false;
-
-        $currencies = Yii::$container->get('currencies');
-
-        $products_id = (int) Yii::$app->request->post('products_id');
-
-        $data = self::getProductsDetails($products_id);
-
-        if (count($data) > 0) {
-            $upsellProduct = [
-                'upsell_id' => $data['products_id'],
-                'products_name' => $data['products_name'],
-                'image' => \common\classes\Images::getImage($data['products_id'], 'Small'),
-                'price' => $currencies->format(\common\helpers\Product::get_products_price($data['products_id'])),
-                'status_class' => ($data['products_status'] == 0 ? 'dis_prod' : ''),
-            ];
-
-            return $this->render('product-new-upsell.tpl', [
-                        'upsell' => $upsellProduct,
-            ]);
-        }
-    }
+//    public function actionProductNewUpsell() {
+//
+//        $this->layout = false;
+//
+//        $currencies = Yii::$container->get('currencies');
+//
+//        $products_id = (int) Yii::$app->request->post('products_id');
+//
+//        $data = self::getProductsDetails($products_id);
+//
+//        if (count($data) > 0) {
+//            $upsellProduct = [
+//                'upsell_id' => $data['products_id'],
+//                'products_name' => $data['products_name'],
+//                'image' => \common\classes\Images::getImage($data['products_id'], 'Small'),
+//                'price' => $currencies->format(\common\helpers\Product::get_products_price($data['products_id'])),
+//                'status_class' => ($data['products_status'] == 0 ? 'dis_prod' : ''),
+//            ];
+//
+//            return $this->render('product-new-upsell.tpl', [
+//                        'upsell' => $upsellProduct,
+//            ]);
+//        }
+//    }
 
     public function actionProductImageGenerator() {
 
@@ -4828,9 +4815,16 @@ class CategoriesController extends Sceleton {
 
         $mapImage = null;
         $mapTitle = '';
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('ImageMaps', 'allowed')) {
-            if (isset($category['maps_id']) && $category['maps_id']>0) {
-                $map = \common\extensions\ImageMaps\models\ImageMaps::findOne($category['maps_id']);
+
+        /**
+         * @var $imageMaps \common\extensions\ImageMaps\models\ImageMaps
+         */
+        if ($imageMaps = \common\helpers\Extensions::getModel('ImageMaps', 'ImageMaps')) {
+            if (!isset($cInfo->maps_id)) {
+                $cInfo->maps_id = 0;
+            }
+            if ($cInfo->maps_id > 0 && !empty($imageMaps)) {
+                $map = $imageMaps::findOne((int)$cInfo->maps_id);
                 if ($map) {
                     $mapImage = $map->image;
                     $mapTitle = $map->getTitle($languages_id);
@@ -5176,41 +5170,61 @@ class CategoriesController extends Sceleton {
             $bannerGroups[$banner['id']] = $banner['banners_group'];
         }
 
-        $xsellProducts = [0=>[]];
-        $this->view->xsellTypes = [];
-        $get_xsell_types_r = tep_db_query("SELECT xsell_type_id, xsell_type_name FROM ".TABLE_PRODUCTS_XSELL_TYPE." WHERE language_id='".$languages_id."' ORDER BY xsell_type_name");
-        if ( tep_db_num_rows($get_xsell_types_r)>0 ) {
-            while ( $_xsell_type = tep_db_fetch_array($get_xsell_types_r) ) {
-                $this->view->xsellTypes[$_xsell_type['xsell_type_id']] = $_xsell_type['xsell_type_name'];
-                $xsellProducts[$_xsell_type['xsell_type_id']] = [];
-            }
+//        $xsellProducts = [0=>[]];
+//        $this->view->xsellTypes = [];
+//        $get_xsell_types_r = tep_db_query("SELECT xsell_type_id, xsell_type_name FROM ".TABLE_PRODUCTS_XSELL_TYPE." WHERE language_id='".$languages_id."' ORDER BY xsell_type_name");
+//        if ( tep_db_num_rows($get_xsell_types_r)>0 ) {
+//            while ( $_xsell_type = tep_db_fetch_array($get_xsell_types_r) ) {
+//                $this->view->xsellTypes[$_xsell_type['xsell_type_id']] = $_xsell_type['xsell_type_name'];
+//                $xsellProducts[$_xsell_type['xsell_type_id']] = [];
+//            }
+//        }
+//        $this->view->xsellProducts = $xsellProducts;
+//
+//        $currencies = Yii::$container->get('currencies');
+//        $query = tep_db_query("select cpxs.xsell_products_id as xsell_id, cpxs.xsell_type_id, cpxs.sort_order, ".ProductNameDecorator::instance()->listingQueryExpression('pd','')." AS products_name, p.products_status from  " . TABLE_CATS_PRODUCTS_XSELL . " cpxs, " . TABLE_PRODUCTS . " p, " . TABLE_PRODUCTS_DESCRIPTION . " pd where cpxs.xsell_products_id = p.products_id and cpxs.xsell_products_id = pd.products_id and pd.language_id = '" . $languages_id . "' and pd.platform_id = '".intval(\common\classes\platform::defaultId())."' and cpxs.categories_id = '" . (int) $categories_id . "' order by cpxs.xsell_type_id, cpxs.sort_order");
+//        while ($data = tep_db_fetch_array($query)) {
+//            if ( !isset($xsellProducts[$data['xsell_type_id']]) ) continue;
+//            if (empty($data['products_name'])) {
+//                $data['products_name'] = \common\helpers\Product::get_products_name($data['xsell_id']);
+//            }
+//            $xsellProducts[$data['xsell_type_id']][] = [
+//                'xsell_id' => $data['xsell_id'],
+//                'id' => $data['xsell_id'],
+//                'products_name' => $data['products_name'],
+//                'name' => $data['products_name'],
+//                'image' => \common\classes\Images::getImage($data['xsell_id'], 'Small'),
+//                'price' => $currencies->format(\common\helpers\Product::get_products_price($data['xsell_id'])),
+//                'status_class' => ($data['products_status'] == 0 ? 'dis_prod' : ''),
+//            ];
+//        }
+//        $this->view->xsellProducts = $xsellProducts;
+        foreach (\common\helpers\Hooks::getList('categories/categoryedit/before-render') as $filename) {
+            include($filename);
         }
-        $this->view->xsellProducts = $xsellProducts;
-
-        $currencies = Yii::$container->get('currencies');
-        $query = tep_db_query("select cpxs.xsell_products_id as xsell_id, cpxs.xsell_type_id, cpxs.sort_order, ".ProductNameDecorator::instance()->listingQueryExpression('pd','')." AS products_name, p.products_status from  " . TABLE_CATS_PRODUCTS_XSELL . " cpxs, " . TABLE_PRODUCTS . " p, " . TABLE_PRODUCTS_DESCRIPTION . " pd where cpxs.xsell_products_id = p.products_id and cpxs.xsell_products_id = pd.products_id and pd.language_id = '" . $languages_id . "' and pd.platform_id = '".intval(\common\classes\platform::defaultId())."' and cpxs.categories_id = '" . (int) $categories_id . "' order by cpxs.xsell_type_id, cpxs.sort_order");
-        while ($data = tep_db_fetch_array($query)) {
-            if ( !isset($xsellProducts[$data['xsell_type_id']]) ) continue;
-            if (empty($data['products_name'])) {
-                $data['products_name'] = \common\helpers\Product::get_products_name($data['xsell_id']);
-            }
-            $xsellProducts[$data['xsell_type_id']][] = [
-                'xsell_id' => $data['xsell_id'],
-                'id' => $data['xsell_id'],
-                'products_name' => $data['products_name'],
-                'name' => $data['products_name'],
-                'image' => \common\classes\Images::getImage($data['xsell_id'], 'Small'),
-                'price' => $currencies->format(\common\helpers\Product::get_products_price($data['xsell_id'])),
-                'status_class' => ($data['products_status'] == 0 ? 'dis_prod' : ''),
-            ];
-        }
-        $this->view->xsellProducts = $xsellProducts;
-
         global $navigation;
         if (sizeof($navigation->snapshot) > 0) {
             $backUrl = Yii::$app->urlManager->createUrl(array_merge([$navigation->snapshot['page']], $navigation->snapshot['get']));
         } else {
             $backUrl = Yii::$app->urlManager->createUrl(['category', 'category_id' => $cInfo->parent_id]);
+        }
+
+        $heroImages = ImageTypes::find()
+            ->where(['image_types_name' => 'Category hero'])
+            ->andWhere(['not', ['parent_id' => 0]])
+            ->asArray()->all();
+        if (is_array($heroImages)) {
+            foreach ($heroImages as $key => $size) {
+                $categoriesImages = CategoriesImages::find()->where([
+                    'categories_id' => $categories_id,
+                    'image_types_id' => $size['image_types_id']
+                ])->asArray()->all();
+                if (is_array($categoriesImages)) {
+                    foreach ($categoriesImages as $categoriesImage) {
+                        $heroImages[$key]['images'][$categoriesImage['image_types_id']][$categoriesImage['platform_id']] = $categoriesImage;
+                    }
+                }
+            }
         }
 
         return $this->render('categoryedit', [
@@ -5224,9 +5238,10 @@ class CategoriesController extends Sceleton {
                     'js_department_switch_notice' => json_encode($this->view->department_switch_notice),
                     'templates' => \backend\design\CategoryTemplate::categoryedit($categories_id),
                     'upload_path' => \Yii::getAlias('@web') . '/uploads/',
-                    'images' => \common\helpers\Image::getCategorisAdditionlImages($categories_id),
+                    'images' => \common\helpers\Image::getCategoriesAdditionalImages($categories_id),
                     'bannerGroups' => $bannerGroups,
                     'backUrl' => $backUrl,
+                    'heroImages' => $heroImages,
         ]);
     }
 
@@ -5274,32 +5289,15 @@ class CategoriesController extends Sceleton {
           if ($pSettings) {
             foreach($pSettings as $platform_id => $ps) {
               if (!isset($post['plaformsettings'][$platform_id])) {
-                // nice to have - delete images (they could be used on other categories)
-                  if (!empty($ps->categories_image)) {
-                      $image_location = DIR_FS_DOCUMENT_ROOT . DIR_WS_CATALOG_IMAGES . $ps->categories_image;
-                      if (file_exists($image_location)) @unlink($image_location);
-                      Images::removeResizeImages($ps->categories_image);
-                      Images::removeWebp($ps->categories_image);
+                  foreach (['', '_2', '_3', '_4'] as $mod) {
+                      $imageName = 'categories_image' . $mod;
+                      if (!empty($ps->$imageName)) {
+                          $image_location = DIR_FS_DOCUMENT_ROOT . DIR_WS_CATALOG_IMAGES . $ps->$imageName;
+                          if (file_exists($image_location)) @unlink($image_location);
+                          Images::removeResizeImages($ps->$imageName);
+                          Images::removeWebp($ps->$imageName);
+                      }
                   }
-                  if (!empty($ps->categories_image_2)) {
-                      $image_location = DIR_FS_DOCUMENT_ROOT . DIR_WS_CATALOG_IMAGES . $ps->categories_image_2;
-                      if (file_exists($image_location)) @unlink($image_location);
-                      Images::removeResizeImages($ps->categories_image_2);
-                      Images::removeWebp($ps->categories_image_2);
-                  }
-                  if (!empty($ps->categories_image_3)) {
-                      $image_location = DIR_FS_DOCUMENT_ROOT . DIR_WS_CATALOG_IMAGES . $ps->categories_image_3;
-                      if (file_exists($image_location)) @unlink($image_location);
-                      Images::removeResizeImages($ps->categories_image_3);
-                      Images::removeWebp($ps->categories_image_3);
-                  }
-                  if (!empty($ps->categories_image_4)) {
-                      $image_location = DIR_FS_DOCUMENT_ROOT . DIR_WS_CATALOG_IMAGES . $ps->categories_image_4;
-                      if (file_exists($image_location)) @unlink($image_location);
-                      Images::removeResizeImages($ps->categories_image_4);
-                      Images::removeWebp($ps->categories_image_4);
-                  }
-
                 $ps->delete();
               } else {
                 $post['plaformsettings'][$platform_id] = $ps;
@@ -5309,7 +5307,7 @@ class CategoriesController extends Sceleton {
           }
         }
 
-        \common\helpers\Image::saveCategorisAdditionlImages(Yii::$app->request->post('additional_categories'), $categories_id);
+        \common\helpers\Image::saveCategoriesAdditionalImages(Yii::$app->request->post('additional_categories'), $categories_id);
 
         if ($action == 'insert_category') {
             $sql_data_array = [
@@ -5327,6 +5325,8 @@ class CategoriesController extends Sceleton {
             Yii::$app->request->setBodyParams(array_merge(Yii::$app->request->getBodyParams(), ['categories_id' => $categories_id, 'popup' => $popup]));
 
         }
+        $heroImageMain = [];
+        $heroImageMainUpdate = [];
 
 /* platform settings main tab*/
         if (!empty($post['plaformsettings']) && is_array($post['plaformsettings'])) {
@@ -5335,46 +5335,30 @@ class CategoriesController extends Sceleton {
             $maps_id = (int)tep_db_prepare_input($_POST['maps_id'][$platform_id]);
 
             foreach (['gallery' => '', 'hero' => '_2', 'homepage' => '_3', 'menu' => '_4'] as $imageType => $mod) {
-                $categories_image_loaded = $post['categories_image_loaded' . $mod][$platform_id];
-                $delete_image = (isset($post['delete_image' . $mod][$platform_id]) ? $post['delete_image' . $mod][$platform_id] : false);
-                $categories_image = str_replace('images/', '', $post['categories_image' . $mod][$platform_id]);
-                if ($categories_image=='0') {
-                    $categories_image = '';
-                }
-                $sql_data_array['categories_image' . $mod] = $categories_image;
+                $imageName = 'categories_image' . $mod;
+                $oldImage = ($platform_id == 0 ? ($category->$imageName ?? '') : ($ps->$imageName ?? ''));
+                $deleteImage = (boolean)($post['delete_image' . $mod][$platform_id] ?? false);
 
-                $categoriesImage = 'categories_image' . $mod;
-
-                if ($delete_image) {
-                    $sql_data_array[$categoriesImage] = '';
-                }
-
-                if ($delete_image || $categories_image_loaded != '') {
-                    $removeImage = ($platform_id == 0 ? ($category->$categoriesImage ?? null): (empty($ps->$categoriesImage) ? '' : $ps->$categoriesImage));
-                    if (!empty($removeImage)) {
-                        $image_location = DIR_FS_DOCUMENT_ROOT . DIR_WS_CATALOG_IMAGES . $removeImage;
-                        if (file_exists($image_location)) @unlink($image_location);
-                        Images::removeResizeImages($removeImage);
-                        Images::removeWebp($removeImage);
+                $sql_data_array[$imageName] = \common\helpers\Image::prepareSavingImage(
+                    $oldImage,
+                    $post[$imageName][$platform_id],
+                    $post['categories_image_loaded' . $mod][$platform_id],
+                    'categories' . DIRECTORY_SEPARATOR . $categories_id . DIRECTORY_SEPARATOR . $imageType,
+                    $deleteImage
+                );
+                if ($imageType == 'hero') {
+                    $heroImageMain[$platform_id] = $sql_data_array[$imageName];
+                    if ($sql_data_array[$imageName] == $oldImage) {
+                        $heroImageMainUpdate[$platform_id] = false;
+                    } else {
+                        $heroImageMainUpdate[$platform_id] = true;
                     }
                 }
 
-                $imgPath = DIR_WS_IMAGES . 'categories' . DIRECTORY_SEPARATOR . $categories_id . DIRECTORY_SEPARATOR;
-                if ($categories_image_loaded != '') {
-                    $val = Uploads::move($categories_image_loaded, $imgPath . $imageType, true);
-                    $val = str_replace('\\', '/', $val);
-                    $val = str_replace(DIR_WS_IMAGES, '', $val);
-                    $sql_data_array['categories_image' . $mod] = $val;
-                    Images::createWebp($val, true);
-                    Images::createResizeImages($val, 'Category ' . $imageType, true);
-                } elseif ($sql_data_array['categories_image' . $mod]) {
-                    $sql_data_array['categories_image' . $mod] = Images::moveImage(
-                            $sql_data_array['categories_image' . $mod],
-                            'categories' . DIRECTORY_SEPARATOR . $categories_id . DIRECTORY_SEPARATOR . $imageType
-                    );
-                    Images::createWebp($sql_data_array['categories_image' . $mod]);
-                    Images::createResizeImages($sql_data_array['categories_image' . $mod], 'Category ' . $imageType);
+                if ($deleteImage && $oldImage) {
+                    Images::removeResizeImages($oldImage);
                 }
+                Images::createResizeImages($sql_data_array[$imageName], 'Category ' . $imageType);
             }
 
             $sql_data_array['maps_id'] = $maps_id;
@@ -5733,43 +5717,6 @@ class CategoriesController extends Sceleton {
             $supplierRules->saveCategoryData($categoryObj, Yii::$app->request->post('suppliers_data',[]));
         }
 
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('EventSystem', 'allowed')){
-            $ext::event()->exec('saveEventAdditionalFields', [$categories_id, $post]);
-        }
-
-        /**
-         * Marketing xsell
-         */
-        $xsell_array = Yii::$app->request->post('xsell_id');
-        tep_db_query("delete from " . TABLE_CATS_PRODUCTS_XSELL . " where categories_id  = '" . (int) $categories_id . "'");
-        if (is_array($xsell_array)) {
-            $xsell_sort_order_array = Yii::$app->request->post('xsell_sort_order');
-            foreach( $xsell_array as $xsell_type_id=>$xsell ) {
-                $xsell_sort_order = isset($xsell_sort_order_array[$xsell_type_id])?$xsell_sort_order_array[$xsell_type_id]:'';
-                $xsell_sort = [];
-                if (!empty($xsell_sort_order)) {
-                    parse_str($xsell_sort_order, $xsell_sort);
-                    if (isset($xsell_sort['xsell-box']) && is_array($xsell_sort['xsell-box'])) {
-                        $xsell_sort = $xsell_sort['xsell-box'];
-                        $xsell_sort = array_flip($xsell_sort);
-                    }
-                }
-
-                foreach ($xsell as $pointer => $xsell_id) {
-                    if ($categories_id != $xsell_id) {
-                        $sql_data_array = [];
-                        $sql_data_array['categories_id'] = (int) $categories_id;
-                        $sql_data_array['xsell_type_id'] = (int)$xsell_type_id;
-                        $sql_data_array['xsell_products_id'] = (int) $xsell_id;
-                        if (isset($xsell_sort[$xsell_id])) {
-                            $sql_data_array['sort_order'] = (int) $xsell_sort[$xsell_id];
-                        }
-                        tep_db_perform(TABLE_CATS_PRODUCTS_XSELL, $sql_data_array);
-                    }
-                }
-            }
-        }
-
         if (USE_CACHE == 'true') {
             \common\helpers\System::reset_cache_block('categories');
             \common\helpers\System::reset_cache_block('also_purchased');
@@ -5788,7 +5735,60 @@ class CategoriesController extends Sceleton {
             $logger->run();
         }
 
-        \common\helpers\Categories::createCategoriesCache(\common\helpers\Categories::getCategoryParentsIds($categories_id));
+        $heroImages = Yii::$app->request->post('heroImage', []);
+        $heroImagesLoaded = Yii::$app->request->post('heroImage_loaded', []);
+        $heroImagesDelete = Yii::$app->request->post('heroImage_delete', []);
+        $heroImagesPosition = Yii::$app->request->post('heroImage_position', []);
+        $heroImagesFit = Yii::$app->request->post('heroImage_fit', []);
+        if (count($heroImages)) {
+            foreach ($heroImages as $typeId => $heroImagePlatforms) {
+                $imageTypes = ImageTypes::find()->where(['image_types_id' => $typeId])->asArray()->one();
+                foreach ($heroImagePlatforms as $platformId => $heroImage) {
+                    $categoriesImages = CategoriesImages::findOne([
+                            'categories_id' => $categories_id,
+                            'platform_id' => $platformId,
+                            'image_types_id' => $typeId,
+                    ]);
+                    if ((($heroImageMainUpdate[$platformId] ?? false) && !($heroImagesLoaded[$typeId][$platformId] ?? false)) ||
+                        (!$heroImage && !($heroImagesLoaded[$typeId][$platformId] ?? false) && ($heroImageMain[$platformId] ?? false))
+                    ) {
+                        $heroImagesLoaded[$typeId][$platformId] = DIR_WS_IMAGES . $heroImageMain[$platformId];
+                    }
+                    $image = \common\helpers\Image::prepareSavingImage(
+                        $categoriesImages->image ?? '',
+                        $heroImage,
+                        $heroImagesLoaded[$typeId][$platformId],
+                        'categories' . DIRECTORY_SEPARATOR . $categories_id . DIRECTORY_SEPARATOR . 'hero',
+                        $heroImagesDelete[$typeId][$platformId],
+                        false,
+                        [
+                            'width' => $imageTypes['image_types_x'],
+                            'height' => $imageTypes['image_types_y'],
+                            'fit' => $heroImagesFit[$typeId][$platformId]
+                        ]
+                    );
+                    if (!$categoriesImages && $image) {
+                        $categoriesImages = new CategoriesImages();
+                        $categoriesImages->categories_id = $categories_id;
+                        $categoriesImages->image = $image;
+                        $categoriesImages->platform_id = $platformId;
+                        $categoriesImages->image_types_id = $typeId;
+                        $categoriesImages->position = $heroImagesPosition[$typeId][$platformId];
+                        $categoriesImages->fit = $heroImagesFit[$typeId][$platformId];
+                        $categoriesImages->save();
+                    } elseif ($categoriesImages && !$image) {
+                        $categoriesImages->delete();
+                    } elseif ($categoriesImages && $image) {
+                        $categoriesImages->image = $image;
+                        $categoriesImages->position = $heroImagesPosition[$typeId][$platformId];
+                        $categoriesImages->fit = $heroImagesFit[$typeId][$platformId];
+                        $categoriesImages->save();
+                    }
+                }
+            }
+        }
+
+        \common\components\CategoriesCache::getCPC()::invalidateCategories((int)$categories_id);
 
         if ($popup == 1) {
             $this->view->categoriesTree = $this->getCategoryTree();
@@ -5983,11 +5983,9 @@ class CategoriesController extends Sceleton {
         switch ($type) {
             case 'products_status':
                 \common\helpers\Product::set_status((int) $id, ($status == 'true' ? 1 : 0));
-                \common\helpers\Categories::createCategoriesCache(\common\helpers\Product::getCategoriesIdListWithParents($id));
                 break;
             case 'categories_status':
                 \common\helpers\Categories::set_categories_status((int) $id, ($status == 'true' ? 1 : 0));
-                \common\helpers\Categories::createCategoriesCache(\common\helpers\Categories::getCategoryParentsIds($id));
                 break;
             default:
                 break;
@@ -6391,9 +6389,13 @@ class CategoriesController extends Sceleton {
         }
 
         \common\helpers\Php8::nullArrProps($manufacturers, ['manufacturers_id', 'maps_id', 'manufacturers_name', 'manufacturers_image', 'manufacturers_image_2', 'stock_limit', 'mapsId', 'mapsImage', 'mapsTitle', 'brand_id']);
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('ImageMaps', 'allowed')) {
-            if ($manufacturers['maps_id']) {
-              if ($map = \common\extensions\ImageMaps\models\ImageMaps::findOne($manufacturers['maps_id'])) {
+
+        /**
+         * @var $imageMaps \common\extensions\ImageMaps\models\ImageMaps
+         */
+        if ($imageMaps = \common\helpers\Extensions::getModel('ImageMaps', 'ImageMaps')) {
+            if ($manufacturers['maps_id'] && !empty($imageMaps)) {
+              if ($map = $imageMaps::findOne($manufacturers['maps_id'])) {
                 $manufacturers['mapsId'] = $manufacturers['maps_id'];
                 $manufacturers['mapsImage'] = $map->image;
                 $manufacturers['mapsTitle'] = $map->getTitle($languages_id);
@@ -6687,7 +6689,7 @@ class CategoriesController extends Sceleton {
         echo '<div class="brand_pad">';
         echo tep_draw_form('manufacturer_delete', FILENAME_MANUFACTURERS, \common\helpers\Output::get_all_get_params(array('action')) . 'action=update', 'post', 'id="manufacturer_delete" onSubmit="return deleteManufacturer();"');
         echo '<div class="or_box_head">' . TEXT_HEADING_DELETE_MANUFACTURER . '</div>';
-        echo '<div class="col_desc">' . TEXT_DELETE_INTRO . ' <b>' . $mInfo->manufacturers_name . '</b></div>';
+        echo '<div class="col_desc">' . TEXT_DELETE_MANUFACTURER . ' <b>' . $mInfo->manufacturers_name . '</b></div>';
         //echo '<div class="check_linear">' . tep_draw_checkbox_field('delete_image', '', TRUE) . ' <span>' . TEXT_DELETE_IMAGE . '</span></div>';
         ?>
         <div class="btn-toolbar btn-toolbar-order">
@@ -6813,15 +6815,17 @@ class CategoriesController extends Sceleton {
                 'manufacturers_id' => isset($calculateData['manufacturers_id'])?intval($calculateData['manufacturers_id']):0,
                 'currencies_id' => isset($calculateData['currencies_id'])?intval($calculateData['currencies_id']):0,
                 'PRICE' => isset($calculateData['PRICE'])?floatval($calculateData['PRICE']):0,
-                'MARGIN' => isset($calculateData['MARGIN'])?$calculateData['MARGIN']:null,
-                'SURCHARGE' => isset($calculateData['SURCHARGE'])?$calculateData['SURCHARGE']:null,
-                'DISCOUNT' => isset($calculateData['DISCOUNT'])?$calculateData['DISCOUNT']:null,
+                'MARGIN' => !empty($calculateData['MARGIN'])?$calculateData['MARGIN']:null,
+                'SURCHARGE' => !empty($calculateData['SURCHARGE'])?$calculateData['SURCHARGE']:null,
+                'DISCOUNT' => !empty($calculateData['DISCOUNT'])?$calculateData['DISCOUNT']:null,
                 'tax_rate' => isset($calculateData['tax_rate'])?$calculateData['tax_rate']:null,
                 'price_with_tax' => isset($calculateData['price_with_tax'])?$calculateData['price_with_tax']:null,
             ];
 
             if ( $params['PRICE']>=0 ) {
                 $data[$_supplierId]['result'] = \common\helpers\PriceFormula::applyRules($params, $_supplierId);
+                $data[$_supplierId]['result']['SUPPLIER_COST'] = \common\helpers\PriceFormula::correctSupplierValueByCurrencyRisks($_supplierId, $data[$_supplierId]['currencies_id'], $data[$_supplierId]['PRICE']??0);
+                $data[$_supplierId]['result']['LANDED_PRICE'] = \common\helpers\PriceFormula::correctSupplierValueByCurrencyRisks($_supplierId, $data[$_supplierId]['currencies_id'], $data[$_supplierId]['LANDED_PRICE']??0);
                 if ( $data[$_supplierId]['result']===false ) {
                     $data[$_supplierId]['error'] = 'No applicable rule found';
                 }
@@ -7905,7 +7909,8 @@ order by status desc, sort_order
     public function actionProductStockDetails() {
 
         $uprid = Yii::$app->request->post('uprid');
-        $invAllowed = \common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed');
+        /** @var \common\extensions\Inventory\Inventory $invAllowed */
+        $invAllowed = \common\helpers\Extensions::isAllowed('Inventory');
         if ($invAllowed) {
             $uprid = \common\helpers\Inventory::normalizeInventoryId($uprid);
         }
@@ -8257,20 +8262,20 @@ order by status desc, sort_order
 
         $productAllocatedArray = [];
         foreach (\common\helpers\Product::getAllocatedArray($prid) as $productAllocatedRecord) {
-            if ($suppliers_id > 0) {
-                $productAllocatedArray[$productAllocatedRecord['warehouse_id']][$productAllocatedRecord['suppliers_id']] += ($productAllocatedRecord['allocate_received'] - $productAllocatedRecord['allocate_dispatched']);
-            } else {
-                $productAllocatedArray[$productAllocatedRecord['warehouse_id']][$suppliers_id] += ($productAllocatedRecord['allocate_received'] - $productAllocatedRecord['allocate_dispatched']);
+            $tmpSupplierId = ($suppliers_id > 0) ? $productAllocatedRecord['suppliers_id'] : 0;
+            if (!isset($productAllocatedArray[$productAllocatedRecord['warehouse_id']][$tmpSupplierId])) {
+                $productAllocatedArray[$productAllocatedRecord['warehouse_id']][$tmpSupplierId] = 0;
             }
+            $productAllocatedArray[$productAllocatedRecord['warehouse_id']][$tmpSupplierId] += ($productAllocatedRecord['allocate_received'] - $productAllocatedRecord['allocate_dispatched']);
         }
 
         $productAllocatedTemporaryArray = [];
         foreach (\common\helpers\Product::getAllocatedTemporaryArray($prid) as $productAllocatedTemporaryRecord) {
-            if ($suppliers_id > 0) {
-                $productAllocatedTemporaryArray[$productAllocatedTemporaryRecord['warehouse_id']][$productAllocatedTemporaryRecord['suppliers_id']] += $productAllocatedTemporaryRecord['temporary_stock_quantity'];
-            } else {
-                $productAllocatedTemporaryArray[$productAllocatedTemporaryRecord['warehouse_id']][$suppliers_id] += $productAllocatedTemporaryRecord['temporary_stock_quantity'];
+            $tmpSupplierId = ($suppliers_id > 0) ? $productAllocatedTemporaryRecord['suppliers_id'] : 0;
+            if (!isset($productAllocatedTemporaryArray[$productAllocatedTemporaryRecord['warehouse_id']][$tmpSupplierId])) {
+                $productAllocatedTemporaryArray[$productAllocatedTemporaryRecord['warehouse_id']][$tmpSupplierId] = 0;
             }
+            $productAllocatedTemporaryArray[$productAllocatedTemporaryRecord['warehouse_id']][$tmpSupplierId] += $productAllocatedTemporaryRecord['temporary_stock_quantity'];
         }
 
         $warehouses = [];
@@ -9890,6 +9895,7 @@ order by status desc, sort_order
                               'currencies_id' => (int) $currencies_id,
                             ];
                             $fields = [
+                              ['db' => 'products_sets_discount', 'dbdef' => 0, 'post' => 'products_group_sets_discount'],
                               ['db' => 'products_group_price', 'dbdef' => ($groups_id == 0 ? 0 : -2), 'post' => 'products_group_price'],
                               ['db' => 'bonus_points_price', 'dbdef' => 0, 'post' => 'bonus_points_price', 'flag' => 'bonus_points_status'],
                               ['db' => 'bonus_points_cost', 'dbdef' => 0, 'post' => 'bonus_points_cost', 'flag' => 'bonus_points_status'],

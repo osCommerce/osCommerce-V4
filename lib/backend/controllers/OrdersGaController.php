@@ -384,14 +384,12 @@ class OrdersGaController extends Sceleton {
             $orders_query_raw->andWhere(['in', 'o.platform_id', $filter_by_platform]);
         }
 
-        if (\common\helpers\Acl::checkExtensionAllowed('Handlers', 'allowed')) {
+        /**
+         * @var $ext \common\extensions\Handlers\Handlers
+         */
+        if ($ext = \common\helpers\Extensions::isAllowed('Handlers')) {
             global $access_levels_id;
-            $handlers_array = [];
-            $handlers_query = tep_db_query("select handlers_id from handlers_access_levels where access_levels_id='" . (int)$access_levels_id . "'");
-            while ($handlers = tep_db_fetch_array($handlers_query)) {
-                $handlers_array[] = $handlers['handlers_id'];
-            }
-            $orders_query_raw->andWhere(['in', 'hp.handlers_id', $handlers_array]);
+            $orders_query_raw->andWhere(['in', 'hp.handlers_id', $ext::getHandlersQuery((int) $access_levels_id)]);
         }
         
 

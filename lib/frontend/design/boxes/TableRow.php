@@ -61,6 +61,9 @@ class TableRow extends Widget
         for ($col = 1; $col <= $cols; $col++) {
             $response[] = \frontend\design\Block::widget(['name' => $pageName . '-' . $col, 'params' => ['type' => $type, 'params' => $params]]);
         }
+        if ($params['DT_RowClass']) {
+            $response['DT_RowClass'] = $params['DT_RowClass'];
+        }
 
         return $response;
     }

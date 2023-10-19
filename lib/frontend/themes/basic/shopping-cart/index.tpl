@@ -56,7 +56,7 @@
         send--;
         if (send == 0) {
             var inputName = $('input:focus').attr('name');
-            $('#cart-page').replaceWith(d);
+            $('body > .main-content').html(d);
             var inp = $('input[name="'+inputName+'"]').focus().get(0);
 
             if (inp && inp.value) {

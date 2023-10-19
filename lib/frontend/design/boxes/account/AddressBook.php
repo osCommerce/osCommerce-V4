@@ -45,13 +45,13 @@ class AddressBook extends Widget
 
         $customer = Yii::$app->user->getIdentity();
         
-        $aBooks = $customer->getAddressBooks(true);
+        $aBooks = $customer->getAddressBooks(true, true);
         $aBooks = \common\helpers\Address::skipEntryKey($aBooks);
         $address_array = array();
         foreach($aBooks as $addresses){
             $format_id = \common\helpers\Address::get_address_format_id($addresses['country_id']);
             $addresses['text'] = $addresses['city'] . ' ' . $addresses['postcode'] . ' ' . \common\helpers\Country::get_country_name($addresses['country_id']);
-            $addresses['format'] = \common\helpers\Address::address_format($format_id, $addresses, true, '', ' ');
+            $addresses['format'] = \common\helpers\Address::address_format($format_id, $addresses, true, '', '<br>');
 
             if ($page) {
                 $addresses['link_edit'] = Yii::$app->urlManager->createUrl(['account', 'page_name' => $page, 'edit' => $addresses['address_book_id']]);
@@ -65,6 +65,9 @@ class AddressBook extends Widget
                 //'action' => 'deleteconfirm'
             ]);
             $addresses['default_address'] = $customer->customers_default_address_id;
+            if (\common\helpers\Acl::checkExtensionAllowed('SplitCustomerAddresses', 'allowed')) {
+                $addresses['default_shipping_address'] = $customer->customers_shipping_address_id;
+            }
             $addresses['customers'] = \common\helpers\Output::output_string_protected($addresses['firstname'] . ' ' . $addresses['lastname']);
             $address_array[] = $addresses;
         }

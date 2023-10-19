@@ -11,9 +11,14 @@
  */
 
 namespace common\helpers;
+use common\models\BannersGroupsImages;
+use common\models\BannersGroupsSizes;
+use common\models\BannersLanguages;
+use common\models\ImageTypes;
 use yii\helpers\ArrayHelper;
 use common\models\ProductsImages;
 use common\classes\Images;
+use yii\helpers\FileHelper;
 
 class Image {
 
@@ -109,9 +114,11 @@ class Image {
         return $image;
     }
 
-    public static function getCategorisAdditionlImages($categoriesId)
+    public static function getCategoriesAdditionalImages($categoriesId)
     {
+        $imageTypesId = ImageTypes::findOne(['image_types_name' => 'Category gallery add'])->image_types_id ?? 0;
         $where['categories_id'] = $categoriesId;
+        $where['image_types_id'] = $imageTypesId;
 
         $categoriesImages = \common\models\CategoriesImages::find()
             ->where($where)
@@ -129,13 +136,15 @@ class Image {
         return $cImages;
     }
 
-    public static function saveCategorisAdditionlImages($images, $categoriesId)
+    public static function saveCategoriesAdditionalImages($images, $categoriesId)
     {
+        $imageTypesId = ImageTypes::findOne(['image_types_name' => 'Category gallery add'])->image_types_id ?? 0;
         foreach (array_merge([['id' => 0]], \common\classes\platform::getList(false)) as $platform) {
 
             $categoriesImages = \common\models\CategoriesImages::find()->where([
                 'categories_id' => $categoriesId,
                 'platform_id' => $platform['id'],
+                'image_types_id' => $imageTypesId,
             ])->all();
             foreach ($categoriesImages as $cImage) {
                 if (
@@ -168,10 +177,11 @@ class Image {
                     $val = str_replace(DIR_WS_IMAGES, '', $val);
                     $categoriesImages->image = $val;
                     Images::createWebp($val, true);
-                    Images::createResizeImages($val, 'Category galery small', true);
+                    Images::createResizeImages($val, 'Category gallery add', true);
 
                     $categoriesImages->categories_id = $categoriesId;
                     $categoriesImages->platform_id = $platform['id'];
+                    $categoriesImages->image_types_id = $imageTypesId;
                 }
                 $categoriesImages->sort_order = $key;
                 $categoriesImages->save(false);
@@ -183,4 +193,122 @@ class Image {
         return str_replace(TEXT_IMAGE_NONEXISTENT, '', self::info_image($image, $alt, $width, $height));
     }
 
+
+    /**
+     * Prepare image for saving: move, remove, resize image
+     *
+     * @param string $oldValue - value from db
+     * @param string $newValue - value from form
+     * @param string $upload - upload value from form, image with path from root or admin/uploads folder which has to be moved to the $path
+     * @param string $path - path to image destination, starts from image dir if $themes==false and from root if $themes==true
+     * @param boolean $remove - has to remove $oldImage
+     * @param boolean $themes - is it theme image
+     * @param array $resize - [width, height, fit] - settings for resize image
+     * @return string - filename with path for saving in db
+     */
+    public static function prepareSavingImage($oldValue, $newValue, $upload = '', $path = '', $remove = false, $themes = false, $resize = [])
+    {
+        $image = $oldValue;
+
+        if (!$newValue && !$upload && !$remove && !($resize['parentImage'] ?? false)) {
+            return '';
+        }
+
+        if (($resize['parentImage'] ?? false) && ($resize['parentOldImage'] ?? false) &&
+            $resize['parentImage'] != $resize['parentOldImage'] && !$upload
+        ) {
+            $parentOldImage = pathinfo($resize['parentOldImage'], PATHINFO_FILENAME);
+            $oldImage = pathinfo($oldValue, PATHINFO_FILENAME);
+            if (strpos($oldImage, $parentOldImage) === 0 &&
+                pathinfo($oldValue, PATHINFO_EXTENSION ) == pathinfo($resize['parentOldImage'], PATHINFO_EXTENSION)
+            ) {
+                $remove = true;
+                $upload = DIR_WS_IMAGES . $resize['parentImage'];
+            }
+        } elseif (($resize['parentImage'] ?? false) && !$upload && !$newValue) {
+            $upload = DIR_WS_IMAGES . $resize['parentImage'];
+        }
+
+        if ($themes) {
+            $fsPath = DIR_FS_CATALOG;
+        } else {
+            $fsPath = Images::getFSCatalogImagesPath();
+            $path = DIR_WS_IMAGES . $path;
+        }
+
+        if ($remove && $oldValue) {
+            if (is_file($fsPath . $oldValue)) {
+                unlink($fsPath . $oldValue);
+            }
+            $pos = strripos($oldValue, '.');
+            $name = substr($oldValue, 0, $pos+1) . 'webp';
+            if (is_file($fsPath . $name)) {
+                unlink($fsPath . $name);
+            }
+        }
+
+        if (!$newValue && !$upload) {
+            return '';
+        }
+
+        if ($oldValue == $newValue && !$upload && !$remove) {
+            return $oldValue;
+        }
+
+        if ($themes && dirname($oldValue) == dirname($newValue) && !$upload) {
+            return $newValue;
+        }
+
+        if (in_array(substr($upload, 0, 7), ['images/', 'themes/'])) {
+            $fileFrom = DIR_FS_CATALOG . $upload;
+        } else {
+            $fileFrom = DIR_FS_CATALOG . 'uploads/' . $upload;
+        }
+        $type = false;
+        if (is_file($fileFrom)) {
+            $type = explode('/', mime_content_type($fileFrom));
+        }
+
+        if (($resize['width'] ?? false) && $upload && $type && $type[0] == 'image' && substr($upload, -3) != 'svg') {
+
+            $imgExplode = explode('/', str_replace('\\', '/', $upload));
+            $imgName = end($imgExplode);
+            $pos = strrpos($imgName, '.');
+            $name = substr($imgName, 0, $pos);
+            $ext = substr($imgName, $pos);
+
+            $newImg = $path . '/' . $name . '[' . $resize['width'] . ']' . $ext;
+
+            if (!is_file(DIR_FS_CATALOG . $newImg) && $ext !== 'svg') {
+                $size = @GetImageSize($fileFrom);
+                if (isset($size[0]) && $size[0]) {
+
+                    if ($resize['width'] && $resize['height'] && ($resize['fit'] == 'cover' || !$resize['fit'])) {
+                        $scale = @max($resize['width'] / $size[0], $resize['height'] / $size[1]);
+
+                        $width = $size[0] * $scale;
+                        $height = $size[1] * $scale;
+
+                    } elseif (!$resize['width'] && $resize['height']) {
+                        $width = ($size[0] * $resize['height']) / $size[1];
+                        $height = $resize['height'];
+                    }else {
+                        $width = $resize['width'];
+                        $height = ($size[1] * $resize['width']) / $size[0];
+                    }
+                    Images::tep_image_resize($fileFrom, DIR_FS_CATALOG . $newImg, $width, $height, false);
+                    Images::createWebp($newImg, true);
+                    $image = str_replace(DIR_WS_IMAGES, '', str_replace('\\', '/', $newImg));
+                }
+            } else if (is_file(DIR_FS_CATALOG . $newImg)) {
+                $image = str_replace(DIR_WS_IMAGES, '', str_replace('\\', '/', $newImg));
+            }
+
+        } elseif ($upload) {
+            $img = str_replace('uploads' . DIRECTORY_SEPARATOR, '', $upload);
+            $val = \backend\design\Uploads::move($img, $path);
+            $image = str_replace(DIR_WS_IMAGES, '', str_replace('\\', '/', $val));
+        }
+        return $image;
+    }
 }

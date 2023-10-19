@@ -195,6 +195,9 @@ class ViewImages
                 'inventory' => $inventory,
                 'imageSize' => $imageSize,
             ];
+            if ($ext = \common\helpers\Extensions::isAllowed('ProductImagesByPlatform')) {
+                $ext::imageView($images, $images_data);
+            }
         }
         $view->images = $images;
         $view->imagesQty = count($images);

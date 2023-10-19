@@ -20,11 +20,26 @@ $rootPath = './../';
 
 ini_set("display_errors", 0);
 
-defined('VERSION_EXT') or define('VERSION_EXT', 'v.4.12 build 56860');
+defined('VERSION_EXT') or define('VERSION_EXT', 'v.4.13 build 60075');
 defined('VERSION_PHP_RQ') or define('VERSION_PHP_RQ', '7.4.0');
 defined('VERSION_PHP_REC') or define('VERSION_PHP_REC', '7.4.33');
-defined('REQ_PHP_MEMORY') or define('REQ_PHP_MEMORY', '128M');
-defined('REQ_PHP_MEMORY_REC') or define('REQ_PHP_MEMORY_REC', '256M');
+defined('REQ_PHP_MEMORY') or define('REQ_PHP_MEMORY', '256M');
+defined('REQ_PHP_MEMORY_REC') or define('REQ_PHP_MEMORY_REC', '512M');
+
+if (version_compare(PHP_VERSION, VERSION_PHP_RQ, '<')) {
+    echo "<pre>";
+    printf("Incorrect PHP version: %s (%d)\n\n", PHP_VERSION, defined('PHP_VERSION_ID')? PHP_VERSION_ID : '');
+    echo "Current osCommerce version requires at least PHP " . VERSION_PHP_RQ . "\n\n";
+
+    echo "If you've already selected minimal PHP version for your site and still see this message:\n";
+    echo "Probably you host sets PHP version into root .htaccess file\n";
+    echo "After the first step of this installation .htaccess has been overwritten and PHP version has been reset to default.\n";
+    echo "The solution is to change PHP version again or (for advanced users) manually add PHP selector to root .htaccess. Usually it's something like:\n\n";
+    echo htmlspecialchars("<IfModule mime_module>\n");
+    echo "AddHandler application/x-httpd-ea-php80 .php .php8 .phtml\n";
+    echo htmlspecialchars("</IfModule>\n");
+    echo "</pre>";
+}
 
 @set_time_limit(0);
 @ignore_user_abort(true);

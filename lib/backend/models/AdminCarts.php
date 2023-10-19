@@ -197,6 +197,11 @@ class AdminCarts extends Admin {
     public function saveCheckoutDetails($cart, \common\services\storages\StorageInterface $storage) {
         $adCart = $this->_getCartById($this->getCurrentCartID());
         if (!$adCart) {
+            $adCart = AdminShoppingCarts::find()
+                    ->where(['admin_id' => $this->info['admin_id'], 'basket_id' => $cart->basketID, 'customers_id' => (int)$cart->customer_id])
+                    ->one();
+        }
+        if (!$adCart) {
             $adCart = new AdminShoppingCarts();
             $adCart->admin_id = $this->info['admin_id'];
             $adCart->platform_id = (int) $cart->platform_id;

@@ -234,7 +234,7 @@ class Contacts extends Widget
                     //$content = preg_replace('/,[, \n]+/', ",\n", $content);
                     $content = str_replace("\n", '<br>', $content);
 
-                    $content = preg_replace_callback("/\#\#([A-Z_]+)\#\#/", "self::translate", $content);
+                    $content = preg_replace_callback("/\#\#([A-Z_]+)\#\#/", self::class . "::translate", $content);
 
                     if ($this->settings[0]['seo_tags']) {
                         $content = '<span itemscope="" itemtype="http://schema.org/Organization">' . $content . '</span>';

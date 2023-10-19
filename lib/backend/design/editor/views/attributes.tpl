@@ -10,7 +10,7 @@
                 {if $complex}
                     {$aName = 'product_info[]'|cat:$item.id}{*configurator*}                
                 {/if}                
-                  <select name='{$aName}' data-required="{$smarty.const.PLEASE_SELECT} {$item.title}" onchange="{$settings['onchange']}" class="form-control">
+                  <select name='{$aName}' data-required="{$smarty.const.PLEASE_SELECT} {$item.title}" onchange="{$settings['onchange']}" class="form-select">
                       {*<option value="0">{$smarty.const.PULL_DOWN_DEFAULT}</option>*}
                       {foreach $item.options as $option}
                           {if $option.id==$item.selected}{$selected_type = $option.type}{/if}

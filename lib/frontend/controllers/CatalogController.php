@@ -316,6 +316,7 @@ class CatalogController extends Sceleton
         \Yii::$app->set('productsFilterQuery', $q);
 
         $page_name = 'products';
+        $params['page_name'] = $page_name;
 
         $search_results = 10;
         $params = array(
@@ -481,7 +482,7 @@ class CatalogController extends Sceleton
 
         \common\components\google\widgets\GoogleTagmanger::setEvent('productPage');
 
-        foreach (\common\helpers\Hooks::getList('catalog/product') as $filename) {
+        foreach (\common\helpers\Hooks::getList('frontend/catalog/product') as $filename) {
             include($filename);
         }
 
@@ -605,13 +606,11 @@ class CatalogController extends Sceleton
                 }
             }
 
-            if ($use_attributes_quantity && $product && ($product['settings']->show_attributes_quantity ?? null)){
+            if ($use_attributes_quantity && $product && ($product['settings']->show_attributes_quantity ?? null) && \common\helpers\Extensions::isAllowed('Inventory')){
                 return \frontend\design\boxes\product\MultiInventory::widget();
             } else {
-                if ($ext = \common\helpers\Acl::checkExtension('SupplierPurchase', 'allowed')){
-                    if ($ext::allowed()){
-                        $details['sp_collection'] = \common\extensions\SupplierPurchase\SupplierPurchase::getSpCollection($details['current_uprid']);
-                    }
+                if ($ext = \common\helpers\Extensions::isAllowed('SupplierPurchase')) {
+                    $details['sp_collection'] = $ext::getSpCollection($details['current_uprid']);
                 }
                 $details['image_widget'] = \frontend\design\boxes\product\Images::widget(['params'=>['uprid'=>$details['current_uprid']], 'settings' => \frontend\design\Info::widgetSettings('product\Images', false, 'product')]);
                 $details['images'] = \frontend\design\Info::$jsGlobalData['products'][$products_id]['images'];
@@ -635,7 +634,11 @@ class CatalogController extends Sceleton
                     $details['product_attributes'] = \frontend\design\IncludeTpl::widget(['file' => 'boxes/product/attributes.tpl', 'params' => ['attributes' => $details['attributes_array'], 'isAjax' => true, 'settings' => $settings[0]??[], 'boxId' => $boxId??'', 'attrText' => $attrText]]);
                 }
                 $details['product_name'] = $product['products_name'];
-                if ($ext = \common\helpers\Acl::checkExtensionAllowed('FlexiFi', 'allowed')) {
+
+                /**
+                 * @var $ext \common\extensions\FlexiFi\FlexiFi
+                 */
+                if ($ext = \common\helpers\Extensions::isAllowed('FlexiFi')) {
                     $details['flexifi_credit_plan_button'] = $ext::getPopupButtonHtml((['products_id' => $details['current_uprid']] + $details), $details['product_unit_price'], true);
                 } else {
                     $details['flexifi_credit_plan_button'] = '';
@@ -656,20 +659,22 @@ class CatalogController extends Sceleton
         \common\helpers\Translation::init('catalog/product');
 
         $params = tep_db_prepare_input(Yii::$app->request->get());
-        $suppliers_id = (int) $params['supplier_id'];
+        $suppliers_id = (int) ($params['supplier_id']??0);
         // Inventory widget bof
-        if (strpos($params['uprid'], '{') !== false) {
-          $attrib = array();
-          $ar = preg_split('/[\{\}]/', $params['uprid']);
-          for ($i=1; $i<sizeof($ar); $i=$i+2) {
-            if (isset($ar[$i+1])) {
-              $attrib[$ar[$i]] = $ar[$i+1];
+        if (!empty($params['uprid'])) {
+            if (strpos($params['uprid'], '{') !== false) {
+                $attrib = array();
+                $ar = preg_split('/[\{\}]/', $params['uprid']);
+                for ($i = 1; $i < sizeof($ar); $i = $i + 2) {
+                    if (isset($ar[$i + 1])) {
+                        $attrib[$ar[$i]] = $ar[$i + 1];
+                    }
+                }
+                $params['id'] = $attrib;
             }
-          }
-          $params['id'] = $attrib;
         }
         // Inventory widget eof
-        $uprid = tep_db_input(\common\helpers\Inventory::normalize_id(\common\helpers\Inventory::get_uprid($params['products_id'], $params['id'])));
+        $uprid = tep_db_input(\common\helpers\Inventory::normalize_id(\common\helpers\Inventory::get_uprid($params['products_id'], $params['id']??null)));
         if (empty($params['id'])) {
             $check_item = tep_db_fetch_array(tep_db_query("select products_id, products_quantity from " . TABLE_PRODUCTS . " where products_id = '{$uprid}' limit 1"));
             $out_of_stock = $check_item['products_id'] && !\common\helpers\Product::isAvailableForSaleNow($uprid, platform::currentId(), 0, $suppliers_id);
@@ -692,7 +697,7 @@ class CatalogController extends Sceleton
                 ])
                 ->andWhere('products_notify_sent is null')
                 ->one();
-            if (!$check_notify['products_notify_id']) {
+            if (empty($check_notify['products_notify_id'])) {
                 tep_db_query("insert into " . TABLE_PRODUCTS_NOTIFY . " set products_notify_products_id = '{$uprid}', products_notify_email = '{$products_notify_email}', products_notify_name = '{$products_notify_name}', products_notify_customers_id = '". Yii::$app->user->getId()."', suppliers_id = '{$suppliers_id}', platform_id = '" . (int)platform::currentId() . "', products_notify_date = now(), products_notify_sent = null");
                 return YOU_WILL_BE_NOTIFIED;
             } else {
@@ -865,15 +870,13 @@ class CatalogController extends Sceleton
             if (in_array('Products', $ssbo)) {
               $q = new \common\components\ProductsQuery([
                 'filters' => ['keywords' => $keywords],
-                'limit' => 10
+                'limit' => 10,
               ]);
 
               $products = Info::getListProductsDetails($q->buildQuery()->allIds());
               /** @var \common\extensions\SearchPlus\SearchPlus $ext  */
-              if ($ext = \common\helpers\Acl::checkExtension('SearchPlus', 'saveStat')) {
-                if ($ext::allowed()) {
+              if ($ext = \common\helpers\Extensions::isAllowed('SearchPlus')) {
                   $ext::saveStat(\common\helpers\Output::output_string($_GET['keywords']), count($products));
-                }
               }
               foreach ($products as $product_array) {
                   $pResponse[] = array(
@@ -904,6 +907,9 @@ class CatalogController extends Sceleton
             }
 
             foreach (\common\helpers\Hooks::getList('catalog/search-suggest') as $filename) {
+                include($filename);
+            }
+            foreach (\common\helpers\Hooks::getList('frontend/catalog/search-suggest') as $filename) {
                 include($filename);
             }
         }
@@ -949,9 +955,10 @@ class CatalogController extends Sceleton
             $this->layout = false;
             return Listing::widget([
                 'params' => $params,
-                'settings' => array_merge(Info::widgetSettings('Listing', false, $page_name), ['onlyProducts' => true])
+                'settings' => array_merge(Info::widgetSettings('Listing', false, $page_name??null), ['onlyProducts' => true])
             ]);
         }
+        $params['page_name'] = 'products';
 
         if (Yii::$app->request->isAjax && Yii::$app->request->get('fbl')) {
             $this->layout = 'ajax.tpl';
@@ -970,14 +977,15 @@ class CatalogController extends Sceleton
 
         $q = new \common\components\ProductsQuery([
           'get' => \Yii::$app->request->get(),
-          'page' => 'featured'
+          'page' => 'featured',
+          'orderBy' => ['fake' => 1],
         ]);
 
         $cnt = $q->getCount();
         \Yii::$app->set('productsFilterQuery', $q);
-
+        $s = $q->buildQuery()->rebuildByGroup()->getQuery()->orderBy("featured.sort_order, featured.featured_date_added");
         $params = array(
-          'listing_split' => SplitPageResults::make($q->buildQuery()->rebuildByGroup()->getQuery(), (isset($_SESSION['max_items'])?$_SESSION['max_items']:$search_results),'*', 'page', $cnt)->withSeoRelLink(),
+          'listing_split' => SplitPageResults::make($s, (isset($_SESSION['max_items'])?$_SESSION['max_items']:$search_results),'*', 'page', $cnt)->withSeoRelLink(),
           'this_filename' => FILENAME_FEATURED_PRODUCTS
           /*,
           'sorting_options' => $sorting,
@@ -990,6 +998,7 @@ class CatalogController extends Sceleton
                 }
             }
         }
+        $params['page_name'] = 'products';
 
         if (Yii::$app->request->isAjax && Yii::$app->request->get('onlyProducts')) {
             $this->layout = false;
@@ -1042,6 +1051,7 @@ class CatalogController extends Sceleton
                 }
             }
         }
+        $params['page_name'] = 'products';
 
         if (Yii::$app->request->isAjax && Yii::$app->request->get('onlyProducts')) {
             $this->layout = false;
@@ -1086,6 +1096,7 @@ class CatalogController extends Sceleton
         if (empty($page_name)) {
             $page_name = 'products';
         }
+        $params['page_name'] = $page_name;
 
         if (Yii::$app->request->isAjax && Yii::$app->request->get('onlyFilter')) {
             if ($ext = \common\helpers\Acl::checkExtension('ProductPropertiesFilters', 'inFilters')) {
@@ -1618,6 +1629,9 @@ class CatalogController extends Sceleton
 
     public function actionProductBundle()
     {
+        if (!\common\helpers\Acl::checkExtensionAllowed('ProductBundles')) {
+            return '';
+        }
         \common\helpers\Translation::init('catalog/product');
 
         $params = Yii::$app->request->get();
@@ -1633,7 +1647,15 @@ class CatalogController extends Sceleton
         if (Yii::$app->request->isAjax) {
             $details['product_bundle'] = \frontend\design\IncludeTpl::widget(['file' => 'boxes/product/bundle.tpl', 'params' => ['products' => $details['bundle_products'], 'isAjax' => true]]);
             $details['product_attributes'] = \frontend\design\IncludeTpl::widget(['file' => 'boxes/product/attributes.tpl', 'params' => ['attributes' => $attributes_details['attributes_array'], 'isAjax' => true]]);
-            $details['flexifi_credit_plan_button'] = \common\extensions\FlexiFi\FlexiFi::getPopupButtonHtml((['products_id' => $products_id] + $details), $details['actual_bundle_price_unit'], true);
+
+            /**
+             * @var $ext \common\extensions\FlexiFi\FlexiFi
+             */
+            if ($ext = \common\helpers\Extensions::isAllowed('FlexiFi')) {
+                $details['flexifi_credit_plan_button'] = $ext::getPopupButtonHtml((['products_id' => $products_id] + $details), $details['actual_bundle_price_unit'], true);
+            } else {
+                $details['flexifi_credit_plan_button'] = '';
+            }
             return json_encode($details);
         } else {
             if (isset($details['bundle_products']) && count($details['bundle_products']) > 0) {
@@ -1660,22 +1682,31 @@ class CatalogController extends Sceleton
         $params = tep_db_prepare_input(Yii::$app->request->get());
         $products_id = tep_db_prepare_input(Yii::$app->request->get('products_id'));
         $attributes = tep_db_prepare_input(Yii::$app->request->get('id', array()));
+        $only_element = intval(Yii::$app->request->get('only_element', 0));
 
         $attributes_details = \common\helpers\Attributes::getDetails($products_id, $attributes, $params);
         Yii::$container->get('products')->loadProducts(['products_id' => $attributes_details['current_uprid']]);
-        $details = \common\extensions\ProductConfigurator\helpers\Configurator::getDetails($params, $attributes_details);
+        $details = \common\extensions\ProductConfigurator\helpers\Configurator::getDetails($params, $attributes_details, $only_element);
         if (!is_array($details)) {
             return '';
         }
         $product =  Yii::$container->get('products') ? Yii::$container->get('products')->getProduct($details['current_uprid']??null) : null;
         if (Yii::$app->request->isAjax) {
-            $details['product_configurator'] = \frontend\design\IncludeTpl::widget(['file' => 'boxes/product/configurator.tpl', 'params' => ['settings' => Info::widgetSettings('product\\Configurator'), 'elements' => $details['configurator_elements'], 'pctemplates_id' => $details['pctemplates_id'], 'isAjax' => true]]);
+            $details['product_configurator'] = \frontend\design\IncludeTpl::widget(['file' => 'boxes/product/configurator.tpl', 'params' => ['settings' => Info::widgetSettings('product\\Configurator'), 'elements' => $details['configurator_elements'], 'pctemplates_id' => $details['pctemplates_id'], 'only_element' => $only_element, 'isAjax' => true]]);
             if ($product['settings']->show_attributes_quantity ?? null) {
                 $details['product_attributes'] = \frontend\design\boxes\product\MultiInventory::widget();
             } else {
                 $details['product_attributes'] = \frontend\design\IncludeTpl::widget(['file' => 'boxes/product/attributes.tpl', 'params' => ['settings' => Info::widgetSettings('product\\Configurator'), 'attributes' => $attributes_details['attributes_array'], 'isAjax' => true, 'product' => $product]]);
             }
-            $details['flexifi_credit_plan_button'] = \common\extensions\FlexiFi\FlexiFi::getPopupButtonHtml((['products_id' => $products_id] + $details), $details['configurator_price_unit'], true);
+
+            /**
+             * @var $ext \common\extensions\FlexiFi\FlexiFi
+             */
+            if ($ext = \common\helpers\Extensions::isAllowed('FlexiFi')) {
+                $details['flexifi_credit_plan_button'] = $ext::getPopupButtonHtml((['products_id' => $products_id] + $details), $details['configurator_price_unit'], true);
+            } else {
+                $details['flexifi_credit_plan_button'] = '';
+            }
             return json_encode($details);
         } else {
             if (isset($details['configurator_elements']) && count($details['configurator_elements']) > 0) {
@@ -1824,6 +1855,7 @@ class CatalogController extends Sceleton
         if (empty($page_name)) {
             $page_name = 'products';
         }
+        $params['page_name'] = $page_name;
 
         return $this->render('free-samples.tpl', [
             'page_name' => $page_name,

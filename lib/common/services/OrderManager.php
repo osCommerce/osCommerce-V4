@@ -22,6 +22,7 @@ use common\forms\AddressForm;
 use common\forms\ShippingChoice;
 use frontend\forms\registration\CustomerRegistration;
 
+#[\AllowDynamicProperties]
 class OrderManager {
 
     protected $storage;
@@ -31,6 +32,7 @@ class OrderManager {
 
     public function __construct(StorageInterface $storage) {
         $this->storage = $storage;
+        $this->combineShippings = self::getCombineShippingsDefault();
         self::$instance = $this;
     }
 
@@ -92,8 +94,8 @@ class OrderManager {
 
     public function isShippingNeeded() {
         $needed = ($this->contentType != 'virtual') && ($this->contentType != 'virtual_weight');
-
-        if ($this->getInstanceType() == 'quote' && strtolower(\common\helpers\PlatformConfig::getVal('QUOTE_SKIP_SHIPPING', 'false')) == 'true') {
+        /** @var \common\extensions\Quotations\Quotations $ext */
+        if ($this->getInstanceType() == 'quote' && ( ($ext = \common\helpers\Extensions::isAllowed('Quotations')) && !$ext::optionIsSkipShipping() )) {
           $needed = false;
         } else {
           // in some cases we don't have order instance here,
@@ -131,7 +133,7 @@ class OrderManager {
     protected $modulesVisiblility = ['shop_order'];
 
     public function setModulesVisibility($visibility = ['shop_order', 'shop_quote', 'shop_sample', 'admin', 'pos']) {
-        $this->modulesVisiblility = $visibility;
+        $this->modulesVisiblility = \common\helpers\Extensions::getVisibilityVariants($visibility);
     }
 
     public function getModulesVisibility() {
@@ -398,6 +400,17 @@ class OrderManager {
         }
     }
 
+    public function updateShippingCost() {
+        // recalc shipping on changing product count and weight
+        $needUpdate = $this->updateSummaryFields();
+        if ($this->getCart()->getTotalKey('ot_shipping') === false || $needUpdate) {
+            $this->getCart()->clearTotalKey('ot_shipping');
+            //$this->setSelectedShipping($this->getSelectedShipping());
+            $this->getShippingQuotesByChoice(true);
+            $this->checkoutOrder();
+        }
+    }
+
     public function getSelectedShipping() {
         $_selected = false;
         $_shipping = $this->getShipping();
@@ -455,14 +468,22 @@ class OrderManager {
     }
 
     private function _getShipingAsArray($quote, $module, $method, $method_index, $free_shipping = false){
-        $cost = (float) $quote['methods'][$method_index]['cost'];
+        $cost_inc = $cost_exc = $cost = (float) $quote['methods'][$method_index]['cost'];
+        if (!empty($quote['tax'])) {
+            if (defined('PRICE_WITH_BACK_TAX') && PRICE_WITH_BACK_TAX == 'True') {
+                $cost_exc = \common\helpers\Tax::reduce_tax_always($cost, $quote['tax']);
+            } else {
+                $cost_inc = \common\helpers\Tax::add_tax_always($cost, $quote['tax']);
+            }
+        }
         return [
             'module' => $module,
             'id' => $module . '_' . $quote['methods'][$method_index]['id'],
             'title' => (($free_shipping == true) ? $quote['methods'][$method_index]['title'] : $quote['module'] . (empty(trim($quote['methods'][$method_index]['title']))?'':' (' . $quote['methods'][$method_index]['title'] . ')')),
             'cost' => $cost,
             'no_cost' => $quote['methods'][$method_index]['no_cost'] ?? null,
-            'cost_inc_tax' => \common\helpers\Tax::add_tax_always($cost, (isset($quote['tax']) ? $quote['tax'] : 0)),
+            'cost_inc_tax' => $cost_inc,
+            'cost_exc_tax' => $cost_exc,
             'cost_f' => @$quote['methods'][$method_index]['cost_f'],
         ];
     }
@@ -541,8 +562,14 @@ class OrderManager {
         return $this->getPaymentCollection($only_payment, $this);
     }
 
-    public function getPaymentSelection($opc = false, $onlyOnline = false) {
-        $selections = $this->getPaymentCollection()->selection($opc, $onlyOnline, $this->getModulesVisibility(), $this->get('customer_groups_id'));
+    /**
+     * @param string $customerDetails - 'exist'/'optional'/'absent'/'auto'. Currently - exist for compatibility
+     */
+    public function getPaymentSelection($opc = false, $onlyOnline = false, $customerDetails = 'exist') {
+        if ($customerDetails == 'auto') {
+            $customerDetails = $this->isCustomerAssigned() ? 'exist' : 'absent';
+        }
+        $selections = $this->getPaymentCollection()->selection($opc, $onlyOnline, $this->getModulesVisibility(), $this->get('customer_groups_id'), $customerDetails);
         return $this->wrapSelections($selections);
     }
 
@@ -676,10 +703,7 @@ class OrderManager {
     public function loadCart(\common\classes\shopping_cart $cart) {
         $this->_cart = $cart;
         $this->contentType = $cart->get_content_type();
-        if ($cart->notEmpty()) {
-            $this->set('total_weight', $cart->show_weight());
-            $this->set('total_count', $cart->count_contents());
-        }
+        $this->updateSummaryFields();
     }
 
     public function getCart() {
@@ -698,7 +722,7 @@ class OrderManager {
         $sendto = $this->get('sendto') ?? false;
         if (!$sendto && $this->getShippingChoice()) {
             if ($customer = $this->getCustomersIdentity()) {
-                $address = $customer->getDefaultAddress()->one();
+                $address = $customer->getDefaultShippingAddress()->one();
                 if ($address) {
                     $sendto = $address->address_book_id;
                     $this->set('sendto', $sendto);
@@ -784,10 +808,10 @@ class OrderManager {
         return $this->_customer;
     }
 
-    public function getCustomersAddresses($toArray = false, $stripEntry = false) {
+    public function getCustomersAddresses($toArray = false, $stripEntry = false, $type = '') {
         $addresses = [];
         if ($customer = $this->getCustomersIdentity()) {
-            $addresses = $customer->getAddressBooks($toArray);
+            $addresses = $customer->getAddressBooks($toArray, false, $type);
             if ($addresses && $stripEntry && $toArray) {
                 $addresses = \common\helpers\Address::skipEntryKey($addresses);
             }
@@ -921,7 +945,7 @@ class OrderManager {
                     } else if (is_array($billto)) {
                         $address = $billto;
                     }
-                    if (is_array($address['country'])) {
+                    if (is_array($address['country']??null)) {
                         $address['country'] = \common\helpers\Address::addCountriesKey($address['country']);
                     }
                 }
@@ -1280,18 +1304,14 @@ class OrderManager {
 
     public function validateExtensions($form) {
         $valid = true;
-        $messageStack = \Yii::$container->get('message_stack');
-        if (\common\helpers\Acl::checkExtensionAllowed('UkrPost', 'allowed')) {
+
+        /**
+         * @var $ext \common\extensions\UkrPost\UkrPost
+         */
+        if ($ext = \common\helpers\Extensions::isAllowed('UkrPost')) {
             $module = $this->getShipping();
             if ($module && $module['module'] == 'ukrpost' && $form->scenario == AddressForm::SHIPPING_ADDRESS) {
-                $object = $this->getShippingCollection()->get($module['module']);
-                if ($object) {
-                    $service = new \common\extensions\UkrPost\services\Service($object);
-                    if (!$service->checkPostCode($form->postcode)) {
-                        $valid = false;
-                        $messageStack->add(SHIP_POST_CODE_ERROR, 'one_page_checkout');
-                    }
-                }
+                $valid = $ext::validate($form);
             }
         }
         return $valid;
@@ -1688,7 +1708,7 @@ class OrderManager {
         return $this->contactForm;
     }
 
-    /** @var $var \common\classes\extended\OrderAbstract $orderInstance */
+    /** @var \common\classes\extended\OrderAbstract $orderInstance */
     private $orderInstance;
 
     //create empty instance of order
@@ -1863,8 +1883,8 @@ class OrderManager {
         if ($this->hasCart()) {
             $this->_cart->reset(true);
             $this->_cart->order_id = 0;
-            if (\common\helpers\Acl::checkExtensionAllowed('MultiCart', 'allowed') && empty($this->_cart->table_prefix)){
-                \common\extensions\MultiCart\MultiCart::reassignCart($this->_cart->basketID);
+            if (($multiCart = \common\helpers\Extensions::isAllowed('MultiCart')) && empty($this->_cart->table_prefix)){
+                $multiCart::reassignCart($this->_cart->basketID);
             } else {
                 $this->_cart->setBasketId(0);
             }
@@ -1909,12 +1929,33 @@ class OrderManager {
             $addresses = [];
             $addresses_selected_value = 0;
             if ($this->isCustomerAssigned()) {
-                $addresses = $this->getCustomersAddresses(true, true);
-                $addresses_selected_value = $this->getSendto();
-                if (!$addresses_selected_value) {
-                    $addresses_selected_value = $this->getCustomersIdentity()->customers_default_address_id;
-                    if ($addresses_selected_value)
-                        $this->set('sendto', $addresses_selected_value);
+                if ($ext = \common\helpers\Acl::checkExtensionAllowed('SplitCustomerAddresses', 'allowed')) {
+                    $addresses = $this->getCustomersAddresses(true, true, 'shipping');
+                    $addresses_selected_value = $this->getSendto();
+                    if (!$addresses_selected_value) {
+                        $addresses_selected_value = $this->getCustomersIdentity()->customers_shipping_address_id;
+                        if ($addresses_selected_value) {
+                            $this->set('sendto', $addresses_selected_value);
+                        }
+                    }
+                    
+                    $addressesBilling = $this->getCustomersAddresses(true, true, 'billing');
+                    $billing_selected_value = $this->getBillto();
+                    
+                    if (!$billing_selected_value) {
+                        $billing_selected_value = $this->getCustomersIdentity()->customers_default_address_id;
+                        if ($billing_selected_value)
+                            $this->set('billto', $billing_selected_value);
+                    }
+                    
+                } else {
+                    $addresses = $this->getCustomersAddresses(true, true);
+                    $addresses_selected_value = $this->getSendto();
+                    if (!$addresses_selected_value) {
+                        $addresses_selected_value = $this->getCustomersIdentity()->customers_default_address_id;
+                        if ($addresses_selected_value)
+                            $this->set('sendto', $addresses_selected_value);
+                    }
                 }
             }
             if (defined('PREFERRED_CHEAPEST_TYPE')){
@@ -1984,37 +2025,6 @@ class OrderManager {
             return \common\helpers\Coupon::get_coupon_name($this->get('cc_id'));
         }
         return '';
-    }
-
-    private $_bonuses = null;
-
-    public function getBonuses() {
-        if (is_null($this->_bonuses)) {
-            $this->_bonuses = new \common\classes\Bonuses($this);
-        }
-        return $this->_bonuses;
-    }
-
-    public function getBonusesDetails() {
-        static $response = null;
-        if (is_null($response)) {
-            $bonusModule = $this->getTotalCollection()->get('ot_bonus_points');
-            if ($bonusModule) {
-                if (is_object($bonusModule->bonuses)) {
-                    $bonuses = $bonusModule->bonuses;
-                } else {
-                    $bonuses = $this->getBonuses()->getBonusesFormInstance($this->getOrderInstance());
-                }
-
-                $response = [
-                    'bonuses' => $bonuses,
-                    'can_use_bonuses' => $bonuses->hasBonuses() && $bonuses->canUseBonuses(),
-                    'bonus_apply' => $this->get('bonus_apply'),
-                ];
-            }
-        }
-
-        return $response;
     }
 
     private $_template;
@@ -2274,6 +2284,156 @@ class OrderManager {
             \common\helpers\Customer::deleteCustomer($customerInfo->customers_id, false);
             $customerInfo->delete();
         }
+    }
+
+    public function updateSummaryFields(): bool
+    {
+        $cart = $this->getCart();
+        if (is_object($cart)) {
+            $prevCount = $this->get('total_count');
+            $prevWeight = $this->get('total_weight');
+            $newCount = $cart->count_contents();
+            $newWeight = $cart->show_weight();
+            $changed = $prevCount !== $newCount || $prevWeight !== $newWeight;
+            if ($changed) {
+                $this->set('total_weight', $newWeight);
+                $this->set('total_count', $newCount);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public function isPaymentAllowedEx($includeRefund = false, &$reason = null)
+    {
+//        if (!$this->isCustomerAssigned()) {
+//            $reason = 'Customer is not assigned';
+//            return false;
+//        }
+        $cart = $this->getCart();
+        if (!is_object($cart) || $cart->isEmptyProducts()) {
+            $reason = 'Cart is empty';
+            return false;
+        }
+
+        $amountDueCost = 1;
+        $totals = $this->getTotalOutput(false);
+        if (is_array($totals)) {
+            $amountDueCost = \common\helpers\Php::arrayGetSubArrayBySubValue($totals, 'code', 'ot_due');
+            if (empty($amountDueCost)) { // ot_due maybe disabled
+                $amountDueCost = \common\helpers\Php::arrayGetSubArrayBySubValue($totals, 'code', 'ot_total')['value_inc_tax'] ?? 0;
+            } else {
+                $amountDueCost = \common\helpers\Php::arrayGetSubArrayBySubValue($totals, 'code', 'ot_due')['value_inc_tax'] ?? 0;
+            }
+        }
+        $res = $amountDueCost > 0 || ($includeRefund && $amountDueCost < 0);
+        if (!$res) {
+            $reason = 'Amount due = ' . $amountDueCost;
+        }
+        return $res;
+    }
+
+    public function isPaymentSelected(&$reason = null)
+    {
+        $res = (bool) $this->getPayment();
+        if (!$res) {
+            $reason = 'Payment is not selected';
+        }
+        return $res;
+    }
+
+    public function isPaymentAllowed($includeRefund = false)
+    {
+        return $this->isPaymentAllowedEx($includeRefund);
+    }
+
+    public function isPaymentAllowedTpl($includeRefund = false)
+    {
+        $reason = '';
+        $res['allowed'] = $this->isPaymentAllowedEx($includeRefund, $reason);
+        $res['reason'] = $reason;
+        return $res;
+    }
+
+    public function isShippingAllowed()
+    {
+        $cart = $this->getCart();
+        return is_object($cart) && !$cart->isEmptyProducts();
+    }
+
+    public static function getCombineShippingsDefault()
+    {
+        if (class_exists('\common\helpers\Extensions') && method_exists(\common\helpers\Extensions::class, 'isAllowed') && ($ext = \common\helpers\Extensions::isAllowed('CollectionPoints')) && method_exists($ext, 'isSeparateShipping')) {
+            return !$ext::isSeparateShipping();
+        } else {
+            return !defined('SHIPPING_SEPARATELY') || (defined('SHIPPING_SEPARATELY') && SHIPPING_SEPARATELY == 'false');
+        }
+    }
+
+    public function getOrderTaxRates($classId = null)
+    {
+        return \common\helpers\Tax::getOrderTaxRates($classId, $this->getTaxCountry(), $this->getTaxZone(), '', true, $this->getCustomersIdentity()->groups_id ?? 0);
+    }
+
+
+    private function getCaptchaType()
+    {
+        if (isset($this->captcha_type)) return $this->captcha_type;
+
+        $this->captcha_type = $this->captcha_widget = null;
+        if (!defined('CAPTCHA_ON_CREATE_ACCOUNT') || CAPTCHA_ON_CREATE_ACCOUNT != 'True') return null;
+
+        if (defined('PREFERRED_USE_RECAPTCHA') && PREFERRED_USE_RECAPTCHA == 'True') {
+            $captcha = new \common\classes\ReCaptcha();
+            if ($captcha->isEnabled()) {
+                $this->captcha_widget = \frontend\design\boxes\ReCaptchaWidget::widget();
+                $this->captcha_type = 'recaptcha';
+                $this->captcha = $captcha;
+            }
+        }
+        if (empty($this->captcha_widget)) {
+            $this->captcha_type = 'captcha';
+            $this->captcha_widget = \yii\captcha\Captcha::widget([
+                'model' => $this->getCustomerContactForm(),
+                'attribute' => 'captcha',
+//                'captchaAction' => 'site/captcha_order',
+            ]);
+        }
+        return $this->captcha_type;
+    }
+
+
+    /**
+     * The second capcha widget on checkout form
+     * @return string|void|null
+     * @throws \Throwable
+     */
+    public function createCaptchaWidget()
+    {
+        $this->getCaptchaType();
+        return $this->captcha_widget;
+    }
+
+    public function validateCaptcha($params)
+    {
+        if (!\Yii::$app->user->isGuest) return true;
+        if (!($params['checkout']['opc_temp_account']??false)) return true;
+        $errorMsg = null;
+        $res = true;
+        switch ($this->getCaptchaType()) {
+            case 'captcha':
+                $value = $params['checkout']['captcha'] ?? null;
+                $res = (new \yii\captcha\CaptchaValidator())->validate($value, $errorMsg);
+                break;
+            case 'recaptcha':
+                $res = $this->captcha->checkVerification($params['g-recaptcha-response'] ?? null);
+                break;
+        }
+        if (!$res) {
+            $messageStack = \Yii::$container->get('message_stack');
+            $messageStack->add($errorMsg ?? UNSUCCESSFULL_ROBOT_VERIFICATION, 'one_page_checkout');
+        }
+        return $res;
     }
 
 }

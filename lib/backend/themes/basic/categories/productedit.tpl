@@ -3,37 +3,38 @@
 {use class="backend\components\Currencies"}
 {use class="\common\classes\platform"}
 {use class="\common\classes\department"}
+{\backend\assets\ProductAsset::register($this)|void}
 {include file='../assets/tabs.tpl' scope="global"}
 {\backend\assets\MultiSelectAsset::register($this)|void}
 
 {Currencies::widget()}
 {if $editProductBundleSwitcher || $infoBreadCrumb || $infoSubProducts}
-  <div class="row">
+  <div class="row align-items-end">
 {/if}
-{if \common\helpers\Acl::checkExtensionAllowed('ReportChangesHistory')}
-<div class="btn-right">
-<a href="{Yii::$app->urlManager->createUrl(['logger/popup', 'type' => 'Product', 'id' => $pInfo->products_id])}" class="btn-link-create popup">{$smarty.const.TEXT_HISTORY}</a>
-</div>
-{/if}
-{if $editProductBundleSwitcher }
-    <div class="btn-is-bundle" style="float: right;">
-        <span data-value="1" class="btn">
-            {sprintf($smarty.const.TEXT_THIS_IS_SWITCH_TO, $smarty.const.TEXT_REGULAR_PRODUCT, $smarty.const.TEXT_BUNDLE_PRODUCT)}
-        </span>
-        <span data-value="0" class="btn">
+      {if $infoBreadCrumb}
+          <div class="col breadcrumb-additional_info breadcrumb-for-product">{$infoBreadCrumb}</div>
+      {/if}
+      {if $infoSubProducts}
+          <div class="col breadcrumb-additional_info breadcrumb-for-product">{$infoSubProducts}</div>
+      {/if}
+      {if \common\helpers\Acl::checkExtensionAllowed('ReportChangesHistory')}
+          <div class="col-2 btn-right mb-2">
+              <a href="{Yii::$app->urlManager->createUrl(['logger/popup', 'type' => 'Product', 'id' => $pInfo->products_id])}" class="btn-link-create popup">{$smarty.const.TEXT_HISTORY}</a>
+          </div>
+      {/if}
+      {if $editProductBundleSwitcher }
+          <div class="col-2 btn-is-bundle">
+              <span data-value="1" class="btn">
+                  {sprintf($smarty.const.TEXT_THIS_IS_SWITCH_TO, $smarty.const.TEXT_REGULAR_PRODUCT, $smarty.const.TEXT_BUNDLE_PRODUCT)}
+              </span>
+              <span data-value="0" class="btn">
             {sprintf($smarty.const.TEXT_THIS_IS_SWITCH_TO, $smarty.const.TEXT_BUNDLE_PRODUCT, $smarty.const.TEXT_REGULAR_PRODUCT)}
-        </span>
-    </div>
-{/if}
-{if $productGroupVariants}
-    <div class="btn-box-inv-price" style="float: right;margin:-19px 10px 12px"><label>{sprintf($smarty.const.TEXT_PRODUCT_IN_PRODUCTS_GROUP,$productGroupName)}:</label> {Html::dropDownList('',$productGroupVariants['selected'], $productGroupVariants['items'], ['class'=>'form-control js-switch-product-in-group'])}</div>
-{/if}
-{if $infoBreadCrumb}
-    <div class="breadcrumb-additional_info breadcrumb-for-product">{$infoBreadCrumb}</div>
-{/if}
-{if $infoSubProducts}
-  <div class="breadcrumb-additional_info breadcrumb-for-product">{$infoSubProducts}</div>
-{/if}
+              </span>
+          </div>
+      {/if}
+      {if $productGroupVariants}
+          <div class="col btn-box-inv-price" style="margin: -8px 20px 10px"><label>{sprintf($smarty.const.TEXT_PRODUCT_IN_PRODUCTS_GROUP,$productGroupName)}:</label> {Html::dropDownList('',$productGroupVariants['selected'], $productGroupVariants['items'], ['class'=>'form-control js-switch-product-in-group'])}</div>
+      {/if}
 {if $editProductBundleSwitcher || $infoBreadCrumb || $infoSubProducts}
   </div>
 {/if}
@@ -65,9 +66,9 @@
             const _this = this;
             const contentMessage = $(`
                 <div class="alert-message">${ $(this).text()}</div>
-                <div class="btn-bar p-l-4 p-r-4">
-                    <div class="btn-left"><span class="btn btn-cancel">{$smarty.const.TEXT_NO}</span></div>
-                    <div class="btn-right"><span class="btn btn-primary btn-apply">{$smarty.const.TEXT_YES}</span></div>
+                <div class="row p-4">
+                    <div class="col"><span class="btn btn-cancel">{$smarty.const.TEXT_NO}</span></div>
+                    <div class="col text-end"><span class="btn btn-primary btn-apply">{$smarty.const.TEXT_YES}</span></div>
                 </div>
             `);
             alertMessage(contentMessage);
@@ -146,155 +147,161 @@
         </div>
         <div class="tl-all-pages-block">
             {if count(platform::getProductsAssignList())>1 || \common\helpers\Acl::checkExtensionAllowed('UserGroupsRestrictions', 'allowed') }
-              <ul class="">
-              <li><a href="#tab_platform" data-toggle="tab"><span>{$smarty.const.TEXT_ASSIGN_TAB}</span></a></li>
+              <ul class="nav">
+              <li data-bs-toggle="tab" data-bs-target="#tab_platform"><a><span>{$smarty.const.TEXT_ASSIGN_TAB}</span></a></li>
               {else}
               <ul class="">
           {/if}
             {if $departments && count(department::getCatalogAssignList())>1 }
-                <li><a href="#tab_department" data-toggle="tab"><span>{$smarty.const.TEXT_DEPARTMENT_TAB}</span></a></li>
+                <li data-bs-toggle="tab" data-bs-target="#tab_department"><a><span>{$smarty.const.TEXT_DEPARTMENT_TAB}</span></a></li>
             {/if}
-            {*<li><a href="#tab_1_1" data-toggle="tab"><span>{$smarty.const.ITEXT_PAGE_VIEW}</span></a></li>*}
-    {if \common\helpers\Acl::checkExtensionAllowed('Handlers', 'allowed')}
-            <li><a href="#tab_handlers" data-toggle="tab"><span>{$smarty.const.BOX_HANDLERS}</span></a></li>
+            {*<li data-bs-toggle="tab" data-bs-target="#tab_1_1"><a><span>{$smarty.const.ITEXT_PAGE_VIEW}</span></a></li>*}
+    {if \common\helpers\Extensions::isAllowed('Handlers')}
+            <li data-bs-toggle="tab" data-bs-target="#tab_handlers"><a><span>{$smarty.const.BOX_HANDLERS}</span></a></li>
     {/if}
 {if $app->controller->view->showStatistic == true}
     {if $TabAccess->tabView('TEXT_STATIC')}
-            <li><a href="#tab_1_2" data-toggle="tab"><span>{$smarty.const.TEXT_STATIC}</span></a></li>
+            <li data-bs-toggle="tab" data-bs-target="#tab_1_2"><a><span>{$smarty.const.TEXT_STATIC}</span></a></li>
     {/if}
 {/if}
     {if $es = \common\helpers\Acl::checkExtensionAllowed('EventSystem', 'allowed')}
-        <li><a href="#tab_event_program" data-toggle="tab"><span>{$smarty.const.TEXT_EVENT_SYSTEM}</span></a></li>
+        <li data-bs-toggle="tab" data-bs-target="#tab_event_program"><a><span>{$smarty.const.TEXT_EVENT_SYSTEM}</span></a></li>
     {/if}
     {if $TabAccess->tabView('TEXT_PRICE_COST_W')}
-            <li><a href="#tab_1_3" data-toggle="tab"><span>{$smarty.const.TEXT_PRICE_COST_W}</span></a></li>
+            <li data-bs-toggle="tab" data-bs-target="#tab_1_3"><a><span>{$smarty.const.TEXT_PRICE_COST_W}</span></a></li>
     {/if}
     {if $TabAccess->tabView('TEXT_NAME_DESCRIPTION')}
-            <li><a href="#tab_1_4" data-toggle="tab"><span>{$smarty.const.TEXT_NAME_DESCRIPTION}</span></a></li>
+            <li data-bs-toggle="tab" data-bs-target="#tab_1_4"><a><span>{$smarty.const.TEXT_NAME_DESCRIPTION}</span></a></li>
     {/if}
     {if $TabAccess->tabView('TEXT_MAIN_DETAILS')}
-            <li class="active"><a href="#tab_1_5" data-toggle="tab"><span>{$smarty.const.TEXT_MAIN_DETAILS}</span></a></li>
+            <li data-bs-toggle="tab" data-bs-target="#tab_1_5" class="active"><a><span>{$smarty.const.TEXT_MAIN_DETAILS}</span></a></li>
     {/if}
-    {if \common\helpers\Acl::checkExtensionAllowed('LinkedProducts', 'allowed') && $TabAccess->tabView('TEXT_LINKED_PRODUCTS')}
-      <li><a href="#tab_linked_products" data-toggle="tab"><span>{$smarty.const.TEXT_LINKED_PRODUCTS}</span></a></li>
+    {foreach \common\helpers\Hooks::getList('categories/productedit', 'tab-navs-middle') as $filename}
+        {include file=$filename}
+    {/foreach}
+    {if \common\helpers\Extensions::isAllowed('LinkedProducts') && $TabAccess->tabView('TEXT_LINKED_PRODUCTS')}
+      <li data-bs-toggle="tab" data-bs-target="#tab_linked_products"><a><span>{$smarty.const.TEXT_LINKED_PRODUCTS}</span></a></li>
     {/if}
     {if $TabAccess->tabView('TEXT_ATTR_INVENTORY') && count($app->controller->view->attributes)>0}
-            <li class="attributes-tab"><a href="#attributes" data-toggle="tab"><span>{$smarty.const.TEXT_ATTR_INVENTORY}</span></a></li>
+            <li data-bs-toggle="tab" data-bs-target="#attributes" class="attributes-tab"><a><span>{$smarty.const.TEXT_ATTR_INVENTORY}</span></a></li>
     {/if}
     {if $TabAccess->tabView('TAB_IMAGES')}
-            <li><a href="#tab_1_7" data-toggle="tab"><span>{$smarty.const.TAB_IMAGES}</span></a></li>
+            <li data-bs-toggle="tab" data-bs-target="#tab_1_7"><a><span>{$smarty.const.TAB_IMAGES}</span></a></li>
     {/if}
     {if $TabAccess->tabView('TEXT_VIDEO')}
-            <li><a href="#tab_1_14" data-toggle="tab"><span>{$smarty.const.TEXT_VIDEO}</span></a></li>
+            <li data-bs-toggle="tab" data-bs-target="#tab_1_14"><a><span>{$smarty.const.TEXT_VIDEO}</span></a></li>
     {/if}
     {if $TabAccess->tabView('TEXT_SIZE_PACKAGING')}
-            <li><a href="#tab_1_8" data-toggle="tab"><span>{$smarty.const.TEXT_SIZE_PACKAGING}</span></a></li>
+            <li data-bs-toggle="tab" data-bs-target="#tab_1_8"><a><span>{$smarty.const.TEXT_SIZE_PACKAGING}</span></a></li>
     {/if}
     {if $TabAccess->tabView('TEXT_SEO')}
-            <li><a href="#tab_1_9" data-toggle="tab"><span>{$smarty.const.TEXT_SEO}</span></a></li>
+            <li data-bs-toggle="tab" data-bs-target="#tab_1_9"><a><span>{$smarty.const.TEXT_SEO}</span></a></li>
     {/if}
     {if $TabAccess->tabView('TEXT_MARKETING')}
-            <li><a href="#tab_1_10" data-toggle="tab"><span>{$smarty.const.TEXT_MARKETING}</span></a></li>
+            <li data-bs-toggle="tab" data-bs-target="#tab_1_10"><a><span>{$smarty.const.TEXT_MARKETING}</span></a></li>
     {/if}
     {if $TabAccess->tabView('TAB_PROPERTIES')}
-            <li><a href="#tab_1_11" data-toggle="tab" title="{$smarty.const.TAB_PROPERTIES}"><span>{$smarty.const.TAB_PROPERTIES}</span></a></li>
+            <li data-bs-toggle="tab" data-bs-target="#tab_1_11"><a title="{$smarty.const.TAB_PROPERTIES}"><span>{$smarty.const.TAB_PROPERTIES}</span></a></li>
     {/if}
     {if \common\helpers\Acl::checkExtensionAllowed('ObsoleteProducts', 'allowed') && $TabAccess->tabView('TAB_OBSOLETE_PRODUCTS')}
-            <li><a href="#tab_obsolete_products" data-toggle="tab"><span>{$smarty.const.TAB_OBSOLETE_PRODUCTS}</span></a></li>
+            <li data-bs-toggle="tab" data-bs-target="#tab_obsolete_products"><a><span>{$smarty.const.TAB_OBSOLETE_PRODUCTS}</span></a></li>
     {/if}
     {if \common\helpers\Acl::checkExtensionAllowed('ProductDocuments') && $TabAccess->tabView('TAB_DOCUMENTS')}
-            <li><a href="#tab_1_13" data-toggle="tab"><span>{$smarty.const.TAB_DOCUMENTS}</span></a></li>
+            <li data-bs-toggle="tab" data-bs-target="#tab_1_13"><a><span>{$smarty.const.TAB_DOCUMENTS}</span></a></li>
     {/if}
     {if $TabAccess->tabView('TAB_IMPORT_EXPORT') && is_object($app->controller->view->import_export) && $app->controller->view->import_export->hasTabs()}
-           <li><a href="#tabImportExport" data-toggle="tab"><span>{$smarty.const.TAB_IMPORT_EXPORT}</span></a></li>
+           <li data-bs-toggle="tab" data-bs-target="#tabImportExport"><a><span>{$smarty.const.TAB_IMPORT_EXPORT}</span></a></li>
     {/if}
     {if \common\helpers\Acl::checkExtensionAllowed('Ebay', 'allowed')}
-            <li><a href="#tab_ebay" data-toggle="tab"><span>{$smarty.const.BOX_EBAY}</span></a></li>
+            <li data-bs-toggle="tab" data-bs-target="#tab_ebay"><a><span>{$smarty.const.BOX_EBAY}</span></a></li>
     {/if}
                   {if $TabAccess->tabView('TAB_NOTES')}
-                      <li><a href="#tabNotes" data-toggle="tab"><span>{$smarty.const.TAB_NOTES}</span></a></li>
+                      <li data-bs-toggle="tab" data-bs-target="#tabNotes"><a><span>{$smarty.const.TAB_NOTES}</span></a></li>
                   {/if}
     {if \common\helpers\Acl::checkExtensionAllowed('Competitors') && $TabAccess->tabView('TAB_COMPETITORS')}
-            <li><a href="#tab_1_15" data-toggle="tab"><span>{$smarty.const.TAB_COMPETITORS}</span></a></li>
+            <li data-bs-toggle="tab" data-bs-target="#tab_1_15"><a><span>{$smarty.const.TAB_COMPETITORS}</span></a></li>
     {/if}
         </ul>
         </div>
     </div>
           {if count(platform::getProductsAssignList())>1 || \common\helpers\Acl::checkExtensionAllowed('UserGroupsRestrictions', 'allowed') }
               <ul class="nav nav-tabs nav-tabs-platform nav-tabs-scroll">
-              <li><a href="#tab_platform" data-toggle="tab"><span>{$smarty.const.TEXT_ASSIGN_TAB}</span></a></li>
+              <li data-bs-toggle="tab" data-bs-target="#tab_platform"><a><span>{$smarty.const.TEXT_ASSIGN_TAB}</span></a></li>
               {else}
               <ul class="nav nav-tabs nav-tabs-scroll">
           {/if}
           {if $departments && count(department::getCatalogAssignList())>1 }
-              <li><a href="#tab_department" data-toggle="tab"><span>{$smarty.const.TEXT_DEPARTMENT_TAB}</span></a></li>
+              <li data-bs-toggle="tab" data-bs-target="#tab_department"><a><span>{$smarty.const.TEXT_DEPARTMENT_TAB}</span></a></li>
           {/if}
-                {*<li class="active"><a href="#tab_1_1" data-toggle="tab"><span>{$smarty.const.ITEXT_PAGE_VIEW}</span></a></li>*}
-    {if \common\helpers\Acl::checkExtensionAllowed('Handlers', 'allowed')}
-            <li><a href="#tab_handlers" data-toggle="tab"><span>{$smarty.const.BOX_HANDLERS}</span></a></li>
+                {*<li class="active" data-bs-toggle="tab" data-bs-target="#tab_1_1"><a><span>{$smarty.const.ITEXT_PAGE_VIEW}</span></a></li>*}
+    {if \common\helpers\Extensions::isAllowed('Handlers')}
+            <li data-bs-toggle="tab" data-bs-target="#tab_handlers"><a><span>{$smarty.const.BOX_HANDLERS}</span></a></li>
     {/if}
     {if $es = \common\helpers\Acl::checkExtensionAllowed('EventSystem', 'allowed')}
-        <li><a href="#tab_event_program" data-toggle="tab"><span>{$smarty.const.TEXT_EVENT_SYSTEM}</span></a></li>
+        <li data-bs-toggle="tab" data-bs-target="#tab_event_program"><a><span>{$smarty.const.TEXT_EVENT_SYSTEM}</span></a></li>
     {/if}
     {if $TabAccess->tabView('TEXT_PRICE_COST_W')}
-            <li><a href="#tab_1_3" data-toggle="tab"><span>{$smarty.const.TEXT_PRICE_COST_W}</span></a></li>
+            <li data-bs-toggle="tab" data-bs-target="#tab_1_3"><a><span>{$smarty.const.TEXT_PRICE_COST_W}</span></a></li>
     {/if}
     {if $TabAccess->tabView('TEXT_NAME_DESCRIPTION')}
-            <li><a href="#tab_1_4" data-toggle="tab"><span>{$smarty.const.TEXT_NAME_DESCRIPTION}</span></a></li>
+            <li data-bs-toggle="tab" data-bs-target="#tab_1_4"><a><span>{$smarty.const.TEXT_NAME_DESCRIPTION}</span></a></li>
     {/if}
     {if $TabAccess->tabView('TEXT_MAIN_DETAILS')}
-            <li class="active"><a href="#tab_1_5" data-toggle="tab"><span>{$smarty.const.TEXT_MAIN_DETAILS}</span></a></li>
+            <li data-bs-toggle="tab" data-bs-target="#tab_1_5" class="active"><a><span>{$smarty.const.TEXT_MAIN_DETAILS}</span></a></li>
     {/if}
-    {if \common\helpers\Acl::checkExtensionAllowed('LinkedProducts', 'allowed') && $TabAccess->tabView('TEXT_LINKED_PRODUCTS') }
-            <li><a href="#tab_linked_products" data-toggle="tab"><span>{$smarty.const.TEXT_LINKED_PRODUCTS}</span></a></li>
+    {foreach \common\helpers\Hooks::getList('categories/productedit', 'tab-navs-middle') as $filename}
+        {include file=$filename}
+    {/foreach}
+    {if \common\helpers\Extensions::isAllowed('LinkedProducts') && $TabAccess->tabView('TEXT_LINKED_PRODUCTS') }
+            <li data-bs-toggle="tab" data-bs-target="#tab_linked_products"><a><span>{$smarty.const.TEXT_LINKED_PRODUCTS}</span></a></li>
     {/if}
     {if $TabAccess->tabView('TEXT_ATTR_INVENTORY') && count($app->controller->view->attributes)>0}
-            <li class="attributes-tab"><a href="#attributes" data-toggle="tab"><span>{$smarty.const.TEXT_ATTR_INVENTORY}</span></a></li>
+            <li data-bs-toggle="tab" data-bs-target="#attributes" class="attributes-tab"><a><span>{$smarty.const.TEXT_ATTR_INVENTORY}</span></a></li>
     {/if}
     {if $TabAccess->tabView('TAB_IMAGES')}
-            <li><a href="#tab_1_7" data-toggle="tab"><span>{$smarty.const.TAB_IMAGES}</span></a></li>
+            <li data-bs-toggle="tab" data-bs-target="#tab_1_7"><a><span>{$smarty.const.TAB_IMAGES}</span></a></li>
     {/if}
     {if $TabAccess->tabView('TEXT_VIDEO')}
-            <li><a href="#tab_1_14" data-toggle="tab"><span>{$smarty.const.TEXT_VIDEO}</span></a></li>
+            <li data-bs-toggle="tab" data-bs-target="#tab_1_14"><a><span>{$smarty.const.TEXT_VIDEO}</span></a></li>
     {/if}
     {if $TabAccess->tabView('TEXT_SIZE_PACKAGING')}
-            <li><a href="#tab_1_8" data-toggle="tab"><span>{$smarty.const.TEXT_SIZE_PACKAGING}</span></a></li>
+            <li data-bs-toggle="tab" data-bs-target="#tab_1_8"><a><span>{$smarty.const.TEXT_SIZE_PACKAGING}</span></a></li>
     {/if}
     {if $TabAccess->tabView('TEXT_SEO')}
-            <li><a href="#tab_1_9" data-toggle="tab"><span>{$smarty.const.TEXT_SEO}</span></a></li>
+            <li data-bs-toggle="tab" data-bs-target="#tab_1_9"><a><span>{$smarty.const.TEXT_SEO}</span></a></li>
     {/if}
     {if $TabAccess->tabView('TEXT_MARKETING')}
-            <li><a href="#tab_1_10" data-toggle="tab"><span>{$smarty.const.TEXT_MARKETING}</span></a></li>
+            <li data-bs-toggle="tab" data-bs-target="#tab_1_10"><a><span>{$smarty.const.TEXT_MARKETING}</span></a></li>
     {/if}
     {if $TabAccess->tabView('TAB_PROPERTIES')}
-            <li><a href="#tab_1_11" data-toggle="tab" title="{$smarty.const.TAB_PROPERTIES}"><span>{$smarty.const.TAB_PROPERTIES}</span></a></li>
+            <li data-bs-toggle="tab" data-bs-target="#tab_1_11"><a title="{$smarty.const.TAB_PROPERTIES}"><span>{$smarty.const.TAB_PROPERTIES}</span></a></li>
     {/if}
 <!-- {*
     {if \common\helpers\Acl::checkExtensionAllowed('ProductBundles') && $TabAccess->tabView('TAB_BUNDLES')}
-            <li><a href="#tab_1_12" data-toggle="tab"><span>{$smarty.const.TAB_BUNDLES}</span></a></li>
+            <li data-bs-toggle="tab" data-bs-target="#tab_1_12"><a><span>{$smarty.const.TAB_BUNDLES}</span></a></li>
     {/if}
 *} -->
     {if \common\helpers\Acl::checkExtensionAllowed('ObsoleteProducts', 'allowed') && $TabAccess->tabView('TAB_OBSOLETE_PRODUCTS')}
-            <li><a href="#tab_obsolete_products" data-toggle="tab"><span>{$smarty.const.TAB_OBSOLETE_PRODUCTS}</span></a></li>
+            <li data-bs-toggle="tab" data-bs-target="#tab_obsolete_products"><a><span>{$smarty.const.TAB_OBSOLETE_PRODUCTS}</span></a></li>
     {/if}
     {if \common\helpers\Acl::checkExtensionAllowed('ProductDocuments') && $TabAccess->tabView('TAB_DOCUMENTS')}
-            <li><a href="#tab_1_13" data-toggle="tab"><span>{$smarty.const.TAB_DOCUMENTS}</span></a></li>
+            <li data-bs-toggle="tab" data-bs-target="#tab_1_13"><a><span>{$smarty.const.TAB_DOCUMENTS}</span></a></li>
     {/if}
     {if $TabAccess->tabView('TAB_IMPORT_EXPORT') && is_object($app->controller->view->import_export) && $app->controller->view->import_export->hasTabs()}
-        <li><a href="#tabImportExport" data-toggle="tab"><span>{$smarty.const.TAB_IMPORT_EXPORT}</span></a></li>
+        <li data-bs-toggle="tab" data-bs-target="#tabImportExport"><a><span>{$smarty.const.TAB_IMPORT_EXPORT}</span></a></li>
     {/if}
     {if \common\helpers\Acl::checkExtensionAllowed('Ebay', 'allowed')}
-            <li><a href="#tab_ebay" data-toggle="tab"><span>{$smarty.const.BOX_EBAY}</span></a></li>
+            <li data-bs-toggle="tab" data-bs-target="#tab_ebay"><a><span>{$smarty.const.BOX_EBAY}</span></a></li>
     {/if}
                   {if $TabAccess->tabView('TAB_NOTES')}
-                      <li><a href="#tabNotes" data-toggle="tab"><span>{$smarty.const.TAB_NOTES}</span></a></li>
+                      <li data-bs-toggle="tab" data-bs-target="#tabNotes"><a><span>{$smarty.const.TAB_NOTES}</span></a></li>
                   {/if}
     {if \common\helpers\Acl::checkExtensionAllowed('Competitors') && $TabAccess->tabView('TAB_COMPETITORS') }
-            <li><a href="#tab_1_15" data-toggle="tab"><span>{$smarty.const.TAB_COMPETITORS}</span></a></li>
+            <li data-bs-toggle="tab" data-bs-target="#tab_1_15"><a><span>{$smarty.const.TAB_COMPETITORS}</span></a></li>
     {/if}
                   {if $app->controller->view->showStatistic == true}
                       {if $TabAccess->tabView('TEXT_STATIC')}
-                          <li><a href="#tab_1_2" data-toggle="tab"><span>{$smarty.const.TEXT_STATIC}</span></a></li>
+                          <li data-bs-toggle="tab" data-bs-target="#tab_1_2"><a><span>{$smarty.const.TEXT_STATIC}</span></a></li>
                       {/if}
                   {/if}
         </ul>
@@ -342,8 +349,8 @@
                   })})(jQuery)
                 </script>
             </div>*}
-{if \common\helpers\Acl::checkExtensionAllowed('Handlers', 'allowed')}
-        {\common\extensions\Handlers\Handlers::productBlock($pInfo)}
+{if $ext = \common\helpers\Extensions::isAllowed('Handlers')}
+        {$ext::productBlock($pInfo)}
 {/if}
 {if $app->controller->view->showStatistic == true}
     {if $TabAccess->tabView('TEXT_STATIC')}
@@ -381,15 +388,19 @@
                 {/if}
             </div>
     {/if}
-    {if \common\helpers\Acl::checkExtensionAllowed('LinkedProducts', 'allowed') && $TabAccess->tabView('TEXT_LINKED_PRODUCTS')}
+    {foreach \common\helpers\Hooks::getList('categories/productedit', 'tab-content-middle') as $filename}
+        {include file=$filename}
+    {/foreach}
+    {$ext = \common\helpers\Extensions::isAllowed('LinkedProducts')}
+    {if $ext && $TabAccess->tabView('TEXT_LINKED_PRODUCTS') }
         <div class="tab-pane" id="tab_linked_products">
-            {\common\extensions\LinkedProducts\LinkedProducts::productBlock($pInfo)}
+            {$ext::productBlock($pInfo)}
         </div>
     {/if}
     {if $TabAccess->tabView('TEXT_ATTR_INVENTORY') && count($app->controller->view->attributes)>0}
             <div class="tab-pane" id="attributes">
-              {if \common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed')}
-                {\common\extensions\Inventory\Inventory::productBlock($pInfo)}
+              {if $ext = \common\helpers\Extensions::isAllowed('Inventory')}
+                {$ext::productBlock($pInfo)}
               {else}   
               {include 'productedit/attributes.tpl'}
               {/if}
@@ -770,19 +781,19 @@ $(document).ready(function(){
         $(window).resize();
 
         $('.click-main').click(function(){
-            $('a[href="#tab_1_5"]').click();
+            $('[data-bs-target="#tab_1_5"]').click();
         });
         $('.click-price').click(function(){
-            $('a[href="#tab_1_3"]').click();
+            $('[data-bs-target="#tab_1_3"]').click();
         });
         $('.click-images').click(function(){
-            $('a[href="#tab_1_7"]').click();
+            $('[data-bs-target="#tab_1_7"]').click();
         });
         $('.widget-content-stat img').click(function(){
-            $('a[href="#tab_1_7"]').click();
+            $('[data-bs-target="#tab_1_7"]').click();
         });
         $('.edp-qty-t b').click(function(){
-            $('a[href="#attributes"]').click();
+            $('[data-bs-target="#attributes"]').click();
         });
         $('.pr_plus').click(function(){
             val = $(this).next('input').attr('value');
@@ -870,14 +881,7 @@ $(document).ready(function(){
         var linksButton = $('.tp-all-pages-btn-wrapp');
         var linksBox = $('.tp-all-pages-btn');
         var body = $('body');
-        var hideLinksBoxKey = true;
 
-        var hideLinksBox = function(){
-            if (hideLinksBoxKey) {
-                linksBox.removeClass('active');
-                body.off('click', hideLinksBox)
-            }
-        };
         linksButton.on('click', function(){
             if (!linksBox.hasClass('active')){
                 linksBox.addClass('active');
@@ -887,20 +891,14 @@ $(document).ready(function(){
                 }, 100)
             }
         });
+        function hideLinksBox(){
+            linksBox.removeClass('active');
+            body.off('click', hideLinksBox)
+        };
 
         var all_page_btn = $('.tp-all-pages-btn').width() + 8;
-		$('.scrtabs-tab-container').css('margin-right', all_page_btn);
-		$('a[data-toggle="tab"]').on('shown.bs.tab', function () {
-                    //localStorage.setItem('lastTab', $(this).attr('href'));
-                    //window.location = (""+window.location).replace(/#[A-Za-z0-9_]*$/,'')+$(this).attr('href');
-                    //$(window).scrollTop(0);
-                });
-        /*var lastTab = localStorage.getItem('lastTab');
-        if (lastTab) {
-            $('a[href=' + lastTab + ']').tab('show');
-        } else {
-            $('a[data-toggle="tab"]:first').tab('show');
-        }*/
+        $('.scrtabs-tab-container').css('margin-right', all_page_btn);
+
         var activate_categories = {$json_platform_activate_categories};
       $('.check_on_off').bootstrapSwitch( {
             onText: "{$smarty.const.SW_ON}",

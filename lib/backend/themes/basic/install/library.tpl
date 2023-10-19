@@ -123,6 +123,8 @@ $('#tblStore').on('reload',function(event, resetPage) {
     $('#tblStore').DataTable().ajax.reload(null,resetPage);
 });
 
+var delayTimer;
+
 $(document).ready(function(){
     
     applyFilter();
@@ -139,5 +141,11 @@ $(document).ready(function(){
     };
     check_type_checkboxes();
     
+    $('input[name="search"]').on('keyup', function () {
+        clearTimeout(delayTimer);
+        delayTimer = setTimeout(function() {
+            applyFilter();
+        }, 1000);
+    });
 });
 </script>

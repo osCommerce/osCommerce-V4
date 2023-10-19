@@ -13,16 +13,20 @@
 namespace backend\assets;
 
 use yii\web\AssetBundle;
+use yii\web\View;
 
 class SelectProductsAsset extends AssetBundle
 {
     public $basePath = '@webroot';
-    public $baseUrl = '@web/themes/basic';
+    public $baseUrl = '@web';
     public $css = [
-        //'css/editor/product-box.css',
-        'css/select-products.css',
+        'themes/basic/css/select-products.css',
     ];
     public $js = [
-        'js/select-products.js',
+        'plugins/dragselect.js',
+        'themes/basic/js/select-products.js',
+    ];
+    public $jsOptions = [
+        'position' => View::POS_HEAD,
     ];
 }

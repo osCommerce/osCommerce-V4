@@ -110,7 +110,8 @@ class AccountLink extends Widget
         
         $is_multi = \Yii::$app->get('storage')->get('is_multi');
         /** @var \common\extensions\CustomersMultiEmails\CustomersMultiEmails $CustomersMultiEmails */
-            if ($is_multi && $CustomersMultiEmails = \common\helpers\Acl::checkExtensionAllowed('CustomersMultiEmails', 'allowed')) {
+        if ($is_multi) {
+            if ($CustomersMultiEmails = \common\helpers\Acl::checkExtensionAllowed('CustomersMultiEmails', 'allowed')) {
               if (!$CustomersMultiEmails::checkLink($this->settings[0]['link'])) {
                   if ($this->settings[0]['link'] == 'Order History') {
                       return TEXT_NOT_ALLOWED;
@@ -124,6 +125,21 @@ class AccountLink extends Widget
                  }
               }
             }
+            if ($DealersMultiCustomers = \common\helpers\Acl::checkExtensionAllowed('DealersMultiCustomers', 'allowed')) {
+                if (!$DealersMultiCustomers::checkLink($this->settings[0]['link'])) {
+                    if ($this->settings[0]['link'] == 'Order History') {
+                        return TEXT_NOT_ALLOWED;
+                    }
+                    return '';
+                }
+                if ($this->settings[0]['link'] == 'logoff') {
+                    $multiCustomerInfo = $DealersMultiCustomers::getMultiCustomerInfo();
+                    if (is_object($multiCustomerInfo)) {
+                       $text .= ' ('.$multiCustomerInfo->customers_firstname . ' ' . $multiCustomerInfo->customers_lastname . ')';
+                    }
+                }
+            }
+        }
             /*
         if ($this->settings[0]['link'] == 'delete' || $page == 'address_book' || $page == 'account_edit' || $page == 'my_password') {
             $manager = new \common\services\OrderManager(Yii::$app->get('storage'));

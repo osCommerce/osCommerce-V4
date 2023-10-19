@@ -247,7 +247,7 @@ class ModulesController extends Sceleton
         //$ppp = $platform_config->const_value('MODULE_PAYMENT_PAYPAL_PARTNER_STATUS', null);
         $ret = ['installPPP' => false];
 
-        if (is_null($ppp) && $set == 'payment' && $type == 'online') {
+        if (is_null($ppp??null) && $set == 'payment' && $type == 'online') {
 
             $class = 'paypal_partner';
             $file = $class . '.php';
@@ -927,7 +927,7 @@ class ModulesController extends Sceleton
                 $level = $rootLevel; // End work with root menu items. Transferring the shift level to the extension menu items
             }
             $title = (defined($item['title'])) ? constant($item['title']) : $item['title'];  // Replacing the title with a translation
-            if(!isset($item['path']) or empty($item['path'])) {
+            if(!isset($item['path']) or empty($item['path']) or is_array($item['child']??null)) {
                 $res .= '<div>' . str_repeat('&nbsp;&nbsp;&nbsp;&nbsp;', $level) . '<button class="btn btn-disabled" style="margin-top: 5px;" href="#" disabled="disabled">' . $title . '</button></div>';
             }elseif(!self::isMenuItemEnabled($item['title']))
             {
@@ -1312,8 +1312,11 @@ class ModulesController extends Sceleton
                     $value = $object->confValueBeforeSave($key, $value, intval($this->selected_platform_id));
                 }
 
-                tep_db_query("update " . TABLE_PLATFORMS_CONFIGURATION. " set configuration_value = '" . tep_db_input(tep_db_prepare_input($value)) . "' where configuration_key = '" . tep_db_input($key) . "' AND platform_id='".intval($this->selected_platform_id)."'");
-
+                if (is_object($object) && $key == "{$object->code}_EXTENSION_STATUS" && (new \common\classes\platform_config($this->selected_platform_id))->const_value($key) != $value) {
+                    $object->enable_module($this->selected_platform_id, $value == 'True');
+                } else {
+                    tep_db_query("update " . TABLE_PLATFORMS_CONFIGURATION . " set configuration_value = '" . tep_db_input(tep_db_prepare_input($value)) . "' where configuration_key = '" . tep_db_input($key) . "' AND platform_id='" . intval($this->selected_platform_id) . "'");
+                }
                 if (isset($logUniversal)) {
                     $logUniversal->mergeAfterArray(\common\models\PlatformsConfiguration::find()
                         ->select(['configuration_value', 'platform_id', 'configuration_key'])
@@ -1383,7 +1386,7 @@ class ModulesController extends Sceleton
             if (method_exists($object, 'setZeroPrice') && !($object instanceof \common\classes\modules\ModuleExtensions)) {
                 $object->setZeroPrice();
             }
-            if (method_exists($object, 'setVisibility')) {
+            if (method_exists($object, 'setVisibility') && !($object instanceof \common\extensions\ModulesVisibility\ModulesVisibility)) {
                 $object->setVisibility();
             }
             if (method_exists($object, 'setRestriction')) {
@@ -1686,19 +1689,11 @@ class ModulesController extends Sceleton
             if (file_exists($this->module_directory . $class . $file_extension)) {
                 include_once($this->module_directory . $class . $file_extension);
             }
+        }
+        if ($this->module_type == 'extensions') {
+            $class = \common\helpers\Acl::checkExtension($class, 'enabled');
         } else {
-            $ext = \common\helpers\Acl::checkExtension($class, 'allowed');
-            if ($this->module_type == 'payment') {
-                $ext = '';
-            }
-            if (!$ext){
-                if ($this->module_namespace) {
-                    $class = $this->module_namespace . $_module;
-                }
-            } else {
-                $file_extension = "";
-                $class = $ext;
-            }
+            $class = $this->module_namespace . $_module;
         }
         if (class_exists($class) && is_subclass_of($class,"common\\classes\\modules\\{$this->module_class}") ) {
             $module = new $class;

@@ -34,6 +34,8 @@ use common\models\queries\CouponsQuery;
  * @property int $tax_class_id
  * @property int $flag_with_tax
  * @property string $full_name
+ * @property string $restrict_to_manufacturers
+ * @property string $coupon_groups
  *
  * @property CouponsDescription $description
  *
@@ -67,6 +69,8 @@ class Coupons extends ActiveRecord
             [['coupon_code'], 'string', 'max' => 32],
             [['coupon_currency'], 'string', 'max' => 3],
             [['restrict_to_products', 'restrict_to_categories', 'restrict_to_countries'], 'string', 'max' => 255],
+            [['coupon_groups'],'string','max'=> 2048],
+            [['restrict_to_manufacturers'],'string','max'=> 65535],
         ];
     }
 
@@ -98,6 +102,8 @@ class Coupons extends ActiveRecord
             'pos_only' => 'For POS only',
             'tax_class_id' => 'Tax Class ID',
             'flag_with_tax' => 'Flag With Tax',
+            'restrict_to_manufacturers' => 'Restrict To Manufacturers',
+            'coupon_groups' => 'Coupon Groups',
         ];
     }
 
@@ -139,7 +145,7 @@ class Coupons extends ActiveRecord
     }
     
     public static function getCouponByCode($code, $onlyActive = false){
-        $query = self::find()->alias('c')->select('c.coupon_id, coupon_type, coupon_amount, coupon_currency, coupon_minimum_order, coupon_start_date, coupon_expire_date, uses_per_coupon, uses_per_user, restrict_to_products, restrict_to_categories, coupon_active, restrict_to_countries, exclude_products, exclude_categories, disable_for_special, spend_partly, single_per_order')
+        $query = self::find()->alias('c')->select('c.coupon_id, coupon_type, coupon_amount, coupon_currency, coupon_minimum_order, coupon_start_date, coupon_expire_date, uses_per_coupon, uses_per_user, restrict_to_products, restrict_to_categories, restrict_to_manufacturers, coupon_active, coupon_groups, restrict_to_countries, exclude_products, exclude_categories, disable_for_special, spend_partly, single_per_order')
             ->addSelect(['coupon_code' => (new \yii\db\Expression('ifnull(c2c.coupon_code, c.coupon_code)'))])
             ->addSelect(['restrict_to_customers' => (new \yii\db\Expression('ifnull(c2c.only_for_customer, c.restrict_to_customers)'))])
             ->addSelect('check_platforms')

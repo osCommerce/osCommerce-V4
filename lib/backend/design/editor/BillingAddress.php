@@ -27,7 +27,7 @@ class BillingAddress extends Widget {
     public function run(){
         return $this->render('billing-address',[
             'manager' => $this->manager,
-            'urlCheckout' => Yii::$app->urlManager->createAbsoluteUrl(array_merge(['editor/checkout', 'action' => 'get_address_list', 'type' => 'billing'], Yii::$app->request->getQueryParams())),
+            'urlCheckout' => Yii::$app->urlManager->createAbsoluteUrl(['editor/checkout', 'action' => 'get_address_list', 'type' => 'billing', 'currentCart' => Yii::$app->request->get('currentCart')]),
         ]);
     }
 }

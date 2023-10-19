@@ -209,47 +209,22 @@ class Manufacturers {
         $deleteImage = Yii::$app->request->post('delete_image' . $suffix);
         $manufacturersImage = Yii::$app->request->post('manufacturers_image' . $suffix);
 
-        $manufacturersImage = str_replace('images/', '', $manufacturersImage);
-
-        if ($manufacturersImage == '0') {
-            $manufacturersImage = '';
-        }
-        $saveImage = $manufacturersImage;
-
         $manufacture = \common\models\Manufacturers::findOne($manufacturersId);
         if (!$manufacture) return false;
 
         $manufactureImage = 'manufacturers_image' . $suffix;
 
-        if ($deleteImage) {
-            $saveImage = '';
+        $saveImage = \common\helpers\Image::prepareSavingImage(
+            $manufacture->$manufactureImage,
+            $manufacturersImage,
+            $imageLoaded,
+            'brands' . DIRECTORY_SEPARATOR . $manufacturersId,
+            $deleteImage
+        );
+        if ($deleteImage && $manufacture->$manufactureImage) {
+            Images::removeResizeImages($manufacture->$manufactureImage);
         }
-
-        if ($deleteImage || $imageLoaded != '') {
-            $removeImage = $manufacture->$manufactureImage;
-            if (!empty($removeImage)) {
-                $image_location = DIR_FS_DOCUMENT_ROOT . DIR_WS_CATALOG_IMAGES . $removeImage;
-                if (file_exists($image_location)) @unlink($image_location);
-                Images::removeResizeImages($removeImage);
-                Images::removeWebp($removeImage);
-            }
-        }
-
-        $imgPath = DIR_WS_IMAGES . 'brands' . DIRECTORY_SEPARATOR . $manufacturersId . DIRECTORY_SEPARATOR;
-        if ($imageLoaded != '') {
-            $val = Uploads::move($imageLoaded, $imgPath . $imageType, true);
-            $val = str_replace(DIR_WS_IMAGES, '', $val);
-            $saveImage = $val;
-            Images::createWebp($val, true);
-            Images::createResizeImages($val, 'Brand ' . $imageType, true);
-        } elseif ($saveImage) {
-            $saveImage = Images::moveImage(
-                $saveImage,
-                'brands' . DIRECTORY_SEPARATOR . $manufacturersId . DIRECTORY_SEPARATOR . $imageType
-            );
-            Images::createWebp($saveImage);
-            Images::createResizeImages($saveImage, 'Brand ' . $imageType);
-        }
+        Images::createResizeImages($saveImage, 'Brand ' . $imageType);
 
         $manufacture->$manufactureImage = $saveImage;
         $manufacture->save();

@@ -9,11 +9,11 @@
   <div class="tabbable tabbable-custom tabbable-ep">
 
     <ul class="nav nav-tabs nav-tabs-big {if $isMultiPlatform}tab-radius-ul{/if}">
-        <li class="active"><a href="#main" data-toggle="tab"><span>{$smarty.const.TEXT_MAIN_DETAILS}</span></a></li>
-        <li><a href="#images" data-toggle="tab"><span>{$smarty.const.TAB_IMAGES}</span></a></li>
+        <li class="active" data-bs-toggle="tab" data-bs-target="#main"><a><span>{$smarty.const.TEXT_MAIN_DETAILS}</span></a></li>
+        <li data-bs-toggle="tab" data-bs-target="#images"><a><span>{$smarty.const.TAB_IMAGES}</span></a></li>
       {if $designer_mode == 'expert'}
-        <li><a href="#fonts" data-toggle="tab"><span>{$smarty.const.TEXT_FONTS}</span></a></li>
-        <li><a href="#sizes" data-toggle="tab"><span>{$smarty.const.SIZES_RESPONSIVE_DESIGN}</span></a></li>
+        <li data-bs-toggle="tab" data-bs-target="#fonts"><a><span>{$smarty.const.TEXT_FONTS}</span></a></li>
+        <li data-bs-toggle="tab" data-bs-target="#sizes"><a><span>{$smarty.const.SIZES_RESPONSIVE_DESIGN}</span></a></li>
       {/if}
     </ul>
     <div class="tab-content {if $isMultiPlatform}tab-content1{/if}">
@@ -44,6 +44,14 @@
             <select name="settings[show_empty_categories]" id="" class="form-control">
               <option value=""{if $settings.show_empty_categories == ''} selected{/if}>{$smarty.const.TEXT_BTN_NO}</option>
               <option value="1"{if $settings.show_empty_categories == '1'} selected{/if}>{$smarty.const.TEXT_BTN_YES}</option>
+            </select>
+          </div>
+
+          <div class="setting-row">
+            <label for="">{$smarty.const.SHOW_EMPTY_BRANDS}</label>
+            <select name="settings[hide_empty_brands]" id="" class="form-control">
+              <option value=""{if $settings.hide_empty_brands == ''} selected{/if}>{$smarty.const.TEXT_BTN_YES}</option>
+              <option value="1"{if $settings.hide_empty_brands == '1'} selected{/if}>{$smarty.const.TEXT_BTN_NO}</option>
             </select>
           </div>
 
@@ -91,7 +99,7 @@
 
             <div id="cp3" class="input-group colorpicker-component" style="width: 243px">
               <input type="text" name="settings[theme_color]" value="{$settings.theme_color}" class="form-control"/>
-              <span class="input-group-addon"><i></i></span>
+               <span class="input-group-append"><span class="input-group-text colorpicker-input-addon"><i></i></span></span>
             </div>
           </div>
 
@@ -174,9 +182,6 @@
             {/if}
 
 
-          {*<div class="setting-row">
-            <a href="{Yii::$app->urlManager->createUrl(['design/apply-styles-file', 'theme_name' => $theme_name])}" class="btn">{$smarty.const.ADD_NEW_DESIGN_ELEMENTS}</a>
-          </div>*}
         </div>
         </div>
       </div>
@@ -262,47 +267,27 @@
                 <div class="setting-row setting-row-image">
                   <label for="">{$smarty.const.TEXT_BACKGROUND_IMAGE}</label>
 
-                    {if isset($setting.background_image)}
-                      <div class="image">
-                        <img src="{$app->request->baseUrl}/../images/{$setting.background_image}" alt="">
-                        <div class="remove-img"></div>
-                      </div>
-                    {/if}
-
-                  <div class="image-upload">
-                    <div class="upload" data-name="setting[background_image]"></div>
-                    <script type="text/javascript">
-                      $('.upload').uploads().on('upload', function(){
-                        var img = $('.dz-image-preview img', this).attr('src');
-                        $('.demo-box').css('background-image', 'url("'+img+'")')
-                      });
-
-                      $(function(){
-                        $('.setting-row-image .image > img').each(function(){
-                          var img = $(this).attr('src');
-                          $('.demo-box').css('background-image', 'url("'+img+'")');
-
-                          $('input[name="setting[background_image]"]').val('{$setting.background_image}');
-                        });
-
-                        $('.setting-row-image .image .remove-img').on('click', function(){
-                          $('input[name="setting[background_image]"]').val('');
-                          $('.setting-row-image .image').remove()
-                        })
-
-                      });
-
-                    </script>
-                  </div>
+                  {\backend\design\Image::widget([
+                      'name' => 'setting[background_image]',
+                      'value' => $setting.background_image,
+                      'upload' => 'setting[background_image_upload]',
+                      'acceptedFiles' => 'image/*',
+                      'type' => 'image'
+                  ])}
 
                 </div>
                 <div class="setting-row">
                   <label for="">{$smarty.const.TEXT_BACKGROUND_COLOR}</label>
                   <div class="colors-inp">
+
+
                     <div id="cp2" class="input-group colorpicker-component">
                       <input type="text" name="setting[background_color]" value="{$setting.background_color}" class="form-control" placeholder="{$smarty.const.TEXT_COLOR_}" />
-                      <span class="input-group-addon"><i></i></span>
+                      <span class="input-group-append">
+                        <span class="input-group-text colorpicker-input-addon"><i></i></span>
+                      </span>
                     </div>
+
                   </div>
                   <span style="display:inline-block; padding: 7px 0 0 10px">{$smarty.const.TEXT_CLICK_RIGHT_FIELD}</span>
                 </div>

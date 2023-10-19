@@ -1,4 +1,4 @@
-{use class="yii\helpers\Html"}
+{use class="common\helpers\Html"}
 <div class="product-details" data-box="{$product['products_id']}" >
      <div class="widget box box-no-shadow">
         {if $edit}
@@ -37,9 +37,10 @@
                 {/if}
                 <div class="w-line-row">
                     <div class="or-ed-ad-row-sum {if isset($product['product_details']) && ($product['product_details']['product']['pack_unit'] > 0 || $product['product_details']['product']['packaging'] > 0) } or-ed-ad-row-sum-big{/if}">
+
                         {if isset($product['product_details']) && ($product['product_details']['product']['pack_unit'] > 0 || $product['product_details']['product']['packaging'] > 0)}
-                        <span class="with_tax label_ed-or-pr label_ed-or-pr-auto">                                        
-                            <table width="100%" cellspacing="0" cellpadding="0">                                      
+                            <span class="with_tax label_ed-or-pr label_ed-or-pr-auto">
+                            <table width="100%" cellspacing="0" cellpadding="0">
                                 <tr>
                                     <td align="right">{$smarty.const.TABLE_HEADING_PRICE_EXCLUDING_TAX}: </td>
                                     <td><span class="final_price_unit"></span></td>
@@ -74,30 +75,43 @@
                             </table>
                         </span>
                         {else}
-                        <span class="with_tax label_ed-or-pr">                                        
-                            <table width="100%" cellspacing="0" cellpadding="0">
-                                <tr class="old_price_tr">
-                                    <td colspan=3><span class="old_price"></span></td>
-                                </tr>                                        
-                                <tr>
-                                    <td align="right">{$smarty.const.TABLE_HEADING_PRICE_EXCLUDING_TAX}: </td>
-                                    <td><span class="final_price "></span>
-                                    {Html::hiddenInput('product_info[][final_price]', 0, ['class' => 'edit-price form-control', 'data-reg' => 'final_price'])}
-                                    </td>
-                                    <td rowspan="2" class="union_td"><span>}</span></td>
-                                </tr>
-                                <tr>
-                                    <td align="right">{$smarty.const.TABLE_HEADING_PRICE_INCLUDING_TAX}: </td>
-                                    <td><span class="final_price_tax "></span>
-                                    {Html::hiddenInput('product_info[][final_price_tax]', 0, ['class' => 'edit-price form-control', 'data-reg' => 'final_price_tax'])}
-                                    </td>
-                                </tr>
-                            </table>
-                        </span>
+                            <span class="with_tax label_ed-or-pr">
+                                <table width="100%" cellspacing="0" cellpadding="0">
+                                    <tr>
+                                        <td align="right" style="width: 150px">{$smarty.const.TABLE_HEADING_PRICE_EXCLUDING_TAX}: </td>
+                                        <td style="padding-top: 3px">
+                                            {*<span class="old-price"></span>
+                                            <span class="final_price "></span>*}
+                                            {*Html::hiddenInput('product_info[][final_price]', 0, ['class' => 'edit-price form-control', 'data-reg' => 'final_price'])*}
 
-                        <span class="edit_price"><i class="icon-pencil" data-element="edit-price" onclick="manualEdit(this)"><b>{$smarty.const.APPLY}</b></i></span>
-                        {/if}                                                                        
-                        <span class="or-ed-x">x</span>
+    {Html::textInputNullable('product_info[][final_price]', 0,['class'=>'form-control js-bind-ctrl edit-price keep-val', 'placeholder' => $product['price']])}
+                                        </td>
+                                        <td rowspan="2" class="union_td">{*<span>}</span>*}</td>
+                                    </tr>
+                                    <tr class="vat-aria">
+                                        <td align="right">{$smarty.const.TABLE_HEADING_PRICE_INCLUDING_TAX}: </td>
+                                        <td>
+                                            {*<span class="old-price-tax"></span>
+                                            <span class="final_price_tax "></span>*}
+                                            {*Html::hiddenInput('product_info[][final_price_tax]', 0, ['class' => 'edit-price form-control', 'data-reg' => 'final_price_tax'])*}
+                                            {Html::textInputNullable('product_info[][final_price_tax]', 0,['class'=>'form-control js-bind-ctrl edit-price keep-val', 'placeholder' => 0])}
+                                        </td>
+                                    </tr>
+                                </table>
+                            </span>
+
+                            {*<span class="edit_price"><i class="icon-pencil" data-element="edit-price" onclick="manualEdit(this)"><b>{$smarty.const.APPLY}</b></i></span>*}
+                        {/if}
+
+
+                        {if $edit}
+                            {$manager->render('ExtraCharge', ['product' => $product, 'manager' => $manager])}
+                        {/if}
+
+
+
+                        <span class="overwritten-multiply"></span>
+
                         {if $product['pack_unit'] || $product['packaging'] }
                             
                             <div class="qty-box plus_td">
@@ -131,8 +145,8 @@
                                     <div class="ed-or-pr-stock"><span>{$smarty.const.TEXT_STOCK_QTY}</span><span class="valid1"></span><br><span class="valid"></span></div>
                             </div>
                         {else}
-                            <span class="label_ed-or-pr">{$smarty.const.ENTRY_INVOICE_QTY}:</span>
                                 <div class="qty-box plus_td">
+                                    <div class="qty-title">{$smarty.const.ENTRY_INVOICE_QTY}:</div>
                                     <span class="pr_minus"></span>
                                         {Html::textInput('product_info[][qty]', $product['quantity_virtual'], ['class' => 'qty form-control new-product', 'data-max'=>'', 'data-min'=>'', 'data-step'=>max((int)$product['order_quantity_step'], 1), 'data-value-real'=> $product['quantity']])}
                                     <span class='pr_plus'></span>
@@ -176,24 +190,25 @@
                                     <tr>
                                         <td><span class="total_summ"></span></td>
                                     </tr>
-                                    <tr>
+                                    <tr class="vat-aria">
                                         <td><span class="total_summ_tax"></span></td>
                                     </tr>
                                 </table>
                             </span>
                         {else}
-                            <span>=</span>
+                            <span class="overwritten-is">=</span>
                             <span class="tl-ed-or-two-pr">
                                 <table width="100%" cellspacing="0" cellpadding="0">
                                     <tr>
                                         <td><span class="total_summ"></span></td>
                                     </tr>
-                                    <tr>
+                                    <tr class="vat-aria">
                                         <td><span class="total_summ_tax"></span></td>
                                     </tr>
                                 </table>
                             </span>
-                        {/if}    
+                        {/if}
+
                     </div>
                 </div>
                 {if $product['ga']}
@@ -215,12 +230,6 @@
                 <div class="attributes-parent w-line-row">
                     <div >
                       <div class="wl-td product-attributes">
-                      </div>
-                    </div>
-                </div>
-                <div class="configurator-row w-line-row" style="display:none;">
-                    <div >
-                      <div class="product-configurator">
                       </div>
                     </div>
                 </div>
@@ -248,6 +257,12 @@
                         </div>   
                     </div>
                 </div>
+                <div class="configurator-row w-line-row" style="display:none;">
+                    <div >
+                        <div class="product-configurator">
+                        </div>
+                    </div>
+                </div>
                 <div class="bundles-row w-line-row" style="display:none;">
                     <div>
                       <div class="product-bundles">
@@ -262,17 +277,29 @@
 <script>
     
     $(document).ready(function(){
-        $('.prod_name').click(function(e){
+
+        const $product = $(`.product-details[data-box="{$product['products_id']}"]`);
+
+        $('.overwritten-choose').each(overwrittenChoose)
+        $('.overwritten-choose').on('change', overwrittenChoose)
+
+        function overwrittenChoose(){
+            $(this).closest('.or-ed-ad-row-sum').find('.extra-disc-box').hide();
+            $(this).closest('.or-ed-ad-row-sum').find('.overwritten-' + $(this).val()).show()
+        }
+
+        $('.prod_name', $product).click(function(e){
             if ((e.target.offsetWidth - e.offsetX) < e.target.offsetHeight){
                 var box = $(this).closest('.product-details');
                 loaded_products.forEach(function(e, i){
-                    if ($(box).data('box') == e.id){
+                    if ($product.data('box') == e.id){
                         loaded_products.splice(i, 1);
                     }
                 })
                 box.remove();
+                $(window).trigger('changedProduct', [$product.data('box')])
             }
-            if (!$('.product-details').size()){
+            if (!$('.product-details').length){
                 _new = true;
                 $('.product_holder').html('<div class="widget box"><div class="widget-content after">{$smarty.const.TEXT_PRODUCT_NOT_SELECTED|escape:"javascript"}</div></div>');
                 $('.add-product .btn-save').hide();
@@ -280,11 +307,13 @@
             }
         });
 
-        $(".or-ed-ad-row-sum input.edit-price.form-control").on('change', function(){
+        $product.on('change', 'select', () => $(window).trigger('changedProduct', [$product.data('box')]))
+
+        /*$(".or-ed-ad-row-sum input.edit-price.form-control").on('change', function(){
             $(this).parents('.or-ed-ad-row-sum').find('i.icon-pencil').each(function(){
                 $(this).trigger('click');
             });
-        });
+        });*/
         
         $(".gift_wrap .check_on_off").bootstrapSwitch(
         {
@@ -294,6 +323,8 @@
             labelWidth: '24px'
             }
         );
+
+
         
     })
     

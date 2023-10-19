@@ -54,10 +54,11 @@ class Manufacturer extends EPMap
         return $this->hasMany(Info::className(), ['manufacturers_id'=>'manufacturers_id']);
     }
 
-    public function getSeoRedirectsNamed()
-    {
-        return $this->hasMany(\common\models\SeoRedirectsNamed::className(), ['owner_id' => 'manufacturers_id'])->andWhere(['redirects_type'=>'brand']);
-    }
+// SeoRedirectsNamed moved to extensions/SeoRedirectsNamed/models/
+//    public function getSeoRedirectsNamed()
+//    {
+//        return $this->hasMany(\common\models\SeoRedirectsNamed::className(), ['owner_id' => 'manufacturers_id'])->andWhere(['redirects_type'=>'brand']);
+//    }
 
 
     public function getPossibleKeys()

@@ -183,6 +183,7 @@ class Inventory extends EPMap
 
     protected function regenerateFields($onlyUprid=false)
     {
+        if (!is_object($this->parentObject)) return;
         $attr = [];
         foreach($this->optionValuesList as $optValInfo){
             $attr[ $optValInfo['options_id'] ] = $optValInfo['options_values_id'];

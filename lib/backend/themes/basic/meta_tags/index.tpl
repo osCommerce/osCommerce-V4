@@ -18,7 +18,7 @@
                 <div class="tabbable tabbable-custom tabbable-ep">
                   <ul class="nav nav-tabs nav-tabs-scroll">
                     {foreach $tabs_data as $tab_data}
-                      <li class="{if isset($tab_data.class)}{$tab_data.class}{/if}{if isset($tab_data.active) && $tab_data.active} active {/if}"><a href="#{$tab_data.id}" data-toggle="tab"><span>{$tab_data.tab_title}</span></a></li>
+                      <li class="{if isset($tab_data.class)}{$tab_data.class}{/if}{if isset($tab_data.active) && $tab_data.active} active {/if}" data-bs-toggle="tab" data-bs-target="#{$tab_data.id}"><a><span>{$tab_data.tab_title}</span></a></li>
                     {/foreach}
                   </ul>
                   <div class="tab-content {if $isMultiPlatform}tab-content1{/if}">
@@ -32,7 +32,7 @@
                       <div class="tabbable tabbable-custom">
                         <ul class="nav nav-tabs tab-light-gray {if $isMultiPlatform && false}tab-radius-ul tab-radius-ul-white{/if}">
                           {foreach $platforms as $platform}
-                          <li {if $first_platform_id==$platform['id']} class="active"{/if}><a href="#{$tab_data.id}_{$platform['id']}" data-toggle="tab"><span>{$platform['text']}</span></a></li>
+                          <li {if $first_platform_id==$platform['id']} class="active"{/if} data-bs-toggle="tab" data-bs-target="#{$tab_data.id}_{$platform['id']}"><a><span>{$platform['text']}</span></a></li>
                           {/foreach}
                         </ul>
                       {/if}
@@ -43,7 +43,7 @@
                             <div class="tabbable tabbable-custom">
                                 {if count($languages) > 1}
                               <ul class="nav nav-tabs {if $isMultiPlatform}nav-tabs3{/if}">
-                              {foreach $languages as $lang_idx=>$lang}<li{if $lang_idx == 0} class="active"{/if}><a href="#{$tab_data.id}_{$platform['id']}_{$lang['id']}" data-toggle="tab">{$lang['logo']}<span>{$lang['name']}</span></a></li>{/foreach}
+                              {foreach $languages as $lang_idx=>$lang}<li{if $lang_idx == 0} class="active"{/if} data-bs-toggle="tab" data-bs-target="#{$tab_data.id}_{$platform['id']}_{$lang['id']}"><a>{$lang['logo']}<span>{$lang['name']}</span></a></li>{/foreach}
                               </ul>
                               {/if}
                               <div class="tab-content {if $isMultiPlatform}tab-content3{/if} {if count($languages) < 2}tab-content-no-lang{/if}">
@@ -118,6 +118,8 @@ $('body').on('click', '.del-pt.del-tag', function(){
                 <option value=""></option>
                 <option value="##PRODUCT_NAME##"
                         data-common="1">{$smarty.const.TEXT_PRODUCT_NAME}</option>
+                <option value="##PRODUCT_MODEL##"
+                        data-common="1">{$smarty.const.TEXT_PRODUCT_MODEL}</option>
                 <option value="##CATEGORY_NAME##"
                         data-category="1"
                         data-common="1">{$smarty.const.CATEGORY_NAME}</option>
@@ -155,7 +157,9 @@ $('body').on('click', '.del-pt.del-tag', function(){
                 var inputValue = window.currentValue;
                 var cursorPosition = window.currentPosition;
 
-                input.val(inputValue.substr(0, cursorPosition) + key + inputValue.substr(cursorPosition));
+                inputValue = inputValue ?? '';
+                console.log(inputValue)
+                input.val(inputValue.substring(0, cursorPosition) + key + inputValue.substring(cursorPosition));
 
                 $('.popup-box-wrap').remove()
             })
@@ -169,7 +173,7 @@ $(function(){
     window.currentValue = '';
     window.currentPosition = 0;
 
-    $('.wtabplform input, .wtabplform textarea').on('focus keyup click', function(){
+    $('form[name="meta_tags"] input, form[name="meta_tags"] textarea').on('focus keyup click', function(){
         window.currentInput = $(this);
         window.currentValue = $(this).val();
         window.currentPosition = this.selectionStart;

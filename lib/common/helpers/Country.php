@@ -73,7 +73,7 @@ class Country {
         } else {
             $data = \frontend\design\Info::platformData();
             
-            $c = self::getPlatformCountries($data['platform_id'], $type);
+            $c = self::getPlatformCountries($data['platform_id']??null, $type);
             
             if (empty($default)) {
                 $countries_array = $c;

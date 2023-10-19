@@ -50,37 +50,320 @@ class inst_settings extends install_generic {
         if (!$this->def_lang)
             $this->def_lang = $_POST['inst_lang'];
         if (!$this->platform_url)
-            $this->platform_url = rtrim($_SERVER['HTTP_HOST'] . '/' . trim(dirname(dirname($_SERVER['SCRIPT_NAME'])), '/'), '/');
+            $this->platform_url = rtrim($_SERVER['HTTP_HOST'] . '/' . trim(dirname(dirname($_SERVER['SCRIPT_NAME'])), '/\\'), '/\\');
         $cuntries = $this->get_cuntries();
         if (!is_array($cuntries)) {
             $cuntries = [
-                222 => 'United Kingdom',
-            ];
+                1 =>  "Afghanistan",
+                2 =>  "Albania",
+                3 =>  "Algeria",
+                4 =>  "American Samoa",
+                5 =>  "Andorra",
+                6 =>  "Angola",
+                7 =>  "Anguilla",
+                8 =>  "Antarctica",
+                9 =>  "Antigua and Barbuda",
+                10 =>  "Argentina",
+                11 =>  "Armenia",
+                12 =>  "Aruba",
+                13 =>  "Australia",
+                14 =>  "Austria",
+                15 =>  "Azerbaijan",
+                16 =>  "Bahamas",
+                17 =>  "Bahrain",
+                18 =>  "Bangladesh",
+                19 =>  "Barbados",
+                20 =>  "Belarus",
+                21 =>  "Belgium",
+                22 =>  "Belize",
+                23 =>  "Benin",
+                24 =>  "Bermuda",
+                25 =>  "Bhutan",
+                26 =>  "Bolivia",
+                27 =>  "Bosnia and Herzegowina",
+                28 =>  "Botswana",
+                29 =>  "Bouvet Island",
+                30 =>  "Brazil",
+                31 =>  "British Indian Ocean Territory",
+                32 =>  "Brunei Darussalam",
+                33 =>  "Bulgaria",
+                34 =>  "Burkina Faso",
+                35 =>  "Burundi",
+                36 =>  "Cambodia",
+                37 =>  "Cameroon",
+                38 =>  "Canada",
+                39 =>  "Cape Verde",
+                40 =>  "Cayman Islands",
+                41 =>  "Central African Republic",
+                42 =>  "Chad",
+                43 =>  "Chile",
+                44 =>  "China",
+                45 =>  "Christmas Island",
+                46 =>  "Cocos (Keeling) Islands",
+                47 =>  "Colombia",
+                48 =>  "Comoros",
+                49 =>  "Congo",
+                50 =>  "Cook Islands",
+                51 =>  "Costa Rica",
+                52 =>  "Cote D'Ivoire",
+                53 =>  "Croatia",
+                54 =>  "Cuba",
+                55 =>  "Cyprus",
+                56 =>  "Czech Republic",
+                57 =>  "Denmark",
+                58 =>  "Djibouti",
+                59 =>  "Dominica",
+                60 =>  "Dominican Republic",
+                61 =>  "East Timor",
+                62 =>  "Ecuador",
+                63 =>  "Egypt",
+                64 =>  "El Salvador",
+                65 =>  "Equatorial Guinea",
+                66 =>  "Eritrea",
+                67 =>  "Estonia",
+                68 =>  "Ethiopia",
+                69 =>  "Falkland Islands (Malvinas)",
+                70 =>  "Faroe Islands",
+                71 =>  "Fiji",
+                72 =>  "Finland",
+                73 =>  "France",
+                74 =>  "France, Metropolitan",
+                75 =>  "French Guiana",
+                76 =>  "French Polynesia",
+                77 =>  "French Southern Territories",
+                78 =>  "Gabon",
+                79 =>  "Gambia",
+                80 =>  "Georgia",
+                81 =>  "Germany",
+                82 =>  "Ghana",
+                83 =>  "Gibraltar",
+                84 =>  "Greece",
+                85 =>  "Greenland",
+                86 =>  "Grenada",
+                87 =>  "Guadeloupe",
+                88 =>  "Guam",
+                89 =>  "Guatemala",
+                241 =>  "Guernsey",
+                90 =>  "Guinea",
+                91 =>  "Guinea-bissau",
+                92 =>  "Guyana",
+                93 =>  "Haiti",
+                94 =>  "Heard and Mc Donald Islands",
+                95 =>  "Honduras",
+                96 =>  "Hong Kong",
+                97 =>  "Hungary",
+                98 =>  "Iceland",
+                99 =>  "India",
+                100 =>  "Indonesia",
+                101 =>  "Iran (Islamic Republic of)",
+                102 =>  "Iraq",
+                103 =>  "Ireland",
+                240 =>  "Isle of Man",
+                104 =>  "Israel",
+                105 =>  "Italy",
+                106 =>  "Jamaica",
+                107 =>  "Japan",
+                242 =>  "Jersey",
+                108 =>  "Jordan",
+                109 =>  "Kazakhstan",
+                110 =>  "Kenya",
+                111 =>  "Kiribati",
+                112 =>  "Korea, Democratic People's Republic of",
+                113 =>  "Korea, Republic of",
+                114 =>  "Kuwait",
+                115 =>  "Kyrgyzstan",
+                116 =>  "Lao People's Democratic Republic",
+                117 =>  "Latvia",
+                118 =>  "Lebanon",
+                119 =>  "Lesotho",
+                120 =>  "Liberia",
+                121 =>  "Libyan Arab Jamahiriya",
+                122 =>  "Liechtenstein",
+                123 =>  "Lithuania",
+                124 =>  "Luxembourg",
+                125 =>  "Macau",
+                126 =>  "Macedonia, The Former Yugoslav Republic of",
+                127 =>  "Madagascar",
+                128 =>  "Malawi",
+                129 =>  "Malaysia",
+                130 =>  "Maldives",
+                131 =>  "Mali",
+                132 =>  "Malta",
+                133 =>  "Marshall Islands",
+                134 =>  "Martinique",
+                135 =>  "Mauritania",
+                136 =>  "Mauritius",
+                137 =>  "Mayotte",
+                138 =>  "Mexico",
+                139 =>  "Micronesia, Federated States of",
+                140 =>  "Moldova, Republic of",
+                141 =>  "Monaco",
+                142 =>  "Mongolia",
+                143 =>  "Montserrat",
+                144 =>  "Morocco",
+                145 =>  "Mozambique",
+                146 =>  "Myanmar",
+                147 =>  "Namibia",
+                148 =>  "Nauru",
+                149 =>  "Nepal",
+                150 =>  "Netherlands",
+                151 =>  "Netherlands Antilles",
+                152 =>  "New Caledonia",
+                153 =>  "New Zealand",
+                154 =>  "Nicaragua",
+                155 =>  "Niger",
+                156 =>  "Nigeria",
+                157 =>  "Niue",
+                158 =>  "Norfolk Island",
+                159 =>  "Northern Mariana Islands",
+                160 =>  "Norway",
+                161 =>  "Oman",
+                162 =>  "Pakistan",
+                163 =>  "Palau",
+                164 =>  "Panama",
+                165 =>  "Papua New Guinea",
+                166 =>  "Paraguay",
+                167 =>  "Peru",
+                168 =>  "Philippines",
+                169 =>  "Pitcairn",
+                170 =>  "Poland",
+                171 =>  "Portugal",
+                172 =>  "Puerto Rico",
+                173 =>  "Qatar",
+                174 =>  "Reunion",
+                175 =>  "Romania",
+                176 =>  "Russian Federation",
+                177 =>  "Rwanda",
+                178 =>  "Saint Kitts and Nevis",
+                179 =>  "Saint Lucia",
+                180 =>  "Saint Vincent and the Grenadines",
+                181 =>  "Samoa",
+                182 =>  "San Marino",
+                183 =>  "Sao Tome and Principe",
+                184 =>  "Saudi Arabia",
+                185 =>  "Senegal",
+                186 =>  "Seychelles",
+                187 =>  "Sierra Leone",
+                188 =>  "Singapore",
+                189 =>  "Slovakia (Slovak Republic)",
+                190 =>  "Slovenia",
+                191 =>  "Solomon Islands",
+                192 =>  "Somalia",
+                193 =>  "South Africa",
+                194 =>  "South Georgia and the South Sandwich Islands",
+                195 =>  "Spain",
+                196 =>  "Sri Lanka",
+                197 =>  "St. Helena",
+                198 =>  "St. Pierre and Miquelon",
+                199 =>  "Sudan",
+                200 =>  "Suriname",
+                201 =>  "Svalbard and Jan Mayen Islands",
+                202 =>  "Swaziland",
+                203 =>  "Sweden",
+                204 =>  "Switzerland",
+                205 =>  "Syrian Arab Republic",
+                206 =>  "Taiwan",
+                207 =>  "Tajikistan",
+                208 =>  "Tanzania, United Republic of",
+                209 =>  "Thailand",
+                210 =>  "Togo",
+                211 =>  "Tokelau",
+                212 =>  "Tonga",
+                213 =>  "Trinidad and Tobago",
+                214 =>  "Tunisia",
+                215 =>  "Turkey",
+                216 =>  "Turkmenistan",
+                217 =>  "Turks and Caicos Islands",
+                218 =>  "Tuvalu",
+                219 =>  "Uganda",
+                220 =>  "Ukraine",
+                221 =>  "United Arab Emirates",
+                222 =>  "United Kingdom",
+                223 =>  "United States",
+                224 =>  "United States Minor Outlying Islands",
+                225 =>  "Uruguay",
+                226 =>  "Uzbekistan",
+                227 =>  "Vanuatu",
+                228 =>  "Vatican City State (Holy See)",
+                229 =>  "Venezuela",
+                230 =>  "Viet Nam",
+                231 =>  "Virgin Islands (British)",
+                232 =>  "Virgin Islands (U.S.)",
+                233 =>  "Wallis and Futuna Islands",
+                234 =>  "Western Sahara",
+                235 =>  "Yemen",
+                237 =>  "Zaire",
+                238 =>  "Zambia",
+                239 =>  "Zimbabwe",                                                  ];
         }
-        $content = '<table class="no-borders table-db-access" style="border-collapse: collapse;" width="100%">
+        $content = '<table class="no-borders table-db-access table-settings" style="border-collapse: collapse;" width="100%">
 						<tr>
-                                                    <th class="" colspan="4">' . $this->lang['general_config'] . '</th>
+                            <th class="" colspan="4">' . $this->lang['general_config'] . '</th>
 						</tr>
-                                                <tr>
-                                                  <td width="20%" class="empty_line"></td><td  width="30%" class="empty_line"></td><td width="20%" class="empty_line"></td><td  width="30%" class="empty_line"></td>
-                                                </tr>
-                                                <tr>
-                                                    <td align="right">' . $this->lang['platform_type'] . ':</td>
-                                                    <td colspan="3">
-                                                        <select name="platform_type">
-                                                            <option value="0"' . ($this->platform_type == 0 ? ' selected' : '') . '>Splash page and multi sales channels</option>
-                                                            <option value="7"' . ($this->platform_type == 7 ? ' selected' : '') . '>Furniture</option>
-                                                            <option value="8"' . ($this->platform_type == 8 ? ' selected' : '') . '>Watch</option>
-                                                            <option value="9"' . ($this->platform_type == 9 ? ' selected' : '') . '>b2b supermarket</option>
-                                                            <option value="10"' . ($this->platform_type == 10 ? ' selected' : '') . '>Print Shop</option>
-                                                        </select>
-                                                    </td>
-                                                </tr>
+                        <tr>
+                          <td width="20%" class="empty_line" style="width: 20%">&nbsp;</td>
+                          <td  width="30%" class="empty_line" style="width: 30%">&nbsp;</td>
+                          <td width="20%" class="empty_line" style="width: 20%">&nbsp;</td>
+                          <td  width="30%" class="empty_line" style="width: 30%">&nbsp;</td>
+                        </tr>
+                        <tr style="vertical-align: top">
+                            <td align="right" style="vertical-align: top">' . $this->lang['platform_type'] . ':</td>
+                            <td colspan="3" style="vertical-align: top; padding-top: 3px">
+                                <div style="display: inline-block"><input type="radio" id="multi_channel" name="multi_channel" value="1" checked /><label for="multi_channel">' . $this->lang['platform_multi_channel'] . '</label></div>
+                                <div style="display: inline-block"><input type="radio" id="single_channel" class="single-channel" name="multi_channel" value="0" /><label for="single_channel">' . $this->lang['platform_single_channel'] . '</label></div>
+                                
+                                <div class="platform-types" style="display: none">
+                                    <label>
+                                        <input type="radio" name="platform_type" value="7"
+                                            ' . ($this->platform_type == 7 ? ' checked' : '') . ' />
+                                        <div class="platform-image">
+                                            <img src="images/furniture.webp" alt="Furniture" title="Furniture">
+                                            <div class="float-image"><img src="images/furniture.jpg" alt="Furniture"></div>
+                                        </div>
+                                    </label>
+                                    <label>
+                                        <input type="radio" name="platform_type" value="8"
+                                            ' . ($this->platform_type == 8 ? ' checked' : '') . ' />
+                                        <div class="platform-image">
+                                            <img src="images/watch.webp" alt="Watch" title="Watch">
+                                            <div class="float-image"><img src="images/watch.jpg" alt="Watch"></div>
+                                        </div>
+                                    </label>
+                                    <label>
+                                        <input type="radio" name="platform_type" value="9"
+                                            ' . ($this->platform_type == 9 ? ' checked' : '') . ' />
+                                        <div class="platform-image">
+                                            <img src="images/b2b_supermarket.webp" alt="b2b supermarket" title="b2b supermarket">
+                                            <div class="float-image"><img src="images/b2b_supermarket.jpg" alt="b2b supermarket"></div>
+                                        </div>
+                                    </label>
+                                    <label>
+                                        <input type="radio" name="platform_type" value="10"
+                                            ' . ($this->platform_type == 10 ? ' checked' : '') . ' />
+                                        <div class="platform-image">
+                                            <img src="images/print_shop.webp" alt="Print Shop" title="Print Shop">
+                                            <div class="float-image"><img src="images/print_shop.jpg" alt="Print Shop"></div>
+                                        </div>
+                                    </label>
+                                </div>
+                                <script type="text/javascript">
+                                    $(function(){
+                                        $(\'input[name="multi_channel"]\').on("change", function(){
+                                            if ($(".single-channel").prop("checked")) {
+                                                $(".platform-types").slideDown()
+                                            } else {
+                                                $(".platform-types").slideUp()
+                                            }
+                                        })
+                                    })
+                                </script>
+                            </td>
+                        </tr>
 						<tr>
-                                                    <td align="right">' . $this->lang['platform_owner'] . ':<span class="requared">*</span></td>
-                                                    <td><input type="text" name="platform_owner" size="25" value="' . $this->platform_owner . '" class="input" required /></td>
-                                                    <td align="right">' . $this->lang['platform_name'] . ':<span class="requared">*</span></td>
-                                                    <td><input type="text" name="platform_name" size="25" value="' . $this->platform_name . '" class="input" required /></td>
+                            <td align="right">' . $this->lang['platform_owner'] . ':<span class="requared">*</span></td>
+                            <td><input type="text" name="platform_owner" size="25" value="' . $this->platform_owner . '" class="input" required /></td>
+                            <td align="right">' . $this->lang['platform_name'] . ':<span class="requared">*</span></td>
+                            <td><input type="text" name="platform_name" size="25" value="' . $this->platform_name . '" class="input" required /></td>
 						</tr>
 						<tr>
                                                     <td align="right">' . $this->lang['platform_url'] . ':<span class="requared">*</span></td>
@@ -219,7 +502,7 @@ class inst_settings extends install_generic {
 
     public function parse_input() {
 
-        $this->platform_type = $_POST['platform_type'];
+        $this->platform_type = $_POST['multi_channel']? 0 : $_POST['platform_type'];
         $this->platform_owner = $_POST['platform_owner'];
         $this->platform_name = $_POST['platform_name'];
         $this->platform_url = $_POST['platform_url'];
@@ -364,7 +647,15 @@ class inst_settings extends install_generic {
             $this->log('install_error', 'Can\'t update database settings: ' . $link->error, $query);
             return false;
         }
-        
+
+        // to remove "You have changes in categories..." dashboard warning
+        $query = "UPDATE menus SET last_modified= NOW();";
+        $result = mysqli_query($link, $query);
+        if (!$result) {
+            $this->log('install_error', 'Can\'t update menu date: ' . $link->error, $query);
+            return false;
+        }
+
         switch ($this->platform_type) {
             case '7':// Furniture
             case '8':// Watch

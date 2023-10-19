@@ -203,7 +203,7 @@ class Cache_controlController extends Sceleton  {
         }
         
         if (Yii::$app->request->post('hooks') == 1) {
-            \common\helpers\Hooks::resetHooks();
+            \common\helpers\Hooks::rebuildHooks();
             $message = 'Hooks cache flushed';
             ?>
             <div class="pop-mess-cont pop-mess-cont-<?= $messageType?>">
@@ -247,12 +247,8 @@ class Cache_controlController extends Sceleton  {
          * Categories cache
          */
         if (Yii::$app->request->post('categories_cache') == 1) {
-            \common\models\CategoriesCache::deleteAll();
-            if (\common\helpers\Categories::createCategoriesCache()) {
-                echo '<div class="pop-mess-cont pop-mess-cont-' . $messageType . '">
-                    ' . PRODUCTS_IN_CATEGORIES_FLUSHED . '
-                </div>';
-            }
+            \common\components\CategoriesCache::getCPC()::invalidateAll();
+            echo '<div class="pop-mess-cont pop-mess-cont-' . $messageType . '">' . PRODUCTS_IN_CATEGORIES_FLUSHED . '</div>';
         }
         
         if (Yii::$app->request->post('do_migrations') == 1) {

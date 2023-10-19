@@ -100,6 +100,9 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
         foreach (\common\helpers\Hooks::getList('checkout/index', '') as $filename) {
             include($filename);
         }
+        foreach (\common\helpers\Hooks::getList('frontend/checkout/index', '') as $filename) {
+            include($filename);
+        }
 
         if (Yii::$app->request->isPost) {
 
@@ -111,6 +114,10 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
             }
 
             if (!$this->manager->validateContactForm(Yii::$app->request->post())) {
+                $error = true;
+            }
+
+            if (!$this->manager->validateCaptcha(\Yii::$app->request->post())) {
                 $error = true;
             }
 
@@ -256,8 +263,7 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
         ]);
 
         \common\components\google\widgets\GoogleTagmanger::setEvent('orderStep2');
-        $checkoutStep = 2;
-        foreach (\common\helpers\Hooks::getList('analytics', 'checkout/step') as $filename) {
+        foreach (\common\helpers\Hooks::getList('frontend/checkout/index/before-render', '') as $filename) {
             include($filename);
         }
 
@@ -352,8 +358,7 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
         }
 
         \common\components\google\widgets\GoogleTagmanger::setEvent('orderStep1');
-        $checkoutStep = 1;
-        foreach (\common\helpers\Hooks::getList('analytics', 'checkout/step') as $filename) {
+        foreach (\common\helpers\Hooks::getList('frontend/checkout/login/before-render', '') as $filename) {
             include($filename);
         }
 
@@ -433,10 +438,6 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
             if (!$this->manager->has('conditions')) {
                 tep_redirect(tep_href_link(FILENAME_CHECKOUT_PAYMENT, 'error_message=' . urlencode(ERROR_CONDITIONS_NOT_ACCEPTED), 'SSL', true, false));
             }
-        }
-
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('UploadCustomerId', 'allowed')) {
-            $ext::checkIsCustomerIdRequiredAndNotUploaded();
         }
 
         foreach ($this->manager->getAll() as $key => $value) {
@@ -605,10 +606,6 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
             }
         } else {
             \common\components\google\widgets\GoogleTagmanger::setEvent('orderStep3');
-            $checkoutStep = 3;
-            foreach (\common\helpers\Hooks::getList('analytics', 'checkout/step') as $filename) {
-                include($filename);
-            }
         }
 
         $render_data = [
@@ -624,7 +621,6 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
             'form_action_url' => $form_action_url,
             'payment_process_button_hidden' => $payment_process_button_hidden,
             'payment_confirmation' => $payment_confirmation,
-            'bonus_points' => $this->manager->getBonusesDetails(),
             'manager' => $this->manager,
             'skipCsrf' => $skipCsrf,
         ];
@@ -647,6 +643,10 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
             'params' => $render_data,
             'widgets' => $designCheckout > 0 || Info::isAdmin() ? true : false
         ]);
+
+        foreach (\common\helpers\Hooks::getList('frontend/checkout/confirmation/before-render', '') as $filename) {
+            include($filename);
+        }
 
         return $this->render($tpl, $render_data);
     }
@@ -706,12 +706,16 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
                 'order_id' => $order_info['orders_id'],
                 'print_order_href' => tep_href_link('account/invoice', \common\helpers\Output::get_all_get_params(array('order_id')) . 'orders_id=' . $order_info['orders_id'], 'SSL'),
                 'order' => $order,
+                'manager' => $this->manager,
             );
         }
 
         \common\components\google\widgets\GoogleTagmanger::setEvent('orderSuccess');
 
         foreach (\common\helpers\Hooks::getList('checkout/success', '') as $filename) {
+            include($filename);
+        }
+        foreach (\common\helpers\Hooks::getList('frontend/checkout/success', '') as $filename) {
             include($filename);
         }
 
@@ -723,15 +727,6 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
 
                 $cart->reset();
 
-                if ($ext = \common\helpers\Acl::checkExtension('Quotations', 'resetCart')) {
-                    $ext::resetCart();
-                }
-                if ($ext = \common\helpers\Acl::checkExtension('Samples', 'resetCart')) {
-                    $ext::resetCart();
-                }
-                if ( $ext = \common\helpers\Acl::checkExtension( 'MultiCart', 'resetCarts' ) ) {
-                    $ext::resetCarts();
-                }
                 unset($order_info_data['print_order_href']);
             }
         }
@@ -739,8 +734,9 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
         return $this->render('success.tpl', array_merge([
                     'products' => '',
                     'continue_href' => tep_href_link(FILENAME_DEFAULT, '', 'NONSSL'),
-                    'params' => $order_info_data
-                                ], $order_info_data));
+                    'params' => $order_info_data,
+                    'order' => $order_info_data['order'],
+               ], $order_info_data));
     }
 
     public function actionFail()
@@ -796,10 +792,9 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
             }
         }
 
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('UploadCustomerId', 'allowed')) {
-            $ext::checkIsCustomerIdRequiredAndNotUploaded();
+        foreach (\common\helpers\Hooks::getList('frontend/checkout/process/cart-loaded') as $filename) {
+            include($filename);
         }
-
 // load selected payment module
 
         $payment = $this->manager->getPayment();
@@ -837,10 +832,8 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
             }
         }
 
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('UploadCustomerId', 'allowed')) {
-            if (($upload_customer_id_set_order_status = $ext::configSetOrderStatus())) {
-                $order->info['order_status'] = $upload_customer_id_set_order_status;
-            }
+        foreach (\common\helpers\Hooks::getList('frontend/checkout/process/before-process') as $filename) {
+            include($filename);
         }
 
         $this->manager->totalProcess();
@@ -863,7 +856,10 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
         $order->save_products();
 
         // process
-        foreach (\common\helpers\Hooks::getList('checkout/process', '') as $filename) {
+        foreach (\common\helpers\Hooks::getList('checkout/process', '') as $filename) { // deprecated
+            include($filename);
+        }
+        foreach (\common\helpers\Hooks::getList('frontend/checkout/process/after-save', '') as $filename) {
             include($filename);
         }
 
@@ -886,9 +882,28 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
 
         $payment_modules->trackCredits();
 
+        // remove drop_ship address
+        $oinfo = tep_db_fetch_array(tep_db_query('SELECT customers_id FROM orders WHERE orders_id='.$order->order_id));
+        if (isset($oinfo['customers_id']) && $oinfo['customers_id'] > 0) {
+            $AddressBooks = \common\models\AddressBook::find()
+                    ->where(['customers_id' => $oinfo['customers_id']])
+                    ->andWhere('drop_ship > 0')
+                    ->all();
+            if (is_array($AddressBooks)) {
+                foreach ($AddressBooks as $AB) {
+                    tep_db_query('UPDATE orders SET drop_ship=1, delivery_address_book_id=0 WHERE delivery_address_book_id='.$AB->address_book_id);
+                    $AB->delete();
+                }
+            }
+            unset($AddressBooks);
+        }
+
         $this->manager->clearAfterProcess();
 
-        foreach (\common\helpers\Hooks::getList('checkout/after-process', '') as $filename) {
+        foreach (\common\helpers\Hooks::getList('checkout/after-process', '') as $filename) { //deprecated
+            include($filename);
+        }
+        foreach (\common\helpers\Hooks::getList('frontend/checkout/process/end', '') as $filename) {
             include($filename);
         }
 
@@ -995,7 +1010,11 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
         } else {
             tep_redirect(tep_href_link(FILENAME_CHECKOUT_SHIPPING, '', 'SSL'));
         }
-        tep_redirect(tep_href_link(FILENAME_CHECKOUT_CONFIRMATION, '', 'SSL'));
+        if ( defined('SKIP_CHECKOUT') && SKIP_CHECKOUT == 'True') {
+            tep_redirect(tep_href_link(FILENAME_CHECKOUT_CONFIRMATION, '', 'SSL'));
+        } else {
+            tep_redirect(tep_href_link(FILENAME_CHECKOUT_PAYMENT, '', 'SSL'));
+        }
     }
 
     public function __construct($id, $module, OrderRepository $orderRepository, $config = []) {
@@ -1011,7 +1030,11 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
         parent::checkoutInit();
 
         $customers_id = (int)Yii::$app->user->getId();
-        if ($GroupAdministrator = \common\helpers\Acl::checkExtensionAllowed('GroupAdministrator', 'allowed')) {
+
+        /**
+         * @var $GroupAdministrator \common\extensions\GroupAdministrator\GroupAdministrator
+         */
+        if ($GroupAdministrator = \common\helpers\Extensions::isAllowed('GroupAdministrator')) {
             $gIds = $GroupAdministrator::isGroupAdministratorFor($customers_id);
         } else {
             $gIds = false;
@@ -1021,10 +1044,6 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
         } else {
             $this->manager->setModulesVisibility(['shop_order']);
         }
-
-        Yii::configure($this->manager, [
-            'combineShippings' => !(($ext = \common\helpers\Extensions::isAllowed('CollectionPoints')) && method_exists($ext, 'isSeparateShipping') && $ext::isSeparateShipping()),
-        ]);
     }
 
     public function actionAmazonlogin() {
@@ -1575,8 +1594,8 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
         }
 
         $cart = new \common\classes\shopping_cart($order_id);
-        if (\common\helpers\Acl::checkExtensionAllowed('MultiCart', 'allowed')){
-            $key = \common\extensions\MultiCart\MultiCart::getCurrentCartKey();
+        if ($multiCart = \common\helpers\Extensions::isAllowed('MultiCart')) {
+            $key = $multiCart::getCurrentCartKey();
             if ($key){
                 $cart->setBasketID($key);
             }

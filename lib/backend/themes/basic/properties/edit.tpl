@@ -166,7 +166,7 @@
       {if count($languages) > 1}
       <ul class="nav nav-tabs under_tabs_ul lang-tabs">
         {foreach $languages as $lang}
-          <li{if $lang['code'] == $default_language} class="active"{/if}><a href="#tab_{$lang['code']}" data-toggle="tab">{$lang['logo']}<span>{$lang['name']}</span></a></li>
+          <li{if $lang['code'] == $default_language} class="active"{/if} data-bs-toggle="tab" data-bs-target="#tab_{$lang['code']}" data-bs-toggle="tab" data-bs-target="#tab_{$lang['code']}"><a>{$lang['logo']}<span>{$lang['name']}</span></a></li>
         {/foreach}
       </ul>
       {/if}
@@ -193,32 +193,18 @@
                     <h4>{$smarty.const.UPLOAD_IMAGE}</h4>
 
                     <div class="row properties_descr">
-                      <div class="col-md-4 text-right"><label>{$smarty.const.TEXT_ICON}</label></div>
-                      <div class="col-md-8">
-                        <div class="gallery-filedrop-container">
-                          <div class="gallery-filedrop">
-                            <span class="gallery-filedrop-message"><span>{$smarty.const.TEXT_DRAG_DROP}</span><a href="#gallery-filedrop" class="gallery-filedrop-fallback-trigger btn" rel="nofollow">{$smarty.const.TEXT_CHOOSE_FILE}</a></span>
-                            <input size="30" id="gallery-filedrop-fallback-{$lang['id']}" name="properties_image[{$lang['id']}]" class="elgg-input-file hidden" type="file">
-                            <input type="hidden" name="properties_image_loaded[{$lang['id']}]" class="elgg-input-hidden">
+                      <div class="col-md-12"><label>{$smarty.const.TEXT_ICON}</label></div>
+                      <div class="col-md-12">
 
-                          </div>
-
-                          <div class="gallery-filedrop-queue">
-                            <img style="max-height:48px;{if strlen(\common\helpers\Properties::get_properties_image($pInfo->properties_id|default:null, $lang['id'])) == 0}display:none;{/if}" src="{$smarty.const.DIR_WS_CATALOG_IMAGES}{\common\helpers\Properties::get_properties_image($pInfo->properties_id|default:null, $lang['id'])}" class="properties_image" />
-                          </div>
-
-                          <div class="hidden" id="image_wrapper">
-                            <div class="gallery-template">
-                              <div class="gallery-media-summary">
-                                <div class="gallery-album-image-placeholder">
-                                  <img src="">
-                                  <span class="elgg-state-uploaded"></span>
-                                  <span class="elgg-state-failed"></span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
+                        <div class="upload-box-prop upload-box upload-box-wrap"
+                             data-name="properties_image[{$lang['id']}]"
+                             data-value="{\common\helpers\Properties::get_properties_image($pInfo->properties_id|default:null, $lang['id'])}"
+                             data-upload="properties_image_loaded[{$lang['id']}]"
+                             data-delete="properties_image_delete[{$lang['id']}]"
+                             data-type="image"
+                             data-acceptedFiles="image/*">
                         </div>
+
                       </div>
                     </div>
 
@@ -258,9 +244,9 @@
                       <div class="col-md-4 text-right"><label>{$smarty.const.TEXT_COLOR_}:</label></div>
                       <div class="col-md-3">
                         <div class="colors-inp">
-                          <div id="cp3" class="input-group colorpicker-component">
+                          <div class="input-group colorpicker-component colorpicker-prop">
                               {Html::textInput('properties_color['|cat:$lang['id']|cat:']', \common\helpers\Properties::get_properties_color($pInfo->properties_id|default:null, $lang['id']), ['class'=>'form-control'])}
-                            <span class="input-group-addon"><i></i></span>
+                            <span class="input-group-append"><span class="input-group-text colorpicker-input-addon"><i></i></span></span>
                           </div>
                         </div>
                       </div>
@@ -402,7 +388,7 @@
 <script type="text/javascript">
 <!--
 function hideTabs() {
-    $('.lang-tabs a:first').trigger('click');
+    $('.lang-tabs li:first').trigger('click');
     $('.lang-tabs').hide();
     $('.lang-tabs + .tab-content').css({
         border: 'none',
@@ -523,6 +509,14 @@ $('.btn-add').click(function() {
   $('#so_new' + new_val_counter + '_{$lang['id']}').val(so);
   {/foreach}
   $('.upload_doc', $('.prop_value_new' + new_val_counter)).uploads2();
+  $('.upload-box', $('.prop_value_new' + new_val_counter)).fileManager();
+
+  $('.colorpicker-component', $('.prop_value_new' + new_val_counter)).colorpicker({ sliders: {
+      saturation: { maxLeft: 200, maxTop: 200 },
+      hue: { maxTop: 200 },
+      alpha: { maxTop: 200 }
+    }
+  });
   return false;
 })
 ;
@@ -609,58 +603,19 @@ function changeDefaultLang(theInput, default_lang) {
   });
 }
 
-$('.gallery-filedrop-container').each(function() {
+$(function () {
+  $('.upload-box-prop').fileManager();
+  $('.ps_desc .upload-box').fileManager();
 
-  var $filedrop = $(this);
-
-  function createImage (file, $container) {
-    var $preview = $('.gallery-template', $filedrop);
-    $image = $('img', $preview);
-    var reader = new FileReader();
-    $image.height(48);
-    reader.onload = function(e) {
-        $image.attr('src',e.target.result);
-    };
-    reader.readAsDataURL(file);
-    $preview.appendTo($('.gallery-filedrop-queue', $container));
-    $.data(file, $preview);
-  }
-
-  $(function () {
-
-    $('.gallery-filedrop-fallback-trigger', $filedrop)
-      .on('click', function(e) {
-        e.preventDefault();
-        $('#' + $('.elgg-input-file', $filedrop).attr('id')).trigger('click');
-      })
-
-    $filedrop.filedrop({
-      fallback_id : $('.elgg-input-file', $filedrop).attr('id'),
-      url: "{Yii::$app->urlManager->createUrl('upload/index')}",
-      paramname: 'file',
-      maxFiles: 1,
-      maxfilesize : 20,
-      allowedfiletypes: ['image/jpeg','image/png','image/gif'],
-      allowedfileextensions: ['.jpg','.jpeg','.png','.gif'],
-      error: function(err, file) {
-        console.log(err);
-      },
-      uploadStarted: function(i, file, len) {
-        $('.properties_image', $filedrop).hide();
-        createImage(file, $filedrop);
-      },
-      progressUpdated: function(i, file, progress) {
-        $.data(file).find('.gallery-filedrop-progress').width(progress);
-      },
-      uploadFinished: function (i, file, response, time) {
-        $('.elgg-input-hidden', $filedrop).val(file.name);
-      }
-    });
+  $('.colorpicker-prop, .ps_desc .colorpicker-component').colorpicker({ sliders: {
+      saturation: { maxLeft: 200, maxTop: 200 },
+      hue: { maxTop: 200 },
+      alpha: { maxTop: 200 }
+    }
   });
 
-});
-
-$('.upload_doc').uploads2();
+  $('.upload_doc').uploads2();
+})
 
 {if {$app->controller->view->usePopupMode && $pInfo->properties_id|default:null > 0}}
 $('.properties_top').hide();

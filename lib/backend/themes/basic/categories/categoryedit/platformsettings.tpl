@@ -73,6 +73,62 @@ Released under the GNU General Public License
                 </div>
                 <div class="divider"></div>
             </div>
+
+            <div class="widget box">
+                <div class="widget-header">
+                    <h4>{$smarty.const.TEXT_HOMEPAGE_IMAGE}</h4>
+                </div>
+                <div class="widget-content">
+                    <div class="about-image">
+                        <div class="about-image-scheme-1">
+                            <div></div><div></div><div></div><div></div><div></div><div></div>
+                        </div>
+                        <div class="about-image-text">
+                            {$smarty.const.TEXT_HOMEPAGE_IMAGE_INTRO}
+                        </div>
+                    </div>
+                    {if !isset($data['categories_image_3'])}{$data['categories_image_3'] = ''}{/if}
+                    {\backend\design\Image::widget([
+                    'name' => {"categories_image_3$fieldSuffix"},
+                    'value' => {$data['categories_image_3']|escape},
+                    'upload' => {"categories_image_loaded_3$fieldSuffix"},
+                    'delete' => {"delete_image_3$fieldSuffix"}
+                    ])}
+                </div>
+                <div class="divider"></div>
+            </div>
+
+            <div class="widget box">
+                <div class="widget-header">
+                    <h4>{$smarty.const.IMAGE_MAP}</h4>
+                </div>
+                <div class="widget-content">
+                    <div class="category-image-map form-container">
+                        <div class="row">
+
+                            <div class="col-md-3" style="padding: 20px 0">
+                                <label for="">{$smarty.const.IMAGE_MAP_NAME}</label>
+                            </div>
+                            <div class="col-md-6" style="padding: 20px 0">
+                                {if !isset($data.imageMapTitle.title)}{$data.imageMapTitle.title = ''}{/if}{Html::textInput('', $data.imageMapTitle.title, ['class' => "map-name", 'id' => "map_name$idSuffix", 'data-idsuffix' => "$idSuffix"])}
+                                {if !isset($data['maps_id'])}{$data['maps_id'] = ''}{/if}{Html::hiddenInput("maps_id$fieldSuffix", $data['maps_id'], ['id' => "map_id$idSuffix"])}
+                                <div class="search-map" id="search_map{$idSuffix}" data-idsuffix="{$idSuffix}"></div>
+                            </div>
+                            {if isset($data.imageMap.image)}
+                                <div class="col-md-3">
+                                    <div class="map-image-holder">
+                                        <img src="../images/maps/{$data.imageMap.image}" class="map-image"  id="map_image{$idSuffix}" alt="" data-idsuffix='{$idSuffix}'
+                                                {if !$data.imageMap.image} style="display: none" {/if}>
+                                        <div class="map-image-remove" id="map_image_remove{$idSuffix}" data-idsuffix='{$idSuffix}'
+                                                {if !$data.imageMap.image} style="display: none" {/if}></div>
+                                    </div>
+                                </div>
+                            {/if}
+                        </div>
+                    </div>
+                </div>
+                <div class="divider"></div>
+            </div>
         </div>
         <div class="col-md-6">
             <div class="widget box">
@@ -100,38 +156,60 @@ Released under the GNU General Public License
                         'upload' => {"categories_image_loaded_2$fieldSuffix"},
                         'delete' => {"delete_image_2$fieldSuffix"}
                     ])}
-                </div>
-                <div class="divider"></div>
-            </div>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-md-6">
-            <div class="widget box">
-                <div class="widget-header">
-                    <h4>{$smarty.const.TEXT_HOMEPAGE_IMAGE}</h4>
-                </div>
-                <div class="widget-content">
-                    <div class="about-image">
-                        <div class="about-image-scheme-1">
-                            <div></div><div></div><div></div><div></div><div></div><div></div>
+
+                    {if count($heroImages)}
+                    <div class="widget box widget-closed" id="category-hero-image" style="margin: 33px 0 0">
+                        <div class="widget-header">
+                            <h4>{$smarty.const.CATEGORY_HERO_IMAGE_RESPONSIVE}</h4>
+                            <div class="toolbar no-padding">
+                                <div class="btn-group">
+                                    <span class="btn btn-xs widget-collapse"><i class="icon-angle-up"></i></span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="about-image-text">
-                            {$smarty.const.TEXT_HOMEPAGE_IMAGE_INTRO}
+                        <div class="widget-content">
+                            {foreach $heroImages as $heroImage}
+                                <span class="image-size">
+                                    <span class="label-image-width">Image/video width:</span>
+                                    <span class="image-width">{$heroImage.image_types_x}</span>.
+                                    {if $heroImage.image_types_x}
+                                        <span class="label-image-height">Recommended height:</span>
+                                        <span class="image-height">{$heroImage.image_types_y}</span>.
+                                    {/if}
+                                </span>
+                                <span class="window-size">
+                                    <span class="parenthesis">(</span>
+                                    Window width
+                                    from
+                                    <span class="width-from">
+                                        {if $heroImage.width_from}{$heroImage.width_from}{else}0{/if}
+                                    </span>
+                                    {if $heroImage.width_to}
+                                        to <span class="width-to">{$heroImage.width_to}</span>
+                                    {/if}
+                                    <span class="parenthesis">)</span>
+                                </span>
+        {\backend\design\Image::widget([
+            'name' => {"heroImage[{$heroImage.image_types_id}]$fieldSuffix"},
+            'value' => {$heroImage['images'][$heroImage.image_types_id][$data['platform_id']]['image']},
+            'upload' => {"heroImage_loaded[{$heroImage.image_types_id}]$fieldSuffix"},
+            'delete' => {"heroImage_delete[{$heroImage.image_types_id}]$fieldSuffix"},
+            'width' => $heroImage.image_types_x,
+            'height' => $heroImage.image_types_y,
+            'positionName' => {"heroImage_position[{$heroImage.image_types_id}]$fieldSuffix"},
+            'positionValue' => {$heroImage['images'][$heroImage.image_types_id][$data['platform_id']]['position']},
+            'fitName' => {"heroImage_fit[{$heroImage.image_types_id}]$fieldSuffix"},
+            'fitValue' => {$heroImage['images'][$heroImage.image_types_id][$data['platform_id']]['fit']}
+        ])}
+                            {/foreach}
                         </div>
                     </div>
-                    {if !isset($data['categories_image_3'])}{$data['categories_image_3'] = ''}{/if}
-                    {\backend\design\Image::widget([
-                        'name' => {"categories_image_3$fieldSuffix"},
-                        'value' => {$data['categories_image_3']|escape},
-                        'upload' => {"categories_image_loaded_3$fieldSuffix"},
-                        'delete' => {"delete_image_3$fieldSuffix"}
-                    ])}
+                    {/if}
+
                 </div>
                 <div class="divider"></div>
             </div>
-        </div>
-        <div class="col-md-6">
+
             <div class="widget box">
                 <div class="widget-header">
                     <h4>{$smarty.const.TEXT_MENU_IMAGE}</h4>
@@ -144,38 +222,6 @@ Released under the GNU General Public License
                     'upload' => {"categories_image_loaded_4$fieldSuffix"},
                     'delete' => {"delete_image_4$fieldSuffix"}
                     ])}
-                </div>
-                <div class="divider"></div>
-            </div>
-
-            <div class="widget box">
-                <div class="widget-header">
-                    <h4>{$smarty.const.IMAGE_MAP}</h4>
-                </div>
-                <div class="widget-content">
-                    <div class="category-image-map form-container">
-                        <div class="row">
-
-                            <div class="col-md-3" style="padding: 20px 0">
-                                <label for="">{$smarty.const.IMAGE_MAP_NAME}</label>
-                            </div>
-                            <div class="col-md-6" style="padding: 20px 0">
-                              {if !isset($data.imageMapTitle.title)}{$data.imageMapTitle.title = ''}{/if}{Html::textInput('', $data.imageMapTitle.title, ['class' => "map-name", 'id' => "map_name$idSuffix", 'data-idsuffix' => "$idSuffix"])}
-                              {if !isset($data['maps_id'])}{$data['maps_id'] = ''}{/if}{Html::hiddenInput("maps_id$fieldSuffix", $data['maps_id'], ['id' => "map_id$idSuffix"])}
-                                <div class="search-map" id="search_map{$idSuffix}" data-idsuffix="{$idSuffix}"></div>
-                            </div>
-                            {if isset($data.imageMap.image)}
-                            <div class="col-md-3">
-                                <div class="map-image-holder">
-                                    <img src="../images/maps/{$data.imageMap.image}" class="map-image"  id="map_image{$idSuffix}" alt="" data-idsuffix='{$idSuffix}'
-                                            {if !$data.imageMap.image} style="display: none" {/if}>
-                                    <div class="map-image-remove" id="map_image_remove{$idSuffix}" data-idsuffix='{$idSuffix}'
-                                            {if !$data.imageMap.image} style="display: none" {/if}></div>
-                                </div>
-                            </div>
-                            {/if}
-                        </div>
-                    </div>
                 </div>
                 <div class="divider"></div>
             </div>

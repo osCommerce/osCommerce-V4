@@ -12,10 +12,10 @@
         <div class="tabbable tabbable-custom">
             <ul class="nav nav-tabs">
 
-                <li class="active"><a href="#type" data-toggle="tab">{$smarty.const.HEADING_TYPE}</a></li>
-                <li><a href="#style" data-toggle="tab">{$smarty.const.HEADING_STYLE}</a></li>
-                <li><a href="#align" data-toggle="tab">{$smarty.const.HEADING_WIDGET_ALIGN}</a></li>
-                <li><a href="#visibility" data-toggle="tab">{$smarty.const.TEXT_VISIBILITY_ON_PAGES}</a></li>
+                <li class="active" data-bs-toggle="tab" data-bs-target="#type"><a>{$smarty.const.HEADING_TYPE}</a></li>
+                <li data-bs-toggle="tab" data-bs-target="#style"><a>{$smarty.const.HEADING_STYLE}</a></li>
+                <li data-bs-toggle="tab" data-bs-target="#align"><a>{$smarty.const.HEADING_WIDGET_ALIGN}</a></li>
+                <li data-bs-toggle="tab" data-bs-target="#visibility"><a>{$smarty.const.TEXT_VISIBILITY_ON_PAGES}</a></li>
 
             </ul>
             <div class="tab-content">
@@ -70,6 +70,7 @@
                         <div class="setting-row">
                             <label for="">{$smarty.const.TEXT_MENU_STYLE}</label>
                             <select name="setting[0][class]" class="form-control">
+                                <option value=""></option>
                                 <option value="menu-style-1"{if $settings[0].class == 'menu-style-1'} selected{/if}>{$smarty.const.TEXT_HORIZONTAL}</option>
                                 <option value="menu-slider"{if $settings[0].class == 'menu-slider'} selected{/if}>{$smarty.const.TEXT_MENU_SLIDER}</option>
                                 <option value="menu-big"{if $settings[0].class == 'menu-big'} selected{/if}>{$smarty.const.BIG_DROPDOWN_MENU}</option>
@@ -90,7 +91,7 @@
                         </div>
 
                         {if $settings.designer_mode}
-                        {if $settings.media_query|@count > 0}
+                        {if $settings.media_query|default:array()|@count > 0}
                             <div style="margin-bottom: 20px">
                                 <h4>{$smarty.const.HIDE_MENU_UNDER_ICON}</h4>
                                 {foreach $settings.media_query as $item}
@@ -113,10 +114,10 @@
                         <div class="tabbable tabbable-custom box-style-tab">
                             <ul class="nav nav-tabs  style-tabs">
 
-                                <li class="active"><a href="#menu_main" data-toggle="tab">{$smarty.const.TEXT_MAIN}</a></li>
+                                <li class="active" data-bs-toggle="tab" data-bs-target="#menu_main"><a>{$smarty.const.TEXT_MAIN}</a></li>
                                 <li class="label">{$smarty.const.WINDOW_WIDTH}:</li>
                                 {foreach $settings.media_query as $item}
-                                    <li><a href="#menu{$item.id}" data-toggle="tab">{$item.title}</a></li>
+                                    <li data-bs-toggle="tab" data-bs-target="#menu{$item.id}"><a>{$item.title}</a></li>
                                 {/foreach}
                             </ul>
                             <div class="tab-content menu-list">
@@ -183,12 +184,12 @@
     <div class="tabbable tabbable-custom">
         <ul class="nav nav-tabs">
 
-            <li class="active"><a href="#level_1_{$id}" data-toggle="tab">{$smarty.const.TEXT_LEVEL} 1</a></li>
-            <li><a href="#level_2_{$id}" data-toggle="tab">{$smarty.const.TEXT_LEVEL} 2</a></li>
-            <li><a href="#level_3_{$id}" data-toggle="tab">{$smarty.const.TEXT_LEVEL} 3</a></li>
-            <li><a href="#level_4_{$id}" data-toggle="tab">{$smarty.const.TEXT_LEVEL} 4</a></li>
-            <li><a href="#level_5_{$id}" data-toggle="tab">{$smarty.const.TEXT_LEVEL} 5</a></li>
-            <li><a href="#level_6_{$id}" data-toggle="tab">{$smarty.const.TEXT_LEVEL} 6</a></li>
+            <li class="active" data-bs-toggle="tab" data-bs-target="#level_1_{$id}"><a>{$smarty.const.TEXT_LEVEL} 1</a></li>
+            <li data-bs-toggle="tab" data-bs-target="#level_2_{$id}"><a>{$smarty.const.TEXT_LEVEL} 2</a></li>
+            <li data-bs-toggle="tab" data-bs-target="#level_3_{$id}"><a>{$smarty.const.TEXT_LEVEL} 3</a></li>
+            <li data-bs-toggle="tab" data-bs-target="#level_4_{$id}"><a>{$smarty.const.TEXT_LEVEL} 4</a></li>
+            <li data-bs-toggle="tab" data-bs-target="#level_5_{$id}"><a>{$smarty.const.TEXT_LEVEL} 5</a></li>
+            <li data-bs-toggle="tab" data-bs-target="#level_6_{$id}"><a>{$smarty.const.TEXT_LEVEL} 6</a></li>
 
         </ul>
         <div class="tab-content">

@@ -55,8 +55,8 @@ class Logo extends Widget
                 ->where(['platform_id' => \common\classes\platform::currentId()])
                 ->asArray()
                 ->one();
-            if ($platform['logo'] && is_file(DIR_FS_CATALOG . $platform['logo'])) {
-                $image = $platform['logo'];
+            if ($platform['logo'] && is_file(DIR_FS_CATALOG . DIR_WS_IMAGES . $platform['logo'])) {
+                $image = DIR_WS_IMAGES . $platform['logo'];
             }
         }
 
@@ -97,7 +97,7 @@ class Logo extends Widget
                 $url = tep_href_link('/');
             }
 
-            if ( empty(Yii::$app->request->baseUrl) && defined('DIR_WS_HTTPS_CATALOG') ) {
+            if (Yii::$app->id == 'app-console' || (empty(Yii::$app->request->baseUrl) && defined('DIR_WS_HTTPS_CATALOG')) ) {
                 $imageUrl =  DIR_WS_HTTPS_CATALOG . $image;
             }else{
                 $imageUrl =  Yii::$app->request->baseUrl . '/' . $image;
@@ -105,9 +105,18 @@ class Logo extends Widget
             $width = 0;
             $height = 0;
             if (isset($this->params['absoluteUrl']) && $this->params['absoluteUrl']) {
-                $imageUrl = \Yii::$app->get('platform')->config()->getCatalogBaseUrl(Yii::$app->request->getIsSecureConnection()).$image;
+                if (Yii::$app->id == 'app-console'){
+                    $ssl = true;
+                } else {
+                    $ssl = Yii::$app->request->getIsSecureConnection();
+                }
+                $imageUrl = \Yii::$app->get('platform')->config()->getCatalogBaseUrl($ssl).$image;
                 $width = ArrayHelper::getValue($this->settings, [0,'width'], 0);
                 $height = ArrayHelper::getValue($this->settings, [0,'height'], 0);
+            }
+
+            if (Yii::$app->id == 'app-console'){
+                return '<a href="' . $url . '"><img src="' . $image . '" style="border: none;"></a>';
             }
 
             return IncludeTpl::widget([

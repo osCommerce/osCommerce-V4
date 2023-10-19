@@ -207,7 +207,8 @@ class OptionsTemplatesController extends Sceleton {
                     \common\models\ProductsAttributes::find()->select('products_attributes_id')->where(['products_id' => $pid])]);
                 \common\models\ProductsAttributes::deleteAll(['products_id' => $pid]);
 
-                if ($ext = \common\helpers\Acl::checkExtension('Inventory', 'deleteProduct')) {
+                /** @var \common\extensions\Inventory\Inventory $ext */
+                if ($ext = \common\helpers\Extensions::isAllowed('Inventory')) {
                     $ext::deleteProduct($pid);
                 }
             }
@@ -507,7 +508,7 @@ class OptionsTemplatesController extends Sceleton {
                     $sql_data_array['products_options_sort_order'] = (int)$__attr_order_array[$value_id];
                 }
 
-                if ($ext = \common\helpers\Acl::checkExtensionAllowed('TypicalOperatingTemp', 'allowed')) {
+                if ($ext = \common\helpers\Extensions::isAllowed('TypicalOperatingTemp')) {
                     $_ext_data = $ext::saveTemplateAttribute($option_id, $value_id);
                     if (is_array($_ext_data)) $sql_data_array = array_merge($sql_data_array, $_ext_data);
                 }
@@ -1193,8 +1194,9 @@ class OptionsTemplatesController extends Sceleton {
                 tep_db_query("delete from " . TABLE_PRODUCTS_ATTRIBUTES_PRICES . " where products_attributes_id = '" . (int)$data['products_attributes_id'] . "'");
             }
             tep_db_query("delete from " . TABLE_PRODUCTS_ATTRIBUTES . " where products_id = '" . (int)$assigned_product_id . "'");
-            if ($ext = \common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed')) {
-                tep_db_query("delete from " . TABLE_INVENTORY . " where prid = '" . (int)$assigned_product_id . "'");
+            /** @var \common\extensions\Inventory\Inventory $ext */
+            if ($ext = \common\helpers\Extensions::isAllowed('Inventory')) {
+                $ext::deleteProduct((int)$assigned_product_id);
             }
         }
 
@@ -1246,7 +1248,8 @@ class OptionsTemplatesController extends Sceleton {
             }
         }
 
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed')) {
+        /** @var \common\extensions\Inventory\Inventory $ext */
+        if ($ext = \common\helpers\Extensions::isAllowed('Inventory')) {
             $total_comb = 1;
             $count_values = array();
             $inventory_uprids_array = array();

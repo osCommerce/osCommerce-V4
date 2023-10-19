@@ -78,6 +78,8 @@ class Products extends ProviderAbstract implements ImportInterface, ExportInterf
 
     protected function initFields()
     {
+        \common\helpers\Translation::init('admin/categories');
+
         $currencies = \Yii::$container->get('currencies');
 
         //$this->fields[] = array('name' => 'products_tax_class_id', 'value' => 'Products Tax Class possible values: ' . $txt);
@@ -100,11 +102,19 @@ class Products extends ProviderAbstract implements ImportInterface, ExportInterf
         $this->fields[] = array( 'name' => 'products_new_until', 'value' => 'Mark new until', 'type' => 'date', 'set'=>'set_date', );
         $this->fields[] = array( 'name' => 'weight_cm', 'value' => 'Products Weight', 'type' => 'numeric' );
 
-        $this->fields[] = array( 'name' => 'products_ean', 'value' => 'EAN' );
-        $this->fields[] = array( 'name' => 'products_upc', 'value' => 'UPC' );
-        $this->fields[] = array( 'name' => 'products_asin', 'value' => 'ASIN' );
-        $this->fields[] = array( 'name' => 'products_isbn', 'value' => 'ISBN' );
-        if (\common\helpers\Acl::checkExtensionAllowed('TypicalOperatingTemp', 'allowed')){
+        if (defined('SHOW_EAN') && SHOW_EAN=='True') {
+            $this->fields[] = array('name' => 'products_ean', 'value' => TEXT_EAN);
+        }
+        if (defined('SHOW_UPC') && SHOW_UPC=='True') {
+            $this->fields[] = array('name' => 'products_upc', 'value' => TEXT_UPC);
+        }
+        if (defined('SHOW_ASIN') && SHOW_ASIN=='True') {
+            $this->fields[] = array('name' => 'products_asin', 'value' => TEXT_ASIN);
+        }
+        if (defined('SHOW_ISBN') && SHOW_ISBN=='True') {
+                $this->fields[] = array('name' => 'products_isbn', 'value' => TEXT_ISBN);
+        }
+        if (\common\helpers\Extensions::isAllowed('TypicalOperatingTemp')) {
             $this->fields[] = array( 'name' => 'TOTemperature', 'value' => 'TO Temperature' );
         }
 
@@ -575,7 +585,7 @@ class Products extends ProviderAbstract implements ImportInterface, ExportInterf
             );
         }
 
-        if (\common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed')) {
+        if (\common\helpers\Extensions::isAllowed('Inventory')) {
             $this->fields[] = array('name' => 'products_price_full', 'value' => 'Full price?');
             $this->fields[] = array('name' => 'without_inventory', 'value' => 'Disable attributes inventory?');
         }
@@ -583,7 +593,7 @@ class Products extends ProviderAbstract implements ImportInterface, ExportInterf
         $this->fields[] = array( 'name' => 'stock_indication_id', 'value' => 'Stock Availability', 'get' => 'get_stock_indication', 'set' => 'set_stock_indication', );
         $this->fields[] = array( 'name' => 'stock_delivery_terms_id', 'value' => 'Stock Delivery Terms', 'get' => 'get_delivery_terms', 'set' => 'set_delivery_terms', );
 
-        if ( \common\helpers\Acl::checkExtensionAllowed('ProductTemplates', 'allowed') ) {
+        if ( \common\helpers\Extensions::isAllowed('ProductTemplates') ) {
             foreach (\common\classes\platform::getList() as $platformInfo) {
                 $this->fields[] = array(
                     'data_descriptor' => '@|assigned_templates|0',
@@ -1008,7 +1018,7 @@ class Products extends ProviderAbstract implements ImportInterface, ExportInterf
                     //if (defined('MSEARCH_ENABLE') && strtolower(MSEARCH_ENABLE)=='soundex') {
                         if (isset($new_data['products_name']) && strlen($new_data['products_name']) > 0) {
                             $products_name_keywords = array_filter(preg_split('/[\s]+/', strip_tags($new_data['products_name'])), function ($__word) {
-                                return strlen($__word) >= (defined('MSEARCH_WORD_LENGTH')?intval(MSEARCH_WORD_LENGTH):0);
+                                return strlen($__word) >= (defined('BACKEND_MSEARCH_WORD_LENGTH')?intval(BACKEND_MSEARCH_WORD_LENGTH):0);
                             });
                             if (count($products_name_keywords) > 0) {
                                 $ks_hash = tep_db_fetch_array(tep_db_query(
@@ -1024,7 +1034,7 @@ class Products extends ProviderAbstract implements ImportInterface, ExportInterf
 
                         if (isset($new_data['products_description']) && strlen($new_data['products_description']) > 0) {
                             $products_description_keywords = array_filter(preg_split('/[\s]+/', strip_tags($new_data['products_description'])), function ($__word) {
-                                return strlen($__word) >= (defined('MSEARCH_WORD_LENGTH')?intval(MSEARCH_WORD_LENGTH):0);
+                                return strlen($__word) >= (defined('BACKEND_MSEARCH_WORD_LENGTH')?intval(BACKEND_MSEARCH_WORD_LENGTH):0);
                             });
                             if (count($products_description_keywords) > 0) {
                                 $ks_hash = tep_db_fetch_array(tep_db_query(

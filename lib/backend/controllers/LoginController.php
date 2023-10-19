@@ -228,10 +228,14 @@ class LoginController extends Controller {
                         }
                     }
                 }
+                $isGApassed = null;
                 if (\Yii::$app->request->post('action', '') == 'gaauthorize') {
                     $gaSecurityKey = preg_replace('/[^0-9a-z]*/si', '', \Yii::$app->request->post('security_key', ''));
                     if ($gaSecurityKey != '') {
-                        if ($ext = \common\helpers\Acl::checkExtensionAllowed('GoogleAuthenticator', 'allowed')) {
+                        /**
+                         * @var $ext \common\extensions\GoogleAuthenticator\GoogleAuthenticator
+                         */
+                        if ($ext = \common\helpers\Extensions::isAllowed('GoogleAuthenticator')) {
                             $isGApassed = $isAdminNoPassword = $ext::checkTwoStepAuth($check_admin);
                         }
                     }
@@ -298,7 +302,10 @@ class LoginController extends Controller {
                             ((ADMIN_TWO_STEP_AUTH_ENABLED == 'true') OR ($check_admin['admin_two_step_auth'] != ''))
                         ) {
                         $isAdminLogged = false;
-                        if ($ext = \common\helpers\Acl::checkExtensionAllowed('GoogleAuthenticator', 'allowed')) {
+                        /**
+                         * @var $ext \common\extensions\GoogleAuthenticator\GoogleAuthenticator
+                         */
+                        if ($ext = \common\helpers\Extensions::isAllowed('GoogleAuthenticator')) {
                             if ($isGApassed) {
                                 $isAdminLogged = true;
                             } else {
@@ -329,9 +336,8 @@ class LoginController extends Controller {
                                 $securityKeyExpireArray[] = ['id' => $loginExpireArray['ale_id'], 'text' => $loginExpireArray['ale_title']];
                             }
                             $isMobile = false;
-                            if ($ext = \common\helpers\Acl::checkExtension('MobileDetect', 'init')) {
-                                $ext = new $ext();
-                                $isMobile = ($ext->isMobile() OR $ext->isTablet() OR $ext->isIphone());
+                            if ($ext = \common\helpers\Extensions::isAllowed('MobileDetect')) {
+                                $isMobile = $ext::isMobileTabletOrIphone();
                             }
                             $parameterArray = [
                                 'securityKeyExpireArray' => $securityKeyExpireArray,
@@ -473,7 +479,9 @@ class LoginController extends Controller {
         $action = '';
         if (\Yii::$app->request->get('action') == 'restore') {
             $action = 'restore';
-            $loginModel->captha_enabled = 'captha';
+            if (empty($loginModel->captha_enabled)) {
+                $loginModel->captha_enabled = 'captha';
+            }
         }
         return $this->render('index', ['passwordResetFileds' => $passwordResetFileds, 'loginModel' => $loginModel, 'action' => $action]);
     }

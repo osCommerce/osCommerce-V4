@@ -321,9 +321,13 @@ $properties_id = \Yii::$app->request->post('properties_id', 0);
       } else {
         $properties_values['values'] = $properties_values['values_text'];
       }
-      if ($ext = \common\helpers\Acl::checkExtensionAllowed('ImageMaps', 'allowed')) {
-        if ($properties_values['maps_id']) {
-          if ($map = \common\extensions\ImageMaps\models\ImageMaps::findOne($properties_values['maps_id'])) {
+
+      /**
+       * @var $imageMaps \common\extensions\ImageMaps\models\ImageMaps
+       */
+      if ($imageMaps = \common\helpers\Extensions::getModel('ImageMaps', 'ImageMaps')) {
+        if ($properties_values['maps_id'] && !empty($imageMaps)) {
+          if ($map = $imageMaps::findOne($properties_values['maps_id'])) {
             $properties_values['mapsId'] = $properties_values['maps_id'];
             $properties_values['mapsImage'] = $map->image;
             $properties_values['mapsTitle'] = $map->getTitle($properties_values['language_id']);
@@ -409,7 +413,9 @@ $properties_id = \Yii::$app->request->post('properties_id', 0);
     $properties_name_alt = tep_db_prepare_input(Yii::$app->request->post('properties_name_alt', array()));
     $properties_description = tep_db_prepare_input(Yii::$app->request->post('properties_description', array()));
     $properties_seo_page_name = tep_db_prepare_input(Yii::$app->request->post('properties_seo_page_name', array()));
+    $properties_image = Yii::$app->request->post('properties_image', array());
     $properties_image_loaded = Yii::$app->request->post('properties_image_loaded', array());
+    $properties_image_delete = Yii::$app->request->post('properties_image_delete', array());
     $properties_units_title = tep_db_prepare_input(Yii::$app->request->post('properties_units_title', array()));
     $properties_color = tep_db_prepare_input(Yii::$app->request->post('properties_color', array()));
 
@@ -420,7 +426,9 @@ $properties_id = \Yii::$app->request->post('properties_id', 0);
     $upload_docs = tep_db_prepare_input(Yii::$app->request->post('upload_docs', array()));
     $values_color = tep_db_prepare_input(Yii::$app->request->post('values_color', array()));
     $maps_id = tep_db_prepare_input(Yii::$app->request->post('maps_id', array()));
+    $values_image = tep_db_prepare_input(Yii::$app->request->post('values_image', array()));
     $values_image_loaded = tep_db_prepare_input(Yii::$app->request->post('values_image_loaded', array()));
+    $values_image_delete = tep_db_prepare_input(Yii::$app->request->post('values_image_delete', array()));
     $values_prefix = tep_db_prepare_input(Yii::$app->request->post('values_prefix', array()));
     $values_postfix = tep_db_prepare_input(Yii::$app->request->post('values_postfix', array()));
     
@@ -520,15 +528,26 @@ $properties_id = \Yii::$app->request->post('properties_id', 0);
       if ((trim($properties_image_loaded[$languages[$i]['id']] ?? null) == '' || $same_all_languages) && trim($properties_image_loaded[$default_language_id] ?? null) != '') {
         $properties_image_loaded[$languages[$i]['id']] = $properties_image_loaded[$default_language_id];
       }
-      if (tep_not_null($properties_image_loaded[$languages[$i]['id']] ?? null)) {
-        $path = \Yii::getAlias('@webroot');
-        $path .= DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR;
-        $tmp_name = $path . $properties_image_loaded[$languages[$i]['id']];
-        $new_name = DIR_FS_CATALOG_IMAGES . $properties_id . '-' . $properties_image_loaded[$languages[$i]['id']];
-        @copy($tmp_name, $new_name);
-        @unlink($tmp_name);
-        tep_db_query("update " . TABLE_PROPERTIES_DESCRIPTION . " set properties_image = '" . tep_db_input($properties_id . '-' . $properties_image_loaded[$languages[$i]['id']]) . "' where properties_id = '" . (int)$properties_id . "' and language_id = '" . (int)$languages[$i]['id'] . "'");
+      if ((trim($properties_image_delete[$languages[$i]['id']] ?? null) == '' || $same_all_languages) && trim($properties_image_delete[$default_language_id] ?? null) != '') {
+        $properties_image_delete[$languages[$i]['id']] = $properties_image_delete[$default_language_id];
       }
+      if ((trim($properties_image[$languages[$i]['id']] ?? null) == '' || $same_all_languages) && trim($properties_image[$default_language_id] ?? null) != '') {
+        $properties_image[$languages[$i]['id']] = $properties_image[$default_language_id];
+      }
+
+        $propertiesDescription = \common\models\PropertiesDescription::findOne([
+            'properties_id' => $properties_id,
+            'language_id' => $languages[$i]['id']
+        ]);
+        $propertiesDescription->properties_image = \common\helpers\Image::prepareSavingImage(
+            $propertiesDescription->properties_image ?? '',
+            $properties_image[$languages[$i]['id']],
+            $properties_image_loaded[$languages[$i]['id']],
+            'properties' . DIRECTORY_SEPARATOR . $properties_id,
+            $properties_image_delete[$languages[$i]['id']]
+        );
+        $propertiesDescription->save(false);
+
     }
 
     $all_values_id = array();
@@ -597,15 +616,19 @@ $properties_id = \Yii::$app->request->post('properties_id', 0);
                                   'values_prefix'           => $values_prefix[$val_id][$languages[$i]['id']],
                                   'values_postfix'           => $values_postfix[$val_id][$languages[$i]['id']],
           );
-          if (tep_not_null($values_image_loaded[$val_id][$languages[$i]['id']])) {
-                $path = \Yii::getAlias('@webroot');
-                $path .= DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR;
-                $tmp_name = $path . $values_image_loaded[$val_id][$languages[$i]['id']];
-                $new_name = DIR_FS_CATALOG_IMAGES . 'prop-' . $properties_id . '-val-' . $val_id . '-' . $values_image_loaded[$val_id][$languages[$i]['id']];
-                @copy($tmp_name, $new_name);
-                @unlink($tmp_name);
-                $sql_data_array['values_image'] = 'prop-' . $properties_id . '-val-' . $val_id . '-' . $values_image_loaded[$val_id][$languages[$i]['id']];
-          }
+
+            $propertiesValues = \common\models\PropertiesValues::findOne([
+                'values_id' => $values_id,
+                'properties_id' => $properties_id,
+                'language_id' => $languages[$i]['id'],
+            ]);
+            $sql_data_array['values_image'] = \common\helpers\Image::prepareSavingImage(
+                $propertiesValues->values_image ?? '',
+                $values_image[$val_id][$languages[$i]['id']] ?? '',
+                $values_image_loaded[$val_id][$languages[$i]['id']] ?? '',
+                'properties' . DIRECTORY_SEPARATOR . $properties_id,
+                $values_image_delete[$val_id][$languages[$i]['id']] ?? ''
+            );
           
           $check = tep_db_fetch_array(tep_db_query("select count(*) as properties_values_exists from " . TABLE_PROPERTIES_VALUES . " where values_id = '" . (int)$values_id . "' and properties_id = '" . (int)$properties_id . "' and language_id = '" . (int)$languages[$i]['id'] . "'"));
           if ($check['properties_values_exists']) {

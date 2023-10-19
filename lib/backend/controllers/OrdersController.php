@@ -80,7 +80,7 @@ class OrdersController extends Sceleton {
         $this->view->headingTitle = HEADING_TITLE;
         $this->view->ordersTable = [];
         $this->view->ordersTable[] = array(
-            'title' => '<input type="checkbox" class="uniform">',
+            'title' => '<input type="checkbox" class="uniform form-check-input">',
             'not_important' => 2
         );
 
@@ -311,12 +311,30 @@ class OrdersController extends Sceleton {
 
         $oModelQuery = Orders::find();
 
-        $this->view->filters->payments = $payments = \yii\helpers\ArrayHelper::map($oModelQuery->select(['payment_method'])->groupBy('payment_method')->orderBy('payment_method')->asArray()->all(), 'payment_method', 'payment_method');
-        $this->view->filters->shipping = array_map('html_entity_decode', $this->view->filters->payments);
+        $oModelQuery->select(['payment_class', 'payment_method'])->where(['not', ['payment_class' => '']])->andWhere(['not', ['payment_method' => '']]);
+        $payments = \yii\helpers\ArrayHelper::map($oModelQuery->groupBy('payment_class')->orderBy('payment_class, payment_method')->asArray()->all(), 'payment_class', 'payment_method');
+        $payments = array_map('html_entity_decode', array_map('strip_tags', $payments));
+        foreach ($payments as $class => $method) {
+            if (tep_not_null($method)) {
+                $this->view->filters->payments[$class] = trim($method) . ' (' . $class . ')';
+            }
+        }
+        if (!empty($this->view->filters->payments)) {
+            asort($this->view->filters->payments);
+        }
         $this->view->filters->payments_selected = $GET['payments'] ?? [];
 
-        $this->view->filters->shipping = $payments = \yii\helpers\ArrayHelper::map($oModelQuery->select(['shipping_method'])->groupBy('shipping_method')->orderBy('shipping_method')->asArray()->all(), 'shipping_method', 'shipping_method');
-        $this->view->filters->shipping = array_map('html_entity_decode', $this->view->filters->shipping);
+        $oModelQuery->select(['shipping_class', 'shipping_method'])->where(['not', ['shipping_class' => '']])->andWhere(['not', ['shipping_method' => '']]);
+        $shippings = \yii\helpers\ArrayHelper::map($oModelQuery->groupBy('shipping_class')->orderBy('shipping_class, shipping_method')->asArray()->all(), 'shipping_class', 'shipping_method');
+        $shippings = array_map('html_entity_decode', array_map('strip_tags', $shippings));
+        $this->view->filters->shipping = [];
+        foreach ($shippings as $class => $method) {
+            list($class, ) = explode('_', $class);
+            if (tep_not_null($method)) {
+                $this->view->filters->shipping[$class] = trim($method) . ' (' . $class . ')';
+            }
+        }
+        asort($this->view->filters->shipping);
         $this->view->filters->shipping_selected = $GET['shipping'] ?? [];
 
         $delivery_country = '';
@@ -434,7 +452,7 @@ class OrdersController extends Sceleton {
             if ($adminTemplates) {;
                 defined('THEME_NAME') or define('THEME_NAME', \common\classes\design::pageName(BACKEND_THEME_NAME));
                 $params = [];
-                $params['backendOrdersList\BatchCheckbox'] = '<div class="checkbox-column"><input type="checkbox" class="uniform"></div>';
+                $params['backendOrdersList\BatchCheckbox'] = '<div class="checkbox-column"><input type="checkbox" class="uniform form-check-input"></div>';
                 if ($adminTemplates->template) {
                     $tableHeading = \frontend\design\boxes\TableRow::headingRow($params, $adminTemplates->template);
                 }
@@ -625,13 +643,13 @@ class OrdersController extends Sceleton {
         if ((isset($_GET['in_stock']) && $_GET['in_stock'] != '')){
             $_orders_products_joined = true;
             $orders_query_raw->leftJoin(TABLE_ORDERS_PRODUCTS . " op", "(op.orders_id = o.orders_id)");
-            $orders_query_raw->addSelect("BIT_AND(" . (\common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed') ? "if(i.products_quantity is not null,if((i.products_quantity>=op.products_quantity),1,0),if((p.products_quantity>=op.products_quantity),1,0))" : "if((p.products_quantity>=op.products_quantity),1,0)") . ") as in_stock");
+            $orders_query_raw->addSelect("BIT_AND(" . (\common\helpers\Extensions::isAllowed('Inventory') ? "if(i.products_quantity is not null,if((i.products_quantity>=op.products_quantity),1,0),if((p.products_quantity>=op.products_quantity),1,0))" : "if((p.products_quantity>=op.products_quantity),1,0)") . ") as in_stock");
             $orders_query_raw->leftJoin(TABLE_PRODUCTS . " p", "(p.products_id = op.products_id)");
-            if (\common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed')){
+            if (\common\helpers\Extensions::isAllowed('Inventory')){
                 $orders_query_raw->leftJoin(TABLE_INVENTORY . " i", "(i.prid = op.products_id and i.products_id = op.uprid)");
             }
         }
-        if (\common\helpers\Acl::checkExtensionAllowed('Handlers', 'allowed')) {
+        if (\common\helpers\Extensions::isAllowed('Handlers')) {
             if ( !$_orders_products_joined ) {
                 $_orders_products_joined = true;
                 $orders_query_raw->leftJoin(TABLE_ORDERS_PRODUCTS . " op", "(op.orders_id = o.orders_id)");
@@ -688,16 +706,14 @@ class OrdersController extends Sceleton {
             $orders_query_raw->andWhere(['in', 'o.platform_id', $filter_by_platform]);
         }
 
-        if (\common\helpers\Acl::checkExtensionAllowed('Handlers', 'allowed')) {
+        /**
+         * @var $ext \common\extensions\Handlers\Handlers
+         */
+        if ($ext = \common\helpers\Extensions::isAllowed('Handlers')) {
             global $access_levels_id;
-            $handlers_array = [];
-            $handlers_query = tep_db_query("select handlers_id from handlers_access_levels where access_levels_id='" . (int)$access_levels_id . "'");
-            while ($handlers = tep_db_fetch_array($handlers_query)) {
-                $handlers_array[] = $handlers['handlers_id'];
-            }
             $orders_query_raw->andWhere([
                 'OR',
-                ['in', 'hp.handlers_id', $handlers_array],
+                ['in', 'hp.handlers_id', $ext::getHandlersQuery((int) $access_levels_id)],
                 ['hp.handlers_id' => NULL]
             ]);
         }
@@ -864,11 +880,11 @@ class OrdersController extends Sceleton {
         }
 
         if (isset($output['payments']) && !empty($output['payments'])) {
-            $orders_query_raw->andWhere(['in', 'o.payment_method', $output['payments']]);
+            $orders_query_raw->andWhere(['in', 'o.payment_class', $output['payments']]);
         }
 
         if (isset($output['shipping']) && !empty($output['shipping'])) {
-            $orders_query_raw->andWhere(['in', 'o.shipping_method', $output['shipping']]);
+            $orders_query_raw->andWhere(['in', 'SUBSTRING_INDEX(o.shipping_class, "_", 1)', $output['shipping']]);
         }
 
         if (isset($output['fc_id']) && is_array($output['fc_id']) && count($output['fc_id'])) {
@@ -933,6 +949,11 @@ class OrdersController extends Sceleton {
                 $ext_query = $ext::getQuery($orders_query_raw);
             }
         }
+
+        foreach (\common\helpers\Hooks::getList('orders/orderlist') as $filename) {
+            include($filename);
+        }
+
 //echo $orders_query_raw->createCommand()->getRawSql();
         $_session->set('filter', $orders_query_raw->where);
 
@@ -1154,7 +1175,7 @@ class OrdersController extends Sceleton {
                     $tableOrderRow['DT_RowClass'] = $orderRow['DT_RowClass'];
                 }
 
-                $batchCheckbox = '<input type="checkbox" class="uniform">' . '<input class="cell_identify" type="hidden" value="' . $orders['orders_id'] . '">';
+                $batchCheckbox = '<input type="checkbox" class="uniform form-check-input">' . '<input class="cell_identify" type="hidden" value="' . $orders['orders_id'] . '">';
                 $orderRow[] = $batchCheckbox;
                 $tableOrderRow['backendOrdersList\BatchCheckbox'] = $batchCheckbox;
 
@@ -1165,14 +1186,13 @@ class OrdersController extends Sceleton {
                         $coloredRow = $markers[$orderMarkers['markers']];
                     }
                     $paint = '<div class="fa-paint-brush" onclick="sendOrderMarker(' . (int)$orders['orders_id'] . ', ' . (int)($orderMarkers['markers'] ?? 0) . ')"></div>';
-                    $orderMarkers = '';
                     if (isset($orderMarkers['flags']) && isset($flags[$orderMarkers['flags']])){
                         $orderMarkers = '<div class="fa-flag" style="color: ' . $flags[$orderMarkers['flags']] . ';" onclick="sendOrderFlag(' . (int)$orders['orders_id'] . ', ' . (int)$orderMarkers['flags'] . ')"></div>' . $paint;
                     } else {
                         $orderMarkers = '<div class="fa-flag-o" onclick="sendOrderFlag(' . (int)$orders['orders_id'] . ')"></div>' . $paint;
                     }
                     $orderRow[] = $orderMarkers;
-                    $tableOrderRow['backendOrdersList\OrderMarkersCell'] = '<input type="checkbox" class="uniform">' . '<input class="cell_identify" type="hidden" value="' . $orders['orders_id'] . '">';
+                    $tableOrderRow['backendOrdersList\OrderMarkersCell'] = '<input type="checkbox" class="uniform form-check-input">' . '<input class="cell_identify" type="hidden" value="' . $orders['orders_id'] . '">';
                 }
 
                 $customerColumn = $cusColumn . '<input class="row_colored" type="hidden" value="' . $coloredRow . '">';
@@ -1332,7 +1352,8 @@ class OrdersController extends Sceleton {
         }
     }
 
-    public function actionProcessOrder() {
+    public function actionProcessOrder()
+    {
         global $login_id;
         defined('THEME_NAME') or define('THEME_NAME', \common\classes\design::pageName(BACKEND_THEME_NAME));
 
@@ -1428,7 +1449,7 @@ class OrdersController extends Sceleton {
             $filter = $_session->get('filter');
         }
 
-        $pagin_model = \common\models\Orders::find()->select('o.orders_id')->from(TABLE_ORDERS . " o ");
+        $pagin_model = \common\models\Orders::find()->select('o.orders_id')->from(TABLE_ORDERS . " o USE INDEX (PRIMARY) ");
         if ($_session->has('search_condition')) {
             $pagin_model->andWhere($_session->get('search_condition'));
         }
@@ -1446,7 +1467,7 @@ class OrdersController extends Sceleton {
             }
             $pagin_model->leftJoin(TABLE_ORDERS_STATUS_HISTORY." osh", "o.orders_id = osh.orders_id");
         }
-        if ($filter && \common\helpers\Acl::checkExtensionAllowed('Handlers', 'allowed')) {
+        if ($filter && \common\helpers\Extensions::isAllowed('Handlers')) {
             $pagin_model->leftJoin("handlers_products hp", "hp.products_id = op.products_id");
         }
         if ($filter && strpos($pagin_model->andWhere($filter)->createCommand()->getRawSql(),'wpb')!==false){
@@ -1457,11 +1478,15 @@ class OrdersController extends Sceleton {
             $pagin_model->leftJoin("warehouses_products_batches wpb", "wpb.batch_id = opa.batch_id");
         }
 
+        foreach (\common\helpers\Hooks::getList('orders/process-order/before-next-prev-query') as $filename) {
+            include($filename);
+        }
+
         $order_next = $pagin_model->where("o.orders_id > '" . (int) $order->order_id . "'")
                 ->andWhere($filter)->orderBy("orders_id ASC")->limit(1)->asArray()->one();
         $order_prev = $pagin_model->where("o.orders_id < '" . (int) $order->order_id . "'")
                 ->andWhere($filter)->orderBy("orders_id DESC")->limit(1)->asArray()->one();
-
+        
         $this->view->order_next = ( isset($order_next['orders_id']) ? $order_next['orders_id'] : 0);
         $this->view->order_prev = ( isset($order_prev['orders_id']) ? $order_prev['orders_id'] : 0);
 
@@ -1677,57 +1702,6 @@ class OrdersController extends Sceleton {
             if ($status == DOWNLOADS_ORDERS_STATUS_UPDATED_VALUE) {
                 tep_db_query("update " . TABLE_ORDERS_PRODUCTS_DOWNLOAD . " set download_maxdays = '" . tep_db_input(\common\helpers\Configuration::get_configuration_key_value('DOWNLOAD_MAX_DAYS')) . "', download_count = '" . tep_db_input(\common\helpers\Configuration::get_configuration_key_value('DOWNLOAD_MAX_COUNT')) . "' where orders_id = '" . (int) $oID . "'");
             }
-
-            if ($platform_config->const_value('MODULE_ORDER_TOTAL_BONUS_POINTS_STATUS') == 'true'){
-                $_statuses = explode(", ", $platform_config->const_value('MODULE_ORDER_TOTAL_BONUS_POINTS_ORDER_STATUS_ID'));
-
-                if (in_array($status, $_statuses)){
-                    $_total = tep_db_fetch_array(tep_db_query("select sum(op.bonus_points_cost * op.products_quantity) as bonus_points_cost from " . TABLE_ORDERS_PRODUCTS . " op, " . TABLE_ORDERS . " o where o.orders_id =  op.orders_id and o.orders_id ='" . (int) $oID . "' and o.bonus_applied = 0"));
-                    $prefix = '+';
-                } else { //another status
-                    $_total = tep_db_fetch_array(tep_db_query("select sum(op.bonus_points_cost * op.products_quantity) as bonus_points_cost from " . TABLE_ORDERS_PRODUCTS . " op, " . TABLE_ORDERS . " o where o.orders_id =  op.orders_id and o.orders_id ='" . (int) $oID . "' and o.bonus_applied = 1"));
-                    $prefix = '-';
-                }
-                $notify = (int)\Yii::$app->request->post('notify', 0);
-                if ($_total  && (float)$_total['bonus_points_cost'] > 0.00) {
-
-                    \common\classes\Bonuses::setAppliedBonuses($oID);
-
-                    /** @var CustomersService $customerService */
-                    $customerService = \Yii::createObject(CustomersService::class);
-                    $customer = $customerService->findById((int) $check_status['customers_id']);
-
-                    if ($customer && ! $customer->isGuest()) {
-
-                        \common\classes\Bonuses::updateCustomerBonuses([
-                            'customers_id' => $check_status['customers_id'],
-                            'prefix' => $prefix,
-                            'credit_amount' => (float)$_total['bonus_points_cost'],
-                            'comments' => 'Order #' . $oID,
-                            'admin_id' => $login_id,
-                            'customer_notified' => $notify,
-                        ]);
-
-                        if ($_total && $notify === 1) {
-                            $email_params['STORE_NAME'] = STORE_OWNER;
-                            $email_params['CUSTOMER_FIRSTNAME'] = $order->customer['firstname'];
-                            $email_params['CUSTOMER_LASTNAME'] = $order->customer['lastname'];
-                            // $email_params['BONUS_POINTS'] = $prefix . number_format((float)$_total['bonus_points_cost'], 2);
-                            $email_params['BONUS_POINTS'] = $prefix . (int)$_total['bonus_points_cost'];
-                            $email_params['BONUS_POINTS_COMMENTS'] = 'Order #' . $oID;
-
-                            [$emailSubject, $emailContent] = \common\helpers\Mail::get_parsed_email_template('Bonus points notification', $email_params, $order->info['language_id'], $order->info['platform_id']);
-
-                            \common\helpers\Mail::send(
-                                $order->customer['firstname'] . ' ' . $order->customer['lastname'],
-                                $order->customer['email_address'], $emailSubject, $emailContent, STORE_OWNER, STORE_OWNER_EMAIL_ADDRESS, [], '', '', ['add_br' => 'no']);
-                        }
-                    }
-
-                }
-
-            }
-
 
 // EOF: WebMakers.com Added: Downloads Controller
 
@@ -3764,7 +3738,7 @@ class OrdersController extends Sceleton {
         if ($orders_label_id > 0) {
             $oLabel = \common\models\OrdersLabel::findOne(['orders_label_id' => $orders_label_id, 'orders_id' => $orders_id]);
             if ($oLabel) {
-                [$label_module, $label_method] = explode('_', $oLabel->label_class, 2);
+                [$label_module, $label_method] = array_pad( explode('_', $oLabel->label_class, 2), 2, null);
                 if ($label_module && $label_method) {
                     $class = "common\\modules\\label\\" . $label_module;
                     if (class_exists($class) && is_subclass_of($class, ModuleLabel::class)) {
@@ -3844,7 +3818,7 @@ class OrdersController extends Sceleton {
 
             if ($orders_label_id > 0) {
                 $oLabel = \common\models\OrdersLabel::findOne(['orders_label_id' => $orders_label_id, 'orders_id' => $orders_id]);
-                [$label_module, $label_method] = explode('_', $oLabel->label_class, 2);
+                [$label_module, $label_method] = array_pad( explode('_', $oLabel->label_class??'', 2), 2, '');
                 if (!empty($label_module) && !empty($label_method)) {
                     $class = "common\\modules\\label\\" . $label_module;
                     if (class_exists($class) && is_subclass_of($class, "common\\classes\\modules\\ModuleLabel")) {
@@ -3995,7 +3969,8 @@ class OrdersController extends Sceleton {
             }
 
             $auto_selected_label = '';
-            if ($ext = \common\helpers\Acl::checkExtensionAllowed('ShippingCarrierPick', 'allowed')) {
+            /** @var \common\extensions\ShippingCarrierPick\ShippingCarrierPick $ext */
+            if ($ext = \common\helpers\Extensions::isAllowed('ShippingCarrierPick')) {
                 $auto_selected_label = $ext::suggestOnOrder($order);
                 if (!empty($auto_selected_label)) {
                     if (strpos($auto_selected_label, '_') !== false) {
@@ -4041,7 +4016,7 @@ class OrdersController extends Sceleton {
             'orders_id' => $orders_id,
             'orders_label_id' => $orders_label_id,
             'all_methods' => $all_methods,
-            'hypashipTracking' => $result
+            'hypashipTracking' => $result ?? null
         ]);
     }
     public function actionMakeOrderLabel()
@@ -4049,8 +4024,8 @@ class OrdersController extends Sceleton {
         Translation::init('admin/orders');
 
         Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
-
-        $ext = \common\helpers\Acl::checkExtensionAllowed('ShippingCarrierPick', 'allowed');
+        /** @var \common\extensions\ShippingCarrierPick\ShippingCarrierPick $ext */
+        $ext = \common\helpers\Extensions::isAllowed('ShippingCarrierPick');
         if ( !$ext ) {
             Yii::$app->response->data = [
                 'status' => 'error',
@@ -4376,9 +4351,6 @@ class OrdersController extends Sceleton {
               $class = $data->orders_payment_module;
               $builder = new \common\classes\modules\ModuleBuilder($manager);
               $class = $builder(['class' => "\\common\\modules\\orderPayment\\{$class}"]);
-
-              $tManager = $manager->getTransactionManager($class);
-
               $tmp = 'can' . ucfirst($method);
 
               if (is_object($class) && method_exists($class, $tmp) && $class->$tmp($data->orders_payment_transaction_id) ) {
@@ -4865,8 +4837,8 @@ class OrdersController extends Sceleton {
               'value' => 'on_behalf',
               'name' => TEXT_PAY_ON_BEHALF,
           ];
-
-          $aup = \common\helpers\Password::encryptAuthUserParam($order->customer['id'], $order->customer['email_address'], 'payment');
+          $cInfo = \common\models\Customers::find()->where(['customers_id' => $order->customer['id']])->one();
+          $aup = \common\helpers\Password::encryptAuthUserParam($order->customer['id'], $order->customer['email_address'], 'payment', ($cInfo->auth_key ?? ''));
           \Yii::$app->get('platform')->config($_activePlatformId);
 
           $due = array_filter($order->totals, function ($el) { return ($el['class']=='ot_due' && round($el['value'],2)>0.01 );} );
@@ -5007,6 +4979,7 @@ class OrdersController extends Sceleton {
                 'url' => $url,
                 'list' => $pSearchList,
                 'mode' => $mode,
+                'search' => Yii::$app->request->get('search', false),
             ]);
         }
     }

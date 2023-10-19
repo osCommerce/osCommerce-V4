@@ -47,7 +47,7 @@
   <ul class="nav nav-tabs">
   {foreach $groups $group}
     {$groups_id=$group.groups_id}
-    <li class="{if $groups_id==0}active{/if}"><a href="#{$id_prefix}_{$groups_id}" data-toggle="tab"><span>{$group['groups_name']}</span></a></li>
+    <li class="{if $groups_id==0}active{/if}" data-bs-toggle="tab" data-bs-target="#{$id_prefix}_{$groups_id}"><a><span>{$group['groups_name']}</span></a></li>
   {/foreach}
   </ul>
 {/function}

@@ -12,11 +12,11 @@ table.table-transactions td:last-child { text-align:center; }
                 {$activeTab="tab_rma"}
             {/if}
             <ul class="nav nav-tabs">
-               <li {if $activeTab == 'tab_assigned'}class="active"{/if}><a href="#tab_assigned" data-toggle="tab"><span>{$smarty.const.TEXT_TRANSACTIONS}</span></a></li>
+               <li {if $activeTab == 'tab_assigned'}class="active"{/if} data-bs-toggle="tab" data-bs-target="#tab_assigned"><a><span>{$smarty.const.TEXT_TRANSACTIONS}</span></a></li>
                {if $activeTab == 'tab_rma'}
-               <li class="active"><a href="#tab_rma" data-toggle="tab"><span>{$smarty.const.TEXT_CREDITNOTE}</span></a></li>
+               <li class="active" data-bs-toggle="tab" data-bs-target="#tab_rma"><a><span>{$smarty.const.TEXT_CREDITNOTE}</span></a></li>
                {/if}
-               <li><a href="#tab_assign" data-toggle="tab"><span>{$smarty.const.TEXT_ASSIGN_TRANSACTIONS}</span></a></li>
+               <li data-bs-toggle="tab" data-bs-target="#tab_assign"><a><span>{$smarty.const.TEXT_ASSIGN_TRANSACTIONS}</span></a></li>
             </ul>
             <div class="tab-content">
                 <div class="tab-pane {if $activeTab == 'tab_assigned'}active{/if} tabbable-custom" id="tab_assigned">
@@ -419,7 +419,7 @@ table.table-transactions td:last-child { text-align:center; }
                 console.error('leak of amount: '+allowedAmount+' for '+trans.creditNote.amount);
             }
             
-            if ( !$('.transactions-list > div').size() ){
+            if ( !$('.transactions-list > div').length ){
                 $('.transactions-list').html('{$smarty.const.TEXT_NO_TRANSACTIONS|escape:javascript}');
             }
         }

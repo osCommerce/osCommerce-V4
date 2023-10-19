@@ -17,7 +17,8 @@ use common\extensions\OscLink\models\Configuration;
 use common\extensions\OscLink\models\Entity;
 use common\extensions\OscLink\models\Mapping;
 
-class Importer implements \OscLink\XML\ImportTuningInterface 
+#[\AllowDynamicProperties]
+class Importer implements \OscLink\XML\ImportTuningInterface
 {
     private $downloader;
 
@@ -86,9 +87,7 @@ class Importer implements \OscLink\XML\ImportTuningInterface
         $p = (int) (100 * ($this->batch_offset + $this->count_in_batch) / $this->count_all);
         $p = $p > 100 ? 100 : $p;
         \OscLink\Progress::Percent($p, "$p%");
-        if (Configuration::isCancelSign()) {
-            throw new \yii\base\UserException('Process was canceled by user.');
-        }
+        Configuration::throwIfCanceled();
     }
 
     public function finishedImport()
@@ -110,9 +109,7 @@ class Importer implements \OscLink\XML\ImportTuningInterface
 
     public function afterCleanEntity($model, $id, $res)
     {
-        if (Configuration::isCancelSign()) {
-            throw new \yii\base\UserException('Process was canceled by user.');
-        }
+        Configuration::throwIfCanceled();
     }
 
 
@@ -157,6 +154,8 @@ class Importer implements \OscLink\XML\ImportTuningInterface
                 $project->setStructure($structure, $this);
 
                 $imported = $project->import();
+                if (function_exists('gc_collect_cycles')) gc_collect_cycles();
+
                 \OscLink\Helper::sumCols($imported_sum, $imported);
             }
             $this->finishedImport();

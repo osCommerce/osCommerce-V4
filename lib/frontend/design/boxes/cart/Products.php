@@ -47,17 +47,10 @@ class Products extends Widget
 
         $cartDecorator = new CartDecorator($cart);
         
-        $multiCart = ['enabled' => false,];
-        if($ext = \common\helpers\Acl::checkExtension('MultiCart', 'allowed')){
-            if ($ext::allowed()){
-                $multiCart['enabled'] = !$ext::isEmpty();
-            }
-        }
-
-        if($ext = \common\helpers\Acl::checkExtension('MultiCart', 'allowed')){
-            if ($ext::allowed()){
-                $multiCart['script'] = $ext::actionScript();
-            }
+        $multiCart = ['enabled' => false, 'script' => ''];
+        if($ext = \common\helpers\Extensions::isAllowed('MultiCart')) {
+            $multiCart['enabled'] = !$ext::isEmpty();
+            $multiCart['script'] = $ext::actionScript();
         }
 
         \frontend\design\Info::addBlockToWidgetsList('cart-listing');
@@ -75,12 +68,11 @@ class Products extends Widget
         
         if ($cart->count_contents() > 0) {
             $popup = (int)Yii::$app->request->get('popup', 0);
-            return IncludeTpl::widget(['file' => 'boxes/cart/products' . ($this->type ? '-' . $this->type : '') . '.tpl', 'params' => [
+            $render_params = [
               'products' => $productsDecorated,
               'allow_checkout' => !($cartDecorator->oos_product_incart || $bounded),
               'oos_product_incart' => $cartDecorator->oos_product_incart,
               'bound_quantity_ordered' => $bounded,
-              'bonus_points' => (is_object($this->params['manager'])? $this->params['manager']->getBonusesDetails(): null),
               'promoMessage' => \common\helpers\Acl::checkExtensionAllowed('Promotions') ? \common\extensions\Promotions\models\PromotionService::getMessage() : null,
               'boundMessage' => $boundMessage ?? '',
               'popupMode' => ($popup == 1),
@@ -88,7 +80,13 @@ class Products extends Widget
               'settings' => $this->settings,
               'groupId' => $groupId,
               'manager' => $this->params['manager'] ?? null,
-            ]]);
+            ];
+
+            foreach (\common\helpers\Hooks::getList('box/cart/products') as $filename) {
+                include($filename);
+            }
+
+            return IncludeTpl::widget(['file' => 'boxes/cart/products' . ($this->type ? '-' . $this->type : '') . '.tpl', 'params' => $render_params]);
         } else {
             return '<div class="empty">' . CART_EMPTY . '</div>';
         }

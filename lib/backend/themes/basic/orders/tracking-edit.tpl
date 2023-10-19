@@ -59,7 +59,7 @@
             {foreach $orders_products as $orders_products_id => $product}
                 <tr>
                     <td class="prod-edit"><input type="checkbox" name="selected_products[{$orders_products_id}]" value="{$orders_products_id}"{if $product['selected']} checked disabled{/if}{if $product['qty_max'] <= 0} disabled{/if} /></td>
-                    <td class="plus_td box_al_center prod-edit" align="center"><span class="pr_minus"></span><input type="text" name="selected_products_qty[{$orders_products_id}]" size="2" value="{$product['qty']}" data-min="{$product['qty_min']}" data-max="{$product['qty_max']}" opid="{$orders_products_id}" class="form-control qty" /><span class="pr_plus"></span><input type="hidden" name="selected_products_qty_max[{$orders_products_id}]" value="{$product['qty_max']}" /></td>
+                    <td class="plus_td box_al_center prod-edit" align="center"><span class="pr_minus"></span><input type="text" name="selected_products_qty[{$orders_products_id}]" size="2" value="{$product['qty']}" data-min="{$product['qty_min']}" data-max="{$product['qty_max']}" opid="{$orders_products_id}" class="form-select qty" /><span class="pr_plus"></span><input type="hidden" name="selected_products_qty_max[{$orders_products_id}]" value="{$product['qty_max']}" /></td>
                     <td class="prod-veiw"><span opid="{$orders_products_id}">{$product['qty']}</span>&nbsp;x</td>
                     <td class="left"><div class="table-image-cell"><a href="{\common\classes\Images::getImageUrl($product['id'], 'Large')}" class="fancybox">{\common\classes\Images::getImage($product['id'])}</a></a></div></td>
                     <td>

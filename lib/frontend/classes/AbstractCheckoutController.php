@@ -145,12 +145,13 @@ abstract class AbstractCheckoutController extends \frontend\controllers\Sceleton
     }
 
     public function actions() {
-        return [
-            'auth' => [
-                'class' => 'yii\authclient\AuthAction',
-                'successCallback' => [$this, 'onAuthSuccess'],
-            ],
+        $actions = parent::actions();
+        if (!is_array($actions)) $actions = [];
+        $actions['auth'] = [
+            'class' => 'yii\authclient\AuthAction',
+            'successCallback' => [$this, 'onAuthSuccess'],
         ];
+        return $actions;
     }
 
     public function beforeAction($action)
@@ -179,7 +180,7 @@ abstract class AbstractCheckoutController extends \frontend\controllers\Sceleton
                 break;
             case 'get_address_list':
                 $type = tep_db_prepare_input(Yii::$app->request->get('type'));
-                $data = $this->manager->render('AddressesList', ['manager' => $this->manager, 'mode' => 'select', 'type' => $type], 'json');
+                $data = $this->manager->render('AddressesList', ['manager' => $this->manager, 'mode' => 'select', 'type' => $type, 'drop_ship' => 1], 'json');
                 break;
             case 'set_delivery_option':
                 if ($ext = \common\helpers\Acl::checkExtensionAllowed('DeliveryOptions', 'allowed')) {
@@ -239,13 +240,14 @@ abstract class AbstractCheckoutController extends \frontend\controllers\Sceleton
             case 'edit_address':
                 $type = tep_db_prepare_input(Yii::$app->request->get('type'));
                 $ab_id = (int)Yii::$app->request->get('ab_id', 0);
-                $data['address'] = $this->manager->render('AddressesList', ['manager' => $this->manager, 'mode' => 'edit', 'type' => $type, 'ab_id' => $ab_id], 'json');
+                $drop_ship = (int)Yii::$app->request->get('drop_ship', 0);
+                $data['address'] = $this->manager->render('AddressesList', ['manager' => $this->manager, 'mode' => 'edit', 'type' => $type, 'ab_id' => $ab_id, 'drop_ship' => $drop_ship], 'json');
                 break;
             case 'save_address':
                 $type = tep_db_prepare_input(Yii::$app->request->get('type'));
                 $shipAsBill = Yii::$app->request->post('ship_as_bill', false) && true;
                 $shipAsBill = $shipAsBill || (Yii::$app->request->post('bill_as_ship', false) && true);
-                $valid = $this->manager->validateAddressForms(Yii::$app->request->post(), '', $shipAsBill);
+                $valid = $this->manager->validateAddressForms(Yii::$app->request->post(), $type, $shipAsBill);
                 $data = [];
                 if ($valid) {
                     $this->manager->checkoutOrder();

@@ -1,4 +1,5 @@
 {use class="yii\helpers\Html"}
+{\backend\assets\RatingAsset::register($this)|void}
 <!--=== Page Content ===-->
 <div id="rewiews_management_data">
 <!--===Customers List ===-->

@@ -19,7 +19,7 @@ class PageComponents {
     public static function addComponents($text)
     {
         if ( !empty($text) && strpos($text,'##COMPONENT%')!==false ) {
-            $text = preg_replace_callback("/\#\#COMPONENT\%([^\#^\%]+)[\%]{0,1}([^\#]{0,})##/", "self::addComponent", $text);
+            $text = preg_replace_callback("/\#\#COMPONENT\%([^\#^\%]+)[\%]{0,1}([^\#]{0,})##/", self::class . "::addComponent", $text);
         }
 
         return $text;

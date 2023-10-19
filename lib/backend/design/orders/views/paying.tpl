@@ -14,13 +14,13 @@
         <div style='display: inline-block' class="">
             <div style='display: none' class='payingPayDetails'>
                 <div class="f_tr after">
-                    {Html::dropDownList('paid_prefix', '+', ['+' => '+', '-' => '-'], ['class' => 'form-control', 'style' => 'margin-left:5px; width: 45px; display: inline-block;', 'id' => 'use_update_amount_paid_prefix'])}
+                    {Html::dropDownList('paid_prefix', '+', ['+' => '+', '-' => '-'], ['class' => 'form-select', 'style' => 'margin-left:5px; width: 45px; display: inline-block;', 'id' => 'use_update_amount_paid_prefix'])}
                     {Html::input('text', 'update_paid_amount', {$amt}, ['class' => 'form-control', 'style' => 'margin-left:5px; width: 100px; display: inline-block;', 'id' => 'update_paid_amount_input'])}<br />
                 </div>
                 <div class="f_tr after">
                     <div class="f_tr after">
                         {$smarty.const.TABLE_HEADING_PAYMENT_TRANSACTION_STATUS}<span class="colon">:</span>
-                        {Html::dropDownList('t_status', OrderPayment::OPYS_SUCCESSFUL, OrderPayment::getStatusList(OrderPayment::OPYS_SUCCESSFUL), ['class' => 'form-control', 'style' => 'margin-left:5px; width: 125px;  display: inline-block;', 'id' => 'update_paid_status'])}<br />
+                        {Html::dropDownList('t_status', OrderPayment::OPYS_SUCCESSFUL, OrderPayment::getStatusList(OrderPayment::OPYS_SUCCESSFUL), ['class' => 'form-select', 'style' => 'margin-left:5px; width: 125px;  display: inline-block;', 'id' => 'update_paid_status'])}<br />
                     </div>
                     <div class="f_tr after">
                         {$smarty.const.TABLE_HEADING_PAYMENT_TRANSACTION_ID}<span class="colon">:</span>

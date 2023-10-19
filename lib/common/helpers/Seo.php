@@ -168,6 +168,34 @@ class Seo {
         return $prop_name;
     }
 
+    /**
+     * @param $propertyData
+     * @return string
+     */
+    public static function makePropertyValueSlug($propertyValueData)
+    {
+        $prop_value_slug = static::makeSlug($propertyValueData['values_text']);
+        $exist_count = \common\models\PropertiesValues::find()
+            ->where(['values_seo_page_name'=>$prop_value_slug])
+            ->andFilterWhere(['!=','values_id', $propertyValueData['values_id']??null])
+            ->andFilterWhere(['properties_id' => $propertyValueData['properties_id']??null])
+            ->andFilterWhere(['language_id' => $propertyValueData['language_id']??null])
+            ->count('distinct values_id');
+        if ( $exist_count>0 ){
+            $prop_value_slug = static::makeSlug($propertyValueData['values_text'].'-'.(int)$exist_count);
+            $exist_count = \common\models\PropertiesValues::find()
+                ->where(['values_seo_page_name'=>$prop_value_slug])
+                ->andFilterWhere(['!=','values_id', $propertyValueData['values_id']??null])
+                ->andFilterWhere(['properties_id' => $propertyValueData['properties_id']??null])
+                ->andFilterWhere(['language_id' => $propertyValueData['language_id']??null])
+                ->count('distinct values_id');
+            if ( $exist_count>0 ){
+                $prop_value_slug = static::makeSlug($propertyValueData['values_text'].'-'.(int)($propertyValueData['values_id']??99));
+            }
+        }
+        return $prop_value_slug;
+    }
+
     /*public static function getSeoUrlsByRoute($route)
     {
         $urls = [];

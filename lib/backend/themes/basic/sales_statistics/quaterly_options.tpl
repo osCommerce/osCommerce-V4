@@ -12,7 +12,7 @@
 
   var checkSelection = function(){
     //check custom
-    if ($('.work').size() > 0){
+    if ($('.work').length > 0){
         if ($('.work:first').hasClass('range-block')){ //2
             var items = 0;
             $.each($('.work'), function(i, e){

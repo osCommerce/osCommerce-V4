@@ -1,1 +1,0 @@
-<div class="points-earnt">{$mainData.customer_points}</div>

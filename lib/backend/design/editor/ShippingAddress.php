@@ -27,7 +27,7 @@ class ShippingAddress extends Widget {
     public function run(){
         return $this->render('shipping-address',[
             'manager' => $this->manager,
-            'urlCheckout' => Yii::$app->urlManager->createAbsoluteUrl(array_merge(['editor/checkout', 'action' => 'get_address_list', 'type' => 'shipping'], Yii::$app->request->getQueryParams())),
+            'urlCheckout' => Yii::$app->urlManager->createAbsoluteUrl(['editor/checkout', 'action' => 'get_address_list', 'type' => 'shipping', 'currentCart' => Yii::$app->request->get('currentCart')]),
         ]);
     }
 }

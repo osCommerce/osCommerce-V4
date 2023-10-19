@@ -1,5 +1,5 @@
     <div id="suppliers-placeholder{(int)$pInfo->products_id}">
-        {if isset($app->controller->view->suppliers) && $app->controller->view->suppliers|@count > 0}
+        {if isset($app->controller->view->suppliers) && $app->controller->view->suppliers|default:array()|@count > 0}
           {assign var = cMap value = \yii\helpers\ArrayHelper::map($currencies->currencies, 'id', 'title')}
           {foreach $app->controller->view->suppliers as $suppliers_id => $supplier}
             {include file="supplierproduct.tpl" sInfo=$supplier cMap = $cMap}
@@ -11,6 +11,49 @@
 
     // -- new supplier calc
   var productCategories = {$pInfo->current_assigned_categories|json_encode};
+
+    function getSupplierLandedOrCalcField(supplierBlock) {
+        return $('.js-supplier-landed-price-gross-displayed', supplierBlock);
+    }
+
+    function getSupplierCostField(supplierBlock) {
+        return $('.js-supplier-cost', supplierBlock);
+    }
+
+    function getSupplierLandedPriceField(supplierBlock) {
+        return $('.js-supplier-landed-price-field', supplierBlock);
+    }
+
+    function getConvertedWithCurrencyRisk(field, val = undefined) {
+        if (val == undefined) {
+            var converted = field.data('converted');
+            return converted ? converted : field.val();
+        } else {
+            field.data('converted', val);
+        }
+    }
+
+    function getPushedObj($updatedBlock) {
+        supplierId = $updatedBlock.data('supplier-id');
+        if (supplierId == null) return;
+        defValueIsUndefined = !$suppliersIdWithDefValues.includes(parseInt(supplierId));
+
+        return {
+            htmlId: $updatedBlock.attr('id'),
+            supplier_id: $updatedBlock.data('supplier-id'),
+            products_id: 0,
+            categories_id: productCategories,
+            manufacturers_id: $('#save_product_form .js-product-manufacturer').val(),
+            currencies_id : $('.js-supplier-currency',$updatedBlock).val(),
+            PRICE: getSupplierCostField($updatedBlock).val(),
+            MARGIN: getControlValue(defValueIsUndefined, $('.js-supplier-margin',$updatedBlock)),
+            SURCHARGE: getControlValue(defValueIsUndefined, $('.js-supplier-surcharge',$updatedBlock)),
+            DISCOUNT: getControlValue(defValueIsUndefined, $('.js-supplier-discount',$updatedBlock)),
+            LANDED: getSupplierLandedPriceField($updatedBlock).val(),
+            tax_rate: $('.js-supplier-tax-rate',$updatedBlock).textInputNullableValue(),
+            price_with_tax: $('.js-supplier-tax-rate-flag',$updatedBlock).get(0).checked?1:0
+        }
+    }
 
   function onSupplierCalculateArrive(serverData) {
       if (!serverData.data) return;
@@ -39,7 +82,8 @@
               TAX_RATE = 0,
               price_with_tax = true,
               APPLIED_DISCOUNT = 0,
-              SUPPLIER_COST = 0;
+              SUPPLIER_COST = 0,
+              LANDED = 0;
 
           if (!priceInfo.result) {
               $('.js-applied-rule', $root).html(typeof priceInfo.error !== 'undefined'?priceInfo.error:'');
@@ -57,10 +101,13 @@
               TAX_RATE = parseFloat(priceInfo.result.applyParams.tax_rate);
               price_with_tax = priceInfo.result.applyParams.price_with_tax;
               APPLIED_DISCOUNT = priceInfo.result.applyParams.DISCOUNT;
-              SUPPLIER_COST = priceInfo.result.applyParams.PRICE;
+              SUPPLIER_COST = priceInfo.result.SUPPLIER_COST;
+              LANDED = priceInfo.result.applyParams.LANDED;
 
               $('#calc_net_price_' + idPart).html(currencyFormat(RESULT_PRICE));
               $('#calc_net_price_' + idPart).data('value', RESULT_PRICE);
+              getConvertedWithCurrencyRisk( getSupplierCostField($root), SUPPLIER_COST);
+              getConvertedWithCurrencyRisk( getSupplierLandedPriceField($root), LANDED);
 
               $(document).trigger('suppliers:calc-price-changed', { 'updateBlock': $root, 'supplierId': supIndex});
           }
@@ -120,30 +167,15 @@
   var supplierQueue = new supplierQueueClass();
   let $suppliersIdWithDefValues = [];
 
-  function getControlValue(defValueIsUndefined, value) {
-      return (defValueIsUndefined && !value)? null : value;
+  function getControlValue(defValueIsUndefined, field) {
+      value = field.textInputNullableValue();
+      ret = (defValueIsUndefined && value == '0')? null : value;
+      return ret;
   }
 
   function updateSupplierAt($updatedBlock, $target = null) {
       if ($target != null && !$target.hasClass('js-supplier-product') && !$target.hasClass('js-supplier-recalc')) return;
-      supplierId = $updatedBlock.data('supplier-id');
-      if (supplierId == null) return;
-      defValueIsUndefined = !$suppliersIdWithDefValues.includes(parseInt(supplierId));
-      supplierQueue.push({
-          //$updatedBlock
-          htmlId: $updatedBlock.attr('id'),
-          supplier_id: supplierId,
-          products_id: 0,
-          categories_id: productCategories,
-          manufacturers_id: $('#save_product_form .js-product-manufacturer').val(),
-          currencies_id : $('.js-supplier-currency',$updatedBlock).val(),
-          PRICE: $('.js-supplier-cost',$updatedBlock).val(),
-          MARGIN: getControlValue(defValueIsUndefined, $('.js-supplier-margin',$updatedBlock).textInputNullableValue()),
-          SURCHARGE: getControlValue(defValueIsUndefined, $('.js-supplier-surcharge',$updatedBlock).textInputNullableValue()),
-          DISCOUNT: getControlValue(defValueIsUndefined, $('.js-supplier-discount',$updatedBlock).textInputNullableValue()),
-          tax_rate: getControlValue(defValueIsUndefined, $('.js-supplier-tax-rate',$updatedBlock).textInputNullableValue()),
-          price_with_tax: $('.js-supplier-tax-rate-flag',$updatedBlock).get(0).checked?1:0
-      });
+      supplierQueue.push(getPushedObj($updatedBlock));
   }
 
   function updateSupplierAll() {
@@ -209,7 +241,7 @@
   // -- new supplier calc
     function deleteSupplier(id) {
         bootbox.dialog({
-            message: '<div class="align-center">{$smarty.const.TEXT_DELETE_ALL_CONFIRM}</div>',
+            message: '<div class="align-center">{\common\helpers\Translation::getTranslationValue("TEXT_DELETE_INTRO", "admin/suppliers")}</div>',
             //title: '',
             buttons: {
                 success: {
@@ -390,6 +422,7 @@
               if (serverData.data && serverData.data[id] && serverData.data[id].result) {
                   var priceCalculated = serverData.data[id];
                   var price = doRound(priceCalculated.result.resultPrice, 6);
+                  console.log(price)
                   if (typeof(target_id) == "object") {
                       var prev = parseFloat($(target_id).val().replace(/[^(\d+)\.(\d+)]/g, '')) || 0;
                       $(target_id).val(price).keyup();
@@ -408,26 +441,13 @@
               $(document).trigger('suppliers:selected-manually', { 'suppliers_id': id, 'price': price });
           };
 
-          var $updatedBlock = $(supplierPriceInput).parents('.js-supplier-product');
-          supplierSelect.push({
-              //$updatedBlock
-              htmlId: $updatedBlock.attr('id'),
-              supplier_id: $updatedBlock.data('supplier-id'),
-              products_id: 0,
-              categories_id: productCategories,
-              manufacturers_id: $('#save_product_form .js-product-manufacturer').val(),
-              currencies_id : $('.js-supplier-currency',$updatedBlock).val(),
-              PRICE: $('.js-supplier-cost',$updatedBlock).val(),
-              MARGIN: $('.js-supplier-margin',$updatedBlock).textInputNullableValue(),
-              SURCHARGE: $('.js-supplier-surcharge',$updatedBlock).textInputNullableValue(),
-              DISCOUNT: $('.js-supplier-discount',$updatedBlock).textInputNullableValue()
-          },0);
+          supplierSelect.push(getPushedObj($(supplierPriceInput).parents('.js-supplier-product')), 0);
     }
   }
 
   function deleteSupplierInv(id, uprid) {
     $('#suppliers' + uprid + '-' + id).remove();
-    if ($('.popup-content:visible [name^="suppliers_id_"]:not([readonly])').size() == 0){
+    if ($('.popup-content:visible [name^="suppliers_id_"]:not([readonly])').length == 0){
         $('.popup-content:visible .supplier-product-status:first').bootstrapSwitch('state', true);
     }
     getCountSuppliersPricesInv(uprid);

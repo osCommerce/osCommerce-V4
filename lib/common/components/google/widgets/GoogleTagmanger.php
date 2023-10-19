@@ -72,8 +72,14 @@ class GoogleTagmanger {
 
     public static function setEvent($value) {
       if (self::checkAPI()) return;
+      $events = self::getEvent();
+      if (is_array($events)) {
+          $values = array_unique(array_merge($events, [$value]));
+      } else {
+          $values = [$value];
+      }
         $session = Yii::$app->session;
-        $session->set(self::EVENT_NAME, $value);
+        $session->set(self::EVENT_NAME, $values);
     }
 
     public static function clearEvent() {
@@ -136,74 +142,94 @@ EOD;
         $Gt = self::instance();
         if (Info::isAdmin() || ($Gt->module === FALSE))
             return '';
-        $response = "";
+        $return = $response = "";
 
         $event = (empty($fEvent) ? self::getEvent()  : $fEvent);
         if (!$event)
             return $response;
-        
-        if (!isset($Gt->module->config['tagmanger']['fields'][1]) || (isset($Gt->module->config['tagmanger']['fields'][1]) && $Gt->module->config['tagmanger']['fields'][1]['value'])) {
+
+        if (\Yii::$app->user->isGuest && \common\helpers\PlatformConfig::getFieldValue('platform_please_login')) {
+            return $response;
+        }
+
+        if (!is_array($event )) {
+            $events = [$event];
+        } else {
+            $events = $event;
+        }
+        $config = [];
+        if (!empty($Gt->module->config['tagmanger']['fields']) && is_array($Gt->module->config['tagmanger']['fields']) ) {
+            foreach ($Gt->module->config['tagmanger']['fields'] as $v) {
+                $config[$v['name']] = $v['value'];
+            }
+        }
+
+        foreach ($events as $event) {
+        if (!isset($config['collect_measuring']) || $config['collect_measuring']==1 || !isset($config['collect_measuring_ga4']) || $config['collect_measuring_ga4']==1) {
             switch ($event) {
                 case "addToCart":
-                    $response = self::addToCart();
+                    $response = self::addToCart($config);
                     break;
                 case "removeFromCart":
-                    $response = self::removeFromCart();
+                    $response = self::removeFromCart($config);
                     break;
                 case "productClick":
-                    $response = self::productClick();
+                    $response = self::productClick($config);
                     break;
                 case "checkout":
-                    $response = self::checkout($wrap);
+                    $response = self::checkout($wrap, $config); //NU
                     break;
                 case "promotionClick":
-                    $response = self::promotionClick();
+                    $response = self::promotionClick($config);//ga4
                     break;
                 case "indexPage":
-                    $response = self::indexPage();
+                    $response = self::indexPage($config); //ga4 na
                     break;
                 case "productListing":
-                    $response = self::productListing();
+                    $response = self::productListing($config);
                     break;
                 case "productPage":
-                    $response = self::productPage();
+                    $response = self::productPage($config);
                     break;
                 case "shoppingCart":
-                    $response = self::orderStep(1, 'cart');
+                    $response = self::orderStep(1, 'cart', $config);
                     break;
                 case "orderStep1":
-                    $response = self::orderStep(1);
+                    $response = self::orderStep(1, 'order', $config);
                     break;
                 case "orderStep2":
-                    $response = self::orderStep(2);
+                    $response = self::orderStep(2, 'order', $config); //ga4
                     break;
                 case "orderStep3":
-                    $response = self::orderStep(3);
+                    $response = self::orderStep(3, 'order', $config);//ga4
                     break;
                 case "orderStep4":
-                    $response = self::orderStep(4);
+                    $response = self::orderStep(4, 'order', $config);//ga4
                     break;
                 case "orderSuccess":
-                    $response = self::orderSuccess();
+                    $response = self::orderSuccess($config);
                     break;
             }
             if ($wrap) {
                 $response = "<script>" . $response . "</script>";
             }
+                $return .= $response;
         }
         self::clearEvent();
-        return $response;
+        }
+        return $return;
     }
 
-    public static function addToCart() {
+    public static function addToCart($config = []) {
       if (self::checkAPI()) return;
         global $new_products_id_in_cart;
+        /** @var \common\classes\shopping_cart $cart */
         global $cart;
         $currencies = \Yii::$container->get('currencies');
         $currency = \Yii::$app->settings->get('currency');
         $products = $cart->get_products($new_products_id_in_cart);
         if (is_array($products)) {
-            $list = [];
+            $ga4list = $list = [];
             foreach ($products as $product) {
                 $brand = self::helperBrand($product['id']);
                 $attributes = "";
@@ -228,49 +254,64 @@ EOD;
                     "id" => "{$product['model']}",
                     "reference" => "{$product['model']}",
                     "name" => "{$product['name']}",
-                    "price" => "{$price}",
+                    "price" => (float)$price,
                     "brand" => "{$brand}",
                     "category" => "{$category_name}",
                     "variant" => "{$attributes}",
                     "position" => 0,
-                    "quantity" => "{$product['quantity']}"
+                    "quantity" => (int)$product['quantity']
+                ];
+                $ga4list[] = [
+                    "item_id" => "{$product['id']}",
+                    "reference" => "{$product['model']}",
+                    "item_model" => "{$product['model']}",
+                    "item_name" => "{$product['name']}",
+                    "price" => (float)$price,
+                    "item_brand" => "{$brand}",
+                    "item_category" => "{$category_name}",
+                    "item_variant" => "{$attributes}",
+                    "index" => 0,
+                    "quantity" => (int)$product['quantity']
                 ];
             }
 
+
             if (count($list)) {
                 $list = json_encode($list);
-                return self::eventDatalayerPush('{
-                    "event": "addToCart",
-                    "ecommerce": {
-                        "currencyCode": "' . $currency . '",
-                        "add": {
-                            "products": ' . $list . '
-                        }
-                    }
-                }');
-/*
-                return <<<EOD
-            if (typeof dataLayer == 'object'){
-                dataLayer.push({
-                    "event": "addToCart",
-                    "ecommerce": {
-                        "currencyCode": "{$currency}",
-                        "add": {
-                            "products": {$list}
-                            }
-                    }
-                });
-                
+                $_total = $cart->show_total();
+
+                $ret = '';
+                if (!isset($config['collect_measuring_ga4']) || $config['collect_measuring_ga4']==1) {
+                    $ret .= self::eventDatalayerPush(json_encode([
+                        "event" =>  "add_to_cart",
+                        "ecommerce" => [
+                            'currency' => $currency,
+                            'value' => $_total,
+                            'items' => $ga4list
+                         ]]));
                 }
-EOD;
-*/
-                /* var _e = new Event('addToCart'); window.addEventListener('addToCart', function(){}); window.dispatchEvent(_e); */
+
+                if (!isset($config['collect_measuring']) || $config['collect_measuring']==1) {
+                    $ret .= self::eventDatalayerPush('{
+                        "event": "addToCart",
+                        "ecommerce": {
+                            "currencyCode": "' . $currency . '",
+                            "add": {
+                                "products": ' . $list . '
+                            }
+                        }
+                    }');
+                }
+
+                return $ret;
+
+
             }
         }
         return;
     }
 
-    public static function removeFromCart() {
+    public static function removeFromCart($config = []) {
       if (self::checkAPI()) return;
         global $last_removed;
         $currencies = \Yii::$container->get('currencies');
@@ -285,7 +326,7 @@ EOD;
 
         if ($uprid) {
             $languages_id = \Yii::$app->settings->get('languages_id');
-            $list = [];
+            $ga4list = $list = [];
             $atts = [];
             $uprid = \common\helpers\Inventory::normalize_id($uprid, $atts);
             $currency = \Yii::$app->settings->get('currency');
@@ -296,7 +337,8 @@ EOD;
             if ($_products){
                 $prid = $_products['products_id'];
 
-                if ($ext = \common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed')) {
+                /** @var \common\extensions\Inventory\Inventory $ext */
+                if ($ext = \common\helpers\Extensions::isAllowed('Inventory')) {
                     $_products = array_replace($_products, $ext::getInventorySettings($prid, $uprid));
                 }
 
@@ -327,18 +369,46 @@ EOD;
                     "id" => "{$_products['products_model']}",
                     "reference" => "{$_products['products_model']}",
                     "name" => "{$_products['products_name']}",
-                    "price" => "{$price}",
+                    "price" => (float)$price,
                     "brand" => "{$brand}",
                     "category" => "{$category_name}",
                     "variant" => "{$attributes}",
                     "position" => 0,
-                    "quantity" => "{$last_removed_data['qty']}"
+                    "quantity" => (int)$last_removed_data['qty']
+                ];
+                $ga4list[] = [
+                    "item_id" => $prid,
+                    "reference" => "{$_products['products_model']}",
+                    "item_model" => "{$_products['products_model']}",
+                    "item_name" => "{$_products['products_name']}",
+                    "price" => "{$price}",
+                    "item_brand" => "{$brand}",
+                    "item_category" => "{$category_name}",
+                    "item_variant" => "{$attributes}",
+                    "index" => 0,
+                    "quantity" => $last_removed_data['qty']
                 ];
             }
 
             if (count($list)) {
                 $list = json_encode($list);
-                return self::eventDatalayerPush('{
+                $ret = '';
+                /** @var \common\classes\shopping_cart $cart */
+                global $cart;
+                $_total = $cart->show_total();
+
+                if (!isset($config['collect_measuring_ga4']) || $config['collect_measuring_ga4']==1) {
+                    $ret .= self::eventDatalayerPush(json_encode([
+                        "event" =>  "remove_from_cart",
+                        "ecommerce" => [
+                            'currency' => $currency,
+                            'value' => $_total,
+                            'items' => $ga4list
+                         ]]));
+                }
+
+                if (!isset($config['collect_measuring']) || $config['collect_measuring']==1) {
+                    $ret .= self::eventDatalayerPush('{
                         "event": "removeFromCart",
                         "ecommerce": {
                             "currencyCode": "' . $currency . '",
@@ -346,23 +416,9 @@ EOD;
                                 "products": ' . $list . '
                             }
                     }');
-/*
-                return <<<EOD
-                if (typeof dataLayer == 'object'){
-                    dataLayer.push({
-                        "event": "removeFromCart",
-                        "ecommerce": {
-                            "currencyCode": "{$currency}",
-                            "remove": {
-                                "products": {$list}
-                                }
-                        }
-                    });
-                   
-                } 
-EOD;
-*/
-                /* var _e = new Event('removeFromCart');window.addEventListener('removeFromCart', function(){});window.dispatchEvent(_e); */
+                }
+                return $ret;
+
             }
         }
         return;
@@ -375,7 +431,7 @@ EOD;
         }
     }
 
-    public static function productClick() {
+    public static function productClick($config = []) {
         global $products_id;
         if ($products_id) { //not ready
             $currencies = \Yii::$container->get('currencies');
@@ -389,10 +445,22 @@ EOD;
                     'id' => $product['model'],
                     'reference' => $product['model'],
                     'name' => $product['products_name'],
-                    'price' => $price,
+                    'price' =>(float)$price,
                     'brand' => self::helperBrand($products_id),
                     'category' => self::helperCategory($products_id),
                     'position' => 1
+                ]
+            ];
+            $ga4list = [
+                [
+                    'item_id' => $products_id,
+                    'item_model' => $product['model'],
+                    'reference' => $product['model'],
+                    'item_name' => $product['products_name'],
+                    'price' => $price,
+                    'item_brand' => self::helperBrand($products_id),
+                    'item_category' => self::helperCategory($products_id),
+                    'index' => 0
                 ]
             ];
             self::removeTagAction();
@@ -402,43 +470,40 @@ EOD;
             $tagAction = <<<EOD
 tl("{$main_js}", function(){ jQuery.cookie('tagAction','', cookieConfig || {}); });
 EOD;
-            return self::eventDatalayerPush('{
-                "event": "productClick",
-                "ecommerce": {
-                    "currencyCode": "' . $currency . '",
-                    "click": {
-                        "actionField": {
-                          "list": localStorage.tagPage
-                        },
-                        "products": ' . $list . '
-                    }
+
+                $ret = '';
+
+                if (!isset($config['collect_measuring_ga4']) || $config['collect_measuring_ga4']==1) {
+                    $ret .= self::eventDatalayerPush(json_encode([
+                        "event" =>  "select_item",
+                        "ecommerce" => [
+                            'currency' => $currency,
+                            'items' => $ga4list
+                         ]]));
                 }
-            }') . "\n" . $tagAction;
-/*
-            return <<<EOD
-            if (typeof dataLayer == 'object'){
-                    dataLayer.push({
+
+                if (!isset($config['collect_measuring']) || $config['collect_measuring']==1) {
+
+                    $ret .= self::eventDatalayerPush('{
                         "event": "productClick",
                         "ecommerce": {
-                            "currencyCode": "{$currency}",
+                            "currencyCode": "' . $currency . '",
                             "click": {
                                 "actionField": {
                                   "list": localStorage.tagPage
                                 },
-                                "products": {$list}
+                                "products": ' . $list . '
                             }
                         }
-                    });
-                }
-tl("{$main_js}", function(){ jQuery.cookie('tagAction','', cookieConfig || {}); });
+                    }') . "\n" . $tagAction;
 
-EOD;
-*/
-            /* var _e = new Event('productClick');window.addEventListener('productClick', function(){}); window.dispatchEvent(_e); */
+                }
+                return $ret;
+
         }
     }
     
-    public static function promotionClick(){
+    public static function promotionClick($config = []){
         $code = <<<EOD
                 if (typeof dataLayer == 'object'){
                     var cF = function(id){
@@ -465,6 +530,11 @@ EOD;
             return $code;
     }
 
+/**
+ * @deprecated return false always
+ * @param type $wrap
+ * @return boolean|string
+ */
     public static function checkout($wrap = true) {
       return false; // deprecated
       if (self::checkAPI()) return;
@@ -503,12 +573,12 @@ EOD;
                 "id" => "{$product['model']}",
                 "reference" => "{$product['model']}",
                 "name" => "{$product['name']}",
-                "price" => "{$price}",
+                "price" => (float)$price,
                 "brand" => "{$brand}",
                 "category" => "{$category_name}",
                 "variant" => "{$attributes}",
                 "position" => 0,
-                "quantity" => "{$product['quantity']}"
+                "quantity" => (int)$product['quantity']
             ];
         }
         if (count($list)) {
@@ -594,7 +664,7 @@ EOD;
       return $ret;
     }
 
-    public static function indexPage() {
+    public static function indexPage($config = []) {
         if (self::checkAPI()) return;
         $currency = \Yii::$app->settings->get('currency');
         return self::eventDatalayerPush('{
@@ -608,50 +678,75 @@ EOD;
         }');
     }
 
-    public static function productListing() {
+    public static function productListing($config = []) {
         if (self::checkAPI()) return;
         $currencies = \Yii::$container->get('currencies');
         $currency = \Yii::$app->settings->get('currency');
         $products = \frontend\design\Info::$jsGlobalData['products'];
         if (is_array($products) && \frontend\design\Info::$jsGlobalData['page_title']) {
-            $list = [];
+            $ga4list = $list = [];
             $position = 1;
-            foreach ($products as $prod) {
-                $products_id = \common\helpers\Inventory::get_prid($prod['products_id']);
-                $price = $prod['calculated_price'];
+            foreach ($products as $product) {
+                $products_id = \common\helpers\Inventory::get_prid($product['products_id']);
+                $price = $product['calculated_price'];
                 $category_name = self::helperCategory($products_id);
                 $brand = self::helperBrand($products_id);
 
                 $list[] = [
-                    "id" => "{$prod['products_model']}",
-                    "reference" => "{$prod['products_model']}",
-                    "name" => "{$prod['products_name']}",
-                    "price" => "{$prod['calculated_price']}",
-                    "price_tax_exc" => "{$prod['calculated_price_exc']}",
+                    "id" => "{$product['products_model']}",
+                    "reference" => "{$product['products_model']}",
+                    "name" => "{$product['products_name']}",
+                    "price" => (float)$product['calculated_price'],
+                    "price_tax_exc" => (float)$product['calculated_price_exc'],
                     "brand" => "{$brand}",
                     "category" => "{$category_name}",
                     "position" => $position++,
                 ];
+                $ga4list[] = [
+                    "item_id" => "{$product['products_id']}",
+                    "reference" => "{$product['products_model']}",
+                    "item_model" => "{$product['products_model']}",
+                    "item_name" => "{$product['products_name']}",
+                    "price" => (float)$price,
+                    "item_brand" => "{$brand}",
+                    "item_category" => "{$category_name}",
+                    "item_list_name" => "{$category_name}",
+                    "index" => $position
+                ];
+                $position++;
             }
             if (count($list)) {
                 $list = json_encode($list);
-                return self::eventDatalayerPush('{
-                    "pageCategory":"category",
-                    "ecommerce": {
-                        "currencyCode":"' . $currency . '",
-                        "impressions" :' . $list . '
-                    },
-                    "google_tag_params": {
-                        "ecomm_pagetype":"category",
-                        "ecomm_category":"' . \frontend\design\Info::$jsGlobalData['page_title'] . '"
-                    }
-                }');
+                $ret = '';
+                if (!isset($config['collect_measuring_ga4']) || $config['collect_measuring_ga4']==1) {
+                    $ret .= self::eventDatalayerPush(json_encode([
+                        "event" =>  "view_item_list",
+                        "ecommerce" => [
+                            'items' => $ga4list
+                         ]]));
+                }
+
+                if (!isset($config['collect_measuring']) || $config['collect_measuring']==1) {
+
+                    $ret .= self::eventDatalayerPush('{
+                        "pageCategory":"category",
+                        "ecommerce": {
+                            "currencyCode":"' . $currency . '",
+                            "impressions" :' . $list . '
+                        },
+                        "google_tag_params": {
+                            "ecomm_pagetype":"category",
+                            "ecomm_category":"' . \frontend\design\Info::$jsGlobalData['page_title'] . '"
+                        }
+                    }');
+                }
+                return $ret;
             }
         }
         return;
     }
 
-    public static function productPage() {
+    public static function productPage($config = []) {
         if (self::checkAPI()) return;
         global $products_id;
         if ($products_id) { //not ready
@@ -667,34 +762,63 @@ EOD;
                     'id' => $product['model'],
                     'reference' => $product['model'],
                     'name' => $product['products_name'],
-                    'price' => $price_inc,
-                    'price_tax_exc' => $price_exc,
+                    'price' => (float)$price_inc,
+                    'price_tax_exc' => (float)$price_exc,
                     'brand' => self::helperBrand($products_id),
                     'category' => $category,
                     //'position' => 1
                 ]
             ];
+
+            $ga4list[] = [
+                "item_id" => "{$product['products_id']}",
+                "reference" => "{$product['products_model']}",
+                "item_model" => "{$product['products_model']}",
+                "item_name" => "{$product['products_name']}",
+                "price" => "{$price}",
+                "item_brand" => self::helperBrand($products_id),
+                "item_category" => "{$category}",
+                "item_list_name" => "{$category}",
+                "index" => 0
+            ];
+
+
             $list = json_encode($list);
-            return self::eventDatalayerPush('{
-                "pageCategory":"product",
-                "ecommerce": {
-                    "currencyCode":"' . $currency . '",
-                    "detail":{
-                        "products":' . $list . '
+            $ret = '';
+
+            if (!isset($config['collect_measuring_ga4']) || $config['collect_measuring_ga4']==1) {
+
+                $ret .= self::eventDatalayerPush(json_encode([
+                            "event" =>  "view_item",
+                            "currency" =>  $currency,
+                            "ecommerce" => [
+                                'items' => $ga4list
+                             ]]));
+            }
+
+            if (!isset($config['collect_measuring']) || $config['collect_measuring']==1) {
+                $ret .= self::eventDatalayerPush('{
+                    "pageCategory":"product",
+                    "ecommerce": {
+                        "currencyCode":"' . $currency . '",
+                        "detail":{
+                            "products":' . $list . '
+                        }
+                    },
+                    "google_tag_params":{
+                        "ecomm_pagetype":"product",
+                        "ecomm_prodid":"' . $product['model'] . '",
+                        "ecomm_totalvalue":' . number_format($price_inc, 2, ".", "") . ',
+                        "ecomm_category":"' . $category . '",
+                        "ecomm_totalvalue_tax_exc":' . number_format($price_exc, 2, ".", "") . '
                     }
-                },
-                "google_tag_params":{
-                    "ecomm_pagetype":"product",
-                    "ecomm_prodid":"' . $product['model'] . '",
-                    "ecomm_totalvalue":' . number_format($price_inc, 2, ".", "") . ',
-                    "ecomm_category":"' . $category . '",
-                    "ecomm_totalvalue_tax_exc":' . number_format($price_exc, 2, ".", "") . '
-                }
-            }');
+                }');
+            }
+            return $ret;
         }
     }
 
-    public static function orderStep($step, $pageCategory = 'order') {
+    public static function orderStep($step, $pageCategory = 'order', $config = []) {
         if (self::checkAPI()) return;
         $currencies = \Yii::$container->get('currencies');
         $currency = \Yii::$app->settings->get('currency');
@@ -717,7 +841,7 @@ EOD;
                 ->all();
             $group_properties_list = \yii\helpers\ArrayHelper::map($group_properties_list,'properties_id', 'properties_name');
 
-            $list = [];
+            $ga4list = $list = [];
             $position = 1;
             $totalvalue = 0;
             $totalvalue_exc = 0;
@@ -774,42 +898,72 @@ EOD;
                     "id" => "{$product['model']}",
                     "reference" => "{$product['model']}",
                     "name" => "{$product['name']}",
-                    "price" => "{$price}",
-                    "price_tax_exc" => "{$price_tax_exc}",
+                    "price" => (float)$price,
+                    "price_tax_exc" => (float)$price_tax_exc,
                     "brand" => "{$brand}",
                     "category" => "{$category_name}",
                     "variant" => "{$attributes}",
                     //"position" => $position++,
-                    "quantity" => "{$quantity}"
+                    "quantity" => (int)$quantity
                 ];
+                $ga4list[] = [
+                    "item_id" => (int)$product['id'],
+                    "reference" => "{$product['model']}",
+                    "item_model" => "{$product['model']}",
+                    "item_name" => "{$product['name']}",
+                    "price" => (float)$price,
+                    "item_brand" => "{$brand}",
+                    "item_category" => "{$category_name}",
+                    "item_variant" => "{$attributes}",
+                    "index" => $position,
+                    "quantity" => (int)$quantity
+                ];
+                $position++;
+                    
             }
             if (count($list)) {
                 $list = json_encode($list);
-                return self::eventDatalayerPush('{
-                    "pageCategory":"' . $pageCategory . '",
-                    "ecommerce": {
-                        "currencyCode":"' . $currency . '",
-                        "checkout": {
-                            "actionField":{
-                                "step":' . $step . '
+                $ret = '';
+                
+                if ($step<2 && !isset($config['collect_measuring_ga4']) || $config['collect_measuring_ga4']==1) {
+
+                    $ret .= self::eventDatalayerPush(json_encode([
+                        "event" =>  ($pageCategory == 'cart'?"view_cart":'begin_checkout'),
+                        "ecommerce" => [
+                            'currency' => $currency,
+                            'value' => number_format($totalvalue, 2, ".", ""),
+                            'items' => $ga4list
+                         ]]));
+                }
+
+                if (!isset($config['collect_measuring']) || $config['collect_measuring']==1) {
+                        $ret .= self::eventDatalayerPush('{
+                            "pageCategory":"' . $pageCategory . '",
+                            "ecommerce": {
+                                "currencyCode":"' . $currency . '",
+                                "checkout": {
+                                    "actionField":{
+                                        "step":' . $step . '
+                                    },
+                                    "products":' . $list . '
+                                }
                             },
-                            "products":' . $list . '
-                        }
-                    },
-                    "event":"checkout",
-                    "google_tag_params":{
-                        "ecomm_pagetype":"cart",
-                        "ecomm_prodid":["' . implode('","', $models_array) . '"],
-                        "ecomm_totalvalue":' . number_format($totalvalue, 2, ".", "") . ',
-                        "ecomm_totalvalue_tax_exc":' . number_format($totalvalue_exc, 2, ".", "") . '
-                    }
-                }');
+                            "event":"checkout",
+                            "google_tag_params":{
+                                "ecomm_pagetype":"cart",
+                                "ecomm_prodid":["' . implode('","', $models_array) . '"],
+                                "ecomm_totalvalue":' . number_format($totalvalue, 2, ".", "") . ',
+                                "ecomm_totalvalue_tax_exc":' . number_format($totalvalue_exc, 2, ".", "") . '
+                            }
+                        }');
+                }
+                return $ret;
             }
         }
         return;
     }
 
-    public static function orderSuccess() {
+    public static function orderSuccess($config = []) {
         if (self::checkAPI())
             return;
         $currencies = \Yii::$container->get('currencies');
@@ -839,9 +993,9 @@ EOD;
             $actionField = json_encode([
                 'id' => $order->info['order_id'],
                 'affiliation' => \common\classes\platform::name($order->info['platform_id']),
-                'revenue' => $_total,
-                'shipping' => $_shipping,
-                'tax' => $_tax,
+                'revenue' => (float)$_total,
+                'shipping' => (float)$_shipping,
+                'tax' => (float)$_tax,
                     //'coupon' => ($_coupon ? $_coupon : ''),
             ]);
         }
@@ -858,7 +1012,7 @@ EOD;
             $group_properties_list = \yii\helpers\ArrayHelper::map($group_properties_list,'properties_id', 'properties_name');
 
 
-            $list = [];
+            $list = $ga4list = [];
             $position = 1;
             $totalvalue = 0;
             $totalvalue_exc = 0;
@@ -913,26 +1067,62 @@ EOD;
                     "id" => "{$product['model']}",
                     //"reference" => "{$product['model']}",
                     "name" => "{$product['name']}",
-                    "price" => "{$price}",
+                    "price" => (float)$price,
                     //"price_tax_exc" => "{$price_tax_exc}",
                     "brand" => "{$brand}",
                     "category" => "{$category_name}",
                     "variant" => "{$attributes}",
-                    //"position" => $position++,
-                    "quantity" => "{$quantity}"
+                    //"position" => $position,
+                    "quantity" => (int)$quantity
                 ];
+
+                $ga4list[] = [
+                    "item_id" => "{$product['id']}",
+                    "reference" => "{$product['model']}",
+                    "item_model" => "{$product['model']}",
+                    "item_name" => "{$product['name']}",
+                    "price" => (float)$price,
+                    "item_brand" => "{$brand}",
+                    "item_category" => "{$category_name}",
+                    "item_variant" => "{$attributes}",
+                    "index" => $position,
+                    "quantity" => (int)$quantity
+                ];
+                $position++;
             }
             if (count($list)) {
                 $list = json_encode($list);
-                return self::eventDatalayerPush('{
-                    "ecommerce":{
-                        "currencyCode":"' . $order->info['currency'] . '",
-                        "purchase":{
-                            "actionField":' . $actionField . ',
-                            "products":' . $list . '
+                $ret = '';
+
+                if (!isset($config['collect_measuring_ga4']) || $config['collect_measuring_ga4']==1) {
+                    $ret .= self::eventDatalayerPush(json_encode([
+                        "event" =>  "purchase",
+                        "ecommerce" => [
+                            'transaction_id' => $order->info['order_id'],
+                            'currency' => $order->info['currency'],
+                            'affiliation' => \common\classes\platform::name($order->info['platform_id']),
+                            'value' => $_total,
+                            'shipping' => $_shipping,
+                            'tax' => $_tax,
+                            'items' => $ga4list
+                         ]]));
+                }
+
+                if (!isset($config['collect_measuring']) || $config['collect_measuring']==1) {
+                    $ret .= self::eventDatalayerPush('{
+                        "ecommerce":{
+                            "currencyCode":"' . $order->info['currency'] . '",
+                            "purchase":{
+                                "actionField":' . $actionField . ',
+                                "products":' . $list . '
+                            }
                         }
-                    }
-                }');
+                    }');
+                }
+
+                return $ret;
+
+
             }
         }
         return;
@@ -958,7 +1148,7 @@ EOD;
                     'products' => [[
                         'name' => $product['products_name'],
                         'id' => $product['products_model'],
-                        'price' => $price_inc,
+                        'price' => (float)$price_inc,
                         'brand' => $brand,
                         'category' => $category,
                         //'variant' => '',

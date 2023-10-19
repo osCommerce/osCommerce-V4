@@ -3,11 +3,12 @@ imports:
 
 build:
     environment:
-        php: '7.2.13'
+        php: '7.4'
     tests:
         override:
             -
-                command: 'vendor/bin/phpunit --coverage-clover=clover.xml --exclude-group slow'
+                command: 'vendor/bin/phpunit --coverage-clover=clover.xml --exclude-group flaky'
                 coverage:
                     file: 'clover.xml'
                     format: 'clover'
+            - php-scrutinizer-run

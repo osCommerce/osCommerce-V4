@@ -50,7 +50,7 @@ class PagingBar extends Widget
         $format_display_count = $this->params['listing_display_count_format'];
       }
 
-      if (Info::widgetSettings('Listing', 'fbl')){
+      if (Info::widgetSettings('Listing', 'fbl', ($this->params['page_name'] ?? false))){
         return '';
       }
       

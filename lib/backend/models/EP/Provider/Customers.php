@@ -272,9 +272,30 @@ class Customers extends ProviderAbstract implements ImportInterface, ExportInter
             $importData['address']['address_book_id'] = $customerModel->customers_default_address_id;
         }
          */
-        $importData['address'][0]['is_default'] = 1;
-        $customerImportData['addresses'] = $importData['address'];
-        $customerModel->indexedCollectionAppendMode('addresses',true);
+        if ( isset($importData['address']) && is_array($importData['address']) && count($importData['address'])>0 ) {
+            foreach ($importData['address'] as $idx=>$address) {
+                // need remove all empty addresses
+                $all_empty = true;
+                foreach ($address as $a_val) {
+                    if ( is_numeric($a_val) ) {
+                        if ( !empty($a_val) ) {
+                            $all_empty = false;
+                            break;
+                        }
+                    }elseif ( !empty($a_val) ) {
+                        $all_empty = false;
+                        break;
+                    }
+                }
+                if ($all_empty) {
+                    unset($importData['address'][$idx]);
+                }
+            }
+            $importData['address'] = array_values($importData['address']);
+            $importData['address'][0]['is_default'] = 1;
+            $customerImportData['addresses'] = $importData['address'];
+            $customerModel->indexedCollectionAppendMode('addresses',true);
+        }
 
         if ( isset($importData['info']) && is_array($importData['info']) ) {
             $customerImportData['info'] = [$importData['info']];

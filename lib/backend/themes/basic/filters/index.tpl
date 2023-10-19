@@ -710,8 +710,7 @@ $(document).ready(function() {
 </script>
 {if $filter_selected == 'orders'}
     
-{if \common\helpers\Acl::checkExtensionAllowed('ShippingCarrierPick', 'allowed')}
-    {assign var="ext" value=\common\helpers\Acl::checkExtensionAllowed('ShippingCarrierPick', 'allowed')}
+{if $ext = \common\helpers\Extensions::isAllowed('ShippingCarrierPick')}
     {$ext::orderIndexJs()}
 {/if}
 

@@ -162,7 +162,7 @@ return [
                         $productImport = [];
                         $localProduct = \common\api\models\AR\Products::find()->where(['products_id' => $products_id])->one();
                         if ($localProduct) {
-                            $productImport['without_inventory'] = !\common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed');
+                            $productImport['without_inventory'] = !\common\helpers\Extensions::isAllowed('Inventory');
                             $productImport['weight_cm'] = $product['products_weight'];
                             $productImport['weight_in'] = $product['products_weight'] * 2.20462;
                             $productImport['assigned_platforms'] = $assign_to_all_platform;
@@ -186,7 +186,7 @@ return [
                             "where p.products_id = '" . (int)$products_id . "' group by p.products_id, p.products_price " .
                             " having count(pa.options_values_price) > 0"
                         );
-                        if (tep_db_num_rows($get_data_r) == 0 || !\common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed')) {
+                        if (tep_db_num_rows($get_data_r) == 0 || !\common\helpers\Extensions::isAllowed('Inventory')) {
                             if ($localProduct) {
                                 \common\models\SuppliersProducts::deleteAll(['products_id' => $products_id]);
                                 $productImport['suppliers_product'] = [

@@ -441,10 +441,8 @@ class Warehouses {
             $current_platform_id = \Yii::$app->get('platform')->config()->getId();
             $platformWarehousedOrdered = \Yii::$app->get('platform')->config()->assignedWarehouses();
             $suppliers_id = 0; // all suppliers
-            if ($ext = \common\helpers\Acl::checkExtension('SupplierPurchase', 'allowed')) {
-                if ($ext::allowed()) {
-                    $suppliers_id = $ext::getSupplierFromUprid($original_products_id);
-                }
+            if ($ext = \common\helpers\Extensions::isAllowed('SupplierPurchase')) {
+                $suppliers_id = $ext::getSupplierFromUprid($original_products_id);
             }
             $active_suppliers = \common\helpers\Suppliers::orderedActiveIds();
             if ( $suppliers_id>0 ) {
@@ -628,10 +626,8 @@ class Warehouses {
             $warehouse_id = \common\helpers\Warehouses::get_default_warehouse();
         }*/
         //$suppliers_id = 0; // all suppliers
-        if (($ext = \common\helpers\Acl::checkExtension('SupplierPurchase', 'allowed')) && $suppliers_id == 0) {
-            if ($ext::allowed()) {
-                $suppliers_id = $ext::getSupplierFromUprid($products_id);
-            }
+        if (($ext = \common\helpers\Extensions::isAllowed('SupplierPurchase')) && $suppliers_id == 0) {
+            $suppliers_id = $ext::getSupplierFromUprid($products_id);
         }
         $products_id = \common\helpers\Inventory::normalizeInventoryId($products_id);
 // {{   // needed to calculate allocated stock
@@ -660,7 +656,10 @@ class Warehouses {
                     $warehousesIds[] = $warehouses['warehouse_id'];
                 }
 
-                if ($ext = \common\helpers\Acl::checkExtensionAllowed('WarehousePriority', 'getInstance')) {
+                /**
+                 * @var $ext \common\extensions\WarehousePriority\WarehousePriority
+                 */
+                if ($ext = \common\helpers\Extensions::isAllowed('WarehousePriority')) {
                     $orderedProduct = [
                         'products_id' => $products_id,
                         'products_quantity' => $update_qty,

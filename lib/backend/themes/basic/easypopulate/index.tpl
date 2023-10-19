@@ -131,7 +131,7 @@
                     </div>
                 </div>
             </div>
-            <div class="widget-content fields_style">
+            <div class="widget-content fields_style" style="padding-top: 50px">
                 <div class="scroll-table-workaround">
                 <table class="js-export_columns table -table-striped -table-hover -table-responsive -table-ordering -no-footer">
                     <thead>
@@ -835,11 +835,11 @@
 
         var dtDef = $.fn.dataTable.defaults;
         $.extend(true, $.fn.dataTable.defaults, {
-            searching: false,
+            //searching: true,
             ordering:  false,
-            sDom:'',
-            scrollY: '200px',
-            scrollCollapse: false,
+            sDom:'lfrtip',
+            //scrollY: '200px',
+            //scrollCollapse: false,
             paging: false,
             fnDrawCallback:function(){ }
         } );
@@ -870,13 +870,19 @@
         });
 // } checkboxes handle
       $exportTable.DataTable({
-              searching: false,
+              //searching: true,
               ordering:  false,
-              sDom:'',
-              scrollY: '200px',
-              scrollCollapse: false,
+              sDom:'lfrtip',
+              //scrollY: '200px',
+              //scrollCollapse: false,
               paging: false,
-              fnDrawCallback:function(){ }
+              fnDrawCallback:function(){
+                  var search_input = $(this).closest('.dataTables_wrapper').find('div[id$=_filter] input');
+                  if (search_input.parent().hasClass('input-group')) return;
+                  search_input.addClass('form-control')
+                  search_input.wrap('<div class="input-group input-group-order" style="position: absolute; right: 10px; top: 10px;"></div>');
+                  search_input.parent().prepend('<span class="input-group-addon dt-ic-search"><i class="icon-search"></i></span>');
+              }
       });
       $('#frmDownload').on('export_fields_confirmed',function(){
           var $popupBox = $('#popupSelectExportFields');

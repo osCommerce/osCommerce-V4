@@ -1,75 +1,88 @@
 <div class="visibility">
-  <div class="buttons">
-    <span class="btn btn-check">{$smarty.const.TEXT_CHECK_ALL}</span>
-    <span class="btn btn-uncheck">{$smarty.const.TEXT_UNCHECK_ALL}</span>
-  </div>
 
-  <div class="row">
-    <div class="col-md-6 visibility-pages">
+    <div class="row">
+        <div class="col visibility-pages">
+            <h4>{$smarty.const.TEXT_PAGES}</h4>
+            {$pages = [
+                'visibility_home' => $smarty.const.TEXT_HOME,
+                'visibility_product' => $smarty.const.TEXT_PRODUCT,
+                'visibility_catalog' => $smarty.const.TEXT_LISTING,
+                'visibility_info' => $smarty.const.TEXT_INFORMATION,
+                'visibility_cart' => $smarty.const.TEXT_SHOPPING_CART,
+                'visibility_checkout' => $smarty.const.TEXT_CHECKOUT,
+                'visibility_success' => $smarty.const.TEXT_CHECKOUT_SUCCESS,
+                'visibility_account' => $smarty.const.TEXT_ACCOUNT,
+                'visibility_login' => $smarty.const.TEXT_LOGIN_CREATE_ACCOUNT,
+                'visibility_other' => $smarty.const.TEXT_OTHER
+            ]}
+            <label class="form-check">
+                <input type="checkbox"
+                       name="visibility-page-all"
+                       class="form-check-input visibility-page-all"/>
+                {$smarty.const.TEXT_ALL}
+            </label>
+            {foreach $pages as $page => $title}
+                <label class="form-check">
+                    <input type="checkbox"
+                           name="setting[0][{$page}]"
+                           class="form-check-input visibility-page"
+                           {if !$settings[0][$page]} checked{/if}/>
+                    {$title}
+                </label>
+            {/foreach}
+        </div>
+        <div class="col">
+            <h4>&nbsp;</h4>
+            {$statuses = [
+                'visibility_first_view' => 'First visit',
+                'visibility_more_view' => 'More then one visit',
+                'visibility_logged' => 'Logged in',
+                'visibility_not_logged' => 'No logged in'
+            ]}
+            {foreach $statuses as $status => $title}
+                <label class="form-check">
+                    <input type="checkbox"
+                           name="setting[0][{$status}]"
+                           class="form-check-input"
+                            {if !$settings[0][$status]} checked{/if}/>
+                    {$title}
+                </label>
+            {/foreach}
+        </div>
 
-      <p><label><input type="checkbox" name="setting[0][visibility_home]"{if !$settings[0].visibility_home} checked{/if}/> {$smarty.const.TEXT_HOME}</label></p>
-      <p><label><input type="checkbox" name="setting[0][visibility_product]"{if !$settings[0].visibility_product} checked{/if}/> {$smarty.const.TEXT_PRODUCT}</label></p>
-      <p><label><input type="checkbox" name="setting[0][visibility_catalog]"{if !$settings[0].visibility_catalog} checked{/if}/> {$smarty.const.TEXT_LISTING}</label></p>
-      <p><label><input type="checkbox" name="setting[0][visibility_info]"{if !$settings[0].visibility_info} checked{/if}/> {$smarty.const.TEXT_INFORMATION}</label></p>
-      <p><label><input type="checkbox" name="setting[0][visibility_cart]"{if !$settings[0].visibility_cart} checked{/if}/> {$smarty.const.TEXT_SHOPPING_CART}</label></p>
-      <p><label><input type="checkbox" name="setting[0][visibility_checkout]"{if !$settings[0].visibility_checkout} checked{/if}/> {$smarty.const.TEXT_CHECKOUT}</label></p>
-      <p><label><input type="checkbox" name="setting[0][visibility_success]"{if !$settings[0].visibility_success} checked{/if}/> {$smarty.const.TEXT_CHECKOUT_SUCCESS}</label></p>
-      <p><label><input type="checkbox" name="setting[0][visibility_account]"{if !$settings[0].visibility_account} checked{/if}/> {$smarty.const.TEXT_ACCOUNT}</label></p>
-      <p><label><input type="checkbox" name="setting[0][visibility_login]"{if !$settings[0].visibility_login} checked{/if}/> {$smarty.const.TEXT_LOGIN_CREATE_ACCOUNT}</label></p>
-      <p><label><input type="checkbox" name="setting[0][visibility_other]"{if !$settings[0].visibility_other} checked{/if}/> {$smarty.const.TEXT_OTHER}</label></p>
+        {foreach \common\helpers\Hooks::getList('design/box-edit', 'hide-widget') as $filename}
+            {include file=$filename}
+        {/foreach}
+
     </div>
-    <div class="col-md-6">
-
-      <p><label><input type="checkbox" name="setting[0][visibility_first_view]"{if !$settings[0].visibility_first_view} checked{/if}/> First visit</label></p>
-      <p><label><input type="checkbox" name="setting[0][visibility_more_view]"{if !$settings[0].visibility_more_view} checked{/if}/> More then one visit</label></p>
-      <p><label><input type="checkbox" name="setting[0][visibility_logged]"{if !$settings[0].visibility_logged} checked{/if}/> Logged in</label></p>
-      <p><label><input type="checkbox" name="setting[0][visibility_not_logged]"{if !$settings[0].visibility_not_logged} checked{/if}/> No logged in</label></p>
-    </div>
-  </div>
-
-  <div class="buttons">
-    <span class="btn btn-check">{$smarty.const.TEXT_CHECK_ALL}</span>
-    <span class="btn btn-uncheck">{$smarty.const.TEXT_UNCHECK_ALL}</span>
-  </div>
 </div>
 
 
-
-<script type="text/javascript">
-  (function($){
-    $(function(){
-
-      function defaultChecked(){
-        if ($('.page-link-home').hasClass('active')){
-          $('.visibility input[name="setting[0][visibility_home]"]').prop({ 'checked': 'true', 'disabled': 'true'})
-        }
-        if ($('.page-link-product').hasClass('active')){
-          $('.visibility input[name="setting[0][visibility_product]"]').prop({ 'checked': 'true', 'disabled': 'true'})
-        }
-        if ($('.page-link-catalog').hasClass('active')){
-          $('.visibility input[name="setting[0][visibility_catalog]"]').prop({ 'checked': 'true', 'disabled': 'true'})
-        }
-        if ($('.page-link-info').hasClass('active')){
-          $('.visibility input[name="setting[0][visibility_info]"]').prop({ 'checked': 'true', 'disabled': 'true'})
-        }
-        if ($('.page-link-cart').hasClass('active')){
-          $('.visibility input[name="setting[0][visibility_cart]"]').prop({ 'checked': 'true', 'disabled': 'true'})
-        }
-        if ($('.page-link-success').hasClass('active')){
-          $('.visibility input[name="setting[0][visibility_success]"]').prop({ 'checked': 'true', 'disabled': 'true'})
-        }
-      }
-      defaultChecked();
-
-      $('.btn-check').on('click', function(){
-        $('.visibility-pages input').prop('checked', 'true').trigger('change');
-        defaultChecked()
-      });
-      $('.btn-uncheck').on('click', function(){
-        $('.visibility-pages input').prop('checked', 0).trigger('change');
-        defaultChecked()
-      })
-
+<script>
+    $(function () {
+        const $checkBoxes = $('.visibility-page');
+        const $checkBoxAll = $('.visibility-page-all');
+        $checkBoxAll.on('change', function () {
+            if ($checkBoxAll.prop('checked')) {
+                $checkBoxes.prop('checked', true).trigger('change')
+            } else {
+                $checkBoxes.prop('checked', false).trigger('change')
+            }
+        });
+        checkAll();
+        $checkBoxes.on('change', checkAll);
+        function checkAll() {
+            let allChecked = true;
+            $checkBoxes.each(function () {
+                if (!$(this).prop('checked')) {
+                    allChecked = false
+                }
+            });
+            if (allChecked) {
+                $checkBoxAll.prop('checked', true);
+            } else {
+                $checkBoxAll.prop('checked', false);
+            }
+        };
     })
-  })(jQuery);
 </script>

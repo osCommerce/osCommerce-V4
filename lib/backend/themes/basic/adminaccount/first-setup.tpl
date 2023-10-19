@@ -7,7 +7,7 @@
         <title>Admin Account | Trueloaded Admin</title>
         <link rel="stylesheet" href="{$app->view->theme->baseUrl}/css/fontawesome/font-awesome.min.css">
         <link href="{$app->view->theme->baseUrl}/css/login.css?1" rel="stylesheet" type="text/css" />
-        <script type="text/javascript" src="{$app->view->theme->baseUrl}/js/libs/jquery-3.4.1.min.js"></script>
+        <script type="text/javascript" src="{$app->request->baseUrl}/plugins/jquery.min.js"></script>
         <script type="text/javascript" src="{$app->request->baseUrl}/plugins/validation/jquery.validate.min.js"></script>
         <script type="text/javascript" src="{$app->view->theme->baseUrl}/js/login.js"></script>
     </head>

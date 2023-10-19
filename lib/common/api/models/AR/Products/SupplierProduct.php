@@ -49,7 +49,8 @@ class SupplierProduct extends EPMap
     public function parentEPMap(EPMap $parentObject)
     {
         $this->products_id = $parentObject->products_id;
-        if (is_subclass_of($parentObject, 'backend\models\EP\Provider\Inventory')){
+//        if (is_subclass_of($parentObject, 'backend\models\EP\Provider\Inventory')){
+        if (is_subclass_of($parentObject, 'common\extensions\Inventory\EP\Providers\Inventory')){
             $this->uprid = $parentObject->products_id;
         } else {
             $this->uprid = $parentObject->products_id;

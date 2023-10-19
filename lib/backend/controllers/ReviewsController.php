@@ -428,9 +428,7 @@ class ReviewsController extends Sceleton {
                 tep_db_query("update " . TABLE_REVIEWS . " set reviews_rating = '" . tep_db_input($reviews_rating) . "', last_modified = now(), new = 0, status = $status where reviews_id = '" . (int)$reviews_id . "'");
                 tep_db_query("update " . TABLE_REVIEWS_DESCRIPTION . " set reviews_text = '" . tep_db_input($reviews_text) . "' where reviews_id = '" . (int)$reviews_id . "'");
                 
-                if ($status){
-                    $this->checkCustomerAction($reviews_id);
-                }
+                $this->afterStatusChange($reviews_id, $status);
 
                 $message = "Item updated";
             } else {
@@ -476,15 +474,9 @@ class ReviewsController extends Sceleton {
         return $this->actionEdit();
     }
     
-    public function checkCustomerAction($reviews_id){
-        if (\common\helpers\Acl::checkExtensionAllowed('BonusActions')) {
-            $cus = tep_db_fetch_array(tep_db_query("select customers_id from " . TABLE_REVIEWS . " where reviews_id = '" . (int)$reviews_id . "'"));
-            if ($cus){
-                $instance = \common\extensions\BonusActions\models\PromotionsBonusObserver::getInstance();
-                if ($instance){
-                    $result = $instance->triggerAction('post_review', $cus['customers_id']);
-                }
-            }
+    public function afterStatusChange($reviews_id, $status) {
+        foreach (\common\helpers\Hooks::getList('reviews/after-status-change') as $filename) {
+            include($filename);
         }
     }
     
@@ -605,6 +597,7 @@ class ReviewsController extends Sceleton {
         $selected_ids = Yii::$app->request->post('selected_ids');
         foreach ($selected_ids as $id) {
             tep_db_query("update " . TABLE_REVIEWS . " set status = '1', new = '0' where reviews_id = '" . (int)$id . "'");
+            $this->afterStatusChange($id, 1);
         }
     }
     
@@ -614,6 +607,7 @@ class ReviewsController extends Sceleton {
         $selected_ids = Yii::$app->request->post('selected_ids');
         foreach ($selected_ids as $id) {
             tep_db_query("update " . TABLE_REVIEWS . " set status = '0', new = '0' where reviews_id = '" . (int)$id . "'");
+            $this->afterStatusChange($id, 0);
         }
     }
     
@@ -622,9 +616,7 @@ class ReviewsController extends Sceleton {
         $id = Yii::$app->request->post('id');
         $status = Yii::$app->request->post('status');
         tep_db_query("update " . TABLE_REVIEWS . " set status = '" . ($status == 'true' ? 1 : 0) . "', new = '0' where reviews_id = '" . (int)$id . "'");
-        if ($status == 'true'){
-            $this->checkCustomerAction($id);
-        }
+        $this->afterStatusChange($id, $status == 'true');
     }
 
 } 

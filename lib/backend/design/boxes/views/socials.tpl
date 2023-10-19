@@ -7,19 +7,19 @@
     <div class="popup-content box-img">
         <div class="tabbable tabbable-custom">
             <div class="nav nav-tabs">
-                <div class="active"><a href="#type" data-toggle="tab">Socials</a></div>
-                <div><a href="#style" data-toggle="tab">{$smarty.const.HEADING_STYLE}</a></div>
-                <div><a href="#align" data-toggle="tab">{$smarty.const.HEADING_WIDGET_ALIGN}</a></div>
-                <div><a href="#visibility" data-toggle="tab">{$smarty.const.TEXT_VISIBILITY_ON_PAGES}</a></div>
+                <div class="active" data-bs-toggle="tab" data-bs-target="#type"><a>Socials</a></div>
+                <div data-bs-toggle="tab" data-bs-target="#style"><a>{$smarty.const.HEADING_STYLE}</a></div>
+                <div data-bs-toggle="tab" data-bs-target="#align"><a>{$smarty.const.HEADING_WIDGET_ALIGN}</a></div>
+                <div data-bs-toggle="tab" data-bs-target="#visibility"><a>{$smarty.const.TEXT_VISIBILITY_ON_PAGES}</a></div>
             </div>
             <div class="tab-content">
                 <div class="tab-pane active menu-list" id="type">
                     <div class="tabbable tabbable-custom">
                         <div class="nav nav-tabs">
-                            <div class="active"><a href="#facebook" data-toggle="tab">Facebook</a></div>
-                            <div><a href="#instagram" data-toggle="tab">Instagram</a></div>
-                            <div><a href="#twitter" data-toggle="tab">Twitter</a></div>
-							<div><a href="#youtube" data-toggle="tab">YouTube</a></div>
+                            <div class="active" data-bs-toggle="tab" data-bs-target="#facebook"><a>Facebook</a></div>
+                            <div data-bs-toggle="tab" data-bs-target="#instagram"><a>Instagram</a></div>
+                            <div data-bs-toggle="tab" data-bs-target="#twitter"><a>Twitter</a></div>
+							<div data-bs-toggle="tab" data-bs-target="#youtube"><a>YouTube</a></div>
                         </div>
                         <div class="tab-content">
                             <div class="tab-pane active" id="facebook">

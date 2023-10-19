@@ -472,8 +472,8 @@ class Orders_statusController extends Sceleton  {
             }
         }
 
-        if (\common\helpers\Acl::checkExtensionAllowed('OrderStatusRules', 'allowed')){
-            \common\extensions\OrderStatusRules\OrderStatusRules::orderStatusSave($orders_status_id);
+        if ($ext = \common\helpers\Extensions::isAllowed('OrderStatusRules')) {
+            $ext::orderStatusSave($orders_status_id);
         }
 
         echo json_encode([
@@ -485,8 +485,8 @@ class Orders_statusController extends Sceleton  {
 
     public function actionOrderStatusRules()
     {
-        if (\common\helpers\Acl::checkExtensionAllowed('OrderStatusRules', 'allowed')){
-            return \common\extensions\OrderStatusRules\OrderStatusRules::orderStatusAction($this);
+        if ($ext = \common\helpers\Extensions::isAllowed('OrderStatusRules')) {
+            return $ext::orderStatusAction($this);
         }
         return '';
     }

@@ -4,7 +4,9 @@
 <div {if $name}id="{$name}"{else}class="select-products"{/if}></div>
 <script type="text/javascript">
     $(function(){
+      try {
         $('{if $name}#{$name}{else}.select-products{/if}').selectProducts({
+            selectTitle: '{$selectTitle}',
             selectedName: '{$selectedName}',
             selectedProducts: JSON.parse('{$selectedProducts}'),
             selectedPrefix: '{$selectedPrefix}',
@@ -12,6 +14,7 @@
             selectedBackLink: '{$selectedBackLink}',
             selectedBackLink_c: '{$selectedBackLink_c}',
         })
+        } catch (e)  {}
     })
 </script>
 {/if}

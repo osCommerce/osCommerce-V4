@@ -13,7 +13,7 @@
 <br>
 <div class="btn-toolbar btn-toolbar-order">
     <form action="{\Yii::$app->urlManager->createUrl(['error-log-viewer/view'])}" method="get" id="view">
-        <input type="hidden" value="{$file->sourceFile}" name="log" id="file">
+        <input type="hidden" value="{$file->mask}" name="log" id="file">
     </form>
     <input type="submit" onclick="submit()" class="btn btn-no-margin" value="{$smarty.const.IMAGE_VIEW}">
     <button class="btn btn-delete btn-no-margin" onclick="deleteLog()">{$smarty.const.IMAGE_DELETE}</button>

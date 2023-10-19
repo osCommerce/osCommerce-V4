@@ -47,7 +47,7 @@ class SubProduct
 
                 if ( $childProduct->products_id_price==$childProduct->parent_products_id ) {
                     // child use parent price
-                    $childProduct->importArray(['attributes' => $applyAttributes, 'inventory' => $data['inventory']]);
+                    $childProduct->importArray(['attributes' => $applyAttributes, 'inventory' => $data['inventory']??null]);
                 }else {
                     // child with own price
                     $common_inventory = [];

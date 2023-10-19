@@ -525,7 +525,9 @@ class TextsController extends Sceleton {
         
         $admin = new Admin;
         $a_info = $admin->getAdditionalInfo();
-        
+        if (!isset($a_info['key_entity'])){
+            $a_info['key_entity'] = [];
+        }
         //$this->selectedMenu = array('settings', 'translation', 'texts');
         $this->selectedMenu = array('design_controls', 'texts');
         $this->navigation[] = array('link' => Yii::$app->urlManager->createUrl('texts/index'), 'title' => HEADING_TITLE);
@@ -671,6 +673,7 @@ class TextsController extends Sceleton {
 
           $total_query = tep_db_query("select t.translation_key, t.translation_entity,  min(translated) as translated from " . TABLE_TRANSLATION. " t where t.language_id in (" . (count( $a_info['shown_language'])? implode(',',  $a_info['shown_language']):(int)$languages_id ) . ") and t.hash in (select distinct t1.hash from " . TABLE_TRANSLATION . " t1 where t1.language_id in (" . (count( $a_info['shown_language'])? implode(',',  $a_info['shown_language']):(int)$languages_id ) . ") " . (tep_not_null($selected_entity)? "and t1.translation_entity = '" . $selected_entity . "'" : '') . " " . (tep_not_null($by) && tep_not_null($search) ? " and t1." . ( $by == 'translation_entity' ? "translation_entity = '" . tep_db_input($search) . "' " : "$by like " . ($sensitive?" BINARY " :'') . " '%" . tep_db_input($search) . "%'")  : (tep_not_null($search) ? " and (t1.translation_entity like " . ($sensitive?" BINARY " :'') . " '%" . tep_db_input($search) . "%' or t1.translation_key like " . ($sensitive?" BINARY " :'') . " '%" . tep_db_input($search) . "%' or t1.translation_value like " . ($sensitive?" BINARY " :'') . " '%" . tep_db_input($search) . "%')" : '')). ") $add_search group by t.translation_key, t.translation_entity order by t.translation_key, t.translation_entity");
 
+          $cursor = 0;
           $_next_ut = 0;
           $total_num = tep_db_num_rows($total_query);
           $have_untranslated = false;
@@ -678,7 +681,6 @@ class TextsController extends Sceleton {
             $spl = new \SplFixedArray($total_num+1);
             $i =0;
            
-            $cursor = 0;
             $found = false;
             $setled = false;
             while($_row = tep_db_fetch_array($total_query)){
@@ -1080,12 +1082,14 @@ class TextsController extends Sceleton {
     
     public function actionExport() {
         \common\helpers\Translation::init('admin/texts');
+        \common\helpers\Translation::init('admin/easypopulate');
         $this->layout = false;
         $languages = \common\helpers\Language::get_languages(true);
         return $this->render('export', ['languages' => $languages]);
     }
     
     public function actionExportStart() {
+        $this->layout = false;
         $params = Yii::$app->request->post('params');
         parse_str($params, $filter);
         $sensitive = '';
@@ -1128,32 +1132,50 @@ class TextsController extends Sceleton {
         }
         
         \common\helpers\Translation::init('admin/texts');
-        
-        $filename  = 'Keys_' . strftime( '%Y%b%d_%H%M' ) . '.csv';
-        $CSV = new \backend\models\EP\Formatter\CSV('write', array(), $filename);
-        
+
+        $format = (string)Yii::$app->request->post('format', 'XLSX');
+        if ( $format=='XLSX' ) {
+            $mime_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+            $extension = 'xlsx';
+            $CSV = new \backend\models\EP\Writer\XLSX([
+                'filename' => 'php://output',
+            ]);
+        }else{
+            $mime_type = 'application/vnd.ms-excel';
+            $extension = 'csv';
+            $CSV = new \backend\models\EP\Writer\CSV([
+                'filename' => 'php://output',
+            ]);
+        }
+        $filename  = 'Keys_' . strftime( '%Y%b%d_%H%M' ) . '.'.$extension;
+
+        Yii::$app->response->format = \yii\web\Response::FORMAT_RAW;
+        Yii::$app->response->setDownloadHeaders($filename, $mime_type, false);
+        Yii::$app->response->content = null;
+        Yii::$app->response->send();
+
         $_def_id = \common\helpers\Language::get_default_language_id();
         $languages = \common\helpers\Language::get_languages(true);
         
         $write_data = [];
         foreach ($languages as $_lang) {
             if ($_lang['id'] == $_def_id && in_array($_lang['id'], $sl) ) {
-                $write_data[] = $_lang['code'];
-                $write_data[] = $_lang['code'] . '_TSL';
+                $write_data['def_value'] = $_lang['code'];
+                $write_data['def_tsl'] = $_lang['code'] . '_TSL';
             }
         }
         foreach ($languages as $_lang) {
             if ($_lang['id'] != $_def_id && in_array($_lang['id'], $sl) ) {
-                $write_data[] = $_lang['code'];
-                $write_data[] = $_lang['code'] . '_TSL';
+                $write_data[$_lang['code'].'_value'] = $_lang['code'];
+                $write_data[$_lang['code'].'_tsl'] = $_lang['code'] . '_TSL';
             }
         }
-        $write_data[] = TABLE_HEADING_LANGUAGE_KEY;
-        $write_data[] = TABLE_HEADING_LANGUAGE_ENTITY;
-        $write_data[] = 'HASH';
+        $write_data['translation_key'] = TABLE_HEADING_LANGUAGE_KEY;
+        $write_data['translation_entity'] = TABLE_HEADING_LANGUAGE_ENTITY;
+        $write_data['hash'] = 'HASH';
 
-        $CSV->write_array($write_data);
-        
+        $CSV->setColumns($write_data);
+
         if (in_array($_def_id, $sl)) {
             $select = "select t.translation_value as def_value, t.translated as def_tsl, ";
         } else {
@@ -1177,8 +1199,9 @@ class TextsController extends Sceleton {
         while( $data = tep_db_fetch_array( $query ) ) {
 //            $data = preg_replace("/\r?\n/", '\n', $data);
 //            $data = preg_replace("/\t/", '\t', $data);
-            $CSV->write_array($data);
+            $CSV->write($data);
         }
+        $CSV->close();
         die();
     }
     
@@ -1193,54 +1216,54 @@ class TextsController extends Sceleton {
         $addnew = (int)Yii::$app->request->post('addnew');
         
         $languages = \common\helpers\Language::get_languages(true);
-        
-        $CSV = new \backend\models\EP\Formatter\CSV('read', array(), $_FILES['usrfl']['tmp_name']);
-        
-        $uploadedHeaders = $CSV->getHeaders();
-        $CSV->close();
-        $CSV = new \backend\models\EP\Formatter\CSV('read', array(), $_FILES['usrfl']['tmp_name']);
-        $uploadedKeys = array_flip($uploadedHeaders);
 
-        $CSV->setReadRemapArray($uploadedHeaders);
-        
-        while ($data = $CSV->read_array()) {
-            if (isset($data[$uploadedKeys['HASH']]) && !empty($data[$uploadedKeys['HASH']])) {
-                foreach ($languages as $_lang) {
-                    if (isset($uploadedKeys[$_lang['code']])) {
-                        
-                        $check_hash_query = tep_db_query("SELECT * FROM " . TABLE_TRANSLATION . " WHERE language_id='" . (int)$_lang['id'] . "' and hash = '" . tep_db_input($data[$uploadedKeys['HASH']]) . "'");
-                        if (tep_db_num_rows($check_hash_query) > 0) {
-                            if ($override) {
-                                tep_db_query("update " . TABLE_TRANSLATION . " set translation_value = '" . tep_db_input($data[$uploadedKeys[$_lang['code']]]) . "', translated = '" . tep_db_input($data[$uploadedKeys[$_lang['code'] . '_TSL']]) . "' where language_id = '" . (int)$_lang['id'] . "' and hash = '" . tep_db_input($data[$uploadedKeys['HASH']]) . "'");
-                            }
-                        } elseif (isset($data[$uploadedKeys['Entity']]) && isset($data[$uploadedKeys['Key']]) ) {
-                            $check_hash_query = tep_db_query("SELECT * FROM " . TABLE_TRANSLATION . " WHERE language_id='" . (int)$_lang['id'] . "' and translation_key = '" . tep_db_input($data[$uploadedKeys['Key']]) . "' and translation_entity = '" . tep_db_input($data[$uploadedKeys['Entity']]) . "'");
-                            if (tep_db_num_rows($check_hash_query) > 0) {
-                                if ($override) {
-                                    tep_db_query("update " . TABLE_TRANSLATION . " set translation_value = '" . tep_db_input($data[$uploadedKeys[$_lang['code']]]) . "', translated = '" . tep_db_input($data[$uploadedKeys[$_lang['code'] . '_TSL']]) . "' where language_id = '" . (int)$_lang['id'] . "' and hash = '" . tep_db_input($data[$uploadedKeys['HASH']]) . "'");
-                                }
-                            } elseif ($addnew && !empty($data[$uploadedKeys['Key']]) && !empty($data[$uploadedKeys['Entity']])) {
-                                $hash = md5($data[$uploadedKeys['Key']] . '-' . $data[$uploadedKeys['Entity']]);
-                                $sql_data_array = [
-                                    'language_id' => (int)$_lang['id'],
-                                    'translation_key' => $data[$uploadedKeys['Key']],
-                                    'translation_entity' => $data[$uploadedKeys['Entity']],
-                                    'translation_value' => $data[$uploadedKeys[$_lang['code']]],
-                                    'hash' => $hash,
-                                    'translated' => $data[$uploadedKeys[$_lang['code'] . '_TSL']],
-                                ];
-                                tep_db_perform(TABLE_TRANSLATION, $sql_data_array);
-                            }
+        $filename = $_FILES['usrfl']['tmp_name'];
+        if ( substr($_FILES['usrfl']['name'],-5)=='.xlsx' ) {
+            $reader = new \backend\models\EP\Reader\XLSX([
+                'filename' => $filename,
+            ]);
+        }else{
+            $reader = new \backend\models\EP\Reader\CSV([
+                'filename' => $filename,
+            ]);
+        }
+
+        while ($data = $reader->read()) {
+            if ( !array_key_exists('HASH', $data) || empty($data['HASH']) ) continue;
+
+            foreach ($languages as $_lang) {
+                if (!isset($data[$_lang['code']])) {
+                    //check and add empty value if not exist
+                    continue;
+                }
+
+                $check_hash_query = tep_db_query("SELECT * FROM " . TABLE_TRANSLATION . " WHERE language_id='" . (int)$_lang['id'] . "' and hash = '" . tep_db_input($data['HASH']) . "'");
+                if (tep_db_num_rows($check_hash_query) > 0) {
+                    if ($override) {
+                        tep_db_query("update " . TABLE_TRANSLATION . " set translation_value = '" . tep_db_input($data[$_lang['code']]) . "', translated = '" . tep_db_input($data[$_lang['code'] . '_TSL']) . "' where language_id = '" . (int)$_lang['id'] . "' and hash = '" . tep_db_input($data['HASH']) . "'");
+                    }
+                } elseif (isset($data['Entity']) && isset($data['Key']) ) {
+                    $check_hash_query = tep_db_query("SELECT * FROM " . TABLE_TRANSLATION . " WHERE language_id='" . (int)$_lang['id'] . "' and translation_key = '" . tep_db_input($data['Key']) . "' and translation_entity = '" . tep_db_input($data['Entity']) . "'");
+                    if (tep_db_num_rows($check_hash_query) > 0) {
+                        if ($override) {
+                            tep_db_query("update " . TABLE_TRANSLATION . " set translation_value = '" . tep_db_input($data[$_lang['code']]) . "', translated = '" . tep_db_input($data[$_lang['code'] . '_TSL']) . "' where language_id = '" . (int)$_lang['id'] . "' and hash = '" . tep_db_input($data['HASH']) . "'");
                         }
-                    } else {
-                        //check and add empty value if not exist
+                    } elseif ($addnew && !empty($data['Key']) && !empty($data['Entity'])) {
+                        $hash = md5($data['Key'] . '-' . $data['Entity']);
+                        $sql_data_array = [
+                            'language_id' => (int)$_lang['id'],
+                            'translation_key' => $data['Key'],
+                            'translation_entity' => $data['Entity'],
+                            'translation_value' => $data[$_lang['code']],
+                            'hash' => $hash,
+                            'translated' => $data[$_lang['code'] . '_TSL'],
+                        ];
+                        tep_db_perform(TABLE_TRANSLATION, $sql_data_array);
                     }
                 }
             }
-        }
-        
-        $CSV->close();
 
+        }
         \common\helpers\Translation::resetCache();
 
         $this->redirect(array('texts/'));

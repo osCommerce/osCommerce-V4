@@ -40,6 +40,7 @@ class ErrorLogViewer extends \common\classes\modules\ModuleExtensions
 
     public static function getFile($sourceFile)
     {
+        $sourceFile = str_replace('|', '.', $sourceFile);
         $tmp = explode("/", $sourceFile);
         if(count($tmp) > 2){
             throw new \Exception("Undefined source/file");
@@ -62,8 +63,8 @@ class ErrorLogViewer extends \common\classes\modules\ModuleExtensions
             $file->sourceFile = $sourceFile;
             $file->source = $source;
             $file->name = $fileName;
+            $file->mask = str_replace('.', '|', $sourceFile);
             $file->fullPath = $path.DIRECTORY_SEPARATOR.$fileName;
-            $file->content = file_get_contents(htmlspecialchars($file->fullPath));
             $file->sizeText = self::formatSize(filesize($file->fullPath));
             $file->size = filesize($file->fullPath);
             $file->date = filemtime($file->fullPath) ? date("Y-m-d H:i:s", filemtime($file->fullPath)) : 'Undefined';

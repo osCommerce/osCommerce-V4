@@ -21,6 +21,7 @@ use common\classes\platform;
  *
  * @author vlad
  */
+#[\AllowDynamicProperties]
 class ProductsQuery {
   const PRESELECT_PRODUCST_IDS = true;
   const PRESELECT_PRODUCST_PRICE_IDS = true;
@@ -54,6 +55,7 @@ class ProductsQuery {
     'skipInTopOnly' => null,
   ];
 
+  /* @var \common\models\queries\ProductsQuery $query */
   private $query = null;
   private $count = [];
   private $listProductIds = [];
@@ -100,6 +102,8 @@ class ProductsQuery {
  *
  * 'products_name' | 'bestsellers' | 'products_model' | 'products_date_added' | 'products_popularity' | 'products_weight' | 'manufacturers_name' | 'products_price' | 'products_quantity' | 'rand()
  *  => dir | 'FIELD (products_id, 5) DESC'
+ * or
+ * ['fake' => 1]
  * ],
  * 
  *  'limit' => 0
@@ -204,7 +208,7 @@ class ProductsQuery {
       $this->query->andWhere('p.is_listing_product=1');
     }
 
-    /** @var \common\extensions\CustomerProducts $ext  */
+    /** @var \common\extensions\CustomerProducts\CustomerProducts $ext  */
     if ($ext = \common\helpers\Acl::checkExtension('CustomerProducts', 'allowed')) {
       if($ext::allowed() && !\Yii::$app->user->isGuest) {
         if (\Yii::$app->user->identity->restrict_products) {
@@ -212,6 +216,18 @@ class ProductsQuery {
         }
       }
     }
+
+    /**
+     * @var $ga \common\extensions\GoogleAnalyticsTools\GoogleAnalyticsTools
+     */
+      if (isset($this->params['filters']['keywords'])) {
+          if (($ga = \common\helpers\Extensions::isAllowed('GoogleAnalyticsTools')) && $ga::optionUseInSearch()) {
+              $gaQuery = $ga::getProductsForProductsQuery($this->params['filters']['keywords']);
+              if ($gaQuery) {
+                  $this->query->andWhere(['p.products_id' => $gaQuery]);
+              }
+          }
+      }
 
   }
 
@@ -500,7 +516,29 @@ class ProductsQuery {
                                                     'groups_id' => (int)$customer_groups_id,
                                                   ])
             ]);
-
+          if (\common\helpers\Extensions::isAllowed('Inventory') && !$this->params['withInventory']) {
+            if ($groupsInventory = \common\helpers\Acl::checkExtensionTableExist('UserGroupsRestrictions', 'GroupsInventory', 'isAllowed')) {
+                $this->query->andWhere(['or',
+                    ['not exists',
+                        \common\models\Inventory::find()
+                        ->where('p.products_id = prid')
+                    ],
+                    ['and',
+                        ['exists',
+                            \common\models\Inventory::find()
+                            ->where('p.products_id = prid')
+                        ],
+                        ['exists',
+                            $groupsInventory::find()
+                            ->where('p.products_id = prid')
+                            ->andWhere([
+                                'groups_id' => (int) $customer_groups_id,
+                            ])
+                        ],
+                    ]
+                ]);
+            }
+          }
       }
     }
   }
@@ -531,7 +569,7 @@ class ProductsQuery {
   public function addActive () {
     if (!empty($this->params['active']) && $this->params['active']) {
       /* @var $ext \common\extensions\ShowInactive\ShowInactive */
-      if ($ext = \common\helpers\Acl::checkExtensionAllowed('ShowInactive', 'allowed')) {
+      if ($ext = \common\helpers\Extensions::isAllowed('ShowInactive')) {
         $this->query->andWhere($ext::getState(false));
       } else {
         $this->query->andWhere(' p.products_status = 1 ');
@@ -728,23 +766,46 @@ class ProductsQuery {
   }
 
   public function addWithInventory() {
-    if (!empty($this->params['withInventory']) && $this->params['withInventory']) {
+    if (!empty($this->params['withInventory']) && $this->params['withInventory'] && \common\helpers\Extensions::isAllowed('Inventory')) {
       $this->query->leftJoin(['i' => TABLE_INVENTORY], 'p.products_id = i.prid and i.non_existent = 0');
       $this->query->select(new \yii\db\Expression('ifnull(i.products_id, p.products_id) as products_id'));
-      if ($groupsInventory = \common\helpers\Acl::checkExtensionTableExist('UserGroupsRestrictions', 'GroupsInventory', 'isAllowed')) {
+      /** @var \common\extensions\UserGroupsRestrictions\models\GroupsInventory $groupsInventory $groupsInventory */
+      $groupsInventory = \common\helpers\Extensions::getModel('UserGroupsRestrictions', 'GroupsInventory');
+      if (!empty($groupsInventory)) {
         $customer_groups_id = (int) \Yii::$app->storage->get('customer_groups_id');
-        $this->query->andWhere(['exists',
-                        $groupsInventory::find()
-                            ->where('i.products_id = products_id and i.prid = prid')
-                            ->andWhere([
-                                'groups_id' => (int) $customer_groups_id,
-                            ])
+        $this->query->andWhere(['or',
+            ['not exists',
+                \common\models\Inventory::find()
+                ->where('p.products_id = prid')
+            ],
+            ['and',
+                ['exists',
+                    \common\models\Inventory::find()
+                    ->where('p.products_id = prid')
+                ],
+                ['exists',
+                    $groupsInventory::find()
+                    ->where('i.products_id = products_id and i.prid = prid')
+                    ->andWhere([
+                        'groups_id' => (int) $customer_groups_id,
+                    ])
+                ],
+            ]
         ]);
       }
     }
   }
 
   public function addOrderBy($params = null) {
+// {{
+    $skip_add_order_by = false;
+    foreach (\common\helpers\Hooks::getList('products-query/add-order-by') as $filename) {
+        $skip_add_order_by = include($filename);
+        if ($skip_add_order_by === true) {
+            return $this;
+        }
+    }
+// }}
     if (empty($params)) {
       $params = $this->params['orderBy'];
     }
@@ -773,9 +834,12 @@ class ProductsQuery {
           switch ($field) {
             case 'products_name':
               $this->query->joinWith('listingName');
-              $ext = \common\helpers\Acl::checkExtensionAllowed('PlainProductsDescription', 'allowed');
-              if ($ext && $ext::isEnabled() && class_exists('common\\models\\PlainProductsNameSearch')) {
-                $knownTable = \common\models\PlainProductsNameSearch::tableName() . '.' . $field;
+                /**
+                 * @var $extModel \common\extensions\PlainProductsDescription\models\PlainProductsNameSearch
+                 */
+              $extModel = \common\helpers\Extensions::getModel('PlainProductsDescription', 'PlainProductsNameSearch');
+              if (!empty($extModel) && !$this->params['withInventory']) {
+                $knownTable = $extModel::tableName(). '.' . $field;
               } else {
                 $knownTable = \common\models\ProductsDescription::tableName() . '.' . $field;
               }
@@ -815,12 +879,15 @@ class ProductsQuery {
                     $taxRateM .= ' WHEN ' . (int)$v['tax_class_id'] . ' THEN 1+'. (float)  \common\helpers\Tax::get_tax_rate($v['tax_class_id'])/100;
                   }
                 }
-                $ext = \common\helpers\Acl::checkExtensionAllowed('ProductPriceIndex', 'allowed');
-                if ($ext && $ext::isEnabled()) {
+                  /**
+                   * @var $ppiModel \common\extensions\ProductPriceIndex\models\ProductPriceIndex
+                   */
+                $ppiModel = \common\helpers\Extensions::getModel('ProductPriceIndex', 'ProductPriceIndex');
+                if (!empty($ppiModel)) {
                   $knownTable = [
                     'products_final_price' => new \yii\db\Expression(
                       'round(if(products_special_price_min>0, products_special_price_min, products_price_min) '
-                      . ($taxRates?' * (case ifnull(' . \common\extensions\ProductPriceIndex\models\ProductPriceIndex::tableName() . '.products_tax_class_id,0) ' . $taxRateM . ' else 1 end)':'')
+                      . ($taxRates?' * (case ifnull(' . $ppiModel::tableName() . '.products_tax_class_id,0) ' . $taxRateM . ' else 1 end)':'')
                       . ', 2)'
                     )
                     ];
@@ -862,19 +929,19 @@ class ProductsQuery {
                             ->distinct()
                             ->andWhere(['IN', '{{%products_to_categories}}.categories_id', $all_sub_categories])
                             //->addOrderBy('{{%products_to_categories}}.sort_order, {{%products_to_categories}}.products_id desc')
-                            ->addOrderBy('{{%categories}}.categories_left, {{%products_to_categories}}.sort_order, {{%products_to_categories}}.products_id desc')
-                            ->addSelect('{{%products_to_categories}}.sort_order, {{%products_to_categories}}.products_id ');
+                            ->addOrderBy('{{%categories}}.categories_left, {{%products_to_categories}}.sort_order, {{%products_to_categories}}.products_id desc');
+                            //->addSelect('{{%products_to_categories}}.sort_order, {{%products_to_categories}}.products_id ');
                     } else {
                         $this->query->innerJoin('{{%products_to_categories}} ' . $useIndex, '({{%products_to_categories}}.products_id=p.products_id) ')
                             ->andWhere(['{{%products_to_categories}}.categories_id' => $this->getCurrentCategoryId()])
-                            ->addOrderBy('{{%products_to_categories}}.sort_order, {{%products_to_categories}}.products_id desc')
-                            ->addSelect('{{%products_to_categories}}.sort_order, {{%products_to_categories}}.products_id ');
+                            ->addOrderBy('{{%products_to_categories}}.sort_order, {{%products_to_categories}}.products_id desc');
+                           // ->addSelect('{{%products_to_categories}}.sort_order, {{%products_to_categories}}.products_id ');
                     }
                 } else {
                   //$this->query->joinWith('listingGlobalSort', false, 'inner join')
                   $this->query->joinWith('listingGlobalSort')
-                        ->addOrderBy('{{%products_global_sort}}.sort_order desc')
-                        ->addSelect('{{%products_global_sort}}.sort_order ');
+                        ->addOrderBy('{{%products_global_sort}}.sort_order desc');
+                        //->addSelect('{{%products_global_sort}}.sort_order ');
                 }
               break;
             default:
@@ -1111,13 +1178,13 @@ class ProductsQuery {
       }
       $groups_id =  (int) \Yii::$app->storage->get('customer_groups_id');
 
-/* @var $ext \common\extensions\ProductPriceIndex\ProductPriceIndex */
-      $ext = \common\helpers\Acl::checkExtensionAllowed('ProductPriceIndex', 'allowed');
-      if ($ext && $ext::isEnabled()) {
+      /** @var $ppiModel \common\extensions\ProductPriceIndex\models\ProductPriceIndex */
+      $ppiModel = \common\helpers\Extensions::getModel('ProductPriceIndex', 'ProductPriceIndex');
+      if (!empty($ppiModel)) {
 
         $tmp = [];
         if (DISPLAY_PRICE_WITH_TAX == 'true' ) {
-          $taxRates = \common\extensions\ProductPriceIndex\models\ProductPriceIndex::find()
+          $taxRates = $ppiModel::find()
             ->andWhere([
               'currencies_id' => $currencies_id,
               'groups_id' => $groups_id,
@@ -1148,14 +1215,14 @@ class ProductsQuery {
               $each[] = [
                 'and',
                 ['>=', 'if(products_special_price_min>0, products_special_price_min, products_price_min)', $params['from']/($rate>0?$rate:1)],
-                ['=', \common\extensions\ProductPriceIndex\models\ProductPriceIndex::tableName() . '.products_tax_class_id', $ids]
+                ['=', $ppiModel::tableName() . '.products_tax_class_id', $ids]
               ];
             }
             if ($params['to']>0 ){
               $each[] = [
                 'and',
                 ['<=', 'if(products_special_price_min>0, products_special_price_min, products_price_min)', $params['to']/($rate>0?$rate:1)],
-                ['=', \common\extensions\ProductPriceIndex\models\ProductPriceIndex::tableName() . '.products_tax_class_id', $ids]
+                ['=', $ppiModel::tableName() . '.products_tax_class_id', $ids]
               ];
             }
             if (count($each)==2) {
@@ -1285,7 +1352,16 @@ $s = \Yii::$app->db->createCommand($q->offset(null)->limit(null)->orderBy(null)-
        if (isset($this->params['filters']['keywords'])) {
             $this->params['filters']['keywords'] = (string)$this->params['filters']['keywords'];
        }
-      if (self::PRESELECT_PRODUCST_SEARCH_IDS) {
+// {{
+        $skip_add_keywords = false;
+        foreach (\common\helpers\Hooks::getList('products-query/add-keywords') as $filename) {
+            $skip_add_keywords = include($filename);
+            if ($skip_add_keywords === true) {
+                return $this;
+            }
+        }
+// }}
+      if (self::PRESELECT_PRODUCST_SEARCH_IDS && !$this->params['withInventory']) {
         $params = $this->params;
         unset($params['filters']);
         unset($params['orderBy']);
@@ -1294,7 +1370,7 @@ $s = \Yii::$app->db->createCommand($q->offset(null)->limit(null)->orderBy(null)-
       self::cleanupParams($params);
       $pk = serialize($params);
 
-      if (self::PRESELECT_PRODUCST_SEARCH_IDS && is_array($this->listProductIds[$pk] ?? null)) {
+      if (self::PRESELECT_PRODUCST_SEARCH_IDS && !$this->params['withInventory'] && is_array($this->listProductIds[$pk] ?? null)) {
         $this->query->andWhere(['p.products_id' => $this->listProductIds[$pk]]);
         return $this;
       }
@@ -1308,7 +1384,7 @@ $s = \Yii::$app->db->createCommand($q->offset(null)->limit(null)->orderBy(null)-
       /// plain
       /* @var $ext \common\extensions\PlainProductsDescription\PlainProductsDescription */
       $ext = \common\helpers\Acl::checkExtensionAllowed('PlainProductsDescription', 'allowed');
-      if ($ext && $ext::isEnabled()) {
+      if ($ext && $ext::isEnabled() && !$this->params['withInventory']) {
         if (defined('MSEARCH_ENABLE') && strtolower(MSEARCH_ENABLE)=='fulltext') {
           $kws = \common\extensions\PlainProductsDescription\PlainProductsDescription::validateKeywords($kws, true);
         } else {
@@ -1320,7 +1396,7 @@ $s = \Yii::$app->db->createCommand($q->offset(null)->limit(null)->orderBy(null)-
         }
       }
 
-      if (self::PRESELECT_PRODUCST_SEARCH_IDS) {
+      if (self::PRESELECT_PRODUCST_SEARCH_IDS && !$this->params['withInventory']) {
         unset($params['filters']);
         $q = clone ($this);
 
@@ -1330,14 +1406,21 @@ $s = \Yii::$app->db->createCommand($q->offset(null)->limit(null)->orderBy(null)-
         $q = $q->getQuery();
       } else {
         $q = $this->getQuery();
-        $q->joinWith('listingName', false);
+        if ($this->params['withInventory']) {
+            $languages_id = \Yii::$app->settings->get('languages_id');
+            $platform_id = \common\classes\platform::currentId();
+            $platform_id = (new \common\classes\platform_settings($platform_id))->getPlatformToDescription();
+            $q->innerJoin(\common\models\ProductsDescription::tableName(), new \yii\db\Expression('p.products_id = ' . \common\models\ProductsDescription::tableName() . '.products_id'))->andWhere([\common\models\ProductsDescription::tableName() . '.language_id' => (int)$languages_id, \common\models\ProductsDescription::tableName() . '.platform_id' => $platform_id]);
+        } else {
+            $q->joinWith('listingName', false);
+        }
       }
       $params = $kws;
       /* @var $q \common\models\queries\ProductsQuery  */
 
 
       /// plain
-      if ($ext && $ext::isEnabled()) {
+      if ($ext && $ext::isEnabled() && !$this->params['withInventory']) {
 
         if (defined('MSEARCH_ENABLE') && strtolower(MSEARCH_ENABLE)=='fulltext') {
   
@@ -1381,6 +1464,10 @@ $s = \Yii::$app->db->createCommand($q->offset(null)->limit(null)->orderBy(null)-
 
             $this->relevanceOrder = '(' . implode(' and ', $tmpF) . ') desc, (' .implode(' + ', $tmp) . ')';
 
+            foreach (\common\helpers\Hooks::getList('products-search/alter-force-search') as $filename) {
+                include($filename);
+            }
+
             $q->andWhere($f);
           }
 
@@ -1395,7 +1482,11 @@ $s = \Yii::$app->db->createCommand($q->offset(null)->limit(null)->orderBy(null)-
             }
         } else {
           //like by model, name and description in the description table
-          $f = ['like', 'concat(p.products_model, {{%products_description}}.products_name, {{%products_description}}.products_description)', $params];
+          if ($this->params['withInventory']) {
+            $f = ['like', 'concat(ifnull(i.products_model, p.products_model), {{%products_description}}.products_name, {{%products_description}}.products_description)', $params];
+          } else {
+            $f = ['like', 'concat(p.products_model, ifnull({{%products_description}}.products_name, ""), ifnull({{%products_description}}.products_description, ""))', $params];
+          }
 
           $q->andWhere($f);
 
@@ -1418,11 +1509,16 @@ $s = \Yii::$app->db->createCommand($q->offset(null)->limit(null)->orderBy(null)-
       }
 //echo " <BR><BR>" . $q->createCommand()->rawSql . ' ' . ($this->relevanceOrder??null);
 
-      if (self::PRESELECT_PRODUCST_SEARCH_IDS) {
+      if (self::PRESELECT_PRODUCST_SEARCH_IDS && !$this->params['withInventory']) {
 //echo " <BR><BR> $pk <br>" . $q->offset(null)->limit(null)->orderBy(null)->select("p.products_id")->createCommand()->rawSql;
         if ($q->offset(null)->limit(null)->orderBy(null)->select("p.products_id")->count() < 100000) {//
           $this->listProductIds[$pk] = $q->offset(null)->limit(null)->orderBy(null)->select("p.products_id")->asArray()->column();
-          $this->query->andWhere(['p.products_id' => $this->listProductIds[$pk]]);
+          if (!empty($this->listProductIds[$pk])) {
+              $this->query->andWhere(['p.products_id' => $this->listProductIds[$pk]]);
+          } else {
+              $this->query->andWhere('0=1');
+          }
+
   //echo " <BR><BR>" . $this->query->createCommand()->rawSql;
         //echo " count " . count($this->listProductIds[$pk]);
         //unset($this->listProductIds[$pk]);
@@ -1608,16 +1704,23 @@ $s = \Yii::$app->db->createCommand($q->offset(null)->limit(null)->orderBy(null)-
           } else {
             $typeId = 0;
           }
- /**/
-          $this->query->andWhere(['exists', \common\models\Featured::find()
-                                            ->alias('feat_'.(int)$typeId)
-                                            ->where('p.products_id = feat_'.(int)$typeId.'.products_id')
-                                            ->andWhere([
-                                                    'status' => 1,
-                                                    'affiliate_id' => $ids,
-                                                    'featured_type_id' => $typeId
-                                                  ])
-            ]);
+ /**/       $this->query
+                ->innerJoinWith('productsFeatured featured', false)
+                ->andWhere([
+                    'featured.status' => 1,
+                    'featured.affiliate_id' => $ids,
+                    'featured.featured_type_id' => $typeId
+                ]);
+//          ->andWhere(['exists', \common\models\Featured::find()
+//                                            ->alias('feat_'.(int)$typeId)
+//                                            ->where('p.products_id = feat_'.(int)$typeId.'.products_id')
+//                                            ->andWhere([
+//                                                    'status' => 1,
+//                                                    'affiliate_id' => $ids,
+//                                                    'featured_type_id' => $typeId
+//                                                  ])
+//                                            ->joinWith('productsFeatured featured', false)
+//            ]);
 
         break;
     }
@@ -2261,12 +2364,14 @@ $s = \Yii::$app->db->createCommand($q->offset(null)->limit(null)->orderBy(null)-
     unset($params['filters']['price']);
     unset($params['orderBy']);
 
-    /* @var $ext \common\extensions\ProductPriceIndex\ProductPriceIndex */
-    $ext = \common\helpers\Acl::checkExtensionAllowed('ProductPriceIndex', 'allowed');
-    if ($ext && $ext::isEnabled()) {
+    /**
+     * @var $ext \common\extensions\ProductPriceIndex\ProductPriceIndex
+     * @var $extModel \common\extensions\ProductPriceIndex\models\ProductPriceIndex
+     */
+    if (($ext = \common\helpers\Extensions::isAllowed('ProductPriceIndex')) && !empty($extModel = $ext::getModel('ProductPriceIndex'))) {
       $ext::checkUpdateStatus();
 
-      $ranges = \common\extensions\ProductPriceIndex\models\ProductPriceIndex::getRange(['products' => $this->filterProductsIds($params)]);
+      $ranges = $extModel::getRange(['products' => $this->filterProductsIds($params)]);
 //echo "<PRE STYle='position:absolute; width:40%; top:0; left:60%; z-index:100'>" . __FILE__ .':' . __LINE__ . " #### " .print_r( /*$ranges*/$this->filterProductsIds($params), 1) ."</PRE>";
       foreach ($ranges as $products) {
         if ($products['min_special'] >0 && $products['min_special'] < $products['min']) {

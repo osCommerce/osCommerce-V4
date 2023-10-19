@@ -8,7 +8,7 @@
     <div class="tabbable tabbable-custom tabbable-ep">
         <ul class="nav nav-tabs">
             {foreach $platforms_list as $_platform}
-                <li class="{if $_platform['is_default']} active {/if}"><a href="#tab_pp_{$_platform['id']}" data-toggle="tab"><span>{$_platform['text']}</span></a></li>
+                <li class="{if $_platform['is_default']} active {/if}" data-bs-toggle="tab" data-bs-target="#tab_pp_{$_platform['id']}"><a><span>{$_platform['text']}</span></a></li>
             {/foreach}            
         </ul>
         <div class="tab-content tab-content">

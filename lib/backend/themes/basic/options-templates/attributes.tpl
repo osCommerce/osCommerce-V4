@@ -112,8 +112,8 @@
     var ajax_attribute_add_in_progress = 0;
     function updateInventoryBox() {
         if (ajax_attribute_add_in_progress == 0) {
-            $('ul[id^="invPrice"] a[data-toggle="tab"]').off('shown.bs.tab').on('shown.bs.tab', invPriceTabsShown);
-            $('ul[id^="attr_popup"] a[data-toggle="tab"]').off('shown.bs.tab').on('shown.bs.tab', invPriceTabsShown);
+            $('ul[id^="invPrice"] [data-bs-toggle="tab"]').off('shown.bs.tab').on('shown.bs.tab', invPriceTabsShown);
+            $('ul[id^="attr_popup"] [data-bs-toggle="tab"]').off('shown.bs.tab').on('shown.bs.tab', invPriceTabsShown);
             $('.js_inventory_group_price input.price-options').off('click').on('click', priceOptionsClick);
         }
     }
@@ -227,7 +227,9 @@
                   if ( $(".attr-option-"+products_options+" tbody").find('.js-option-value').length>1 ) {
                     $(".attr-option-"+products_options+" tbody").sortable('enable');
                   }else{
-                    $(".attr-option-"+products_options+" tbody").sortable('disable');
+                      if ($(".attr-option-"+products_options+" tbody").data('uiSortable')) {
+                          $(".attr-option-"+products_options+" tbody").sortable('disable');
+                      }
                   }
                 }
                 ajax_attribute_add_in_progress -= 1;

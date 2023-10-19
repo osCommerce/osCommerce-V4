@@ -2,7 +2,7 @@
 <div class="atb">
 {Html::beginForm($url, 'post', ['id'=> 'searchTransactions'])}
 
-{Html::dropDownList('payment_class', '', $list, ['class' => 'form-control', 'id' => 'search_payment_class', 'prompt' => $smarty.const.TEXT_SELECT_PAYMENT_METHOD])}
+{Html::dropDownList('payment_class', '', $list, ['class' => 'form-select', 'id' => 'search_payment_class', 'prompt' => $smarty.const.TEXT_SELECT_PAYMENT_METHOD])}
 <div class="alert fade in" style="display:none;">
   <i data-dismiss="alert" class="icon-remove close"></i>
   <span id="message_plce"></span>

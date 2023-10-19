@@ -1,44 +1,44 @@
 
 {use class="backend\design\SelectStyle"}
-<div class="tabbable tabbable-custom box-style-tab">
+<div class="tabbable tabbable-custom box-style-tab">{$settings.data_class}
   <ul class="nav nav-tabs">
-{*if $responsive && !$settings.data_class}
-  <li class="active"><a href="#view-{$id}" data-toggle="tab">{$smarty.const.TEXT_VIEW}</a></li>
+{if  $responsive && !$settings.data_class && ($responsive_settings || $block_view)}
+  <li class="active" data-bs-toggle="tab" data-bs-target="#view-{$id}"><a>{$smarty.const.TEXT_VIEW}</a></li>
     {if $styleHide.font !== 1}
-      <li><a href="#font-{$id}" data-toggle="tab">{$smarty.const.TEXT_FONT}</a></li>
+      <li data-bs-toggle="tab" data-bs-target="#font-{$id}"><a>{$smarty.const.TEXT_FONT}</a></li>
     {/if}
 {else}
     {if $styleHide.font !== 1}
-      <li class="active"><a href="#font-{$id}" data-toggle="tab">{$smarty.const.TEXT_FONT}</a></li>
+      <li class="active" data-bs-toggle="tab" data-bs-target="#font-{$id}"><a>{$smarty.const.TEXT_FONT}</a></li>
     {/if}
-{/if*}
-    {if $styleHide.font !== 1}
-      <li class="active"><a href="#font-{$id}" data-toggle="tab">{$smarty.const.TEXT_FONT}</a></li>
-    {/if}
+{/if}
+    {*if $styleHide.font !== 1}
+      <li class="active" data-bs-toggle="tab" data-bs-target="#font-{$id}"><a>{$smarty.const.TEXT_FONT}</a></li>
+    {/if*}
     {if $styleHide.background !== 1}
-      <li {if $styleHide.font === 1 && $styleHide.background !== 1} class="active"{/if}><a href="#background-{$id}" data-toggle="tab">{$smarty.const.TEXT_BACKGROUND}</a></li>
+      <li {if $styleHide.font === 1 && $styleHide.background !== 1} class="active"{/if} data-bs-toggle="tab" data-bs-target="#background-{$id}"><a>{$smarty.const.TEXT_BACKGROUND}</a></li>
     {/if}
     {if $styleHide.padding !== 1}
-      <li {if $styleHide.font === 1 && $styleHide.background === 1 && $styleHide.padding !== 1} class="active"{/if}><a href="#padding-{$id}" data-toggle="tab">{$smarty.const.TEXT_PADDING}</a></li>
+      <li {if $styleHide.font === 1 && $styleHide.background === 1 && $styleHide.padding !== 1} class="active"{/if} data-bs-toggle="tab" data-bs-target="#padding-{$id}"><a>{$smarty.const.TEXT_PADDING}</a></li>
     {/if}
     {if $styleHide.border !== 1}
-      <li {if $styleHide.font === 1 && $styleHide.background === 1 && $styleHide.padding === 1 && $styleHide.border !== 1} class="active"{/if}><a href="#border-{$id}" data-toggle="tab">{$smarty.const.TEXT_BORDER}</a></li>
+      <li {if $styleHide.font === 1 && $styleHide.background === 1 && $styleHide.padding === 1 && $styleHide.border !== 1} class="active"{/if} data-bs-toggle="tab" data-bs-target="#border-{$id}"><a>{$smarty.const.TEXT_BORDER}</a></li>
     {/if}
 
     {if $styleHide.size !== 1}
-      <li {if $styleHide.font === 1 && $styleHide.background === 1 && $styleHide.padding === 1 && $styleHide.border === 1 && $styleHide.size !== 1} class="active"{/if}><a href="#size-{$id}" data-toggle="tab">{$smarty.const.TABLE_HEADING_FILE_SIZE}</a></li>
+      <li {if $styleHide.font === 1 && $styleHide.background === 1 && $styleHide.padding === 1 && $styleHide.border === 1 && $styleHide.size !== 1} class="active"{/if} data-bs-toggle="tab" data-bs-target="#size-{$id}"><a>{$smarty.const.TABLE_HEADING_FILE_SIZE}</a></li>
     {/if}
     {if $designer_mode}
     {if $styleHide.display !== 1}
-      <li {if $styleHide.font === 1 && $styleHide.background === 1 && $styleHide.padding === 1 && $styleHide.border === 1 && $styleHide.size === 1 && $styleHide.display !== 1} class="active"{/if}><a href="#display-{$id}" data-toggle="tab">Display</a></li>
+      <li {if $styleHide.font === 1 && $styleHide.background === 1 && $styleHide.padding === 1 && $styleHide.border === 1 && $styleHide.size === 1 && $styleHide.display !== 1} class="active"{/if} data-bs-toggle="tab" data-bs-target="#display-{$id}"><a>Display</a></li>
     {/if}
     {/if}
 
   </ul>
   <div class="tab-content menu-list">
-    {*{if $responsive && !$settings.data_class}
+    {if $responsive && !$settings.data_class && ($responsive_settings || $block_view)}
       <div class="tab-pane active" id="view-{$id}">
-        <p><label><input type="checkbox" name="{$name}[display_none]"{if $value.display_none} checked{/if}/> {$smarty.const.TEXT_HIDE_BLOCK}</label></p>
+        {*<p><label><input type="checkbox" name="{$name}[display_none]"{if $value.display_none} checked{/if}/> {$smarty.const.TEXT_HIDE_BLOCK}</label></p>*}
 
         {if $responsive_settings}
           {foreach $responsive_settings as $item}
@@ -50,9 +50,9 @@
         {/if}
 
       </div>
-    {/if}*}
+    {/if}
     {*<div class="tab-pane{if ($responsive != 1 || $settings.data_class) && $styleHide.font !== 1} active{/if}" id="font-{$id}">*}
-    <div class="tab-pane{if $styleHide.font !== 1} active{/if}" id="font-{$id}">
+    <div class="tab-pane{if !($responsive && !$settings.data_class && ($responsive_settings || $block_view)) && $styleHide.font !== 1} active{/if}" id="font-{$id}">
       {if !$designer_mode}
 
         <div class="font-styles">
@@ -388,44 +388,15 @@
       <div class="setting-row setting-row-image">
         <label for="">{$smarty.const.TEXT_BACKGROUND_IMAGE}</label>
 
-        {if isset($value.background_image)}
-          <div class="image">
-            <img src="../{\frontend\design\Info::themeImage($value.background_image)}" alt="">
-            <div class="remove-img"></div>
-          </div>
-        {/if}
 
-        <div class="image-upload">
-          <div class="upload" data-name="{$name}[background_image]"></div>
-          <script type="text/javascript">
-            $('#{$id} .upload').uploads().on('upload', function(){
-              var img = $('#{$id} .dz-image-preview img', this).attr('src');
-              $('#{$id} .demo-box').css('background-image', 'url("'+img+'")')
-            });
-            $('.popup-box-wrap').on('remove', function(){
-              $('#{$id} .upload').trigger('destroy')
-            });
-            $('.style-tabs-content').on('st_remove', function(){
-              $('#{$id} .upload').trigger('destroy')
-            });
+        {\backend\design\Image::widget([
+            'name' => $name|cat:'[background_image]',
+            'value' => $value['background_image'],
+            'upload' => $name|cat:'[background_image_upload]',
+            'acceptedFiles' => 'image/*',
+            'type' => 'image'
+        ])}
 
-            $(function(){
-              $('#{$id} .setting-row-image .image > img').each(function(){
-                var img = $(this).attr('src');
-                $('#{$id} .demo-box').css('background-image', 'url("'+img+'")');
-
-                $('#{$id} input[name="{$name}[background_image]"]').val('{$value.background_image}').trigger('change');
-              });
-
-              $('#{$id} .setting-row-image .image .remove-img').on('click', function(){
-                $('#{$id} input[name="{$name}[background_image]"]').val('').trigger('change');
-                $('#{$id} .setting-row-image .image').remove()
-              })
-
-            });
-
-          </script>
-        </div>
 
       </div>
       {/if}

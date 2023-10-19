@@ -14,9 +14,13 @@ namespace backend\design;
 
 use common\classes\design;
 use common\helpers\Language;
+use common\models\Banners;
+use common\models\BannersGroups;
+use common\models\BannersGroupsSizes;
 use common\models\DesignBoxesSettings;
 use common\models\DesignBoxesSettingsTmp;
 use common\models\Modules;
+use common\models\Themes;
 use common\models\ThemesSettings;
 use common\models\ThemesStyles;
 use common\models\ThemesStylesMain;
@@ -29,6 +33,7 @@ use Yii;
 class Theme
 {
     public static $themeFiles = [];
+    public static $exportImportType = 'theme';
 
     public static function export($theme_name, $output='download')
     {
@@ -160,6 +165,7 @@ class Theme
 
     public static function exportBlock($id, $type, $params)
     {
+        self::$exportImportType = 'block';
         $fsCatalog = DIR_FS_CATALOG . implode(DIRECTORY_SEPARATOR, ['lib', 'backend', 'design', 'groups']) . DIRECTORY_SEPARATOR;
 
         $theme_name = $params['theme_name'];
@@ -320,7 +326,7 @@ class Theme
         return false;
     }
 
-    public static function importBlock($fileName, $params)
+    public static function importBlock($fileName, $params, $file = '')
     {
         $pathTmp = implode(DIRECTORY_SEPARATOR, [DIR_FS_CATALOG, 'themes', $params['theme_name'], 'tmp']);
 
@@ -347,11 +353,23 @@ class Theme
 
         $boxIdArr = [];
         if ($boxesArr['microtime'] ?? false) {
+            if ($file) {
+                $boxesArr['settings'][] = [
+                    'setting_name' => 'from_file',
+                    'setting_value' => $file,
+                ];
+            }
             $boxIdArr[] = Theme::blocksTreeImport($boxesArr, $params['theme_name'], $params['block_name'], $params['sort_order']);
         } else {
             foreach ($boxesArr as $blockName => $arr) {
+                if ($file) {
+                    $arr['settings'][] = [
+                        'setting_name' => 'from_file',
+                        'setting_value' => $file,
+                    ];
+                }
                 if (is_int($blockName)) {
-                    $sortOrder = $params['sort_order'] + $arr['sort_order'];
+                    $sortOrder = $params['sortOrder'] ?? ($params['sort_order'] + $arr['sort_order']);
                     $blockBoxes = DesignBoxesTmp::find()->where([
                         'block_name' => $params['block_name'],
                         'theme_name' => $params['theme_name'],
@@ -574,7 +592,7 @@ class Theme
         }
     }
 
-    public static function addCss($css, $themeName, $widgetName)
+    public static function addCss($css, $themeName, $widgetName, $rewrite = true)
     {
         if (!isset($css) || !is_array($css) || !count($css)) {
             return null;
@@ -585,7 +603,9 @@ class Theme
                 $className = self::widgetNameToCssClass($widgetName);
             }
 
-            if (ThemesStyles::findOne(['accessibility' => $className, 'theme_name' => $themeName])) {
+            if ($rewrite) {
+                ThemesStyles::deleteAll(['accessibility' => $className, 'theme_name' => $themeName]);
+            } elseif (ThemesStyles::findOne(['accessibility' => $className, 'theme_name' => $themeName])) {
                 continue;
             }
 
@@ -800,7 +820,9 @@ where dbs.box_id = '" . (int)$id . "'
             foreach ($vArr as $vKey => $vItem) {
                 if ($vItem > 10) {
                     $vMedia = tep_db_fetch_array(tep_db_query("select setting_value from " . TABLE_THEMES_SETTINGS . " where id = '" . $vItem . "'"));
-                    $vArr[$vKey] = $vMedia['setting_value'];
+                    if ($vMedia) {
+                        $vArr[$vKey] = $vMedia['setting_value'];
+                    }
                 }
             }
             $item2['visibility'] = Style::vStr($vArr, true);
@@ -817,6 +839,10 @@ where dbs.box_id = '" . (int)$id . "'
             if (!$images && $item2['setting_name'] == 'style_class') {
                 $css = array_merge($css, self::getWidgetClassCss($item2['setting_value'], $query['theme_name']));
             }
+        }
+
+        if (self::$exportImportType == 'block' && $arr['widget_name'] == 'Banner' && isset($arr['settings'])) {
+            $arr['banner'] = self::addBanner($arr['settings'], $query['theme_name']);
         }
 
         if (!$images) {
@@ -995,6 +1021,7 @@ where dbs.box_id = '" . (int)$id . "'
                 $mainStyle->value = $style['value'];
                 $mainStyle->type = $style['type'];
                 $mainStyle->sort_order = $style['sort_order'];
+                $mainStyle->main_style = $style['main_style'] ?? 0;
                 $mainStyle->save();
             }
         }
@@ -1035,8 +1062,21 @@ where dbs.box_id = '" . (int)$id . "'
             include($filename);
         }
 
+        $bannerSettings = false;
+        if ($arr['widget_name'] == 'Banner' && isset($arr['banner']) && is_array($arr['banner'])) {
+            $bannerSettings = self::applyBanners($arr['banner'], $theme_name);
+        }
+
         if (is_array($arr['settings'] ?? null) && count($arr['settings']))
             foreach ($arr['settings'] as $item){
+
+                if ($bannerSettings && $item['setting_name'] == 'banners_group') {
+                    $item['setting_value'] = $bannerSettings['groupId'];
+                }
+                if ($bannerSettings && $item['setting_name'] == 'ban_id') {
+                    $item['setting_value'] = $bannerSettings['bannerId'];
+                }
+
                 $language_id = 0;
                 $key = true;
                 if ($item['language_id'] ?? false){
@@ -1048,7 +1088,7 @@ where dbs.box_id = '" . (int)$id . "'
                     }
                 }
                 $visibility = '';
-                if (strlen($item['visibility']) > 1){
+                if (($item['visibility'] ?? false) && strlen($item['visibility']) > 1){
 
                     $vArr = Style::vArr($item['visibility'], true);
                     foreach ($vArr as $vKey => $vItem) {
@@ -1060,7 +1100,7 @@ where dbs.box_id = '" . (int)$id . "'
                     $visibility = Style::vStr($vArr);
 
                 } else {
-                    $visibility = $item['visibility'];
+                    $visibility = $item['visibility'] ?? '';
                 }
                 if ($key) {
                     if (substr($item['setting_value'], 0, 2) == '$$'){
@@ -1528,59 +1568,37 @@ where dbs.box_id = '" . (int)$id . "'
     {
         $post = Yii::$app->request->post();
 
-        $imgPath = 'themes' . DIRECTORY_SEPARATOR . $post['theme_name'] . DIRECTORY_SEPARATOR . 'img' . DIRECTORY_SEPARATOR;
-
-        if ($post[$name . '_upload']) {
-
-            $uploadedFile = Uploads::move($post[$name . '_upload'], $imgPath, true);
-
-        } else {
-
-            $oldFavicon = \common\models\ThemesSettings::find()->where([
-                'theme_name' => $post['theme_name'],
-                'setting_group' => 'hide',
-                'setting_name' => $name,
-            ])->one();
-
-            if ($oldFavicon && $oldFavicon->setting_value == $post[$name]) {
-                return $oldFavicon->setting_value;
-            } elseif ($oldFavicon && $post[$name] == '') {
-                $oldFavicon->delete();
-            }
-
-            $pos = strripos($post[$name], DIRECTORY_SEPARATOR);
-            $fileName = strtolower(substr($post[$name], $pos+1));
-
-            $uploadedFile = $imgPath . $fileName;
-
-            @copy(DIR_FS_CATALOG . $post[$name], DIR_FS_CATALOG . $uploadedFile);
-            @chmod(DIR_FS_CATALOG . $uploadedFile, 0777);
-
-        }
-
-        $imageMod = \common\models\ThemesSettings::find()->where([
+        $imageMod = \common\models\ThemesSettings::findOne([
             'theme_name' => $post['theme_name'],
             'setting_group' => 'hide',
             'setting_name' => $name,
-        ])->one();
-
-        if ($imageMod) {
-            $imageMod->setting_value = $uploadedFile;
-        } else {
+        ]);
+        if (!$imageMod) {
             $imageMod = new \common\models\ThemesSettings();
-
-            $imageMod->attributes = [
-                'theme_name' => $post['theme_name'],
-                'setting_group' => 'hide',
-                'setting_name' => $name,
-                'setting_value' => $uploadedFile,
-            ];
         }
-        $imageMod->save();
+
+        $uploadedFile = \common\helpers\Image::prepareSavingImage(
+            ($imageMod->setting_value ?? ''),
+            $post[$name],
+            $post[$name . '_upload'],
+            'themes' . DIRECTORY_SEPARATOR . $post['theme_name'] . DIRECTORY_SEPARATOR . 'img',
+            false, true
+        );
+
+        $imageMod->attributes = [
+            'theme_name' => $post['theme_name'],
+            'setting_group' => 'hide',
+            'setting_name' => $name,
+            'setting_value' => $uploadedFile,
+        ];
+        if (!$uploadedFile) {
+            $imageMod->delete();
+        } else {
+            $imageMod->save();
+        }
 
         return $uploadedFile;
     }
-
 
     public static function saveFavicon ()
     {
@@ -1657,15 +1675,15 @@ where dbs.box_id = '" . (int)$id . "'
         foreach ($icons as $icon){
             $l = $icon['size'];
             if ($w > $h){
-                $left = 0 - (($l * ($w/$h)) - $l) / 2;
+                $left = round(0 - (($l * ($w/$h)) - $l) / 2);
                 $top = 0;
-                $width = $l * ($w/$h);
+                $width = round($l * ($w/$h));
                 $height = $l;
             } else {
                 $left = 0;
-                $top = 0 - (($l * ($h/$w)) - $l) / 2;
+                $top = round(0 - (($l * ($h/$w)) - $l) / 2);
                 $width = $l;
-                $height = $l * ($h/$w);
+                $height = round($l * ($h/$w));
             }
             $im1 = imagecreatetruecolor($l, $l);
             imagealphablending($im1, false);
@@ -1943,5 +1961,61 @@ where dbs.box_id = '" . (int)$id . "'
         }
 
         return $fields;
+    }
+
+    public static function addBanner($settings, $themeName = '')
+    {
+        $bannerGroup = $type = $bannerId = '';
+        foreach ($settings as $setting) {
+            if ($setting['setting_name'] == 'banners_group') {
+                if (preg_match("/^[0-9]+$/", $setting['setting_value'])) {
+                    $bannersGroups = BannersGroups::findOne($setting['setting_value']);
+                    if ($bannersGroups) {
+                        $bannerGroup = $bannersGroups->banners_group;
+                    } else {
+                        $bannerGroup = $setting['setting_value'];
+                    }
+                } else {
+                    $bannerGroup = $setting['setting_value'];
+                }
+            }
+        }
+
+        $platforms = [];
+        if ($themeName) {
+            $platforms = self::getPlatformIds($themeName);
+        }
+
+        $banners = [];
+        $groupData = \common\helpers\Banner::groupData($bannerGroup, $platforms, true);
+        $groupImages = \common\helpers\Banner::groupImages($groupData, []);
+
+        $banners['groupSettings'][$bannerGroup] = BannersGroupsSizes::find()->alias('bgs')
+            ->innerJoin(\common\models\BannersGroups::tableName() . ' bg', 'bg.id = bgs.group_id')
+            ->where(['banners_group' => $bannerGroup])
+            ->asArray()->all();
+        $banners[$bannerGroup] = $groupImages[1];
+        $bannerImages = $groupImages[0];
+
+        if (count($banners)) {
+            foreach ($bannerImages as $imageName => $imagePath) {
+                if (is_file(DIR_FS_CATALOG. 'images/' . $imagePath)) {
+                    //$zip->addFile(DIR_FS_CATALOG_IMAGES . $imagePath, $imagePath);
+                    self::$themeFiles['images/' . $imagePath] = 'images/' . $imagePath;
+                }
+            }
+        }
+        return $banners;
+    }
+
+    public static function applyBanners($banner, $themeName)
+    {
+        $pathTmp = implode(DIRECTORY_SEPARATOR, [DIR_FS_CATALOG, 'themes', $themeName, 'tmp', 'images']) . DIRECTORY_SEPARATOR;
+
+        $platformIds = self::getPlatformIds($themeName);
+        [$bannerId] = \common\helpers\Banner::setupBanners($banner, $pathTmp, $platformIds, true);
+
+        $banner = Banners::findOne(['banners_id' => $bannerId]);
+        return ['groupId' => ($banner ? $banner->group_id : 0), 'bannerId' => $bannerId];
     }
 }

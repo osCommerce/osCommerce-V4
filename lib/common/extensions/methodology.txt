@@ -111,20 +111,34 @@ if you want to use hooks in extensions
 getAdminHooks
 We recommend to place all hook files in separate extention folder with name "hooks"
 
+naming rules:
+------------
+second hook parameter 'page_area' is used only for .tpl files and means visual place
+
+the first hook parameter must be named depending on its location:
+- for frontend controllers: frontend/controller/action[/place-in-action]
+- for backend controllers: controller/action/[/place-in-action]
+- for common files: file-name/function[/place-in-function]
+- for widgets: 'box/widget-class'
+- for extensions: 'ext/extension-class/unique-name'
+
 In addition a list of available values page_name and page_area:
 <HOOKS>
+
+### BACKEND CONTROLLERS ###
+'index/index', ''
+'adminmembers/before-save', ''
+'adminmembers/adminedit', 'form-top'
+'adminmembers/adminedit', 'form-middle'
+'adminmembers/adminedit', 'form-bottom'
 'customers/customeredit', ''
 'customers/customeredit/before-render', ''
 'customers/customeredit', 'personal-block'
 'customers/customeredit', 'left-column'
 'customers/customeredit', 'right-column'
+'customers/customeredit', 'address-form-bottom'
 'customers/customeractions', ''
-'customers/register', ''
-'customers/logoff', ''
-'customers/after-auth', ''
-'customers/after-trunk', ''     // helpers/customer.php
-'customers/after-delete', ''    // helpers/customer.php
-'customers/order-anonymize', '' // helpers/customer.php
+'customergroups/groupedit/before-save', ''
 'customergroups/groupedit/before-render', ''
 'customergroups/groupedit', 'right-column'
 'categories/brandedit', ''
@@ -137,15 +151,24 @@ In addition a list of available values page_name and page_area:
 'categories/productedit', ''
 'categories/productedit/before-render', ''
 'categories/productedit', 'prices-left-top'
+'categories/productedit', 'prices-priceblock-bottom'
 'categories/productedit', 'details-left-column'
+'categories/productedit', 'details-left-column-subproduct'
 'categories/productedit', 'details-right-column'
+'categories/productedit', 'details-right-column-subproduct'
 'categories/productedit', 'details-actions'
 'categories/productedit', 'details-actions-subproduct'
 'categories/productedit', 'details-after-actions'
+'categories/productedit', 'details-after-actions-subproduct'
+'categories/productedit', 'product-identifiers'
 'categories/productedit', 'seo-tab'
 'categories/productedit', 'marketing/tab-navs'
 'categories/productedit', 'marketing/tab-content'
+'categories/productedit', 'size/bottom'
+'categories/productedit', 'tab-navs-middle'
+'categories/productedit', 'tab-content-middle'
 'categories/categoryedit', ''
+'categories/categoryedit/before-render', ''
 'categories/categoryedit', 'tab-navs'
 'categories/categoryedit', 'tab-content'
 'categories/categoryedit', 'main-tab'
@@ -154,74 +177,166 @@ In addition a list of available values page_name and page_area:
 'categories/categoryedit', 'seo-tab-without-lang' // after languages tabs
 'categories/supplier-price', ''
 'categories/auto-supplier-price', ''
-'categories/after-delete', '' // helpers/categories
-'categories/after-trunk', ''  // helpers/categories
-'product/after-delete', ''    //helpers/products.php
-'product/after-trunk', ''     //helpers/products.php
-'product/get-products-discount-table', ''
+'filters/orders', 'filter-1-column'
+'orders/orderlist', '',
 'orders/process-order', ''
+'orders/process-order/before-next-prev-query', ''
 'orders/process-order', 'totals-block'
 'orders/process-order', 'btn-bar-top'
 'orders/process-order', 'btn-bar-bottom'
 'orders/process-order', 'btn-bar-right'
 'orders/process-order', 'product-name'
-'orders/after-delete', ''   // helpers/order.php
-'orders/after-trunk', ''    // helpers/order.php
-'orders/order-anonymize', '' // helpers/order.php
-// deprecated 'Order', 'save_order/before'
-// deprecated 'Order', 'save_order/after'
-// deprecated 'Order', 'notify_customer'
-'order/before-save', ''
-'order/after-save', ''
-'order/notify_customer', ''
-'order-manager/check-free-shipping', ''
-'order-manager/reset-delivery-address', ''
-'order-manager/total-process', ''
-'ot-shipping/process', ''
-'tax/get-tax-rate', ''
-'tax/get-tax-values', ''
+'orders/process-order', 'customer-block'
 'tmp-orders/process-order', 'btn-bar-top'
 'tmp-orders/process-order', 'btn-bar-bottom'
 'tmp-orders/process-order', 'btn-bar-right'
 'shopping-cart/index', ''
-'shopping-cart/reset', ''
-'shopping-cart/add-cart', ''
-'shopping-cart/remove', ''
-'shopping-cart/cleanup', ''
-'module-payment/process-notification', ''
+'platforms/edit', 'left-column'
+'platforms/edit', 'right-column'
+'platforms/after-save', ''
+'platforms/after-delete', ''
+'platforms-settings/after-save', ''
+'banner_manager/banneredit', ''
+'banner_manager/banneredit', 'platform-table-heading-cell'
+'banner_manager/banneredit', 'platform-table-cell'
+'banner_manager/switch-status-platform', ''
+'banner_manager/submit', ''
+'coupon_admin/voucher-submit', ''
+'coupon_admin/voucheredit', 'tab-content/main-detail/bottom'
+'reviews/after-status-change', ''
+
+### FRONTEND CONTROLLERS ###
+'frontend/account/edit', ''
+'frontend/account/create-success', ''
+'frontend/account/login-success', ''
+'frontend/account/password-forgotten', ''
+'frontend/index/index', ''
+'frontend/checkout/index', ''
+'frontend/checkout/index/before-render', ''
+'frontend/checkout/process/cart-loaded', ''
+'frontend/checkout/process/before-process', ''
+'frontend/checkout/process/after-save', ''
+'frontend/checkout/process/end', ''
+'frontend/checkout/success', ''
+'frontend/checkout/login/before-render', ''
+'frontend/checkout/confirmation/before-render', ''
+'frontend/cart-decorator/decorate-products/products', ''
+'frontend/catalog/product', ''
+'frontend/catalog/search-suggest', ''
+'frontend/sceleton/construct', ''
+'frontend/sceleton/bindactionparams', ''
+'frontend/sceleton/set-meta', ''
+'frontend/sceleton/register-href-lang', ''
+'frontend/socials/login-success', ''
+
+### WIDGETS ###
+'box/cart/products', ''
+'box/cart/products', 'bottom'
+'box/product', 'button-buy-attribute'
+'box/product-listing', ''
+'box/product-listing', 'button-buy-attribute'
+'box/login/register', 'after-main-fields'
+'box/account/account-edit', 'after-main-fields'
+'box/account/order-products', 'order-product' // was account/order_history_info, order-product
+'box/banner', ''
+'box/block/hide-widget', ''
+
+### EXTENSIONS ###
+'departments/after-create', ''
+'departments/after-update', ''
+'departments/after-delete', ''
+'PlainProductsDescription/extra-product-details-same', '' // same for all lang
+'PlainProductsDescription/extra-lang-product-details', ''
+'PlainProductsDescription/extra-product-details', '' // dirty hack
+
+### FRONTEND OTHERS ###
+'frontend/layouts-main', 'before-body-close'
+'frontend/layouts-ajax', 'before-body-close'
+'frontend/jsonld-organization', ''
+'frontend/jsonld-product', ''
+
+### OTHERS ###
+'customers/register', ''                        // common/components/Customer.php
+'customers/login-customer', ''                  // common/components/Customer.php
+'customers/login-customer/after-validate', ''   // common/components/Customer.php
+'customers/logoff', ''                          // common/components/Customer.php
+'customers/after-auth', ''                      // common/components/Customer.php
+'customers/after-trunk', ''     // helpers/customer.php
+'customers/after-delete', ''    // helpers/customer.php
+'customers/order-anonymize', '' // helpers/customer.php
+
+'categories/after-delete', '' // helpers/categories
+'categories/after-trunk', ''  // helpers/categories
+
+'product/after-delete', ''    //helpers/products.php
+'product/after-trunk', ''     //helpers/products.php
+'product/get-products-discount-table', ''
+'products-query/add-keywords', '' // return true if extension did work and no need standard way
+'products-query/add-order-by', '' // return true if extension did work and no need standard way
+'products-search/alter-keywords', '' //alternate search keywords
+'products-search/alter-force-search', '' //alternate products_id by keywords: $f = ['or',$f, ['in', 'p.products_id', [NNNN]]] NNNNNNNN by $params (only valid keywords) or $this
+'product_props/init_workers', ''
 'attributes/get-options-values-price', ''
+'stock-indication/product-info', ''
+
 'base-price/get-product-price', ''
 'base-price/get-inventory-group-price', ''
 'base-price/get-inventory-special-price', ''
 'base-price/get-product-special-price', ''
-'platforms/after-delete', ''
-'platforms-settings/after-save', ''
-'index/index', ''
-'checkout/index', ''
-'checkout/process', ''
-'checkout/after-process', ''
-'analytics', 'checkout/step'
-'checkout/success', ''
-'catalog/product', ''
-'catalog/search-suggest', ''
+'tax/get-tax-rate', ''
+'tax/get-tax-values', ''
+'tax/get-product-tax-class-id', ''
+
+'orders/after-delete', ''   // helpers/order.php
+'orders/after-trunk', ''    // helpers/order.php
+'orders/order-anonymize', '' // helpers/order.php
+'orders/after-setstatus', '' // helpers/order.php
+'order/before-save', ''
+'order/after-save', ''
+'order/notify_customer', ''
+'order/cart/after', ''
+'order/query/after', ''
+'order-manager/check-free-shipping', ''
+'order-manager/reset-delivery-address', ''
+'order-manager/total-process', ''
+
 'init-factory/init', ''
+'cart-factory/add-product', ''  // return true if extension did work and no need standard way
 'cart-factory/work', ''
 'cart-factory/work/end', ''
-'url-rule/parse-request', ''
-'console-tools/logs-cleanup', ''
-'product_props/init_workers', ''
-'account/order_history_info', 'order-product' // smarty tpl
-'frontend/layouts-main', 'before-body-close'
-'frontend/layouts-ajax', ''
-'box/product', 'button-buy-attribute'
-'box/product-listing', ''
-'box/product-listing', 'button-buy-attribute'
-'shipping/check-ignored', ''
-'frontend/jsonld-organization', ''
-'frontend/jsonld-product', ''
+'shopping-cart/reset', ''
+'shopping-cart/add-cart', ''     // for simple products only
+'shopping-cart/add-cart-cfg', '' // for configurable products only
+'shopping-cart/remove', ''
+'shopping-cart/restore-content-products/products-basket', ''
+'shopping-cart/cleanup/before', ''
+'shopping-cart/cleanup', ''
+'shopping-cart/cleanup/after', ''
+'shopping-cart/count_contents/after', ''
+'shopping-cart/get-products', ''
+
+'module-payment/force-pre-authorize-method', '' // return true if extension wants to force pre-authorize transaction method
+'module-payment/process-notification', ''
+'payment/check-ignored', ''
+'shipping/check-ignored', ''  // return true if extension wants to ignore current shipping module
+'shipping/after-quote', ''
+'ot-shipping/process', ''
+'ot-coupon/get-coupon-by-id', ''
+
 'comment-template/visibility-variants', ''
 'email/template-keys', ''
 'email/after-sending', ''
+
 'design/export-block', ''
 'design/import-block', ''
+'design/file-manager', ''
+'design/box-edit', 'hide-widget'
+
+'meta-cannonical/set-cannonical', ''
+'url-rule/parse-request/before', ''    // return url array
+'url-rule/parse-request', ''    // return url array
+'socials/get-defined-modules', ''
+'console-tools/logs-cleanup', ''
+
+'catalog/products-list-info', ''
 </HOOKS>

@@ -297,7 +297,7 @@ $(".products_groups_image").image_uploads();
         }
 
         $groupProducts = [];
-        $query = tep_db_query("select p.products_id, p.products_model, p.products_status, pd.products_name from " . TABLE_PRODUCTS . " p, " . TABLE_PRODUCTS_DESCRIPTION . " pd where p.products_id = p.products_id and p.products_id = pd.products_id and pd.language_id = '" . (int)$languages_id . "' and pd.platform_id = '".intval(\common\classes\platform::defaultId())."' and p.products_groups_id = '" . (int)$eInfo->products_groups_id . "' order by pd.products_name");
+        $query = tep_db_query("select p.products_id, p.products_model, p.products_status, pd.products_name from " . TABLE_PRODUCTS . " p, " . TABLE_PRODUCTS_DESCRIPTION . " pd where p.products_id = p.products_id and p.products_id = pd.products_id and pd.language_id = '" . (int)$languages_id . "' and pd.platform_id = '".intval(\common\classes\platform::defaultId())."' and p.products_groups_id = '" . (int)$eInfo->products_groups_id . "' order by p.products_groups_sort, pd.products_name");
         while ($data = tep_db_fetch_array($query)) {
             $groupProducts[] = [
                 'products_id' => $data['products_id'],
@@ -321,12 +321,10 @@ $(".products_groups_image").image_uploads();
 
         $all_products_array = array();
         foreach ($products_group_products_id as $sort_order => $products_id) {
-            tep_db_query("update " . TABLE_PRODUCTS . " set products_groups_id = '" . (int)$products_groups_id . "' where products_id = '" . (int)$products_id . "'");
+            tep_db_query("update " . TABLE_PRODUCTS . " set products_groups_id = '" . (int)$products_groups_id . "', products_groups_sort = '" . (int)$sort_order . "' where products_id = '" . (int)$products_id . "'");
             $all_products_array[] = (int) $products_id;
         }
-        tep_db_query("update " . TABLE_PRODUCTS . " set products_groups_id = '0' where products_groups_id = '" . (int)$products_groups_id . "' and products_id not in ('" . implode("','", $all_products_array) . "')");
-
-        \common\helpers\ProductsGroupSortCache::update();
+        tep_db_query("update " . TABLE_PRODUCTS . " set products_groups_id = '0', products_groups_sort = '0' where products_groups_id = '" . (int)$products_groups_id . "' and products_id not in ('" . implode("','", $all_products_array) . "')");
 
         if (Yii::$app->request->isAjax) {
 //          $this->layout = false;

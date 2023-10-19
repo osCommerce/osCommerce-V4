@@ -41,8 +41,8 @@ class Qty extends Widget {
             $this->min = \common\extensions\MinimumOrderQty\MinimumOrderQty::setLimit($this->product['stock_limits']);
         }
 
-        if (\common\helpers\Acl::checkExtensionAllowed('OrderQuantityStep', 'allowed')){
-            $this->step = \common\extensions\OrderQuantityStep\OrderQuantityStep::setLimit($this->product['stock_limits']);
+        if ($oqs = \common\helpers\Extensions::isAllowed('OrderQuantityStep')) {
+            $this->step = $oqs::setLimit($this->product['stock_limits']);
         }
         if ($this->isPack){
             $insulator = new \backend\services\ProductInsulatorService( $this->product['id'], $this->manager);

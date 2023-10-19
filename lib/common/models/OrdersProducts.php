@@ -75,14 +75,14 @@ class OrdersProducts extends ActiveRecord
     {
         return $this->hasOne(SuppliersProducts::className(), ['uprid' => 'uprid']);
     }
-
-    public function getUpsell(){
-		return $this->hasMany(ProductsUpsell::className(),['products_id' => 'products_id']);
-    }
-
-    public function getXsell(){
-	    return $this->hasMany(ProductsXsell::className(),['products_id' => 'products_id']);
-    }
+//      moved to UpSell extension. relation is used nowhere in osc and extensions but maybe somethere in old projects?
+//    public function getUpsell(){
+//		return $this->hasMany(ProductsUpsell::className(),['products_id' => 'products_id']);
+//    }
+//
+//    public function getXsell(){
+//	    return $this->hasMany(ProductsXsell::className(),['products_id' => 'products_id']);
+//    }
 
     public function stockUpdateExtraParams()
     {

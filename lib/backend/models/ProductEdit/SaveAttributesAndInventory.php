@@ -116,7 +116,7 @@ class SaveAttributesAndInventory
                     $sql_data_array['products_options_sort_order'] = (int) $__attr_order_array[$value_id];
                 }
 
-                if ($ext = \common\helpers\Acl::checkExtensionAllowed('TypicalOperatingTemp', 'allowed')) {
+                if ($ext = \common\helpers\Extensions::isAllowed('TypicalOperatingTemp')) {
                     $_ext_data = $ext::saveProductAttribute($option_id, $value_id);
                     if ( is_array($_ext_data) ) $sql_data_array = array_merge($sql_data_array, $_ext_data);
                 }
@@ -184,7 +184,7 @@ class SaveAttributesAndInventory
                 }
 
                 ///group prices
-                if ($without_inventory || \common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed') || \common\helpers\Attributes::is_virtual_option($option_id)) {
+                if ($without_inventory || \common\helpers\Extensions::isAllowed('Inventory') || \common\helpers\Attributes::is_virtual_option($option_id)) {
                     tep_db_query("delete from " . TABLE_PRODUCTS_ATTRIBUTES_PRICES . " where products_attributes_id = '" . (int) $products_attributes_id . "'");
                     ///['db' => 'products_group_price_packaging', 'dbdef' => -2, 'post' => 'products_group_price_packaging', 'f' => ['self', 'defGroupPrice']],
                     if (USE_MARKET_PRICES == 'True' || \common\helpers\Extensions::isCustomerGroupsAllowed()) {
@@ -207,8 +207,8 @@ class SaveAttributesAndInventory
                 }
             }
 
-            /* @var \common\extensions\Inventory\Inventory $inventoryExt */
-            if (($inventoryExt = \common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed')) && !$without_inventory) {
+            /** @var \common\extensions\Inventory\Inventory $inventoryExt */
+            if (($inventoryExt = \common\helpers\Extensions::isAllowed('Inventory')) && !$without_inventory) {
                 /// no direct attributes info
                 // inventorypriceprefix_0{33}171{34}174[19][0], products_group_price_0{33}171{34}174[19][0] qty_discount_status0{33}171{34}174[19][0] discount_price_0{33}171{34}174[15][0][10]
                 ksort($options);
@@ -397,14 +397,14 @@ class SaveAttributesAndInventory
                 $all_inventory_uprids_array[] = trim((int)$products_id);
                 \common\models\WarehousesProducts::deleteAll(['AND', ['prid' => (int)$products_id], ['NOT IN', 'products_id', $all_inventory_uprids_array]]);
 
-            }elseif (\common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed') && $without_inventory) {
+            }elseif (\common\helpers\Extensions::isAllowed('Inventory') && $without_inventory) {
                 \common\models\Inventory::deleteAll( ['prid' => (int) $products_id] );
                 \common\models\InventoryPrices::deleteAll( ['prid' => (int) $products_id] );
                 \common\models\WarehousesProducts::deleteAll( ['AND', ['prid' => (int) $products_id], ['!=', 'products_id', trim((int) $products_id)]] );
             }
 
 
-            if (\common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed')) {
+            if (\common\helpers\Extensions::isAllowed('Inventory')) {
                 $inventory_quantity = tep_db_fetch_array(tep_db_query(
                     "SELECT SUM(products_quantity) AS left_quantity " .
                     "FROM " . TABLE_INVENTORY . " " .
@@ -417,7 +417,7 @@ class SaveAttributesAndInventory
         } else {
             /// no attributes / all attributes has been deleted
 
-            if (\common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed')) {
+            if (\common\helpers\Extensions::isAllowed('Inventory')) {
                 \common\models\Inventory::deleteAll( ['prid' => (int) $products_id] );
                 \common\models\InventoryPrices::deleteAll( ['prid' => (int) $products_id] );
                 \common\models\WarehousesProducts::deleteAll( ['AND', ['prid' => (int) $products_id], ['!=', 'products_id', trim((int) $products_id)]] );

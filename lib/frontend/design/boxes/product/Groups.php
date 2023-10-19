@@ -63,6 +63,7 @@ class Groups extends Widget {
         $products_all = $q->addSelect('p.stock_indication_id')  // extra fields
                 ->addSelect('p.products_price, products_tax_class_id')
                 ->addFrontendDescription()
+                ->orderBy('p.products_groups_sort')
                 ->asArray()
                 ->all();
         foreach($products_all as $products) {
@@ -124,7 +125,7 @@ class Groups extends Widget {
             $properties_array[$property['properties_id']] = $property;
         }
 
-        if (is_array($properties_array) && count($properties_array) > 0) {
+        if (isset($properties_array) && is_array($properties_array) && count($properties_array) > 0) {
             $prop_ids = array_keys($properties_array);
             $pruid_mask = [];
             $properties_names = [];
@@ -304,8 +305,8 @@ class Groups extends Widget {
         }
         $changed_properties_text = '';
         $products_groups_prev_pid = \Yii::$app->session->get('products_groups_prev_pid');
-        if ($products_groups_prev_pid > 0 && is_array($products_array[$products_groups_prev_pid])) {
-            if (is_array($products_array[$products_groups_prev_pid]['property_ids']) && is_array($products_array[$products_id]['property_ids'])) {
+        if ($products_groups_prev_pid > 0 && is_array($products_array[$products_groups_prev_pid]??null)) {
+            if (is_array($products_array[$products_groups_prev_pid]['property_ids']??null) && is_array($products_array[$products_id]['property_ids']??null)) {
                 $changed_properties_ids = array_diff_assoc($products_array[$products_id]['property_ids'], $products_array[$products_groups_prev_pid]['property_ids']);
                 if (is_array($changed_properties_ids) && count($changed_properties_ids) > 0) {
                     foreach ($changed_properties_ids as $_pId => $_vId) {
@@ -315,7 +316,7 @@ class Groups extends Widget {
             }
         }
 
-        return ['products' => $products_array, 'properties' => $properties_array, 'changed_properties' => $changed_properties_text];
+        return ['products' => $products_array, 'properties' => $properties_array??null, 'changed_properties' => $changed_properties_text];
     }
 
     

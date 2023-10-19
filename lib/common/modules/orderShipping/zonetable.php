@@ -90,7 +90,7 @@ class zonetable extends ModuleShipping {
         \common\helpers\Php8::nullArrProps($this->delivery, ['postcode', 'country_id', 'zone_id', 'city']);
         if ($this->enabled == true) {
             $check_flag = false;
-            $postcode = str_replace(' ', '', $this->delivery['postcode']);
+            $postcode = str_replace(' ', '', $this->delivery['postcode']??'');
             if ( strlen($postcode)>10 ) $postcode = substr($postcode, 0, 10);
 
             if ( preg_match('/^([A-Za-z][A-Ha-hJ-Yj-y]?[0-9][A-Za-z0-9]? ?[0-9][A-Za-z]{2}|[Gg][Ii][Rr] ?0[Aa]{2})$/',str_replace(' ','',$postcode)) ){
@@ -310,7 +310,8 @@ class zonetable extends ModuleShipping {
         $postcode = str_replace(' ', '', $this->delivery['postcode']);
         if ( strlen($postcode)>10 ) $postcode = substr($postcode, 0, 10);
 
-        $check_query = tep_db_query("select count(*) as total from " . TABLE_ZONES_TO_SHIP_ZONES . " gz where gz.platform_id='" . $platform_id . "' and (gz.zone_country_id = '" . ($this->delivery['country']['id'] ?? null) . "' or gz.zone_country_id=0 ) and (gz.zone_id = '" . ($this->delivery['zone_id'] ?? null) . "' or gz.zone_id = 0 ) and if(gz.start_postcode<>'',gz.start_postcode<='" . tep_db_input($postcode) . "',1) and if(gz.stop_postcode<>'',gz.stop_postcode >= '" . tep_db_input($postcode) . "',1) and if(gz.city<>'',gz.city = '" . tep_db_input($this->delivery['city'] ?? null) . "',1) order by gz.start_postcode desc");
+        $check_query = tep_db_query("select count(*) as total from " . TABLE_ZONES_TO_SHIP_ZONES . " gz where gz.platform_id='" . $platform_id . "' and (gz.zone_country_id = '" . ($this->delivery['country']['id'] ?? null) . "' or gz.zone_country_id=0 ) and (gz.zone_id = '" . ($this->delivery['zone_id'] ?? null) . "' or gz.zone_id = 0 ) /*and if(gz.start_postcode<>'',gz.start_postcode<='" . tep_db_input($postcode) . "',1) and if(gz.stop_postcode<>'',gz.stop_postcode >= '" . tep_db_input($postcode) . "',1) */and if(gz.city<>'',gz.city = '" . tep_db_input($this->delivery['city'] ?? null) . "',1) order by gz.start_postcode desc"); // not compatible UK-style postcodes
+
         $check = tep_db_fetch_array($check_query);
 
         if ($check['total'] == 0) {
@@ -327,8 +328,12 @@ class zonetable extends ModuleShipping {
             return $this->quotes;
         }
 
+        $forceUkPostcode = false;
+        if (!empty($this->delivery['country']['iso_code_2']) && in_array(strtoupper($this->delivery['country']['iso_code_2']), ['IE', 'GB'])) {
+            $forceUkPostcode = true;
+        }
 
-        if ( preg_match('/^([A-Za-z][A-Ha-hJ-Yj-y]?[0-9][A-Za-z0-9]? ?[0-9][A-Za-z]{2}|[Gg][Ii][Rr] ?0[Aa]{2})$/',str_replace(' ','',$postcode)) ){
+        if ($forceUkPostcode ||  preg_match('/^([A-Za-z][A-Ha-hJ-Yj-y]?[0-9][A-Za-z0-9]? ?[0-9][A-Za-z]{2}|[Gg][Ii][Rr] ?0[Aa]{2})$/',str_replace(' ','',$postcode)) ){
             $_postcode = $this->search_uk_zip($postcode, $this->delivery['country_id'], '[@@FIELD@@]');
             $search_by_postcode_sql =
                 "and if(length(gz.start_postcode),gz.start_postcode<=substring(" . str_replace('[@@FIELD@@]', 'gz.start_postcode', $_postcode) . ",1,length(gz.start_postcode)),1) ".
@@ -408,7 +413,7 @@ class zonetable extends ModuleShipping {
             }
 
             $last_value = 0;
-            $rates = explode(';', $data['rate']);
+            $rates = explode(';', $data['rate'] ?? '');
             foreach ($rates as $rate_info) {
                 if (empty($rate_info)) {
                     continue;
@@ -1181,12 +1186,12 @@ $(\'input[name^="city"]\').autocomplete({
                 $html .= '<div class="main-tab">';//START OFF BLOCK
                 $html .= '
     <ul class="nav nav-tabs" id="cartTab">
-      <li class="active"><a data-toggle="tab" data-id="1" href="#panel1">Order</a></li>';
+      <li class="active" data-bs-toggle="tab" data-bs-target="#panel1"><a  data-id="1">Order</a></li>';
                 if (\common\helpers\Acl::checkExtensionAllowed('Quotations', 'allowed')) {
-                    $html .= '<li><a data-toggle="tab" data-id="2" href="#panel2">Quotation</a></li>';
+                    $html .= '<li data-bs-toggle="tab" data-bs-target="#panel2"><a  data-id="2">Quotation</a></li>';
                 }
                 if (\common\helpers\Acl::checkExtensionAllowed('Samples', 'allowed')) {
-                    $html .= '<li><a data-toggle="tab" data-id="3" href="#panel3">Sample</a></li>';
+                    $html .= '<li data-bs-toggle="tab" data-bs-target="#panel3"><a  data-id="3">Sample</a></li>';
                 }
                 $html .='</ul>
 
@@ -1545,6 +1550,7 @@ function delete_tr_cost($obj){
             $html .= $s . '</div>
   </div>
 </div>
+	<script type="text/javascript" src="' . \Yii::$app->request->baseUrl . '/plugins/cookie/jquery.cookie.js"></script>
 <script type="text/javascript">
     (function(){$(function(){
         var ztb_close = $.cookie("ztb_close");

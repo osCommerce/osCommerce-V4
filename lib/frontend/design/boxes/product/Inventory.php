@@ -29,6 +29,7 @@ class Inventory extends Widget
 
   public function run()
   {
+    if (!\common\helpers\Extensions::isAllowed('Inventory')) return '';
     $params = Yii::$app->request->get();
 
     if ($params['products_id'] && Yii::$app->controller instanceof \frontend\controllers\CatalogController ) {

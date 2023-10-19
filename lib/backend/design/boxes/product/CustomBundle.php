@@ -38,11 +38,13 @@ class CustomBundle extends Widget
           0 => Translation::getTranslationValue('FIELDSET_ASSIGNED_XSELL_PRODUCTS','admin/categories'),
       ];
 
-      $tmp = \common\models\ProductsXsellType::find()
-          ->select('xsell_type_name, xsell_type_id')
-          ->andWhere(['language_id' => (int)$languages_id])
-          ->orderBy('xsell_type_name')
-          ->asArray()->indexBy('xsell_type_id')->column();
+      if ($ext = \common\helpers\Acl::checkExtensionAllowed('UpSell'))
+      {
+          $tmp = $ext::getXsellTypeList();
+      }else{
+          $tmp = null;
+      }
+
       if (is_array($tmp)) {
         $xsellTypeVariants += $tmp;
       }

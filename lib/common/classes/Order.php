@@ -290,7 +290,9 @@ class Order extends extended\OrderAbstract implements extended\TransactionsInter
     
     public function notify_customer($products_ordered,$emailParams = [], $emailTemplate = ''){
         $notify_status = parent::notify_customer($products_ordered, $emailParams, $emailTemplate);
-        $this->notifyGiftCards();
+        if ($notify_status){
+            $this->notifyGiftCards();
+        }
         return $notify_status;
     }
     

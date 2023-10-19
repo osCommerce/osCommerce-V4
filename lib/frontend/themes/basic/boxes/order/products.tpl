@@ -6,7 +6,7 @@
         <div class="head price">{$smarty.const.HEADING_PRICE}</div>
     </div>
     {foreach $order_product as $order_product_array}
-        <div class="item">
+        <div class="item{if $order_product_array.parent_product} sub-product{/if}">
             <div class="image">
                 {if $order_product_array.product_info_link}
                     <a href="{$order_product_array.product_info_link}" target="_blank" title="{$order_product_array.order_product_name|escape:'html'}"><img src="{$order_product_array.products_image}" alt="{$order_product_array.order_product_name|escape:'html'}"></a>

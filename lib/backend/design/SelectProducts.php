@@ -18,6 +18,7 @@ use yii\base\Widget;
 class SelectProducts extends Widget
 {
     public $name;
+    public $selectTitle;
     public $selectedName;
     public $selectedProducts;
     public $selectedPrefix;
@@ -36,7 +37,8 @@ class SelectProducts extends Widget
             'TEXT_ROOT', 'TEXT_ADD', 'IMAGE_BACK', 'TABLE_HEADING_PRICE_EXCLUDING_TAX',
             'TABLE_HEADING_PRICE_INCLUDING_TAX', 'TEXT_STOCK_QTY', 'TEXT_MODEL', 'TEXT_TYPE_CHOOSE_PRODUCT',
             'TEXT_PRODUCT_NOT_SELECTED', 'TEXT_IMG', 'TEXT_LABEL_NAME', 'TEXT_PRICE',
-            'FIELDSET_ASSIGNED_PRODUCTS', 'SEARCH_BY_ATTR', 'TEXT_MODEL', 'TEXT_BACKLINK'
+            'FIELDSET_ASSIGNED_PRODUCTS', 'SEARCH_BY_ATTR', 'TEXT_MODEL', 'TEXT_BACKLINK',
+            'BATCH_BACK_LINK_TOOLTIP_TITLE', 'ADD_SELECTED_PRODUCTS', 'TEXT_ADDED',
         ], false);
 
         \backend\design\Data::addJsData(['tr' => $tr]);
@@ -50,6 +52,7 @@ class SelectProducts extends Widget
 
         return $this->render('select-products.tpl', [
             'name' => $this->name,
+            'selectTitle' => $this->selectTitle,
             'selectedName' => $this->selectedName,
             'selectedProducts' => addslashes(json_encode($selectedProducts)),
             'selectedPrefix' => $this->selectedPrefix,

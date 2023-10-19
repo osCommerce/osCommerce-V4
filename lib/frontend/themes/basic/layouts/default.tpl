@@ -37,7 +37,7 @@
 			font-weight: normal;
 			font-style: normal;
 		}
-		{file_get_contents(Info::themeFile('/css/basic.css', 'fs'))}
+		{file_get_contents(Info::themeFile('/css/base.css', 'fs'))}
 		{file_get_contents(Info::themeFile('/css/style.css', 'fs'))}
 	</style>
 

@@ -63,7 +63,8 @@ class PayPalPayLater extends Widget {
                  * 1 - hide
                  * 2 - hide if zero
                  */
-                if (($stock_info['flags']['request_for_quote'] && strtolower(\common\helpers\PlatformConfig::getVal('SHOW_PRICE_FOR_QUOTE_PRODUCT', 'false')) != 'true' /* && $stock_info['flags']['display_price_options'] != 0 */) ||
+                /** @var \common\extensions\Quotations\Quotations $ext */
+                if (($stock_info['flags']['request_for_quote'] && ( ($ext = \common\helpers\Extensions::isAllowed('Quotations')) && !$ext::optionIsPriceShow() ) /* && $stock_info['flags']['display_price_options'] != 0 */) ||
                         ($stock_info['flags']['display_price_options'] == 1) ||
                         (abs($product['products_price']) < 0.01 && $stock_info['flags']['display_price_options'] == 2)) {
                     $return_price = false;

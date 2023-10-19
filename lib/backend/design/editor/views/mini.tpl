@@ -1,4 +1,4 @@
-<div class="unstored_carts">
+<div class="unstored_carts dropdown-item">
     {if !$opened}
         <a href="{\yii\helpers\Url::to(['editor/order-edit', 'orders_id' => $orders_id, 'currentCart'=>$cart])}">
     {else}

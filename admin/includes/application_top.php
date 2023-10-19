@@ -121,6 +121,8 @@ if (defined('PURCHASE_OFF_STOCK')) {
         define('STOCK_ALLOW_CHECKOUT', 'false');
     }
 }
+require_once('../lib/common/helpers/Dbg.php');
+\common\helpers\Dbg::defineConsts();
 
   // {{ time zones
   if ( !class_exists('\common\helpers\Date') ) {

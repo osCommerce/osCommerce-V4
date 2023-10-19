@@ -157,7 +157,7 @@ class Stock extends AbstractClass
             $uProductIdArray = \common\models\Products::find()->select('products_id')->asArray(true)->column();
         }
         foreach ($uProductIdArray as $uProductId) {
-            if ((trim((int)$uProductId) == trim($uProductId)) OR !\common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed')) {
+            if ((trim((int)$uProductId) == trim($uProductId)) OR !\common\helpers\Extensions::isAllowed('Inventory')) {
                 $this->loadProduct($uProductId);
             }
             $this->loadInventory($uProductId);

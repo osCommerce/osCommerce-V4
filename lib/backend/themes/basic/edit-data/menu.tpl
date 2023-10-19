@@ -24,8 +24,8 @@
             {if count($languages) > 1}
             <ul class="nav nav-tabs tab-radius-ul tab-radius-ul-white">
                 {foreach $languages as $language}
-                    <li{if $languageId && $languageId == $language['id'] || !$languageId && $language@index == 0} class="active"{/if}>
-                        <a href="#tab_{$language['id']}" data-toggle="tab">
+                    <li{if $languageId && $languageId == $language['id'] || !$languageId && $language@index == 0} class="active"{/if} data-bs-toggle="tab" data-bs-target="#tab_{$language['id']}">
+                        <a>
                             {$language['logo']}<span>{$language['name']}</span>
                         </a>
                     </li>

@@ -171,7 +171,8 @@ class ErrorLogViewerController extends \common\classes\modules\SceletonExtension
     {
         $id = \Yii::$app->request->post('id', false);
         $file = \Yii::$app->request->post('file', false);
-
+        $file = str_replace('|', '.', $file);
+        $mask = str_replace('.', '|', $file);
         $reader = new LogReader($file);
         $tmp = explode('/', $file);
         try {
@@ -187,6 +188,7 @@ class ErrorLogViewerController extends \common\classes\modules\SceletonExtension
             $result->description = $reader->getDetails($id);
             $result->file = $file;
             $result->source = $tmp[0];
+            $result->mask = $mask;
 
             return $this->renderPartial('advanced-actions', ['log' => $result]);
         }catch (\Exception $e) // if file content not support
@@ -204,6 +206,8 @@ class ErrorLogViewerController extends \common\classes\modules\SceletonExtension
         $this->view->headingTitle = EXT_ELV_HEADING_TITLE;
 
         $file = \Yii::$app->request->get('log', false);
+        $mask = str_replace('.', '|', $file);
+        $realFiename = str_replace('|', '.', $file);
         if(!$file) throw new \Exception("Invalid request");
 
         $this->view->logTable = array(
@@ -233,12 +237,13 @@ class ErrorLogViewerController extends \common\classes\modules\SceletonExtension
             ),
         );
 
-        return $this->render('view', ['file' => $file, 'back' => explode('/', $file)[0]]);
+        return $this->render('view', ['file' => $file, 'back' => explode('/', $file)[0], 'mask' => $mask, 'filename' => $realFiename]);
     }
 
     public function actionAdvancedList()
     {
         $file = \Yii::$app->request->get('file', false);
+        $file = str_replace('|', '.', $file);
         if(!$file) throw new \Exception("Invalid request");
 
         $logger = new LogReader($file);
@@ -293,10 +298,19 @@ class ErrorLogViewerController extends \common\classes\modules\SceletonExtension
         if($file->error)
         {
             $content = "<pre>".$file->errorMessage."</pre>";
+            Yii::$app->response->content = $content;
         }else{
-            $content = "<pre>".$file->content."</pre>";
+            header("Content-type: text/plain");
+            header("Pragma: no-cache");
+            header("Expires: 0");
+            header('Content-Length: ' . filesize($file->fullPath));
+
+            if (ob_get_level()) {
+                ob_end_clean();
+            }
+            readfile("$file->fullPath");
+            exit;
         }
-        Yii::$app->response->content = $content;
     }
 
 }

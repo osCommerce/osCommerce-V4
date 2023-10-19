@@ -7,6 +7,7 @@ namespace common\components;
 
 use Yii;
 
+#[\AllowDynamicProperties]
 class GoogleTools 
 {
     

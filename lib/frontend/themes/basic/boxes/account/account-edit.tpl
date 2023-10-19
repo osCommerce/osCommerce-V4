@@ -10,7 +10,7 @@
     {Html::beginForm($action, 'post', ['id' => 'accountEdit'])}
 
     <div class="messages"></div>
-
+	<div class="formWrapBox">
     {if in_array(ACCOUNT_GENDER, ['required', 'required_register', 'visible', 'visible_register'])}
         <div class="col-full col-gender">
             <span>{field_label const="ENTRY_GENDER" configuration="ACCOUNT_GENDER"}</span>
@@ -75,14 +75,20 @@
             {Html::activeHiddenInput($editModel, 'dob', ['class' => 'dob-res'])}
         </div>
     {/if}
-    <div class="required requiredM">{$smarty.const.FORM_REQUIRED_INFORMATION}</div>
+
+    {foreach \common\helpers\Hooks::getList('box/account/account-edit', 'after-main-fields') as $filename}
+        {include file=$filename}
+    {/foreach}
 
     {if $CustomersMultiEmails = Acl::checkExtensionAllowed('CustomersMultiEmails', 'allowed')}
       <div class="col-full">{$CustomersMultiEmails::frontendViewCustomerEdit()}</div>
     {/if}
 
+    <div class="required requiredM">{$smarty.const.FORM_REQUIRED_INFORMATION}</div>
+
     <div class="center-buttons"><button type="submit" class="btn-2"><span class="button">{$smarty.const.IMAGE_BUTTON_UPDATE}</span></button></div>
     {Html::endForm()}
+	</div>
 </div>
 
 

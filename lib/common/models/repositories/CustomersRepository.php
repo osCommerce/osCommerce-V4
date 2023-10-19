@@ -207,19 +207,4 @@ class CustomersRepository
             ]);
     }
 
-    /**
-     * @return \common\models\queries\CustomersQuery
-     */
-    public function getCustomersWithBonusPointsQuery()
-    {
-        return Customers::find()->where(['>','customers_bonus_points', 0]);
-    }
-
-    /**
-     * @return \common\models\queries\CustomersQuery
-     */
-    public function getCustomerIdentityWithBonusPointsQuery()
-    {
-        return Customer::find()->where(['>','customers_bonus_points', 0]);
-    }
 }

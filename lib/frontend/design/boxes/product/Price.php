@@ -73,7 +73,8 @@ class Price extends Widget
          * 1 - hide
          * 2 - hide if zero
          */
-        if (($stock_info['flags']['request_for_quote'] && strtolower(\common\helpers\PlatformConfig::getVal('SHOW_PRICE_FOR_QUOTE_PRODUCT', 'false')) != 'true' /*&& $stock_info['flags']['display_price_options'] != 0*/) ||
+        /** @var \common\extensions\Quotations\Quotations $ext */
+        if (($stock_info['flags']['request_for_quote'] && ( ($ext = \common\helpers\Extensions::isAllowed('Quotations')) && !$ext::optionIsPriceShow() ) /*&& $stock_info['flags']['display_price_options'] != 0*/) ||
             ($stock_info['flags']['display_price_options'] == 1) ||
             (abs($product['products_price']) < 0.01 && $stock_info['flags']['display_price_options'] == 2 && !$product['is_bundle']) ){
             $return_price = false;
@@ -99,7 +100,7 @@ class Price extends Widget
                     'priceCurrency' => \Yii::$app->settings->get('currency'),
                     'priceValidUntil' => $priceValidUntil,
                 ]
-            ]]);
+            ]], ['Product', 'offers']);
 
             //return TEXT_FREE;
             return IncludeTpl::widget(['file' => 'boxes/product/price.tpl', 'params' => [
@@ -235,27 +236,27 @@ class Price extends Widget
                     'url' => Yii::$app->urlManager->createAbsoluteUrl(['catalog/product', 'products_id' => $params['products_id']]),
                     'availability' => 'https://schema.org/' . ($stock_info['stock_code'] == 'out-stock' ? 'OutOfStock' : 'InStock'),
                 ]
-            ]]);
+            ]], ['Product', 'offers']);
 
             if (isset($product['special_expiration_date']) && !empty($product['special_expiration_date'])) {
                 \frontend\design\JsonLd::addData(['Product' => [
                     'offers' => [
                         'priceValidUntil' => date("Y-m-d", strtotime($product['special_expiration_date'])),
                     ]
-                ]]);
+                ]], ['Product', 'offers', 'priceValidUntil']);
             } else {
                 \frontend\design\JsonLd::addData(['Product' => [
                     'offers' => [
                         'priceValidUntil' => date("Y-m-d", time() + 60*60*24*180),
                     ]
-                ]]);
+                ]], ['Product', 'offers', 'priceValidUntil']);
             }
             \frontend\design\JsonLd::addData(['Product' => [
                 'offers' => [
                     'price' => $jsonPrice,
                     'priceCurrency' => \Yii::$app->settings->get('currency'),
                 ]
-            ]]);
+            ]], ['Product', 'offers', 'price']);
         }
 
         if ($special != '' && abs($special_value) < 0.01 && defined('PRODUCT_PRICE_FREE') && PRODUCT_PRICE_FREE == 'true') {

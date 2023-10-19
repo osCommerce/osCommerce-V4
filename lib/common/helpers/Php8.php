@@ -20,8 +20,9 @@ class Php8 {
     }
 
 
-    public static function nullObjProps($obj, array $prop_names)
+    public static function nullObjProps(&$obj, array $prop_names)
     {
+        if (!is_object($obj)) $obj = new \stdClass();
         foreach ($prop_names as $name) {
             $obj->$name = $obj->$name ?? null;
         }
@@ -137,4 +138,10 @@ class Php8 {
     {
         return Php::array_key_first($arr);
     }
+
+    public static function pregLastErrorMsg()
+    {
+        return preg_last_error() . function_exists('preg_last_error_msg') ? ': ' . preg_last_error_msg() : '';
+    }
+
 }

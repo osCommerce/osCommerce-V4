@@ -17,6 +17,7 @@ use common\modules\orderShipping\np;
 use common\modules\orderTotal\ot_shipping;
 require_once __DIR__ . '/VersionTrait.php'; // thanks for require Module in configure.php
 
+#[\AllowDynamicProperties]
 abstract class Module{
 
     use VersionTrait;
@@ -223,7 +224,7 @@ abstract class Module{
   
   public function enable_module($platform_id, $flag){
     $key_info = $this->describe_status_key();
-    if ( !is_object($key_info) || !is_a($key_info,'common\classes\modules\ModuleStatus')) return;
+    if ( !is_object($key_info) || !is_a($key_info,'common\classes\modules\ModuleStatus')) return false;
 
     if (\common\helpers\Acl::checkExtensionAllowed('ReportUniversalLog')) {
         $logUniversal = \common\extensions\ReportUniversalLog\classes\LogUniversal::getInstance();
@@ -362,6 +363,7 @@ abstract class Module{
             $visibilityAccess = array_merge($this->visibility, $visibility);
         }
         foreach ($variants as $code => $name) {
+            if (!\common\helpers\Extensions::isVisibilityVariant($code)) continue;
             $response .= '<tr><td>';
             $params = 'class="uniform" ';
             if (in_array($code, $this->visibility)) {
@@ -563,6 +565,7 @@ abstract class Module{
     public function getGroupVisibily($platform_id, $groups_id)
     {
         if ( (int)$platform_id==0 ) return true;
+        if (\common\helpers\System::isBackend()) return true; // allow all modules in order edit
         //allow to disable for all groups if ( (int)$groups_id==0 ) return true;
         $modulesGroups = \common\models\ModulesGroupsSettings::findOne(['platform_id' => $platform_id, 'code' => $this->code]);
         if (!is_null($modulesGroups)) {
@@ -732,7 +735,11 @@ abstract class Module{
         if (in_array($key, $this->encrypted_keys)) {
             if ($this->confChanged($key, $value, $platform_id)) {
                 if (!empty($value)) {
-                    $value = utf8_encode(\Yii::$app->security->encryptByKey($value, $this->getEncryptionKey()));
+                    $key = $this->getEncryptionKey();
+                    if (empty($key)) {
+                        $key = \Yii::$app->params['secKey.backend'];
+                    }
+                    $value = utf8_encode(\Yii::$app->security->encryptByKey($value, $key));
                 }
             } else {
                 $pc = new \common\classes\platform_config($platform_id);
@@ -751,7 +758,7 @@ abstract class Module{
      */
     public static function setConf($val, $key) {
         //return \common\helpers\Html::textInput('configuration[' . $key .  ']', base64_encode($val));
-        return \common\helpers\Html::textInput('configuration[' . $key . ']', (defined('PASSWORD_HIDDEN') ? PASSWORD_HIDDEN : '--Encrypted--'));
+        return \common\helpers\Html::textInput('configuration[' . $key . ']', (empty($val)?'':(defined('PASSWORD_HIDDEN') ? PASSWORD_HIDDEN : '--Encrypted--')));
     }
 
     /**
@@ -770,7 +777,11 @@ abstract class Module{
   protected function decryptConst($key) {
     $ret = defined($key) ? constant($key) : (new \common\classes\platform_config($this->getPlatformId()))->const_value($key);
     if (!empty($ret)) {
-      $ret = \Yii::$app->security->decryptByKey( utf8_decode($ret), $this->getEncryptionKey());
+        $key = $this->getEncryptionKey();
+        if (empty($key)) {
+            $key = \Yii::$app->params['secKey.backend'];
+        }
+        $ret = \Yii::$app->security->decryptByKey( utf8_decode($ret), $key);
     }
     return $ret;
   }

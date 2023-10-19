@@ -295,6 +295,7 @@ class ProductsattributesController extends Sceleton {
         $option_name_alias = Yii::$app->request->post('option_name_alias');
         $option_image = Yii::$app->request->post('option_image');
         $option_image_loaded = Yii::$app->request->post('option_image_loaded');
+        $option_image_delete = Yii::$app->request->post('option_image_delete');
         $option_color = Yii::$app->request->post('option_color');
         $option_sort_order = Yii::$app->request->post('option_sort_order_eng', array());
         $type_code = Yii::$app->request->post('type_code', 'option');
@@ -345,9 +346,6 @@ class ProductsattributesController extends Sceleton {
                         $obj->products_options_values_name = $option_name[$_def_l];
                         $obj->products_options_values_name_alias = $option_name_alias[$_def_l];
                         $obj->products_options_values_color = $option_color[$_def_l];
-                        if (tep_not_null($option_image_loaded[$_def_l])) {
-                            $obj->products_options_values_image = 'subopt-' . $products_options_id . '-' . $option_image_loaded[$_def_l];
-                        }
                     } else {
                         if (isset($option_sort_order[$_language_id])) {
                             $obj->products_options_values_sort_order = $option_sort_order[$_language_id];
@@ -356,15 +354,15 @@ class ProductsattributesController extends Sceleton {
                             $obj->products_options_values_color = $option_color[$_language_id];
                         }
                     }
-                    if (tep_not_null($option_image_loaded[$_language_id])) {
-                        $path = \Yii::getAlias('@webroot');
-                        $path .= DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR;
-                        $tmp_name = $path . $option_image_loaded[$_language_id];
-                        $new_name = DIR_FS_CATALOG_IMAGES . 'subopt-' . $id . '-' . $option_image_loaded[$_language_id];
-                        @copy($tmp_name, $new_name);
-                        @unlink($tmp_name);
-                        $obj->products_options_values_image = 'subopt-' . $id . '-' . $option_image_loaded[$_language_id];
-                    }
+
+                    $obj->products_options_values_image = \common\helpers\Image::prepareSavingImage(
+                        $obj->products_options_values_image,
+                        $option_image[$_language_id],
+                        $option_image_loaded[$_language_id],
+                        'attributes',
+                        $option_image_delete[$_language_id]
+                    );
+
                     $obj->save();
                 }
 
@@ -421,9 +419,6 @@ class ProductsattributesController extends Sceleton {
                     if ($same_all_languages) {
                         $obj->products_options_name = $option_name[$_def_l];
                         $obj->products_options_color = $option_color[$_def_l];
-                        if (tep_not_null($option_image_loaded[$_def_l])) {
-                            $obj->products_options_image = 'opt-' . $id . '-' . $option_image_loaded[$_def_l];
-                        }
                     } else {
                         $obj->products_options_name = $option;
                         if (isset($option_color[$_language_id])) {
@@ -431,15 +426,15 @@ class ProductsattributesController extends Sceleton {
                         }
                         $obj->products_options_sort_order = $option_sort_order[$_language_id] ?? 0;
                     }
-                    if (tep_not_null($option_image_loaded[$_language_id])) {
-                        $path = \Yii::getAlias('@webroot');
-                        $path .= DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR;
-                        $tmp_name = $path . $option_image_loaded[$_language_id];
-                        $new_name = DIR_FS_CATALOG_IMAGES . 'opt-' . $id . '-' . $option_image_loaded[$_language_id];
-                        @copy($tmp_name, $new_name);
-                        @unlink($tmp_name);
-                        $data_array['products_options_image'] = 'opt-' . $id . '-' . $option_image_loaded[$_language_id];
-                    }
+
+                    $obj->products_options_image = \common\helpers\Image::prepareSavingImage(
+                        $obj->products_options_image,
+                        $option_image[$_language_id],
+                        $option_image_loaded[$_language_id],
+                        'attributes',
+                        $option_image_delete[$_language_id]
+                    );
+
                     $obj->save();
                 }
                 $existed_l = array_unique($existed_l);

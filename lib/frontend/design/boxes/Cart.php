@@ -12,7 +12,6 @@
 
 namespace frontend\design\boxes;
 
-use common\extensions\MultiCart\MultiCart;
 use Yii;
 use yii\base\Widget;
 use frontend\design\IncludeTpl;
@@ -38,9 +37,9 @@ class Cart extends Widget {
 			return '';
 		}
         
-        if( $ext = \common\helpers\Acl::checkExtension( 'MultiCart', 'allowed' ) ) {
-            if( MultiCart::allowed() && MultiCart::getCartsAmount(false) > 0) {
-                return MultiCart::cartsBlock([
+        if( $ext = \common\helpers\Extensions::isAllowed('MultiCart') ) {
+            if($ext::getCartsAmount(false) > 0) {
+                return $ext::cartsBlock([
                     'settings' => $this->settings,
                     'id' => $this->id
                 ]);
@@ -67,7 +66,7 @@ class Cart extends Widget {
 		}
 		
 		$params = [
-			'total'          => ($this->settings[0]['total'] ? $currencies->format( $cart->show_total() ) : ''),
+			'total'          => (($this->settings[0]['total']??null) ? $currencies->format( $cart->show_total() ) : ''),
 			'count_contents' => $cart->count_contents(),
 			'settings'       => $this->settings,
 			'products'       => $products,

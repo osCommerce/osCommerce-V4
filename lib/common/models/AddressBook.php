@@ -38,6 +38,7 @@ use yii\db\ActiveRecord;
  * @property int $entry_customs_number_status
  * @property date $entry_customs_number_date
  * @property string $entry_telephone
+ * @property string $entry_email_address
  */
 class AddressBook extends ActiveRecord {
 

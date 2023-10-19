@@ -113,13 +113,13 @@ class order_total extends modules\ModuleCollection {
                                 'code' => $module->code,
                                 'title' => $module->output[$i]['title'],
                                 'text' => $module->output[$i]['text'],
-                                'value' => $module->output[$i]['value'],
+                                'value' => $module->output[$i]['value']??null,
                                 'sort_order' => $sort,
-                                'text_exc_tax' => $module->output[$i]['text_exc_tax'],
-                                'text_inc_tax' => $module->output[$i]['text_inc_tax'],
-                                'tax_class_id' => $module->output[$i]['tax_class_id'],
-                                'value_exc_vat' => $module->output[$i]['value_exc_vat'],
-                                'value_inc_tax' => $module->output[$i]['value_inc_tax'],
+                                'text_exc_tax' => $module->output[$i]['text_exc_tax']??null,
+                                'text_inc_tax' => $module->output[$i]['text_inc_tax']??null,
+                                'tax_class_id' => $module->output[$i]['tax_class_id']??null,
+                                'value_exc_vat' => $module->output[$i]['value_exc_vat']??null,
+                                'value_inc_tax' => $module->output[$i]['value_inc_tax']??null,
                             ];
                             
                         }
@@ -140,6 +140,11 @@ class order_total extends modules\ModuleCollection {
             }
         }
     }
+
+    public function clearTotalCache() {
+        $this->order_total_array = null;
+    }
+
 
     private function overwriteModules($reProcess){
         $processinModules = [];

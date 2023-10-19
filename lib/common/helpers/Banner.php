@@ -15,6 +15,7 @@ namespace common\helpers;
 
 use common\models\BannersGroups;
 use common\models\BannersGroupsSizes;
+use common\models\BannersToPlatform;
 use common\models\MenuTitles;
 use Yii;
 use common\models\Menus;
@@ -23,13 +24,21 @@ use common\models\MenuItems;
 
 class Banner {
 
-    public static function groupData($group)
+    public static function groupData($group, $platforms = [], $activeStatus = false)
     {
         $bannersData = [];
-        $banners = \common\models\Banners::find()->alias('b')
+        $bannersQuery = \common\models\Banners::find()->alias('b')
             ->leftJoin(BannersGroups::tableName() . ' bg', 'bg.id = b.group_id')
-            ->where(['banners_group' => $group])
-            ->asArray()->all();
+            ->where(['banners_group' => $group]);
+        if (count($platforms)) {
+            $bannersQuery
+                ->leftJoin(BannersToPlatform::tableName() . ' b2p', 'b2p.banners_id = b.banners_id')
+                ->andWhere(['in', 'platform_id', $platforms]);
+        }
+        if ($activeStatus) {
+            $bannersQuery->andWhere(['status' => '1']);
+        }
+        $banners = $bannersQuery->asArray()->all();
 
         foreach ($banners as $banner) {
             $languages = [];
@@ -148,72 +157,96 @@ class Banner {
         return $imgKey;
     }
 
-    public static function setupBanners($bannerData, $imagePath, $platformIds)
+    public static function setupBanners($bannerData, $imagePath, $platformIds, $forceCreate = false)
     {
-        $bannersIds = [];
         foreach ($bannerData as $groupName => $groupData) {
             if ($groupName == 'groupSettings') {
                 foreach ($groupData as $settingsGroupName => $settingsGroupData) {
-                    self::setupGroupSettings($settingsGroupName, $settingsGroupData);
+                    $newGroupName = self::setupGroupSettings($settingsGroupName, $settingsGroupData, $forceCreate);
+                    if ($forceCreate && $newGroupName != $settingsGroupName) {
+                        $bannerData[$newGroupName] = $bannerData[$settingsGroupName];
+                        unset($bannerData[$settingsGroupName]);
+                    }
                 }
+                break;
+            }
+        }
+        $bannersIds = [];
+        foreach ($bannerData as $groupName => $groupData) {
+            if ($groupName == 'groupSettings') {
                 continue;
             }
 
             foreach ($groupData as $banner) {
-                $bannersIds[] = self::setupBanner($banner, $groupName, $imagePath, $platformIds);
+                $bannersIds[] = self::setupBanner($banner, $groupName, $imagePath, $platformIds, $forceCreate);
             }
         }
         return $bannersIds;
     }
 
-    public static function setupGroupSettings($groupName, $groupData)
+    public static function setupGroupSettings($groupName, $groupData, $forceCreate = false)
     {
-        foreach ($groupData as $imageWidth => $banner) {
-            $group = \common\models\BannersGroups::find()->alias('bg')
-                ->innerJoin(BannersGroupsSizes::tableName() . ' bgs', 'bg.id = bgs.group_id')
-                ->where([
-                    'banners_group' => $groupName,
-                    'image_width' => $imageWidth
-                ])->count();
-            if ($group) continue;
+        if ($forceCreate) {
+            $_groupName = $groupName;
+            for ($i = 1; BannersGroups::findOne(['banners_group' => $_groupName]) && $i < 100; $i++) {
+                $_groupName = $groupName . '-' . $i;
+            }
+            $groupName = $_groupName;
+        }
 
+        $group = BannersGroups::findOne(['banners_group' => $groupName]);
+        if (!$group) {
             $group = new \common\models\BannersGroups();
             $group->attributes = [
                 'banners_group' => $groupName,
             ];
             $group->save();
-            $id = $group->getPrimaryKey();
+        }
+        $id = $group->getPrimaryKey();
 
-            $groupSizes = new \common\models\BannersGroupsSizes();
+        foreach ($groupData as $banner) {
+            $groupSizes = BannersGroupsSizes::findOne([
+                'group_id' => $id,
+                'image_width' => $banner['image_width'],
+            ]);
+            if ($groupSizes) {
+                continue;
+            }
+            $groupSizes = new BannersGroupsSizes();
             $groupSizes->attributes = [
                 'group_id' => $id,
                 'width_from' => $banner['width_from'],
                 'width_to' => $banner['width_to'],
-                'image_width' => $imageWidth,
+                'image_width' => $banner['image_width'],
+                'image_height' => $banner['image_height'],
             ];
-            $groupSizes->save();
+            $groupSizes->save(false);
         }
+
+        return $groupName;
     }
 
-    public static function setupBanner($banner, $groupName, $imagePath, $platformIds = [])
+    public static function setupBanner($banner, $groupName, $imagePath, $platformIds = [], $forceCreate = false)
     {
-        foreach ($banner['languages'] as $languageKey => $language) {
-            $languageData = Language::get_language_id($languageKey);
-            if (!($languageData['languages_id'] ?? false)) {
-                continue;
-            }
-            $bannerData = \common\models\Banners::find()->alias('b')
-                ->select(['b.banners_id'])
-                ->leftJoin(\common\models\BannersGroups::tableName(). ' bg', 'b.group_id = bg.id')
-                ->leftJoin(\common\models\BannersLanguages::tableName(). ' bl', 'b.banners_id = bl.banners_id')
-                ->where([
-                    'banners_group' => $groupName,
-                    'banners_title' => $language['banners_title'],
-                    'language_id' => $languageData['languages_id'],
-                ])
-                ->asArray()->one();
-            if (isset($bannerData['banners_id']) && $bannerData['banners_id']) {
-                return $bannerData['banners_id'];
+        if (!$forceCreate){
+            foreach ($banner['languages'] as $languageKey => $language) {
+                $languageData = Language::get_language_id($languageKey);
+                if (!($languageData['languages_id'] ?? false)) {
+                    continue;
+                }
+                $bannerData = \common\models\Banners::find()->alias('b')
+                    ->select(['b.banners_id'])
+                    ->leftJoin(\common\models\BannersGroups::tableName(). ' bg', 'b.group_id = bg.id')
+                    ->leftJoin(\common\models\BannersLanguages::tableName(). ' bl', 'b.banners_id = bl.banners_id')
+                    ->where([
+                        'banners_group' => $groupName,
+                        'banners_title' => $language['banners_title'],
+                        'language_id' => $languageData['languages_id'],
+                    ])
+                    ->asArray()->one();
+                if (isset($bannerData['banners_id']) && $bannerData['banners_id']) {
+                    return $bannerData['banners_id'];
+                }
             }
         }
 
@@ -229,14 +262,15 @@ class Banner {
         $bannerModel = new \common\models\Banners();
         $bannerModel->attributes = [
             'group_id' => $groupId,
-            'expires_impressions' => $banner['expires_impressions'],
-            'expires_date' => $banner['expires_date'],
-            'date_scheduled' => $banner['date_scheduled'],
+            'expires_impressions' => $banner['expires_impressions'] ?? '',
+            'expires_date' => $banner['expires_date'] ?? '',
+            'date_scheduled' => $banner['date_scheduled'] ?? '',
             'date_added' => new \yii\db\Expression('NOW()'),
-            'status' => $banner['status'],
-            'sort_order' => $banner['sort_order'],
-            'banner_type' => $banner['banner_type'],
+            'status' => $banner['status'] ?? '',
+            'sort_order' => $banner['sort_order'] ?? '',
+            'banner_type' => $banner['banner_type'] ?? '',
         ];
+        $bannerModel->group_id = $groupId;
         $bannerModel->save(false);
         $bannerId = $bannerModel->getPrimaryKey();
         if (!$bannerId) return '';
@@ -263,14 +297,16 @@ class Banner {
             ];
             $bannersLanguages->save();
 
-            /*foreach ($platformIds as $platformId) {
-                if (!\common\models\BannersToPlatform::findOne([])) {
-                    $bannersToPlatform = new \common\models\BannersToPlatform();
-                    $bannersToPlatform->banners_id = $bannerId;
-                    $bannersToPlatform->platform_id = $platformId;
-                    $bannersToPlatform->save();
+            if ($forceCreate) {
+                foreach ($platformIds as $platformId) {
+                    if (!\common\models\BannersToPlatform::findOne([])) {
+                        $bannersToPlatform = new \common\models\BannersToPlatform();
+                        $bannersToPlatform->banners_id = $bannerId;
+                        $bannersToPlatform->platform_id = $platformId;
+                        $bannersToPlatform->save();
+                    }
                 }
-            }*/
+            }
 
             foreach ($language['groupsImages'] as $groupsImage) {
 

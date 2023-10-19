@@ -31,7 +31,14 @@
         {if !$contactName}{$contactName = 'contact'}{/if}
         <a class="btn btn-notify-prod" {if $product_has_attributes || !(isset($stock_info.flags.notify_instock) && $stock_info.flags.notify_instock)} style="display:none;"{/if} href="{Yii::$app->urlManager->createUrl([$contactName, 'products_id' => $products_id])}">{$smarty.const.CONTACT_ABOUT_PRODUCT}</a>
     {else}
-        <span class="btn btn-notify-prod" id="btn-notify"{if $product_has_attributes || !(isset($stock_info.flags.notify_instock) && $stock_info.flags.notify_instock)} style="display:none;"{/if}>{$smarty.const.NOTIFY_WHEN_STOCK}</span>
+        <span class="btn btn-notify-prod" id="btn-notify"{if $product_has_attributes || !(isset($stock_info.flags.notify_instock) && $stock_info.flags.notify_instock)} style="display:none;"{/if}>
+        {if $ext = \common\helpers\Acl::checkExtensionAllowed('NotifyBackInStockWaitDiscount', 'allowed')}
+            <span id="notify_when_stock_text">{$ext::notify_when_stock_text($products_id)}</span>
+            <span id="notify_when_stock_description" style="display:none;">{$ext::notify_when_stock_description($products_id)}</span>
+        {else}
+            {$smarty.const.NOTIFY_WHEN_STOCK}
+        {/if}
+        </span>
     {/if}
 
     {if !$settings['hide_additional_buttons']}
@@ -63,6 +70,7 @@
           {Html::beginForm(Yii::$app->urlManager->createUrl('catalog/product-notify'), 'get')|strip}
             <div class="middle-form">
               <div class="heading-3">{$smarty.const.BACK_IN_STOCK}</div>
+              <div class="col-full">` + $('#notify_when_stock_description').html() + `</div>
               <div class="col-full"><label>{$smarty.const.TEXT_NAME}<input type="text" id="notify-name"></label></div>
               <div class="col-full"><label>{$smarty.const.ENTRY_EMAIL_ADDRESS}<input type="text" id="notify-email"></label></div>
               <div class="center-buttons"><button type="submit" class="btn">{$smarty.const.NOTIFY_ME}</button></div>
@@ -121,9 +129,18 @@
       } else {
         var error = false;
         $('[name^="id\\["]').each(function(index) {
-          uprid += '&id[' + this.name.match(/id\[([-\d]+)\]/)[1] + ']=' + $(this).val();
-          if (!parseInt($(this).val())) {
-            error = true;
+          if ($(this).is('select')) {
+            uprid += '&id[' + this.name.match(/id\[([-\d]+)\]/)[1] + ']=' + $(this).val();
+            if (!parseInt($(this).val())) {
+              error = true;
+            }
+          } else if ($(this).is('input')) {
+            if ($(this).is(':checked')) {
+              uprid += '&id[' + this.name.match(/id\[([-\d]+)\]/)[1] + ']=' + $(this).val();
+            }
+            if (!$('input[name="' + $(this).attr('name') + '"]:checked') || !parseInt($('input[name="' + $(this).attr('name') + '"]:checked').val())) {
+              error = true;
+            }
           }
         });
       }

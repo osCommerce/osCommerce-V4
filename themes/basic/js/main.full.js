@@ -237,7 +237,7 @@ $.fn.quantity = function(options){
                 var new_step = _this.attr('data-step')?parseInt(_this.attr('data-step'),10):options.step;
                 var new_virtual_item_qty = _this.attr('data-virtual-item-qty')?parseInt(_this.attr('data-virtual-item-qty'),10):options.virtual_item_qty;
                 var new_virtual_item_step = _this.attr('data-virtual-item-step')?_this.data('virtual-item-step'):options.virtual_item_step;
-                if (new_max !== false && min > max){
+                if (new_max !== false && new_min > new_max){
                     new_max = false;
                     _this.attr('data-error', 'min > max');
                 }
@@ -436,9 +436,13 @@ $.fn.quantity = function(options){
             _this.on('keyup', function(e){
                 var new_value = _this.val().replace(((virtual_item_qty > 1) ?/[^0-9\.]/g : /[^0-9]/g), '');
 
+                let delayTime = 500;
+                if (new_value === '') {
+                    delayTime = 3000;
+                }
                 delay(function(){
                     _this.trigger('check_quantity', [new_value * virtual_item_qty, true]);
-                }, 500);
+                }, delayTime);
             });
 
             _this.trigger('check_quantity');
@@ -1046,7 +1050,7 @@ if (typeof useCarousel != 'undefined'){
             return obj;
         }
 
-        var pCarousel = new products_carousel();
+        window.pCarousel = new products_carousel();
         pCarousel.init();
     }
 }

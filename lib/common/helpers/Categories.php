@@ -30,7 +30,7 @@ class Categories {
 
         if ( !isset($cached[$cache_key]) ) {
             $the_categories_name = tep_db_fetch_array(tep_db_query("select if(length(cd1.categories_name), cd1.categories_name, cd.categories_name) as categories_name from " . TABLE_CATEGORIES_DESCRIPTION . " cd left join " . TABLE_CATEGORIES_DESCRIPTION . " cd1 on cd.categories_id = cd1.categories_id and cd1.affiliate_id = '" . Affiliate::id() . "' and cd1.language_id = '" . (int)$_language_id . "' and cd1.categories_id = '" . (int)$who_am_i . "' where cd.categories_id = '" . (int)$who_am_i . "' and cd.language_id = '" . (int)$_language_id . "' and cd.affiliate_id = '0'"));
-            $cached[$cache_key] = $the_categories_name['categories_name'];
+            $cached[$cache_key] = $the_categories_name['categories_name']??null;
         }
 
         return $cached[$cache_key];
@@ -309,6 +309,7 @@ class Categories {
         self::remove_category_image($category_image['categories_image']);
         self::remove_category_image_folder($category_id);
 
+        \common\components\CategoriesCache::getCPC()::invalidateCategories((int) $category_id);
         tep_db_query("delete from " . TABLE_CATEGORIES . " where categories_id = '" . (int) $category_id . "'");
         tep_db_query("delete from " . TABLE_CATEGORIES_DESCRIPTION . " where categories_id = '" . (int) $category_id . "'");
         tep_db_query("delete from " . TABLE_PRODUCTS_TO_CATEGORIES . " where categories_id = '" . (int) $category_id . "'");
@@ -382,7 +383,7 @@ class Categories {
                 if ($force_products_status) {
                     tep_db_query("update " . TABLE_PRODUCTS . " set products_status = IFNULL(previous_status, '1'), previous_status = NULL where products_id = " . $data['products_id']);
                 }else{
-                    tep_db_query("update " . TABLE_PRODUCTS . " set products_status = IFNULL(previous_status, '1'), previous_status = NULL where products_id = " . $data['products_id']." AND previous_status NOT IS NULL");
+                    tep_db_query("update " . TABLE_PRODUCTS . " set products_status = IFNULL(previous_status, '1'), previous_status = NULL where products_id = " . $data['products_id']." AND previous_status IS NOT NULL");
                 }
             }
             $tree = self::get_category_tree($category_id);
@@ -393,7 +394,7 @@ class Categories {
                     if ($force_products_status){
                         tep_db_query("update " . TABLE_PRODUCTS . " set  products_status = IFNULL(previous_status, '1'), previous_status = NULL where products_id = " . $data['products_id']);
                     }else{
-                        tep_db_query("update " . TABLE_PRODUCTS . " set  products_status = IFNULL(previous_status, '1'), previous_status = NULL where products_id = " . $data['products_id']." AND previous_status NOT IS NULL");
+                        tep_db_query("update " . TABLE_PRODUCTS . " set  products_status = IFNULL(previous_status, '1'), previous_status = NULL where products_id = " . $data['products_id']." AND previous_status IS NOT NULL");
                     }
                 }
             }
@@ -449,6 +450,10 @@ class Categories {
         if ($ext = \common\helpers\Acl::checkExtensionAllowed('AutomaticallyStatus', 'allowed')) {
             $ext::categoryAutoSwitchOff($category_id);
         }
+        if (array_search($category_id, $tree) === false) {
+            $tree[] = (int) $category_id;
+        }
+        \common\components\CategoriesCache::getCPC()::invalidateCategories($tree);
     }
 /**
  *
@@ -942,40 +947,77 @@ class Categories {
               $_categories['image'] = is_file(DIR_FS_CATALOG_IMAGES . $_categories['image']) ? $_categories['image'] : '';
               $tree_init_data[] = $_categories;
           }
+          $addSelect = '';
+          if (\common\helpers\Settings::isBackendSearchAggregateProductType()) {
+              $addSelect = ', p.is_bundle, p.products_pctemplates_id, p.without_inventory, EXISTS (SELECT 1 FROM products_attributes pa WHERE pa.products_id = p.products_id) as attr_exists ';
+          }
           $get_products_r = tep_db_query(
             "SELECT concat('p',p.products_id,'_',p2c.categories_id) AS `key`, ".ProductNameDecorator::instance()->listingQueryExpression('pd','pd1')." as title, p.products_id, ".
             " IF(pp.products_id IS NULL, 0, 1) AS selected, p.products_model as model ".
+            $addSelect .
             "from ".TABLE_PRODUCTS_DESCRIPTION." pd left join " . TABLE_PRODUCTS_DESCRIPTION . " pd1 on pd1.products_id=pd.products_id and pd1.platform_id = '".($platform_id?$platform_id:intval(\common\classes\platform::defaultId()))."' and pd1.language_id = '".$languages_id."', ".TABLE_PRODUCTS_TO_CATEGORIES." p2c, ".TABLE_PRODUCTS." p ".
             ($inner ? "inner " : "left ") . " join ".TABLE_PLATFORMS_PRODUCTS." pp on pp.products_id=p.products_id and pp.platform_id='".$platform_id."' ".
-            "WHERE pd.products_id=p.products_id and pd.language_id='".$languages_id."' and pd.platform_id='".\common\classes\platform::defaultId()."' and p2c.products_id=p.products_id and p2c.categories_id='".(int)$category_id."' ".
+            "WHERE  pd.products_id=p.products_id and pd.language_id='".$languages_id."' and pd.platform_id='".\common\classes\platform::defaultId()."' and p2c.products_id=p.products_id and p2c.categories_id='".(int)$category_id."' ".
             ($activeProducts? " AND p.products_status=1 " . Product::get_sql_product_restrictions(array('p', 'pd', 's', 'sp', 'pp')) . " ":"") .
             (tep_not_null($search)?" and pd.products_name like '%{$search}%' " :"").
             "order by p.sort_order, title"
           );
-          $currencies = new \common\classes\Currencies();
+
+
           if ( tep_db_num_rows($get_products_r)>0 ) {
               while ($_product = tep_db_fetch_array($get_products_r)) {
                 //$_product['parent'] = (int)$category_id;
-                  $price = \common\helpers\Product::get_products_price($_product['products_id']);
-                $_product['selected'] = $category_selected_state && !!$_product['selected'];
-                $_product['price_ex'] = $currencies->display_price($price, 0, 1, false);
-                $_product['image'] = \common\classes\Images::getImage($_product['products_id'], 'Small');
-                $thumbnail = \common\classes\Images::getImage($_product['products_id']);
-                if ($thumbnail) {
-                    $thumbnail = '<span style="display: none;" class="product-thumbnail">' . $thumbnail . '</span> ';
-                } else {
-                    $thumbnail = '<span style="display: none;" class="product-thumbnail-ico fancytree-icon icon-cubes"></span> ';
-                }
-                $_product['stock'] = \common\helpers\Product::get_products_stock($_product['products_id']);
-                $_product['stock_virtual'] = \common\helpers\Product::getVirtualItemQuantity($_product['products_id'], $_product['stock']);
-                $_product['name'] = $_product['title'];
-                $_product['title'] = '<span class="' . ($_product['stock'] == 0 ? ' empty-stock' : '') . '">' . $thumbnail . $_product['title'] . '</span>';
-                $tree_init_data[] = $_product;
+                  $_product['selected'] = $category_selected_state && !!$_product['selected'];
+                  $_product=self::setProductData($_product);
+                  $tree_init_data[] = $_product;
               }
           }
 
           return $tree_init_data;
-      }
+    }
+
+    public static function setProductData(array $_product=[]) : Array 
+    {
+        static $currencies=null;
+        static $viewSettings=null;
+        if (!$currencies)
+           $currencies = new \common\classes\Currencies();
+        if (!$viewSettings) {
+            if (defined('BACKEND_SEARCH_SHOW_DATA'))
+              $viewSettings=array_fill_keys(array_map('trim',explode(",",BACKEND_SEARCH_SHOW_DATA)),true);
+            else $viewSettings=[];
+        }
+
+        $thumbnail='';
+        if (($viewSettings['Price']??null) || (!defined('BACKEND_SEARCH_AGREGATE_PRODUCT_DATA') || BACKEND_SEARCH_AGREGATE_PRODUCT_DATA == 'Standard') ) {
+           $price = \common\helpers\Product::get_products_price($_product['products_id']);
+           $_product['price_ex'] = $currencies->display_price($price, 0, 1, false);
+        }
+
+        if (($viewSettings['Image']??null) || (!defined('BACKEND_SEARCH_AGREGATE_PRODUCT_DATA') || BACKEND_SEARCH_AGREGATE_PRODUCT_DATA == 'Standard')
+            ) {
+            $_product['image'] = \common\classes\Images::getImage($_product['products_id'], 'Small');
+            $thumbnail = \common\classes\Images::getImage($_product['products_id']);
+            if ($thumbnail) {
+                $thumbnail = '<span style="display: none;" class="product-thumbnail">' . $thumbnail . '</span> ';
+            } else {
+                $thumbnail = '<span style="display: none;" class="product-thumbnail-ico fancytree-icon icon-cubes"></span> ';
+            }
+        }
+
+        if( ($viewSettings['Stock']??null) || !defined('BACKEND_SEARCH_AGREGATE_PRODUCT_DATA') || BACKEND_SEARCH_AGREGATE_PRODUCT_DATA=='Standard') {
+            $_product['stock'] = \common\helpers\Product::get_products_stock($_product['products_id']);
+            $_product['stock_virtual'] = \common\helpers\Product::getVirtualItemQuantity($_product['products_id'], $_product['stock']);
+        }
+
+        if (\common\helpers\Settings::isBackendSearchAggregateProductType()) {
+            $_product['type'] = \common\helpers\Product::getProductTypes($_product);
+        }
+
+        $_product['name'] = $_product['title'];
+        $_product['title'] = '<span class="' . (isset($_product['stock']) ? ($_product['stock'] == 0 ? ' empty-stock' : '') : "") . '">' . $thumbnail . $_product['title'] . '</span>';
+        return $_product;
+    }
 
     public static function load_department_tree_slice($department_id, $category_id, $active = false, $search = '', $inner = false)
     {

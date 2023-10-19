@@ -129,6 +129,10 @@ class ImageSettingsController extends Sceleton
                 ->all();
         }
 
+        if (Yii::$app->request->isAjax) {
+            $this->layout = false;
+        }
+
         return $this->render('edit.tpl', [
             'typeId' => $typeId,
             'image_types_name' => $type['image_types_name'],
@@ -173,7 +177,7 @@ class ImageSettingsController extends Sceleton
             ];
             $imageTypes->save();
 
-            if ($ids[$id]) {
+            if ($ids[$id] ?? false) {
                 unset($ids[$id]);
             }
 

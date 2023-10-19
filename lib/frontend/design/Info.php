@@ -210,10 +210,10 @@ class Info
 
                     }
                     $products_arr += [
-                                    'special_promo_str' => $special_promo_str,
-                                    'special_promo_value' => $special_promo_value,
-                                    'special_promo_ex_value' => $special_promo_ex_value,
-                                    'special_promo_ex_str' => $special_promo_ex_str
+                                    'special_promo_str' => $special_promo_str ?? null,
+                                    'special_promo_value' => $special_promo_value ?? null,
+                                    'special_promo_ex_value' => $special_promo_ex_value ?? null,
+                                    'special_promo_ex_str' => $special_promo_ex_str ?? null
                         ];
 
               }
@@ -251,11 +251,6 @@ class Info
             }
 
 
-          //if (!$settings[0]['show_bonus_points'] && (Info::themeSetting('old_listing') || $settings['itemElements']['bonusPoints'])) {
-              $bonuses = \common\helpers\Product::getBonuses($products_arr['products_id'], $customer_groups_id, @$products_arr['calculated_price']);
-              if ($bonuses)
-                $products_arr = array_merge($products_arr, $bonuses);
-          //}
           if (!(isset($settings[0]['show_image']) && $settings[0]['show_image']) && (Info::themeSetting('old_listing') || ($settings['itemElements']['image'] ?? null))) {
             $products_arr['image'] = Images::getImageUrl($products_arr['products_id'], 'Small');
             $image_tags_arr = Images::getImageTags($products_arr['products_id']);
@@ -370,10 +365,10 @@ class Info
                 $details = \common\helpers\Bundles::getDetails($products_arr, $attributes_details);
               }
 
-              $products_arr['product_qty'] = $details['product_qty'];
+              $products_arr['product_qty'] = $details['product_qty']??0;
               $products_arr['order_quantity_data'] = $details;
-              $products_arr['stock_indicator'] = $details['stock_indicator'];
-              $products_arr['stock_indicator']['max_qty'] = $details['stock_indicator']['quantity_max'];
+              $products_arr['stock_indicator'] = $details['stock_indicator']??null;
+              $products_arr['stock_indicator']['max_qty'] = ($details['stock_indicator']['quantity_max']??null);
               foreach (['add_to_cart', 'ask_sample', 'can_add_to_cart', 'request_for_quote', 'display_price_options'] as $flag) {
                 $products_arr['stock_indicator']['flags'][$flag] = $details['stock_indicator'][$flag] ?? null;
               }
@@ -381,7 +376,7 @@ class Info
               if ($products_arr['products_pctemplates_id'] > 0) {
                 unset($products_arr['price_old']);
                 unset($products_arr['price_special']);
-                $products_arr['price'] = $details['configurator_price'];
+                $products_arr['price'] = $details['configurator_price']??null;
               } else {
                 if ($details['full_bundle_price_clear'] > $details['actual_bundle_price_clear']) {
                   $products_arr['price_old'] = $details['full_bundle_price'];
@@ -416,8 +411,8 @@ class Info
              * 1 - hide
              * 2 - hide if zero
              */
-
-            if (($products_arr['stock_indicator']['flags']['request_for_quote'] && strtolower(\common\helpers\PlatformConfig::getVal('SHOW_PRICE_FOR_QUOTE_PRODUCT', 'false')) != 'true' /*&& $products_arr['stock_indicator']['flags']['display_price_options'] != 0*/) ||
+            /** @var \common\extensions\Quotations\Quotations $ext */
+            if (($products_arr['stock_indicator']['flags']['request_for_quote'] && ( ($ext = \common\helpers\Extensions::isAllowed('Quotations')) && !$ext::optionIsPriceShow() ) /*&& $products_arr['stock_indicator']['flags']['display_price_options'] != 0*/) ||
                 ($products_arr['stock_indicator']['flags']['display_price_options'] == 1) ||
                 (isset($products_arr['calculated_price']) && abs($products_arr['calculated_price'])<0.01 && $products_arr['stock_indicator']['flags']['display_price_options'] == 2)
                 ) {
@@ -451,10 +446,21 @@ class Info
                 }
             }
 
+          if ($extBonusActions = \common\helpers\Extensions::isAllowedAnd('BonusActions', 'isProductPointsEnabled')) {
+            $bonuses = $extBonusActions::getProductBonuses($products_arr['products_id'], $customer_groups_id);
+            if (is_array($bonuses)) {
+                $products_arr = array_merge($products_arr, $bonuses);
+            }
+          }
+
           $ret[] = $products_arr;
         }
-      }
 
+        $products_details_array = &$ret;
+        foreach (\common\helpers\Hooks::getList('catalog/products-list-info') as $filename) {
+            include($filename);
+        }
+      }
       $container->loadList($ret);
       
 
@@ -510,9 +516,12 @@ class Info
         }
       }
       //if (!$settings[0]['show_bonus_points']) {
-          $bonuses = \common\helpers\Product::getBonuses($price_products_id, $customer_groups_id, $products_arr['calculated_price']);
-          if ($bonuses)
-            $products_arr->attachDetails($bonuses);
+//        if ($extBonusActions = \common\helpers\Extensions::isAllowedAnd('BonusActions', 'isProductPointsEnabled')) {
+//            $bonuses = $extBonusActions::getProductBonuses($products_arr['products_id'], $customer_groups_id);
+//            if (is_array($bonuses)) {
+//                $products_arr->attachDetails($bonuses);
+//            }
+//        }
       //}
 
       $products_arr['link'] = tep_href_link('catalog/product', 'products_id=' . $products_arr['products_id']);
@@ -657,7 +666,7 @@ class Info
     if ($field == 'count') {
       return $rating['count'];
     } else {
-      return round($rating['average']);
+      return round($rating['average']??0);
     }
   }
 
@@ -749,28 +758,7 @@ class Info
         // add fonts from theme settings
         $css = self::fonts();
 
-        // add css from files
-        $versionOfBaseCss = \frontend\design\Info::themeSetting('include_css');
-        switch ($versionOfBaseCss) {
-            case 1:
-                $css .= file_get_contents(Info::themeFile('/css/base.css', 'fs'));
-                break;
-            case 2:
-                $css .= file_get_contents(Info::themeFile('/css/base_1.css', 'fs'));
-                break;
-            case 3:
-                $css .= file_get_contents(Info::themeFile('/css/base_3.css', 'fs'));
-                break;
-            default:
-                $css .= "@font-face {font-family:'FontAwesome';src:url('" . self::themeFile('/fonts/fontawesome-webfont.eot') . "?v=3.2.1');src:url('" . self::themeFile('/fonts/fontawesome-webfont.eot') . "?#iefix&v=3.2.1') format('embedded-opentype'),url('" . self::themeFile('/fonts/fontawesome-webfont.woff') . "?v=3.2.1') format('woff'),url('" . self::themeFile('/fonts/fontawesome-webfont.ttf') . "?v=3.2.1') format('truetype'),url('" . self::themeFile('/fonts/fontawesome-webfont.svg') . "#fontawesomeregular?v=3.2.1') format('svg');font-weight:normal;font-style:normal;}@font-face {font-family:'trueloaded';src:url('" . self::themeFile('/fonts/trueloaded.eot') . "?4rk52p');src:url('" . self::themeFile('/fonts/trueloaded.eot') . "?4rk52p#iefix') format('embedded-opentype'),url('" . self::themeFile('/fonts/trueloaded.ttf') . "?4rk52p') format('truetype'),url('" . self::themeFile('/fonts/trueloaded.woff') . "?4rk52p') format('woff'),url('" . self::themeFile('/fonts/trueloaded.svg') . "?4rk52p#trueloaded') format('svg');font-weight:normal;font-style:normal;}";
-
-                $css .= file_get_contents(Info::themeFile('/css/basic.css', 'fs'));
-                $css .= file_get_contents(Info::themeFile('/css/style.css', 'fs'));
-
-                if (!Info::isAdmin() && is_file(DIR_FS_CATALOG . 'themes/' . THEME_NAME . '/css/custom.css')) {
-                    file_get_contents(DIR_FS_CATALOG . 'themes/' . THEME_NAME . '/css/custom.css');
-                }
-        }
+        $css .= file_get_contents(Info::themeFile('/css/base.css', 'fs'));
 
         // add css for widgets ".p-{page}", ".p-{widget}", ".b-{class}"
         $widgets = self::getWidgetsNames();
@@ -1396,7 +1384,11 @@ class Info
   }
   
   public static function themeSetting($setting_name, $setting_group = 'main', $theme_name = ''){
-    $params = Yii::$app->request->get();
+      if (Yii::$app->id == 'app-console'){
+          $params = [];
+      }else {
+          $params = Yii::$app->request->get();
+      }
     if (!$theme_name && isset($params['theme_name'])) {
         $theme_name = filter_var($params['theme_name'], FILTER_SANITIZE_STRING);
     } elseif (defined("THEME_NAME")) {
@@ -1800,8 +1792,8 @@ class Info
      */
     public static function translateKeys($text){
 
-        $text = preg_replace_callback("/\#\#([0-9A-Z_]+)\%([0-9A-Z_]+)\#\#/", "self::translate", $text);
-        $text = preg_replace_callback("/\#\#([0-9A-Z_]+)\#\#/", "self::translate", $text);
+        $text = preg_replace_callback("/\#\#([0-9A-Z_]+)\%([0-9A-Z_]+)\#\#/", self::class . "::translate", $text);
+        $text = preg_replace_callback("/\#\#([0-9A-Z_]+)\#\#/", self::class . "::translate", $text);
 
         return $text;
     }

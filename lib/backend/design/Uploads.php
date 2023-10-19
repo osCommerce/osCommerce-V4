@@ -12,13 +12,22 @@
 
 namespace backend\design;
 
+use common\classes\Images;
+use common\models\ProductsImagesDescription;
+
 class Uploads
 {
 
   public static function move($file_name, $folder = DIR_WS_IMAGES, $show_path = true)
   {
-    $path = \Yii::getAlias('@webroot');
-    $path .= DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR;
+      $uploaded = false;
+      if (in_array(substr($file_name, 0, 7), ['images/', 'themes/'])) {
+          $path = DIR_FS_CATALOG;
+      } else {
+          $path = \Yii::getAlias('@webroot');
+          $path .= DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR;
+          $uploaded = true;
+      }
 
     $upload_file = $path . $file_name;
 
@@ -26,18 +35,26 @@ class Uploads
       $folders_arr = explode('/', $folder);
       $path2 = \Yii::getAlias('@webroot');
       $path2 .= DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR;
-      $path3 = '';
+      $path3 = trim(str_replace('\\', '/', $folder), '/') . '/';
       foreach ($folders_arr as $item) {
           if (!$item) continue;
         $path2 .= $item . DIRECTORY_SEPARATOR;
-        $path3 .= $item . DIRECTORY_SEPARATOR;
         if (!file_exists($path2)) {
           mkdir($path2, 0777, true);
           @chmod($path2,0777);
         }
       }
 
-      $copy_file = $file_name;
+      $splitFileName = explode('/', $file_name);
+      if ($splitFileName[0] == 'products') {
+          $img = ProductsImagesDescription::find()->where([
+              'hash_file_name' => end($splitFileName),
+          ])->asArray()->one();
+          $copy_file = (isset($img['orig_file_name']) ? $img['orig_file_name'] : end($splitFileName));
+      } else {
+          $copy_file = basename($file_name);
+      }
+
       $i = 1;
       $dot_pos = strrpos($copy_file, '.');
       $end = substr($copy_file, $dot_pos);
@@ -50,7 +67,9 @@ class Uploads
 
       @copy($upload_file, $path2 . $temp_name);
       @chmod($path2 . $temp_name,0666);
-      @unlink($upload_file);
+      if ($uploaded) {
+          @unlink($upload_file);
+      }
 
       \common\classes\Images::createWebp($path3 . $temp_name, true);
 

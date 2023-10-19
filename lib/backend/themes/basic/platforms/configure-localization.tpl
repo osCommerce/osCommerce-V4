@@ -99,8 +99,8 @@
         return false;
     }
     $(document).ready(function(){
-        $("select[data-role=multiselect]").multiselect({
-            selectedList: 1 // 0-based index
+        $("select[data-role=multiselect]").multipleSelect({
+            //selectedList: 1 // 0-based index
         });
 
         $('.format_wr .popup').popUp({
@@ -144,14 +144,14 @@
         var fn_default_language_enable_switch = function(obj){
             if (obj.checked) {
                 $(':radio[name=default_language][value='+$(obj).val()+']').prop('disabled', false);
-                if ( $('input[name=default_language]:radio:checked').size() ==0 )
+                if ( $('input[name=default_language]:radio:checked').length ==0 )
                     $(':radio[name=default_language][value='+$(obj).val()+']').prop('checked', true);
                 $('.lang_'+$(obj).val()).removeClass('hide_row');
                 if(!$('.lang_'+$(obj).val()).hasClass('hide_row')){
                     $('.lang_'+$(obj).val()).find('.lang_status').html('<span class="check"></span>');
                 }
             }else {
-                if ($('.p_languages').size() && $(':radio[name=default_language]:checked').val() == $(obj).val()){
+                if ($('.p_languages').length && $(':radio[name=default_language]:checked').val() == $(obj).val()){
                     var _ch = $('.p_languages:checked')[0];
                     $(':radio[name=default_language][value='+$(_ch).val()+']').prop('checked', true);
                 }
@@ -191,7 +191,7 @@
         var fn_default_currency_enable_switch = function(obj){
             if (obj.checked) {
                 $(':radio[name=default_currency][value='+$(obj).val()+']').prop('disabled', false);
-                if ( $('input[name=default_currency]:radio:checked').size() ==0 )
+                if ( $('input[name=default_currency]:radio:checked').length ==0 )
                     $(':radio[name=default_currency][value='+$(obj).val()+']').prop('checked', true);
                 $('.currency_'+$(obj).val()).removeClass('hide_row');
                 if($(obj).parents('tr').find('.js-custom-rate').is(':visible')){
@@ -204,7 +204,7 @@
                 $('.currency_'+$(obj).val()).find('.currency_margin').text(js_rate);
                 //console.log($(obj));
             }else {
-                if ($('.p_currencies').size() && $(':radio[name=default_currency]:checked').val() == $(obj).val()){
+                if ($('.p_currencies').length && $(':radio[name=default_currency]:checked').val() == $(obj).val()){
                     var _ch = $('.p_currencies:checked')[0];
                     $(':radio[name=default_currency][value='+$(_ch).val()+']').prop('checked', true);
                 }

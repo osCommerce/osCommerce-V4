@@ -8,12 +8,12 @@
 
             <span class="price-multiply">x</span>
 
-            {if $special_one != ''}<span id="product-price-special_one" class="special">{$special_one}</span>{/if}
-            {if $special_ex_one != ''}<span id="product-price-special-ex_one" class="special special-ex">{$special_ex_one}</span>{/if}
-            {if $current_one != ''}<span id="product-price-current_one" class="current">{$current_one}</span>{/if}
-            {if $current_ex_one != ''}<span id="product-price-current-ex_one" class="current current-ex">{$current_ex_one}</span>{/if}
+            {if $special_one}<span id="product-price-special_one" class="special">{$special_one}</span>{/if}
+            {if $special_ex_one}<span id="product-price-special-ex_one" class="special special-ex">{$special_ex_one}</span>{/if}
+            {if $current_one}<span id="product-price-current_one" class="current">{$current_one}</span>{/if}
+            {if $current_ex_one}<span id="product-price-current-ex_one" class="current current-ex">{$current_ex_one}</span>{/if}
 
-            {if $special_promote_type>0 && $special_promo_one_str != ''}
+            {if $special_promote_type>0 && $special_promo_one_str}
               <span class="special-promote">{$special_promo_one_str}</span>
             {/if}
 
@@ -36,11 +36,11 @@
 
             <span class="price-is">=</span>
 
-            {if $special != ''}<span id="product-price-special" class="special">{$special}</span>{/if}
-            {if $special_ex != ''}<span id="product-price-special-ex" class="special special-ex">{$special_ex}</span>{/if}
-            {if $current != ''}<span id="product-price-current" class="current">{$current}</span>{/if}
-            {if $current_ex != ''}<span id="product-price-current-ex" class="current current-ex">{$current_ex}</span>{/if}
-            {if $special_promote_type>0 && $special_promo_str != ''}
+            {if $special}<span id="product-price-special" class="special">{$special}</span>{/if}
+            {if $special_ex}<span id="product-price-special-ex" class="special special-ex">{$special_ex}</span>{/if}
+            {if $current}<span id="product-price-current" class="current">{$current}</span>{/if}
+            {if $current_ex}<span id="product-price-current-ex" class="current current-ex">{$current_ex}</span>{/if}
+            {if $special_promote_type>0 && $special_promo_str}
               <span class="special-promote">{$special_promo_str}</span>
             {/if}
             {if $special}
@@ -88,6 +88,13 @@
                 </span>
               {/if}
             {/if}
+{if $ext = \common\helpers\Acl::checkExtensionAllowed('QuickOrder', 'allowed')}
+    {foreach $ext::getPricesForGroups(null, $products_id, \common\helpers\Product::get_products_info($products_id, 'products_tax_class_id')) as $gr => $pr}
+        {if strlen($gr) > 1 && strlen($pr) > 1}
+            <br><span class="price-hierarchy"><small>{$gr}: {$pr}</small></span>
+        {/if}
+    {/foreach}
+{/if}
         {/if}
     {/if}
 </div>

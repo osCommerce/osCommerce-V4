@@ -2,11 +2,11 @@
 {use class="common\helpers\Html"}
 {use class="yii\helpers\Url"}
 {use class="\backend\design\editor\Formatter"}
-<tr class="dataTableRow {$rowClass}" data-opid="{$product['orders_products_id']}" data-sortKey="{$product['orders_products_id']}">
+<tr class="dataTableRow {$rowClass}{if $product['parent_product']} child-product{/if}" data-opid="{$product['orders_products_id']}" data-sortKey="{$product['orders_products_id']}">
     <td class="dataTableContent table-image-td order-product-image" valign="top" align="center">
         <div class="table-image-cell">{Html::a($image, $image_url, ['class' => 'fancybox'])}</div>
     </td>
-    <td class="dataTableContent  qty-price" valign="top">{Product::getVirtualItemQuantity($product['id'], $product['qty'])}</td>
+    <td class="dataTableContent  qty-price" valign="top"><div>{Product::getVirtualItemQuantity($product['id'], $product['qty'])}</div></td>
     <td class="dataTableContent table-name-td" valign="top">
         <span style="cursor:pointer" onclick="window.open('{Url::toRoute(['categories/productedit', 'pID' => $product['id']])}')"><b>{$product['name']}</b></span>
         <span class="product-details-model">{TABLE_HEADING_PRODUCTS_MODEL}: <b>{$product['model']} {$gv_state_label}</b></span>
@@ -158,7 +158,7 @@
 </tr>
 <script>
 $(document).ready(function() {
-    $('.wrapper-row-status').hover(function(){
+    $('.wrapper-row-status').each(function(){
 		var element = $(this).find('.row-status.hide');
 		var element_hide = $(this).find('.row-status-hide-box');
 		element.appendTo(element_hide);

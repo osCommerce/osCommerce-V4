@@ -47,7 +47,11 @@ class PayerController extends Sceleton
         } else {
             
             $customers_id = (int)Yii::$app->user->getId();
-            if ($GroupAdministrator = \common\helpers\Acl::checkExtensionAllowed('GroupAdministrator', 'allowed')) {
+
+            /**
+             * @var $GroupAdministrator \common\extensions\GroupAdministrator\GroupAdministrator
+             */
+            if ($GroupAdministrator = \common\helpers\Extensions::isAllowed('GroupAdministrator')) {
                 $gIds = $GroupAdministrator::isGroupAdministratorFor($customers_id);
             } else {
                 $gIds = false;
@@ -91,6 +95,10 @@ class PayerController extends Sceleton
             $_GET['order_id'] = $this->manager->get('pay_order_id');
         }
 
+        if ( !$this->manager->has('pay_order_id') ){
+            $this->manager->set('pay_order_id', $_GET['order_id']);
+        }
+
         if ((!isset($_GET['order_id']) || (isset($_GET['order_id']) && !is_numeric($_GET['order_id']))) && !Info::isAdmin()) {
             tep_redirect(tep_href_link('index/index', '', 'SSL'));
         }
@@ -111,7 +119,11 @@ class PayerController extends Sceleton
         if ($order->customer['customer_id'] != $customer_id) {
 
             $customers_id = (int)Yii::$app->user->getId();
-            if ($GroupAdministrator = \common\helpers\Acl::checkExtensionAllowed('GroupAdministrator', 'allowed')) {
+
+            /**
+             * @var $GroupAdministrator \common\extensions\GroupAdministrator\GroupAdministrator
+             */
+            if ($GroupAdministrator = \common\helpers\Extensions::isAllowed('GroupAdministrator')) {
                 $cIds = $GroupAdministrator::getCustomerIdsByAdministrator($customers_id);
             } else {
                 $cIds = [$customers_id];
@@ -179,7 +191,7 @@ class PayerController extends Sceleton
           /** @var \common\classes\modules\ModulePayment $module */
           $module = $this->manager->getPaymentCollection($this->manager->getPayment())->getSelectedPayment();
 
-          if ($module->isWithoutConfirmation()) {
+          if (is_object($module) && $module->isWithoutConfirmation()) {
             foreach ($this->manager->getAll() as $key => $value) {
               if (is_scalar($value) && strpos($key, 'payer_') === 0){
                   $_POST[str_replace('payer_', '', $key)] = $value;

@@ -91,6 +91,12 @@ getOrder = function(options){
             if (data.hasOwnProperty('order_totals')){
                 $('.order_totals').replaceWith(data.order_totals);
             }
+            if (data.hasOwnProperty('order_shipping')){
+                $('.shipping-modules-box').html(data.order_shipping);
+            }
+            if (data.hasOwnProperty('order_payment')){
+                $('.payment-modules-box').html(data.order_payment);
+            }
         },
         renderCheckoutDetails:function(data){
             if (data.hasOwnProperty('order_totals')){
@@ -112,18 +118,38 @@ getOrder = function(options){
             }
         },
         removeProduct: function(obj,action, callback){
-            var order = this;
-            var postData = {
+            const order = this;
+            const postData = {
                 'action': action,
                 'currentCart': $('input[name=currentCart]').val(),
-                'uprid' :  encodeURIComponent($(obj).parents('.product_info').find('input[name=uprid]').val()),
+            };
+            const uprid = encodeURIComponent($(obj).parents('.product_info').find('input[name=uprid]').val());
+            $(obj).closest('.dataTableRow').remove();
+            if (this.removeRequest) {
+                order.removeProductRequest(postData, uprid, callback);
+            } else {
+                $(window).one('products-removed', () => order.removeProductRequest(postData, uprid, callback));
             }
-            $.post($urlCalculateRow, postData, function(data, status){
-                if (status == "success") {
-                    order.renderDetails(data);
-                    order.processCallback(callback, data);
-                }
-            }, 'json');
+        },
+        removeRequest: true,
+        sentUprid: [],
+        timeoutID: {},
+        removeProductRequest: function(postData, uprid, callback){
+            const order = this;
+            order.sentUprid.push(uprid);
+            clearTimeout(order.timeoutID);
+            order.timeoutID = setTimeout(function () {
+                order.removeRequest = false;
+                $.post($urlCalculateRow, {...postData, uprid: order.sentUprid}, function(d, status){
+                    $(window).trigger('products-removed');
+                    if (status == 'success') {
+                        order.removeRequest = true;
+                        order.renderDetails(d);
+                        order.processCallback(callback, d);
+                    }
+                }, 'json');
+                order.sentUprid = [];
+            }, 500);
         },
         recalculateTotals: function(module, holder, callback, visible){
             var order = this;
@@ -604,21 +630,25 @@ getOrder = function(options){
                 $(this).data('last-value', qty);
                 if ((old_value !== qty) || direct_change) {
                     clearTimeout(tout);
-                    $(this).trigger('change');
+                    var that = this;
                     if (!$(this).hasClass('new-product')) {
-                        var that = this;
                         tout = setTimeout(function() {
+                            $(that).trigger('change');
                             order.updateProductInRow(that, 'change_qty');
                             clearTimeout(tout);
                         }, 500);
+                    } else {
+                        tout = setTimeout(function() {
+                            $(that).trigger('change');
+                            clearTimeout(tout);
+                        }, 300);
                     }
                 }
             });
         },
         getExtraCharge: function($this, action){
             params = [];
-
-            $.each($($this).closest('.dataTableContent').find('input, select'), function(i, e){
+            $.each($($this).closest('tr').find('input, select'), function(i, e){
                 params.push( { 'name': $(e).attr('name'), 'value': $(e).val() } );
             })
 

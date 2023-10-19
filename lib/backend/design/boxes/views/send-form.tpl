@@ -10,10 +10,10 @@
     <div class="tabbable tabbable-custom">
       <ul class="nav nav-tabs">
 
-        <li class="active"><a href="#text" data-toggle="tab">{$smarty.const.TEXT_TEXT}</a></li>
-        <li><a href="#style" data-toggle="tab">{$smarty.const.HEADING_STYLE}</a></li>
-        <li><a href="#align" data-toggle="tab">{$smarty.const.HEADING_WIDGET_ALIGN}</a></li>
-        <li><a href="#visibility" data-toggle="tab">{$smarty.const.TEXT_VISIBILITY_ON_PAGES}</a></li>
+        <li class="active" data-bs-toggle="tab" data-bs-target="#text"><a>{$smarty.const.TEXT_TEXT}</a></li>
+        <li data-bs-toggle="tab" data-bs-target="#style"><a>{$smarty.const.HEADING_STYLE}</a></li>
+        <li data-bs-toggle="tab" data-bs-target="#align"><a>{$smarty.const.HEADING_WIDGET_ALIGN}</a></li>
+        <li data-bs-toggle="tab" data-bs-target="#visibility"><a>{$smarty.const.TEXT_VISIBILITY_ON_PAGES}</a></li>
 
       </ul>
       <div class="tab-content">
@@ -48,8 +48,8 @@
 
                     <ul class="nav nav-tabs">
 
-                          <li class="active"><a href="#form" data-toggle="tab" class="form-link">{$smarty.const.TEXT_FORM}</a></li>
-                          <li><a href="#success" data-toggle="tab" class="success-link">{$smarty.const.SUCCESS_MESSAGE}</a></li>
+                          <li class="active" data-bs-toggle="tab" data-bs-target="#form"><a class="form-link">{$smarty.const.TEXT_FORM}</a></li>
+                          <li data-bs-toggle="tab" data-bs-target="#success"><a class="success-link">{$smarty.const.SUCCESS_MESSAGE}</a></li>
 
                     </ul>
                     <div class="tab-content">

@@ -18,7 +18,7 @@
     </div>
     <br>
     <div class="btn-toolbar btn-toolbar-order">
-        <button id="btn_modal" class="btn btn-no-margin" data-toggle="modal" data-target="#elv_modal">{$smarty.const.IMAGE_DETAILS}</button>
+        <button id="btn_modal" class="btn btn-no-margin" data-bs-toggle="modal" data-bs-target="#elv_modal">{$smarty.const.IMAGE_DETAILS}</button>
     </div>
 
 
@@ -30,9 +30,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <span class="modal-title" style="font-size: large;">{$log->file}</span>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body" style="color: #424242">
                 <b>{$smarty.const.TEXT_DATE}:</b> <i><b>{$log->date}</b></i><br>
@@ -52,6 +50,6 @@
 <script type="text/javascript">
     function viewAsText()
     {
-        window.open("{$app->urlManager->createUrl('error-log-viewer/view-as-text')}?file={$log->file}", "_blank");
+        window.open("{$app->urlManager->createUrl('error-log-viewer/view-as-text')}?file={$log->mask}", "_blank");
     }
 </script>

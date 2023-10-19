@@ -49,7 +49,7 @@ Released under the GNU General Public License
 $(document).ready(function(){
   {if $popup}
     {if $hash}
-      $('a[href="#popup_{$hash}"]').click();
+      $('[data-bs-target="#popup_{$hash}"]').click();
     {/if}
     $('.btn-cancel').popUp({ 'box_class':'popupSales' });
   {/if}

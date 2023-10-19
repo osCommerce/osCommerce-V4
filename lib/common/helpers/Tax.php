@@ -129,16 +129,20 @@ class Tax {
  * @param int $zone_id
  * @param array $extraAddress - 2do: USA Tax rate could depend on postcode (county)
  * @param bool $check_group
+ * @params int $customer_groups_id - for extension
  * @return int
  */
-    public static function get_tax_rate($class_id, $country_id = -1, $zone_id = -1, $extraAddress='', $check_group = true) {
+    public static function get_tax_rate($class_id, $country_id = -1, $zone_id = -1, $extraAddress='', $check_group = true, $customer_groups_id = null) {
+        if (is_null($customer_groups_id)) {
+            $customer_groups_id = (int) \Yii::$app->storage->get('customer_groups_id');
+        }
+
         $tax_rate = false;
         foreach (\common\helpers\Hooks::getList('tax/get-tax-rate') as $filename) {
             $tax_rate = include($filename);
             if ($tax_rate !== false) return $tax_rate;
         }
         global $tax_rates_array;
-        $customer_groups_id = (int) \Yii::$app->storage->get('customer_groups_id');
 
         $_pos = 1;
 
@@ -234,7 +238,7 @@ class Tax {
             return 0;
         }
     }
-    
+
     public static function getTaxZones($country_id, $zone_id) {
         $key = (int)$country_id.'^'.(int)$zone_id;
         static $fetched = [];
@@ -309,8 +313,14 @@ class Tax {
             $check_platform_zone = tep_db_fetch_array(tep_db_query("select za.geo_zone_id from " . TABLE_TAX_RATES . " tr, " . TABLE_ZONES_TO_TAX_ZONES . " za where tr.tax_zone_id = za.geo_zone_id and (za.zone_country_id is null or za.zone_country_id = '0' or za.zone_country_id = '" . (int) $platform_address['country_id'] . "') and (za.zone_id is null or za.zone_id = '0' or za.zone_id = '" . (int) $platform_address['zone_id'] . "') and tr.tax_class_id = '" . (int) $tax_class_id . "'"));
 
             if (isset($check_platform_zone['geo_zone_id']) && is_array($check_tax_zones) && in_array($check_platform_zone['geo_zone_id'], $check_tax_zones)) {
-                $tax = \common\helpers\Tax::get_tax_rate($tax_class_id, $platform_address['country_id'], $platform_address['zone_id']);
-                $tax_description = \common\helpers\Tax::get_tax_description($tax_class_id, $platform_address['country_id'], $platform_address['zone_id']);
+                if (defined('TAX_BY_PLATFORM_ADDRESS') && TAX_BY_PLATFORM_ADDRESS == 'True') { // probably not needed any more but can be defined in configure.php for compatibility
+                    // be aware that it may be a reason of different taxes for product and totals for multiple rates
+                    $tax = \common\helpers\Tax::get_tax_rate($tax_class_id, $platform_address['country_id'], $platform_address['zone_id']);
+                    $tax_description = \common\helpers\Tax::get_tax_description($tax_class_id, $platform_address['country_id'], $platform_address['zone_id']);
+                } else {
+                    $tax = \common\helpers\Tax::get_tax_rate($tax_class_id, $tax_country_id, $tax_zone_id);
+                    $tax_description = \common\helpers\Tax::get_tax_description($tax_class_id, $tax_country_id, $tax_zone_id);
+                }
             }
             //generally export (tax free), but .... EU pays 3rd party taxes :(
             elseif (defined('ALLOW_SEVERAL_TAX_COUNTRIES') && ALLOW_SEVERAL_TAX_COUNTRIES=='True' && 
@@ -423,7 +433,7 @@ class Tax {
             return $classes['tax_class_title'] ?? null;
         }
     }
-	
+
     public static function get_zone_id($class_id, $country_id, $zone_id){
         $tax = tep_db_fetch_array(tep_db_query("select geo_zone_id from " . TABLE_TAX_RATES . " tr left join " . TABLE_ZONES_TO_TAX_ZONES . " za on (tr.tax_zone_id = za.geo_zone_id) where (za.zone_country_id is null or za.zone_country_id = '0' or za.zone_country_id = '" . (int) $country_id . "') and (za.zone_id is null or za.zone_id = '0' or za.zone_id = '" . (int) $zone_id . "') and tr.tax_class_id = '" . (int) $class_id . "' group by tr.tax_priority"));
         if ($tax) {
@@ -466,8 +476,24 @@ class Tax {
 
         return $select_string;
     }
-	
+
+    public static function isTaxRatesInBackend()
+    {
+        return !defined('BACKEND_TAX_RATES_OR_CLASSES') || BACKEND_TAX_RATES_OR_CLASSES == 'RATES';
+    }
+
+    public static function normalizeTaxSelected($taxSelected)
+    {
+        if (\common\helpers\System::isBackend() && !self::isTaxRatesInBackend()) {
+            $taxArray = array_pad(explode('_', $taxSelected), 2, 0);
+            $taxArray[1] = 0;
+            return implode('_', $taxArray);
+        }
+        return $taxSelected;
+    }
+
     public static function get_complex_classes_list(){
+      if (self::isTaxRatesInBackend()) {
         $tax_class_array = [];
         $tax_class_query = tep_db_query("select tr.tax_class_id, tr.tax_zone_id, sum(tr.tax_rate) as rate, tr.tax_description, tc.tax_class_title from " . TABLE_TAX_RATES . " tr inner join " . TABLE_TAX_CLASS . " tc on tc.tax_class_id = tr.tax_class_id where 1 group by tax_class_id, tax_zone_id order by tax_description");
         while ($tax_class = tep_db_fetch_array($tax_class_query)) {
@@ -488,13 +514,23 @@ class Tax {
                         //'text' => $tax_class['tax_class_title'],
                         //'rate' => $tax_class['rate']
                 //];
-                    
+
         }
         return $tax_class_array;
+      } else {
+          $classes = \common\models\TaxClass::find()->select('tax_class_title, tax_class_id')->asArray();
+          $res = [];
+          foreach($classes->each() as $rec) {
+              $res[$rec['tax_class_id'] . '_0'] = $rec['tax_class_title'];
+          }
+          return $res;
+      }
     }
-    
-    public static function getOrderTaxRates(){
-        $rates_query = tep_db_query("select tr.tax_class_id, tr.tax_zone_id, tr.tax_rate from " . TABLE_TAX_RATES . " tr inner join " . TABLE_TAX_CLASS . " tc on tc.tax_class_id = tr.tax_class_id where 1 group by tr.tax_class_id, tr.tax_zone_id");
+
+    public static function getOrderTaxRates($classId = null, $country_id = -1, $zone_id = -1, $extraAddress = '', $check_group = true, $group_id = null){
+      if (self::isTaxRatesInBackend()) {
+        $where = $classId ? "tr.tax_class_id = $classId" : 1;
+        $rates_query = tep_db_query("select tr.tax_class_id, tr.tax_zone_id, tr.tax_rate from " . TABLE_TAX_RATES . " tr inner join " . TABLE_TAX_CLASS . " tc on tc.tax_class_id = tr.tax_class_id where " . $where . " group by tr.tax_class_id, tr.tax_zone_id");
         $rates = [];
         if (tep_db_num_rows($rates_query)) {
             while ($row = tep_db_fetch_array($rates_query)) {
@@ -502,6 +538,14 @@ class Tax {
             }
         }
         return $rates;
+      } else {
+          $classes = \common\models\TaxClass::find()->select('tax_class_id')->filterWhere(['tax_class_id' => $classId])->asArray();
+          $res = [];
+          foreach($classes->each() as $rec) {
+              $res[$rec['tax_class_id'] . '_0'] = self::get_tax_rate($rec['tax_class_id'], $country_id, $zone_id, $extraAddress, $check_group, $group_id);
+          }
+          return $res;
+      }
     }
 
     public static function roundPriceExc($price) {
@@ -652,5 +696,42 @@ class Tax {
         return $ret;
     }
 
+    /**
+     * products_tax_class_id may be overwritten by group (UserGroupsTax extension)
+     * @param int|mixed|\common\models\Products $product
+     * @param int|mixed $products_tax_class_id cached products_tax_class_id
+     * @param $group_id
+     * @return int|mixed|null
+     * @throws \Exception
+     */
+    public static function getProductTaxClass($product, $products_tax_class_id = null, $group_id = null)
+    {
+        if (is_null($products_tax_class_id)) {
+            $product = \common\models\Products::findByVarCheck($product);
+            $products_tax_class_id = $product->$products_tax_class_id ?? 0;
+        }
+        if (is_null($group_id)) {
+            $group_id = (int) \Yii::$app->storage->get('customer_groups_id');
+        }
+        foreach (\common\helpers\Hooks::getList('tax/get-product-tax-class-id') as $filename) {
+            $overwritten_class_id = include($filename);
+            if ($overwritten_class_id !== false) return $overwritten_class_id;
+        }
+        return (int) $products_tax_class_id;
+    }
+
+    public static function getProductTaxRate($product, $products_tax_class_id = null, $group_id = null)
+    {
+        $taxRate = 0;
+        if (is_null($group_id)) {
+            $group_id = (int) \Yii::$app->storage->get('customer_groups_id');
+        }
+
+        if (\common\helpers\Group::isTaxApplicable($group_id)) {
+            $products_tax_class_id = self::getProductTaxClass($product, $products_tax_class_id, $group_id);
+            $taxRate = self::get_tax_rate($products_tax_class_id, -1, -1, '', true, $group_id);
+        }
+        return (float)$taxRate;
+    }
 
 }

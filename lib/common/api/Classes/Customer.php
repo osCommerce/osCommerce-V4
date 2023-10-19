@@ -59,7 +59,8 @@ class Customer extends AbstractClass
             // EOF PHONE*/
             // EXTRA GROUP
             if (\common\helpers\Acl::checkExtensionAllowed('ExtraGroups', 'allowed')) {
-                $this->extraGroupRecordArray = \common\models\CustomerExtraGroups::find()->where(['customer_id' => $customerId])->asArray(true)->all();
+                $model = \common\helpers\Extensions::getModel('ExtraGroups', 'CustomerExtraGroups');
+                $this->extraGroupRecordArray = (!empty($model)) ? $model::find()->where(['customer_id' => $customerId])->asArray(true)->all() : [];
             }
             // EOF EXTRA GROUP
             return true;
@@ -262,7 +263,8 @@ class Customer extends AbstractClass
             unset($key);
             // EOF PHONE
             // EXTRA GROUP
-            if (\common\helpers\Acl::checkExtensionAllowed('ExtraGroups', 'allowed')) {
+            $model = \common\helpers\Extensions::getModel('ExtraGroups', 'CustomerExtraGroups');
+            if (!empty($model)) {
                 $extraGroupRecordArray = &$this->extraGroupRecordArray;
                 foreach ($extraGroupRecordArray as $key => &$extraGroupRecord) {
                     $isSave = false;
@@ -271,9 +273,9 @@ class Customer extends AbstractClass
                     unset($extraGroupRecord['group_id']);
                     if ($groupId > 0) {
                         try {
-                            $groupClass = \common\models\CustomerExtraGroups::find()->where(['customer_id' => $this->customerId, 'group_id' => $groupId])->one();
-                            if (!($groupClass instanceof \common\models\CustomerExtraGroups)) {
-                                $groupClass = new \common\models\CustomerExtraGroups();
+                            $groupClass = $model::find()->where(['customer_id' => $this->customerId, 'group_id' => $groupId])->one();
+                            if (!($groupClass instanceof $model)) {
+                                $groupClass = new $model();
                                 $groupClass->loadDefaultValues();
                                 $groupClass->customer_id = $this->customerId;
                                 $groupClass->group_id = $groupId;

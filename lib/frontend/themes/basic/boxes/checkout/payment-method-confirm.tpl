@@ -14,6 +14,6 @@
     {/if}
 {/if}
 {\yii\helpers\Html::hiddenInput('payment', $manager->getPaymentCollection()->selected_module)}
-{if $payment_process_button_hidden}
+{* VL duplicate lib/frontend/themes/basic/checkout/confirmation.tpl:103 if $payment_process_button_hidden}
     {$payment_process_button_hidden}
-{/if}
+{/if*}

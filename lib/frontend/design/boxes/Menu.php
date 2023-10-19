@@ -92,7 +92,7 @@ class Menu extends Widget
             && !empty($categories_all) && !(is_array($categories_all) && isset(reset($categories_all)['products'] )) ) {
             $counts = null;
             unset($this->settings[0]['show_count_products']);
-            //$counts = \common\components\CategoriesCache::getProductCountCache()::getCount(array_keys($categories_all), $platformCurrentId, $customer_groups_id);
+            $counts = \common\components\CategoriesCache::getCPC()::getCategories(array_keys($categories_all), $platformCurrentId, $customer_groups_id);
             foreach ($categories_all as $catId => $row) {
                 $categories_all[$catId]['products'] = $counts[$catId] ?? 1;
             }
@@ -165,7 +165,7 @@ class Menu extends Widget
 
                 if (Info::isAdmin()) {
                     $row['title'] = 'Component "' . $row['link'] . '"';
-                } else {
+                } elseif (!empty($row['link'])) {
                     $row['title'] = \frontend\design\Block::widget(['name' => \common\classes\design::pageName($row['link']), 'params' => ['type' => 'components']]);
                 }
                 $row['class'] = ($row['class'] ? $row['class'] : ' ') . 'component-item';
@@ -315,9 +315,16 @@ class Menu extends Widget
                     }
                 }
                 $is_multi = \Yii::$app->get('storage')->get('is_multi');
-                if ($is_multi && $CustomersMultiEmails = \common\helpers\Acl::checkExtensionAllowed('CustomersMultiEmails', 'allowed')) {
-                    if (!$CustomersMultiEmails::checkLink($pageName)) {
-                        continue;
+                if ($is_multi) {
+                    if ($CustomersMultiEmails = \common\helpers\Acl::checkExtensionAllowed('CustomersMultiEmails', 'allowed')) {
+                        if (!$CustomersMultiEmails::checkLink($pageName)) {
+                            continue;
+                        }
+                    }
+                    if ($DealersMultiCustomers = \common\helpers\Acl::checkExtensionAllowed('DealersMultiCustomers', 'allowed')) {
+                        if (!$DealersMultiCustomers::checkLink($pageName)) {
+                            continue;
+                        }
                     }
                 }
                 if($row['page'] == 'wishlist'){
@@ -488,7 +495,10 @@ class Menu extends Widget
                 if ($item['link_id'] == 999999999 || $item['link_id'] == 999999998){
                     $htm .= $this->menuTree($menu, $item['id'], false, $level, false, true);
                 } else {
-                    if (@$item['count'] != 0 || Info::themeSetting('show_empty_categories') || $item['link_type'] != 'categories'){
+                    if (
+                        (@$item['count'] != 0 || Info::themeSetting('show_empty_categories') || $item['link_type'] != 'categories')
+                        && (@$item['count'] != 0 || !Info::themeSetting('hide_empty_brands') || $item['link_type'] != 'brands')
+                    ){
                         [$img, $imgDropdown] = $this->getImage($level+1, $item);
                         $children = '';
                         if ($item['link_type'] != 'categories' || $item['sub_categories'] == 1){

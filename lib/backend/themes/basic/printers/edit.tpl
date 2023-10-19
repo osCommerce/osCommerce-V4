@@ -12,7 +12,7 @@
         <i data-dismiss="alert" class="icon-remove close"></i>
         <span id="message_plce"></span>
     </div>
-  {if {$messages|@count} > 0}
+  {if {$messages|default:array()|@count} > 0}
     {foreach $messages as $type => $message}
         <div class="alert alert-{$type} fade in">
             <i data-dismiss="alert" class="icon-remove close"></i>
@@ -24,9 +24,9 @@
     
     <div class="tabbable tabbable-custom">
         <ul class="nav nav-tabs top_tabs_ul main_tabs">
-            <li class="active"><a href="#tab_main" data-toggle="tab"><span>{$smarty.const.TEXT_SETTINGS}</span></a></li>
+            <li class="active" data-bs-toggle="tab" data-bs-target="#tab_main"><a><span>{$smarty.const.TEXT_SETTINGS}</span></a></li>
             {if $service->id}
-            <li class=""><a href="#tab_printers" data-toggle="tab"><span>{$smarty.const.HEADING_TITLE}</span></a></li>
+            <li class="" data-bs-toggle="tab" data-bs-target="#tab_printers"><a><span>{$smarty.const.HEADING_TITLE}</span></a></li>
             {/if}
         </ul>
         <div class="tab-content">

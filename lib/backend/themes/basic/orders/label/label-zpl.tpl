@@ -1,6 +1,6 @@
 <html>
 <head>
-<script type="text/javascript" src="{$app->request->baseUrl}/js/BrowserPrint-2.0.0.75.min.js"></script>
+<script type="text/javascript" src="{$app->request->baseUrl}/plugins/BrowserPrint-2.0.0.75.min.js"></script>
 <script type="text/javascript">
 var selected_device;
 var devices = [];
@@ -107,7 +107,7 @@ var zpl_text = `{$parcel_label}`;
 <table width="100%" border="0" cellpadding="0" cellspacing="0" class="table-font">
     <tr>
         <td>
-Selected Device: <select id="selected_device" class="form-control" onchange="onDeviceSelected(this)"></select> <!-- <input type="button" value="Change" onclick="changeDevice();"> -->
+Selected Device: <select id="selected_device" class="form-select" onchange="onDeviceSelected(this)"></select> <!-- <input type="button" value="Change" onclick="changeDevice();"> -->
 <br/><br/> 
 <input type="button" value="{$smarty.const.TEXT_PRINT_LABEL}" class="btn btn-primary" onclick="writeToSelectedPrinter(zpl_text)">&nbsp;&nbsp; {$smarty.const.TEXT_OR} &nbsp;&nbsp;
 <a href="{\Yii::$app->urlManager->createUrl(['orders/print-label', 'orders_id' => $orders_id, 'orders_label_id' => $orders_label_id])}" class="btn">{$smarty.const.IMAGE_DOWNLOAD}</a><br/><br/>

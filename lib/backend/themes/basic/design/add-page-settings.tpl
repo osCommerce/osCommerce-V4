@@ -24,6 +24,8 @@
 
     <p><label><input type="checkbox" name="added_page_settings[is_bundle]"{if $added_page_settings.is_bundle} checked{/if}/> {$smarty.const.TEXT_IS_BUNDLE}</label></p>
 
+    <p><label><input type="checkbox" name="added_page_settings[popup_product]"{if $added_page_settings.popup_product} checked{/if}/> Product page in pop up</label></p>
+
     {/if}
 
     {if $page_type == 'home'}

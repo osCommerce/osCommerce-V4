@@ -26,14 +26,14 @@ return [
                         'languages_id' => ['class' => 'IOLanguageMap'],
                     ],
                 ],
-                'seoRedirectsNamed' => [
-                    'xmlCollection' => 'SeoRedirects>SeoRedirect',
-                    'properties' => [
-                        'seo_redirects_named_id' => false,
-                        'language_id' => ['class' => 'IOLanguageMap'],
-                        'redirects_type' => false,
-                    ],
-                ],
+//                'seoRedirectsNamed' => [
+//                    'xmlCollection' => 'SeoRedirects>SeoRedirect',
+//                    'properties' => [
+//                        'seo_redirects_named_id' => false,
+//                        'language_id' => ['class' => 'IOLanguageMap'],
+//                        'redirects_type' => false,
+//                    ],
+//                ],
             ],
         ],
     ],

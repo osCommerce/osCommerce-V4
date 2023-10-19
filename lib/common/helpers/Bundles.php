@@ -22,7 +22,7 @@ class Bundles {
      * @param array $attributes_details
      * @return array|''
      */
-    public static function getDetails($params, $attributes_details = array()) {
+    public static function getDetails($params, $attributes_details = array(), $skip_attributes = false) {
         $customer_groups_id = (int) \Yii::$app->storage->get('customer_groups_id');
 
         if ( !$params['products_id'] ) return '';
@@ -52,7 +52,7 @@ class Bundles {
 
         $products_join = '';
         if ( \common\classes\platform::activeId() ) {
-          $products_join .= self::sqlProductsToPlatformCategories();
+          $products_join .= self::sqlProductsToPlatform();
         }
         
         $sqlWhere = '';
@@ -128,6 +128,9 @@ class Bundles {
 */
 
             $attributes_array = array();
+// {{
+            if (!$skip_attributes) {
+// }}
             tep_db_data_seek($products_options_name_query, 0);
             while ($products_options_name = tep_db_fetch_array($products_options_name_query)) {
                 $selected_attribute = false;
@@ -159,6 +162,7 @@ class Bundles {
                     if ($check_inventory['non_existent']) continue;
                     $priceInstance = \common\models\Product\Price::getInstance($mask);
                     $products_price = $priceInstance->getInventoryPrice($params);
+                    $check_inventory['products_quantity'] = \common\helpers\Product::getAvailable($check_inventory['products_id'], 0);
 
                     //$check_inventory['inventory_price'] = InventoryHelper::get_inventory_price_by_uprid($mask, $params['qty'] * $bundle_sets['num_product'], $check_inventory['inventory_price']);
                     //$check_inventory['inventory_full_price'] = InventoryHelper::get_inventory_full_price_by_uprid($mask, $params['qty'] * $bundle_sets['num_product'], $check_inventory['inventory_full_price']);
@@ -210,7 +214,7 @@ class Bundles {
                       $products_options_array[sizeof($products_options_array)-1]['params'] = ' class="outstock" data-max-qty="' . (int)$stock_indicator['max_qty'] . '"';
                       $products_options_array[sizeof($products_options_array)-1]['text'] .= ' - ' . strip_tags($stock_indicator['stock_indicator_text_short']);
                     } else {
-                      $products_options_array[sizeof($products_options_array)-1]['params'] = ' class="outstock" data-max-qty="'.(int)$stock_indicator['max_qty'].'"';
+                      $products_options_array[sizeof($products_options_array)-1]['params'] = ' class="_outstock_" data-max-qty="'.(int)$stock_indicator['max_qty'].'"';
                     }
 
                     if ($attributes[$products_options_name['products_options_id']] > 0) {
@@ -238,6 +242,9 @@ class Bundles {
                 }
 
             }
+// {{
+            } // end if (!$skip_attributes)
+// }}
 
             $product_query = tep_db_query("select products_id, products_price, products_tax_class_id, stock_indication_id, stock_delivery_terms_id, products_quantity from " . TABLE_PRODUCTS . " where products_id = '" . (int)$products_id . "'");
             $_backup_products_quantity = 0;
@@ -268,6 +275,7 @@ class Bundles {
             $stock_indicator_public['stock_code'] = $stock_indicator['stock_code'];
             $stock_indicator_public['text_stock_code'] = $stock_indicator['text_stock_code'];
             $stock_indicator_public['stock_indicator_text'] = $stock_indicator['stock_indicator_text'];
+            $stock_indicator_public['products_date_available'] = (!empty($stock_indicator['products_date_available'])? sprintf(TEXT_EXPECTED_ON , '', \common\helpers\Date::date_short($stock_indicator['products_date_available'])):'');
             if ($stock_indicator_public['request_for_quote']) {
               $special_price = false;
             }
@@ -407,6 +415,9 @@ class Bundles {
               'actual_bundle_price_unit_ex' => $actual_bundle_price_unit_ex,
               ];
           }
+
+          // Hide "Notify me when in stock" button for Bundles
+          $return_data['stock_indicator']['notify_instock'] = false;
 
           return $return_data;
         }

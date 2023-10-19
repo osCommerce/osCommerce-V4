@@ -21,10 +21,10 @@
 <div class="popupCategory">
     <div class="tabbable tabbable-custom">
         <ul class="nav nav-tabs top_tabs_ul">
-            <li class="active"><a href="#tab_3" data-toggle="tab">{$smarty.const.TEXT_MAIN_DETAILS}</a></li>
-            <li><a href="#tab_2" data-toggle="tab">{$smarty.const.TEXT_NAME_DESCRIPTION}</a></li>
+            <li class="active" data-bs-toggle="tab" data-bs-target="#tab_3"><a>{$smarty.const.TEXT_MAIN_DETAILS}</a></li>
+            <li data-bs-toggle="tab" data-bs-target="#tab_2"><a>{$smarty.const.TEXT_NAME_DESCRIPTION}</a></li>
             {if platform::isMulti()}
-            <li><a href="#tab_4" data-toggle="tab">{$smarty.const.TEXT_COMMON_PLATFORM_TAB}</a></li>
+            <li data-bs-toggle="tab" data-bs-target="#tab_4"><a>{$smarty.const.TEXT_COMMON_PLATFORM_TAB}</a></li>
             {/if}
         </ul>
         <div class="tab-content">
@@ -113,7 +113,8 @@
                     <div class="info-hint"><div class="info-hint-box"><div class="info-hint-mustache"></div>{$smarty.const.COUPON_CODE_HELP}</div></div>
                 </div>
                 <div class="col-md-5">
-                    {\backend\models\Configuration::tep_cfg_pull_down_tax_classes($coupon['tax_class_id'])}
+                    {*\backend\models\Configuration::tep_cfg_pull_down_tax_classes($coupon['tax_class_id'])*}
+                    {Html::dropDownList('configuration_value', $coupon['tax_class_id'], $coupon_taxes)}
                 </div>
             </div>
 
@@ -364,6 +365,38 @@
 
             <div class="row">
                 <div class="col-md-6 label-field">
+                    {$smarty.const.COUPON_MANUFACTURERS}
+                    <div class="info-hint"><div class="info-hint-box"><div class="info-hint-mustache"></div>{$smarty.const.COUPON_MANUFACTURERS_HELP}</div></div>
+                </div>
+                <div class="col-md-5">
+                    {\yii\helpers\Html::dropDownList('restrict_to_manufacturers[]', explode(",", $coupon['restrict_to_manufacturers']), \Yii\helpers\Arrayhelper::map(\common\helpers\Manufacturers::get_manufacturers(), 'id', 'text'), ['class' => '', 'multiple' => 'multiple', 'data-role' => 'multiselect'])}
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="row m-b-2">
+        <div class="col-md-4">
+
+            <div class="row">
+                <div class="col-md-6 label-field">
+                    {$smarty.const.COUPON_GROUPS}
+                    <div class="info-hint"><div class="info-hint-box"><div class="info-hint-mustache"></div>{$smarty.const.COUPON_GROUPS_HELP}</div></div>
+                </div>
+                <div class="col-md-5">
+                    {\yii\helpers\Html::dropDownList('coupon_groups[]', explode(",", $coupon['coupon_groups']), \common\helpers\Group::get_customer_groups_list(), ['class' => '', 'multiple' => 'multiple', 'data-role' => 'multiselect'])}
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="row m-b-2">
+        <div class="col-md-4">
+
+            <div class="row">
+                <div class="col-md-6 label-field">
                     {$smarty.const.COUPON_COUNTRIES}
                     <div class="info-hint"><div class="info-hint-box"><div class="info-hint-mustache"></div>{$smarty.const.COUPON_COUNTRIES_HELP}</div></div>
                 </div>
@@ -403,7 +436,10 @@
 
         </div>
     </div>
-</div>
+    {foreach \common\helpers\Hooks::getList('coupon_admin/voucheredit', 'tab-content/main-detail/bottom') as $filename}
+        {include file=$filename}
+    {/foreach}
+    </div>
 
                    <table cellspacing="0" cellpadding="0" width="100%">
 {*
@@ -414,8 +450,8 @@ existing - only used during creation
                            <tr><td colspan="2">
                              <div class="tabbable tabbable-custom after">
                                 <ul class="nav nav-tabs top_tabs_ul">
-                                  <li class="active"><a href="#tab_3_1" data-toggle="tab">{$smarty.const.TEXT_GENERATE}</a></li>
-                                  <li><a href="#tab_2_1" data-toggle="tab">{$smarty.const.IMAGE_UPLOAD}</a></li>
+                                  <li class="active" data-bs-toggle="tab" data-bs-target="#tab_3_1"><a>{$smarty.const.TEXT_GENERATE}</a></li>
+                                  <li data-bs-toggle="tab" data-bs-target="#tab_2_1"><a>{$smarty.const.IMAGE_UPLOAD}</a></li>
                                 </ul>
                                 <div class="tab-content">
                                     <div class="tab-pane tabbable-custom active" id="tab_3_1">
@@ -439,31 +475,15 @@ existing - only used during creation
                                   <td class="label_value">
                                       {if $has_csv_data == '0' && $cid == false}
                                       <div class="col-md-8">
-                                      <div class="gallery-filedrop-container">
-                                          <div class="gallery-filedrop">
-                                              <span class="gallery-filedrop-message">
-                                                <span>{$smarty.const.TEXT_DRAG_DROP}</span>
-                                                <a href="#gallery-filedrop" class="gallery-filedrop-fallback-trigger btn" rel="nofollow">{$smarty.const.TEXT_CHOOSE_FILE}</a>
-                                              </span>
-                                              <input size="30" id="gallery-filedrop-fallback-0" name="coupon_csv" class="elgg-input-file hidden" type="file">
-                                              <input type="hidden" name="coupon_csv_loaded" class="elgg-input-hidden">
+
+                                          <div class="upload-box upload-box-wrap upload-box-no-buttons"
+                                               data-name="coupon_csv"
+                                               data-value=""
+                                               data-upload="coupon_csv_loaded"
+                                               data-type="image"
+                                               data-acceptedFiles="image/*">
                                           </div>
 
-                                          <div class="gallery-filedrop-queue">
-                                          </div>
-
-                                          <div class="hidden" id="image_wrapper">
-                                              <div class="gallery-template">
-                                                  <div class="gallery-media-summary">
-                                                    <div class="gallery-album-image-placeholder">
-                                                      <img src="">
-                                                      <span class="elgg-state-uploaded"></span>
-                                                      <span class="elgg-state-failed"></span>
-                                                    </div>
-                                                  </div>
-                                              </div>
-                                          </div>
-                                      </div>
                                       </div>
                                       {/if}
                                       {if $has_csv_data == '1' && $cid == true}
@@ -489,7 +509,7 @@ existing - only used during creation
                 {if count($languages) > 1}
               <ul class="nav nav-tabs under_tabs_ul">
                 {foreach $languages as $lKey => $lItem}
-                  <li{if $lKey == 0} class="active"{/if}><a href="#tab_{$lItem['code']}" data-toggle="tab">{$lItem['logo']}<span>{$lItem['name']}</span></a></li>
+                  <li{if $lKey == 0} class="active"{/if} data-bs-toggle="tab" data-bs-target="#tab_{$lItem['code']}"><a>{$lItem['logo']}<span>{$lItem['name']}</span></a></li>
                 {/foreach}
               </ul>
               {/if}
@@ -535,6 +555,9 @@ existing - only used during creation
 </div>
 <script type="text/javascript">
 var form_prepared = true;
+var catIds=[];
+var prodIds=[];
+
 function backStatement() {
     window.history.back();
     return false;
@@ -739,82 +762,7 @@ $.fn.uploads2 = function(options){
   })
 };
 
-
-$('.gallery-filedrop-container').each(function() {
-
-  var $filedrop = $(this);
-
-  function createImage (file, $container) {
-    var $preview = $('.gallery-template', $filedrop);
-    $image = $('img', $preview);
-    var reader = new FileReader();
-    $image.height(48);
-    reader.onload = function(e) {
-        //console.info(file.name);
-        $image.attr('src',e.target.result);
-    };
-    reader.readAsDataURL(file);
-    $preview.appendTo($('.gallery-filedrop-queue', $container));
-    $.data(file, $preview);
-    //console.info(file.name);
-    if (typeof file.name !== 'undefined') {
-        $('div.gallery-album-image-placeholder > img').hide();
-        $("div[id=filename]").remove();
-        $('div.gallery-album-image-placeholder > img').after('<div id="filename"><i class="icon-file-alt" style="font-size: 20px;"></i> '
-            +'<span style="font-size: 15px;">'+file.name+'</span></div>'
-            +'<div class="upload-remove"></div>');
-
-        //$('div.gallery-album-image-placeholder > i').next().text(file.name);
-        $('.upload-remove').on('click', function(){
-            $("input[name=coupon_csv_loaded]").val('');
-            $("div[id=filename]").remove();
-            this.remove();
-        });
-    }
-  }
-
-  $(function () {
-    $('.gallery-filedrop-fallback-trigger', $filedrop)
-      .on('click', function(e) {
-        e.preventDefault();
-        $('#' + $('.elgg-input-file', $filedrop).attr('id')).trigger('click');
-      })
-
-    $filedrop.filedrop({
-      fallback_id : $('.elgg-input-file', $filedrop).attr('id'),
-      url: "{Yii::$app->urlManager->createUrl('upload/index')}",
-      paramname: 'file',
-      maxFiles: 1,
-      maxfilesize : 20,
-      allowedfiletypes:
-        [
-            'text/x-csv',
-            'text/csv',
-            'text/plain',
-            'application/csv',
-            'application/excel',
-            'application/vnd.ms-excel',
-            'application/vnd.msexcel'
-        ],
-      allowedfileextensions: ['.csv','.txt'],
-      error: function(err, file) {
-        console.log(file);
-        console.log(err);
-      },
-      uploadStarted: function(i, file, len) {
-        $('.coupon_csv', $filedrop).hide();
-        createImage(file, $filedrop);
-      },
-      progressUpdated: function(i, file, progress) {
-        $.data(file).find('.gallery-filedrop-progress').width(progress);
-      },
-      uploadFinished: function (i, file, response, time) {
-        $('.elgg-input-hidden', $filedrop).val(file.name);
-      }
-    });
-  });
-
-});
+$('.upload-box').fileManager();
 
 $('.upload_doc').uploads2();
 

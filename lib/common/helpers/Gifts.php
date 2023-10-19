@@ -64,7 +64,7 @@ class Gifts {
 
     public static function virtual_gift_card_process($virtual_gift_card_id, $from_email = STORE_OWNER_EMAIL_ADDRESS, $from_name = STORE_OWNER) {
         global $languages_id;
-        $virtual_gift_card = tep_db_fetch_array(tep_db_query("select vgcb.virtual_gift_card_basket_id, vgcb.products_id, if(length(pd1.products_name), pd1.products_name, pd.products_name) as products_name, p.products_model, p.products_image, p.products_weight, p.products_tax_class_id, vgcb.products_price, vgcb.virtual_gift_card_recipients_name, vgcb.virtual_gift_card_recipients_email, vgcb.virtual_gift_card_message, vgcb.virtual_gift_card_senders_name, c.code as currency_code, vgcb.send_card_date, vgcb.gift_card_design, pd.platform_id from " . TABLE_VIRTUAL_GIFT_CARD_BASKET . " vgcb, " . TABLE_CURRENCIES . " c, " . TABLE_PRODUCTS_DESCRIPTION . " pd, " . TABLE_PRODUCTS . " p left join " . TABLE_PRODUCTS_DESCRIPTION . " pd1 on pd1.products_id = p.products_id and pd1.language_id = '" . (int) $languages_id . "' and pd1.platform_id = '" . intval(\Yii::$app->get('platform')->config()->getPlatformToDescription()) . "' where vgcb.virtual_gift_card_basket_id = '" . (int) $virtual_gift_card_id . "' and p.products_id = vgcb.products_id and pd.platform_id = '".intval(\common\classes\platform::defaultId())."' and pd.products_id = p.products_id and pd.language_id = '" . (int) $languages_id . "' and vgcb.currencies_id = c.currencies_id and vgcb.customers_id = '" . (int) \Yii::$app->user->getId() . "'"));
+        $virtual_gift_card = tep_db_fetch_array(tep_db_query("select vgcb.virtual_gift_card_basket_id, vgcb.products_id, if(length(pd1.products_name), pd1.products_name, pd.products_name) as products_name, p.products_model, p.products_image, p.products_weight, p.products_tax_class_id, vgcb.products_price, vgcb.virtual_gift_card_recipients_name, vgcb.virtual_gift_card_recipients_email, vgcb.virtual_gift_card_message, vgcb.virtual_gift_card_senders_name, c.code as currency_code, vgcb.send_card_date, vgcb.gift_card_design, vgcb.virtual_gift_card_code, pd.platform_id from " . TABLE_VIRTUAL_GIFT_CARD_BASKET . " vgcb, " . TABLE_CURRENCIES . " c, " . TABLE_PRODUCTS_DESCRIPTION . " pd, " . TABLE_PRODUCTS . " p left join " . TABLE_PRODUCTS_DESCRIPTION . " pd1 on pd1.products_id = p.products_id and pd1.language_id = '" . (int) $languages_id . "' and pd1.platform_id = '" . intval(\Yii::$app->get('platform')->config()->getPlatformToDescription()) . "' where vgcb.virtual_gift_card_basket_id = '" . (int) $virtual_gift_card_id . "' and p.products_id = vgcb.products_id and pd.platform_id = '".intval(\common\classes\platform::defaultId())."' and pd.products_id = p.products_id and pd.language_id = '" . (int) $languages_id . "' and vgcb.currencies_id = c.currencies_id and vgcb.customers_id = '" . (int) \Yii::$app->user->getId() . "'"));
         if (!$virtual_gift_card)
             return;
         if (strlen($virtual_gift_card['virtual_gift_card_code'])){
@@ -113,7 +113,7 @@ class Gifts {
         if ($virtual_gift_card_id){
             $virtual_gift_card = \common\models\VirtualGiftCardBasket::findOne(['virtual_gift_card_basket_id' => $virtual_gift_card_id]);
             if ($virtual_gift_card && $virtual_gift_card->customers_id == $order->customer['customer_id'] && strlen($virtual_gift_card->virtual_gift_card_code)){
-                if($virtual_gift_card->activate()){
+                if (!$virtual_gift_card->activated && $virtual_gift_card->activate()){
                     if (!intval($virtual_gift_card->send_card_date)){
                         $product = ArrayHelper::toArray($virtual_gift_card->product);
                         $virtual_gift_card = ArrayHelper::toArray($virtual_gift_card);
@@ -293,7 +293,7 @@ class Gifts {
         $products = $response['giveaway_query']->asArray()->all();
 
         $details = [];
-        foreach (\frontend\design\Info::getListProductsDetails(array_unique(\yii\helpers\ArrayHelper::getColumn($products, 'products_id')), ['listing_type' => 'gwa' . $response['cart_total'], 0 => ['show_attributes' => 0, 'show_image' => 0], 'itemElements'=> ['image' => 1] ])
+        foreach (\frontend\design\Info::getListProductsDetails(array_unique(\yii\helpers\ArrayHelper::getColumn($products, 'products_id')), ['listing_type' => 'gwa' . $response['cart_total'], 0 => ['show_attributes' => 0, 'show_image' => 0], 'itemElements'=> ['attributes' => 1, 'image' => 1] ])
             as $detail) {
           $details[$detail['products_id']] = $detail;
         }

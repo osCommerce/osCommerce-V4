@@ -27,9 +27,9 @@ class Customer extends Widget {
     
     public function run(){
         $model = null;
-        if ($this->manager->isCustomerAssigned() || $this->manager->has('customer')){
+        //if ($this->manager->isCustomerAssigned() || $this->manager->has('customer')){
             $model = $this->manager->getCustomerContactForm();
-        }
+        //}
         
         return $this->render('customer',[
             'manager' => $this->manager,

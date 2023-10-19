@@ -70,6 +70,30 @@ class Images {
         return false;
     }
 
+    public static function getQuery($productsId, $limit = '') {
+        static $_dummy_fetch = null;
+        if (is_null($_dummy_fetch)) {
+            $_dummy_fetch = tep_db_query("select * from " . TABLE_PRODUCTS_IMAGES . " where products_id = '-1'");
+        }
+        $images_query = $_dummy_fetch;
+        /** @var \common\extensions\InventoryImages\InventoryImages $ext */
+        if ($ext = \common\helpers\Extensions::isAllowed('InventoryImages')) {
+            $images_query = $ext::getQuery($productsId, $limit);
+        }
+        /** @var \common\extensions\AttributesImages\AttributesImages $ext */
+        if ($ext = \common\helpers\Extensions::isAllowed('AttributesImages')) {
+            $images_query = $ext::getQuery($images_query, $productsId, $limit);
+        }
+        /** @var \common\extensions\ProductImagesByPlatform\ProductImagesByPlatform $ext */
+        if ($ext = \common\helpers\Extensions::isAllowed('ProductImagesByPlatform')) {
+            $images_query = $ext::getQuery($images_query, $productsId, $limit);
+        }
+        if (tep_db_num_rows($images_query) == 0) {
+            $images_query = tep_db_query("select * from " . TABLE_PRODUCTS_IMAGES . " where image_status = 1 and products_id = '" . (int) \common\helpers\Inventory::get_prid($productsId) . "' order by default_image desc, sort_order " . $limit);
+        }
+        return $images_query;
+    }
+
     public static function getImageExists($productsId = 0, $typeName = 'Thumbnail', $languageId = 0, $imageId = 0) {
         $imagePath = self::getImage($productsId, $typeName, $languageId, $imageId);
         if (empty($imagePath)) {
@@ -130,17 +154,7 @@ class Images {
 
         $images = [];
 
-        $images_query = tep_db_query("select * from " . TABLE_PRODUCTS_IMAGES . " where products_id = '-1'");
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('InventortyImages', 'allowed')) {
-            $images_query = $ext::getQuery($productsId);
-        }
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('AttributesImages', 'allowed')) {
-            $images_query = $ext::getQuery($images_query, $productsId);
-        }
-        if (tep_db_num_rows($images_query) == 0) {
-            $productsId = \common\helpers\Inventory::get_prid($productsId);
-            $images_query = tep_db_query("select * from " . TABLE_PRODUCTS_IMAGES . " where image_status = 1 and products_id = '" . (int)$productsId  . "' order by default_image DESC, sort_order");
-        }
+        $images_query = self::getQuery($productsId);
         while ($images_data = tep_db_fetch_array($images_query)) {
 
             $item = [];
@@ -315,7 +329,11 @@ class Images {
             $naImage = false;
         } else {
             $image_types = self::getImageTypes($typeName);
-            $naImage = Info::themeSetting('na_product', 'hide');
+            if (Info::isTotallyAdmin()) {
+                $naImage = 'images/na.png';
+            } else {
+                $naImage = Info::themeSetting('na_product', 'hide');
+            }
         }
         if (!$image_types) {
             return $naImage;
@@ -451,25 +469,15 @@ class Images {
 
     public static function getImageId($productsId = 0)
     {
+        static $_images=[];
         $uprid = \common\helpers\Inventory::normalize_id($productsId);
 
-        static $_dummy_fetch = null;
-        if ( is_null($_dummy_fetch) ) {
-            $_dummy_fetch = tep_db_query("select * from " . TABLE_PRODUCTS_IMAGES . " where products_id = '-1'");
-        }
-        $images_query = $_dummy_fetch;
+        if (isset($_images[$uprid])) 
+           return (isset($_images[$uprid]['products_images_id']) ? $_images[$uprid]['products_images_id'] : 0);
 
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('InventortyImages', 'allowed')) {
-            $images_query = $ext::getQuery(tep_db_input($uprid), ' LIMIT 1');
-        }
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('AttributesImages', 'allowed')) {
-            $images_query = $ext::getQuery($images_query, $uprid, ' LIMIT 1');
-        }
-        if ( tep_db_num_rows($images_query)==0 ) {
-            $images_query = tep_db_query("select * from " . TABLE_PRODUCTS_IMAGES . " where image_status = 1 and products_id = '" . (int)$productsId . "' order by default_image DESC, sort_order LIMIT 1");
-        }
-
+        $images_query = self::getQuery($uprid, ' LIMIT 1');
         $images = tep_db_fetch_array($images_query);
+        $_images[$uprid]=$images;
         return (isset($images['products_images_id']) ? $images['products_images_id'] : 0);
     }
 
@@ -508,18 +516,25 @@ class Images {
             return \yii\helpers\Html::tag('img', '', $attributes);
         }
         return  \yii\helpers\Html::img($url, array_merge([
-            'alt' => $images_tags['alt_tag'],
-            'title' => $images_tags['title_tag'],
-            'srcset' => $srcsetSizes['srcset'],
-            'sizes' => $srcsetSizes['sizes'],
+            'alt' => $images_tags['alt_tag'] ?? '',
+            'title' => $images_tags['title_tag'] ?? '',
+            'srcset' => $srcsetSizes['srcset'] ?? '',
+            'sizes' => $srcsetSizes['sizes'] ?? '',
         ], $attributes));
     }
 
     public static function getImageSrcsetSizes($productsId = 0, $typeName = 'Thumbnail', $languageId = -1, $imageId = 0)
     {
-        $resolutions = \common\models\ImageTypes::find()->where(['image_types_name' => $typeName])->asArray()
-            ->cache(self::IMAGETYPES_CACHE_LIFETIME)
-            ->all();
+        static $_resolutions=[];
+
+        if (isset($_resolutions[$typeName])) 
+            $resolutions=$_resolutions[$typeName];
+        else {
+            $resolutions = \common\models\ImageTypes::find()->where(['image_types_name' => $typeName])->asArray()
+                ->cache(self::IMAGETYPES_CACHE_LIFETIME)
+                ->all();
+            $_resolutions[$typeName]=$resolutions;
+        }
 
         if (!$resolutions || count($resolutions) < 2) {
             return ['srcset' => '', 'sizes' => '', 'sources' => []];
@@ -749,6 +764,9 @@ class Images {
     }
 
     public static function tep_image_resize($image, $t_location, $thumbnail_width, $thumbnail_height, $fields_color = false) {
+        if (!$thumbnail_width || !$thumbnail_height) {
+            return false;
+        }
         $image = str_replace("/./", "/", str_replace("//", "/", $image));
         $t_location = str_replace("/./", "/", str_replace("//", "/", $t_location));
         $size = @GetImageSize($image);
@@ -838,6 +856,9 @@ class Images {
                         break;
                     case 2 : // JPEG
                         $im = @ImageCreateFromJPEG($image);
+                        break;
+                    case 8 : // webp
+                        $im = @imagecreatefromwebp($image);
                         break;
                     default :
                         return false;
@@ -1670,10 +1691,7 @@ class Images {
         if ($catalog === false) {
             $catalog = DIR_WS_IMAGES;
         }
-        $path = \Yii::getAlias('@webroot') . DIRECTORY_SEPARATOR . $catalog;
-        if (defined("DIR_WS_HTTP_ADMIN_CATALOG")) {
-            $path = str_replace(DIR_WS_HTTP_ADMIN_CATALOG, '', $path);
-        }
+        $path = DIR_FS_CATALOG;
 
         if (!is_file($path . $sourceImage)) return false;
 
@@ -1706,10 +1724,7 @@ class Images {
 
     public static function removeWebp($sourceImage)
     {
-        $path = \Yii::getAlias('@webroot') . DIRECTORY_SEPARATOR . DIR_WS_IMAGES;
-        if (defined("DIR_WS_HTTP_ADMIN_CATALOG")) {
-            $path = str_replace(DIR_WS_HTTP_ADMIN_CATALOG, '', $path);
-        }
+        $path = self::getFSCatalogImagesPath();
 
         $pos = strripos($sourceImage, '.');
         $fileName = substr($sourceImage, 0, $pos);
@@ -1755,18 +1770,13 @@ class Images {
      */
     public static function createResizeImages($sourceImage, $imageType = '', $rewrite = false)
     {
-        $path = \Yii::getAlias('@webroot') . DIRECTORY_SEPARATOR . DIR_WS_IMAGES;
-        if (defined("DIR_WS_HTTP_ADMIN_CATALOG")) {
-            $path = str_replace(DIR_WS_HTTP_ADMIN_CATALOG, '', $path);
-        }
+        $path = self::getFSCatalogImagesPath();
 
         if (!is_file($path . $sourceImage)) {
             return false;
         }
 
-        $pos = strripos($sourceImage, DIRECTORY_SEPARATOR);
-        $fileNameFull = strtolower(substr($sourceImage, $pos+1));
-        $filePath = substr($sourceImage, 0, $pos);
+        $fileNameFull = strtolower($sourceImage);
 
         $pos = strripos($fileNameFull, '.');
         $ext = strtolower(substr($fileNameFull, $pos+1));
@@ -1775,27 +1785,25 @@ class Images {
             return false;
         }
 
-        $destination = $filePath . DIRECTORY_SEPARATOR;
-
         $conditions = [];
         if ($imageType) {
             $conditions['image_types_name'] = $imageType;
         }
         $imageTypes = \common\models\ImageTypes::find()->where($conditions)->asArray()->all();
 
-        foreach ($imageTypes as $imageType) {
+        foreach ($imageTypes as $_imageType) {
 
-            $width = $imageType['image_types_x'];
+            $width = $_imageType['image_types_x'];
 
             $newImg = $fileName . '-' . $width . '.' . $ext;
 
-            if ($rewrite || is_file($path . $destination . $newImg)) {
+            if ($rewrite || !is_file($path . $newImg)) {
                 $size = @GetImageSize($path . $sourceImage);
                 $height = ($size[1] * $width) / $size[0];
 
-                self::tep_image_resize($path . $sourceImage, $path . $destination . $newImg, $width, $height);
+                self::tep_image_resize($path . $sourceImage, $path . $newImg, $width, $height);
             }
-            self::createWebp($destination . $newImg);
+            self::createWebp(DIR_WS_IMAGES . $newImg);
         }
 
         return true;
@@ -1809,14 +1817,9 @@ class Images {
      */
     public static function removeResizeImages($sourceImage)
     {
-        $path = \Yii::getAlias('@webroot') . DIRECTORY_SEPARATOR . DIR_WS_IMAGES;
-        if (defined("DIR_WS_HTTP_ADMIN_CATALOG")) {
-            $path = str_replace(DIR_WS_HTTP_ADMIN_CATALOG, '', $path);
-        }
+        $path = self::getFSCatalogImagesPath();
 
-        $pos = strripos($sourceImage, DIRECTORY_SEPARATOR);
-        $fileNameFull = strtolower(substr($sourceImage, $pos+1));
-        $filePath = substr($sourceImage, 0, $pos);
+        $fileNameFull = strtolower($sourceImage);
 
         $pos = strripos($fileNameFull, '.');
         $ext = strtolower(substr($fileNameFull, $pos+1));
@@ -1826,10 +1829,10 @@ class Images {
 
         foreach ($imageTypes as $imageType) {
             $width = $imageType['image_types_x'];
-            $removeImage = $path . $filePath . DIRECTORY_SEPARATOR . $fileName . '-' . $width . '.' . $ext;
+            $removeImage = $path . $fileName . '-' . $width . '.' . $ext;
             if (is_file($removeImage)) {
                 @unlink($removeImage);
-                self::removeWebp($filePath . DIRECTORY_SEPARATOR . $fileName . '-' . $width . '.' . $ext);
+                self::removeWebp($fileName . '-' . $width . '.' . $ext);
             }
         }
 
@@ -1842,9 +1845,10 @@ class Images {
      * @param array    $attributes  additional attributes for teg
      * @param string   $naImage
      * @param boolean  $lazy_load
+     * @param array  $responsiveImages list of images by image_types_id
      * @return string img html teg with srcset and sizes attributes
      */
-    public static function getImageSet($sourceImage, $imageType = '', $attributes = [], $naImage = '', $lazy_load = false)
+    public static function getImageSet($sourceImage, $imageType = '', $attributes = [], $naImage = '', $lazy_load = false, $responsiveImages = [])
     {
         $urlPath = \common\helpers\Media::getAlias('@webCatalogImages/');
 
@@ -1880,12 +1884,13 @@ class Images {
         $sources = '';
         foreach ($imageTypes as $imageType) {
             $width = $imageType['image_types_x'];
-            $imagePath = $path . $filePath . DIRECTORY_SEPARATOR . $fileName . '-' . $width . '.' . $ext;
-            $imageUrl = $urlPath . self::getWebp($filePath . DIRECTORY_SEPARATOR . rawurlencode($fileName) . '-' . $width . '.' . $ext);
-            if (!is_file($imagePath)) continue;
-            $size = @GetImageSize($imagePath);
-            if (!$size[0]) continue;
-            if (!$imageType['width_from'] && !$imageType['width_to']) continue;
+            if ($responsiveImages[$imageType['image_types_id']]['image'] ?? false) {
+                $imagePath = $path . $responsiveImages[$imageType['image_types_id']]['image'];
+                $imageUrl = $urlPath . $responsiveImages[$imageType['image_types_id']]['image'];
+            } else {
+                $imagePath = $path . $filePath . DIRECTORY_SEPARATOR . $fileName . '-' . $width . '.' . $ext;
+                $imageUrl = $urlPath . self::getWebp($filePath . DIRECTORY_SEPARATOR . rawurlencode($fileName) . '-' . $width . '.' . $ext);
+            }
 
             $media = '';
             if ($imageType['width_from']) {
@@ -1897,6 +1902,39 @@ class Images {
             if ($imageType['width_to']) {
                 $media .= '(max-width: ' . $imageType['width_to'] . 'px)';
             }
+
+            if ( ($attributes['id'] ?? false)) {
+                $css = '';
+                if ($media) {
+                    $css .= '@media ' . $media . '{';
+                }
+                if ($imageType['image_types_y'] && $imageType['image_types_x']) {
+                    $heightPer = round($imageType['image_types_y'] * 100 / $imageType['image_types_x'], 4);
+                    $css .= 'picture#' . $attributes['id'] . ' {padding-top: ' . $heightPer . '%;position: relative}';
+                    if ($responsiveImages[$imageType['image_types_id']]['fit'] ?? false) {
+                        $fit = $responsiveImages[$imageType['image_types_id']]['fit'];
+                    } else {
+                        $fit = 'cover';
+                    }
+                    $css .= 'picture#' . $attributes['id'] . ' img {object-fit: ' . $fit . ';';
+                    if ($responsiveImages[$imageType['image_types_id']]['position'] ?? false) {
+                        $position = $responsiveImages[$imageType['image_types_id']]['position'];
+                        $css .= 'object-position: ' . $position . '%;';
+                    }
+                    $css .= 'position:absolute;left:0;top:0;width:100%;height:100%}';
+                } else {
+                    $css .= 'picture#' . $attributes['id'] . ' img {position: static;}';
+                }
+                if ($media) {
+                    $css .= '}';
+                }
+                Info::setScriptCss($css);
+            }
+
+            if (!is_file($imagePath)) continue;
+            $size = @GetImageSize($imagePath);
+            if (!$size[0]) continue;
+            if (!$imageType['width_from'] && !$imageType['width_to']) continue;
 
             $sourcesAttr = [
                 'srcset' => $imageUrl,
@@ -1915,8 +1953,14 @@ class Images {
             $src = $naImage;
         }
 
+
+        $id = 0;
+        if ($attributes['id']) {
+            $id = $attributes['id'];
+            unset($attributes['id']);
+        }
         $img = Html::img($src, $attributes);
-        $html = Html::tag('picture', $sources . $img);
+        $html = Html::tag('picture', $sources . $img, ($id ? ['id' => $id] : []));
         return  $html;
     }
 

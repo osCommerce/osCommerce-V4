@@ -3,7 +3,7 @@
     {$title} ({$social->module})
 </h4>
 <div>
-			  {if {$messages|@count} > 0}
+			  {if {$messages|default:array()|@count} > 0}
 			   {foreach $messages as $type => $message}
               <div class="alert alert-{$type} fade in">
                   <i data-dismiss="alert" class="icon-remove close"></i>
@@ -18,14 +18,14 @@
     <div class="tabbable tabbable-custom">
               <ul class="nav nav-tabs top_tabs_ul main_tabs">
                 {if $social->hasAuth}
-                <li class="active"><a href="#tab_main" data-toggle="tab"><span>{$smarty.const.TEXT_AUTHORIZATION}</span></a></li>
+                <li class="active" data-bs-toggle="tab" data-bs-target="#tab_main"><a><span>{$smarty.const.TEXT_AUTHORIZATION}</span></a></li>
                 {/if}
                 {assign var=i value=0}
                 {foreach $social->addon_settings as $block => $values}
-                <li class="{if !$social->hasAuth && !$i}active{/if}"><a href="#tab_{$block}" data-toggle="tab"><span>{ucfirst($block)}</span></a></li>
+                <li class="{if !$social->hasAuth && !$i}active{/if}" data-bs-toggle="tab" data-bs-target="#tab_{$block}"><a><span>{ucfirst($block)}</span></a></li>
                 {$i++|void}
                 {/foreach}
-                  <li><a href="#view" data-toggle="tab">View</a></li>
+                  <li data-bs-toggle="tab" data-bs-target="#view"><a>View</a></li>
               </ul>
               <div class="tab-content">
               {if $social->hasAuth}

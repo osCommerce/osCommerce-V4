@@ -16,7 +16,7 @@
           <i data-dismiss="alert" class="icon-remove close"></i>
           <span id="message_plce"></span>
         </div>
-        {if {$messages|@count} > 0}
+        {if {$messages|default:array()|@count} > 0}
           {foreach $messages as $message}
             <div class="alert fade in {$message['messageType']}">
               <i data-dismiss="alert" class="icon-remove close"></i>
@@ -38,9 +38,9 @@
     </form>
   </div>
   <div class="featureContent">
-{if {$app->controller->view->featuresArray|@count} > 0}
+{if {$app->controller->view->featuresArray|default:array()|@count} > 0}
   {foreach $app->controller->view->featuresTypesArray as $id => $type}
-    {if {$app->controller->view->featuresArray[$id]|@count} > 0}
+    {if {$app->controller->view->featuresArray[$id]|default:array()|@count} > 0}
       <fieldset class="main">
         <legend>{$type.features_types_title}</legend>
       {foreach $app->controller->view->featuresArray[$id] as $feature}

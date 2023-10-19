@@ -18,7 +18,8 @@ use yii\base\Widget;
 use yii\helpers\Html;
 
 class OrderTotals extends Widget {
-    
+
+    /** @var \common\services\OrderManager */
     public $manager;
     private $js = '';
     private $lines = [];
@@ -29,6 +30,7 @@ class OrderTotals extends Widget {
     }
     
     public function run(){
+        /** @var \common\classes\shopping_cart $cart */
         $cart = $this->manager->getCart();
         $currencies = Yii::$container->get('currencies');
         $currency_value = $currencies->currencies[$cart->currency]['value'];
@@ -176,9 +178,9 @@ class OrderTotals extends Widget {
             return [
                 (isset($module->output[$index]['title']) ? $module->output[$index]['title'] : $module->title),
                 Formatter::price($module->output[$index]['value_exc_vat'], 0, 1, $cart->currency, $currency_value).
-                Html::hiddenInput("update_totals[" . $module->code . "][ex]", $params['ex'], ['class' => 'form-control', 'data-control'=>"${$module->code}", 'data-marker'=>"ex"]),
+                Html::hiddenInput("update_totals[" . $module->code . "][ex]", $params['ex'], ['class' => 'form-control', 'data-control'=>"{$module->code}", 'data-marker'=>"ex"]),
                 Formatter::price($module->output[$index]['value_inc_tax'], 0, 1, $cart->currency, $currency_value).
-                Html::hiddenInput("update_totals[" . $module->code . "][in]", $params['in'], ['class' => 'form-control', 'data-control'=>"${$module->code}", 'data-marker'=>"in"]),
+                Html::hiddenInput("update_totals[" . $module->code . "][in]", $params['in'], ['class' => 'form-control', 'data-control'=>"{$module->code}", 'data-marker'=>"in"]),
                 '<div class="totals edit-pt"><i class="icon-pencil"></i></div> ' . ($module->code != 'ot_shipping'? '<div class="totals del-pt" onclick="removeModule(\'' . $module->code . '\')"></div>': '<div></div>'),
             ];
         } else {

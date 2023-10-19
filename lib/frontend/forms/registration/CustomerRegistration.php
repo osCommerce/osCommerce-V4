@@ -65,6 +65,8 @@ class CustomerRegistration extends Model {
     public $admin_id;
     public $opc_temp_account;
     public $pin;
+    public $drop_ship;
+    public $can_use_drop_ship;
 
     /* for enquire */
     public $name;
@@ -178,6 +180,7 @@ class CustomerRegistration extends Model {
             ['platform_id', 'required', 'on' => [static::SCENARIO_CREATE, static::SCENARIO_EDIT], 'skipOnEmpty' => false],
             ['opc_temp_account', 'default', 'value' => '0', 'on' => [static::SCENARIO_CREATE, static::SCENARIO_EDIT], 'skipOnEmpty' => false],
             ['pin', 'default', 'value' => '', 'on' => [static::SCENARIO_EDIT]],
+            ['can_use_drop_ship', 'default', 'value' => '0', 'on' => [static::SCENARIO_EDIT]],
             ['admin_id', 'default', 'value' => '0', 'on' => [static::SCENARIO_EDIT]],
         ];
         if ($ext = \common\helpers\Acl::checkExtensionAllowed('BusinessToBusiness', 'allowed')) {
@@ -411,12 +414,16 @@ class CustomerRegistration extends Model {
                 }
                 break;
             case 'firstname':
-                if (in_array(ACCOUNT_FIRSTNAME, $this->getRequired()) && strlen($this->$attribute) < ENTRY_FIRST_NAME_MIN_LENGTH) {
+                if (strpos($this->$attribute, '<')!==false || strpos($this->$attribute, 'https://')!==false || strpos($this->$attribute, 'http://')!==false 
+                    || (strip_tags($this->$attribute) != $this->$attribute) || (in_array(ACCOUNT_FIRSTNAME, $this->getRequired()) && strlen($this->$attribute) < ENTRY_FIRST_NAME_MIN_LENGTH)) {
+                //if (in_array(ACCOUNT_FIRSTNAME, $this->getRequired()) && strlen($this->$attribute) < ENTRY_FIRST_NAME_MIN_LENGTH) {
                     $this->addError($attribute, sprintf(ENTRY_FIRST_NAME_ERROR, ENTRY_FIRST_NAME_MIN_LENGTH));
                 }
                 break;
             case 'lastname':
-                if (in_array(ACCOUNT_LASTNAME, $this->getRequired()) && strlen($this->$attribute) < ENTRY_LAST_NAME_MIN_LENGTH) {
+                if (strpos($this->$attribute, '<')!==false || strpos($this->$attribute, 'https://')!==false || strpos($this->$attribute, 'http://')!==false 
+                    || (strip_tags($this->$attribute) != $this->$attribute) || (in_array(ACCOUNT_LASTNAME, $this->getRequired()) && strlen($this->$attribute) < ENTRY_LAST_NAME_MIN_LENGTH)) {
+                //if (in_array(ACCOUNT_LASTNAME, $this->getRequired()) && strlen($this->$attribute) < ENTRY_LAST_NAME_MIN_LENGTH) {
                     $this->addError($attribute, sprintf(ENTRY_LAST_NAME_ERROR, ENTRY_LAST_NAME_MIN_LENGTH));
                 }
                 break;
@@ -788,10 +795,22 @@ class CustomerRegistration extends Model {
                 if($ext = \common\helpers\Acl::checkExtensionAllowed('CustomerCode')) {
                     /* @var \common\extensions\CustomerCode */
                     if ($ext::isEnabledErpId()) {
-                        $fields[] = 'erp_customer_id';
+                        if ( \common\helpers\Acl::checkExtension($ext, 'readonlyInput') ) {
+                            if (!$ext::readonlyInput('erp_customer_id')) {
+                                $fields[] = 'erp_customer_id';
+                            }
+                        } else {
+                            $fields[] = 'erp_customer_id';
+                        }
                     }
                     if ($ext::isEnabledErpCode()) {
-                        $fields[] = 'erp_customer_code';
+                        if ( \common\helpers\Acl::checkExtension($ext, 'readonlyInput') ) {
+                            if (!$ext::readonlyInput('erp_customer_code')) {
+                                $fields[] = 'erp_customer_code';
+                            }
+                        } else {
+                            $fields[] = 'erp_customer_code';
+                        }
                     }
                 }
 
@@ -832,23 +851,22 @@ class CustomerRegistration extends Model {
                 if ($this->useExtending) {
                     $fields[] = 'status';
                     $fields[] = 'group';
-                    if(\common\helpers\Acl::checkExtensionAllowed('CustomerCode')) {
-                        if($ext = \common\helpers\Acl::checkExtensionAllowed('CustomerCode')) {
-                            /* @var \common\extensions\CustomerCode */
-                            if ($ext::isEnabledErpId()) {
-                                $fields[] = 'erp_customer_id';
-                            }
-                            if ($ext::isEnabledErpCode()) {
-                                $fields[] = 'erp_customer_code';
-                            }
+                    /* @var \common\extensions\CustomerCode\CustomerCode $ext*/
+                    if ($ext = \common\helpers\Extensions::isAllowed('CustomerCode')) {
+                        if ($ext::isEnabledErpId()) {
+                            $fields[] = 'erp_customer_id';
+                        }
+                        if ($ext::isEnabledErpCode()) {
+                            $fields[] = 'erp_customer_code';
                         }
                     }
-                    
+
                     $fields[] = 'platform_id';
                     $fields[] = 'language_id';
                     $fields[] = 'admin_id';
                     $fields[] = 'opc_temp_account';
                     $fields[] = 'pin';
+                    $fields[] = 'can_use_drop_ship';
                 }
                 break;
         }
@@ -1008,6 +1026,7 @@ class CustomerRegistration extends Model {
                     $this->platform_id = $customer->platform_id;
                     $this->language_id = $customer->language_id;
                     $this->admin_id = $customer->admin_id;
+                    $this->can_use_drop_ship = $customer->can_use_drop_ship;
                 }
             }
         } else {

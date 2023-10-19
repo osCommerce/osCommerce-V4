@@ -30,8 +30,8 @@ class MessageStack {
         return $this;
     }
 
-    public function add($message, $class = 'header', $type = 'error') {
-        $this->messages[$class][] = ['text' => $message, 'type' => $type];
+    public function add($message, $class = 'header', $type = 'error', $name = '') {
+        $this->messages[$class][] = ['text' => $message, 'type' => $type, 'name' => $name];
     }
 
     public function add_unique($message, $class = 'header', $type = 'error') {
@@ -134,15 +134,16 @@ class MessageStack {
             return $html;
         }
         foreach ($this->messages['alert'] as $alert) {
-            $html .= '<div class="alert alert-' . $alert['type'] . ' fade in">
-                          <i class="icon-remove close" data-dismiss="alert"></i>
+            $html .= '<div class="alert alert-dismissible alert-' . $alert['type'] . ' fade in show" role="alert" data-name="' . $alert['name'] . '">
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            <i class="icon-remove close" data-dismiss="alert"></i>
                           ' . $alert['text'] . '
                       </div>';
         }
         return $html;
     }
 
-    public function output($class = 'header') {
+    public function output($class = 'header', $type = 'info') {
         $html = '';
         if (\Yii::$app->session->has($class)){
             $this->initFlash();
@@ -156,7 +157,8 @@ class MessageStack {
         if (count($this->messages[$class]) > 0) {
             $html .= '<div class="messageBox">';
             foreach ($this->messages[$class] as $message) {
-                $html .= '<div class="info">' . $message['text'] . '</div>';
+                $alertType = $message['type'] == 'error' ? 'danger' : $message['type'];
+                $html .= '<div class="info ' . $message['type'] . '-message alert alert-' . $alertType . '">' . $message['text'] . '</div>';
             }
             $html .= '</div>';
         }

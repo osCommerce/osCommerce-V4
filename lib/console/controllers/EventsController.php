@@ -11,17 +11,14 @@ use backend\services\ConfigurationService;
 use common\classes\Currencies;
 use common\classes\platform;
 use common\components\Customer;
-use common\helpers\Points;
 use common\models\Customers;
-use common\services\BonusPointsService\DTO\TransferData;
 use common\services\CustomersService;
 use yii\console\Controller;
-use common\services\BonusPointsService\BonusPointsService;
 
 /**
  * Events controller
  */
-class EventsController extends Controller {
+class EventsController extends Sceleton {
 
     public $runNow;
 
@@ -228,194 +225,6 @@ class EventsController extends Controller {
     }
 
     /**
-     * cron customers newsletters sync (mailchimp) Params (optional) max count, delay between each
-     * @param int $count
-     * @param int $timeout
-     */
-    public function actionNewslettersSubscription($count=0, $timeout=0) {
-      /** @var \common\extensions\Newsletters\Newsletters $ext */
-      if($ext = \common\helpers\Acl::checkExtension('Newsletters', 'subscribeAll')){
-        if ($ext::allowed()){
-            $ext::subscribeAll($count, $timeout);
-        }
-      } else {
-        echo 'Module disabled' . "\n";
-      }
-      echo '<hr>Done.' . "\n";
-    }
-
-/**
- * not implemented yet
- */
-    public function actionNewslettersProducts() {
-      /** @var \common\extensions\Newsletters\Newsletters $ext */
-      if($ext = \common\helpers\Acl::checkExtension('Newsletters', 'productsAll')){
-        if ($ext::allowed()){
-            $ext::productsAll();
-        }
-      } else {
-        echo 'Module disabled';
-      }
-      echo '<hr>Done.';
-    }
-
-/**
- * not implemented yet
- */
-    public function actionNewslettersOrders() {
-      /** @var \common\extensions\Newsletters\Newsletters $ext */
-      if($ext = \common\helpers\Acl::checkExtension('Newsletters', 'ordersAll')){
-        if ($ext::allowed()){
-            $ext::ordersAll();
-        }
-      } else {
-        echo 'Module disabled';
-      }
-      echo '<hr>Done.';
-    }
-
-    /**
-     * cron product prices re-index process
-     */
-    public function actionProductPricesindex(){
-        if($ext = \common\helpers\Acl::checkExtensionAllowed('ProductPriceIndex', 'allowed')){
-            if ($ext::isEnabled()){
-                //$ext::reindex();
-                $ext::checkUpdateStatus();
-            }
-        } else {
-            echo 'Module disabled' . "\n";
-        }
-
-        echo '<hr>Done.' . "\n";
-    }
-
-    /**
-     * cron product prices clean up index process
-     */
-    public function actionProductPricescleanup(){
-        if($ext = \common\helpers\Acl::checkExtensionAllowed('ProductPriceIndex', 'allowed')){
-            if ($ext::isEnabled()){
-                $ext::cleanup();
-            }
-        } else {
-            echo 'Module disabled' . "\n";
-        }
-
-        echo '<hr>Done.' . "\n";
-    }
-
-    /**
-     * cron plain product, params: count, ignoreLifeTime
-     * @param int $count
-     * @param int $ignoreLifeTime
-     */
-    public function actionPlainProductTable($count=0, $ignoreLifeTime=0){
-      /* @var $ext \common\extensions\PlainProductsDescription\PlainProductsDescription */
-        if($ext = \common\helpers\Acl::checkExtensionAllowed('PlainProductsDescription', 'allowed')){
-            if ($ext::isEnabled()){
-              if (!empty($ignoreLifeTime)) {
-                $pid = null;
-              } else {
-                $pid = false;
-              }
-              $cnt = -1;
-              if (!empty($count) && (int)$count > 0) {
-                $cnt = $count;
-              }
-              $ext::reindex($pid, $cnt);
-            } else {
-                echo 'Module disabled' . "\n";
-            }
-        } else {
-            echo 'Module is not installed' . "\n";
-        }
-
-        echo '<hr>Done.' . "\n";
-    }
-
-/**
- * cron product product clean up, params: force default 0
- * @param bool $force default 0
- */
-    public function actionPlainProductTablecleanup($force = 0){
-      /* @var $ext \common\extensions\PlainProductsDescription\PlainProductsDescription */
-        if($ext = \common\helpers\Acl::checkExtensionAllowed('PlainProductsDescription', 'allowed')){
-            if ($ext::isEnabled()){
-                $ext::cleanup($force);
-            }
-        } else {
-            echo 'Module disabled' . "\n";
-        }
-
-        echo '<hr>Done.' . "\n";
-    }
-
-    public function actionClearBonusPoints(): void
-    {
-        if (\common\helpers\Acl::checkExtensionAllowed('BonusActions')) {
-            /** @var BonusPointsService $bonusPointsService */
-            $bonusPointsService = \Yii::createObject(BonusPointsService::class);
-            /** @var ConfigurationService $configurationService */
-            $configurationService = \Yii::createObject(ConfigurationService::class);
-            $platforms = \common\models\Platforms::find()->select('platform_id')->asArray()->all();
-            $rule = $configurationService->findValue('BONUS_POINTS_CLEAR_RULE');
-            $bonusPointsService->clearBonusPoints($rule, -1);
-            foreach ($platforms as ['platform_id'=> $platform_id]) {
-                $rule = $configurationService->findValue('BONUS_POINTS_CLEAR_RULE', (int)$platform_id);
-                $bonusPointsService->clearBonusPoints($rule, (int)$platform_id);
-            }
-        }
-    }
-
-    public function actionBonusPointsToCreditAmount(string $sendEmails = 'not-send-email'): void
-    {
-        if (!\common\helpers\Acl::checkExtensionAllowed('BonusActions')) return;
-        $send = $sendEmails === 'send-email';
-        /** @var $platform_config \common\classes\platform_config */
-        $platform_config = \Yii::$app->get('platform')->config();
-        $STORE_OWNER_EMAIL_ADDRESS = $platform_config->const_value('STORE_OWNER_EMAIL_ADDRESS');
-        $STORE_OWNER = $platform_config->const_value('STORE_OWNER');
-        /** @var BonusPointsService $bonusPointsService */
-        $bonusPointsService = \Yii::createObject(BonusPointsService::class);
-        if (Points::getCurrencyCoefficientNoCache() === false) {
-            return;
-        }
-        /** @var CustomersService $customersService */
-        $customersService = \Yii::createObject(CustomersService::class);
-        /** @var ConfigurationService $configurationService */
-        $configurationService = \Yii::createObject(ConfigurationService::class);
-        /** @var \common\classes\Currencies $currencies */
-        $currencies = \Yii::$container->get('currencies');
-        $customersQuery = $customersService->getCustomerIdentityWithBonusPointsQuery();
-        foreach ($customersQuery->batch() as $customers) {
-            foreach ($customers as $customer) {
-                /** @var Customer $customer */
-                $bonusPointsCosts = Points::getCurrencyCoefficientNoCache($customer->groups_id, $customer->platform_id);
-                if ($bonusPointsCosts === false) {
-                    continue;
-                }
-                $transfer = TransferData::create($customer, $bonusPointsCosts, $customer->customers_bonus_points, $send, $send);
-                $credit_amount = $customersService->bonusPointsToAmount($transfer);
-                if ($send) {
-                    $email_params['STORE_NAME'] = $STORE_OWNER;
-                    $email_params['CUSTOMER_FIRSTNAME'] = $customer->customers_firstname;
-                    $email_params['CUSTOMER_LASTNAME']= $customer->customers_lastname;
-                    $email_params['CREDIT_AMOUNT'] = '+' . $currencies->format($credit_amount, true, DEFAULT_CURRENCY, $currencies->currencies[DEFAULT_CURRENCY]['value']);
-                    $email_params['CREDIT_AMOUNT_COMMENTS'] = TEXT_CONVERT_FROM_BONUS_POINTS;
-                    $email_params['BONUS_POINTS_COMMENTS'] = TEXT_CONVERT_TO_AMOUNT;
-                    $email_params['BONUS_POINTS'] =  '-' . $transfer->getBonusPoints();
-
-                    [$emailSubject, $emailContent] = \common\helpers\Mail::get_parsed_email_template('Credit amount notification', $email_params, $customer->language_id, $customer->platform_id);
-                    \common\helpers\Mail::send($customer->customers_firstname . ' ' . $customer->customers_lastname, $customer->customers_email_address, $emailSubject, $emailContent, $STORE_OWNER, $STORE_OWNER_EMAIL_ADDRESS, [], '', '', ['add_br' => 'no']);
-                    [$emailSubject, $emailContent] = \common\helpers\Mail::get_parsed_email_template('Bonus points notification', $email_params, $customer->language_id, $customer->platform_id);
-                    \common\helpers\Mail::send($customer->customers_firstname . ' ' . $customer->customers_lastname, $customer->customers_email_address, $emailSubject, $emailContent, $STORE_OWNER, $STORE_OWNER_EMAIL_ADDRESS, [], '', '', ['add_br' => 'no']);
-                }
-            }
-        }
-    }
-
-    /**
      * updates status of specials and featured products
      */
     public function actionMarketingStatus(){
@@ -465,7 +274,12 @@ class EventsController extends Controller {
 
     public function actionReportByEmail()
     {
-        \common\helpers\Acl::checkExtensionAllowed('ReportByEmail', 'doSendAll');
+        /**
+         * @var $ext \common\extensions\ReportByEmail\ReportByEmail
+         */
+        if ($ext = \common\helpers\Extensions::isAllowed('ReportByEmail')) {
+            $ext::doSendAll();
+        }
         echo 'Done!';
     }
 

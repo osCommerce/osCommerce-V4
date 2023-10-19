@@ -57,7 +57,7 @@
 		  return false;
       });
 	  $(window).on('click', function(){
-		if(!$('.account-top', $box).is(':hover')){
+		if(!$('.account-top', $box).is(':hover') && !focus){
 			$('.my-acc-link', $box).removeClass('active');
 		}
 	  })

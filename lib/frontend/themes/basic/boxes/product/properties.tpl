@@ -59,6 +59,12 @@
       <li class="propertiesValue js_prop-products_isbn" itemprop="isbn">{$hvo}{$products_data.products_isbn}{$hvc}</li>
     </ul>
   {/if}
+  {if $products_data.products_asin && $settings.show_asin != 'no'}
+    <ul class="properties-table{if !$products_data.products_asin} js-hide{/if}">
+      <li class="propertiesName js_prop-block"><strong class="propertiesName-strong">{$hno}{$smarty.const.TEXT_ASIN}{$hnc}</strong></li>
+      <li class="propertiesValue js_prop-products_asin" itemprop="asin">{$hvo}{$products_data.products_asin}{$hvc}</li>
+    </ul>
+  {/if}
   {if $products_data.products_upc && $settings.show_upc != 'no'}
     <ul class="properties-table{if !$products_data.products_upc} js-hide{/if}">
       <li class="propertiesName js_prop-block"><strong class="propertiesName-strong">{$hno}{$smarty.const.TEXT_UPC}{$hnc}</strong></li>

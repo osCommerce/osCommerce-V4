@@ -116,6 +116,7 @@ abstract class OrderAbstract extends OrderShadowAbstract{
             'customs_number' => $this->data[$type .'_customs_number'],
             'customs_number_status' => $this->data[$type .'_customs_number_status'],
             'telephone' => isset($this->data[$type . '_telephone'])?$this->data[$type . '_telephone']:'',
+            'email_address' => isset($this->data[$type . '_email_address'])?$this->data[$type . '_email_address']:'',
             'street_address' => $this->data[$type . '_street_address'],
             'suburb' => $this->data[$type . '_suburb'],
             'city' => $this->data[$type . '_city'],
@@ -472,53 +473,19 @@ abstract class OrderAbstract extends OrderShadowAbstract{
         $this->info['total_exc_tax'] = round($total_exc_tax, 2);
         $this->info['tax'] = round($tax, 2);
         $this->info['tax_groups'] = $tax_groups;
+
+        foreach (\common\helpers\Hooks::getList('order/query/after') as $filename) {
+            include($filename);
+        }
     }
 
     public function compactLinkedProducts()
     {
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('LinkedProducts', 'allowed')) {
-            $_parent_ref = [];
-            $_linked_children = [];
-            foreach ( $this->products as $_idx=>$product ){
-                if ( $product['relation_type']=='linked' ){
-                    if (!empty($product['parent_product'])){
-                        if ( !is_array($_linked_children[$product['parent_product']]) ) $_linked_children[$product['parent_product']] = [];
-                        $_linked_children[$product['parent_product']][$product['template_uprid']] = $_idx;
-                    }elseif ( !empty($product['sub_products']) ){
-                        $_parent_ref[$product['template_uprid']] = $_idx;
-                    }
-                }
-            }
-            if (count($_linked_children)>0) {
-                foreach ($_linked_children as $parent => $childrenRefs) {
-                    if (!isset($_parent_ref[$parent])) continue;
-                    $parent_idx = $_parent_ref[$parent];
-                    $this->products[$parent_idx]['linked_products'] = [];
-                    foreach ($childrenRefs as $childrenRef) {
-                        $this->products[$parent_idx]['linked_products'][] = $this->products[$childrenRef];
-                        unset($this->products[$childrenRef]);
-                    }
-                }
-                $this->products = array_values($this->products);
-            }
+        if ($ext = \common\helpers\Extensions::isAllowed('LinkedProducts')) {
+            $this->products = $ext::hookCompactLinkedProducts($this->products)??$this->products;
         }
     }
 
-    public function expandLinkedProducts()
-    {
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('LinkedProducts', 'allowed')) {
-            $_products = [];
-            foreach ($this->products as $_idx => $product) {
-                $_products[] = $product;
-                if (isset($product['linked_products']) && is_array($product['linked_products'])) {
-                    foreach ($product['linked_products'] as $childProduct) {
-                        $_products[] = $childProduct;
-                    }
-                }
-            }
-            $this->products = $_products;
-        }
-    }
 
     /**
      * @param string $scope admin_order_detail | packing_slip
@@ -528,57 +495,22 @@ abstract class OrderAbstract extends OrderShadowAbstract{
     {
         $products = $this->products;
         //ProductNameDecorator::instance()->decorateOrder($this);
-
+        if ($pl = \common\helpers\Extensions::isAllowed('LinkedProducts'))
+        {
+            $products = !empty($pl::hookGetOrderedProducts($scope, $products)) ? $pl::hookGetOrderedProducts($scope, $products) : $this->products;
+        }
         switch ($scope){
             case 'packing_slip':
-                if ($ext = \common\helpers\Acl::checkExtensionAllowed('LinkedProducts', 'allowed')) {
-                    if ( $ext::configShowLinkedChildOnPackingSlip() ) {
-                        $products = [];
-                        foreach ($this->products as $product) {
-                            if (isset($product['linked_products']) && is_array($product['linked_products'])) {
-                                $products[] = $product;
-                                foreach ($product['linked_products'] as $linked_product) {
-                                    $products[] = $linked_product;
-                                }
-                            } else {
-                                $products[] = $product;
-                            }
-                        }
-                    }
-                }
                 if (ProductNameDecorator::instance()->useInternalNameForPackingSlip()){
                     $products = ProductNameDecorator::instance()->getUpdatedOrderProducts($products, $this->info['language_id'], $this->info['platform_id']);
                 }
                 break;
             case 'invoice':
-                if ($ext = \common\helpers\Acl::checkExtensionAllowed('LinkedProducts', 'allowed')) {
-                    if ( $ext::configShowLinkedChildOnInvoice() ) {
-                        $products = [];
-                        foreach ($this->products as $product) {
-                            if (isset($product['linked_products']) && is_array($product['linked_products'])) {
-                                $products[] = $product;
-                                foreach ($product['linked_products'] as $linked_product) {
-                                    $products[] = $linked_product;
-                                }
-                            } else {
-                                $products[] = $product;
-                            }
-                        }
-                    }
-                }
                 if (ProductNameDecorator::instance()->useInternalNameForInvoice()){
                     $products = ProductNameDecorator::instance()->getUpdatedOrderProducts($products, $this->info['language_id'], $this->info['platform_id']);
                 }
                 break;
             case 'admin_order_detail':
-                if ($ext = \common\helpers\Acl::checkExtensionAllowed('LinkedProducts', 'allowed')) {
-                    if ( $ext::configShowLinkedChildOnOrder() ){
-                        $keep = $this->products;
-                        $this->expandLinkedProducts();
-                        $products = $this->products;
-                        $this->products = $keep;
-                    }
-                }
                 if (ProductNameDecorator::instance()->useInternalNameForOrder()){
                     $products = ProductNameDecorator::instance()->getUpdatedOrderProducts($products, $this->info['language_id'], $this->info['platform_id']);
                 }
@@ -609,7 +541,7 @@ abstract class OrderAbstract extends OrderShadowAbstract{
                 $this->info['shipping_method'] = $new_shipping['title'];
                 $this->info['shipping_cost'] = $new_shipping['cost'];
                 $this->info['shipping_cost_inc_tax'] = $new_shipping['cost_inc_tax'];
-                $this->info['shipping_cost_exc_tax'] = $new_shipping['cost'];
+                $this->info['shipping_cost_exc_tax'] = (isset($new_shipping['cost_exc_tax'])?$new_shipping['cost_exc_tax']:$new_shipping['cost']);
                 $this->info['total'] = $this->info['subtotal'] + $new_shipping['cost'];
                 $this->info['total_inc_tax'] = $this->info['subtotal_inc_tax'] + $new_shipping['cost'];
                 $this->info['total_exc_tax'] = $this->info['subtotal_exc_tax'] + $new_shipping['cost'];
@@ -627,6 +559,10 @@ abstract class OrderAbstract extends OrderShadowAbstract{
         $this->prepareProducts();
 
         $this->prepareOrderInfoTotals();
+
+        foreach (\common\helpers\Hooks::getList('order/cart/after') as $filename) {
+            include($filename);
+        }
     }
 
     public function overWrite($uprid, &$product) {
@@ -1155,13 +1091,13 @@ abstract class OrderAbstract extends OrderShadowAbstract{
         $this->clear_products();
         $container = \Yii::$container->get('products');
         $normilizeSP = false;
-        if ($extSP = \common\helpers\Acl::checkExtension('SupplierPurchase', 'allowed')){
-            if ($extSP::allowed()){
-                $normilizeSP = true;
-            }
+        if ($extSP = \common\helpers\Extensions::isAllowed('SupplierPurchase')){
+            $normilizeSP = true;
         }
 
-        $this->expandLinkedProducts();
+        if  ($pl = \common\helpers\Extensions::isAllowed('LinkedProducts')) {
+            $this->products = $pl::expandLinkedProducts($this->products)??$this->products;
+        }
 
         $dontUpdateStock = false;
         $sPayment = $this->manager->getPaymentCollection()->getSelectedPayment();
@@ -1348,10 +1284,10 @@ abstract class OrderAbstract extends OrderShadowAbstract{
                 tep_db_query("update " . $this->table_prefix . TABLE_ORDERS_PRODUCTS . " set sets_array = '" . tep_db_input(serialize($sets_array)) . "' where orders_products_id = '" . (int) $order_products_id . "'");
             }
             // }}
-
+            /** @var \common\extensions\Quotations\Quotations $ext */
             //$products_ordered .= $this->products[$i]['qty'] . ' x ' . $this->products[$i]['name'] . (($this->products[$i]['model'] != '') ? ' (' . $this->products[$i]['model'] . ')' : '') . ' = ' . $currencies->display_price($this->products[$i]['final_price'], $this->products[$i]['tax'], $this->products[$i]['qty']) . $products_ordered_attributes . "\n";
             $this->products[$i]['tpl_attributes'] = ($products_ordered_attributes ? implode("\n\t", $products_ordered_attributes) :'');
-            if (($this->table_prefix != 'quote_' || strtolower(\common\helpers\PlatformConfig::getVal('SHOW_PRICE_FOR_QUOTE_PRODUCT', 'false')) == 'true') && !(defined('GROUPS_IS_SHOW_PRICE') && GROUPS_IS_SHOW_PRICE==false)) {
+            if (($this->table_prefix != 'quote_' ||  ( ($ext = \common\helpers\Extensions::isAllowed('Quotations')) && $ext::optionIsPriceShow() )) && !(defined('GROUPS_IS_SHOW_PRICE') && GROUPS_IS_SHOW_PRICE==false)) {
                 $this->products[$i]['tpl_price'] = $currencies->display_price($this->products[$i]['final_price'], $this->products[$i]['tax'], $this->products[$i]['qty']);
             }
 
@@ -1395,8 +1331,8 @@ abstract class OrderAbstract extends OrderShadowAbstract{
 
     public function notify_customer($products_ordered,$emailParams = [], $emailTemplate = '') {
 
+        $ostatus = tep_db_fetch_array(tep_db_query("select orders_status_template_confirm, orders_status_name from " . TABLE_ORDERS_STATUS . " where language_id = '" . (int) $this->info['language_id'] . "' and orders_status_id='" . (int) $this->info['order_status'] . "' LIMIT 1 "));
         if (empty($emailTemplate)){
-            $ostatus = tep_db_fetch_array(tep_db_query("select orders_status_template_confirm from " . TABLE_ORDERS_STATUS . " where language_id = '" . (int) $this->info['language_id'] . "' and orders_status_id='" . (int) $this->info['order_status'] . "' LIMIT 1 "));
             if (!empty($ostatus['orders_status_template_confirm'])) {
                 $get_template_r = tep_db_query("select * from " . TABLE_EMAIL_TEMPLATES . " where email_templates_key='" . tep_db_input($ostatus['orders_status_template_confirm']) . "'");
                 if (tep_db_num_rows($get_template_r) > 0) {
@@ -1404,6 +1340,8 @@ abstract class OrderAbstract extends OrderShadowAbstract{
                 }
             }
         }
+        $email_params = array();
+        $email_params['NEW_ORDER_STATUS'] = $ostatus['orders_status_name'] ?? '';
 
         $showLink = true;
         $customer = $this->manager->getCustomersIdentity();
@@ -1411,7 +1349,6 @@ abstract class OrderAbstract extends OrderShadowAbstract{
             $showLink = false;
         }
 
-        $email_params = array();
         $email_params['STORE_NAME'] = STORE_NAME;
         if (\frontend\design\Info::isTotallyAdmin()) {
             $email_params['STORE_URL'] = rtrim(tep_catalog_href_link('/', '', 'SSL', false),'/').'/';
@@ -1486,6 +1423,8 @@ abstract class OrderAbstract extends OrderShadowAbstract{
 
         $email_params['CUSTOMER_FIRSTNAME'] = $this->customer['firstname'];
         $email_params['CUSTOMER_LASTNAME'] = $this->customer['lastname'];
+        $email_params['CUSTOMERS_TELEPHONE'] = $this->customer['telephone'];
+        $email_params['CUSTOMERS_EMAIL_ADDRESS'] = $this->customer['email_address'];
 
         $email_params['ORDER_COMMENTS'] = tep_db_output($this->info['comments']);
 
@@ -1635,7 +1574,7 @@ abstract class OrderAbstract extends OrderShadowAbstract{
     public function haveSubscription() {
         if (is_array($this->products)) {
             foreach ($this->products as $value) {
-                if ($value['subscription'] == 1) {
+                if ($value['subscription']??null == 1) {
                     return true;
                 }
             }
@@ -1788,20 +1727,6 @@ abstract class OrderAbstract extends OrderShadowAbstract{
         return (is_object($this->manager) && $this->manager->hasCart() ? $this->manager->getCart() : $cart);
     }
 
-    public function getRedeemAmount($db = true){
-        if ($db){
-            if ($this->order_id){
-                $query = tep_db_fetch_array(tep_db_query("select bonus_points_redeem from " . $this->table_prefix . TABLE_ORDERS . " where orders_id = '" .(int)$this->order_id. "'"));
-                if ($query){
-                    return $query['bonus_points_redeem'];
-                }
-            }
-            return 0;
-        } else {
-            return $this->info['bonus_points_redeem'];
-        }
-
-    }
     public function isSendEmailAfterPaypalTransaction() {
         $sql = "SELECT paypal_notify FROM " . $this->table_prefix . TABLE_ORDERS . " WHERE orders_id = '" . (int) $this->order_id . "'";
         $order_query = tep_db_query($sql);
@@ -1933,7 +1858,8 @@ abstract class OrderAbstract extends OrderShadowAbstract{
                     $products_ordered_attributes .= "\n\t" . htmlspecialchars($attribute['option']) . ': ' . htmlspecialchars($attribute['value']);
                 }
             }
-            $hidePrice = ($this->table_prefix == 'quote_' && strtolower(\common\helpers\PlatformConfig::getVal('SHOW_PRICE_FOR_QUOTE_PRODUCT', 'false')) != 'true') ||
+            /** @var \common\extensions\Quotations\Quotations $ext */
+            $hidePrice = ($this->table_prefix == 'quote_' && ( ($ext = \common\helpers\Extensions::isAllowed('Quotations')) && !$ext::optionIsPriceShow() )) ||
                 (defined('GROUPS_IS_SHOW_PRICE') && GROUPS_IS_SHOW_PRICE ==false);
             if (!$hidePrice) {
                 $this->products[$i]['tpl_price'] = $currencies->display_price($product['final_price'], $product['tax'], $product['qty']);

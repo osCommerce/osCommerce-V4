@@ -21,18 +21,87 @@ class Extensions
     private static $cacheAllowed = [];
     private static $cacheEnabled = []; // cache for Acl::checkXXX instead of const 'ext_EXTENSION_STATUS'
 
+    /**
+     * Returns extension class if it exists and is allowed
+     * @param string $code extension classname
+     * @return bool|mixed|string
+     */
     public static function isAllowed(string $code)
     {
-
-        if (!isset(self::$cacheAllowed[$code])) {
-            self::$cacheAllowed[$code] = Acl::checkExtensionAllowed($code);
-        }
-        return self::$cacheAllowed[$code];
+        return self::allowed($code);
     }
 
+    /**
+     * return extension class if allowed and $func return true
+     * @param string $code
+     * @param string $func
+     * @param array $args
+     * @return bool|mixed|string
+     */
+    public static function isAllowedAnd(string $code, string $func, array $args = null)
+    {
+        if (($ext = self::isAllowed($code)) &&
+            (
+                (method_exists($ext, $func) && call_user_func([$ext, $func], $args)) ||
+                (method_exists($ext, 'cfg') && class_exists($cfgClass=$ext::cfg()) && method_exists($cfgClass, $func) && call_user_func([$cfgClass, $func], $args))
+            ))
+        {
+            return $ext;
+        }
+        return false;
+    }
+
+    /**
+     * Calls $func if extension $code is allowed
+     * @param string $code - extension classname
+     * @param string $func - static extension function name
+     * @param array $args - args for function $func
+     * @return false|mixed - false if extension is not allowed or return value of $func
+     */
+    public static function callIfAllowed(string $code, string $func, array $args = [])
+    {
+        if (($ext = self::isAllowed($code)) && method_exists($ext, $func)) {
+            return call_user_func([$ext, $func], $args);
+        }
+        return false;
+    }
+
+    private static function allowed(string $code, $func = 'allowed')
+    {
+        if ($func == 'allowed') {
+            if (!isset(self::$cacheAllowed[$code])) {
+                self::$cacheAllowed[$code] = Acl::checkExtensionAllowed($code);
+            }
+            return self::$cacheAllowed[$code];
+        }
+        return Acl::checkExtensionAllowed($code, $func);
+    }
+
+    /*
+     * @return null|common\extensions\UserGroups\UserGroups
+     */
     public static function isCustomerGroupsAllowed()
     {
         return self::isAllowed('UserGroups');
+    }
+
+    /*
+     * @return null|common\extensions\CronScheduler\CronScheduler
+     */
+    public static function isCronScheduler($funcName = null)
+    {
+        $ext = self::isAllowed('CronScheduler');
+        if ($ext && (empty($funcName) || method_exists($ext, $funcName))) {
+            return $ext;
+        }
+    }
+
+    /*
+     * @return null|common\extensions\Inventory\Inventory
+     */
+    public static function isInventoryAllowed()
+    {
+        return self::isAllowed('Inventory');
     }
 
     private static function getState($code)
@@ -182,6 +251,154 @@ class Extensions
         } else {
             return $defImageFN;
         }
+    }
+
+
+    /**
+     * @param string $class className of extension
+     * @param string $relativeModelName 'models\Collections' or just 'Collections'
+     * @param string|null $allowedFunc
+     * @return \yii\db\ActiveRecord|null
+     */
+    public static function getModel($class, $relativeModelName, $allowedFunc = 'allowed')
+    {
+        /** @var \common\classes\modules\ModuleExtensions $ext */
+        if ($ext = self::allowed($class, 'enabled')) {
+            if (method_exists($ext, 'getModel') && ($model = $ext::getModel($relativeModelName)) && class_exists($model)) {
+                return $model;
+            }
+            if (!empty($allowedFunc) && !(method_exists($ext, $allowedFunc) && call_user_func([$ext, $allowedFunc]))) return null;
+            $reflection_class = new \ReflectionClass($ext);
+            $namespace = $reflection_class->getNamespaceName();
+            $modelClass = $namespace . "\\$relativeModelName";
+            if (!class_exists($modelClass) || ($class == $relativeModelName)) {
+                $modelClass = $namespace . "\\models\\$relativeModelName";
+            }
+            if (class_exists($modelClass) && \Yii::$app->db->schema->getTableSchema($modelClass::tablename()) !==null) {
+                return $modelClass;
+            }
+        }
+    }
+
+    /**
+     * Check extensions for hide or show in "Modules Restrictions Visibility on pages"
+     * @param $visibilityConstant string
+     * @return bool
+     */
+    public static function isVisibility($visibilityConstant)
+    {
+        $const = [
+            'Quotations' => [
+                'TEXT_EMAIL_QUOTE',
+                'TEXT_QUOTE_CART',
+                'TEXT_QUOTE_CHECKOUT'
+            ],
+            'Samples' => [
+                'TEXT_EMAIL_SAMPLE',
+            ],
+        ];
+
+        foreach ($const as $extension => $constants) {
+            if (in_array($visibilityConstant, $constants)) {
+                return self::isAllowed($extension);
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Check extensions and POS available for "Modules Restrictions Available for"
+     * @param $variant string
+     * @return bool
+     */
+    public static function isVisibilityVariant($variant)
+    {
+        $extVariants = [
+            'shop_quote' => 'Quotations',
+            'shop_sample' => 'Samples',
+            'moderator' => 'GroupAdministrator'
+        ];
+        if ($variant == 'pos') return self::isPosExist();
+        if (!empty($extVariants[$variant])) {
+            return self::isAllowed($extVariants[$variant]);
+        }
+        return true;
+    }
+
+    /**
+     * Get correct visibility variants for "Modules Restrictions Available for"
+     * @param $variants array | string
+     * @return array
+     * @uses isVisibilityVariant() for check available extensions and POS
+     */
+    public static function getVisibilityVariants($variants)
+    {
+        $result = [];
+        if (is_array($variants)) {
+            foreach ($variants as $variant) {
+                if (self::isVisibilityVariant($variant)) {
+                    $result[] = $variant;
+                }
+            }
+        } else {
+            if (self::isVisibilityVariant($variants)) {
+                $result[] = $variants;
+            }
+        }
+        return $result;
+    }
+
+    public static function isPosExist()
+    {
+        return file_exists(\Yii::getAlias('@pos'));
+    }
+
+    public static function checkSetup($extClass, $setupFuncName = null)
+    {
+        if (($ext = self::isAllowed($extClass)) && method_exists($ext, 'checkSetup')) {
+            return $ext::checkSetup($setupFuncName);
+        }
+        return false;
+    }
+
+    public static function getOverwrittenCfgKeys()
+    {
+        static $keysAll = null;
+        if (is_null($keysAll)) {
+            $keysAll = \Yii::$app->getCache()->getOrSet('overwritten-config-keys', function () {
+                $res = [];
+                $extensions = new \DirectoryIterator(\Yii::$aliases['@common'] . '/extensions/');
+                foreach($extensions as $extFile){
+                    $class = $extFile->getFilename();
+                    if (method_exists(self::class, 'checkSetup') && ($setup = self::checkSetup($class, 'getOverwrittenCfgKeys'))){
+                        $keys = $setup::getOverwrittenCfgKeys();
+                        if (is_array($keys) && count($keys)>0){
+                            foreach ($keys as &$arr) {
+                                $arr['extension'] = $class;
+                            }
+                            $res = array_merge($res, $keys);
+                        }
+                    }
+                }
+                return $res;
+            },0, new \yii\caching\TagDependency(['tags'=>['extension_changed']]));
+        }
+        return $keysAll;
+    }
+
+    public static function getOverwrittenCfgKey($configKey)
+    {
+        $res = self::getOverwrittenCfgKeys()[$configKey] ?? null;
+        if (is_array($res) && !isset($res['value'])) {
+            $class = $res['extension'];
+            $defaultValue = '<a href="%s">%s</a>';
+            \common\helpers\Translation::init('configuration');
+            $defaultCaption = defined('TEXT_EXTENSION_OVERWRITE_CONFIG_KEY')? TEXT_EXTENSION_OVERWRITE_CONFIG_KEY : 'The extension <strong>%s</strong> enhances this option</a>';
+            $url = \Yii::$app->urlManager->createUrl(['modules/edit', 'set' => 'extensions', 'module' => $class]);
+            $caption = isset($arr['caption']) ? $arr['caption'] : sprintf($defaultCaption, $class);
+            $res['value'] = sprintf($defaultValue, $url, $caption);
+        }
+        return $res;
     }
 
 }

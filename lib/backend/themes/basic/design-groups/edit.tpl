@@ -2,17 +2,18 @@
 {BannersAsset::register($this)|void}
 {use class="backend\assets\DesignAsset"}
 {DesignAsset::register($this)|void}
+
 <form class="group-edit-form">
     <input type="hidden" name="group_id" value="{$groupId}"/>
     <input type="hidden" name="group[status]" value="{$group.status}"/>
 <div class="group-edit-holder">
     <div class="tabbable tabbable-custom">
         <ul class="nav nav-tabs">
-            <li class="active">
-                <a href="#main" data-toggle="tab">{$smarty.const.TEXT_MAIN_DETAILS}</a>
+            <li class="active" data-bs-toggle="tab" data-bs-target="#main">
+                <a>{$smarty.const.TEXT_MAIN_DETAILS}</a>
             </li>
-            <li>
-                <a href="#images" data-toggle="tab">{$smarty.const.TAB_IMAGES}</a>
+            <li data-bs-toggle="tab" data-bs-target="#images">
+                <a>{$smarty.const.TAB_IMAGES}</a>
             </li>
         </ul>
         <div class="tab-content">
@@ -51,24 +52,24 @@
                 <div class="row m-b-2">
                     <div class="col-md-4">
                         <div class="file row align-items-center m-b-2">
-                            <label class="col-xs-3 align-right">{$smarty.const.ICON_FILE}:</label>
-                            <div class="col-xs-9">
+                            <label class="col-3 align-right">{$smarty.const.ICON_FILE}:</label>
+                            <div class="col-9">
                                 <input type="text" name="group[file]" value="{$group.file}" class="form-control"/>
                             </div>
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="category row align-items-center m-b-2">
-                            <label class="col-xs-3 align-right">{$smarty.const.TEXT_CATEGORY}:</label>
-                            <div class="col-xs-9">
+                            <label class="col-3 align-right">{$smarty.const.TEXT_CATEGORY}:</label>
+                            <div class="col-9">
                                 {$group.categoryDropdown}
                             </div>
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="page-type row align-items-center m-b-2">
-                            <label class="col-xs-4 align-right">{$smarty.const.SHOW_ON_PAGE_TYPE}:</label>
-                            <div class="col-xs-8">
+                            <label class="col-4 align-right">{$smarty.const.SHOW_ON_PAGE_TYPE}:</label>
+                            <div class="col-8">
                                 {$group.typesDropdown}
                             </div>
                         </div>
@@ -79,7 +80,7 @@
                 {if count($languages) > 1}
                     <ul class="nav nav-tabs under_tabs_ul">
                         {foreach $languages as $lKey => $language}
-                            <li{if $lKey == 0} class="active"{/if}><a href="#tab_{$language['code']}" data-toggle="tab" data-id="{$language['id']}">{$language['logo']}<span>{$language['name']}</span></a></li>
+                            <li{if $lKey == 0} class="active"{/if} data-bs-toggle="tab" data-bs-target="#tab_{$language['code']}"><a data-id="{$language['id']}">{$language['logo']}<span>{$language['name']}</span></a></li>
                         {/foreach}
                     </ul>
                 {/if}
@@ -88,15 +89,15 @@
                         <div class="tab-pane{if $lKey == 0} active{/if}" id="tab_{$language['code']}">
 
                             <div class="titles row align-items-center m-b-2">
-                                <label class="col-xs-3 align-right">{$smarty.const.TEXT_TITLE}:</label>
-                                <div class="col-xs-9">
+                                <label class="col-3 align-right">{$smarty.const.TEXT_TITLE}:</label>
+                                <div class="col-9">
                                     <input type="text" name="group[languages][{$language['id']}][title]" value="{$group.languages[$language['id']].title}" class="form-control group-title"/>
                                 </div>
                             </div>
 
                             <div class="descriptions row">
-                                <label class="col-xs-3 align-right">{$smarty.const.TEXT_DESCRIPTION}:</label>
-                                <div class="col-xs-9">
+                                <label class="col-3 align-right">{$smarty.const.TEXT_DESCRIPTION}:</label>
+                                <div class="col-9">
                                     <textarea name="group[languages][{$language['id']}][description]" rows="10" class="form-control">{$group.languages[$language['id']].description}</textarea>
                                 </div>
                             </div>
@@ -215,6 +216,8 @@
 
 
         const $form = $('.group-edit-form');
+
+        $('.top-buttons .btn-save').on('click', () => $form.trigger('submit'))
 
         $form.on('submit', function (e) {
             e.preventDefault();

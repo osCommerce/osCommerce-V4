@@ -29,9 +29,9 @@
                     {else}
                         <label style="display:inline;">{$product['name']}</label>
                     {/if}
-                    
-                    {if (!$product['ga'] && \common\helpers\Acl::checkExtensionAllowed('PackUnits', 'allowed'))}
-                            {\common\extensions\PackUnits\PackUnits::queryOrderProcessAdmin($products, $_idx)}
+                    {$ext = \common\helpers\Acl::checkExtensionAllowed('PackUnits', 'allowed')}
+                    {if (!$product['ga'] && $ext)}
+                            {$ext::queryOrderProcessAdmin($products, $_idx)}
                     {/if}
                     {if is_array($product['attributes']) && $product['attributes']|count > 0}
                         {for $j=0; $j<sizeof($product['attributes']); $j++}

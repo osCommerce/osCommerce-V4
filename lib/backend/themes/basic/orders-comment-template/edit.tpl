@@ -57,7 +57,7 @@
             {if count($languages) > 1}
                 <ul class="nav nav-tabs">
                     {foreach $languages as $lKey => $lItem}
-                        <li{if $lKey == 0} class="active"{/if}><a href="#tab_{$lItem['code']}" data-toggle="tab">{$lItem['logo']}<span>{$lItem['name']}</span></a></li>
+                        <li{if $lKey == 0} class="active"{/if} data-bs-toggle="tab" data-bs-target="#tab_{$lItem['code']}"><a>{$lItem['logo']}<span>{$lItem['name']}</span></a></li>
                     {/foreach}
                 </ul>
             {/if}
@@ -101,8 +101,7 @@
     </div>
     {Html::endForm()}
 </div>
-<link href="{$app->request->baseUrl}/plugins/multiple-select/multiple-select.css" rel="stylesheet" type="text/css" />
-<script type="text/javascript" src="{$app->request->baseUrl}/plugins/jquery-ui/multiple-select.js"></script>
+{\backend\assets\MultiSelectAsset::register($this)|void}
 <script type="text/javascript">
     $(document).ready(function(){
         $(".check_on_off").bootstrapSwitch({

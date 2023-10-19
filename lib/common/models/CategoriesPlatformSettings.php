@@ -28,7 +28,7 @@ class CategoriesPlatformSettings extends \yii\db\ActiveRecord
       ];
   }
 
-  public function getImageMap()
+  /*public function getImageMap()
   {
       if (!class_exists('\common\extensions\ImageMaps\models\ImageMaps')) {
           return null;
@@ -49,6 +49,6 @@ class CategoriesPlatformSettings extends \yii\db\ActiveRecord
                     'maps_id'
                     ])
         ;
-  }
+  }*/
 
 }

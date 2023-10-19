@@ -27,6 +27,8 @@ use common\models\BannersGroups;
 use common\classes\Images;
 use common\helpers\Affiliate;
 use common\classes\platform as Platform;
+use common\helpers\Image;
+use common\helpers\Language;
 
 class Banner_managerController extends Sceleton
 {
@@ -477,7 +479,7 @@ class Banner_managerController extends Sceleton
 
     function bannerRow($data) {
         $row = [];
-        $row[] = '<div class="batch-cell"><input type="checkbox" name="' . $data['name'] . '" value="' . $data['id'] . '" class="uniform"/></div>';
+        $row[] = '<div class="batch-cell"><input type="checkbox" name="' . $data['name'] . '" value="' . $data['id'] . '"/></div>';
         $row[] = '<div class="sort-cell" data-id="' . $data['id'] . '" data-name="' . $data['name'] . '"></div>';
         $row[] = '<div class="image-cell double-click" data-id="' . $data['id'] . '" data-name="' . $data['name'] . '">' . ($data['image'] ?? '') . '</div>';
         $row[] = '<div class="title-cell double-click" data-id="' . $data['id'] . '" data-name="' . $data['name'] . '">' . ($data['title'] ?? '') . '</div>';
@@ -757,6 +759,7 @@ class Banner_managerController extends Sceleton
                 $bannerLanguage->banners_id = $banners_id;
                 $bannerLanguage->language_id = $language_id;
             }
+            $oldImage[$language_id] = $bannerLanguage->banners_image;
 
             $bannerLanguage->banners_title = $request['banners_title'][$language_id] ?? '';
             $bannerLanguage->banners_url = $request['banners_url'][$language_id] ?? '';
@@ -765,33 +768,21 @@ class Banner_managerController extends Sceleton
             $bannerLanguage->text_position = $request['text_position'][$language_id] ?? 0;
             $bannerLanguage->banners_html_text = $request['banners_html_text'][$language_id] ?? 0;
 
-            $oldImage[$language_id] = $bannerLanguage->banners_image;
+            $bannerLanguage->banners_image = Image::prepareSavingImage(
+                $bannerLanguage->banners_image,
+                $request['banners_image'][$language_id] ?? '',
+                $request['banners_image_upload'][$language_id] ?? '',
+                'banners' . DIRECTORY_SEPARATOR . $banners_id,
+                $request['banners_image_delete'][$language_id] ?? ''
+            );
+
             $deleteOldImage[$language_id] = false;
 
-            $imgPath = DIR_WS_IMAGES . 'banners' . DIRECTORY_SEPARATOR . $banners_id;
-
-            if (isset($request['banners_image_delete'][$language_id]) && $bannerLanguage->banners_image) {
+            if (isset($request['banners_image_delete'][$language_id]) &&
+                $request['banners_image_delete'][$language_id] == 1 &&
+                $bannerLanguage->banners_image
+            ) {
                 $deleteOldImage[$language_id] = true;
-                if (is_file($imgPath . $bannerLanguage->banners_image)) {
-                    unlink($imgPath . $bannerLanguage->banners_image);
-                }
-                $pos = strripos($bannerLanguage->banners_image, '.');
-                $name = substr($bannerLanguage->banners_image, 0, $pos+1) . 'webp';
-                if (is_file($imgPath . $name)) {
-                    unlink($imgPath . $name);
-                }
-            }
-
-            if (isset($request['banners_image'][$language_id])) {
-                $bannerLanguage->banners_image = str_replace(DIR_WS_IMAGES, '', $request['banners_image'][$language_id]);
-            }
-
-            if (isset($request['banners_image_upload'][$language_id]) && $request['banners_image_upload'][$language_id] != '') {
-
-                $img = str_replace('uploads' . DIRECTORY_SEPARATOR, '', $request['banners_image_upload'][$language_id]);
-                $val = \backend\design\Uploads::move($img, $imgPath);
-                $bannerLanguage->banners_image = str_replace(DIR_WS_IMAGES, '', str_replace('\\', '/', $val));
-                Images::createWebp($bannerLanguage->banners_image);
             }
 
             if ($bannerLanguage->banners_title || $bannerLanguage->banners_url || $bannerLanguage->banners_html_text || $bannerLanguage->banners_image) {
@@ -810,6 +801,10 @@ class Banner_managerController extends Sceleton
         }
 
         self::saveGroupImages($banners_id, $oldImage, $deleteOldImage);
+
+        foreach (\common\helpers\Hooks::getList('banner_manager/submit') as $filename) {
+            include($filename);
+        }
 
         return json_encode(['text' => $successMessage, 'html' => $this->actionBanneredit()]);
     }
@@ -1044,18 +1039,6 @@ class Banner_managerController extends Sceleton
             $mainDesc['date_scheduled'] = '<input type="text" name="date_scheduled" value="' . \common\helpers\Date::formatDateTimeJS($banner_data && $banner_data['date_scheduled'] > 0 ? $banner_data['date_scheduled'] : '') . '" class="form-control datepicker">';
             $mainDesc['expires_date'] = '<input type="text" name="expires_date" value="' . \common\helpers\Date::formatDateTimeJS($banner_data && $banner_data['expires_date'] > 0 ? $banner_data['expires_date'] : '') . '" class="form-control datepicker">';
 
-            if (Platform::isMulti()) {
-                foreach (Platform::getList(false, true) as $_platform_info) {
-                    $status = (isset($banner_statuses[$_platform_info['id']]) ? true : false);
-                    if ($_platform_info['id'] == $platform_id) {
-                        $status = true;
-                    }
-                    $platform_statuses[$_platform_info['id']] = tep_draw_checkbox_field('platform_status[' . $_platform_info['id'] . ']', '1', $status, '', 'class="check_on_off"');
-                }
-            } else {
-                $platform_statuses = Html::hiddenInput('platform_status[' . Platform::firstId() . ']', 1);
-            }
-
             $mainDesc['status'] = tep_draw_checkbox_field('status', '1', (isset($banner_data['status']) && $banner_data['status'] ? true : false), '', 'class="check_on_off"');
 
             $mainDesc['sort_order'] = tep_draw_input_field('sort_order', ($banner_data ? $banner_data['sort_order'] : ''), 'class="form-control"');
@@ -1064,6 +1047,18 @@ class Banner_managerController extends Sceleton
             $banners_data = $mainDesc;
         }
         $banners_data['lang'] = $cDescription;
+
+        if (Platform::isMulti()) {
+            foreach (Platform::getList(false, true) as $_platform_info) {
+                $status = (isset($banner_statuses[$_platform_info['id']]) ? true : false);
+                if ($_platform_info['id'] == $platform_id) {
+                    $status = true;
+                }
+                $platform_statuses[$_platform_info['id']] = tep_draw_checkbox_field('platform_status[' . $_platform_info['id'] . ']', '1', $status, '', 'class="check_on_off platform-status" data-platform-id="' . $_platform_info['id'] . '"');
+            }
+        } else {
+            $platform_statuses = Html::hiddenInput('platform_status[' . Platform::firstId() . ']', 1);
+        }
         $banners_data['platform_statuses'] = $platform_statuses;
 
         $this->selectedMenu = array('marketing', 'banner_manager');
@@ -1073,6 +1068,10 @@ class Banner_managerController extends Sceleton
         }
         $text_new_or_edit = ($banners_id == 0) ? TEXT_BANNER_INSERT : TEXT_BANNER_EDIT;
         $this->navigation[] = array('link' => Yii::$app->urlManager->createUrl('banner_manager/index'), 'title' => $text_new_or_edit);
+
+        foreach (\common\helpers\Hooks::getList('banner_manager/banneredit') as $filename) {
+            include($filename);
+        }
 
         $render_data = [
             'banners_id' => $banners_id,
@@ -1096,116 +1095,6 @@ class Banner_managerController extends Sceleton
             'popup' => $popup
         ];
         return $this->render('banneredit.tpl', $render_data);
-    }
-
-    function actionBannerEditor()
-    {
-        $this->selectedMenu = array('marketing', 'banner_manager');
-        $this->topButtons[] = '
-            <span class="btn btn-confirm btn-save-boxes btn-elements">' . IMAGE_SAVE . '</span>
-            <span class="btn btn-cancel btm-back">' . IMAGE_BACK . '</span>';
-        $this->navigation[] = array('link' => Yii::$app->urlManager->createUrl('marketing/index'), 'title' => HEADING_TITLE);
-        $this->view->headingTitle = HEADING_TITLE;
-
-        return $this->render('banner-editor.tpl', [
-            'svgEditorUrl' => Yii::$app->urlManager->createUrl('banner_manager/svg-editor'),
-            'banners_id' => Yii::$app->request->get('banners_id'),
-            'language_id' => Yii::$app->request->get('language_id'),
-            'banner_group' => Yii::$app->request->get('banner_group', 0),
-            'tr' => \common\helpers\Translation::translationsForJs(['IMAGE_SAVE', 'IMAGE_CANCEL', 'NOT_SAVE',
-                'YOU_CHANGED_BANNER', 'GO_TO_BANNER_PAGE'])
-        ]);
-    }
-
-    function actionSvgEditor()
-    {
-        $languages_id = \Yii::$app->settings->get('languages_id');
-        $this->layout = false;
-        \common\helpers\Translation::init('admin/design');
-
-        $languages_code = \common\helpers\Language::get_language_code($languages_id);
-
-        return $this->render('svg-editor.tpl', [
-            'setLangKey' => $languages_code['code'],
-            'tr' => \common\helpers\Translation::translationsForJs(['TEXT_GALLERY_IMAGE', 'IMAGE_CANCEL', 'IMAGE_SAVE',
-                'TEXT_WIDTH', 'TEXT_HEIGHT'])
-        ]);
-    }
-
-    function actionGetSvg()
-    {
-        $banners_id = Yii::$app->request->get('banners_id');
-        $language_id = Yii::$app->request->get('language_id');
-        $banner_group = Yii::$app->request->get('banner_group', false);
-
-        if ($banner_group) {
-            $banner = BannersGroupsImages::find()->select(['svg', 'banners_image' => 'image'])->where([
-                'banners_id' => $banners_id,
-                'language_id' => $language_id,
-                'image_width' => $banner_group,
-            ])->asArray()->one();
-        } else {
-            $banner = BannersLanguages::find()->select(['svg', 'banners_image'])->where([
-                'banners_id' => $banners_id,
-                'language_id' => $language_id,
-            ])->asArray()->one();
-        }
-
-        if ($banner['svg']) {
-            return $banner['svg'];
-        }
-
-        if (!$banner['banners_image']) {
-            $blankWidth = $banner_group ? $banner_group :640;
-
-            return '<svg width="' . $blankWidth . '" height="480" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"></svg>';
-        }
-
-        $size = @GetImageSize (DIR_FS_CATALOG_IMAGES . $banner['banners_image']);
-
-        return '
-<svg width="' . $size[0] . '" height="' . $size[1] . '" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-  <image width="' . $size[0] . '" height="' . $size[1] . '" id="svg_1" x="0" xlink:href="' . HTTP_CATALOG_SERVER . DIR_WS_CATALOG_IMAGES . $banner['banners_image'] . '" y="0"/>
-</svg>
-            ';
-    }
-
-    function actionSaveSvg()
-    {
-        $banners_id = (int)Yii::$app->request->post('banners_id');
-        $language_id = (int)Yii::$app->request->post('language_id');
-        $banner_group = Yii::$app->request->post('banner_group', false);
-        $svg = Yii::$app->request->post('svg');
-
-        if ($banner_group) {
-            $banner = BannersGroupsImages::findOne([
-                'banners_id' => $banners_id,
-                'language_id' => $language_id,
-                'image_width' => $banner_group,
-            ]);
-        } else {
-            $banner = BannersLanguages::findOne([
-                'banners_id' => $banners_id,
-                'language_id' => $language_id,
-            ]);
-        }
-
-        if (!$banner) {
-            if ($banner_group) {
-                $banner = new BannersGroupsImages();
-                $banner->image_width = $banner_group;
-            } else {
-                $banner = new BannersLanguages();
-            }
-            $banner->banners_id = $banners_id;
-            $banner->language_id = $language_id;
-        }
-
-        $banner->svg = $svg;
-
-        $save = $banner->save();
-
-        return $save ? MESSAGE_SAVED : TEXT_MESSAGE_ERROR;
     }
 
     public function actionGallery()
@@ -1616,56 +1505,27 @@ class Banner_managerController extends Sceleton
         $groupImage = Yii::$app->request->post('group_image', []);
         $groupImageUpload = Yii::$app->request->post('group_image_upload', []);
         $groupImageDelete = Yii::$app->request->post('group_image_delete', []);
-        $groupSvgDelete = Yii::$app->request->post('group_svg_remove', []);
         $groupId = Yii::$app->request->post('group_id', 0);
         $positions = Yii::$app->request->post('position', []);
         $fits = Yii::$app->request->post('fit', []);
 
-        $languages = \common\helpers\Language::get_languages();
-
-        $groupSizes = BannersGroupsSizes::find()
-            ->where(['group_id' => $groupId])
-            ->asArray()
-            ->all();
-
-        $imgPath = 'banners' . DIRECTORY_SEPARATOR . $bannersId;
-        FileHelper::createDirectory(\common\classes\Images::getFSCatalogImagesPath() . $imgPath);
+        $languages = Language::get_languages();
+        $groupSizes = BannersGroupsSizes::find()->where(['group_id' => $groupId])->asArray()->all();
 
         foreach ($languages as $language) {
+            $mainImage = BannersLanguages::find()->select('banners_image')
+                ->where(['banners_id' => $bannersId, 'language_id' => $language['id']])
+                ->asArray()->one();
+
             foreach ($groupSizes as $groupSize) {
                 if (!isset($groupImage[$language['id']])) {
                     continue;
                 }
-                if (isset($groupImage[$language['id']]) && isset($groupImage[$language['id']][$groupSize['image_width']])){
-                    $image = str_replace(DIR_WS_IMAGES, '', $groupImage[$language['id']][$groupSize['image_width']]);
-                } else {
-                    $image = '';
-                }
-                if (isset($groupImageUpload[$language['id']]) && isset($groupImageUpload[$language['id']][$groupSize['image_width']])){
-                    $imageUpload = $groupImageUpload[$language['id']][$groupSize['image_width']];
-                } else {
-                    $imageUpload = '';
-                }
-                if (isset($groupImageDelete[$language['id']]) && isset($groupImageDelete[$language['id']][$groupSize['image_width']])){
-                    $imageDelete = $groupImageDelete[$language['id']][$groupSize['image_width']];
-                } else {
-                    $imageDelete = '';
-                }
-                if (isset($groupSvgDelete[$language['id']]) && isset($groupSvgDelete[$language['id']][$groupSize['image_width']])){
-                    $svgDelete = $groupSvgDelete[$language['id']][$groupSize['image_width']];
-                } else {
-                    $svgDelete = '';
-                }
-                if (isset($positions[$language['id']]) && isset($positions[$language['id']][$groupSize['image_width']])){
-                    $position = $positions[$language['id']][$groupSize['image_width']];
-                } else {
-                    $position = '';
-                }
-                if (isset($fits[$language['id']]) && isset($fits[$language['id']][$groupSize['image_width']])){
-                    $fit = $fits[$language['id']][$groupSize['image_width']];
-                } else {
-                    $fit = '';
-                }
+                $image = str_replace(DIR_WS_IMAGES, '', ($groupImage[$language['id']][$groupSize['image_width']] ?? ''));
+                $imageUpload = $groupImageUpload[$language['id']][$groupSize['image_width']] ?? '';
+                $imageDelete = (boolean)$groupImageDelete[$language['id']][$groupSize['image_width']] ?? false;
+                $position = $positions[$language['id']][$groupSize['image_width']] ?? '';
+                $fit = $fits[$language['id']][$groupSize['image_width']] ?? '';
 
                 $bannersGroupsImages = BannersGroupsImages::findOne([
                     'banners_id' => $bannersId,
@@ -1673,73 +1533,22 @@ class Banner_managerController extends Sceleton
                     'image_width' => $groupSize['image_width'],
                 ]);
 
-                $dotPos = strrpos($oldImage[$language['id']], '.');
-                $end = substr($oldImage[$language['id']], $dotPos);
-                $_oldImage = substr($oldImage[$language['id']], 0, $dotPos). '[' . $groupSize['image_width'] . ']' . $end;
-                if ($bannersGroupsImages) {
-                    $sameImage = str_contains(str_replace('\\', '/', $bannersGroupsImages->image), str_replace('\\', '/', $_oldImage));
-                } else {
-                    $sameImage = false;
-                }
-                $newImg = '';
+                $newImg = Image::prepareSavingImage(
+                    $bannersGroupsImages->image ?? '',
+                    $image,
+                    $imageUpload,
+                    'banners' . DIRECTORY_SEPARATOR . $bannersId,
+                    $imageDelete,
+                    false,
+                    [
+                        'width' => $groupSize['image_width'],
+                        'height' => $groupSize['image_height'],
+                        'fit' => $fit,
+                        'parentImage' => $mainImage['banners_image'] ?? '',
+                        'parentOldImage' => $oldImage[$language['id']]
+                    ]
+                );
 
-                if ($imageUpload) {
-                    $imageUpload = str_replace('uploads' . DIRECTORY_SEPARATOR, '', $imageUpload);
-                    $tmpImg = \backend\design\Uploads::move($imageUpload, DIR_WS_IMAGES . $imgPath, false);
-                    $newImg = $imgPath . DIRECTORY_SEPARATOR . $tmpImg;
-                } elseif ($image && is_file(DIR_FS_CATALOG_IMAGES .$image) && !$sameImage) {
-                    $newImg = $image;
-                } else {
-                    $mainImage = BannersLanguages::find()
-                        ->select('banners_image')
-                        ->where(['banners_id' => $bannersId, 'language_id' => $language['id']])
-                        ->asArray()
-                        ->one();
-
-                    if (isset($mainImage['banners_image']) && (is_file(DIR_FS_CATALOG_IMAGES . $mainImage['banners_image']) ||
-                        $sameImage)
-                    ) {
-                        $imgExplode = explode('/', str_replace('\\', '/', $mainImage['banners_image']));
-                        $imgName = end($imgExplode);
-                        $pos = strrpos($imgName, '.');
-                        $name = substr($imgName, 0, $pos);
-                        $ext = substr($imgName, $pos);
-
-                        $newImg = $imgPath . DIRECTORY_SEPARATOR . $name . '[' . $groupSize['image_width'] . ']' . $ext;
-
-                        $type = explode('/', mime_content_type(DIR_FS_CATALOG_IMAGES . $mainImage['banners_image']));
-
-                        if (!is_file(DIR_FS_CATALOG_IMAGES .$newImg) && $type && $type[0] == 'image') {
-                            $size = @GetImageSize(DIR_FS_CATALOG_IMAGES . $mainImage['banners_image']);
-                            if (isset($size[0]) && $size[0]) {
-
-                                if ($groupSize['image_width'] && $groupSize['image_height'] && ($fit == 'cover' || !$fit)) {
-                                    $scale = @max($groupSize['image_width'] / $size[0], $groupSize['image_height'] / $size[1]);
-
-                                    $width = $size[0] * $scale;
-                                    $height = $size[1] * $scale;
-
-                                } elseif (!$groupSize['image_width'] && $groupSize['image_height']) {
-                                    $width = ($size[0] * $groupSize['image_height']) / $size[1];
-                                    $height = $groupSize['image_height'];
-                                }else {
-                                    $width = $groupSize['image_width'];
-                                    $height = ($size[1] * $groupSize['image_width']) / $size[0];
-                                }
-                                \common\classes\Images::tep_image_resize(DIR_FS_CATALOG_IMAGES . $mainImage['banners_image'], DIR_FS_CATALOG_IMAGES . $newImg, $width, $height, false);
-                            }
-                        }
-                    }
-                }
-
-                if (($bannersGroupsImages && $imageDelete || $sameImage && $deleteOldImage[$language['id']]) &&
-                    is_file(DIR_FS_CATALOG_IMAGES . $bannersGroupsImages->image)
-                ) {
-                    unlink(DIR_FS_CATALOG_IMAGES . $bannersGroupsImages->image);
-                }
-                if ($sameImage && ($deleteOldImage[$language['id']] || !is_file(DIR_FS_CATALOG_IMAGES . $newImg))) {
-                    $newImg = '';
-                }
                 if (!$bannersGroupsImages) {
                     $bannersGroupsImages = new BannersGroupsImages();
                 }
@@ -1748,17 +1557,10 @@ class Banner_managerController extends Sceleton
                     'language_id' => (int)$language['id'],
                     'image_width' => (int)$groupSize['image_width'],
                     'image' => $newImg ? $newImg : '',
-                    'fit' => $fit ?? '',
-                    'position' => $position ?? '',
+                    'fit' => $fit,
+                    'position' => $position,
                 ];
-                if ($svgDelete) {
-                    $bannersGroupsImages->svg = '';
-                }
-
                 $bannersGroupsImages->save();
-
-                Images::createWebp($newImg);
-
             }
         }
     }

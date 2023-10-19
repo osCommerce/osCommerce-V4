@@ -7,7 +7,7 @@
   <meta http-equiv="Content-Type" content="text/html; charset={$smarty.const.CHARSET}">
   <title>{$smarty.const.STORE_NAME} - {$smarty.const.TITLE_PRINT_ORDER}{$oID}</title>
   <base href="{$base_url}">
-  <link rel="stylesheet" href="{Info::themeFile('/css/basic.css')}"/>
+  <link rel="stylesheet" href="{Info::themeFile('/css/base.css')}"/>
   {if Info::isAdmin()}
     <link rel="stylesheet" href="{Info::themeFile('/css/admin.css')}"/>
   {/if}

@@ -80,14 +80,6 @@ class Providers
                     'filters' => ['category','products'],
                 ],
             ],
-            'product\inventory' => [
-                'group' => TEXT_CATALOG_PRODUCTS,
-                'name' => TEXT_OPTION_INVENTORY,
-                'class' => 'Provider\\Inventory',
-                'export' =>[
-                    'filters' => ['category','products','price_tax'],
-                ],
-            ],
             'product\brands' => [
                 'group' => TEXT_CATALOG_PRODUCTS,
                 'name' => TEXT_BRANDS,
@@ -134,38 +126,6 @@ class Providers
                 'group' => TEXT_CATALOG_PRODUCTS,
                 'name' => 'Warehouse '.TEXT_OPTION_STOCK_FEED,
                 'class' => 'Provider\\WarehouseStock',
-                'export' =>[
-                    'filters' => ['category', 'products'],
-                ],
-            ],
-            'product\bundles' => [
-                'group' => TEXT_CATALOG_PRODUCTS,
-                'name' => TEXT_PRODUCTS_BUNDLE,
-                'class' => 'Provider\\Bundles',
-                'export' =>[
-                    'filters' => ['category', 'products'],
-                ],
-            ],
-            'product\customer_products' => [
-                'group' => TEXT_CATALOG_PRODUCTS,
-                'name' => defined('TEXT_CUSTOMER_PRODUCTS')?TEXT_CUSTOMER_PRODUCTS:'Customer products',
-                'class' => 'CustomerProducts\\ImportExport',
-                'export' =>[
-                    'disableSelectFields' => true,
-                ],
-            ],
-            'product\customer_prices' => [
-                'group' => TEXT_CATALOG_PRODUCTS,
-                'name' => defined('TEXT_CUSTOMER_PRICES')?TEXT_CUSTOMER_PRICES:'Customer prices',
-                'class' => 'CustomerProducts\\ImportPrices',
-                'export' =>[
-                    'disableSelectFields' => true,
-                ],
-            ],
-            'product\xsell' => [
-                'group' => TEXT_CATALOG_PRODUCTS,
-                'name' => TEXT_CROSS_SELL_PRODUCTS,
-                'class' => 'Provider\\XSell',
                 'export' =>[
                     'filters' => ['category', 'products'],
                 ],
@@ -227,14 +187,6 @@ class Providers
                 'class' => 'Provider\\OrderStatistic',
                 'export' =>[
                     'filters' => ['orders-date-range'],
-                    'disableSelectFields' => true,
-                ],
-            ],
-            'seo\redirects' => [
-                'group' => 'SEO Redirects',
-                'name' => 'SEO Redirects',
-                'class' => 'SeoRedirects\\SeoRedirectsExport',
-                'export' =>[
                     'disableSelectFields' => true,
                 ],
             ],
@@ -590,50 +542,6 @@ class Providers
             ],
         ];
         $this->providers = array_merge($this->providers, TrueloadedXmlFeedProvider::getProviderList());
-
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('LinkedProducts', 'allowed')) {
-             $this->providers['product\linked_products'] = [
-                'group' => TEXT_CATALOG_PRODUCTS,
-                'name' => defined('TEXT_LINKED_PRODUCTS')?TEXT_LINKED_PRODUCTS:'Linked products',
-                'class' => 'LinkedProducts\\ImportExport',
-                'export' =>[
-                    'disableSelectFields' => true,
-                    'filters' => ['category', 'products'],
-                ],
-            ];
-        }
-
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('SeoRedirectsNamed', 'allowed')) {
-            $this->providers['seo\redirectscategories'] = [
-                    'group' => 'SEO Redirects',
-                    'name' => 'Categories OLD SEO URLs',
-                    'class' => 'Provider\\CategoriesOldSeoUrls',
-                    'export' =>[
-                        'filters' => ['category'],
-                    ],
-                ];
-            $this->providers['seo\redirectsproducts'] = [
-                    'group' => 'SEO Redirects',
-                    'name' => 'Products OLD SEO URLs',
-                    'class' => 'Provider\\ProductsOldSeoUrls',
-                    'export' =>[
-                        'filters' => ['category'],
-                    ],
-                ];
-        }
-
-        $ext = \common\helpers\Acl::checkExtension('TradeIn', 'allowed');
-        if ($ext && method_exists($ext, 'allowed') && $ext::allowed()){
-          $this->providers['product\\tradein'] = [
-                'group' => TEXT_CATALOG_PRODUCTS,
-                'name' => BOX_TRADE_IN,
-                'class' => 'TradeIn\\TradeInImport',
-            ];
-        }
-
-        if (!\common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed')){
-            unset($this->providers['product\inventory']);
-        }
 
         if (!\common\helpers\Acl::checkExtensionTableExist('Quotations', 'QuoteOrders')) {
             unset($this->providers['Trueloaded\\Quotes']);

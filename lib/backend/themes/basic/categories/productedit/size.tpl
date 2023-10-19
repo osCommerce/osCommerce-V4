@@ -26,16 +26,17 @@
         </div>
         <div class="col-md-3">
             <div class="metric_system">
-                <span class="selected" data-class="dimmens_cm">{$smarty.const.TEXT_METRIC_SYSTEM}</span>
-                <span data-class="dimmens_in">{$smarty.const.TEXT_ENGLISH_SYSTEM}</span>
+                {$metric = $smarty.const.WEIGHT_UNIT_DEFAULT|default:'KG' == 'KG'}
+                <span {if $metric}class="selected"{/if} data-class="dimmens_cm">{$smarty.const.TEXT_METRIC_SYSTEM}</span>
+                <span {if !$metric}class="selected"{/if} data-class="dimmens_in">{$smarty.const.TEXT_ENGLISH_SYSTEM}</span>
             </div>
         </div>
     </div>
 
 
   <div class="cartoon_wrapper">
-    {if \common\helpers\Acl::checkExtensionAllowed('PackUnits', 'allowed')}
-      {\common\extensions\PackUnits\PackUnits::productBlock($pInfo, $app->controller->view->pack_unit_price_tabs_data|default:null, $app->controller->view->packaging_unit_price_tabs_data|default:null)}
+    {if $ext = \common\helpers\Acl::checkExtensionAllowed('PackUnits', 'allowed')}
+      {$ext::productBlock($pInfo, $app->controller->view->pack_unit_price_tabs_data|default:null, $app->controller->view->packaging_unit_price_tabs_data|default:null)}
     {else}
         <div class="widget box box-no-shadow">
             <div class="widget-header"><h4>{$smarty.const.TEXT_PRODUCT_SIZE}</h4></div>
@@ -60,7 +61,9 @@
     {/if}
   </div>
 </div>
-
+{foreach \common\helpers\Hooks::getList('categories/productedit', 'size/bottom') as $filename}
+    {include file=$filename}
+{/foreach}
 
 
 <div class="popup-box-wrap-page" style="display: none" id="packaging-price-management">
@@ -78,10 +81,10 @@
               {if is_array($app->controller->view->groups) && $app->controller->view->groups|@count > 0}
               <div class="tabbable tabbable-custom">
                 <ul class="nav nav-tabs">
-                  <li class="active"><a href="#tab_packaging-0" data-toggle="tab"><span>{$smarty.const.TEXT_MAIN}</span></a></li>
+                  <li class="active" data-bs-toggle="tab" data-bs-target="#tab_packaging-0"><a><span>{$smarty.const.TEXT_MAIN}</span></a></li>
                   {foreach $app->controller->view->groups as $groups_id => $group}
-                    <li>
-                      <a href="#tab_packaging-{$groups_id}" data-toggle="tab">
+                    <li data-bs-toggle="tab" data-bs-target="#tab_packaging-{$groups_id}">
+                      <a>
                         <span>{$group['groups_name']}</span>
                       </a>
                     </li>

@@ -42,11 +42,12 @@ class paypal_partner extends lib\PaypalMiddleWare {
 
     var $code, $title, $description, $enabled;
     private $jsIncluded = false;
-    private $debug = true;
+    private $debug = false;
     private $sendExVat = true; //true to send items See comment in patch webhook processing
     private $requireItemVat = false; //DE pay upon invoice /purchase_units/0/items/0/tax is required for provided payment source.
     private $pp_commit = 'true'; //string! false - order total could be changed after confirmation. Incomaptible with APMs (is Eligable == false)
     private $jsLibAdded = false;
+    private $onlySiteAddress = false;
     
     protected $webHooks1party = [
       'CHECKOUT.ORDER.APPROVED',
@@ -157,6 +158,13 @@ class paypal_partner extends lib\PaypalMiddleWare {
       'PAYPAL_PARTNER_OWN_CLIENT_ID' => 'PayPal API Client ID',
       'PAYPAL_PARTNER_OWN_CLIENT_SECRET' => 'PayPal API Client secret',
       'PAYPAL_PARTNER_GO_LIVE' => 'PayPal Go Live',
+      'PAYPAL_PARTNER_RESTART_GENERAL' => 'Error during comunication with PayPal. Please try to pay once again or choose a different payment method.',
+      'PAYPAL_PARTNER_RESTART' => 'Error during comunication with PayPal (incorrect total). Please login to PayPal once again',
+      'PAYPAL_PARTNER_RESTART_AUTHORIZE' => 'Error during comunication with PayPal (payment not authorized). Please login to PayPal once again',
+      'PAYPAL_PARTNER_RESTART_CAPTURE' => 'Error during comunication with PayPal (payment not captured). Please login to PayPal once again',
+      'PAYPAL_PARTNER_ORDER_DETAILS_ERROR' => 'Order is not completed',
+      'PAYPAL_PARTNER_ORDER_ID_ERROR' => 'Invalid Order Id',
+
     ];
 
     public function getQuickTranslationKeys() {
@@ -208,8 +216,8 @@ class paypal_partner extends lib\PaypalMiddleWare {
             $this->enabled = false;
         }
 
-        if ( $this->enabled  && \Yii::$app->id=='app-frontend' && ($this->currentPageButtonsLayout() == 'False' || \Yii::$app->controller->id == 'payer')) {
-            $this->enabled = false;
+        if ( $this->enabled  && \Yii::$app->id=='app-frontend' && $this->currentPageButtonsLayout() == 'False') { //|| \Yii::$app->controller->id == 'payer')
+            $this->enabled = $this->checkMessageOnProduct();//PP Paylater message could be displayed on all pages :(
         }
 
         if ( in_array(\Yii::$app->controller->id, ['callback', 'checkout', 'payer'])) {
@@ -222,12 +230,12 @@ class paypal_partner extends lib\PaypalMiddleWare {
             //&& \Yii::$app->controller->id != 'modules'
             && \Yii::$app->id == 'app-frontend'
             && \Yii::$app->controller->id != 'callback') {
-            $this->doCheckoutInitializationOnInactive = true;
+            //$this->doCheckoutInitializationOnInactive = true;
             //load JS libraries etc regardless selected address
             $this->checkout_initialization_method_js();
 
             $this->update_status();
-            if ($this->enabled !== true) {
+            if ($this->enabled === false) {
                 $this->doCheckoutInitializationOnInactive = true;
             }
         }
@@ -235,7 +243,7 @@ class paypal_partner extends lib\PaypalMiddleWare {
 
     private function currentPageButtonsLayout() {
         $ret = 'False';
-        if (\Yii::$app->controller->id == 'callback') {
+        if (\Yii::$app->controller->id == 'callback' || (\Yii::$app->controller->id == 'checkout' && \Yii::$app->controller->action->id == 'process')) {
             $ret = 'True';
         } elseif (defined('MODULE_PAYMENT_PAYPAL_PARTNER_BUY_IMMEDIATELLY') && \Yii::$app->controller->id == 'catalog') {
             $ret = MODULE_PAYMENT_PAYPAL_PARTNER_BUY_IMMEDIATELLY;
@@ -257,7 +265,7 @@ class paypal_partner extends lib\PaypalMiddleWare {
     }
 
     function update_status() {
-
+        $check_flag = true;
         if (defined('MODULE_PAYMENT_PAYPAL_PARTNER_ZONE') && ((int) MODULE_PAYMENT_PAYPAL_PARTNER_ZONE > 0)) {
             $get = \Yii::$app->request->get();
             //callback could change address.
@@ -291,15 +299,18 @@ class paypal_partner extends lib\PaypalMiddleWare {
                 $check_flag = parent::checkStatusByZone(MODULE_PAYMENT_PAYPAL_PARTNER_ZONE);
             }
 
-            if ($check_flag && defined('MODULE_PAYMENT_PAYPAL_PARTNER_VIRTUAL_GUEST') && MODULE_PAYMENT_PAYPAL_PARTNER_VIRTUAL_GUEST == 'True'
-                && is_object($this->manager) && !$this->manager->isShippingNeeded() && !$this->manager->getCustomerAssigned()) {
-                $check_flag = false;
-            }
-            
-            if ($check_flag == false) {
-                $this->enabled = false;
-            }
         }
+
+        if ($check_flag == false) {
+            $this->enabled = false;
+        }
+
+        if (defined('MODULE_PAYMENT_PAYPAL_PARTNER_VIRTUAL_GUEST') && MODULE_PAYMENT_PAYPAL_PARTNER_VIRTUAL_GUEST == 'True'
+            && \Yii::$app->controller->id == 'shopping-cart'
+            && is_object($this->manager) && !$this->manager->isShippingNeeded() && !$this->manager->getCustomerAssigned()) {
+            $this->enabled = 0;
+        }
+
     }
 
     public function updateTitle($platformId = 0) {
@@ -361,7 +372,7 @@ class paypal_partner extends lib\PaypalMiddleWare {
         return $ret ;
     }
     private function isCheckout() {
-        return \Yii::$app->controller->id == 'checkout'; //2do order-pay
+        return \Yii::$app->controller->id == 'checkout' || \Yii::$app->controller->id == 'payer';
     }
 
 /**
@@ -382,8 +393,8 @@ class paypal_partner extends lib\PaypalMiddleWare {
                 $layout = strtolower($this->currentPageButtonsLayout());
                 $generalError = defined('MODULE_PAYMENT_PAYPAL_PARTNER_GENERAL_ERROR') ? MODULE_PAYMENT_PAYPAL_PARTNER_GENERAL_ERROR : "Can't create order";
                 $generalError = htmlspecialchars($generalError);
-                $createUrl = \Yii::$app->urlManager->createAbsoluteUrl(["callback/webhooks.payment.{$this->code}", 'action' => 'createOrder']); //must return OrderId (from paypal)
-                $retrieveUrl = \Yii::$app->urlManager->createAbsoluteUrl(["callback/webhooks.payment.{$this->code}", 'action' => 'retrieveOrder']);
+                $createUrl = \Yii::$app->urlManager->createAbsoluteUrl(["callback/webhooks.payment.{$this->code}", 'action' => 'createOrder', 'partlypaid' => $this->isPartlyPaid()]); //must return OrderId (from paypal)
+                $retrieveUrl = \Yii::$app->urlManager->createAbsoluteUrl(["callback/webhooks.payment.{$this->code}", 'action' => 'retrieveOrder', 'partlypaid' => $this->isPartlyPaid()]);
                 $shippingUrl = \Yii::$app->urlManager->createAbsoluteUrl(["callback/webhooks.payment.{$this->code}", 'action' => 'patchOrder']);
                 $currency = \Yii::$app->settings->get('currency');
                 $customersDetails = '';
@@ -393,12 +404,18 @@ class paypal_partner extends lib\PaypalMiddleWare {
 
 
                 //'frmCheckoutConfirm' : 'frmCheckout'
-                if (!$this->manager->getCustomerAssigned()) {
-                    $customersDetails = ",{
-                                        method: 'POST',
-                                        headers: {'Content-Type':'application/x-www-form-urlencoded'},
-                                        body: $('#frmCheckout').serialize()
-                                    }";
+                try {
+                    $form = $this->manager->getShippingForm();
+                    if (!$this->manager->getCustomerAssigned() || !$form || !$form->customerAddressIsReady() || !$form->hasErrors()) {
+                    //if (!$this->manager->getCustomerAssigned()) {
+                        $customersDetails = ",{
+                                            method: 'POST',
+                                            headers: {'Content-Type':'application/x-www-form-urlencoded'},
+                                            body: $('#frmCheckout').serialize()
+                                        }";
+                    }
+                } catch (\Exception $e ) {
+                    \Yii::warning(print_r($e->getMessage() . ' ' . $e-> getTraceAsString(), true), 'TLDEBUG');
                 }
                 return <<<EOD
             if ($('.paypal-button-container').length>0){
@@ -601,18 +618,25 @@ EOD;
                 $layout = strtolower($this->currentPageButtonsLayout());
                 $generalError = defined('MODULE_PAYMENT_PAYPAL_PARTNER_GENERAL_ERROR') ? MODULE_PAYMENT_PAYPAL_PARTNER_GENERAL_ERROR : "Can't create order";
                 $generalError = htmlspecialchars($generalError);
-                $createUrl = \Yii::$app->urlManager->createAbsoluteUrl(["callback/webhooks.payment.{$this->code}", 'action' => 'createOrder']); //must return OrderId (from paypal)
-                $retrieveUrl = \Yii::$app->urlManager->createAbsoluteUrl(["callback/webhooks.payment.{$this->code}", 'action' => 'retrieveOrder']);
+                $createUrl = \Yii::$app->urlManager->createAbsoluteUrl(["callback/webhooks.payment.{$this->code}", 'action' => 'createOrder', 'partlypaid' => $this->isPartlyPaid()]); //must return OrderId (from paypal)
+                $retrieveUrl = \Yii::$app->urlManager->createAbsoluteUrl(["callback/webhooks.payment.{$this->code}", 'action' => 'retrieveOrder', 'partlypaid' => $this->isPartlyPaid()]);
                 $shippingUrl = \Yii::$app->urlManager->createAbsoluteUrl(["callback/webhooks.payment.{$this->code}", 'action' => 'patchOrder']);
                 $currency = \Yii::$app->settings->get('currency');
                 $customersDetails = '';
                 //'frmCheckoutConfirm' : 'frmCheckout'
-                if (!$this->manager->getCustomerAssigned()) {
-                    $customersDetails = ",{
-                                        method: 'POST',
-                                        headers: {'Content-Type':'application/x-www-form-urlencoded'},
-                                        body: $('#frmCheckout').serialize()
-                                    }";
+                try {
+                    $form = $this->manager->getShippingForm();
+                    if (!$this->manager->getCustomerAssigned() || !$form || !$form->customerAddressIsReady() || !$form->hasErrors()) {
+                    //if (!$this->manager->getCustomerAssigned()) {
+                        $customersDetails = ",{
+                                            method: 'POST',
+                                            headers: {'Content-Type':'application/x-www-form-urlencoded'},
+                                            body: $('#frmCheckout').serialize()
+                                        }";
+                    }
+
+                } catch (\Exception $e ) {
+                    \Yii::warning(print_r($e->getMessage() . ' ' . $e-> getTraceAsString(), true), 'TLDEBUG');
                 }
                 return <<<EOD
                 if ($('.paypal-button-container').length>0){
@@ -839,7 +863,7 @@ $ef = '&enable-funding=sofort';
      * @return string JS
      */
     public function getJS() {
-        if (strpos(\Yii::$app->controller->id, 'checkout') === false) return; // not needed on shopping cart and product pages
+        if (strpos(\Yii::$app->controller->id, 'checkout') === false && \Yii::$app->controller->id != 'payer') return; // not needed on shopping cart and product pages
         if ( \Yii::$app->controller->id == 'quote-checkout') // 2do correct according quote checkout settings
         {
 
@@ -1159,8 +1183,8 @@ EOD;
                     tep_redirect($this->getCheckoutUrl(['error_message' => PAYPAL_PARTNER_RESTART], self::PAYMENT_PAGE));
                 }
             }
-        } elseif (!$direct) {
-            tep_redirect($this->getCheckoutUrl(['error_message' => PAYPAL_PARTNER_RESTART], self::PAYMENT_PAGE));
+        } elseif (!$direct && !$this->successCardPayment($response)) {
+            tep_redirect($this->getCheckoutUrl(['error_message' => PAYPAL_PARTNER_RESTART_GENERAL], self::PAYMENT_PAGE));
         }
         $_paid = false;
         //ssie save order to get ID
@@ -1188,7 +1212,7 @@ EOD;
             tep_redirect(tep_href_link(FILENAME_CHECKOUT_SUCCESS, 'order_id=' . $orderId, 'SSL'));
         }
 
-        try {
+        try {            
 
             if ($this->_getIntent() == 'authorize') {
                 $presponse = $this->authorizeOrder($this->manager->get('partner_order_id'));
@@ -1203,6 +1227,25 @@ EOD;
         }
 
         if (!empty($presponse->result->status) && strtoupper($presponse->result->status) == "COMPLETED") {
+            //completed request could have rejected payment - check additionally
+            $payments = false;
+            if (!empty($presponse->result->purchase_units[0]->payments->authorizations) && is_array($presponse->result->purchase_units[0]->payments->authorizations)) {
+                $payments = $presponse->result->purchase_units[0]->payments->authorizations;
+            } elseif (!empty($presponse->result->purchase_units[0]->payments->captures) && is_array($presponse->result->purchase_units[0]->payments->captures)) {
+                $payments = $presponse->result->purchase_units[0]->payments->captures;
+            }
+            if ($payments) {
+                $anyOk = false;
+                foreach ($payments as $t) {
+                    if (!empty($t->status) && !in_array(strtoupper($t->status), array('DENIED'))) {
+                        $anyOk = true;
+                    }
+                }
+                if (!$anyOk) {
+                    tep_redirect($this->getCheckoutUrl(['error_message' => (($this->_getIntent() == 'authorize')?PAYPAL_PARTNER_RESTART_AUTHORIZE:PAYPAL_PARTNER_RESTART_CAPTURE)], self::PAYMENT_PAGE));
+                }
+            }
+
             $this->manager->set('partner_transaction_id', $rv);
             if ($_paid) { //captured - set paid order status w/o delay.
                 $this->order_status = $this->paidOrderStatus();
@@ -1248,6 +1291,41 @@ EOD;
             //tep_redirect(tep_href_link(FILENAME_SHOPPING_CART, 'error_message=' . stripslashes("Amount could not be captured"), 'SSL'));
         }
     }
+    
+    private function successCardPayment($response) {
+        $ret = false;
+        if (!empty($response->result->payment_source->card)) {
+/*3ds
+    [result] => stdClass Object
+        (
+            [intent] => CAPTURE
+            [status] => CREATED
+            [payment_source] => stdClass Object
+                (
+                    [card] => stdClass Object
+                        (
+                            [last_digits] => 0349
+                            [brand] => MASTERCARD
+                            [type] => CREDIT
+                            [authentication_result] => stdClass Object
+                                (
+                                    [liability_shift] => POSSIBLE
+                                    [three_d_secure] => stdClass Object
+                                        (
+                                            [enrollment_status] => Y
+                                            [authentication_status] => Y
+                                        )
+                                    [authentication_flow] => STEPUP
+                                )
+                        )
+                )
+  */
+
+
+            $ret = true;
+        }
+        return $ret;
+    }
 
     function after_process() {
 
@@ -1263,15 +1341,17 @@ EOD;
         }
         if ($transaction) {
             $order = $this->manager->getOrderInstance();
-            $currencies = \Yii::$container->get('currencies');
-            $pp_result = [
-              'Internal Order ID: ' . \common\helpers\Output::output_string_protected($this->manager->get('partner_order_id')),
-              'Transaction ID: ' . \common\helpers\Output::output_string_protected($transactionID),
-              'Transactin Amount: ' . $currencies->format($transaction->result->amount->value, false, $order->info['currency'], $order->info['currency_value']),
-              'Payment Status: ' . \common\helpers\Output::output_string_protected($transaction->result->status),
-              'Seller Protection: ' . \common\helpers\Output::output_string_protected($transaction->result->seller_protection->status??'') .
-              (is_array($transaction->result->seller_protection->dispute_categories)? ' - ' . implode(', ', $transaction->result->seller_protection->dispute_categories) :''),
-            ];
+
+            $ppOrder = new \stdClass();
+            if ($this->manager->has('partner_order_id')) {
+                $ppId = $this->manager->get('partner_order_id');
+            } elseif (!empty($transaction->result->supplementary_data->related_ids->order_id) ) {
+                $ppId = $transaction->result->supplementary_data->related_ids->order_id;
+            }
+            if (!empty($ppId)) {
+                $ppOrder = $this->getOrder($ppId);
+            }
+            $pp_result = $this->extractComments($ppOrder, $transaction);
 
             $invoice_id = $this->manager->getOrderSplitter()->getInvoiceId();
             $tm = $this->manager->getTransactionManager($this);
@@ -1282,6 +1362,7 @@ EOD;
             } else {
                 $comment = 'Customer\'s payment ' . $transaction->result->amount->value . $transaction->result->amount->currency_code;
             }
+            //$comment .= "\n" . implode("\n", $pp_result);
 
             $ret = $tm->updatePaymentTransaction($transactionID,
                 [
@@ -1289,7 +1370,7 @@ EOD;
                   'status_code' => $sk,
                   'status' => $transaction->result->status,
                   'amount' => $transaction->result->amount->value,
-                  'comments' => $comment,
+                  'comments' => $comment . "\n" . implode("\n", $pp_result),
                   'date' => date('Y-m-d H:i:s', strtotime($transaction->result->update_time)),
                   'suborder_id' => $invoice_id,
                   'orders_id' => $order->order_id,
@@ -1301,12 +1382,21 @@ EOD;
               'orders_status_id' => $order->info['order_status'],
               'date_added' => 'now()',
               'customer_notified' => '0',
-              'comments' => implode("\n", $pp_result));
+              'comments' => $comment . "($transactionID)");
 
             tep_db_perform(TABLE_ORDERS_STATUS_HISTORY, $sql_data_array);
         }
         $this->manager->remove('partner_capture_id');
         $this->manager->remove('partner_order_id');
+
+        if ($this->onBehalf()) {
+            \Yii::$app->settings->set('from_admin', false);
+            if (!\Yii::$app->user->isGuest) {
+                \Yii::$app->user->getIdentity()->logoffCustomer();
+            }
+            echo '<script> window.parent.document.body.innerHTML = "<br><br><center>' . htmlspecialchars(TEXT_ON_BEHALF_PAYMENT_SUCCESSFUL) .  '</center>"; </script>';
+            die;
+        }
     }
 
     function get_error() {
@@ -1552,212 +1642,215 @@ provide you with a "Source Identifier" for every PayPal account used. Do not mak
         $currency = \Yii::$app->settings->get('currency');
         /** @var \common\helpers\Currencies $currencies */
         $currencies = \Yii::$container->get('currencies');
-        
-        $masterTotal = $this->formatRaw($order->info['total_inc_tax']);
-        $totalPayPal = $totalPayPalTax = 0;
-        $ii = 0;
-        // ex VAT prices and tax to avoid items patch (export orders) - not working via JS :(.
-        foreach ($order->products as $product) {
 
-            if ($this->sendExVat) {
-                $_val = $product['final_price'];
-                if (defined('PRICE_WITH_BACK_TAX') && PRICE_WITH_BACK_TAX == 'True' && $product['tax']>0) {
-                    $_val = \common\helpers\Tax::reduce_tax_always($product['final_price'], $product['tax']);
-                }
-            } else {
-                $_val = \common\helpers\Tax::add_tax($product['final_price'], $product['tax']);
-            }
-            $val = $this->formatRaw($_val);
-            $qty = $product['qty'];
-            $virtual_qty = '';
-            $tmpQty = \common\helpers\Product::getVirtualItemQuantityValue($product['id']);
-            if ($tmpQty>1) {
-                if ($qty/$tmpQty == round($qty/$tmpQty)) {
-                    $qty = round($qty/$tmpQty);
-                    $val = $this->formatRaw($_val*$tmpQty);
-                } else {
-                    $virtual_qty = '/' . ($tmpQty) . ' ';
-                }
-            }
+        if (!$this->isPartlyPaid()) {
 
-            $items[$ii] = [
-              'name' => substr($virtual_qty . $product['name'], 0, 127),
-              'unit_amount' => [
-                'currency_code' => $currency,
-                'value' => $val,
-              ],
-              'quantity' => $qty,
-            ];
+            $masterTotal = $this->formatRaw($order->info['total_inc_tax']);
+            $totalPayPal = $totalPayPalTax = 0;
+            $ii = 0;
+            // ex VAT prices and tax to avoid items patch (export orders) - not working via JS :(.
+            foreach ($order->products as $product) {
 
-            if ($this->requireItemVat) {
-                //PayPal /USA aproach could give huge descrepancy in TAX/Total values because of floating math.
-                // on site for EU we need price inc Tax and the same price inc VAT should be for 1 and 10 pcs
-                // it means net priceEach is changed for 1 and 10 products (EU). USA approach don't allow marketing (NN.99) prices.
-                // ex VAT 20% priceEachGross 0.15 NetPriceEach 0.12 VAT 0.03 (USA approach Net 0.12 Tax 0.02 Gross 0.14)
-                // 10 pcs price Gross 1.50 (Net 1.25 Tax 0.25)  USA approach Net 1.20 Tax 0.20 Gross 1.40
-                $_tax = 0;
-                if ($product['tax']>0 && $qty>0) {
-                    if ($this->sendExVat) {
-                        $_eachGross = $val+\common\helpers\Tax::calculate_tax($val, $product['tax']);
-                    } else {
-                        $_eachGross = $val;
+                if ($this->sendExVat) {
+                    $_val = $product['final_price'];
+                    if (defined('PRICE_WITH_BACK_TAX') && PRICE_WITH_BACK_TAX == 'True' && $product['tax']>0) {
+                        $_val = \common\helpers\Tax::reduce_tax_always($product['final_price'], $product['tax']);
                     }
-                    $_gross = $this->formatRaw($_eachGross * $qty, $currency, 1);
-                    $_nett = $this->formatRaw(\common\helpers\Tax::get_untaxed_value($_gross, $product['tax']), $currency, 1);
-                    $_tax = $this->formatRaw(($_gross - $_nett)/$qty, $currency, 1);
-                    $totalPayPalTax += $this->formatRaw($_tax*$qty, $currency, 1);
+                } else {
+                    $_val = \common\helpers\Tax::add_tax($product['final_price'], $product['tax']);
                 }
-                $items[$ii]['tax'] = [
-                    'currency_code' => $currency,
-                    'value' => $_tax,
-                ];
-                $items[$ii]['tax_rate'] = round($product['tax'], 2);
-                $items[$ii]['category'] = 'PHYSICAL_GOODS';//DIGITAL_GOODS
-            }
-            $ii++;
-        }
-        $shipping = [];
-        if ($this->manager->isShippingNeeded()) {
-            if (!$this->requireItemVat) { //shipping as total - else as product
-                $shipping = [
-                  'currency_code' => $currency,
-                  'value' =>
-                    $this->formatRaw(
-                        $currencies->display_price_clear($this->sendExVat ? $order->info['shipping_cost_exc_tax'] : $order->info['shipping_cost_inc_tax'], 0, 1)
-                                                  , $currency, 1
-                    )
-                ];
-                $totalPayPal += $shipping['value'];
-            } else {// no shipping tax and Should equal sum of (tax * quantity) across all items for a given purchase_unit (/purchase_units/@reference_id=='default'/amount/breakdown/tax_total/value )
-                $_tax = $this->formatRaw($this->formatRaw(
-                        $currencies->display_price_clear($order->info['shipping_cost_inc_tax'], 0, 1), $currency, 1
-                    ) - $this->formatRaw(
-                        $currencies->display_price_clear($order->info['shipping_cost_exc_tax'], 0, 1), $currency, 1
-                    ), $currency, 1);
+                $val = $this->formatRaw($_val);
+                $qty = $product['qty'];
+                $virtual_qty = '';
+                $tmpQty = \common\helpers\Product::getVirtualItemQuantityValue($product['id']);
+                if ($tmpQty>1) {
+                    if ($qty/$tmpQty == round($qty/$tmpQty)) {
+                        $qty = round($qty/$tmpQty);
+                        $val = $this->formatRaw($_val*$tmpQty);
+                    } else {
+                        $virtual_qty = '/' . ($tmpQty) . ' ';
+                    }
+                }
+
                 $items[$ii] = [
-                    'name' => TEXT_SHIPPING,
-                    'unit_amount' => [
-                        'currency_code' => $currency,
-                        'value' => $this->formatRaw(
-                            $currencies->display_price_clear($order->info['shipping_cost_exc_tax'], 0, 1), $currency, 1
-                        )
-                    ],
-                    'quantity' => 1,
-                    'tax' => [
+                  'name' => substr($virtual_qty . $product['name'], 0, 127),
+                  'unit_amount' => [
+                    'currency_code' => $currency,
+                    'value' => $val,
+                  ],
+                  'quantity' => $qty,
+                ];
+
+                if ($this->requireItemVat) {
+                    //PayPal /USA aproach could give huge descrepancy in TAX/Total values because of floating math.
+                    // on site for EU we need price inc Tax and the same price inc VAT should be for 1 and 10 pcs
+                    // it means net priceEach is changed for 1 and 10 products (EU). USA approach don't allow marketing (NN.99) prices.
+                    // ex VAT 20% priceEachGross 0.15 NetPriceEach 0.12 VAT 0.03 (USA approach Net 0.12 Tax 0.02 Gross 0.14)
+                    // 10 pcs price Gross 1.50 (Net 1.25 Tax 0.25)  USA approach Net 1.20 Tax 0.20 Gross 1.40
+                    $_tax = 0;
+                    if ($product['tax']>0 && $qty>0) {
+                        if ($this->sendExVat) {
+                            $_eachGross = $val+\common\helpers\Tax::calculate_tax($val, $product['tax']);
+                        } else {
+                            $_eachGross = $val;
+                        }
+                        $_gross = $this->formatRaw($_eachGross * $qty, $currency, 1);
+                        $_nett = $this->formatRaw(\common\helpers\Tax::get_untaxed_value($_gross, $product['tax']), $currency, 1);
+                        $_tax = $this->formatRaw(($_gross - $_nett)/$qty, $currency, 1);
+                        $totalPayPalTax += $this->formatRaw($_tax*$qty, $currency, 1);
+                    }
+                    $items[$ii]['tax'] = [
                         'currency_code' => $currency,
                         'value' => $_tax,
-                    ]
-                ];
-                $items[$ii]['tax_rate'] = round($_tax/$this->formatRaw(
-                        $currencies->display_price_clear($order->info['shipping_cost_exc_tax'], 0, 1), $currency, 1
-                    ), 2);
-                $items[$ii]['category'] = 'PHYSICAL_GOODS';
+                    ];
+                    $items[$ii]['tax_rate'] = round($product['tax'], 2);
+                    $items[$ii]['category'] = 'PHYSICAL_GOODS';//DIGITAL_GOODS
+                }
                 $ii++;
-                $totalPayPalTax += $_tax;
             }
-        }
+            $shipping = [];
+            if ($this->manager->isShippingNeeded()) {
+                if (!$this->requireItemVat) { //shipping as total - else as product
+                    $shipping = [
+                      'currency_code' => $currency,
+                      'value' =>
+                        $this->formatRaw(
+                            $currencies->display_price_clear($this->sendExVat ? $order->info['shipping_cost_exc_tax'] : $order->info['shipping_cost_inc_tax'], 0, 1)
+                                                      , $currency, 1
+                        )
+                    ];
+                    $totalPayPal += $shipping['value'];
+                } else {// no shipping tax and Should equal sum of (tax * quantity) across all items for a given purchase_unit (/purchase_units/@reference_id=='default'/amount/breakdown/tax_total/value )
+                    $_tax = $this->formatRaw($this->formatRaw(
+                            $currencies->display_price_clear($order->info['shipping_cost_inc_tax'], 0, 1), $currency, 1
+                        ) - $this->formatRaw(
+                            $currencies->display_price_clear($order->info['shipping_cost_exc_tax'], 0, 1), $currency, 1
+                        ), $currency, 1);
+                    $items[$ii] = [
+                        'name' => TEXT_SHIPPING,
+                        'unit_amount' => [
+                            'currency_code' => $currency,
+                            'value' => $this->formatRaw(
+                                $currencies->display_price_clear($order->info['shipping_cost_exc_tax'], 0, 1), $currency, 1
+                            )
+                        ],
+                        'quantity' => 1,
+                        'tax' => [
+                            'currency_code' => $currency,
+                            'value' => $_tax,
+                        ]
+                    ];
+                    $items[$ii]['tax_rate'] = round($_tax/$this->formatRaw(
+                            $currencies->display_price_clear($order->info['shipping_cost_exc_tax'], 0, 1), $currency, 1
+                        ), 2);
+                    $items[$ii]['category'] = 'PHYSICAL_GOODS';
+                    $ii++;
+                    $totalPayPalTax += $_tax;
+                }
+            }
 
-        $details = [
-          'totals' => [
-            'item_total' => [
-              'currency_code' => $currency,
-              'value' => 0
-            //'value' => $this->formatRaw($order->info['subtotal_cost_inc_tax']),
-            ],
-          ]
-        ];
-        //if ($this->sendExVat) {
-            $details['items'] = $items;
-        //}
-        
-        if (!empty($shipping)) {
-            $details['totals']['shipping'] = $shipping;
-        }
+            $details = [
+              'totals' => [
+                'item_total' => [
+                  'currency_code' => $currency,
+                  'value' => 0
+                //'value' => $this->formatRaw($order->info['subtotal_cost_inc_tax']),
+                ],
+              ]
+            ];
+            //if ($this->sendExVat) {
+                $details['items'] = $items;
+            //}
 
-        $handlingValue = 0;
-        $discountValue = 0;
-        $tax = 0;
-        $totalCollection = $this->manager->getTotalCollection();
-        foreach ($this->manager->getTotalOutput(false) as $total) {
-            // calculate tax total - could be several
-            if ($total['code'] == 'ot_tax') {
-                $tax +=  $total['value'];
+            if (!empty($shipping)) {
+                $details['totals']['shipping'] = $shipping;
+            }
 
-            } elseif (!in_array($total['code'], array_merge($totalCollection->readonly, ['ot_shipping']))) {
-                if ($totalCollection->get($total['code'])->credit_class) {
-                    $_tmpTitle = defined('MODULE_ORDER_TOTAL_COUPON_TOTAL')?constant('MODULE_ORDER_TOTAL_COUPON_TOTAL'):'';
-                    if ($total['code']=='ot_coupon' && $total['title'] == $_tmpTitle . ':') {
-                        continue; //multicoupon with total discount line dirty hack;
+            $handlingValue = 0;
+            $discountValue = 0;
+            $tax = 0;
+            $totalCollection = $this->manager->getTotalCollection();
+            foreach ($this->manager->getTotalOutput(false) as $total) {
+                // calculate tax total - could be several
+                if ($total['code'] == 'ot_tax') {
+                    $tax +=  $total['value'];
+
+                } elseif (!in_array($total['code'], array_merge($totalCollection->readonly, ['ot_shipping']))) {
+                    if ($totalCollection->get($total['code'])->credit_class) {
+                        $_tmpTitle = defined('MODULE_ORDER_TOTAL_COUPON_TOTAL')?constant('MODULE_ORDER_TOTAL_COUPON_TOTAL'):'';
+                        if ($total['code']=='ot_coupon' && $total['title'] == $_tmpTitle . ':') {
+                            continue; //multicoupon with total discount line dirty hack;
+                        }
+                        $discountValue += ($this->sendExVat ? $total['value_exc_vat'] : $total['value_inc_tax']);
+                    } else {
+                        $handlingValue += ($this->sendExVat ? $total['value_exc_vat'] : $total['value_inc_tax']);
                     }
-                    $discountValue += ($this->sendExVat ? $total['value_exc_vat'] : $total['value_inc_tax']);
-                } else {
-                    $handlingValue += ($this->sendExVat ? $total['value_exc_vat'] : $total['value_inc_tax']);
                 }
             }
-        }
 
-        $tax = $this->formatRaw($tax);
-        if ($this->requireItemVat) {
-            $tax = $this->formatRaw($totalPayPalTax, $currency, 1);
-        }
-        if ($this->sendExVat) {
-            $totalPayPal += $tax;
-        }
-
-        foreach ($items as $item) {
-            $details['totals']['item_total']['value'] += $this->formatRaw($item['unit_amount']['value'] * $item['quantity'], $currency, 1); //already multiplied currency value
-        }
-        $details['totals']['item_total']['value'] = $this->formatRaw($details['totals']['item_total']['value'], $currency, 1);
-
-        $totalPayPal += $details['totals']['item_total']['value'];
-
-        if ($handlingValue) {
-            $details['totals']['handling'] = [
-              'currency_code' => $currency,
-              'value' => $this->formatRaw($handlingValue),
-            ];
-        }
-        $totalPayPal += $details['totals']['handling']['value'] ?? 0;
-        $totalPayPal = $this->formatRaw($totalPayPal, $currency, 1);
-
-
-        if ($discountValue) {
-            //escape few penny rounding issue with discounts 
-            if (abs($totalPayPal - $this->formatRaw($discountValue) - $masterTotal)<0.05) {
-                if ( ($totalPayPal - $this->formatRaw($discountValue) < $masterTotal) ) {
-                    $discountValue -= abs($totalPayPal - $this->formatRaw($discountValue) - $masterTotal);
-                } else {
-                    $discountValue += abs($totalPayPal - $this->formatRaw($discountValue) - $masterTotal);
-                }
+            $tax = $this->formatRaw($tax);
+            if ($this->requireItemVat) {
+                $tax = $this->formatRaw($totalPayPalTax, $currency, 1);
             }
-            $details['totals']['discount'] = [
-              'currency_code' => $currency,
-              'value' => $this->formatRaw($discountValue),
-            ];
-        }
-        
-///rounding issues
-        $totalPayPal -= $details['totals']['discount']['value'] ?? 0;
-        $totalPayPal = $this->formatRaw($totalPayPal, $currency, 1);
-        if ($totalPayPal > $masterTotal) {
-            $dscnt = $details['totals']['discount']['value']??0;
-            $details['totals']['discount'] = [ //shipping_discount
-              'currency_code' => $currency,
-              'value' => $this->formatRaw($dscnt + $totalPayPal - $masterTotal, $currency, 1),
-            ];
-        } else if ($totalPayPal < $masterTotal) {
-            $handling = $details['totals']['handling']['value']??0;
-            $details['totals']['handling'] = [//insurance
-              'currency_code' => $currency,
-              'value' => $this->formatRaw($handling + $masterTotal - $totalPayPal, $currency, 1),
-            ];
-        }
-        
-        if ($this->sendExVat && $tax > 0) {
-            $details['totals']['tax_total'] = [
-              'currency_code' => $currency,
-              'value' => $tax,
-            ];
+            if ($this->sendExVat) {
+                $totalPayPal += $tax;
+            }
+
+            foreach ($items as $item) {
+                $details['totals']['item_total']['value'] += $this->formatRaw($item['unit_amount']['value'] * $item['quantity'], $currency, 1); //already multiplied currency value
+            }
+            $details['totals']['item_total']['value'] = $this->formatRaw($details['totals']['item_total']['value'], $currency, 1);
+
+            $totalPayPal += $details['totals']['item_total']['value'];
+
+            if ($handlingValue) {
+                $details['totals']['handling'] = [
+                  'currency_code' => $currency,
+                  'value' => $this->formatRaw($handlingValue),
+                ];
+            }
+            $totalPayPal += $details['totals']['handling']['value'] ?? 0;
+            $totalPayPal = $this->formatRaw($totalPayPal, $currency, 1);
+
+
+            if ($discountValue) {
+                //escape few penny rounding issue with discounts
+                if (abs($totalPayPal - $this->formatRaw($discountValue) - $masterTotal)<0.05) {
+                    if ( ($totalPayPal - $this->formatRaw($discountValue) < $masterTotal) ) {
+                        $discountValue -= abs($totalPayPal - $this->formatRaw($discountValue) - $masterTotal);
+                    } else {
+                        $discountValue += abs($totalPayPal - $this->formatRaw($discountValue) - $masterTotal);
+                    }
+                }
+                $details['totals']['discount'] = [
+                  'currency_code' => $currency,
+                  'value' => $this->formatRaw($discountValue),
+                ];
+            }
+
+    ///rounding issues
+            $totalPayPal -= $details['totals']['discount']['value'] ?? 0;
+            $totalPayPal = $this->formatRaw($totalPayPal, $currency, 1);
+            if ($totalPayPal > $masterTotal) {
+                $dscnt = $details['totals']['discount']['value']??0;
+                $details['totals']['discount'] = [ //shipping_discount
+                  'currency_code' => $currency,
+                  'value' => $this->formatRaw($dscnt + $totalPayPal - $masterTotal, $currency, 1),
+                ];
+            } else if ($totalPayPal < $masterTotal) {
+                $handling = $details['totals']['handling']['value']??0;
+                $details['totals']['handling'] = [//insurance
+                  'currency_code' => $currency,
+                  'value' => $this->formatRaw($handling + $masterTotal - $totalPayPal, $currency, 1),
+                ];
+            }
+
+            if ($this->sendExVat && $tax > 0) {
+                $details['totals']['tax_total'] = [
+                  'currency_code' => $currency,
+                  'value' => $tax,
+                ];
+            }
         }
 
         return $details;
@@ -1765,7 +1858,7 @@ provide you with a "Source Identifier" for every PayPal account used. Do not mak
 
     public function createOrder($data = []) {
         global $cart;
-        if ($cart->count_contents() < 1) {
+        if ($cart->count_contents() < 1 && !$this->manager->isInstance()) {
             return false;
         }
         $post = \Yii::$app->request->post();
@@ -1805,7 +1898,7 @@ provide you with a "Source Identifier" for every PayPal account used. Do not mak
         }
 
         if ($this->debug) {
-            \Yii::warning(" #### " .print_r($request, true), 'TLDEBUG' . $this->code);
+            \Yii::warning("createOrderRequest #### " .print_r($request, true), 'TLDEBUG' . $this->code);
         }
 
         try {
@@ -1875,7 +1968,7 @@ provide you with a "Source Identifier" for every PayPal account used. Do not mak
         $request = new \PayPalCheckoutSdk\Orders\OrdersPatchRequest($orderId);
         $order = $this->manager->getOrderInstance(); //?? VL2check wasn't init value 0
 
-        $cartDetails = $this->getCartDetails();
+        //$cartDetails = $this->getCartDetails();
         $details = $this->ppBuildOrderDetails($order);
         $data = [[
                 'op' => 'replace',
@@ -1917,6 +2010,7 @@ provide you with a "Source Identifier" for every PayPal account used. Do not mak
         }
         return false;
     }
+    
     private function ppBuildOrderDetails($order, $post_data = []) {
         $currency_code = \Yii::$app->settings->get('currency');
         if (!empty($order->info['currency'])) {
@@ -2002,29 +2096,49 @@ provide you with a "Source Identifier" for every PayPal account used. Do not mak
                 ];
             }
         }
+        $invoice_id = $this->estimateOrderId() . '-e-' . date('ymdHis');
+        if (!empty($order->info['orders_id'])) {
+            $invoice_id = $order->info['orders_id'];
+        }
 
         $purchaseUnits = [[
         //"reference_id" => "default",
-            "amount" => [
-              "value" => $this->formatRaw($order->info['total_inc_tax']),
-              "currency_code" => $currency_code,
-              "breakdown" => $cartDetails['totals'],
-            ],
 /*            "payee" => [
               "email_address" => $seller->email_address
             ],*/
-            "items" => $cartDetails['items'],
+            
             'description' => (strlen(defined('STORE_NAME')?constant('STORE_NAME'):'')>127  ?
                   substr((defined('STORE_NAME')?constant('STORE_NAME'):''), 0, 123) . ' ...' :
                   (defined('STORE_NAME')?constant('STORE_NAME'):'')),
-            'invoice_id' => $this->estimateOrderId() . '-e-' . date('ymdHis'),
+            'invoice_id' => $invoice_id,
 // custom_id to hide from customer
         ]];
+
+        if (!empty($cartDetails['items'])) {
+            $purchaseUnits[0]["items"] = $cartDetails['items'];
+            $purchaseUnits[0]["amount"] = [
+              "value" => $this->formatRaw($order->info['total_inc_tax']),
+              "currency_code" => $currency_code,
+              "breakdown" => $cartDetails['totals'],
+            ];
+
+        } else {
+
+            $purchaseUnits[0]["amount"] = [
+              "value" => $this->formatRaw($this->getChargeFromOrder($order)),
+              "currency_code" => $currency_code,
+            ];
+
+        }
+
 
         //if (true) { //checkout page/logged in customer: all details are available.
         if ($this->manager->isShippingNeeded()) {
             //$applicationContext['user_action'] = 'PAY_NOW';
             //$applicationContext['shipping_preference'] = 'SET_PROVIDED_ADDRESS';
+            if (!empty($this->onlySiteAddress)) {
+                $applicationContext['shipping_preference'] = 'SET_PROVIDED_ADDRESS';
+            }
             //$tmp = $order->delivery;
             $tmp = $this->manager->getDeliveryAddress();
             if ($tmp['zone_id'] > 0) {
@@ -2058,13 +2172,13 @@ provide you with a "Source Identifier" for every PayPal account used. Do not mak
             if (isset($purchaseUnits[0]['shipping']['options'][0]['type']) && $purchaseUnits[0]['shipping']['options'][0]['type'] == 'PICKUP') {
                 $purchaseUnits[0]['shipping']['name'] = [];
                 foreach ($purchaseUnits[0]['shipping']['options'] as $option) {
-                    if (!empty($option['selected'])) {
+                    if (!empty($option['selected']) || count($purchaseUnits[0]['shipping']['options'])==1) {
                         $addr = \common\helpers\Warehouses::get_warehouse_address(1);
                         $purchaseUnits[0]['shipping'] = [
                             'name' => [
                               'full_name' => substr('S2S ' . $option['label'], 0, 300),
                             ],
-                            'type' => 'PICKUP_IN_PERSON',
+                            //'type' => 'PICKUP_IN_PERSON',
                             'address' => [
                               'address_line_1' => substr($addr['street_address']??'', 0, 300),
                               'address_line_2' => substr($addr['suburb']??'', 0, 300),
@@ -2729,8 +2843,19 @@ provide you with a "Source Identifier" for every PayPal account used. Do not mak
 
     function call_webhooks() {
         $get = \Yii::$app->request->get();
+        $post = \Yii::$app->request->post();
         /** @var \common\helpers\Currencies $currencies */
         $currencies = \Yii::$container->get('currencies');
+        if (!empty($post['order_id']) && $this->manager->has('pay_order_id') ) {
+            $order_id = $this->manager->get('pay_order_id');
+            if ($order_id != $post['order_id']) {
+                $order_id = $post['order_id'];
+                $this->manager->set('pay_order_id', $order_id);
+            }
+            if ($this->isPartlyPaid() ){
+                $this->onlySiteAddress = true; // update and pay - don't allow to change addresses
+            }
+        }
 
         switch ($get['action'] ?? null) {
             case 'returnAPM':
@@ -2888,6 +3013,101 @@ provide you with a "Source Identifier" for every PayPal account used. Do not mak
                 $this->manager->setPayment($this->code);
                 //customer assigned, but addresses could be in post only
                 $data = \Yii::$app->request->post();
+                $this->manager->remove($this->code . 'UseAddresses');
+                if ($this->isPartlyPaid()) {
+
+                } elseif (!empty($data)) {
+                    //checkout - fill/check addresses
+                    //incorrect address could be ignored (except virtual products in cart):
+                    //customer changed his mind and chose PP express on checkout same way as on shopping cart
+                    $error = '';
+                    try {
+                        ///which address forms are filled in 
+                        $_forms = [];
+                        $_forms[] = $this->manager->getBillingForm(false);
+                        $_forms[] = $this->manager->getShippingForm(false);
+                        foreach ($_forms as $key => $addressForm) {
+                            if (isset($data[$addressForm->formName()])) {
+                                $addressForm->load($data);
+                                if (!$addressForm->notEmpty()) {
+                                    unset($_forms[$key]);
+                                }
+                            } else {
+                                unset($_forms[$key]);
+                            }
+                        }
+
+                        // download - address should be filled in
+                        // validate any filled in address
+                        if (!$this->manager->isShippingNeeded() || !empty($_forms)) {
+                            $shipAsBill = \Yii::$app->request->post('ship_as_bill', false) && true;
+                            $shipAsBill = $shipAsBill || (\Yii::$app->request->post('bill_as_ship', false) && true);
+
+                            $valid = $this->manager->validateAddressForms(\Yii::$app->request->post(), '', $shipAsBill);
+                            if (!$valid) {
+                                $messageStack = \Yii::$container->get('message_stack');
+                                $errors = $messageStack->asArray('one_page_checkout');
+                                $resp = [];
+                                if (!empty($errors) && is_array($errors)) {
+                                    $error = implode('<BR>', \yii\helpers\ArrayHelper::getColumn($errors['messages'], 'text'));
+                                    $resp = ['error' => 1, 'message' => $error];
+                                }
+                                echo json_encode($resp);
+                                exit();
+                                break;
+
+                            } elseif (!empty($_forms)) {
+                                $tmp = [];
+                                foreach ($_forms as $addressForm) {
+                                    $tmp[] = $addressForm->formName();
+                                }
+                                $this->manager->set($this->code . 'UseAddresses', $tmp);
+
+                            } elseif (!empty($data['billing_ab_id'])) {
+                                $tmp = [];
+                                $tmp[] = 'Billing_address';
+                                $this->manager->set($this->code . 'UseAddresses', $tmp);
+                            }
+
+                        } else {
+                            $tmp = [];
+                            if (!empty($data['billing_ab_id'])) {
+                                $tmp[] = 'Billing_address';
+                            }
+                            if (!empty($data['shipping_ab_id'])) {
+                                $tmp[] = 'Shipping_address';
+                            }
+                            if (!empty($tmp)) {
+                                $this->manager->set($this->code . 'UseAddresses', $tmp);
+                            }
+                        }
+                        if (\Yii::$app->user->isGuest && !empty($data['checkout']['opc_temp_account']) && !empty($data['checkout']['email_address'])) {
+                            if ($this->manager->validateContactForm($data)) {
+                                $this->manager->registerCustomerAccount(0);
+                            } else {
+                                $messageStack = \Yii::$container->get('message_stack');
+                                $errors = $messageStack->asArray('one_page_checkout');
+                                $resp = [];
+                                if (!empty($errors) && is_array($errors)) {
+                                    $error = implode('<BR>', \yii\helpers\ArrayHelper::getColumn($errors['messages'], 'text'));
+                                    $resp = ['error' => 1, 'message' => $error];
+                                }
+                                echo json_encode($resp);
+                                exit();
+                            }
+                        }
+                    } catch (\Exception $e ) {
+                        // exit here if missed/empty address is critical
+                        \Yii::warning(print_r($e->getMessage() . ' ' . $e-> getTraceAsString(), true), 'TLDEBUG');
+                        if (!$this->manager->isShippingNeeded() ) {
+                            $resp = ['error' => 1];
+                            echo json_encode($resp);
+                            exit();
+                            break;
+                        }
+                    }
+                }
+
                 $pRes = $this->createOrder($data);
                 $response = [];
                 if (is_object($pRes) && is_object($pRes->result)) {
@@ -2910,7 +3130,11 @@ provide you with a "Source Identifier" for every PayPal account used. Do not mak
                 $this->manager->set('partner_order_pending', false);
                 $json = [];
                 if ($orderId) {
-                    $order = $this->manager->createOrderInstance('\common\classes\Order');
+                    if (!$this->manager->isInstance()) {
+                        if (!$this->isPartlyPaid()) {
+                            $order = $this->manager->createOrderInstance('\common\classes\Order');
+                        }
+                    }
                     $response = $this->getOrder($orderId);
                     if (!empty($response->result->status) && 
                         (in_array(strtoupper($response->result->status), ['CREATED', 'APPROVED'])
@@ -2987,6 +3211,88 @@ provide you with a "Source Identifier" for every PayPal account used. Do not mak
                             $payerAddresses['sendto']->lastname = $payer->name->surname;
                         }
                         $sendto = $billto = false;
+
+//2test dont override billing address if selected.
+                        $hasAddresses = [];
+                        if ($this->manager->has($this->code . 'UseAddresses')){
+                            $useAddresses = $this->manager->get($this->code . 'UseAddresses');
+                            if (is_array($useAddresses)) {
+                                $addressForm = $this->manager->getBillingForm(null, false);
+                                if (in_array($addressForm->formName(), $useAddresses) && $this->manager->has('billto')) {
+                                    $savedBillto = $this->manager->get('billto');
+                                    $savedBilltoEst = $this->manager->get('estimate_bill');
+                                    if (!$payerAddresses && is_numeric($savedBillto) && $savedBillto > 0) {
+                                        unset($payerAddresses['billto']);
+                                        $billto = $savedBillto;
+
+                                    } elseif (is_array($savedBillto) || is_array($savedBilltoEst)) {
+                                        if (!is_array($savedBillto)) {
+                                            $savedBillto = $savedBilltoEst;
+                                        }
+                                        foreach( [
+                                            'firstname' => 'firstname',
+                                            'lastname' => 'lastname',
+                                            'postcode' => 'postal_code',
+                                            'street_address' => 'address_line_1',
+                                            'suburb' => 'address_line_2',
+                                            'city' => 'admin_area_2',
+                                            'state' => 'state',
+                                            'country_iso_code_2' => 'country_code',
+
+                                            'company' => 'company',
+                                            'company_vat' => 'company_vat',
+                                            'customs_number' => 'customs_number',
+                                            'gender' => 'gender'] as $saved => $pp) {
+                                            if (!empty($savedBillto[$saved])) {
+                                                $payerAddresses['billto']->$pp = $savedBillto[$saved];
+                                            }
+                                        }
+                                    } 
+                                }
+                                $addressForm = $this->manager->getShippingForm(null, false);
+                                if (in_array($addressForm->formName(), $useAddresses) && $this->manager->has('sendto')) {
+                                    $savedSendto = $this->manager->get('sendto');
+                                    if (is_numeric($savedSendto) && $savedSendto>0) { // shipping address could change on PP
+                                        $addressForm = $this->manager->getShippingForm($savedSendto);
+                                        $savedSendto = $addressForm->attributes;
+                                        $tmp = \common\helpers\Country::get_country_info_by_id($savedSendto['country']);
+                                        $savedSendto['country_iso_code_2'] = $tmp['countries_iso_code_2']??'';
+
+                                    }
+                                    if (is_array($savedSendto)) {
+                                    //"city":"ship City","state":"","country_code":"ZW","postal_code":"shipCode"
+                                        //if address "same" update with some saved details  else - leave as is
+                                        if (
+                                               $savedSendto['postcode'] == $payerAddresses['sendto']->postal_code
+                                            && $savedSendto['city'] == $payerAddresses['sendto']->admin_area_2
+                                            && $savedSendto['country_iso_code_2'] == $payerAddresses['sendto']->country_code
+                                            ) {
+                                            foreach( [
+                                                'firstname' => 'firstname',
+                                                'lastname' => 'lastname',
+                                                /*'postcode' => 'postal_code',
+                                                'street_address' => 'address_line_1',
+                                                'suburb' => 'address_line_2',
+                                                'city' => 'admin_area_2',
+                                                'state' => 'state',
+                                                'country_iso_code_2' => 'country_code',*/
+
+                                                'company' => 'company',
+                                                'company_vat' => 'company_vat',
+                                                'customs_number' => 'customs_number',
+                                                'gender' => 'gender'] as $saved => $pp) {
+                                                if (!empty($savedSendto[$saved])) {
+                                                    $payerAddresses['sendto']->$pp = $savedSendto[$saved];
+                                                }
+                                            }
+
+                                        }
+                                    }
+                                } elseif (empty($payerAddresses['sendto'])) {
+                                    // downloadable
+                                }
+                            }
+                        }
                         foreach ($payerAddresses as $type => $payerAddress) {
                             if (!empty($payerAddress) && count((array)$payerAddress)>2) {
                                 $country = \common\helpers\Country::get_country_info_by_iso($payerAddress->country_code);
@@ -3013,14 +3319,18 @@ provide you with a "Source Identifier" for every PayPal account used. Do not mak
                                     $$type = $ab->address_book_id;
                                 } else {
                                     $sql_data_array = array(
-                                      'customers_id' => $customer->customers_id,
-                                      'entry_firstname' => $payerAddress->firstname??'',
-                                      'entry_lastname' => $payerAddress->lastname??'',
-                                      'entry_street_address' => $payerAddress->address_line_1??'',
-                                      'entry_suburb' => $payerAddress->address_line_2??'',
-                                      'entry_postcode' => $payerAddress->postal_code??'',
-                                      'entry_city' => $payerAddress->admin_area_2??'',
-                                      'entry_country_id' => $country['id']
+                                        'customers_id' => $customer->customers_id,
+                                        'entry_firstname' => $payerAddress->firstname??'',
+                                        'entry_lastname' => $payerAddress->lastname??'',
+                                        'entry_street_address' => $payerAddress->address_line_1??'',
+                                        'entry_suburb' => $payerAddress->address_line_2??'',
+                                        'entry_postcode' => $payerAddress->postal_code??'',
+                                        'entry_city' => $payerAddress->admin_area_2??'',
+                                        'entry_company' => $payerAddress->company??'',
+                                        'entry_company_vat' => $payerAddress->company_vat??'',
+                                        'entry_customs_number' => $payerAddress->customs_number??'',
+                                        'entry_gender' => $payerAddress->gender??'',
+                                        'entry_country_id' => $country['id']
                                     );
 
                                     if ($ship_zone_id > 0) {
@@ -3062,7 +3372,11 @@ provide you with a "Source Identifier" for every PayPal account used. Do not mak
                         $this->manager->set('partner_order_id', $orderId);
 
                         $json['ok'] = true;
-                        $json['url'] = tep_href_link(FILENAME_CHECKOUT_PROCESS, '', 'SSL');
+                        //$json['url'] = tep_href_link(FILENAME_CHECKOUT_PROCESS, '', 'SSL');
+                        $json['url'] = $this->getCheckoutUrl([], self::PROCESS_PAGE);
+                        if ($this->debug) {
+                            \Yii::warning(print_r($response, true), 'TLDEBUGretrievepp');
+                        }
                     } else {
                         $json['error'] = PAYPAL_PARTNER_ORDER_DETAILS_ERROR;
                     }
@@ -3089,17 +3403,14 @@ provide you with a "Source Identifier" for every PayPal account used. Do not mak
                     \Yii::warning("patchOrder \$request " . print_r($request, true), 'TLDEBUG');
                 }
 
-                $order = $this->manager->createOrderInstance('\common\classes\Order');
+                if (!$this->manager->isInstance()) {
+                    $order = $this->manager->createOrderInstance('\common\classes\Order');
+                }
                 //$pOrder = $this->getOrder($request['orderID']);
                 $currency_code = \Yii::$app->settings->get('currency');
                 if (!empty($order->info['currency'])) {
                     $currency_code = $order->info['currency'];
                 }
-/*                $oldSubtotal = empty($request['amount']['breakdown']['item_total']['value'])?
-                    $this->formatRaw($order->info['subtotal_inc_tax']) :
-                    $request['amount']['breakdown']['item_total']['value']
-                    ;
-*/
 
                 $estimateShippingChanged = true;
                 if (!empty($request['shipping_address'])) {
@@ -3125,7 +3436,9 @@ provide you with a "Source Identifier" for every PayPal account used. Do not mak
                 if ($this->manager->isShippingNeeded()) {
                     $this->manager->resetDeliveryAddress();
                 }
-                $this->manager->resetBillingAddress();
+                if (\Yii::$app->user->isGuest) {
+                    $this->manager->resetBillingAddress();
+                }
 
 
                 if (!empty($request['selected_shipping_option']['id'])) {
@@ -3156,9 +3469,6 @@ provide you with a "Source Identifier" for every PayPal account used. Do not mak
                 $details = $this->getCartDetails();
                 
                 $resp = [];
-//\Yii::warning(" cart \$details #### " .print_r($details, true), 'TLDEBUG');
-//\Yii::warning(" cart \$details #### " .print_r($order->info, true), 'TLDEBUG');
-
                 $resp[] = [
                             'op' => 'replace',
                             'path' => '/purchase_units/@reference_id==\'default\'/amount',
@@ -3201,6 +3511,7 @@ provide you with a "Source Identifier" for every PayPal account used. Do not mak
                         ];
                     } elseif ($this->manager->isShippingNeeded()) {
                         //shipping is needed but not available
+                        \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
                         return [];
                     }
                 }
@@ -3317,10 +3628,21 @@ provide you with a "Source Identifier" for every PayPal account used. Do not mak
 
         $options = [];
         if ($this->manager->isShippingNeeded()) {
-            foreach ($this->manager->getShippingQuotesByChoice() as $shipping_quote_item ) {
+            if ( $this->manager->combineShippings ) {
+                $quotes = $this->manager->getAllShippingQuotes();
+            } else {
+                $quotes = $this->manager->getShippingQuotesByChoice();
+            }
+            foreach ($quotes as $shipping_quote_item ) {
                 if (empty($shipping_quote_item['error'])) {
 
                     foreach ($shipping_quote_item['methods'] as $shipping_quote_item_method) {
+                        if (!isset($shipping_quote_item_method['code'])) {
+                            $shipping_quote_item_method['code'] = $shipping_quote_item['id'] . '_' . $shipping_quote_item_method['id'];
+                        }
+                        if (!isset($shipping_quote_item_method['selected'])) {
+                            $shipping_quote_item_method['selected'] = ($this->manager->getSelectedShipping() == $shipping_quote_item_method['code']);
+                        }
                         if (strlen($shipping_quote_item_method['code']) > 125) continue;
                         $label = html_entity_decode(strip_tags($shipping_quote_item['module'] . ' '. $shipping_quote_item_method['title']));
                         $mxl = 125;
@@ -3341,7 +3663,7 @@ provide you with a "Source Identifier" for every PayPal account used. Do not mak
                         } else {
                             $cost = $currencies->display_price_clear($shipping_quote_item_method['cost'], $shipping_quote_item['tax'], 1);
                         }
-                        $row = ['id' => $shipping_quote_item_method['code'],
+                        $row = ['id' => ($shipping_quote_item['id'] != 'collect'?$shipping_quote_item_method['code']:'collect_' . $shipping_quote_item_method['id']),
                                 'label' => $label,
                                 'type' => ($shipping_quote_item['id'] != 'collect'? "SHIPPING" :"PICKUP"),
                                 'selected' => $shipping_quote_item_method['selected']? true : false,
@@ -3651,6 +3973,91 @@ provide you with a "Source Identifier" for every PayPal account used. Do not mak
             }
         }
     }
+
+    private function convertKey($k) {
+        $ret = $k;
+        if ($k == 'three_d_secure')  {
+            $ret = '3DS';
+
+        } else {
+            $ret = ucwords(str_replace('_', ' ', $ret));
+        }
+        return $ret;
+    }
+
+    private function convertObject($val, $pad='&nbsp;&nbsp;') {
+        $ret = [];
+        if (!empty($val) ) {
+            foreach ($val as $k => $v) {
+                if (is_scalar($v)) {
+                    $ret[] =  $pad . $this->convertKey($k) . ': ' . \common\helpers\Output::output_string_protected($v);
+                } else {
+                    $ret[] =  $pad . $this->convertKey($k) . ': ';
+                    $ret = array_merge($ret, $this->convertObject($v, $pad . '&nbsp;&nbsp;'));
+                }
+            }
+        }
+        return $ret;
+    }
+
+    protected function extractComments($ppOrder, $transaction) {
+        $currencies = \Yii::$container->get('currencies');
+        $transactionID = $transaction->result->id;
+        $ppOrderId = '';
+        if (!empty($ppOrder->result->id)) {
+            $ppOrderId = $ppOrder->result->id;
+        }
+        $ccDetails = [];
+        if (!empty($ppOrder->result->payment_source->card)) {
+            foreach($ppOrder->result->payment_source->card as $k => $v)  {
+                if (is_scalar($v)) {
+                    $ccDetails[] =  $this->convertKey($k) . ': ' . \common\helpers\Output::output_string_protected($v);
+                } else {
+                    $ccDetails[] =  $this->convertKey($k) . ':';
+                    $ccDetails = array_merge($ccDetails, $this->convertObject($v));
+                }
+            }
+        }
+        if (!empty($transaction->result->processor_response)) {
+            foreach($transaction->result->processor_response as $k => $v)  {
+                if (is_scalar($v)) {
+                    $ccDetails[] =  $this->convertKey($k) . ': ' . \common\helpers\Output::output_string_protected($v);
+                } else {
+                    $ccDetails[] =  $this->convertKey($k) . ':';
+                    $ccDetails = array_merge($ccDetails, $this->convertObject($v));
+                }
+            }
+        }
+
+        $ret = [
+              'Internal Order ID: ' . \common\helpers\Output::output_string_protected($ppOrderId),
+              'Transaction ID: ' . \common\helpers\Output::output_string_protected($transactionID),
+              'Transactin Amount: ' . \common\helpers\Output::output_string_protected($transaction->result->amount->value . ' ' . $transaction->result->amount->currency_code),
+              'Payment Status: ' . \common\helpers\Output::output_string_protected($transaction->result->status),
+              'Seller Protection: ' . \common\helpers\Output::output_string_protected($transaction->result->seller_protection->status??'') .
+              (is_array($transaction->result->seller_protection->dispute_categories)? ' - ' . implode(', ', $transaction->result->seller_protection->dispute_categories) :''),
+            ];
+        return array_merge($ret, $ccDetails);
+    }
+
+    public function isPartlyPaid() {
+        $ret = parent::isPartlyPaid() || \Yii::$app->request->get('partlypaid');
+        if ($ret && $this->manager->has('pay_order_id') && is_numeric($this->manager->get('pay_order_id'))) {
+            if ($this->manager->isInstance()) {
+                $order = $this->manager->getOrderInstance();
+                $order->info['orders_id'] = $order->order_id = $this->manager->get('pay_order_id');
+
+            } else {
+                $order = $this->manager->getOrderInstanceWithId('\common\classes\Order', $this->manager->get('pay_order_id'));
+            }
+        }
+        return $ret;
+    }
+/*
+    public function hasGuestCheckout() {
+        return true;
+    }*/
+
     // 2d0  add 2 methods for own API keys:
     // check webhooks
     // assign webhooks

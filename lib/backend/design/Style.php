@@ -948,7 +948,7 @@ class Style
                     $borderColor = $matches[1];
                 } elseif (preg_match('/(\#[\-0-9a-fA-F]{3,6})/', $value, $matches)) {
                     $borderColor = $matches[1];
-                } elseif (preg_match('/($[\-0-9a-z]+)/', $value, $matches)) {
+                } elseif (preg_match('/(\$[\-0-9a-z]+)/', $value, $matches)) {
                     $borderColor = $matches[1];
                 } elseif (strpos($value, 'transparent') !== false) {
                     $borderColor = 'transparent';
@@ -1925,16 +1925,16 @@ class Style
                 $attributes['border-bottom-left-radius'] . self::dimension($attributes['border_radius_4_measure']) . $importantArr['border-radius'] . ';' . $br;
         } else {
             if (isset($attributes['border-top-left-radius'])) {
-                $style .= $displacement . 'border-top-left-radius:' . $attributes['border-top-left-radius'] . self::dimension($attributes['border_radius_1_measure']) . $importantArr['border-top-left-radius'] . ';' . $br;
+                $style .= $displacement . 'border-top-left-radius:' . $attributes['border-top-left-radius'] . self::dimension($attributes['border_radius_1_measure']) . ($importantArr['border-top-left-radius'] ?? '') . ';' . $br;
             }
             if (isset($attributes['border-top-right-radius'])) {
-                $style .= $displacement . 'border-top-right-radius:' . $attributes['border-top-right-radius'] . self::dimension($attributes['border_radius_2_measure']) . $importantArr['border-top-right-radius'] . ';' . $br;
+                $style .= $displacement . 'border-top-right-radius:' . $attributes['border-top-right-radius'] . self::dimension($attributes['border_radius_2_measure']) . ($importantArr['border-top-right-radius'] ?? '') . ';' . $br;
             }
             if (isset($attributes['border-bottom-right-radius'])) {
-                $style .= $displacement . 'border-bottom-right-radius:' . $attributes['border-bottom-right-radius'] . self::dimension($attributes['border_radius_3_measure']) . $importantArr['border-bottom-right-radius'] . ';' . $br;
+                $style .= $displacement . 'border-bottom-right-radius:' . $attributes['border-bottom-right-radius'] . self::dimension($attributes['border_radius_3_measure']) . ($importantArr['border-bottom-right-radius'] ?? '') . ';' . $br;
             }
             if (isset($attributes['border-bottom-left-radius'])) {
-                $style .= $displacement . 'border-bottom-left-radius:' . $attributes['border-bottom-left-radius'] . self::dimension($attributes['border_radius_4_measure']) . $importantArr['border-bottom-left-radius'] . ';' . $br;
+                $style .= $displacement . 'border-bottom-left-radius:' . $attributes['border-bottom-left-radius'] . self::dimension($attributes['border_radius_4_measure']) . ($importantArr['border-bottom-left-radius'] ?? '') . ';' . $br;
             }
         }
 
@@ -3517,6 +3517,18 @@ class Style
 
         \common\models\ThemesSettings::deleteAll($dbArr);
         return true;
+    }
+
+    private static $needResetStyleCache = false;
+    public static function invalidateCache() {
+        self::$needResetStyleCache = true;
+    }
+
+    public static function validateCache() {
+        if (self::$needResetStyleCache) {
+            self::flushCacheAll();
+            self::$needResetStyleCache = false;
+        }
     }
 
 }

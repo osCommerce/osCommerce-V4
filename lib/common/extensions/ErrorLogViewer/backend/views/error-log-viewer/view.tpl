@@ -6,7 +6,7 @@
                     <div>
                         <div style="padding: 4px 10px 0 0; font-size: large;">
                             <a class="btn btn-back" href="{$app->urlManager->createUrl('error-log-viewer')}?by={$back}">{$smarty.const.IMAGE_BACK}</a>
-                            <b>{$file}</b>
+                            <b>{$filename}</b>
                             <button id = "refresh" class="btn btn-redo" style="float: right; margin-left: 50px;">{$smarty.const.TEXT_REFRESH}</button>
                         </div>
                     </div>
@@ -28,7 +28,7 @@
 
         function deleteLog()
         {
-            var file = "{$file}"
+            var file = "{$filename}"
 
             bootbox.dialog({
                 message: "{$smarty.const.EXT_ELV_DELETE_INTRO}".replace('%s', file),
@@ -41,7 +41,7 @@
                             $.post("{$app->urlManager->createUrl('error-log-viewer/logs-delete')}", { 'logs' : file }, function(data, status){
                                 if(status == "success")
                                 {
-                                    window.location.href = "{$app->urlManager->createUrl('error-log-viewer')}?by={$log->source}";
+                                    window.location.href = "{$app->urlManager->createUrl('error-log-viewer')}?by={$back}";
                                 }else{
                                     alert("{$smarty.const.EXT_ELV_ERR_REQUEST}");
                                 }
@@ -60,7 +60,7 @@
 
         function viewAsText()
         {
-            window.open("{$app->urlManager->createUrl('error-log-viewer/view-as-text')}?file={$file}", "_blank");
+            window.open("{$app->urlManager->createUrl('error-log-viewer/view-as-text')}?file={$mask}", "_blank");
         }
 
         function elv_show_modal()
@@ -112,7 +112,7 @@
                 serverSide: false,
                 autoWidth: true,
                 ajax: {
-                    url: 'error-log-viewer/advanced-list?file={$file}',
+                    url: 'error-log-viewer/advanced-list?file={$mask}',
                     type: 'GET',
                 },
                 columnDefs: [{
@@ -145,7 +145,7 @@
                 $(this).parents('tr').addClass('selected')
                 var id = $('#advancedList tbody tr.selected').find('input.cell_identify').val();
 
-                $.post("{$app->urlManager->createUrl('error-log-viewer/advanced-actions')}", { 'id' : id , 'file' : '{$file}'}, function(data, status){
+                $.post("{$app->urlManager->createUrl('error-log-viewer/advanced-actions')}", { 'id' : id , 'file' : '{$mask}'}, function(data, status){
                     if (status == "success") {
                         $('#order_management_data .scroll_col').html(data);
                         $("#order_management").show();
@@ -157,7 +157,7 @@
             $('#advancedList tbody').on('dblclick', 'tr td', function (){
                 var id = $('#advancedList tbody tr.selected').find('input.cell_identify').val();
 
-                $.post("{$app->urlManager->createUrl('error-log-viewer/advanced-actions')}", { 'id' : id , 'file' : '{$file}'}, function(data, status){
+                $.post("{$app->urlManager->createUrl('error-log-viewer/advanced-actions')}", { 'id' : id , 'file' : '{$mask}'}, function(data, status){
                     if (status == "success") {
                         $('#order_management_data .scroll_col').html(data);
                         $("#order_management").show();

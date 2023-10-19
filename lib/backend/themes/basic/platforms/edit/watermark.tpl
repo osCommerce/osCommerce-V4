@@ -13,9 +13,9 @@
         <div class="can_set_watermark">
             <div class="tabbable tabbable-custom">
                 <ul class="nav nav-tabs">
-                    <li class="active"><a href="#tab_1" data-toggle="tab">{$smarty.const.TEXT_BIG}</a></li>
-                    <li><a href="#tab_2" data-toggle="tab">{$smarty.const.TEXT_MEDIUM}</a></li>
-                    <li><a href="#tab_3" data-toggle="tab">{$smarty.const.TEXT_SMALL}</a></li>
+                    <li class="active" data-bs-toggle="tab" data-bs-target="#tab_1"><a>{$smarty.const.TEXT_BIG}</a></li>
+                    <li data-bs-toggle="tab" data-bs-target="#tab_2"><a>{$smarty.const.TEXT_MEDIUM}</a></li>
+                    <li data-bs-toggle="tab" data-bs-target="#tab_3"><a>{$smarty.const.TEXT_SMALL}</a></li>
                 </ul>
                 <div class="tab-content">
                     <div class="tab-pane active topTabPane tabbable-custom" id="tab_1">

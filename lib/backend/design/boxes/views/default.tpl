@@ -15,21 +15,21 @@
             {assign var="tabs" value = $settings['tabs']['class']::$method($settings)}
             {$count = 0}
             {foreach $tabs as $t}
-                <li{if $count == 0} class="active"{/if}><a href="#{$t['title']}" data-toggle="tab">{$t['title']}</a></li>
+                <li{if $count == 0} class="active"{/if} data-bs-toggle="tab" data-bs-target="#{$t['title']}"><a>{$t['title']}</a></li>
                 {$count = $count + 1}
             {/foreach}
            {/if}
         {elseif isset($settings['class']) && isset($settings['method']) }
-            <li class="active"><a href="#{$settings['method']}" data-toggle="tab">{$smarty.const.TEXT_SETTINGS}</a></li>
-            <li><a href="#style" data-toggle="tab">{$smarty.const.HEADING_STYLE}</a></li>
+            <li class="active" data-bs-toggle="tab" data-bs-target="#{$settings['method']}"><a>{$smarty.const.TEXT_SETTINGS}</a></li>
+            <li data-bs-toggle="tab" data-bs-target="#style"><a>{$smarty.const.HEADING_STYLE}</a></li>
         {else}
-            <li class="active"><a href="#style" data-toggle="tab">{$smarty.const.HEADING_STYLE}</a></li>
+            <li class="active" data-bs-toggle="tab" data-bs-target="#style"><a>{$smarty.const.HEADING_STYLE}</a></li>
         {/if}
-        <li><a href="#align" data-toggle="tab">{$smarty.const.HEADING_WIDGET_ALIGN}</a></li>
+        <li data-bs-toggle="tab" data-bs-target="#align"><a>{$smarty.const.HEADING_WIDGET_ALIGN}</a></li>
         {if $block_type == 'header' || $block_type == 'footer'}
-        <li><a href="#visibility" data-toggle="tab">{$smarty.const.TEXT_VISIBILITY_ON_PAGES}</a></li>
+        <li data-bs-toggle="tab" data-bs-target="#visibility"><a>{$smarty.const.TEXT_VISIBILITY_ON_PAGES}</a></li>
         {/if}
-        <li><a href="#ajax" data-toggle="tab">{$smarty.const.TEXT_AJAX}</a></li>
+        <li data-bs-toggle="tab" data-bs-target="#ajax"><a>{$smarty.const.TEXT_AJAX}</a></li>
 
       </ul>
       <div class="tab-content">

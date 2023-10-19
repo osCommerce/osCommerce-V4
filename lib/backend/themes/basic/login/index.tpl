@@ -7,7 +7,7 @@
 	<link rel="stylesheet" href="{$app->view->theme->baseUrl}/css/fontawesome/font-awesome.min.css">
 	<link href="{$app->view->theme->baseUrl}/css/login.css?3" rel="stylesheet" type="text/css" />
 	<link href="{$app->view->theme->baseUrl}/css/superadmin.css?3" rel="stylesheet" type="text/css" />
-	<script type="text/javascript" src="{$app->view->theme->baseUrl}/js/libs/jquery.min.js?3"></script>
+	<script type="text/javascript" src="{$app->request->baseUrl}/plugins/jquery.min.js"></script>
 	<script type="text/javascript" src="{$app->request->baseUrl}/plugins/validation/jquery.validate.min.js"></script>
 	<script type="text/javascript" src="{$app->view->theme->baseUrl}/js/login.js?3"></script>
 </head>

@@ -47,14 +47,14 @@ class Rating extends Widget
             \frontend\design\JsonLd::addData(['Product' => [
                 'aggregateRating' => [
                     '@type' => 'AggregateRating',
-                    'ratingValue' => round($rating['average']),
+                    'ratingValue' => round($rating['average']??0),
                     'ratingCount' => $rating['count'],
                 ]
             ]], ['Product', 'aggregateRating']);
         }
 
         return IncludeTpl::widget(['file' => 'boxes/product/rating.tpl', 'params' => [
-            'rating' => round($rating['average']),
+            'rating' => round($rating['average']??0),
             'count' => $rating['count'],
             'settings' => $this->settings
         ]]);

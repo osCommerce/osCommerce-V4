@@ -64,7 +64,7 @@ class OrderProducts extends Widget
             $rows .= '
           <tr class="product-row" style="' . ($attributesText['.product-row'] ?? '') . '">
             ' . ( ($attributesArray['.image']['display'] ?? '') != 'none' ? '
-            <td class="image" style="' . ($attributesText['.image'] ?? '') . '">
+            <td class="image" style="' . ($attributesText['.image'] ?? '') . (($item['parent_product']??false) ? ($attributesText['.subitem'] ?? '') : '') . '">
               <img src="' . \common\classes\Images::getImageUrl($item['id'], 'Thumbnail', -1, 0, false, (defined('USE_WEBP_IN_EMAILS') && USE_WEBP_IN_EMAILS=='True')) . '" alt="" style="' . ($attributesText['img'] ?? '') . '">
             </td>
             ' : '') . '

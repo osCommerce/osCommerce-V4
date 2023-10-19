@@ -84,27 +84,27 @@ Released under the GNU General Public License
               </div>
 
               <div class="row">
-          <div class="dates col-xs-7">
+          <div class="dates col-7">
             <div class="_our-pr-line row">
-              <div class="_disable-btn col-xs-6">
+              <div class="_disable-btn col-6">
                 <label>{$smarty.const.TEXT_START_DATE}<span class="colon">:</span></label>
                 <input id="special_start_date" name="special_start_date{$fieldSuffix|escape}" value='{\common\helpers\Date::datepicker_date_time($data['start_date'])}' class="tl-dtp form-control"/>
               </div>
-              <div class="_disable-btn col-xs-6">
+              <div class="_disable-btn col-6">
                 <label>{$smarty.const.TEXT_EXPIRY_DATE}<span class="colon">:</span></label>
                 <input id="special_expires_date" name="special_expires_date{$fieldSuffix|escape}" value='{\common\helpers\Date::datepicker_date_time($data['expires_date'])}' class="tl-dtp form-control form-control-small"/>
               </div>
             </div>
           </div>
 
-          <div class="limits col-xs-5">
+          <div class="limits col-5">
             <div class="_our-pr-line row">
-              <div class="_disable-btn col-xs-6">
+              <div class="_disable-btn col-6">
                 <label class="inline">{$smarty.const.TEXT_MAX_QTY_TO_SELL}<span class="colon">:</span></label>
                 <div class="info-hint"><div class="info-hint-box"><div class="info-hint-mustache"></div>{$smarty.const.TEXT_LEAVE_EMPTY_FOR_NO_LIMITS}</div></div>
                 <input name="total_qty{$fieldSuffix|escape}" value='{if !empty($data['total_qty'])}{$data['total_qty']}{/if}' class="form-control total_qty"/>
               </div>
-              <div class="_disable-btn col-xs-6">
+              <div class="_disable-btn col-6">
                 <label>{$smarty.const.TEXT_MAX_QTY_TO_SELL_IN_ORDER}<span class="colon">:</span></label>
                 <input name="max_per_order{$fieldSuffix|escape}" value='{if !empty($data['max_per_order'])}{$data['max_per_order']}{/if}' class="form-control max_per_order"/>
               </div>
@@ -121,17 +121,17 @@ Released under the GNU General Public License
 
     {if !$popup}
         <div class="row p-l-2 m-b-2">
-            <div class="col-xs-3">
+            <div class="col-3">
                 <b>{$smarty.const.TEXT_SPECIALS_PRODUCT}</b>
             </div>
-            <div class="col-xs-9">
+            <div class="col-9">
                 <a target="blank" href="{Yii::$app->urlManager->createUrl(['categories/productedit', 'pID' => $pInfo->products_id])}">{$backendProductDescription.products_name}</a>
             </div>
         </div>
     {/if}
 
     <div class="row m-b-2 p-l-2">
-        <div class="col-xs-5">
+        <div class="col-5">
             <label>
                 {if $smarty.const.PRICE_WITH_BACK_TAX == 'True'}
                     {$smarty.const.TEXT_GROSS_PRICE}
@@ -141,26 +141,26 @@ Released under the GNU General Public License
             </label>
             {$price}
         </div>
-        <div class="col-xs-6" {if $smarty.const.PRICE_WITH_BACK_TAX == 'True'}style="display: none;"{/if}>
+        <div class="col-6" {if $smarty.const.PRICE_WITH_BACK_TAX == 'True'}style="display: none;"{/if}>
             <label>{$smarty.const.TEXT_GROSS_PRICE}:</label> {$priceGross}
         </div>
     </div>
 
     <div class="row m-b-2 p-l-2">
         {if (true === \common\helpers\Acl::rule(['TEXT_SETTINGS', 'BOX_HEADING_SPECIALS_TAGS'])) }
-            <div class="col-xs-2">
+            <div class="col-2">
                 <label for="specialsTypeId"><a href="specials-types" target="blank">{$smarty.const.BOX_HEADING_SPECIALS_TAGS}</a>:</label>
             </div>
 
-            <div class="col-xs-3">
+            <div class="col-3">
                 {Html::dropDownList('specials_type_id', $sInfo->specials_type_id|default:null, $specials_types, ['class'=>"form-control form-control-med"])}
             </div>
         {/if}
 
-        <div class="col-xs-2">
+        <div class="col-2">
             <label for="promoteType">{$smarty.const.BOX_HEADING_SPECIALS_PROMOTE_TYPE}:</label>
         </div>
-        <div class="col-xs-4">
+        <div class="col-4">
             {Html::dropDownList('promote_type', $sInfo->promote_type|default:null, $promote_types, ['class'=>"form-control form-control-med"])}
         </div>
     </div>
@@ -198,16 +198,6 @@ $(document).ready(function(){
     $('.btn-cancel').popUp({ 'box_class':'popupSales' });
   {/if}
       $('input.tl-dtp').tlDatetimepicker();
-/*    $('#special_start_date').tlDatetimepicker();
-    $('#special_expires_date').tlDatetimepicker();
-*/
-    $('#special_start_date').on("dp.change", function (e) {
-        $('#special_expires_date').data("DateTimePicker").minDate(e.date);
-        $('#special_expires_date').data("DateTimePicker").date(e.date.add(7, 'd'));
-    });
-    $('#special_expires_date').on("dp.change", function (e) {
-        $('#special_start_date').data("DateTimePicker").maxDate(e.date);
-    });
 
     $(".limits .max_per_order").on("change", function (e) {
         try {
@@ -378,10 +368,10 @@ $(document).ready(function(){
             </div>
             {else}
             <div class="div_sale_prod row m-b-2">
-                <div class="col-xs-5 align-right">
+                <div class="col-5 align-right">
                     <label for="popt{$idSuffix}_s2"><input type="radio" class="price-options" id="popt{$idSuffix}_s2" value="1" {if $data['products_group_special_price']!='-1'}checked{/if} data-idsuffix="{$idSuffix}"/> {sprintf($smarty.const.TEXT_ENABLED_FOR, $data['tabdata']['title'])}</label>
                 </div>
-                <div class="col-xs-5">
+                <div class="col-5">
                     <label for="popt{$idSuffix}_s0"><input type="radio" class="price-options" id="popt{$idSuffix}_s0" value="-1" {if $data['products_group_special_price']=='-1'}checked{/if} data-idsuffix="{$idSuffix}"/> {sprintf($smarty.const.TEXT_PRICE_SWITCH_DISABLE, $data['tabdata']['title'])}</label>
                 </div>
             </div>
@@ -393,7 +383,7 @@ $(document).ready(function(){
         <div class="{if ($default_currency['id']!=$data['currencies_id']) }market_sales_switch{/if} sale_to_dis {if $data['specials_disabled']>0 }dis_module{/if}">
         <div id="div_sale_prod{$idSuffix}" class="sale-prod-line-block after div_sale_prod div_sale_prod{$idSuffix}" {if ($showSalesDiv==0 || $data['products_group_special_price']==-1)}style="display:none;"{/if}>
           <div class="_sale-prod-line row">
-              <div class="{if $smarty.const.PRICE_WITH_BACK_TAX == 'True'}col-xs-3 {else}col-xs-2{/if} align-right">
+              <div class="{if $smarty.const.PRICE_WITH_BACK_TAX == 'True'}col-3 {else}col-2{/if} align-right">
                   <label class="sale-info1">
                         {if $smarty.const.PRICE_WITH_BACK_TAX == 'True'}
                             {$smarty.const.TEXT_GROSS_PRICE}
@@ -402,7 +392,7 @@ $(document).ready(function(){
                         {/if}
                       <span class="colon">:</span></label>
               </div>
-          <div class="col-xs-3">
+          <div class="col-3">
             {if $data['products_group_special_price']>0.001}
               {$val = $data['products_group_special_price']}
             {else}
@@ -414,10 +404,10 @@ $(document).ready(function(){
             <span id="span_special_price{$idSuffix}" class="form-control-span"{if $data['products_group_specials_price']>-0.99}style="display:none;"{/if}>{$currencies->formatById($val, false, $data['currencies_id'])|escape}</span>
 {/if}
           </div>
-              <div class="col-xs-3 align-right" {if $smarty.const.PRICE_WITH_BACK_TAX == 'True'}style="display: none;"{/if}>
+              <div class="col-3 align-right" {if $smarty.const.PRICE_WITH_BACK_TAX == 'True'}style="display: none;"{/if}>
                   <label class="sale-info1">{$smarty.const.TEXT_SALE_GROSS}<span class="colon">:</span></label>
               </div>
-          <div class="col-xs-3" {if $smarty.const.PRICE_WITH_BACK_TAX == 'True'}style="display: none;"{/if}>
+          <div class="col-3" {if $smarty.const.PRICE_WITH_BACK_TAX == 'True'}style="display: none;"{/if}>
             {if $data['products_group_special_price_gross']>0.001}
               {$val = $data['products_group_special_price_gross']}
             {else}

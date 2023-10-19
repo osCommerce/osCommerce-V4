@@ -159,8 +159,8 @@
                   {if $product.stock_indicator.quantity_max > 0 }
                       data-max="{$product.stock_indicator.quantity_max}"
                   {/if}
-                  {if \common\helpers\Acl::checkExtensionAllowed('MinimumOrderQty', 'allowed')}{\common\extensions\MinimumOrderQty\MinimumOrderQty::setLimit($product.order_quantity_data)}{/if}
-                  {if \common\helpers\Acl::checkExtensionAllowed('OrderQuantityStep', 'allowed')}{\common\extensions\OrderQuantityStep\OrderQuantityStep::setLimit($product.order_quantity_data)}{/if}
+                  {if $moq = \common\helpers\Extensions::isAllowed('MinimumOrderQty')}{$moq::setLimit($product.order_quantity_data)}{/if}
+                  {if $oqs = \common\helpers\Extensions::isAllowed('OrderQuantityStep')}{$oqs::setLimit($product.order_quantity_data)}{/if}
           />
           <input type="hidden" name="products_id" value="{$product.id}"/>
         {/if}
@@ -176,8 +176,8 @@
                     {if $product.stock_indicator.quantity_max > 0 }
                         data-max="{$product.stock_indicator.quantity_max}"
                     {/if}
-                    {if \common\helpers\Acl::checkExtensionAllowed('MinimumOrderQty', 'allowed')}{\common\extensions\MinimumOrderQty\MinimumOrderQty::setLimit($product.order_quantity_data)}{/if}
-                    {if \common\helpers\Acl::checkExtensionAllowed('OrderQuantityStep', 'allowed')}{\common\extensions\OrderQuantityStep\OrderQuantityStep::setLimit($product.order_quantity_data)}{/if} />
+                        {if $moq = \common\helpers\Extensions::isAllowed('MinimumOrderQty')}{$moq::setLimit($product.order_quantity_data)}{/if}
+                        {if $oqs = \common\helpers\Extensions::isAllowed('OrderQuantityStep')}{$oqs::setLimit($product.order_quantity_data)}{/if} />
                 <input type="hidden" name="pid[]" value="{$product.id}"/>
           </div>
       {/if}

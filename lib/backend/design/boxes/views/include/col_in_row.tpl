@@ -2,10 +2,10 @@
     <div class="tabbable tabbable-custom">
         <ul class="nav nav-tabs nav-tabs-scroll-2">
 
-            <li class="active"><a href="#list" data-toggle="tab">{$smarty.const.TEXT_MAIN}</a></li>
+            <li class="active" data-bs-toggle="tab" data-bs-target="#list"><a>{$smarty.const.TEXT_MAIN}</a></li>
             <li class="label">{$smarty.const.WINDOW_WIDTH}:</li>
             {foreach $settings.media_query as $item}
-                <li><a href="#list{$item.id}" data-toggle="tab">{$item.title}</a></li>
+                <li data-bs-toggle="tab" data-bs-target="#list{$item.id}"><a>{$item.title}</a></li>
             {/foreach}
 
         </ul>

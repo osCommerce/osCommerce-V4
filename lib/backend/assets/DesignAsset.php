@@ -22,9 +22,6 @@ class DesignAsset extends AssetBundle
         'css/design.css',
     ];
     public $js = [
-      'js/jquery-ui.min.js',
-      'js/libs/jquery.hotkeys.js',
-      //'jquery.edit-blocks.js',
       'js/jquery.edit-theme.js',
     ];
 }

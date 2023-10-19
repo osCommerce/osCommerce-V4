@@ -15,6 +15,7 @@ namespace frontend\design\boxes\order;
 use Yii;
 use yii\base\Widget;
 use frontend\design\IncludeTpl;
+use common\classes\Images;
 
 class Products extends Widget
 {
@@ -52,6 +53,7 @@ class Products extends Widget
             $order_info['products_image'] = Images::getImageUrl($order->products[$i]['id'], 'Small');
             $order_info['order_product_qty'] = \common\helpers\Product::getVirtualItemQuantity($order->products[$i]['id'], $order->products[$i]['qty']);
             $order_info['order_product_name'] = $order->products[$i]['name'];
+            $order_info['parent_product'] = $order->products[$i]['parent_product'];
             $order_info['product_info_link'] = '';
             $order_info['id'] = $order->products[$i]['id'];
             if (\common\helpers\Product::check_product($order->products[$i]['id'])) {

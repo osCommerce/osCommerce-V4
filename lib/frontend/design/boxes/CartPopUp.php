@@ -12,7 +12,6 @@
 
 namespace frontend\design\boxes;
 
-use common\extensions\MultiCart\MultiCart;
 use frontend\design\Info;
 use Yii;
 use yii\base\Widget;
@@ -39,9 +38,9 @@ class CartPopUp extends Widget {
 			return '';
 		}
         
-        if( $ext = \common\helpers\Acl::checkExtension( 'MultiCart', 'allowed' ) ) {
-            if( MultiCart::allowed() && MultiCart::getCartsAmount(false) > 0) {
-                return MultiCart::cartsBlock([
+        if( $ext = \common\helpers\Extensions::isAllowed('MultiCart') ) {
+            if($ext::getCartsAmount(false) > 0) {
+                return $ext::cartsBlock([
                     'settings' => $this->settings,
                     'id' => $this->id
                 ]);

@@ -13,32 +13,50 @@
 namespace backend\controllers;
 
 use Yii;
+use \common\helpers\Acl;
 
 class ExtensionsController extends Sceleton
 {
     function __construct($id, $mod=null) {
         $module = Yii::$app->request->get('module');
         if ($ext = \common\helpers\Acl::checkExtension($module, 'acl')) {
-            $this->acl = $ext::acl();
+            $this->acl = $ext::getAcl('adminActionIndex');
         }
-        return parent::__construct($id, $mod);
+        parent::__construct($id, $mod);
     }
     
     public function actionIndex()
     {
         $module = Yii::$app->request->get('module');
         $action = Yii::$app->request->get('action', 'adminActionIndex');
-        if ($ext = \common\helpers\Acl::checkExtension($module, $action)) {
+        $errMsg = null;
+        if ($ext = Acl::checkExtension($module, $action)) {
             if ($ext::allowed()) {
                 if (method_exists($ext, 'initTranslation')) {
                     $ext::initTranslation('init_beforeaction');
                 }
-                return $ext::$action();
-            } elseif (\common\helpers\System::isDevelopment()) {
-                die ('You have not rights for this extension: ' . \yii\helpers\Html::encode($module));
+                if ($action!='actionRefreshTranslation' && !empty($acl=$ext::getAcl($action))) {
+                    $this->acl = $acl;
+                    Acl::checkAccess($acl);
+                }
+                if (!method_exists($ext, 'beforeAction') || $ext::beforeAction($action)) {
+                    return $ext::$action();
+                }
+            } else {
+                $errMsg = 'Extension is not allowed: ' . \yii\helpers\Html::encode($module);
             }
-        } elseif (\common\helpers\System::isDevelopment()) {
-            die ('Extension has not this action: ' . \yii\helpers\Html::encode($module) . '::' . \yii\helpers\Html::encode($action));
+        } else {
+            if (Acl::checkExtension($module)) {
+                $errMsg = 'Extension has not this action: ' . \yii\helpers\Html::encode($module) . '::' . \yii\helpers\Html::encode($action);
+            } else {
+                $errMsg = 'Extension does not exist: ' . \yii\helpers\Html::encode($module);
+            }
+        }
+        if (!empty($errMsg)) {
+            \Yii::error($errMsg);
+            if (\common\helpers\System::isDevelopment()) {
+                die($errMsg);
+            }
         }
     }
 

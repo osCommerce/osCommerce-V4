@@ -13,10 +13,10 @@
 namespace frontend\design;
 
 use backend\design\Style;
+use frontend\design\Info;
 use Yii;
 use yii\base\Widget;
 use yii\helpers\ArrayHelper;
-use frontend\design\Info;
 use common\models\DesignBoxes;
 use common\models\DesignBoxesTmp;
 use common\models\DesignBoxesSettings;
@@ -112,9 +112,11 @@ class Block extends Widget
             $widgetArray['params']['microtime'] = $widget['microtime'];
             $settings = $widget['settings'];
 
-            $toPdf = (int)Yii::$app->request->get('to_pdf', 0);
-            if ($toPdf) {
-                $settings[0]['p_width'] = Info::blockWidth($widget['id']);
+            if (Yii::$app->id != 'app-console') {
+                $toPdf = (int)Yii::$app->request->get('to_pdf', 0);
+                if ($toPdf) {
+                    $settings[0]['p_width'] = Info::blockWidth($widget['id']);
+                }
             }
 
             if (isset($settings[0]['ajax']) && !Info::isAdmin()){
@@ -137,7 +139,7 @@ class Block extends Widget
                     $widgetHtml = $widgetName::widget($widgetArray);
                 } elseif (($ext_widget = \common\helpers\Acl::runExtensionWidget($widget['widget_name'], $widgetArray)) !== false){
                     $widgetHtml = $ext_widget;
-                } elseif (is_file(Yii::getAlias('@app') . DIRECTORY_SEPARATOR . 'design' . DIRECTORY_SEPARATOR . 'orders' . DIRECTORY_SEPARATOR .  str_replace('\\', DIRECTORY_SEPARATOR, $widget['widget_name']) . '.php')) {
+                } elseif (is_file(Yii::getAlias('@backend') . DIRECTORY_SEPARATOR . 'design' . DIRECTORY_SEPARATOR . 'orders' . DIRECTORY_SEPARATOR .  str_replace('\\', DIRECTORY_SEPARATOR, $widget['widget_name']) . '.php')) {
                     if ($this->params['params']['manager']?? false) {
                         $widgetHtml = $this->params['params']['manager']->render($widget['widget_name'], [
                             'manager' => $this->params['params']['manager'],
@@ -277,7 +279,7 @@ class Block extends Widget
         foreach ($boxes as $key => $box) {
             $boxes[$key]['settings'] = $this->getBoxesSettings($designBoxesSettings, $box);
 
-            if (is_file(Yii::getAlias('@app') . DIRECTORY_SEPARATOR . 'design' . DIRECTORY_SEPARATOR . 'boxes' . DIRECTORY_SEPARATOR .  str_replace('\\', DIRECTORY_SEPARATOR, $box['widget_name']) . '.php')){
+            if (is_file(Yii::getAlias('@frontend') . DIRECTORY_SEPARATOR . 'design' . DIRECTORY_SEPARATOR . 'boxes' . DIRECTORY_SEPARATOR .  str_replace('\\', DIRECTORY_SEPARATOR, $box['widget_name']) . '.php')){
                 $widget = 'frontend\design\boxes\\' . $box['widget_name'];
                 if (method_exists ($widget, 'children')) {
                     foreach ($widget::children($box['id'], $boxes[$key]['settings'], $theme_name) as $child) {
@@ -397,13 +399,24 @@ class Block extends Widget
 
     private function hideWidget($settings)
     {
+        if (Yii::$app->id == 'app-console' || Info::isAdmin()) {
+            return false;
+        }
         $cookies = Yii::$app->request->cookies;
 
-        if (isset($settings[0]['status']) && $settings[0]['status'] == 'hidden' && !Info::isAdmin()) {
+        if (isset($settings[0]['status']) && $settings[0]['status'] == 'hidden') {
             return true;
         }
 
-        if ((
+        $hide = false;
+        foreach (\common\helpers\Hooks::getList('box/block/hide-widget') as $filename) {
+            include($filename);
+            if ($hide) {
+                return true;
+            }
+        }
+
+        if (
                 (
                     @$settings[0]['visibility_first_view'] && Yii::$app->user->isGuest && !$cookies->has('was_visit') ||
                     @$settings[0]['visibility_more_view'] && Yii::$app->user->isGuest && $cookies->has('was_visit') ||
@@ -420,9 +433,9 @@ class Block extends Widget
                 Yii::$app->controller->id == 'checkout' && Yii::$app->controller->action->id == 'success' && ($settings[0]['visibility_success'] ?? false) ||
                 Yii::$app->controller->id == 'account' && Yii::$app->controller->action->id != 'login' && ($settings[0]['visibility_account'] ?? false) ||
                 Yii::$app->controller->id == 'account' && Yii::$app->controller->action->id == 'login' && ($settings[0]['visibility_login'] ?? false)
-            ) && !Info::isAdmin()){
+            ){
             return true;
-        } elseif((
+        } elseif(
                 !(Yii::$app->controller->id == 'index' && Yii::$app->controller->action->id == 'index' ||
                     Yii::$app->controller->id == 'index' && Yii::$app->controller->action->id == 'design' ||
                     Yii::$app->controller->id == 'catalog' && Yii::$app->controller->action->id == 'product' ||
@@ -434,7 +447,7 @@ class Block extends Widget
                     Yii::$app->controller->id == 'account' && Yii::$app->controller->action->id != 'login' ||
                     Yii::$app->controller->id == 'account' && Yii::$app->controller->action->id == 'login') &&
                 ($settings[0]['visibility_other'] ?? false)
-            ) && !Info::isAdmin()) {
+            ) {
             return true;
         } else {
             return false;

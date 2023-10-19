@@ -47,6 +47,7 @@ class ot_subtotal extends ModuleTotal {
     }
 
     function process() {
+        $this->output = [];
         $order = $this->manager->getOrderInstance();
         \common\helpers\Php8::nullArrProps($order->info, ['subtotal_exc_tax', 'subtotal_inc_tax', 'currency', 'currency_value', 'subtotal']);
         $currencies = \Yii::$container->get('currencies');

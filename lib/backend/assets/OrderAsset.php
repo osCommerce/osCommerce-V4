@@ -19,11 +19,11 @@ class OrderAsset extends AssetBundle
     public $basePath = '@webroot';
     public $baseUrl = '@web';
     public $css = [
-        '@web/../themes/basic/css/order.css',
+        '@web/../themes/basic/css/order.css?2',
     ];
     public $js = [
-        '@web/../themes/basic/js/order.js',
-        '@web/../themes/basic/js/order.product.js',
+        '@web/../themes/basic/js/order.js?2',
+        '@web/../themes/basic/js/order.product.js?2',
         '@web/../themes/basic/js/address.js',
     ];
 }

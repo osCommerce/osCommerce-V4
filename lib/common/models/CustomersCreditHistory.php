@@ -35,4 +35,31 @@ class CustomersCreditHistory extends ActiveRecord {
         ];
     }
 
+    public function getAdmin()
+    {
+        return $this->hasOne(Admin::class, ['admin_id' => 'admin_id']);
+    }
+
+    public static function saveCreditHistory(int $customers_id, $amount, $prefix = '+', $currency = '', $currency_value = '', $comment = '', $type = 0, $customer_notified = 0)
+    {
+        try {
+            \common\helpers\Assert::assert($customers_id > 0, 'Customer id is not valid: ' . $customers_id);
+            $history = new self();
+            $history->setAttributes([
+                'customers_id' => $customers_id,
+                'credit_prefix' => $prefix,
+                'credit_amount' => $amount,
+                'currency' => $currency,
+                'currency_value' => $currency_value,
+                'customer_notified' => $customer_notified,
+                'comments' => $comment,
+                'admin_id' => \Yii::$app->session->get('login_id', 0),
+                'credit_type' => $type
+            ], false);
+            $history->save(false);
+        } catch(\Throwable $e) {
+            \common\helpers\Php::handleErrorProd($e);
+        }
+    }
+
 }

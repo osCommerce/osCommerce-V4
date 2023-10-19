@@ -49,15 +49,9 @@ class WarningWidget extends \yii\bootstrap\Widget
     }
 
 
-  // give the visitors a message that the website will be down at ... time
-    if ( (WARN_BEFORE_DOWN_FOR_MAINTENANCE == 'true') && (DOWN_FOR_MAINTENANCE == 'false') ) {
-         $messageStack->add(TEXT_BEFORE_DOWN_FOR_MAINTENANCE . PERIOD_BEFORE_DOWN_FOR_MAINTENANCE, 'header', 'warning');
-    }
-
-
-  // this will let the admin know that the website is DOWN FOR MAINTENANCE to the public
-    if ( (DOWN_FOR_MAINTENANCE == 'true') && (EXCLUDE_ADMIN_IP_FOR_MAINTENANCE == getenv('REMOTE_ADDR')) ) {
-         $messageStack->add(TEXT_ADMIN_DOWN_FOR_MAINTENANCE, 'header', 'warning');
+    if ($ext = \common\helpers\Extensions::isAllowed('Maintenance'))
+    {
+        $ext::getWarnMessage();
     }
 
   // check session.auto_start is disabled

@@ -195,7 +195,7 @@ class SplitterManager {
             }
         }
 
-        if (is_array($order->mixed) && $order->mixed) {
+        if (is_array($order->mixed ?? null) && $order->mixed) {
             foreach ($order->mixed as $mixed) {
                 $row = OrdersSplinters::create($order->order_id, $status, self::OWNER_MIXED, $mixed['qty'], $mixed['value_exc_vat'], $mixed['value_inc_tax'], $mixed['owner'], $mixed['data'], $this->getAdmin());
                 if ($row->splinters_id) {
@@ -639,7 +639,7 @@ class SplitterManager {
     }
 
     private function getAdmin() {
-        return $_SESSION['login_id'];
+        return $_SESSION['login_id'] ?? null;
     }
 
     /**

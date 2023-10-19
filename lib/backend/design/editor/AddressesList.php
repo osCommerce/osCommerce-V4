@@ -39,28 +39,33 @@ class AddressesList extends Widget
         $this->params['manager'] = $this->manager;
         $this->params['type'] = $this->type;
         $this->params['mode'] = $this->mode;
-        
-        if ($this->type == 'shipping'){
+
+        if ($this->ab_id) {
+            $_selectedABid = $this->ab_id;
+        } elseif ($this->type == 'shipping'){
             $_selectedABid = $this->manager->getSendto();
         } else {
             $_selectedABid = $this->manager->getBillto();
-        }        
+        }
         $this->params['selected_ab_id'] = $_selectedABid;
         
         if ($this->mode == 'single'){
             $this->params['address'] = $this->manager->getCustomersAddress($_selectedABid, true, true);
             $this->_defineForm();
             if (is_null($this->params['address']) || !$this->params['model']->customerAddressIsReady() || $this->params['model']->hasErrors()){
-                $this->params['mode'] = 'edit';
+                $this->params['error'] = true;
             }
-        } else if ($this->mode == 'select'){
+        } elseif ($this->mode == 'select'){
             $this->ab_id = $_selectedABid;
             $this->_defineForm();
             if (!$this->params['model']->customerAddressIsReady()){
-                $this->params['mode'] = 'edit';
-            } else {
-                $this->params['addresses'] = $this->manager->getCustomersAddresses(true, true);
+                $this->params['error'] = true;
             }
+            $this->params['addresses'] = $this->manager->getCustomersAddresses(true, true, $this->type);
+            if (!count($this->params['addresses'])) {
+                $this->params['mode'] = 'edit';
+            }
+
         } else {
             $this->_defineForm();
         }

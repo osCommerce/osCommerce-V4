@@ -31,30 +31,75 @@ body {
     --color-danger: #f00;
     --color-dim: #858484;
 
-    --border-color-tiny: #d9d9d9;
-    --border-color-midle: #caccd3;
-    --border-color-strong: #caccd3;
+    --border-color-tiny: #222222;
+    --border-color-midle: #363636;
+    --border-color-strong: #666666;
     --border-color-selected: #008ae8;
 
     --heading-color: #bdbdbd;
     --main-color: #bdbdbd;
+    --main-color-reverce: #000;
     --tiny-color: #666666;
 
     --background-color: #000;
     --background-color-1: #222222;
     --background-color-2: #ece9f9;
     --background-color-3: #e8e1ff;
-    --background-color-4: #eeeeee;
+    --background-color-4: #111;
     --background-search-key: #ffff00;
+    --background-color-reverce: #565656;
+    --background-color-reverce-1: #ffffff;
+    --background-shadow: rgba(0, 0, 0, 0.7);
 
     --link-color: #0077e4;
     --primary-color: #7b5bb9;
 
     --input-background: #313131;
+
+
+    --dt-row-selected: 80, 80, 80;
+    --dt-row-selected-text: var(--main-color) !important;
+    --dt-row-selected-link: var(--link-color) !important;
+
+    --btn-background: #111;
+    --btn-confirm-background: #1fbb26;
+    --bs-body-color: var(--main-color);
 }
 
 .btn-bar-top {
     --btn-background: #006cdb;
     --btn-primary-background: #7b5bb9;
     --btn-danger-background: #5340bc;
+}
+.btn {
+    --bs-btn-color: #fff;
+    --bs-btn-bg: #111;
+    --bs-btn-border-color: #363636;
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: #363636;
+    --bs-btn-hover-border-color: #363636;
+    --bs-btn-focus-shadow-rgb: 49,132,253;
+    --bs-btn-active-color: #fff;
+    --bs-btn-active-bg: #363636;
+    --bs-btn-active-border-color: #363636;
+    --bs-btn-active-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
+    --bs-btn-disabled-color: #fff;
+    --bs-btn-disabled-bg: #111;
+    --bs-btn-disabled-border-color: #363636;
+}
+.btn-primary {
+    --bs-btn-color: #fff;
+    --bs-btn-bg: #1fbb26;
+    --bs-btn-border-color: #1fbb26;
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: #208d24;
+    --bs-btn-hover-border-color: #208d24;
+    --bs-btn-focus-shadow-rgb: 49,132,253;
+    --bs-btn-active-color: #fff;
+    --bs-btn-active-bg: #208d24;
+    --bs-btn-active-border-color: #208d24;
+    --bs-btn-active-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
+    --bs-btn-disabled-color: #fff;
+    --bs-btn-disabled-bg: #208d24;
+    --bs-btn-disabled-border-color: #208d24;
 }

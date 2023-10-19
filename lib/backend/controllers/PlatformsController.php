@@ -13,9 +13,12 @@
 namespace backend\controllers;
 
 use backend\components\MessagePopup;
+use common\classes\Images;
 use common\classes\platform;
 use common\helpers\Acl;
 use common\helpers\Translation;
+use common\models\PlatformsToThemes;
+use common\models\ThemesSettings;
 use frontend\design\boxes\productListing\model;
 use Yii;
 use \yii\helpers\Html;
@@ -218,6 +221,13 @@ class PlatformsController extends Sceleton {
                 $platform_soap_server_link = Url::toRoute(['platforms/soap-server-configure', 'id' => $platform->platform_id]);
             }
         }
+        
+        $platform_rest_server_link = '';
+        if (\common\helpers\Acl::checkExtensionAllowed('RestServer', 'allowed')) {
+            if ( \common\helpers\Acl::rule(['BOX_HEADING_FRONENDS', 'BOX_REST_SERVER_SETTINGS']) ) {
+                $platform_rest_server_link = Url::toRoute(['platforms/rest-server-configure', 'id' => $platform->platform_id]);
+            }
+        }
 
         $platform_working_timetable_link = '';
         $platform_localization_link = '';
@@ -232,6 +242,7 @@ class PlatformsController extends Sceleton {
             'theme_edit_link' => $theme_edit_link,
             'watermark_edit_link' => $watermark_edit_link,
             'platform_soap_server_link' => $platform_soap_server_link,
+            'platform_rest_server_link' => $platform_rest_server_link,
             'platform_working_timetable_link' => $platform_working_timetable_link,
             'platform_localization_link' => $platform_localization_link,
         ]);
@@ -373,23 +384,14 @@ class PlatformsController extends Sceleton {
             ];
         }
 
+        /**
+         * @var $ext \common\extensions\WarehousePriority\WarehousePriority
+         */
         $warehouse_priorities = [];
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('WarehousePriority', 'getInstance')) {
+        if ($ext = \common\helpers\Extensions::isAllowed('WarehousePriority')) {
             $warehouse_priorities = $ext::getInstance()->getModules($item_id);
         }
 
-        /*if ($ext = \common\helpers\Acl::checkExtensionAllowed('WarehousePriority', 'getInstance')) {
-            $orderedProduct = [
-                'products_id' => 878,
-                'products_quantity' => 1,
-                ];
-            $prefferedWarehouseIds = $ext::getInstance()->getPreferredWarehouseId($orderedProduct, $item_id);
-            echo "<pre>";
-            print_r($prefferedWarehouseIds);
-            echo "</pre>";
-            die();
-        }*/
-        
         $exclusion_rules = unserialize($pInfo->exclusion_rules ?? null);
         $exclusion_rules['method'] = (is_array($exclusion_rules['method'] ?? null) ? $exclusion_rules['method'] : []);
         $exclusion_rules['type'] = (is_array($exclusion_rules['type'] ?? null) ? $exclusion_rules['type'] : []);
@@ -412,7 +414,6 @@ class PlatformsController extends Sceleton {
             'PerformingGroup' => 'PerformingGroup',
             'Project' => 'Project',
             'SportsOrganization' => 'SportsOrganization',
-            'Store' => 'Store',
             'WebSite' => 'WebSite',
             'WorkersUnion' => 'WorkersUnion',
         ];
@@ -617,13 +618,15 @@ class PlatformsController extends Sceleton {
         $logo = Yii::$app->request->post('logo', '');
         $logoUpload = Yii::$app->request->post('logo_upload', '');
         $logoRemove = Yii::$app->request->post('image_delete', false);
-        if ($logoRemove) {
-            $platform = \common\models\Platforms::findOne($item_id);
-            @unlink(DIR_FS_CATALOG . $platform->logo);
-        }
-        if ($logoUpload) {
-            $logo = \backend\design\Uploads::move($logoUpload, DIR_WS_IMAGES, true);
-        }
+
+        $platform = \common\models\Platforms::findOne($item_id);
+        $logo = \common\helpers\Image::prepareSavingImage(
+            $platform->logo,
+            $logo,
+            $logoUpload,
+            'platforms',
+            $logoRemove
+        );
         
         $default_platform_id = (int)Yii::$app->request->post('default_platform_id');
 
@@ -858,25 +861,11 @@ class PlatformsController extends Sceleton {
                 $object->save();
             }
 
-            if ($restrictLoginExt = \common\helpers\Acl::checkExtensionAllowed('PlatformRestrictLogin', 'allowed')) {
-                $restrictLoginExt::onPlatformEditSave((int)$item_id);
-            }
-
-            if ($ext = \common\helpers\Acl::checkExtensionAllowed('WarehousePriority', 'getInstance')) {
-                $update_data_array = Yii::$app->request->post('priority',[]);
-                if ( is_array($update_data_array) ) {
-                    foreach ($update_data_array as $priorityClass => $update_data){
-                        $ext::getInstance()->updateModule($priorityClass, $update_data);
-                    }
-                }
+            foreach (\common\helpers\Hooks::getList('platforms/after-save') as $filename) {
+                include($filename);
             }
 
             if ((int)$item_id > 0) {
-                /** @var \common\extensions\InvoiceNumberFormat\InvoiceNumberFormat $serverExt */
-                if ($serverExt = \common\helpers\Acl::checkExtensionAllowed('InvoiceNumberFormat', 'allowed')) {
-                  $serverExt::onInvoiceNumberFormatEditSave((int)$item_id);
-                }
-
                 $platformId = (int)$item_id;
                 tep_db_query(
                     'INSERT IGNORE INTO `platforms_configuration` (`configuration_title`, `configuration_key`, `configuration_value`,'
@@ -955,6 +944,7 @@ class PlatformsController extends Sceleton {
 
         }else {
 
+          \common\components\CategoriesCache::getCPC()::invalidatePlatforms((int)$item_id);
           ///2do event
           /** @var \common\extensions\InvoiceNumberFormat\InvoiceNumberFormat $serverExt */
           if ($serverExt = \common\helpers\Acl::checkExtensionAllowed('InvoiceNumberFormat', 'allowed')) {
@@ -1182,38 +1172,6 @@ class PlatformsController extends Sceleton {
 
     }
 
-    public function actionAddtheme()
-    {
-        $get   = Yii::$app->request->get();
-
-        $this->layout = false;
-        $results = tep_db_query("select * from " . TABLE_THEMES);
-        $tInfo = array();
-        while($results_array = tep_db_fetch_array ($results)){
-            $themesSettings = \common\models\ThemesSettings::findOne([
-                'theme_name' => $results_array['theme_name'],
-                'setting_group' => 'hide',
-                'setting_name' => 'theme_image',
-            ]);
-            $image = '';
-            if ($themesSettings) {
-                $image = $themesSettings->setting_value;
-            }
-            $tInfo[] = array(
-                'id'=> $results_array['id'],
-                'theme_name'=> $results_array['theme_name'],
-                'title'=> $results_array['title'],
-                'description'=> $results_array['description'],
-                'theme_image'=> $image
-            );
-        }
-        return $this->render('addtheme.tpl', [
-                'results' => $tInfo,
-                'mobile' => $get['mobile']??null ? true : false
-            ]
-        );
-    }
-
     public function actionThemeBanners() {
         $themeName = Yii::$app->request->get('theme_name');
         $languagesId = Yii::$app->settings->get('languages_id');
@@ -1333,7 +1291,7 @@ class PlatformsController extends Sceleton {
     foreach($this->load_tree_slice($platform_id, $categories_id) as $item) {
       $key = $item['key'];
       $children[] = $key;
-      if ($item['folder']) {
+      if ($item['folder']??null) {
         $this->tep_get_category_children($children, $platform_id, intval(substr($item['key'],1)));
       }
     }
@@ -1528,7 +1486,7 @@ class PlatformsController extends Sceleton {
       );
     }
 
-      \common\helpers\Categories::createCategoriesCache();
+    \common\components\CategoriesCache::getCPC()::invalidateAll();
 
     Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
     Yii::$app->response->data = array(
@@ -1797,8 +1755,11 @@ class PlatformsController extends Sceleton {
 
                     if (!is_object(${$class_method[0]})) {
 
-                        require( DIR_WS_CLASSES . 'currencies.php' );
-                        ${$class_method[0]} = new $class_method[0]();
+                        if ($class_method[0] == 'currencies') {
+                            ${$class_method[0]} = new \common\classes\Currencies();
+                        } else {
+                            ${$class_method[0]} = new $class_method[0]();
+                        }
                     }
 
                     $cfgValue = tep_call_function($class_method[1], $configuration['configuration_value'], ${$class_method[0]});
@@ -1966,7 +1927,7 @@ class PlatformsController extends Sceleton {
                             <div class="tabbable tabbable-custom">
                                 <ul class="nav nav-tabs">
             <?php foreach ($languages as $lKey => $lItem) { ?>
-                                        <li <?php if ($lKey == 0) { ?> class="active"<?php } ?> ><a href="#tab_2_<?= $lItem['id'] ?>" class="flag-span" data-toggle="tab"><?= $lItem['image']; ?><span><?= $lItem['name'] ?></span></a></li>
+                                        <li <?php if ($lKey == 0) { ?> class="active"<?php } ?> data-bs-toggle="tab" data-bs-target="#tab_2_<?= $lItem['id'] ?>"><a class="flag-span"><?= $lItem['image']; ?><span><?= $lItem['name'] ?></span></a></li>
             <?php } ?>
                                 </ul>
                                 <div class="tab-content">
@@ -2253,79 +2214,61 @@ class PlatformsController extends Sceleton {
     public function actionChooseTheme()
     {
         Translation::init('admin/platforms');
-        $message = '';
 
-        $item_id = 1;
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('AdditionalPlatforms', 'allowed')) {
-            $item_id = $ext::edit();
+        $platformId = 1;
+        if ($ext = Acl::checkExtensionAllowed('AdditionalPlatforms', 'allowed')) {
+            $platformId = $ext::edit();
         }
 
-        if ( Yii::$app->request->isPost ){
-
+        if ( Yii::$app->request->isPost ) {
             $theme_id = (int) Yii::$app->request->post('theme_id');
-            tep_db_query("delete from " . TABLE_PLATFORMS_TO_THEMES . " where platform_id = '" . (int) $item_id . "'");
+            PlatformsToThemes::deleteAll(['platform_id' => (int) $platformId]);
             if ($theme_id > 0) {
-                $sql_data_array = [
-                    'platform_id' => $item_id,
-                    'theme_id' => $theme_id,
-                    'is_default' => 1,
-                ];
-                tep_db_perform(TABLE_PLATFORMS_TO_THEMES, $sql_data_array);
+                $platformsToThemes = new PlatformsToThemes();
+                $platformsToThemes->platform_id = $platformId;
+                $platformsToThemes->theme_id = $theme_id;
+                $platformsToThemes->is_default = 1;
+                $platformsToThemes->save(false);
             }
-
-
-            $message = MessagePopup::widget([
-                'messageType' => MessagePopup::MESSAGE_TYPE_SUCCESS,
-                'message' => TEXT_MESSEAGE_SUCCESS,
-            ]);
-            //$this->redirect(Url::current());
+            return json_encode(['message' => TEXT_MESSEAGE_SUCCESS]);
         }
 
-        if ($item_id > 0) {
-            $platformModel = \common\models\Platforms::findOne((int)$item_id);
-            $pInfo = new \objectInfo($platformModel->getAttributes());
-        } else {
-            $pInfo = new \objectInfo();
-        }
+        $themeId = PlatformsToThemes::findOne(['platform_id' => $platformId])->theme_id ?? 0;
+        $platformName = Platforms::findOne((int)$platformId)->platform_name ?? '';
 
         $this->navigation[] = [
             'link' => Yii::$app->urlManager->createUrl('platforms/'),
-            'title' => sprintf(TEXT_CHOOSE_PLATFORM_THEME_HEAD, strval($pInfo->platform_name ?? ''))
+            'title' => sprintf(TEXT_CHOOSE_PLATFORM_THEME_HEAD, $platformName)
         ];
         $this->selectedMenu = array('fronends', 'platforms');
+        $this->topButtons[] = '<span class="btn" onclick="return window.history.back()">' . IMAGE_BACK . '</span>';
 
-        $theme_array = [];
-        $pInfo->theme_id = 0;
-
-        $theme = tep_db_fetch_array(tep_db_query("select t.* from " . TABLE_PLATFORMS_TO_THEMES . " AS p2t INNER JOIN " . TABLE_THEMES . " as t ON (p2t.theme_id=t.id) where p2t.is_default = 1 and p2t.platform_id = " . (int)$item_id));
-
-        if (isset($theme['theme_name'])) {
-            $themeImage = \common\models\ThemesSettings::findOne([
-                'theme_name' => $theme['theme_name'],
-                'setting_group' => 'hide',
-                'setting_name' => 'theme_image',
-            ]);
-            if ($themeImage && $themeImage->setting_value) {
-                $theme['theme_image'] = $themeImage->setting_value;
+        $themesArray = \common\models\Themes::find()->orderBy('sort_order')->asArray()->all();
+        $themes = [];
+        foreach ($themesArray as $item) {
+            if ($item['theme_name'] == \common\classes\design::pageName(BACKEND_THEME_NAME)) {
+                continue;
             }
+            $themeImage = ThemesSettings::findOne([
+                    'theme_name' => $item['theme_name'],
+                    'setting_group' => 'hide',
+                    'setting_name' => 'theme_image',
+                ])->setting_value ?? null;
+            if (is_file(DIR_FS_CATALOG . $themeImage)) {
+                $item['image'] = DIR_WS_CATALOG . $themeImage;
+            } elseif (is_file(DIR_FS_CATALOG . 'themes/' . $item['theme_name'] . '/screenshot.png')) {
+                $item['image'] = DIR_WS_CATALOG . 'themes/' . $item['theme_name'] . '/screenshot.png';
+            } else {
+                $item['image'] = '';
+            }
+            $themes[] = $item;
         }
 
-        if (isset($theme['id'])) {
-            $pInfo->theme_id = $theme['id'];
-            $theme_array[] = $theme;
-        }
-
-        $renderParams = [
-            'message' => $message,
-            'pInfo' => $pInfo,
-            'theme_array' => $theme_array,
-        ];
-        if ( Yii::$app->request->isAjax && Yii::$app->request->isPost ){
-            return $this->renderAjax('choose-theme',$renderParams);
-        }
-
-        return $this->render('choose-theme',$renderParams);
-
+        return $this->render('choose-theme', [
+            'themeId' => $themeId,
+            'platformId' => $platformId,
+            'themes' => $themes,
+        ]);
     }
 
     public function actionWorkingTimetable()

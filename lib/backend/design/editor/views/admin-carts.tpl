@@ -1,8 +1,7 @@
 {if is_array($admin_choice) && count($admin_choice)}
- <div class="dropdown btn-link-create">
-    <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+ <div class="dropdown">
+    <a href="#" class="btn btn-link-create dropdown-toggle" data-bs-toggle="dropdown" title="{$smarty.const.TEXT_UNSAVED_CARTS}">
         {$smarty.const.TEXT_UNSAVED_CARTS}
-        <i class="icon-caret-down small"></i>
     </a>
     <ul class="dropdown-menu">
         {foreach $admin_choice as $choice}

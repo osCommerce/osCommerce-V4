@@ -43,9 +43,9 @@ class News extends Widget {
         }
 
         $max = defined('RSS_FEED_MAX_ITEMS') ? RSS_FEED_MAX_ITEMS : 10;
-        usort($news, function($a, $b){
+        /*usort($news, function($a, $b){
             return (strtotime($a['pubDate']) > strtotime($b['pubDate'])) ? -1 : 1;
-        });
+        });*/
         $news = array_splice($news, 0, $max);
 
         return $this->render('News.tpl', [

@@ -167,4 +167,33 @@ class CategoriesCache
         return 0;
     }
 
+    private static $CPCInterface = null;
+
+    /**
+     * Returns active CPCInterface (Categories Product Count).
+     * Default is CPCFileCache, but it maybe slow for a lot of products or for UserGroupsRestrictions ext + a lot of groups => Then use ext CategoriesCache
+     * @return \common\classes\CPC\CPCInterface actually name of class that supports CPCInterface
+     * @throws \yii\base\InvalidConfigException
+     */
+    public static function getCPC()
+    {
+        if (is_null(self::$CPCInterface)) {
+            if (\Yii::$app->has('CategoriesProductCache')) {
+                self::$CPCInterface = \Yii::$app->get('CategoriesProductCache');
+            }
+            if (!empty(self::$CPCInterface) && class_exists(self::$CPCInterface)) {
+                $interfaces = class_implements(self::$CPCInterface);
+                if ($interfaces === false || !isset($interfaces['common\classes\CPC\CPCInterface'])) {
+                    \Yii::warning('Class ' . self::$CPCInterface . ' does not implement CPCInterface');
+                    self::$CPCInterface = null;
+                }
+            }
+            if (is_null(self::$CPCInterface)) {
+                self::$CPCInterface = \common\classes\CPC\CPCFileCache::class;
+                //self::$CPCInterface = \common\classes\CPC\CPCWithoutCache::class; // for testing
+            }
+        }
+        return self::$CPCInterface;
+    }
+
 }

@@ -557,7 +557,7 @@
       if ($default == $values[$i]['id']) {
         $field .= ' SELECTED';
       }
-      $field .= ' ' . $values[$i]['params'];
+      $field .= ' ' . ($values[$i]['params']??null) ;
 
       $field .= '>' . \common\helpers\Output::output_string($values[$i]['text'], array('&' => '&amp;', '"' => '&quot;', '\'' => '&#039;', '<' => '&lt;', '>' => '&gt;')) . '</option>';
     }

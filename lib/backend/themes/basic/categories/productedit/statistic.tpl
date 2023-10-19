@@ -72,29 +72,36 @@
                   yaxis : 1
                 }
               ];
-              var plot1 = $.plot("#chart_multiple", series_multiple1, $.extend(true, { }, Plugins.getFlotDefaults(), {
-                yaxes: [ {
-                  position : 'left',
-                  tickFormatter: someFunc1,
-                } ],
-                xaxis: {
-                  mode: "time"
-                },
-                series: {
-                  lines: { show: true },
-                  points: { show: true },
-                  grow: { active: true }
-                },
-                grid: {
-                  hoverable: true,
-                  clickable: true,
-                  axisMargin: -10
-                },
-                tooltip: true,
-                tooltipOpts: {
-                  content: '%s: %y'
+              //$('[data-bs-target]').on('click', initPlot);
+              function initPlot(){
+                if (typeof($('#chart_multiple:visible')) != 'undefined' && $('#chart_multiple:visible').length && $('#chart_multiple').width() && $('#chart_multiple').height()) {
+                  var plot1 = $.plot("#chart_multiple", series_multiple1, $.extend(true, { }, Plugins.getFlotDefaults(), {
+                    yaxes: [ {
+                      position : 'left',
+                      tickFormatter: someFunc1,
+                    } ],
+                    xaxis: {
+                      mode: "time"
+                    },
+                    series: {
+                      lines: { show: true },
+                      points: { show: true },
+                      grow: { active: true }
+                    },
+                    grid: {
+                      hoverable: true,
+                      clickable: true,
+                      axisMargin: -10
+                    },
+                    tooltip: true,
+                    tooltipOpts: {
+                      content: '%s: %y'
+                    }
+                  }));
                 }
-              }));
+              }
+              initPlot();
+
             });
           </script>
         </div>
@@ -126,31 +133,37 @@
               ];
 
               // Initialize flot
-              var plot2 = $.plot("#chart_multiple_price", series_multiple2, $.extend(true, {}, Plugins.getFlotDefaults(), {
-                yaxes: [ {
-                  position : 'left',
-                  tickFormatter: someFunc1,
-                } ],
-                xaxis: {
-                  mode: "time"
-                },
-                series: {
-                  lines: { show: true },
-                  points: { show: true },
-                  grow: { active: true }
-                },
-                grid: {
-                  hoverable: true,
-                  clickable: true,
-                  axisMargin: -10
-                },
-                tooltip: true,
-                tooltipOpts: {
-                  content: '%s: %y'
+
+              //$('[data-bs-target]').on('click', initPlot1);
+              function initPlot1(){
+                if (typeof($('#chart_multiple:visible')) != 'undefined' && $('#chart_multiple:visible').length && $('#chart_multiple').width() && $('#chart_multiple').height()) {
+                  var plot2 = $.plot("#chart_multiple_price", series_multiple2, $.extend(true, { }, Plugins.getFlotDefaults(), {
+                    yaxes: [ {
+                      position : 'left',
+                      tickFormatter: someFunc1,
+                    } ],
+                    xaxis: {
+                      mode: "time"
+                    },
+                    series: {
+                      lines: { show: true },
+                      points: { show: true },
+                      grow: { active: true }
+                    },
+                    grid: {
+                      hoverable: true,
+                      clickable: true,
+                      axisMargin: -10
+                    },
+                    tooltip: true,
+                    tooltipOpts: {
+                      content: '%s: %y'
+                    }
+
+                  }));
                 }
-
-              }));
-
+              }
+              initPlot1();
             });
           </script>
         </div>

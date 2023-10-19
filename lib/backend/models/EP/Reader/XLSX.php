@@ -13,9 +13,7 @@
 namespace backend\models\EP\Reader;
 
 use backend\models\EP\Exception;
-use Box\Spout\Reader\ReaderFactory;
-use Box\Spout\Common\Type;
-use Box\Spout\Reader\XLSX\RowIterator;
+use Box\Spout\Reader\Common\Creator\ReaderEntityFactory;
 use yii\base\BaseObject; //extends BaseObject
 
 class XLSX extends BaseObject implements ReaderInterface
@@ -57,7 +55,7 @@ class XLSX extends BaseObject implements ReaderInterface
             throw new Exception('Can\'t open file', 20);
         }
 */
-        $this->reader = \Box\Spout\Reader\ReaderFactory::create(Type::XLSX);
+        $this->reader = ReaderEntityFactory::createXLSXReader();
         $this->reader->open($this->filename);
 
         $cnt = 1;
@@ -96,7 +94,7 @@ class XLSX extends BaseObject implements ReaderInterface
     {
       $ret = [];
       $sheetsCnt = 0;
-      $this->reader = \Box\Spout\Reader\ReaderFactory::create(Type::XLSX);
+      $this->reader =   ReaderEntityFactory::createXLSXReader();
       $this->reader->open($this->filename);
 
       foreach ($this->reader->getSheetIterator() as $sheet) {
@@ -132,6 +130,7 @@ class XLSX extends BaseObject implements ReaderInterface
             // skip table header
             // until max filled row with unique values
             $u = array();
+            $_file_header = [];
             for ($row = 1; $row <= $this->file_header_rows; ++$row) {
               $tmp = $this->read();
               if (is_array($tmp)) {
@@ -178,10 +177,12 @@ class XLSX extends BaseObject implements ReaderInterface
       }
 
       $data = false;
-
       if ($this->file_handle->valid()) {
         $data = $this->file_handle->current();
         $this->file_handle->next();
+        if ( is_object($data) && $data instanceof \Box\Spout\Common\Entity\Row) {
+            $data = $data->toArray();
+        }
         if (is_array($data)) {
           foreach ($data as $k => $v) {
             if ( is_a($v, 'DateTime')) {

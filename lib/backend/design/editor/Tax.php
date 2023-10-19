@@ -25,17 +25,34 @@ class Tax extends Widget {
     public $onchange;
     public $wrap = false;
     public $uprid = ''; //use for products in bundle
+    public $tax_selected; // for elements of product configurator
     
     public function init(){
         parent::init();        
     }
     
     public function run(){
-        
+
+        if (!empty($this->tax_selected)) {
+            $tax_selected = $this->tax_selected;
+        } else {
+            $tax_selected = $this->product['overwritten']['tax_selected'];
+
+            if (empty($tax_selected)) {
+                $class_id = isset($this->product['products_tax_class_id']) ? $this->product['products_tax_class_id'] : $this->product['tax_class_id'];
+                //$zone = \common\helpers\Tax::get_zone_id($class_id, $this->tax_address['entry_country_id'], $this->tax_address['entry_zone_id']);
+                $zone = \common\helpers\Tax::get_zone_id($class_id, $this->manager->getTaxCountry(), $this->manager->getTaxZone());
+                if (!$zone) {
+                    $zone = 0;
+                }
+                $tax_selected ="{$class_id}_{$zone}";
+            }
+        }
+        $tax_selected = \common\helpers\Tax::normalizeTaxSelected($tax_selected);
+
         if (!$this->uprid){
             $this->uprid = $this->product['current_uprid'] ?? $this->product['products_id'];
         }
-        
         return $this->render('tax', [
             'product' => $this->product,
             'tax_address' => $this->tax_address,
@@ -43,6 +60,7 @@ class Tax extends Widget {
             'onchange' => $this->onchange,
             'wrap' => $this->wrap,
             'uprid' => $this->uprid,
+            'tax_selected' => $tax_selected,
         ]);
     }
     

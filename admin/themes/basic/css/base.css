@@ -429,16 +429,15 @@ fieldset[disabled] .form-control{
 
 .tl-or-pr-edt-right .edp-line{padding-left: 0;}
 .tl-or-pr-edt-right .edp-line > label{width: 115px; margin-left: -120px; margin-right: 5px;}
-.w-line-row-22, .w-line-row-qtd{border-top: 1px solid #e5e5e5; padding-top: 15px;}
 .tl-or-pr-edt-right .gift_wrap_price{font-size: 13px; font-weight: 700;}
 .or-ed-give > div{background: #f5f5f5; font-weight: 700; padding: 6px 7px;}
 .or-ed-give{border-top: 1px solid #e5e5e5; padding-top: 12px;}
 .edit_product_popup > .widget.box{border: none;}
 .w-line-row-2.w-line-row-22 > div + div{margin-left: 0;}
-.edit_product_popup1 .product-details .widget.box{border: none!important; margin-bottom: 0!important;}
-.edit_product_popup1 .product-details .widget-content{padding: 0!important;}
-.edit_product_popup1 .tl-or-pr-edt-right .edp-line{padding-left: 150px;}
-.edit_product_popup1 .tl-or-pr-edt-right .edp-line > label{width: 145px; margin-left: -150px;}
+.product-details .widget.box{border: none!important; margin-bottom: 0!important;}
+.product-details .widget-content{padding: 0!important;}
+.tl-or-pr-edt-right .edp-line{padding-left: 150px;}
+.tl-or-pr-edt-right .edp-line > label{width: 145px; margin-left: -150px;}
 .ed-pname{border-bottom: 1px solid #e5e5e5; padding-bottom: 15px;}
 .ed-pname #name{font-size: 13px; font-weight: 600; padding: 6px 0; height: 28px; display: inline-block;}
 .ed-pname .product_name.form-control{display: inline-block; width: 70%;}

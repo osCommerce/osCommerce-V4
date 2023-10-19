@@ -1,5 +1,7 @@
 <div class="cart-listing w-cart-listing{\frontend\design\Info::addBlockToWidgetsList('cart-listing')}">
-    <div{if strtolower(\common\helpers\PlatformConfig::getVal('SHOW_PRICE_FOR_QUOTE_PRODUCT', 'false')) != 'true'} class="no-price"{/if}>
+    {if $ext = \common\helpers\Extensions::isAllowed('Quotations')}
+        <div{if !$ext::optionIsPriceShow()} class="no-price"{/if}>
+    {/if}
   <div class="headings">
     <div class="head remove">{$smarty.const.REMOVE}</div>
     <div class="head image">{$smarty.const.PRODUCTS}</div>
@@ -65,12 +67,20 @@
                       <input type="text" name="cart_quantity_[{$product.id}][2]" value="{$product.packagings}" class="qty-inp-s" data-min="0"{if $product.in_stock != false} data-max="{$product.in_stock/($product.packs*$product.packagings)}"{/if}/>
                   </div>
               {else}
-                <input type="text" name="cart_quantity[]" value="{$product.quantity}" class="qty-inp-s"{if $product.quantity_max != false} data-max="{$product.quantity_max}"{/if}{if \common\helpers\Acl::checkExtensionAllowed('MinimumOrderQty', 'allowed')}{\common\extensions\MinimumOrderQty\MinimumOrderQty::setLimit($product.order_quantity_data)}{/if}{if \common\helpers\Acl::checkExtensionAllowed('OrderQuantityStep', 'allowed')}{\common\extensions\OrderQuantityStep\OrderQuantityStep::setLimit($product.order_quantity_data)}{/if} />
+                <input type="text" name="cart_quantity[]" value="{$product.quantity}" class="qty-inp-s"
+                        {if $product.quantity_max != false} data-max="{$product.quantity_max}"{/if}
+                        {if $moq = \common\helpers\Extensions::isAllowed('MinimumOrderQty')}{$moq::setLimit($product.order_quantity_data)}{/if}
+                        {if $oqs = \common\helpers\Extensions::isAllowed('OrderQuantityStep')}{$oqs::setLimit($product.order_quantity_data)}{/if}
+                />
             {/if}
           {/if}
           {$product.hidden_fields}
         </div>
-        <div class="price">{if strtolower(\common\helpers\PlatformConfig::getVal('SHOW_PRICE_FOR_QUOTE_PRODUCT', 'false')) == 'true'}{$product.final_price}{/if}</div>
+        {if $ext = \common\helpers\Extensions::isAllowed('Quotations')}
+            <div class="price">{if $ext::optionIsPriceShow()}{$product.final_price}{/if}</div>
+        {else}
+            <div class="price">{$product.final_price}</div>
+        {/if}
         {if $product.gift_wrap_allowed}
         <div class="gift-wrap"><label>{$smarty.const.BUYING_GIFT} ({$product.gift_wrap_price_formated}) <input type="checkbox" name="gift_wrap[{$product.id}]" class="check-on-off" {if $product.gift_wrapped} checked="checked"{/if}/></label></div>
         {/if}

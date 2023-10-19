@@ -12,6 +12,9 @@ use Yii;
  * @property string $image
  * @property int $sort_order
  * @property int $platform_id
+ * @property int $image_types_id
+ * @property int $position
+ * @property int $fit
  */
 class CategoriesImages extends \yii\db\ActiveRecord
 {
@@ -30,7 +33,7 @@ class CategoriesImages extends \yii\db\ActiveRecord
     {
         return [
             [['categories_id', 'image'], 'required'],
-            [['categories_id', 'sort_order', 'platform_id'], 'integer'],
+            [['categories_id', 'sort_order', 'platform_id', 'image_types_id'], 'integer'],
             [['image'], 'string', 'max' => 256],
         ];
     }
@@ -46,6 +49,7 @@ class CategoriesImages extends \yii\db\ActiveRecord
             'image' => 'Image',
             'sort_order' => 'Sort Order',
             'platform_id' => 'Platform ID',
+            'image_types_id' => 'Image types id',
         ];
     }
 }

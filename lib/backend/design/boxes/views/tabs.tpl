@@ -12,9 +12,9 @@
     <div class="tabbable tabbable-custom">
       <ul class="nav nav-tabs">
 
-          <li class="active"><a href="#type" data-toggle="tab">{$smarty.const.TEXT_TABS}</a></li>
-          <li><a href="#style" data-toggle="tab">{$smarty.const.HEADING_STYLE}</a></li>
-          <li><a href="#visibility" data-toggle="tab">{$smarty.const.TEXT_VISIBILITY_ON_PAGES}</a></li>
+          <li class="active" data-bs-toggle="tab" data-bs-target="#type"><a>{$smarty.const.TEXT_TABS}</a></li>
+          <li data-bs-toggle="tab" data-bs-target="#style"><a>{$smarty.const.HEADING_STYLE}</a></li>
+          <li data-bs-toggle="tab" data-bs-target="#visibility"><a>{$smarty.const.TEXT_VISIBILITY_ON_PAGES}</a></li>
 
       </ul>
       <div class="tab-content">
@@ -112,7 +112,7 @@
             <ul class="nav nav-tabs">
 
               {foreach $languages as $language}
-                <li{if $language.id == $languages_id} class="active"{/if}><a href="#{$item.id}_{$language.id}" data-toggle="tab">{$language.logo} {$language.name}</a></li>
+                <li{if $language.id == $languages_id} class="active"{/if} data-bs-toggle="tab" data-bs-target="#{$item.id}_{$language.id}"><a>{$language.logo} {$language.name}</a></li>
               {/foreach}
 
             </ul>
@@ -170,7 +170,7 @@
 {/if}
 
 
-            {if $settings.media_query|@count > 0}
+            {if $settings.media_query|default:array()|@count > 0}
               <div style="margin: 20px 0; overflow: hidden;">
                 <h4>Accordion instead tabs</h4>
                   {foreach $settings.media_query as $item}

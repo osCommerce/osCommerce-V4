@@ -88,7 +88,7 @@ class SaveProductImages
                     'products_images_id' => $imageId,
                     'products_id' => $products_id,
                     'default_image' => ($pointer == $default_image)?1:0,
-                    'image_status' => (int)$image_status[$pointer],
+                    'image_status' => (int)($image_status[$pointer]??0),
                     'sort_order' => isset($images_sort[$pointer])?$images_sort[$pointer]:(int)$pointer,
                     'image_description' => [],
                 ];
@@ -113,7 +113,7 @@ class SaveProductImages
                     $image_data['image_description'][$language_id==0?'00':\common\classes\language::get_code($language_id)] = $image_description;
                     if ( isset($external_image_array[$pointer][$language_id]) && is_array($external_image_array[$pointer][$language_id]) ) {
                         foreach ( Images::getImageTypes(false, true) as $image_type ) {
-                            $external_image_url = $external_image_array[$pointer][$language_id][$image_type['image_types_id']];
+                            $external_image_url = $external_image_array[$pointer][$language_id][$image_type['image_types_id']] ?? '';
                             tep_db_query(
                                 "INSERT INTO ".TABLE_PRODUCTS_IMAGES_EXTERNAL_URL."(products_images_id, language_id, image_types_id, image_url) ".
                                 "VALUES('".(int)$imageId."', '".(int)$language_id."', '".(int)$image_type['image_types_id']."', '".tep_db_input($external_image_url)."') ".
@@ -122,6 +122,9 @@ class SaveProductImages
                             ;
                         }
                     }
+                }
+                if ($ext = \common\helpers\Extensions::isAllowed('ProductImagesByPlatform')) {
+                    $ext::imageSave($image_data, $pointer);
                 }
                 $update_image_data[] = $image_data;
             }
@@ -147,11 +150,13 @@ class SaveProductImages
             $imageId = $_map['products_images_id'];
             $pointer = $_sort_order2pointer[$_map['sort_order']];
             $products_images_id[$pointer] = $imageId;
-            if ($ext = \common\helpers\Acl::checkExtensionAllowed('AttributesImages', 'allowed')) {
+            /** @var \common\extensions\AttributesImages\AttributesImages $ext */
+            if ($ext = \common\helpers\Extensions::isAllowed('AttributesImages')) {
                 $ext::productSave($imageId, $pointer);
             }
 
-            if ($ext = \common\helpers\Acl::checkExtensionAllowed('InventortyImages', 'allowed')) {
+            /** @var \common\extensions\InventoryImages\InventoryImages $ext */
+            if ($ext = \common\helpers\Extensions::isAllowed('InventoryImages')) {
                 $ext::productSave($imageId, $pointer);
             }
         }
@@ -178,8 +183,9 @@ class SaveProductImages
         // }} cleaning uploaded images
         $mapsId = (int)Yii::$app->request->post('maps_id', 0);
         $this->product->setAttributes(['maps_id'=>$mapsId], false);
-        
-        if ($pdExt = \common\helpers\Acl::checkExtensionAllowed('ProductDesigner', 'allowed')){
+
+        /** @var \common\extensions\ProductDesigner\ProductDesigner $pdExt */
+        if ($pdExt = \common\helpers\Extensions::isAllowed('ProductDesigner')){
             $pdExt::productSave($products_id);
         }
     }

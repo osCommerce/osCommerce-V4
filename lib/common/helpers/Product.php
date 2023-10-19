@@ -21,7 +21,7 @@ use common\helpers\Inventory as InventoryHelper;
 defined('ALLOW_ANY_QUERY_CACHE') or define('ALLOW_ANY_QUERY_CACHE', 'True');
 
 class Product {
-    public const PRODUCT_RECORD_CACHE = 1;
+    const PRODUCT_RECORD_CACHE = 1;
 
     use SqlTrait;
 
@@ -142,7 +142,7 @@ class Product {
 
     public static function getState($and = false){
       /* @var $ext \common\extensions\ShowInactive\ShowInactive */
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('ShowInactive', 'allowed')) {
+        if ($ext = \common\helpers\Extensions::isAllowed('ShowInactive')) {
             return $ext::getState($and);
         } else {
             return ($and ? " and ": " ") . " p.products_status = 1 ";
@@ -357,7 +357,7 @@ class Product {
 
     public static function getProductWeight($uprid, $qty=1) {
       $products_weight = $qty * self::get_products_weight($uprid);
-          if (\common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed') && !InventoryHelper::disabledOnProduct($uprid)){
+          if (\common\helpers\Extensions::isAllowed('Inventory') && !InventoryHelper::disabledOnProduct($uprid)){
               $simpleUprid = InventoryHelper::normalize_id($uprid);
               if (($inventory_weight = InventoryHelper::get_inventory_weight_by_uprid($simpleUprid)) > 0) {
                   $products_weight += $qty * $inventory_weight;
@@ -467,7 +467,7 @@ class Product {
 
     public static function get_products_info($products_id, $field) {
         $product = static::getProductColumns($products_id, [$field]);
-        return $product[$field];
+        return $product[$field] ?? null;
     }
 
     public static function get_backend_products_name($product_id, $language = '', $platform_id = '', $search_terms = array()) {
@@ -591,15 +591,20 @@ class Product {
         } else {
             $customers_temporary_stock_quantity = 0;
         }
-        if (\common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed') && strpos($products_id,'{')!==false && !\common\helpers\Inventory::disabledOnProduct($products_id)) {
+        if (\common\helpers\Extensions::isAllowed('Inventory') && strpos($products_id,'{')!==false && !\common\helpers\Inventory::disabledOnProduct($products_id)) {
             $stock_query = tep_db_query("select products_quantity, suppliers_stock_quantity, stock_control from " . TABLE_INVENTORY . " where products_id = '" . tep_db_input($products_id) . "'");
             if (tep_db_num_rows($stock_query)) {
                 $stock_values = tep_db_fetch_array($stock_query);
-                if ($extScl = \common\helpers\Acl::checkExtensionAllowed('StockControl', 'allowed')) {
+                $stock_values['products_quantity'] = self::getAvailable($products_id, 0);
+                /** @var \common\extensions\StockControl\StockControl $extScl */
+                if ($extScl = \common\helpers\Extensions::isAllowed('StockControl')) {
                     $extScl::updateGetProductStockInventory($products_id, $stock_values);
                 }
-                if (($ext = \common\helpers\Acl::checkExtensionAllowed('ReportFreezeStock')) && $ext::isFreezed()) {
-                    $freezeInventory = \common\extensions\ReportFreezeStock\models\FreezeInventory::find()->where(['products_id' => $products_id])->asArray()->one();
+                /** @var \common\extensions\ReportFreezeStock\ReportFreezeStock $ext */
+                if (($ext = \common\helpers\Extensions::isAllowed('ReportFreezeStock')) && $ext::isFreezed()) {
+                    $freezeModel = \common\helpers\Extensions::getModel('ReportFreezeStock', 'FreezeInventory');
+                    if (empty($freezeModel)) $freezeInventory = null;
+                    $freezeInventory = $freezeModel::find()->where(['products_id' => $products_id])->asArray()->one();
                     if (is_array($freezeInventory)) {
                         $stock_values = array_merge($stock_values, $freezeInventory);
                     }
@@ -608,6 +613,7 @@ class Product {
                 $products_id = \common\helpers\Inventory::get_prid($products_id);
                 $stock_query = tep_db_query("select products_quantity, suppliers_stock_quantity, stock_control from " . TABLE_PRODUCTS . " where products_id = '" . (int) $products_id . "'");
                 $stock_values = tep_db_fetch_array($stock_query);
+                $stock_values['products_quantity'] = self::getAvailable((int)$products_id, 0);
                 if ($extScl = \common\helpers\Acl::checkExtensionAllowed('StockControl', 'allowed')) {
                     $extScl::updateGetProductStockProduct($products_id, $stock_values);
                 }
@@ -621,6 +627,8 @@ class Product {
         } else {
             $products_id = \common\helpers\Inventory::get_prid($products_id);
             $stock_values = static::getProductColumns((int) $products_id, ['products_quantity', 'suppliers_stock_quantity', 'stock_control']);
+            $stock_values['products_quantity'] = self::getAvailable((int)$products_id, 0);
+            /** @var \common\extensions\StockControl\StockControl $extScl */
             if ($extScl = \common\helpers\Acl::checkExtensionAllowed('StockControl', 'allowed')) {
                 $extScl::updateGetProductStockProduct($products_id, $stock_values);
             }
@@ -953,7 +961,8 @@ class Product {
                 $uprid = \common\helpers\Inventory::get_uprid($prid, $vids);
             }
 */
-            if ($ext = \common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed')) {
+            /** @var \common\extensions\Inventory\Inventory $ext */
+            if ($ext = \common\helpers\Extensions::isAllowed('Inventory')) {
                 $ext::updateStock($prid, $uprid, $q, $warehouse_id, $suppliers_id, $platform_id);
             } else {
                 tep_db_query("update " . TABLE_PRODUCTS . " set products_quantity = products_quantity  " . $q . " where products_id = '" . (int)$prid . "'");
@@ -978,6 +987,7 @@ class Product {
     }
 
     public static function remove_product($product_id) {
+        $changePids = [$product_id];
         // {{ remove sub products
         if ( (int)$product_id>0 ) {
             foreach (\common\models\Products::find()
@@ -985,34 +995,39 @@ class Product {
                          ->where(['parent_products_id' => (int)$product_id])
                          ->asArray()
                          ->all() as $sub_product) {
+                $changePids[] = (int) $sub_product['products_id'];
                 static::remove_product($sub_product['products_id']);
             }
         }
         // }} remove sub products
+        \common\components\CategoriesCache::getCPC()::invalidateProducts($changePids);
         $productModel = \common\models\Products::findOne($product_id);
 
         \common\classes\Images::removeProductImages($product_id);
 
+        /**
+         * Moved to hook
+         */
         // {{ put redirect to category
-        $get_category_r = tep_db_query(
-            "SELECT c.categories_id ".
-            "FROM ".TABLE_PRODUCTS_TO_CATEGORIES." p2c ".
-              "LEFT JOIN ".TABLE_CATEGORIES." c ON c.categories_id=p2c.categories_id ".
-            "WHERE p2c.products_id='".(int)$product_id."' ".
-            "ORDER BY IFNULL(c.categories_left,4000000), c.categories_status DESC ".
-            "LIMIT 1"
-        );
-        if ( tep_db_num_rows($get_category_r)>0 ) {
-            $_category = tep_db_fetch_array($get_category_r);
-
-            tep_db_query(
-                "INSERT INTO seo_redirect (old_url, new_url, platform_id) ".
-                "SELECT DISTINCT pd.products_seo_page_name, cd.categories_seo_page_name, pd.platform_id ".
-                "FROM ".TABLE_PRODUCTS_DESCRIPTION." pd ".
-                " INNER JOIN ".TABLE_CATEGORIES_DESCRIPTION." cd ON cd.categories_id='".$_category['categories_id']."' AND cd.categories_seo_page_name!='' AND cd.language_id=pd.language_id ".
-                "WHERE pd.products_seo_page_name!='' AND pd.products_id='".(int)$product_id."' "
-            );
-        }
+//        $get_category_r = tep_db_query(
+//            "SELECT c.categories_id ".
+//            "FROM ".TABLE_PRODUCTS_TO_CATEGORIES." p2c ".
+//              "LEFT JOIN ".TABLE_CATEGORIES." c ON c.categories_id=p2c.categories_id ".
+//            "WHERE p2c.products_id='".(int)$product_id."' ".
+//            "ORDER BY IFNULL(c.categories_left,4000000), c.categories_status DESC ".
+//            "LIMIT 1"
+//        );
+//        if ( tep_db_num_rows($get_category_r)>0 ) {
+//            $_category = tep_db_fetch_array($get_category_r);
+//
+//            tep_db_query(
+//                "INSERT INTO seo_redirect (old_url, new_url, platform_id) ".
+//                "SELECT DISTINCT pd.products_seo_page_name, cd.categories_seo_page_name, pd.platform_id ".
+//                "FROM ".TABLE_PRODUCTS_DESCRIPTION." pd ".
+//                " INNER JOIN ".TABLE_CATEGORIES_DESCRIPTION." cd ON cd.categories_id='".$_category['categories_id']."' AND cd.categories_seo_page_name!='' AND cd.language_id=pd.language_id ".
+//                "WHERE pd.products_seo_page_name!='' AND pd.products_id='".(int)$product_id."' "
+//            );
+//        }
         // }}
 
         //if (USE_MARKET_PRICES == 'True') {
@@ -1030,12 +1045,7 @@ class Product {
         if (defined('PRODUCTS_PROPERTIES') && PRODUCTS_PROPERTIES == 'True') {
             tep_db_query("delete from " . TABLE_PROPERTIES_TO_PRODUCTS . " where products_id = '" . (int) $product_id . "'");
         }
-        if (defined('SUPPLEMENT_STATUS') && SUPPLEMENT_STATUS == 'True') {
-            tep_db_query("delete from " . TABLE_PRODUCTS_UPSELL . " where products_id = '" . (int) $product_id . "'");
-            tep_db_query("delete from " . TABLE_PRODUCTS_UPSELL . " where upsell_id = '" . (int) $product_id . "'");
-            tep_db_query("delete from " . TABLE_CATS_PRODUCTS_XSELL . " where xsell_products_id = '" . (int) $product_id . "'");
-            tep_db_query("delete from " . TABLE_CATS_PRODUCTS_UPSELL . " where upsell_products_id = '" . (int) $product_id . "'");
-        }
+
         tep_db_query("delete from " . TABLE_SPECIALS . " where products_id = '" . (int) $product_id . "'");
         if ( $productModel ) {
             $productModel->delete();
@@ -1049,12 +1059,9 @@ class Product {
         tep_db_query("delete from " . TABLE_PRODUCTS_PRICES . " where products_id = '" . (int) $product_id . "'");
         tep_db_query("delete from " . TABLE_PRODUCTS_COMMENTS . " where products_id = '" . $product_id . "'");
 
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('EventSystem', 'allowed')) {
-            $ext::programme()->exec('deleteProgramme', [$product_id]);
-        }
-
-        if (\common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed')) {
-            tep_db_query("delete from " . TABLE_INVENTORY . " where prid = '" . (int) $product_id . "'");
+        /** @var \common\extensions\Inventory\Inventory $ext */
+        if ($ext = \common\helpers\Extensions::isAllowed('Inventory')) {
+            $ext::deleteProduct((int) $product_id);
         }
 
         tep_db_query("delete from " . TABLE_SUPPLIERS_PRODUCTS . " where products_id = '" . (int) $product_id . "'");
@@ -1091,7 +1098,6 @@ class Product {
     }
 
     public static function trunk_products(){
-        tep_db_query("TRUNCATE " . TABLE_SPECIALS);
         tep_db_query("TRUNCATE " . TABLE_PRODUCTS);
         tep_db_query("TRUNCATE " . TABLE_PRODUCTS_TO_CATEGORIES);
         tep_db_query("TRUNCATE " . TABLE_PRODUCTS_DESCRIPTION);
@@ -1100,29 +1106,54 @@ class Product {
         tep_db_query("TRUNCATE " . TABLE_PRODUCTS_ATTRIBUTES_PRICES);
         tep_db_query("TRUNCATE " . TABLE_PRODUCTS_PRICES);
         tep_db_query("TRUNCATE " . TABLE_PROPERTIES_TO_PRODUCTS);
+
         tep_db_query("TRUNCATE " . TABLE_INVENTORY);
         tep_db_query("TRUNCATE " . TABLE_INVENTORY_PRICES);
-        tep_db_query("TRUNCATE " . TABLE_PRODUCTS_UPSELL);
-        tep_db_query("TRUNCATE " . TABLE_CATS_PRODUCTS_XSELL);
-        tep_db_query("TRUNCATE " . TABLE_CATS_PRODUCTS_UPSELL);
+
         tep_db_query("TRUNCATE " . TABLE_SUPPLIERS_PRODUCTS);
         tep_db_query("TRUNCATE " . TABLE_PLATFORMS_PRODUCTS);
+
+        tep_db_query("TRUNCATE " . TABLE_REVIEWS);
+        tep_db_query("TRUNCATE " . TABLE_REVIEWS_DESCRIPTION);
+
+        tep_db_query("TRUNCATE " . TABLE_SPECIALS);
         tep_db_query("TRUNCATE " . TABLE_SPECIALS_PRICES);
+
         tep_db_query("TRUNCATE " . TABLE_PRODUCTS_IMAGES);
         tep_db_query("TRUNCATE " . TABLE_PRODUCTS_IMAGES_ATTRIBUTES);
         tep_db_query("TRUNCATE " . TABLE_PRODUCTS_IMAGES_DESCRIPTION);
         tep_db_query("TRUNCATE " . TABLE_PRODUCTS_IMAGES_INVENTORY);
+
         tep_db_query("TRUNCATE " . TABLE_PRODUCTS_OPTIONS);
         tep_db_query("TRUNCATE " . TABLE_PRODUCTS_OPTIONS_VALUES);
         tep_db_query("TRUNCATE " . TABLE_PRODUCTS_OPTIONS_VALUES_TO_PRODUCTS_OPTIONS);
+
         tep_db_query("TRUNCATE " . TABLE_PRODUCTS_COMMENTS);
+        tep_db_query("TRUNCATE " . TABLE_PRODUCTS_VIDEOS);
+        tep_db_query("TRUNCATE " . TABLE_FEATURED);
+        tep_db_query("TRUNCATE " . TABLE_GIVE_AWAY_PRODUCTS);
+        tep_db_query("TRUNCATE " . TABLE_PRODUCTS_NOTIFY);
+        tep_db_query("TRUNCATE " . TABLE_PRODUCTS_NOTIFICATIONS);
+
+        tep_db_query("TRUNCATE " . TABLE_STOCK_HISTORY);
+        tep_db_query("TRUNCATE " . \common\models\WarehousesProducts::tableName());
+
+        tep_db_query("TRUNCATE " . TABLE_CUSTOMERS_BASKET);
+        tep_db_query("TRUNCATE " . TABLE_CUSTOMERS_BASKET_ATTRIBUTES);
+
         if (defined('USE_CACHE') && USE_CACHE == 'true') {
             \common\helpers\System::reset_cache_block('categories');
             \common\helpers\System::reset_cache_block('also_purchased');
         }
 
         $var_tables = [
-            TABLE_CUSTOMERS_BASKET, TABLE_CUSTOMERS_BASKET_ATTRIBUTES,
+            // bundle
+            TABLE_SETS_PRODUCTS,
+            // GiftWrap
+            TABLE_GIFT_WRAP_PRODUCTS, TABLE_VIRTUAL_GIFT_CARD_PRICES, TABLE_VIRTUAL_GIFT_CARD_BASKET, \common\models\VirtualGiftCardInfo::tableName(),
+            // LinkedProducts
+            'products_linked_parent', 'products_linked_children',
+
         ];
         foreach($var_tables as $table) {
           if ( \Yii::$app->db->schema->getTableSchema($table) ) {
@@ -1225,7 +1256,8 @@ class Product {
         // ]]
 
         // [[ SUPPLEMENT_STATUS
-        if (defined('SUPPLEMENT_STATUS') && SUPPLEMENT_STATUS == 'True') {
+        if ((defined('SUPPLEMENT_STATUS') && SUPPLEMENT_STATUS == 'True') && \common\helpers\Acl::checkExtensionAllowed('UpSell'))
+        {
             $query = tep_db_query("select * from " . TABLE_PRODUCTS_UPSELL . " where products_id = '" . (int) $products_id . "'");
             while ($data = tep_db_fetch_array($query)) {
                 tep_db_query("insert into " . TABLE_PRODUCTS_UPSELL . " (products_id, upsell_id, sort_order) values ('" . $dup_products_id . "', '" . $data['upsell_id'] . "', '" . $data['sort_order'] . "')");
@@ -1490,6 +1522,12 @@ class Product {
       if (!$listingCheck && defined('LISTING_SUB_PRODUCT') && LISTING_SUB_PRODUCT=='True' && !\frontend\design\Info::isTotallyAdmin()) {
         $where_str .= " and " . $table_prefixes['p'] . "is_listing_product=1 ";
       }
+      if (\common\helpers\Extensions::isAllowed('Inventory')) {
+        if ($groupsInventory = \common\helpers\Acl::checkExtensionTableExist('UserGroupsRestrictions', 'GroupsInventory', 'isAllowed')) {
+          $customer_groups_id = (int) \Yii::$app->storage->get('customer_groups_id');
+          $where_str .= " and ((not exists (select * from " . TABLE_INVENTORY . " where " . $table_prefixes['p'] . "products_id = prid)) or ((exists (select * from " . TABLE_INVENTORY . " where " . $table_prefixes['p'] . "products_id = prid)) and (exists (select * from " . $groupsInventory::tableName() . " where (" . $table_prefixes['p'] . "products_id = prid) and (groups_id = '" . (int)$customer_groups_id . "')))))";
+        }
+      }
       return $where_str;
     }
 
@@ -1518,33 +1556,6 @@ class Product {
       }
       ksort($qty_discounts);
       return $qty_discounts;
-    }
-
-    public static function getBonuses($products_id, $groups_id, ?float $price = null){
-        if (\common\helpers\Acl::checkExtensionAllowed('BonusActions')) {
-            if (\common\helpers\Extensions::isCustomerGroupsAllowed()) {
-                $bonusPoints = tep_db_fetch_array(
-                    tep_db_query(
-                        "select if(pp.bonus_points_price > 0, pp.bonus_points_price, p.bonus_points_price) as bonus_points_price, if(pp.bonus_points_cost > 0, pp.bonus_points_cost, p.bonus_points_cost) as bonus_points_cost from " . TABLE_PRODUCTS_PRICES . " pp, " . TABLE_PRODUCTS . " p where p.products_id=pp.products_id and p.products_id = '" . (int)$products_id . "' and pp.groups_id = '" . (int)$groups_id . "' and pp.currencies_id = '0'"
-                    )
-                );
-            } else {
-                $bonusPoints = tep_db_fetch_array(tep_db_query("select bonus_points_price, bonus_points_cost from " . TABLE_PRODUCTS . " where products_id = '" . (int)$products_id . "'"));
-            }
-            if ($bonusPoints && $price !== null) {
-                $bonusPrice = (float)$bonusPoints['bonus_points_price'];
-                $price = $bonusPrice > 0 ? $bonusPrice : $price;
-                $bonusPoints['bonus_points_price'] = Points::getBonusPointsPrice($price, (float)$bonusPoints['bonus_points_price'], (int)$groups_id);
-                $bonusPoints['bonus_points_cost'] = Points::getBonusPointsPriceCost($price, (int)$groups_id, (float)$bonusPoints['bonus_points_cost']);
-                $bonusPoints['bonus_coefficient'] = Points::getCurrencyCoefficient((int)$groups_id);
-                $bonusPoints['bonus_price_cost_currency_formatted'] = Points::getBonusPointsPriceInCurrencyFormatted((float)$bonusPoints['bonus_points_cost'], (int)$groups_id);
-            }
-            return $bonusPoints;
-        }
-        return [
-            'bonus_points_price' => 0,
-            'bonus_points_cost' => 0,
-        ];
     }
 
     public static function products_groups_name($products_groups_id, $language_id = '') {
@@ -1591,6 +1602,7 @@ class Product {
         if ($ext = \common\helpers\Acl::checkExtensionAllowed('AutomaticallyStatus', 'allowed')) {
             $ext::productAutoSwitchOff($productId);
         }
+        \common\components\CategoriesCache::getCPC()::invalidateProducts($productId);
     }
 
     public static function fillGlobalSort($platform_id = 0, $products_id = 0) {
@@ -2124,6 +2136,15 @@ class Product {
      */
     public static function getAvailable($uProductId = 0, $platformId = false, $warehouseId = false, $supplierId = false, $locationId = false, $layersId = false, $batchId = false)
     {
+        $productChildArray = self::getChildArray($uProductId);
+        if (count($productChildArray) > 0) {
+            $childStockArray = [];
+            foreach ($productChildArray as $prid => $item) {
+                $childStockArray[] = self::getAvailable($prid, $platformId, $warehouseId, $supplierId, $locationId, $layersId, $batchId);
+            }
+            return min($childStockArray);
+        }
+
         $return = 0;
         $uProductId = \common\helpers\Inventory::normalize_id_excl_virtual($uProductId);
         $platformArray = [];
@@ -2517,7 +2538,11 @@ class Product {
             }
             unset($warehouseRecord);
             unset($warehouseQuery);
-            if ($extension = \common\helpers\Acl::checkExtensionAllowed('WarehousePriority', 'getInstance')) {
+
+            /**
+             * @var $extension \common\extensions\WarehousePriority\WarehousePriority
+             */
+            if ($extension = \common\helpers\Extensions::isAllowed('WarehousePriority')) {
                 $rulesArray = [
                     'products_id' => $uProductId,
                     'products_quantity' => $productQuantity,
@@ -2694,16 +2719,6 @@ class Product {
                     unset($uProductId);
                 }
                 unset($productSetRecord);
-            }elseif (false){
-                if ($ext = \common\helpers\Acl::checkExtensionAllowed('LinkedProducts', 'allowed')) {
-                    $linked_products = $ext::getChildrenProducts((int)$productRecord->products_id);
-                    foreach ($linked_products as $linked_product_id=>$linked_product_qty){
-                        $return[$linked_product_id] = [
-                            'products_id' => $linked_product_id,
-                            'num_product' => $linked_product_qty,
-                        ];
-                    }
-                }
             }
         }
         unset($productRecord);
@@ -2917,7 +2932,7 @@ class Product {
             $productRecord->products_quantity = 0;
             $inventoryArray = [];
             $inventoryId = 0;
-            if (\common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed')) {
+            if (\common\helpers\Extensions::isAllowed('Inventory')) {
                 foreach (\common\models\Inventory::find()->where(['prid' => $productRecord->products_id])->all() as $inventoryRecord) {
                     if (\common\helpers\Inventory::isInventory($inventoryRecord->products_id) != true) {
                         continue;
@@ -2938,7 +2953,11 @@ class Product {
             }
 
             if ((int)$productRecord->manual_stock_unlimited > 0) {
-                \common\models\WarehousesProducts::deleteAll(['prid' => $productId]);
+                if ($ext = \common\helpers\Acl::checkExtensionAllowed('SupplierPurchase', 'allowed')) {
+                    \common\models\WarehousesProducts::deleteAll(['prid' => $productId, 'suppliers_id' => \common\helpers\Suppliers::getDefaultSupplierId()]);
+                } else {
+                    \common\models\WarehousesProducts::deleteAll(['prid' => $productId]);
+                }
                 foreach ($inventoryArray as $iId => $iRecord) {
                     $warehouseId = self::getWarehouseIdPriorityArray($iId, 1, false);
                     reset($warehouseId);
@@ -3154,10 +3173,9 @@ class Product {
             } catch (\Exception $exc) {
                 $return = false;
             }
+            \common\components\CategoriesCache::getCPC()::invalidateProducts((int)$productRecord->products_id);
         }
-        $productId = $productRecord->products_id;
         unset($productRecord);
-        \common\helpers\Categories::createCategoriesCache(\common\helpers\Product::getCategoriesIdListWithParents($productId));
         return $return;
     }
 
@@ -3268,6 +3286,9 @@ class Product {
     {
         if (($ext = \common\helpers\Acl::checkExtensionAllowed('ReportFreezeStock')) && $ext::isFreezed() && !$ignoreFreeze) {
             if (!$ext::isFreezeProductRecord($uProductId)) {
+                if ($uProductId instanceof \common\models\Products) {
+                    $uProductId = $uProductId->products_id;
+                }
                 $uProductId = \common\extensions\ReportFreezeStock\models\FreezeProducts::find()->andWhere(['products_id' => (int)$uProductId])
                     ->cache((!$doCache && defined('ALLOW_ANY_QUERY_CACHE') && ALLOW_ANY_QUERY_CACHE=='True')?self::PRODUCT_RECORD_CACHE : -1)
                     ->one();
@@ -3975,5 +3996,33 @@ class Product {
         }
         asort($return, SORT_STRING);
         return $return;
+    }
+
+    public static function getProductIdByModel(string $model)
+    {
+        $productId = null;
+        if (\common\helpers\Extensions::isInventoryAllowed()) {
+            $productId = \common\models\Inventory::findOne(['products_model' => $model])->products_id ?? null;
+        }
+        if (is_null($productId)) {
+            $productId = \common\models\Products::findOne(['products_model' => $model])->products_id ?? null;
+        }
+        return $productId;
+    }
+
+    public static function getProductTypes($productArray)
+    {
+        $res = [];
+        if (($productArray['is_bundle']??null) && \common\helpers\Extensions::isAllowed('ProductBundles')) {
+            $res = ['bundle'];
+        } elseif (($productArray['products_pctemplates_id']??null) && \common\helpers\Extensions::isAllowed('ProductConfigurator')) {
+            $res = ['configurator'];
+        } elseif ($productArray['attr_exists']??null) {
+            $res = ['attributes'];
+            if (!($productArray['without_inventory']??null) && \common\helpers\Extensions::isAllowed('Inventory')) {
+                $res[] = 'inventory';
+            }
+        }
+        return $res;
     }
 }

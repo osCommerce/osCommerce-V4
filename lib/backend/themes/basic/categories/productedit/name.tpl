@@ -1,4 +1,7 @@
-
+{use class = "\yii\helpers\Html"}
+{if $ext = \common\helpers\Extensions::isAllowed('GoogleTranslate')}
+    {$ext::includeJs($languages)}
+{/if}
 <div class="tabbable tabbable-custom">
   <style>.platform-tabs-switcher,  .platform-lang-tabs-switcher { margin: 0 0 10px 0; }</style>
 
@@ -8,7 +11,7 @@
             <ul class="nav nav-tabs platform-tabs platform-tabs-names">
                 {foreach $app->controller->view->platforms as $platform}
                     {if ($app->controller->view->sph && !$platform->status) || $platform->status}
-                    <li{if $platform->platform_id == $app->controller->view->def_platform_id} class="active"{/if}><a href="#tab_1_4_{$platform->platform_id}" class="flag-span" data-status="{$platform->status}" data-toggle="tab" data-id="{$platform->platform_id}"><span>{$platform->platform_name}</span>
+                    <li{if $platform->platform_id == $app->controller->view->def_platform_id} class="active"{/if} data-bs-toggle="tab" data-bs-target="#tab_1_4_{$platform->platform_id}"><a class="flag-span" data-status="{$platform->status}" data-id="{$platform->platform_id}"><span>{$platform->platform_name}</span>
                     <i class="platform-name-actions icon-copy"></i>
                     </a></li>
                     {/if}
@@ -29,18 +32,15 @@
   {/if}  
 </div>
 <script>
-    $('.platform-tabs').scrollingTabs();
+    setTimeout(() => $('.platform-tabs').scrollingTabs('refresh'), 0)
+    $('[data-bs-toggle="tab"]').on('click', function () {
+        setTimeout(() => $('.platform-tabs').scrollingTabs('refresh'), 0)
+    })
     
     startAllCKE = function(){
-        if ($('.ck-editor').size() > 30){
-            $.each($('.ck-editor'), function(i, e){
-                CKEDITOR.inline($(e).attr('id'));
-            })
-        } else {
             $.each($('.ck-editor'), function(i, e){
                 CKEDITOR.replace($(e).attr('id'));
-            })        
-        }
+            })    
     }
     
     getOptions = function(except){
@@ -53,7 +53,7 @@
         return options;
     }
     
-    copyData = function($frm, $to, $fLangauge, $tLanguage){
+    copyData = function($frm, $to, $fLangauge, $tLanguage, overwrite){
         let boxFrom = $('.platform-name-contents div[data-platform-id='+$frm+']');
         let boxTo = $('.platform-name-contents div[data-platform-id='+$to+']');
         if (boxTo && boxFrom){
@@ -73,24 +73,32 @@
             let _id, _nid;
             $.each(itemsFrom, function(i, e){
                 let toItemName = e.name;
-                if ($fLangauge && !$tLanguage){
-                    toItemName = toItemName.replace("pDescription["+$frm+"]["+$fLangauge+"]", "pDescription["+$to+"]["+$fLangauge+"]");
-                } else if ($fLangauge && $tLanguage) {
-                    toItemName = toItemName.replace("pDescription["+$frm+"]["+$fLangauge+"]", "pDescription["+$to+"]["+$tLanguage+"]");
-                } else {
-                    toItemName = toItemName.replace("pDescription["+$frm+"]", "pDescription["+$to+"]");
-                }                
-                if ($('[name="'+toItemName+'"]').is('input')){
-                    $('[name="'+toItemName+'"]').val(e.value);
-                } else {
-                    $('[name="'+toItemName+'"]').text(e.value);
-                    _id = $('[name="'+toItemName+'"]').attr('id');
-                    if (_id && $('#'+_id).hasClass('ck-editor')){
-                        _nid = $(e).attr('id');
-                        CKEDITOR.instances[_id].setData(CKEDITOR.instances[_nid].getData());
-                    }
-                }
+                replaceData($fLangauge, $tLanguage, toItemName, e.value, $frm, $to, overwrite)
             })
+        }
+    }
+
+    function replaceData($fLangauge, $tLanguage, toItemName, value, $frm, $to, overwrite) {
+        if ($fLangauge && !$tLanguage){
+            toItemName = toItemName.replace("pDescription["+$frm+"]["+$fLangauge+"]", "pDescription["+$to+"]["+$fLangauge+"]");
+        } else if ($fLangauge && $tLanguage) {
+            toItemName = toItemName.replace("pDescription["+$frm+"]["+$fLangauge+"]", "pDescription["+$to+"]["+$tLanguage+"]");
+        } else {
+            toItemName = toItemName.replace("pDescription["+$frm+"]", "pDescription["+$to+"]");
+        }
+        let toItemElement = $('[name="'+toItemName+'"]');
+        if (toItemElement.is('input')){
+            if ((toItemElement.val().length && overwrite) || !toItemElement.val().length) {
+                toItemElement.val(value);
+            }
+        } else {
+            if ((toItemElement.text().length && overwrite) || !toItemElement.text().length) {
+                toItemElement.text(value);
+                _id = toItemElement.attr('id');
+                if (_id && $('#' + _id).hasClass('ck-editor')) {
+                    CKEDITOR.instances[_id].setData(value);
+                }
+            }
         }
     }
         
@@ -150,12 +158,22 @@
     }
     
     $('.platform-language-name-actions').click(function(e){
-        let except = $(this).data('platform-id');
-        let currentL = $(this).data('language-id');;
+        // let except = $(this).data('platform-id');
+        let currentP = $(this).data('platform-id');
+        let except = -1;
+        let currentL = $(this).data('language-id');
         let laction = 0;
         bootbox.dialog({
-            title: "{$smarty.const.TEXT_PLATFORM_LANGUAGE_MESSAGE|escape:javascript} " + $('.platform-tabs-names a[data-id='+except+'] span').text() + " " + $(this).prev().text(),
-            message: "<div><label>{$smarty.const.PULL_DOWN_DEFAULT|escape:javascript}</label><br><select class='form-control action-lang-choice'>"+getOptions(except).join("")+"</select><br>+{$smarty.const.IMAGE_COPY_TO|escape:javascript}<br>"+getLanguages(currentL),
+            title: "{$smarty.const.TEXT_PLATFORM_LANGUAGE_MESSAGE|escape:javascript} " + $('.platform-tabs-names a[data-id='+currentP+'] span').text() + " " + $(this).prev().text(),
+            message: "<div><label>{$smarty.const.PULL_DOWN_DEFAULT|escape:javascript}</label><br>" +
+                "<select class='form-control action-platform-choice'>"+getOptions(except).join("")+"</select><br>" +
+                {if $ext = \common\helpers\Extensions::isAllowed('GoogleTranslate')}
+                '{Html::radio('type', true, ['id' => 'op_type', 'value' => 'copy'])} + {$smarty.const.IMAGE_COPY_TO|escape:javascript}<br>'+
+                '{Html::radio('type', false, ['id' => 'op_type', 'value' => 'translate'])} + {$ext::getLabel()}<br>'+
+                {else}
+                    "+ {$smarty.const.IMAGE_COPY_TO|escape:javascript}<br>" +
+                {/if}
+                getLanguages(currentL) + '<br><br>{Html::checkbox('overwrite', false, ['class' => 'overwrite'])}' + '\xa0\xa0{$smarty.const.TEXT_OVERWRITE_NON_EMPTY_FIELDS}<br>',
             buttons: {
                 cancel: {
                     label: "Cancel",
@@ -168,32 +186,43 @@
                     label: "Confirm",
                     className: 'btn btn-confirm',
                     callback: function(event){
-                        let also = [];
-                        $.each($('.selected-pl:checked'), function(i, e){ also.push(e.value);  })
-                        
-                        if (!laction) { //copy to all
-                            $.each($('.platform-name-contents').children(), function(i, e){
-                                let to = $(e).data('platform-id');
-                                if (to != except){
-                                    copyData(except, to, currentL);
+                        let translateFlag = $('#op_type:checked').val() === 'translate';
+                        let overwriteFlag = $('.overwrite').is(':checked');
+                        if (translateFlag) {
+                            {if \common\helpers\Extensions::isAllowed('GoogleTranslate')}
+                                collectData(currentL, currentP, laction, overwriteFlag);
+                            {/if}
+                        }else {
+                            let also = [];
+                            $.each($('.selected-pl:checked'), function (i, e) {
+                                also.push(e.value);
+                            })
+                            if (!laction) { //copy to all
+                                $.each($('.platform-name-contents').children(), function (i, e) {
+                                    let to = $(e).data('platform-id');
+                                    if (to != except) {
+                                        copyData(currentP, to, currentL, false, overwriteFlag);
+                                    }
+                                });
+                                if (also.length) {
+                                    also.forEach(function (toL) {
+                                        $.each($('.platform-name-contents').children(), function (i, e) {
+                                            let to = $(e).data('platform-id');
+                                            if (to != except) {
+                                                copyData(currentP, to, currentL, toL, overwriteFlag);
+                                            }
+                                        });
+
+                                    })
                                 }
-                            });
-                            if (also.length){
-                                also.forEach(function(toL){ 
-                                    $.each($('.platform-name-contents').children(), function(i, e){
-                                        let to = $(e).data('platform-id');
-                                        if (to != except){
-                                            copyData(except, to, currentL, toL);
-                                        }
-                                    });
-                                
-                                })
-                            }
-                        } else {
-                            //copy this to some
-                            copyData(except, laction, currentL);
-                            if (also.length){
-                                also.forEach(function(e){ copyData(except, laction, currentL, e); })
+                            } else {
+                                //copy this to some
+                                copyData(currentP, laction, currentL, currentL, overwriteFlag);
+                                if (also.length) {
+                                    also.forEach(function (e) {
+                                        copyData(currentP, laction, currentL, e, overwriteFlag);
+                                    })
+                                }
                             }
                         }
                     }
@@ -204,7 +233,7 @@
             }
         });  
 
-        $('body').on('change', '.action-lang-choice', function(){
+        $('body').on('change', '.action-platform-choice', function(){
             laction = $(this).val();
         })
     })
@@ -261,9 +290,11 @@
     {if is_array($platform_languages[$platform_id]) && count($platform_languages[$platform_id]) > 1}
     <ul class="nav nav-tabs pl-nav-tabs-{$platform_id}">
       {foreach $platform_languages[$platform_id] as $lKey => $lItem}
-        <li{if $lKey == 0} class="active"{/if}><a href="#tab_1_4_{$platform_id}_{$lItem['id']}" class="flag-span" data-toggle="tab">{$lItem['image']}<span>{$lItem['name']}</span>
+        <li{if $lKey == 0} class="active"{/if} data-bs-toggle="tab" data-bs-target="#tab_1_4_{$platform_id}_{$lItem['id']}">
+            <a class="flag-span">{$lItem['image']}<span>{$lItem['name']}</span>
         <i class="platform-language-name-actions icon-copy" data-platform-id="{$platform_id}" data-language-id="{$lItem['id']}"></i>
-        </a></li>
+        </a>
+        </li>
       {/foreach}
     </ul>
   {/if}

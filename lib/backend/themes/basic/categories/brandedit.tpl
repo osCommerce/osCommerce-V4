@@ -1,7 +1,7 @@
 {use class="yii\helpers\Html"}
 {if $app->controller->view->usePopupMode }
-  <script type="text/javascript" src="{$app->request->baseUrl}/js/ckeditor/ckeditor.js"></script>
-  <script type="text/javascript" src="{$app->request->baseUrl}/js/ckeditor/adapters/jquery.js"></script>
+  <script type="text/javascript" src="{$app->request->baseUrl}/plugins/ckeditor/ckeditor.js"></script>
+  <script type="text/javascript" src="{$app->request->baseUrl}/plugins/ckeditor/adapters/jquery.js"></script>
 {/if}
 {if $app->controller->view->contentAlreadyLoaded == 0}
 <div class="brandEditPage popupEditCat">
@@ -10,10 +10,10 @@
 <div class="popupCategory">
     <div class="tabbable tabbable-custom">
         <ul class="nav nav-tabs">
-            <li class="active"><a href="#tab_2" data-toggle="tab">{$smarty.const.TEXT_MAIN_DETAILS}</a></li>
-            <li><a href="#tab_3" data-toggle="tab">{$smarty.const.TEXT_NAME_DESCRIPTION}</a></li>
-            <li><a href="#tab_4" data-toggle="tab">{$smarty.const.TEXT_SEO}</a></li>
-            <li><a href="#tab_supplier" data-toggle="tab">{$smarty.const.TEXT_TAB_SUPPLIERS}</a></li>
+            <li class="active" data-bs-toggle="tab" data-bs-target="#tab_2"><a>{$smarty.const.TEXT_MAIN_DETAILS}</a></li>
+            <li data-bs-toggle="tab" data-bs-target="#tab_3"><a>{$smarty.const.TEXT_NAME_DESCRIPTION}</a></li>
+            <li data-bs-toggle="tab" data-bs-target="#tab_4"><a>{$smarty.const.TEXT_SEO}</a></li>
+            <li data-bs-toggle="tab" data-bs-target="#tab_supplier"><a>{$smarty.const.TEXT_TAB_SUPPLIERS}</a></li>
             {foreach \common\helpers\Hooks::getList('categories/brandedit', 'tab-navs') as $filename}
                 {include file=$filename}
             {/foreach}
@@ -27,14 +27,12 @@
                                 <td class="label_value">{Html::input('text', 'manufacturers_name', $mInfo->manufacturers_name, ['class' => 'form-control'])}</td>
                             </tr>
                             <tr>
-                                <td>
-                                    <div class="stock-reorder stock-limit">
-                                        <label>{$smarty.const.TEXT_STOCK_LIMIT}&nbsp;<input type="checkbox" {if $mInfo->stock_limit_on|default:null}checked {/if}/></label>
-                                        {Html::input('text', 'stock_limit', $mInfo->stock_limit, ['class'=>'form-control form-control-small-qty'])}
+                                <td colspan="2">
+                                    <div class="stock-reorder stock-limit row align-items-center mb-3">
+                                        <label class="col-auto">{$smarty.const.TEXT_STOCK_LIMIT}</label>
+                                        <div class="col-auto"><input type="checkbox" {if $mInfo->stock_limit_on|default:null}checked {/if}/></div>
+                                        <div class="col-auto">{Html::input('text', 'stock_limit', $mInfo->stock_limit, ['class'=>'form-control form-control-small-qty'])}</div>
                                     </div>
-                                </td>
-                                <td>
-                                    
                                 </td>
                             </tr>
                             <tr>
@@ -122,7 +120,7 @@
                 {if count($languages) > 1}
                 <ul class="nav nav-tabs">
                     {foreach $languages as $lKey => $lItem}
-                    <li{if $lKey == 0} class="active"{/if}><a href="#tab_l_{$lItem['code']}" data-toggle="tab">{$lItem['logo']}<span>{$lItem['name']}</span></a></li>
+                    <li{if $lKey == 0} class="active"{/if} data-bs-toggle="tab" data-bs-target="#tab_l_{$lItem['code']}"><a>{$lItem['logo']}<span>{$lItem['name']}</span></a></li>
                     {/foreach}
                 </ul>
                 {/if}
@@ -162,7 +160,7 @@
                 {if count($languages) > 1}
                 <ul class="nav nav-tabs">
                     {foreach $languages as $lKey => $lItem}
-                    <li{if $lKey == 0} class="active"{/if}><a href="#tab_{$lItem['code']}" data-toggle="tab">{$lItem['logo']}<span>{$lItem['name']}</span></a></li>
+                    <li{if $lKey == 0} class="active"{/if} data-bs-toggle="tab" data-bs-target="#tab_{$lItem['code']}"><a>{$lItem['logo']}<span>{$lItem['name']}</span></a></li>
                     {/foreach}
                 </ul>
                 {/if}
@@ -335,9 +333,9 @@ $(document).ready(function(){
     $('div.stock-reorder input:checkbox')
             .off()
             .on('change', function() {
-                $(this).closest('div').find('input:text.form-control').attr('disabled', 'disabled');
+                $(this).closest('.stock-reorder').find('input:text.form-control').attr('disabled', 'disabled');
                 if ($(this).prop('checked') == true) {
-                    $(this).closest('div').find('input:text.form-control').removeAttr('disabled');
+                    $(this).closest('.stock-reorder').find('input:text.form-control').removeAttr('disabled');
                 }
             })
             .change();

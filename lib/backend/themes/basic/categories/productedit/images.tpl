@@ -61,14 +61,17 @@ div.image-size { display:none; font-size: 10px; color: #000000; z-index: 1; widt
                 <input type="radio" value="{$Key}" name="default_image" class="default-images check_bot_switch_on_off{if $Key != 0}_ni{/if}"{if $Item['default_image'] == 1} checked="checked"{/if} />
               </div>
             </div>
+            {if $ext = \common\helpers\Acl::checkExtensionAllowed('ProductImagesByPlatform', 'allowed')}
+                {$ext::imageBlock($Key, $Item)}
+            {/if}
           </div>
           <div class="widget box widget-not-full box-no-shadow" style="margin-bottom: 0; border-top: 0;">
             <div class="widget-content">
               <div class="tabbable tabbable-custom">
                 <ul class="nav nav-tabs nav-tabs-vertical nav-tabs-vertical-lang">
-                  <li class="active"><a href="#tab_4_{$Key}_0" data-toggle="tab"><span>{$smarty.const.TEXT_MAIN}</span></a></li>
+                  <li class="active" data-bs-toggle="tab" data-bs-target="#tab_4_{$Key}_0"><a><span>{$smarty.const.TEXT_MAIN}</span></a></li>
                   {foreach $Item['description'] as $DKey => $DItem}
-                    <li><a href="#tab_4_{$Key}_{$DItem['key']}" class="flag-span" data-toggle="tab">{$DItem['logo']}<span>{$DItem['name']}</span></a></li>
+                    <li data-bs-toggle="tab" data-bs-target="#tab_4_{$Key}_{$DItem['key']}"><a class="flag-span">{$DItem['logo']}<span>{$DItem['name']}</span></a></li>
                   {/foreach}
                 </ul>
                 <div class="tab-content tab-content-vertical">
@@ -194,20 +197,20 @@ div.image-size { display:none; font-size: 10px; color: #000000; z-index: 1; widt
           </div>
         </div>
       </div>
-      {$AttributesImages = \common\helpers\Acl::checkExtensionAllowed('AttributesImages', 'allowed')}
-      {$InventoryImages = \common\helpers\Acl::checkExtensionAllowed('InventortyImages', 'allowed')}
+      {$AttributesImages = \common\helpers\Extensions::isAllowed('AttributesImages')}
+      {$InventoryImages = \common\helpers\Extensions::isAllowed('InventoryImages')}
       {if $AttributesImages || $InventoryImages}
       <div class="box-gallery-right">
         <div class="tabbable tabbable-custom">
           <ul class="nav nav-tabs">
                 {$rightTabActive = 'class="active"'}
                 {if $AttributesImages}
-                    <li {$rightTabActive}><a href="#tab_{$Key}_5_1" data-toggle="tab"><span>{$smarty.const.TEXT_ASSIGN_TO_ATTR}</span></a></li>
+                    <li {$rightTabActive} data-bs-toggle="tab" data-bs-target="#tab_{$Key}_5_1"><a><span>{$smarty.const.TEXT_ASSIGN_TO_ATTR}</span></a></li>
                     {$rightTabActive = ''}
                 {/if}
             {if $app->controller->view->showInventory == true}
                 {if $InventoryImages}
-                    <li {$rightTabActive}><a href="#tab_{$Key}_5_2" data-toggle="tab"><span>{$smarty.const.TEXT_ASSIGN_TO_INVENT}</span></a></li>
+                    <li {$rightTabActive} data-bs-toggle="tab" data-bs-target="#tab_{$Key}_5_2"><a><span>{$smarty.const.TEXT_ASSIGN_TO_INVENT}</span></a></li>
                     {$rightTabActive = ''}
                 {/if}
             {/if}

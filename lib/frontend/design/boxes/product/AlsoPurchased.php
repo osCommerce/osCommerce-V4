@@ -83,10 +83,10 @@ class AlsoPurchased extends Widget
 
 
       } else {
-        return '';
+        return Info::hideBox($this->id, $this->settings[0]['hide_parents']);
       }
     } else {
-      return '';
+      return Info::hideBox($this->id, $this->settings[0]['hide_parents']);
     }
   }
 }

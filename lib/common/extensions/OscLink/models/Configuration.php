@@ -71,6 +71,15 @@ class Configuration extends \yii\db\ActiveRecord
         return !empty($row) && $row->cmc_value == 'TRUE';
     }
 
+    public static function throwIfCanceled()
+    {
+        if (self::isCancelSign()) {
+            \OscLink\Logger::print('Cancel sign detected');
+            throw new \yii\base\UserException('Process was canceled by user.');
+            //throw new \Exception('Process was canceled by user.');
+        }
+    }
+
     public static function createCancelSign()
     {
         $row = self::findCancelSign();

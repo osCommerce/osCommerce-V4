@@ -16,7 +16,7 @@
 </form>
 <script>
 	$(document).ready(function(){
-		if ($('input[name=type]:radio').size()){
+		if ($('input[name=type]:radio').length){
 			
 		}
 	})

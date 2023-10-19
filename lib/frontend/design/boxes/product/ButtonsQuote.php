@@ -31,6 +31,7 @@ class ButtonsQuote extends Widget
 
     public function run()
     {
+        if (!\common\helpers\Extensions::isAllowed('Quotations')) return '';
 
         $params = Yii::$app->request->get();
 

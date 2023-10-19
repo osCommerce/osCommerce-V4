@@ -41,6 +41,7 @@ class Properties extends Widget
           p.products_model,
           p.products_ean,
           p.products_isbn,
+          p.products_asin,
           p.products_upc,
           m.manufacturers_id, m.manufacturers_name, m.manufacturers_image
         from " . TABLE_PRODUCTS . " p
@@ -81,37 +82,42 @@ class Properties extends Widget
         if ($products_data['products_model'] && @$this->settings[0]['show_model'] != 'no') {
             \frontend\design\JsonLd::addData(['Product' => [
                 'sku' => $products_data['products_model']
-            ]]);
+            ]], ['Product', 'sku']);
         }
         if ($products_data['products_ean'] && @$this->settings[0]['show_ean'] != 'no') {
             \frontend\design\JsonLd::addData(['Product' => [
                 'gtin13' => $products_data['products_ean']
-            ]]);
+            ]], ['Product', 'gtin13']);
         }
         if ($products_data['products_isbn'] && @$this->settings[0]['show_isbn'] != 'no') {
             \frontend\design\JsonLd::addData(['Product' => [
                 'isbn' => $products_data['products_isbn']
-            ]]);
+            ]], ['Product', 'isbn']);
+        }
+        if ($products_data['products_asin'] && @$this->settings[0]['show_asin'] != 'no') {
+            \frontend\design\JsonLd::addData(['Product' => [
+                'asin' => $products_data['products_asin']
+            ]], ['Product', 'asin']);
         }
         if ($products_data['products_upc'] && @$this->settings[0]['show_upc'] != 'no') {
             \frontend\design\JsonLd::addData(['Product' => [
                 'upc' => $products_data['products_upc']
-            ]]);
+            ]], ['Product', 'upc']);
         }
         if ($products_data['manufacturers_name'] && @$this->settings[0]['show_manufacturer'] != 'no') {
             \frontend\design\JsonLd::addData(['Product' => [
                 'brand' => [
-                    '@type' => 'Thing',
+                    '@type' => 'Brand',
                     'name' => $products_data['manufacturers_name']
                 ],
-            ]]);
+            ]], ['Product', 'brand', '@type']);
         }
         if (@$this->settings[0]['show_manufacturer'] != 'no' && $products_data['manufacturers_image'] && is_file(\common\classes\Images::getFSCatalogImagesPath() . $products_data['manufacturers_image'])) {
             \frontend\design\JsonLd::addData(['Product' => [
                 'brand' => [
                     'image' => Yii::$app->urlManager->createAbsoluteUrl($products_data['manufacturers_image'])
                 ],
-            ]]);
+            ]], ['Product', 'brand', 'image']);
         }
 
         if (is_array($properties_tree_array) && count($properties_tree_array)) {

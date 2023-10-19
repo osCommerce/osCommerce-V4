@@ -3,11 +3,11 @@
 
       <div class="tabbable tabbable-custom">
         <ul class="nav nav-tabs tab-radius-ul tab-radius-ul-white">
-          <li class="active"><a href="#history" data-toggle="tab"><span>{$smarty.const.TEXT_ORDER_HISTORY}</span></a></li>
-          <li><a href="#marketing" data-toggle="tab"><span>{$smarty.const.TEXT_MARKETING}</span></a></li>
-          <li><a href="#contacts" data-toggle="tab"><span>{$smarty.const.T_CONTACT}</span></a></li>
-          <li><a href="#info" data-toggle="tab"><span>{$smarty.const.IMAGE_DETAILS}</span></a></li>
-          <li><a href="#errors" data-toggle="tab"><span>{$smarty.const.TEXT_ERRORS}</span></a></li>
+          <li class="active" data-bs-toggle="tab" data-bs-target="#history"><a><span>{$smarty.const.TEXT_ORDER_HISTORY}</span></a></li>
+          <li data-bs-toggle="tab" data-bs-target="#marketing"><a><span>{$smarty.const.TEXT_MARKETING}</span></a></li>
+          <li data-bs-toggle="tab" data-bs-target="#contacts"><a><span>{$smarty.const.T_CONTACT}</span></a></li>
+          <li data-bs-toggle="tab" data-bs-target="#info"><a><span>{$smarty.const.IMAGE_DETAILS}</span></a></li>
+          <li data-bs-toggle="tab" data-bs-target="#errors"><a><span>{$smarty.const.TEXT_ERRORS}</span></a></li>
         </ul>
           <div class="tab-content" id="">
            <div id="history" class="tab-pane active">

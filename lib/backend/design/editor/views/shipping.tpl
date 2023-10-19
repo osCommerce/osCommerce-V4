@@ -1,6 +1,6 @@
-<div class="widget box box-no-shadow">
+<div class="widget box box-no-shadow{if !$manager->isShippingAllowed()} dis_module{/if}">
     <div class="widget-header">
-        <h4>Shipping method</h4>
+        <h4>{$smarty.const.TEXT_CHOOSE_SHIPPING_METHOD}</h4>
         {$manager->render('Toolbar')}
     </div>
     <div class="widget-content after">
@@ -9,7 +9,7 @@
                 {if !$manager->getShipping()}
                     <div class="item no-shipping-item">
                         <label class="row">
-                            Shipping is not selected
+                            {$smarty.const.SHIPPING_IS_NOT_SELECTED}
                             <div class="input"><input value="" checked="checked" type="radio" name="shipping" /></div>
                         </label>
                     </div>
@@ -22,8 +22,8 @@
                         {else}
                             {foreach $shipping_quote_item.methods as $shipping_quote_item_method}
                                 <div class="subItem">
-                                    <label class="row">
-                                        <div class="input"><input value="{$shipping_quote_item_method.code}" {if $shipping_quote_item_method.selected}checked="checked"{/if} type="radio" name="shipping" data-widget="{if isset($shipping_quote_item.widget) && $shipping_quote_item.widget}{$shipping_quote_item.id}{/if}"/></div>
+                                    <label class="subItem-row">
+                                        <div class="input"><input value="{$shipping_quote_item_method.code}" {if $shipping_quote_item_method.selected}checked="checked"{/if} {if !$manager->isShippingAllowed()} disabled{/if} type="radio" name="shipping" data-widget="{if isset($shipping_quote_item.widget) && $shipping_quote_item.widget}{$shipping_quote_item.id}{/if}"/></div>
                                         <div class="cost">{$shipping_quote_item_method.cost_f}</div>
                                         <div class="sub-title">{$shipping_quote_item_method.title}{if $shipping_quote_item_method.description|default:null}{$shipping_quote_item_method.description}{/if}</div>
                                     </label>

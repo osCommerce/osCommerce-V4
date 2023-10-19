@@ -74,6 +74,14 @@ class FeaturedController extends Sceleton {
     
     $this->view->featuredTable = array(
       array(
+        'title' => ' ',
+        'not_important' => 2
+      ),
+        array(
+        'title' => ' ',
+        'not_important' => 2
+      ),
+      array(
         'title' => Html::checkbox('select_all', false, ['id' => 'select_all']),
         'not_important' => 2
       ),
@@ -82,7 +90,7 @@ class FeaturedController extends Sceleton {
         'not_important' => 0
       ),
       array(
-        'title' => DATE_CREATED,
+        'title' => TEXT_INFO_DATE_ADDED,
         'not_important' => 0
       ),
       array(
@@ -102,7 +110,7 @@ class FeaturedController extends Sceleton {
         'not_important' => 1
       ),
     );
-    $this->view->sortColumns = '1,2,3,4,5,6';
+    $this->view->sortColumns = '3,4,5,6,7,8';
 
     $languages_id = \Yii::$app->settings->get('languages_id');
     $featuredTypesArr = \common\models\FeaturedTypes::find()->where([
@@ -158,7 +166,7 @@ class FeaturedController extends Sceleton {
     $filter = Yii::$app->request->get('filter', []);
     $filterArr = [];
     parse_str($filter, $filterArr);
-    $featuredTypeId = (int) $filterArr['featured_type_id'];
+    $featuredTypeId = (int) ($filterArr['featured_type_id'] ?? 0);
     $currencies = Yii::$container->get('currencies');
 
     $responseList = array();
@@ -265,7 +273,8 @@ class FeaturedController extends Sceleton {
         $listQuery->andWhere(array_merge(['or'], $tmp));
       }
     }
-
+    $canSort = false;
+    $currentSort = [];
     if (!empty($gets['order']) && is_array($gets['order'])) {
       foreach ($gets['order'] as $sort) {
         $dir = 'asc';
@@ -273,32 +282,44 @@ class FeaturedController extends Sceleton {
           $dir = 'desc';
         }
         switch ($sort['column']) {
-          case 1:
+          case 0:
+            $canSort = true;
+              $currentSort[] = "sort_order, featured_date_added";
+            $listQuery->addOrderBy("sort_order, featured_date_added");
+          case 3:
+              $currentSort[] = "featured_type_name " . $dir;
             $listQuery->addOrderBy(" featured_type_name " . $dir);
             break;
-          case 2:
+          case 4:
+              $currentSort[] = "featured_date_added " . $dir;
             $listQuery->addOrderBy(" featured_date_added " . $dir);
             break;
-          case 3:
+          case 5:
+              $currentSort[] = "products_name " . $dir;
             $listQuery->addOrderBy(" products_name " . $dir);
             break;
-          case 4:
+          case 6:
+              $currentSort[] = "start_date " . $dir;
             $listQuery->addOrderBy(" start_date " . $dir);
             break;
-          case 5:
+          case 7:
+              $currentSort[] = "expires_date " . $dir;
             $listQuery->addOrderBy(" expires_date " . $dir);
             break;
-          case 6:
+          case 8:
+              $currentSort[] = "status ".$dir;
             $listQuery->addOrderBy(" status " . $dir);
             break;
           default:
+              $currentSort[] = "featured_date_added desc";
             $listQuery->addOrderBy(" featured_date_added desc ");
             break;
         }
       }
       $listQuery->addOrderBy(" products_name ");
     } else {
-      $listQuery->addOrderBy(" featured_date_added desc ");
+        $currentSort[] = "sort_order, featured_date_added";
+      $listQuery->addOrderBy("sort_order, featured_date_added");
     }
 
     $responseList = array();
@@ -316,6 +337,16 @@ class FeaturedController extends Sceleton {
 
     foreach ($featureds as $featured) {
       $row = [];
+      $row[] = $featured['sort_order'];
+      if ($canSort) {
+          $row[] = '<div class="handle_cat_list"><span class="handle" style="top: -15px; "><i class="icon-hand-paper-o"></i></span>'.
+              '<input class="cell_id" type="hidden" value="' . $featured['featured_id'] . '">'.
+              '</div>';
+      }else{
+          $row[] = '<input class="cell_id" type="hidden" value="' . $featured['featured_id'] . '">'.
+          '<input class="current_sort" type="hidden" value="' . implode(', ', $currentSort) . '">';
+      }
+
       $row[] = Html::checkbox('bulkProcess[]', false, ['value' => $featured['featured_id']])
           . Html::hiddenInput('featured_' . $featured['featured_id'], $featured['featured_id'], ['class' => "cell_identify"])
           . (!$featured['status'] ? Html::hiddenInput('featured_st' . $featured['featured_id'], 'dis_module', ['class' => "tr-status-class"]) : '')
@@ -466,11 +497,12 @@ class FeaturedController extends Sceleton {
     $status = tep_db_prepare_input(Yii::$app->request->post('status', 0));
     $expires_date = \common\helpers\Date::prepareInputDate(Yii::$app->request->post('expires_date'), true);
     $start_date = \common\helpers\Date::prepareInputDate(Yii::$app->request->post('start_date'), true);
-
-    if (!$start_date || $start_date=='' || $start_date=='NULL') {
       $dateFormat = date_create();
+    if (!$start_date || $start_date=='' || $start_date=='NULL') {
+
       $start_date = $dateFormat?$dateFormat->format(\common\helpers\Date::DATABASE_DATETIME_FORMAT):'';
     }
+    $currentDatetime = $dateFormat ? $dateFormat->format(\common\helpers\Date::DATABASE_DATETIME_FORMAT) : '';
 
     \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
     $ret = ['result' => 0 ];
@@ -478,6 +510,7 @@ class FeaturedController extends Sceleton {
     $m = $item_id>0 ? \common\models\Featured::findOne($item_id) : null;
     if (!$m) {
       $m = new \common\models\Featured();
+      $m->featured_date_added = $currentDatetime;
     }
     if ($m) {
       $ret = ['result' => 1 ];
@@ -491,6 +524,7 @@ class FeaturedController extends Sceleton {
         if (!empty($start_date)) {
           $m->start_date = $start_date;
         }
+        $m->featured_last_modified = $currentDatetime;
         $m->save();
         $ret['item_id'] = $m->featured_id;
       } catch (\Exception $e) {
@@ -680,5 +714,50 @@ class FeaturedController extends Sceleton {
       \common\models\Featured::deleteAll(['featured_id' => $spIds]);
     }
   }
+
+    public function actionSortOrder()
+    {
+        /** @var $featured \common\models\Featured */
+        $tmpRec = null;
+        $i = 0;
+        $tmpIndex = 0;
+        $justAfterCurrent = null;
+        $sort = array_map('intval',Yii::$app->request->post('sort_data', []));
+        foreach (\common\models\Featured::find()->orderBy('sort_order, featured_date_added')->each() as $featured) {
+            $fId = $featured->featured_id;
+            if ($fId === $sort['current']) {
+                $tmpRec = $featured;
+                continue;
+            }
+            if ($fId === $sort['before']) {
+                $tmpIndex = $i+1;
+                $justAfterCurrent = true;
+
+            } elseif ($fId === $sort['after'] || ($sort['after'] === 0 && $justAfterCurrent )) { // next after moved item
+                $tmpIndex = $i;
+                $i++;
+                $justAfterCurrent = null;
+            }
+
+            $featured->sort_order = $i++;
+            $featured->save();
+        }
+        $tmpRec->sort_order = $tmpIndex;
+        $tmpRec->save();
+    }
+
+    public function actionSaveCurrentSort()
+    {
+        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+        /** @var $featured \common\models\Featured */
+        $orderBy = trim(Yii::$app->request->post('order_by', ''));
+        if (empty($orderBy)) return ['status' => 'error', 'message' => 'SortOrder is empty'];
+        $i = 0;
+        foreach (\common\models\Featured::find()->joinWith(['backendProductDescription', 'featuredType'])->select(\common\models\Featured::tableName() . '.*')->orderBy($orderBy)->each() as $featured) {
+            $featured->sort_order = $i++;
+            $featured->save();
+        }
+        return ['status' => 'success'];
+    }
 
 }

@@ -21,7 +21,7 @@
 <div class="order-wrap">
     <div class="row order-box-list" id="modules_list">
         <div class="col-md-12">
-              {if {$messages|@count} > 0}
+              {if {$messages|default:array()|@count} > 0}
 			   {foreach $messages as $type => $message}
               <div class="alert alert-{$type} fade in">
                   <i data-dismiss="alert" class="icon-remove close"></i>

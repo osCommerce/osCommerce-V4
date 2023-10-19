@@ -15,6 +15,7 @@ namespace common\models\queries;
 
 use yii\db\ActiveQuery;
 use paulzi\nestedsets\NestedSetsQueryTrait;
+use common\models\Categories;
 
 class CategoriesQuery extends ActiveQuery{
 
@@ -49,4 +50,10 @@ class CategoriesQuery extends ActiveQuery{
     {
         return $this->andWhere(['categories_status' => 1]);
     }
+
+    public function withNestedCategories($aliasMain = 'c', $aliasNested = 'c1')
+    {
+        return $this->leftJoin(Categories::tableName() . " $aliasNested", "$aliasMain.categories_left <= $aliasNested.categories_left AND $aliasMain.categories_right >= $aliasNested.categories_right");
+    }
+
 }

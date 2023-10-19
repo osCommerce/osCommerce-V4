@@ -59,7 +59,7 @@
 
 
         {Html::beginForm($checkout_process_link, 'post', ['id' => 'frmCheckout', 'name' => 'one_page_checkout'])}
-        <div class="checkout-step active" id="shipping-step">
+        <div class="checkout-step active shipping-step" id="shipping-step">
             <div class="checkout-heading">
                 <span class="edit">{$smarty.const.EDIT}</span>
                 <span class="count">1</span>
@@ -74,7 +74,7 @@
 
 
 
-        <div class="checkout-step" id="payment-step">
+        <div class="checkout-step payment-step" id="payment-step">
             <div class="checkout-heading">
                 <span class="edit">{$smarty.const.EDIT}</span>
                 <span class="count">2</span>

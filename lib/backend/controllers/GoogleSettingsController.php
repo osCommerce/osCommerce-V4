@@ -53,11 +53,11 @@ class GoogleSettingsController extends Sceleton {
         }
         
         $platforms = [];
-        $platforms[0] = [
+        $platforms[] = [
             'id' => 0,
             'text' => (defined('TEXT_DEFAULT') ? TEXT_DEFAULT : 'Default'),
         ];
-        $platforms += \common\classes\platform::getList(false, true);
+        $platforms = array_merge($platforms, \common\classes\platform::getList(false, true));
         
 
         

@@ -123,11 +123,26 @@ class Contact extends \frontend\forms\registration\CustomerRegistration {
         $platform_config = Yii::$app->get('platform')->config();
         $to_name = $platform_config->const_value('STORE_OWNER');
         $to_email = $platform_config->contactUsEmail();
+
+
+        $email_params = array();
+
+        /** @var \common\extensions\CustomerAdditionalFields\CustomerAdditionalFields $ext */
+        if ($ext = \common\helpers\Extensions::isAllowed('CustomerAdditionalFields')) {
+            $email_params = $ext::prepareEmailParams(Yii::$app->request->post());
+        }
+
+        $email_params['STORE_NAME'] = STORE_NAME;
+        $email_params['CUSTOMER_NAME'] = $this->name;
+        $email_params['CUSTOMER_EMAIL'] = $this->email_address;
+        $email_params['ENQUIRY_CONTENT'] = $this->content;
+        list($email_subject, $email_text) = \common\helpers\Mail::get_parsed_email_template('Contact Us Enquiry', $email_params);
+
         if ( strpos($to_email,',')!==false ) {
             $to_name = '';
             \common\helpers\Mail::send(
                 $to_name, $platform_config->const_value('STORE_OWNER_EMAIL_ADDRESS'),
-                EMAIL_SUBJECT, $this->content,
+                ($email_subject ? $email_subject : EMAIL_SUBJECT), ($email_text ? $email_text : $this->content),
                 $to_name, $platform_config->const_value('STORE_OWNER_EMAIL_ADDRESS'),
                 array(), 'CC: ' . $to_email . "\n" . 'Reply-To: "' . $this->name . '" <' . $this->email_address . '>'
             );
@@ -135,7 +150,7 @@ class Contact extends \frontend\forms\registration\CustomerRegistration {
 
             \common\helpers\Mail::send(
                 $to_name, $to_email,
-                EMAIL_SUBJECT, $this->content,
+                ($email_subject ? $email_subject : EMAIL_SUBJECT), ($email_text ? $email_text : $this->content),
                 $to_name, $to_email,
                 array(), 'Reply-To: "' . $this->name . '" <' . $this->email_address . '>'
             );

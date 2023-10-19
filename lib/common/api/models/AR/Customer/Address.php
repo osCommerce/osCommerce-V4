@@ -14,6 +14,7 @@ namespace common\api\models\AR\Customer;
 
 
 use backend\models\EP\Tools;
+use common\api\models\AR\Customer;
 use common\api\models\AR\EPMap;
 
 class Address extends EPMap
@@ -160,17 +161,21 @@ class Address extends EPMap
     {
         parent::afterSave($insert, $changedAttributes);
         if ( $this->is_default && $this->parentObject->customers_default_address_id !== $this->address_book_id ) {
-            tep_db_perform(
-                TABLE_CUSTOMERS,
-                [
-                    'customers_default_address_id' => $this->address_book_id,
-                    'customers_gender' => $this->entry_gender,
-                    'customers_firstname' => $this->entry_firstname,
-                    'customers_lastname' => $this->entry_lastname,
-                ],
-                'update',
-                "customers_id='".intval($this->customers_id)."'"
-            );
+            if ( !empty($this->entry_firstname) && !empty($this->entry_lastname) ) {
+                $this->getDb()->createCommand()
+                    ->update(
+                        Customer::tableName(),
+                        [
+                            'customers_default_address_id' => $this->address_book_id,
+                            'customers_gender' => $this->entry_gender,
+                            'customers_firstname' => $this->entry_firstname,
+                            'customers_lastname' => $this->entry_lastname,
+                        ],
+                        [
+                            'customers_id' => (int)$this->customers_id,
+                        ]
+                    )->execute();
+            }
             if(is_object($this->parentObject)){
                 $this->parentObject->refresh();
             }                

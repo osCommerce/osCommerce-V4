@@ -66,7 +66,7 @@ class Sorting extends Widget
           'sorting_id' => $this->params['sorting_id'],
           'hidden_fields' => '',//\common\helpers\Output::get_all_get_params(array('sort'), true),
           'gl' => (isset($_SESSION['gl']) ? $_SESSION['gl'] : 0),
-          'fbl' => Info::widgetSettings('Listing', 'fbl'),
+          'fbl' => Info::widgetSettings('Listing', 'fbl', ($this->params['page_name'] ?? false)),
         ]
       ]);
     }

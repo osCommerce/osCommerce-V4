@@ -34,7 +34,7 @@ class SpecialsTypesController extends Sceleton {
       ),
     );
 
-    $messages = $_SESSION['messages'];
+    $messages = $_SESSION['messages']??null;
     unset($_SESSION['messages']);
     return $this->render('index', array('messages' => $messages));
   }
@@ -62,7 +62,7 @@ class SpecialsTypesController extends Sceleton {
           ]);
     }
     $orderBy = "specials_type_name";
-    if ($order[0]['column'] === 0 && $order[0]['dir']) {
+    if (($order[0]['column']??null) === 0 && $order[0]['dir']) {
       $orderBy = "specials_type_name " . tep_db_prepare_input($order[0]['dir']);
     }
     $specialsTypes->orderBy($orderBy);

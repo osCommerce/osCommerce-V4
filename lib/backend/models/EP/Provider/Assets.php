@@ -175,7 +175,7 @@ class Assets extends ProviderAbstract implements ImportInterface, ExportInterfac
         }else{
             $db_main_data = $this->last_product_lookup[$file_primary_value]['data'];
             $products_id = $db_main_data->products_id;
-            if (\common\helpers\Attributes::has_product_attributes($products_id) && \common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed') && !$isInventory){
+            if (\common\helpers\Attributes::has_product_attributes($products_id) && \common\helpers\Extensions::isAllowed('Inventory') && !$isInventory){
                 $products_id = \common\helpers\Inventory::get_first_invetory($products_id);
                 $db_main_data = \common\models\Inventory::find()->where(['products_id' => $products_id, 'prid' => (int)$products_id])->one();
                 ProductsAssets::updateAll(['uprid' => $products_id], ['products_id' => (int)$products_id, 'uprid' => (int)$products_id]);

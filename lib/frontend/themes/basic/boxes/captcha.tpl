@@ -7,7 +7,7 @@
 <script class="v3score-{$uniqueId}">
 grecaptcha.ready(function() {
     grecaptcha.execute("{$public_key}", { action: 'ecommerce' }).then(function(token) {
-        tl(function(){
+        {if \common\helpers\System::isBackend()}${else}tl{/if}(function(){
             var form = $('.v3score-{$uniqueId}').closest('form');
             if (form){
                 var input = document.createElement('input');

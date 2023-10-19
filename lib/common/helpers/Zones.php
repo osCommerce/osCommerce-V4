@@ -332,7 +332,6 @@ class Zones {
                 ':country_id' => $countryId,
                 ':state_id' => $stateId
             ]);
-        \common\helpers\Dbg::logQuery($res);
         $res = $res->one();
         return !empty($res);
     }

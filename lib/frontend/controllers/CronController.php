@@ -13,19 +13,6 @@ class CronController extends Sceleton
     {
     }
 
-    public function actionFlexifi()
-    {
-        $payment = new \common\modules\orderPayment\flexifi();
-        if ($payment->checkPassword(\Yii::$app->request->get('password')) == true) {
-            if (\Yii::$app->request->get('action') == 'log') {
-                $payment->logDisplay(\Yii::$app->request->get('type'));
-            } else {
-                $payment->requestStatusAll();
-            }
-        }
-        die();
-    }
-
     public function actionRealex()
     {
         $payment = new \common\modules\orderPayment\globalpayshpp();
@@ -49,6 +36,10 @@ class CronController extends Sceleton
                 if (!\common\helpers\Product::check_product($products_id)) {
                     continue;
                 }
+                $check_discount_coupon_data = array();
+                if ($extNotifyBackInStockWaitDiscount = \common\helpers\Acl::checkExtensionAllowed('NotifyBackInStockWaitDiscount', 'allowed')) {
+                    $check_discount_coupon_data = $extNotifyBackInStockWaitDiscount::discount_coupon_data($product['products_notify_products_id']);
+                }
                 $notifies = tep_db_query("select * from " . TABLE_PRODUCTS_NOTIFY . " where products_notify_products_id = '" . tep_db_input($product['products_notify_products_id']) . "' and products_notify_sent is null");
                 while ($notify = tep_db_fetch_array($notifies)) {
                     // {{
@@ -59,16 +50,20 @@ class CronController extends Sceleton
                     $email_params['PRODUCT_NAME'] = \common\helpers\Product::get_products_name($products_id);
                     $email_params['PRODUCT_URL'] = tep_href_link('catalog/product', 'products_id=' . $products_id);
                     $email_params['PRODUCT_IMAGE'] = \common\classes\Images::getImageUrl($products_id, 'Small');
-                    list($email_subject, $email_text) = \common\helpers\Mail::get_parsed_email_template('Notify Back in Stock', $email_params);
+                    if ($extNotifyBackInStockWaitDiscount && $check_discount_coupon_data['coupon_status'] && $check_discount_coupon_data['coupon_amount'] > 0) {
+                        list($email_subject, $email_text) = $extNotifyBackInStockWaitDiscount::get_parsed_email_template_with_coupon($email_params, $check_discount_coupon_data, $notify);
+                    } else {
+                        list($email_subject, $email_text) = \common\helpers\Mail::get_parsed_email_template('Notify Back in Stock', $email_params);
+                    }
                     // }}
-                    \common\helpers\Mail::send($notify['products_notify_name'], $notify['products_notify_email'], $email_subject, $email_text, STORE_OWNER, STORE_OWNER_EMAIL_ADDRESS);
+                    \common\helpers\Mail::send($notify['products_notify_name'], $notify['products_notify_email'], $email_subject, $email_text, STORE_OWNER, STORE_OWNER_EMAIL_ADDRESS, [], '', false, ['add_br' => 'no']);
                     tep_db_query("update " . TABLE_PRODUCTS_NOTIFY . " set products_notify_sent = now() where products_notify_id = '" . tep_db_input($notify['products_notify_id']) . "'");
                 }
             }
         }
 
         /** @var \common\extensions\NotifyProductsDate\NotifyProductsDate $npd */
-        if ($npd = \common\helpers\Acl::checkExtensionAllowed('NotifyProductsDate', 'allowed')) {
+        if ($npd = \common\helpers\Extensions::isAllowed('NotifyProductsDate')) {
             $npd::sendEmails();
         }
 
@@ -262,185 +257,6 @@ class CronController extends Sceleton
         }
     }
 
-    public function actionCrossUpSelling() {
-        global $platform;
-
-        $orderRepository = new \common\models\repositories\OrderRepository();
-        $productRepository = new \common\models\repositories\ProductsRepository();
-        $platform = new \common\classes\platform_config($platform['platform_id']);
-        $defCurrency = $platform->getDefaultCurrency();
-        $defLanguage = \common\helpers\Language::get_default_language_id();
-
-        $languages_id = \Yii::$app->settings->get('languages_id');
-        $currencies = \Yii::$container->get('currencies');
-        $template_name = 'Cross-selling and up-selling products';
-
-        $result = $orderRepository->getCrossUpSellingProductsForDelivery();
-
-        $currencies = \Yii::$container->get('currencies');
-        $template_name = 'Cross-selling and up-selling products';
-
-        $result = $orderRepository->getCrossUpSellingProductsForDelivery();
-        if (!$result) {
-            exit;
-        }
-
-        foreach ($result as $row) {
-            //if((int)$row['customers_id'] != 520) continue;
-
-            if (!empty($row['xsells']) || !empty($row['upsells'])) {
-                $customer = \common\models\Customers::findOne((int) $row['customers_id']);
-                $group_id = $customer->groups_id;
-
-
-                if ($row['xsells']) {
-
-                    $Products = $productRepository->getWithDescription(explode(',', $row['xsells']), $defLanguage, true);
-                    $ptoduct = '';
-                    $ptoductArr = [];
-                    $columns = 3;
-
-                    foreach ($Products as $product) {
-
-//			$sprice = \common\helpers\Product::get_products_price($product['products_id'],1,0,0, $group_id);
-
-                        $sprice = \common\helpers\Product::get_products_special_price($product['products_id']);
-                        if ($sprice < 1) {
-                            $sprice = \common\helpers\Product::get_products_price($product['products_id'], 1, 0, 0, 0);
-                        }
-                        $sprice += ( $sprice * \common\helpers\Tax::get_tax_rate($product['products_tax_class_id']) / 100 );
-
-                        $pprice_formated = $currencies->format($sprice, false, $defCurrency, $defCurrency);
-                        $product_link = Yii::$app->urlManager->createAbsoluteUrl([
-                            'catalog/product',
-                            'products_id' => $product['products_id']
-                        ]);
-                        if (EMAIL_USE_HTML == 'true') {
-                            $image = \common\classes\Images::getImage($product['products_id'], 'Small');
-                            $ptoductArr[] = '
-<div style="text-align: center; padding: 20px;">
-    <div>' . ( $image ? '<a href="' . $product_link . '">' . $image . '</a>' : '' ) . '</div>
-    <div style="margin-bottom: 10px"><a href="' . $product_link . '" style="font-size: 16px; font-weight: bold; color: #444444; text-decoration:none;">' . $product['descriptions'][0]['products_name'] . '</a></div>
-    <div style="font-size: 24px">' . $pprice_formated . '</div>
-</div>';
-                        } else {
-                            $ptoduct .= $product['products_name'] . " - " . $pprice_formated . "\n";
-                        }
-                    }
-
-                    if (EMAIL_USE_HTML == 'true') {
-                        $count = count($ptoductArr);
-                        $last = $count % $columns;
-                        $ptoduct .= '<table  cellpadding="0" cellspacing="0" width="100%" border="0"><tr style="vertical-align: top">';
-                        for ($i = 0; $i < ( $count - $last ); $i ++) {
-                            if ($i != 0 && $i % $columns == 0) {
-                                $ptoduct .= '</tr><tr style="vertical-align: top">';
-                            }
-                            $ptoduct .= '<td width="' . floor(100 / $columns) . '%">' . $ptoductArr[$i] . '</td>';
-                        }
-                        $ptoduct .= '</tr></table>';
-
-                        $ptoduct .= '<table  cellpadding="0" cellspacing="0" width="100%" border="0"><tr style="vertical-align: top">';
-                        for ($i; $i < $count; $i ++) {
-                            $ptoduct .= '<td width="' . floor(100 / $last) . '%">' . $ptoductArr[$i] . '</td>';
-                        }
-                        $ptoduct .= '</tr></table>';
-                    }
-                    $xmline = $ptoduct;
-                }
-
-
-                if ($row['upsells']) {
-                    $Products = $productRepository->getWithDescription(explode(',', $row['upsells']), $defLanguage, true);
-
-                    $ptoduct = '';
-                    $ptoductArr = [];
-                    $columns = 3;
-                    foreach ($Products as $product) {
-
-                        //$sprice = \common\helpers\Product::get_products_price($product['products_id'],1,0,0, $group_id);
-                        $sprice = \common\helpers\Product::get_products_special_price($product['products_id']);
-                        if ($sprice < 1) {
-                            $sprice = \common\helpers\Product::get_products_price($product['products_id'], 1, 0, 0, 0);
-                        }
-
-                        $sprice += ( $sprice * \common\helpers\Tax::get_tax_rate($product['products_tax_class_id']) / 100 );
-
-                        $pprice_formated = $currencies->format($sprice, false, $defCurrency, $defCurrency);
-                        $product_link = Yii::$app->urlManager->createAbsoluteUrl([
-                            'catalog/product',
-                            'products_id' => $product['products_id']
-                        ]);
-
-                        if (EMAIL_USE_HTML == 'true') {
-                            $image = \common\classes\Images::getImage($product['products_id'], 'Small');
-                            $ptoductArr[] = '
-<div style="text-align: center; padding: 20px;">
-    <div>' . ( $image ? '<a href="' . $product_link . '">' . $image . '</a>' : '' ) . '</div>
-    <div style="margin-bottom: 10px"><a href="' . $product_link . '" style="font-size: 16px; font-weight: bold; color: #444444; text-decoration:none;">' . $product['descriptions'][0]['products_name'] . '</a></div>
-    <div style="font-size: 24px">' . $pprice_formated . '</div>
-</div>';
-                        } else {
-                            $ptoduct .= $product['products_name'] . "-" . $pprice_formated . "\n";
-                        }
-                    }
-
-                    if (EMAIL_USE_HTML == 'true') {
-                        $count = count($ptoductArr);
-                        $last = $count % $columns;
-                        $ptoduct .= '<table  cellpadding="0" cellspacing="0" width="100%" border="0"><tr style="vertical-align: top">';
-                        for ($i = 0; $i < ( $count - $last ); $i ++) {
-                            if ($i != 0 && $i % $columns == 0) {
-                                $ptoduct .= '</tr><tr style="vertical-align: top">';
-                            }
-                            $ptoduct .= '<td width="' . floor(100 / $columns) . '%">' . $ptoductArr[$i] . '</td>';
-                        }
-                        $ptoduct .= '</tr></table>';
-
-                        $ptoduct .= '<table  cellpadding="0" cellspacing="0" width="100%" border="0"><tr style="vertical-align: top">';
-                        for ($i; $i < $count; $i ++) {
-                            $ptoduct .= '<td width="' . floor(100 / $last) . '%">' . $ptoductArr[$i] . '</td>';
-                        }
-                        $ptoduct .= '</tr></table>';
-                    }
-
-                    $upmline = $ptoduct;
-                }
-
-                $customerName = $row['customers_firstname'] . " " . $row['customers_lastname'];
-                $outEmailAddr = '"' . $customerName . '" <' . $row['customers_email_address'] . '>';
-
-                if (defined('RCS_EMAIL_COPIES_TO') && tep_not_null(RCS_EMAIL_COPIES_TO)) {
-                    $outEmailAddr .= ', ' . RCS_EMAIL_COPIES_TO;
-                }
-
-                $email_params = array();
-                $email_params['CUSTOMER_NAME'] = $customerName;
-                $email_params['STORE_NAME'] = $platform->const_value('STORE_NAME');
-                $email_params['STORE_OWNER_EMAIL_ADDRESS'] = $platform->const_value('STORE_OWNER_EMAIL_ADDRESS');
-                $email_params['XSELLS'] = $xmline;
-                $email_params['UPSELLS'] = $upmline;
-                list( $email_subject, $email_text ) = \common\helpers\Mail::get_parsed_email_template($template_name, $email_params, $languages_id, $platform->getId());
-                if ((int) $row->customer->customers_newsletter) {
-                    \common\helpers\Mail::send(
-                            $customerName, //$to_name
-                            $row['customers_email_address'], //$to_email_address
-                            $email_subject, //$email_subject
-                            $email_text, //$email_text
-                            $platform->const_value('STORE_OWNER'), //$from_email_name
-                            $platform->const_value('STORE_OWNER_EMAIL_ADDRESS'), //$from_email_address
-                            [], //$email_params
-                            '', //$headers
-                            false, //$attachments
-                            ['add_br' => 'no']//$settings
-                    );
-                }
-                \common\models\Orders::updateAll(['cross_up_email_send' => 1], ['orders_id' => explode(',', $row['orders_ids'])]);
-            }
-        }
-        EXIT;
-    }
-
     public function actionEbay() {
         if ($ext = \common\helpers\Acl::checkExtensionAllowed('Ebay', 'allowed')) {
             return $ext::cron();
@@ -453,10 +269,5 @@ class CronController extends Sceleton
         }
     }
 
-    public function actionPurchaseOrders() {
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('PurchaseOrders', 'allowed')) {
-            return $ext::cron();
-        }
-    }
 }
 

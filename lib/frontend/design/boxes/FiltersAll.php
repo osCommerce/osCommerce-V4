@@ -25,6 +25,7 @@ class FiltersAll extends Widget
     $exclude_params = array('page');
     $filters_array = array();
 
+    $this->params['this_filename'] = $this->params['this_filename'] ?? null;
     $listing_sql_array = \frontend\design\ListingSql::get_listing_sql_array($this->params['this_filename']);
     $listing_sql_array['left_join'] = " left join " . TABLE_PRODUCTS_TO_CATEGORIES . " p2c on p.products_id = p2c.products_id left join " . TABLE_MANUFACTURERS . " m on p.manufacturers_id = m.manufacturers_id left join " . TABLE_PRODUCTS_DESCRIPTION . " pd on pd.products_id = p.products_id and pd.language_id = '" . (int) $languages_id . "' and pd.platform_id = '".intval(\common\classes\platform::defaultId())."' left join " . TABLE_PRODUCTS_DESCRIPTION . " pd1 on pd1.products_id = p.products_id and pd1.language_id = '" . (int) $languages_id . "' and pd1.platform_id = '" . (int)Yii::$app->get('platform')->config()->getPlatformToDescription() . "' " . $listing_sql_array['left_join'];
     if ($this->params['this_filename'] == FILENAME_SPECIALS) {
@@ -36,8 +37,8 @@ class FiltersAll extends Widget
         'title' => TEXT_CATEGORY,
         'name' => $name,
         'type' => 'pulldown',
-        'pulldown' => tep_draw_pull_down_menu($name, \common\helpers\Categories::get_categories(array(array('id' => '', 'text' => TEXT_ALL_CATEGORIES))), $HTTP_GET_VARS[$name], 'class="property js-filter_param"'),
-        'params' => $_GET[$name],
+        'pulldown' => tep_draw_pull_down_menu($name, \common\helpers\Categories::get_categories(array(array('id' => '', 'text' => TEXT_ALL_CATEGORIES))), Yii::$app->request->get($name), 'class="property js-filter_param"'),
+        'params' => Yii::$app->request->get($name),
     );
     $exclude_params[] = $name;
 
@@ -46,7 +47,7 @@ class FiltersAll extends Widget
         'title' => TEXT_KEYWORDS,
         'name' => $name,
         'type' => 'input',
-        'params' => $_GET[$name],
+        'params' => Yii::$app->request->get($name),
     );
     $exclude_params[] = $name;
     

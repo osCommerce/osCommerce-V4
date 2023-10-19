@@ -21,7 +21,7 @@ abstract class ModuleCollection {
     
     public function getModule($class){
         $modules = $this->getAllModules();
-        return is_object($modules[$class]) ? $modules[$class] : false;
+        return is_object($modules[$class] ?? null) ? $modules[$class] : false;
     }
    
 }

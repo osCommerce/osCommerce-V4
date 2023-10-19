@@ -157,7 +157,7 @@ trait PaypalPartnerTraitAPM {
         $ret = '';
         //$createUrl = \Yii::$app->urlManager->createAbsoluteUrl(["callback/webhooks.payment.{$this->code}", 'action' => 'createOrder', 'option' => $option]);
         $getCCOptionsUrl = \Yii::$app->urlManager->createAbsoluteUrl(["callback/webhooks.payment.{$this->code}", 'action' => 'customerDetails', 'option' => $option]);
-        $retrieveUrl = \Yii::$app->urlManager->createAbsoluteUrl(["callback/webhooks.payment.{$this->code}", 'action' => 'retrieveOrder']);
+        $retrieveUrl = \Yii::$app->urlManager->createAbsoluteUrl(["callback/webhooks.payment.{$this->code}", 'action' => 'retrieveOrder', 'partlypaid' => $this->isPartlyPaid()]);
         $generalError = str_replace(["'", "\n"], ["\\'", '<br>'], defined('PAYPAL_PARTNER_TEXT_ERROR_CAPTURE')?PAYPAL_PARTNER_TEXT_ERROR_CAPTURE:'Payment could not be captured.');
         $generalErrorModule = str_replace(["'", "\n"], ["\\'", '<br>'], defined('MODULE_PAYMENT_PAYPAL_PARTNER_GENERAL_ERROR') ? MODULE_PAYMENT_PAYPAL_PARTNER_GENERAL_ERROR : "Can't create order");
         switch ($option) {
@@ -205,7 +205,7 @@ trait PaypalPartnerTraitAPM {
                              // Handle buyer confirmed 3D Secure successfully
                              return payload;
                         }
-                        if ({$threeDS} && payload.authenticationStatus == 'APPROVED'){
+                        if ({$threeDS} == 0 && payload.authenticationStatus == 'APPROVED'){
                              return payload;
                         }
                         /**/
@@ -391,8 +391,8 @@ trait PaypalPartnerTraitAPM {
     public function getAPMJS($option) {
         $ret = '';
         $createUrl = \Yii::$app->urlManager->createAbsoluteUrl(["callback/webhooks.payment.{$this->code}", 'action' => 'createOrder', 'option' => $option]);
-        $getCreateUrl = \Yii::$app->urlManager->createAbsoluteUrl(["callback/webhooks.payment.{$this->code}", 'action' => 'createOrder', 'option' => $option, 'get' => 1]);
-        $retrieveUrl = \Yii::$app->urlManager->createAbsoluteUrl(["callback/webhooks.payment.{$this->code}", 'action' => 'retrieveOrder']);
+        $getCreateUrl = \Yii::$app->urlManager->createAbsoluteUrl(["callback/webhooks.payment.{$this->code}", 'action' => 'createOrder', 'option' => $option, 'get' => 1, 'partlypaid' => $this->isPartlyPaid()]);
+        $retrieveUrl = \Yii::$app->urlManager->createAbsoluteUrl(["callback/webhooks.payment.{$this->code}", 'action' => 'retrieveOrder', 'partlypaid' => $this->isPartlyPaid()]);
         $shippingUrl = \Yii::$app->urlManager->createAbsoluteUrl(["callback/webhooks.payment.{$this->code}", 'action' => 'patchOrder']);
         $customersDetails = '';
         if (!$this->manager->getCustomerAssigned()) {

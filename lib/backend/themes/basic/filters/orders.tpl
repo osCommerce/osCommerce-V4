@@ -17,14 +17,14 @@
         {if $isMultiPlatform}
             <div class="tl_filters_title">{$smarty.const.TEXT_COMMON_PLATFORM_FILTER}</div>
             <div class="f_td wl-td ftd_block tl_fron_or">
-                {$count_platform = $platforms|@count}
+                {$count_platform = $platforms|default:array()|@count}
                 {if $count_platform < 3}
                     {foreach $platforms as $platform}
                         <div><label class="radio_label"><input type="checkbox" name="platform[]" class="js_platform_checkboxes" value="{$platform['id']}" {if in_array($platform['id'], $app->controller->view->filters->platform)} checked="checked"{/if}> {$platform['text']}</label></div>
                             {/foreach}
                         {else}
                     <div>
-                        <select class="form-control" name="platform[]" multiple="multiple" data-role="multiselect">
+                        <select class="form-select" name="platform[]" multiple="multiple" data-role="multiselect">
                             {foreach $platforms as $platform}
                                 <option value="{$platform['id']}"{if in_array($platform['id'], $app->controller->view->filters->platform)} selected{/if}>{$platform['text']}</option>
                             {/foreach}
@@ -49,6 +49,9 @@
                 </div>
             {/if}
         </div>
+{foreach \common\helpers\Hooks::getList('filters/orders', 'filter-1-column') as $filename}
+    {include file=$filename}
+{/foreach}
     </div>
     <div class="item_filter item_filter_2">
         <div class="tl_filters_title">{$smarty.const.TABLE_HEADING_STATUS}/{$smarty.const.TEXT_STOCK}</div>
@@ -59,13 +62,13 @@
         {if empty($tmpOrderController)}
         <div class="wl-td">
             <label>{$smarty.const.TEXT_STOCK_DEFICIT_QUANTITY}</label>
-            {Html::checkbox('deficit_only', $app->controller->view->filters->deficit_only, ['class' => 'form-control-small'])}
+            {Html::checkbox('deficit_only', $app->controller->view->filters->deficit_only, ['class' => 'form-check-input'])}
         </div>
         {/if}
         <div class="tl_filters_title tl_filters_title_border">{$smarty.const.TEXT_ORDER_PLACED}</div>
         <div class="wl-td w-tdc">
              <label class="radio_label"><input type="radio" name="date" value="presel" id="presel" {if $app->controller->view->filters->presel}checked{/if} /> {$smarty.const.TEXT_PRE_SELECTED}</label>
-             <select name="interval" class="form-control" {if $app->controller->view->filters->exact}disabled{/if}>
+             <select name="interval" class="form-select" {if $app->controller->view->filters->exact}disabled{/if}>
                     {foreach $app->controller->view->filters->interval as $Item}
                         <option {$Item['selected']} value="{$Item['value']}">{$Item['name']}</option>
                     {/foreach}
@@ -117,14 +120,14 @@
         <div class="wl-tdr wl-td-from " style="padding-bottom:10px;">
            <table cellspacing="0" cellpadding="0" width="100%">
              <tr>
-               <td><label class="radio_label"><input type="checkbox" class="_uniform" id="fpFrom" {if isset($app->controller->view->filters->fpFrom) && $app->controller->view->filters->fpFrom}checked{/if} /><span> {$smarty.const.TEXT_FROM}</span></label><input name="fp_from" value="{if isset($app->controller->view->filters->fp_from)}{$app->controller->view->filters->fp_from}{/if}" id="fpFromSumm" type="text" class="form-control-small form-control"  {if !(isset($app->controller->view->filters->fpFrom) && $app->controller->view->filters->fpFrom)}disabled{/if} /></td>
-               <td><label class="radio_label"><input type="checkbox" class="_uniform" id="fpTo" {if isset($app->controller->view->filters->fpTo) && $app->controller->view->filters->fpTo}checked{/if} /><span> {$smarty.const.TEXT_TO}</span></label><input name="fp_to" value="{if isset($app->controller->view->filters->fp_to)}{$app->controller->view->filters->fp_to}{/if}" id="fpToSumm" type="text" class="form-control-small form-control"  {if !(isset($app->controller->view->filters->fpTo) && $app->controller->view->filters->fpTo)}disabled{/if} /></td>
+               <td><label class="radio_label"><input type="checkbox" class="form-check-input" id="fpFrom" {if isset($app->controller->view->filters->fpFrom) && $app->controller->view->filters->fpFrom}checked{/if} /><span> {$smarty.const.TEXT_FROM}</span></label><input name="fp_from" value="{if isset($app->controller->view->filters->fp_from)}{$app->controller->view->filters->fp_from}{/if}" id="fpFromSumm" type="text" class="form-control-small form-control"  {if !(isset($app->controller->view->filters->fpFrom) && $app->controller->view->filters->fpFrom)}disabled{/if} /></td>
+               <td><label class="radio_label"><input type="checkbox" class="form-check-input" id="fpTo" {if isset($app->controller->view->filters->fpTo) && $app->controller->view->filters->fpTo}checked{/if} /><span> {$smarty.const.TEXT_TO}</span></label><input name="fp_to" value="{if isset($app->controller->view->filters->fp_to)}{$app->controller->view->filters->fp_to}{/if}" id="fpToSumm" type="text" class="form-control-small form-control"  {if !(isset($app->controller->view->filters->fpTo) && $app->controller->view->filters->fpTo)}disabled{/if} /></td>
              </tr>
            </table>
         </div>
         <div class="wl-td">
           <label> {$smarty.const.TEXT_TOTAL_LINE}</label>
-             <select name="fp_class" id="fpClass" class="form-control" {if !(isset($app->controller->view->filters->fpFrom) && $app->controller->view->filters->fpFrom)  && !(isset($app->controller->view->filters->fpTo) && $app->controller->view->filters->fpTo)}disabled{/if}>
+             <select name="fp_class" id="fpClass" class="form-select" {if !(isset($app->controller->view->filters->fpFrom) && $app->controller->view->filters->fpFrom)  && !(isset($app->controller->view->filters->fpTo) && $app->controller->view->filters->fpTo)}disabled{/if}>
                     {foreach $app->controller->view->filters->fpClass as $Item}
                         <option {$Item['selected']} value="{$Item['value']}">{$Item['name']}</option>
                     {/foreach}

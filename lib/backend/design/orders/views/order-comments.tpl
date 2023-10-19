@@ -35,7 +35,7 @@
                     <label>{$smarty.const.TEXT_VISIBLE_TO}</label>
                 </div>
                 <div class="f_td">
-                    <select name="visible_to" class="form-control">
+                    <select name="visible_to" class="form-select">
                         <option value="0">All</option>
                         {foreach $groups as $group}
                             {if $group['admins']}

@@ -3,7 +3,7 @@
   {Html::beginForm($url, 'post', ['id'=> 'searchTransactions'])}
 
   {if is_array($list)}
-    {Html::dropDownList('payment_class', '', $list, ['class' => 'form-control', 'id' => 'search_payment_class', 'prompt' => $smarty.const.TEXT_SELECT_PAYMENT_METHOD])}
+    {Html::dropDownList('payment_class', '', $list, ['class' => ' form-select ', 'id' => 'search_payment_class', 'prompt' => $smarty.const.TEXT_SELECT_PAYMENT_METHOD])}
   {else}
     {$smarty.const.TEXT_NO_METHODS_AVAILABLE}
   {/if}

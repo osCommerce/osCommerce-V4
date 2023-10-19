@@ -220,6 +220,7 @@ class shipping extends modules\ModuleCollection {
     }
 
     function quote($method = '', $module = '', $visibility = ['shop_order', 'shop_quote', 'shop_sample', 'admin', 'pos'], $groups_id = 0) {
+        $visibility = \common\helpers\Extensions::getVisibilityVariants($visibility);
       if ($groups_id==0 && !\Yii::$app->user->isGuest) {
         $groups_id = \Yii::$app->user->getIdentity()->groups_id;
       }elseif( empty($groups_id) && \Yii::$app->user->isGuest && defined('DEFAULT_USER_GROUP') ){
@@ -306,9 +307,9 @@ class shipping extends modules\ModuleCollection {
                         $module_ignored = false;
                         foreach (\common\helpers\Hooks::getList('shipping/check-ignored') as $filename) {
                             $module_ignored = include($filename);
-                            if ($module_ignored) break;
+                            if ($module_ignored === true) break;
                         }
-                        if ($module_ignored) continue;
+                        if ($module_ignored === true) continue;
 
 
                         /**/
@@ -338,6 +339,9 @@ class shipping extends modules\ModuleCollection {
                         }
                         if (method_exists($_module, 'widget')) {
                             $quotes['widget'] = $_module->widget();
+                        }
+                        foreach (\common\helpers\Hooks::getList('shipping/after-quote') as $filename) {
+                            include($filename);
                         }
                         if ($_module->useDelivery()){
                             $this->deliveryQuotes[] = $quotes;
@@ -480,7 +484,11 @@ class shipping extends modules\ModuleCollection {
                                     'title' => $quotes['module'] . ' (' . $quotes['methods'][$i]['title'] . ')',
                                     'cost' => $quotes['methods'][$i]['cost'],
                                     'no_cost' => (isset($quotes['methods'][$i]['no_cost']) ? $quotes['methods'][$i]['no_cost'] : false),
-                                    'cost_inc_tax' => \common\helpers\Tax::add_tax_always($quotes['methods'][$i]['cost'], (isset($quotes['tax']) ? $quotes['tax'] : 0))
+                                    'cost_inc_tax' => ((defined('PRICE_WITH_BACK_TAX') && PRICE_WITH_BACK_TAX == 'True')?$quotes['methods'][$i]['cost']:
+                                        \common\helpers\Tax::add_tax_always($quotes['methods'][$i]['cost'], (isset($quotes['tax']) ? $quotes['tax'] : 0))),
+                                    'cost_exc_tax' => ((defined('PRICE_WITH_BACK_TAX') && PRICE_WITH_BACK_TAX == 'True')?
+                                  \common\helpers\Tax::reduce_tax_always($quotes['methods'][$i]['cost'], (isset($quotes['tax']) ? $quotes['tax'] : 0)):
+                                  $quotes['methods'][$i]['cost'])
                                 );
                             }
                         }

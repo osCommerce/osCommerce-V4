@@ -733,7 +733,7 @@ class FrontendStructure
             $informationId = \common\models\Information::findOne([
                 'visible' => '1',
                 'platform_id' => $platformId,
-            ])->information_id;
+            ])->information_id??null;
         }
 
         self::$pages[$pageKey]['get_params'][$platformId]['info_id'] = $informationId;

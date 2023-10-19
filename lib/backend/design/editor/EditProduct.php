@@ -34,8 +34,9 @@ class EditProduct extends Widget {
         return $this->render('edit-product',[
             'manager' => $this->manager,
             'product' => $productDetails,
-            'rates' => \common\helpers\Tax::getOrderTaxRates(),
+            'rates' => $this->manager->getOrderTaxRates(),
             'queryParams' => array_merge(['editor/show-basket'], Yii::$app->request->getQueryParams()),
+            'currentUrl' => Yii::$app->request->url
         ]);
     }
 

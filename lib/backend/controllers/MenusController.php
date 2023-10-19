@@ -12,8 +12,10 @@
 
 namespace backend\controllers;
 
+use backend\components\Information;
 use common\models\MenuItems;
 use common\models\Menus;
+use common\models\Platforms;
 use Yii;
 use common\helpers\MenuHelper;
 use common\models\MenuSource;
@@ -65,7 +67,7 @@ class MenusController extends Sceleton {
 
 
 
-        $sql=tep_db_query("SELECT information_id, info_title, page_title from " . TABLE_INFORMATION ." WHERE visible='1' and languages_id =".(int)$languages_id." and platform_id='".$selected_platform_id."' and affiliate_id=0 order by v_order");
+        $sql=tep_db_query("SELECT information_id, info_title, page_title from " . TABLE_INFORMATION ." WHERE visible='1' and languages_id =".(int)$languages_id." and platform_id='".$selected_platform_id."' and affiliate_id=0 " . (Information::showHidePage() ? '' : " and hide=0 ") . " order by v_order");
 
         $info = array();
         while($row=tep_db_fetch_array($sql)){
@@ -224,7 +226,7 @@ class MenusController extends Sceleton {
                         $current = $row['link_id'];
                     }
                     foreach ($new_brands as $item){
-                        if ($item['parent_id'] == $current){
+                        if (isset($item['parent_id']) && $item['parent_id'] == $current){
                             $menu[] = array(
                                 'parent_id' => $row['id'],
                                 'link_type' => 'brands',
@@ -476,7 +478,7 @@ class MenusController extends Sceleton {
             if (isset($list) && is_array($list)) foreach ($list as $item) {
               $link_type = tep_db_prepare_input($item['type']);
               $link = isset($item['link']) ? tep_db_prepare_input($item['link']) : '';
-              $link_id = tep_db_prepare_input($item['type_id']);
+              $link_id = tep_db_prepare_input($item['type_id']??null);
               $target_blank = tep_db_prepare_input($item['target_blank']);
               $nofollow = tep_db_prepare_input($item['nofollow']);
               $no_logged = tep_db_prepare_input($item['no_logged']);
@@ -546,7 +548,7 @@ class MenusController extends Sceleton {
                 $ext::saveMenuLinks($id['id'], (isset($item['custom']) ? $item['custom'] : ''));
               }
 
-                if ($item['titles']) {
+                if ($item['titles']??null) {
                     foreach ($item['titles'] as $title) {
                         $sql_data_array = array(
                           'language_id' => $title['language_id'],
@@ -689,6 +691,55 @@ class MenusController extends Sceleton {
         $menus = Menus::findOne($menuId);
         $menus->last_modified = new \yii\db\Expression('NOW()');
         $menus->save();
+    }
+
+    public function actionSwap()
+    {
+        \common\helpers\Translation::init('admin/menus');
+        $menuId = Yii::$app->request->get('menu_id');
+        $platformId = Yii::$app->request->get('platform_id', false);
+
+        $menu = Menus::findOne($menuId);
+        $platform = Platforms::findOne(['platform_id' => $platformId]);
+
+        if (!$menu) {
+            return json_encode(['error' => 'no menu']);
+        }
+        if (!$platform) {
+            return json_encode(['error' => 'no platform']);
+        }
+
+        $this->layout = false;
+        $html = $this->render('swap', [
+            'menuId' => $menuId,
+            'menuName' => $menu->menu_name,
+            'platformId' => $platformId,
+            'platformName' => $platform->platform_name,
+            'menus' => Menus::find()->asArray()->all(),
+            'platforms' => \common\classes\platform::getList(false),
+            'isMultiPlatforms' => \common\classes\platform::isMulti(),
+        ]);
+        return json_encode(['html' => $html]);
+    }
+
+    public function actionSwapAction()
+    {
+        $menuId = Yii::$app->request->post('menu_id');
+        $platformId = Yii::$app->request->post('platform_id', false);
+
+        $menuId2 = Yii::$app->request->post('menu_id_2');
+        $platformId2 = Yii::$app->request->post('platform_id_2', false);
+
+        $tmpMenuId = MenuItems::find()->max('menu_id') + 1;
+
+        MenuItems::updateAll(['menu_id' => $tmpMenuId],
+            ['menu_id' => $menuId, 'platform_id' => $platformId]);
+
+        MenuItems::updateAll(['menu_id' => $menuId, 'platform_id' => $platformId],
+            ['menu_id' => $menuId2, 'platform_id' => $platformId2]);
+
+        MenuItems::updateAll(['menu_id' => $menuId2, 'platform_id' => $platformId2],
+            ['menu_id' => $tmpMenuId, 'platform_id' => $platformId]);
     }
 
 }

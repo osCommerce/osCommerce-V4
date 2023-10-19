@@ -1,7 +1,28 @@
 {include '../design/menu.tpl'}
 {use class="backend\assets\DesignAsset"}
 {DesignAsset::register($this)|void}
-<div class="order-wrap design-groups-wrap">
+
+<div class="design-groups-wrap">
+<form id="filterForm" name="filterForm">
+    <div class="filters_btn groups-filter">
+        <div class="breadcrumbs">
+            <div class="top">{$smarty.const.TEXT_TOP}</div>
+        </div>
+
+        <input type="hidden" name="row" id="row_id" value="{$row}" />
+        <input type="hidden" name="category" id="category" value="{$category}" />
+        <input type="hidden" name="theme_name" id="category" value="{$theme_name}" />
+
+        <div class="">
+            <input type="checkbox" name="show_empty" class="show-empty" value="" /> {$smarty.const.SHOW_EMPTY_CATEGORIES}
+        </div>
+    </div>
+
+</form>
+
+<div class="categories-wrap"></div>
+
+<div class="order-wrap ">
 
     <div class="row order-box-list">
         <div class="col-md-12">
@@ -11,22 +32,8 @@
                     <span id="message_plce"></span>
                 </div>
 
-                <form id="filterForm" name="filterForm">
-                    <div class="filters_btn groups-filter">
-                        <input type="hidden" name="row" id="row_id" value="{$row}" />
-                        <input type="hidden" name="category" id="category" value="{$category}" />
-                        <input type="hidden" name="theme_name" id="category" value="{$theme_name}" />
-
-                        <div class="">
-                            <input type="checkbox" name="show_empty" class="show-empty" value="" /> {$smarty.const.SHOW_EMPTY_CATEGORIES}
-                        </div>
-                    </div>
-                </form>
 
 
-                <div class="data-table-top-left breadcrumbs">
-                    <div class="top">{$smarty.const.TEXT_TOP}</div>
-                </div>
 
                 <div class="table-holder">
                 <table class="{if $isMultiPlatforms}tab_edt_page_mul{/if} table table-striped table-selectable table-checkable table-hover table-responsive table-bordered datatable tab-pages double-grid table-design-groups" checkable_list="" data_ajax="design-groups/list">
@@ -37,7 +44,6 @@
                         <th class="file-heading-cell">{$smarty.const.ICON_FILE}</th>
                         <th class="type-heading-cell">{$smarty.const.TEXT_PAGE_TYPE}</th>
                         <th class="status-heading-cell">{$smarty.const.SHOW_ON_WIDGETS_LIST}</th>
-                        <th class="align-right">{$smarty.const.GROUPS_COUNT}</th>
                     </tr>
                     </thead>
                 </table>
@@ -57,7 +63,7 @@
         </div>
     </div>
 </div>
-
+</div>
 <script>
 
     function setFilterState() {
@@ -76,7 +82,45 @@
         var table = $('.table').DataTable();
         table.draw(false);
 
+        updateCategories()
+
         return false;
+    }
+
+    function updateCategories(){
+
+        $.get('design-groups/categories-list', $('#filterForm').serializeArray(), function (response) {
+            const $categoriesWrap = $('.categories-wrap');
+            $categoriesWrap.html('');
+
+            if (response.groupsCount) {
+                $('.order-wrap').show()
+            } else {
+                $('.order-wrap').hide()
+            }
+
+            response.categories.forEach(function (category) {
+                const $item = $(`
+                    <div class="item" data-name="${ category.name }">
+                        <div class="image"><img src="{\common\classes\Images::getWSCatalogImagesPath()}widget-groups/categories/${ category.name }.png"></div>
+                        <div class="title">
+                            ${ category.title }
+                            <span class="count-groups">(${ category.count })</span>
+                        </div>
+                    </div>
+                `);
+                $item.one('click', function () {
+                    let categoryPath = $('#category').val();
+                    categoryPath += (categoryPath ? '/' : '') + category.name;
+                    $('#category').val(categoryPath);
+                    applyFilter()
+                });
+                $('img', $item).on('error', function () {
+                    $('.image', $item).html('<div class="catalog-ico"></div>')
+                });
+                $categoriesWrap.append($item)
+            })
+        }, 'json')
     }
 
     function onClickEvent(obj, table){
@@ -129,6 +173,8 @@
     $(function() {
         const url = new URL(window.location.href)
         $("#row_id").val(url.searchParams.get('row'));
+
+        updateCategories();
 
         $("div.table-holder, .btn-add-group").dropzone({
             url: "{Yii::$app->urlManager->createUrl('design-groups/upload')}",

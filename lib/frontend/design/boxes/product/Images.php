@@ -86,7 +86,7 @@ class Images extends Widget
 
             \frontend\design\JsonLd::addData(['Product' => [
                 'image' => $main_image_url
-            ]]);
+            ]], ['Product', 'image']);
         }
 
         return IncludeTpl::widget(['file' => 'boxes/product/images.tpl', 'params' => [

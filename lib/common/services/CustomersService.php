@@ -23,8 +23,6 @@ use common\models\repositories\AddressBookRepository;
 use common\models\repositories\CustomersInfoRepository;
 use common\models\repositories\CustomersRepository;
 use common\models\repositories\OrderRepository;
-use common\services\BonusPointsService\BonusPointsService;
-use common\services\BonusPointsService\DTO\TransferData;
 
 
 class CustomersService
@@ -40,16 +38,13 @@ class CustomersService
     private $addressBookRepository;
     /** @var OrderRepository */
     private $orderRepository;
-    /** @var BonusPointsService */
-    private $bonusPointsService;
 
     public function __construct(
         CustomersRepository $customersRepository,
         CustomersInfoRepository $customersInfoRepository,
         TransactionManager $transactionManager,
         AddressBookRepository $addressBookRepository,
-        OrderRepository $orderRepository,
-        BonusPointsService $bonusPointsService
+        OrderRepository $orderRepository
     )
     {
         $this->customersRepository = $customersRepository;
@@ -57,7 +52,6 @@ class CustomersService
         $this->transactionManager = $transactionManager;
         $this->addressBookRepository = $addressBookRepository;
         $this->orderRepository = $orderRepository;
-        $this->bonusPointsService = $bonusPointsService;
     }
 
     /**
@@ -254,37 +248,4 @@ class CustomersService
         return $this->customersRepository->edit($customer, ['language_id' => $languageId]);
     }
 
-    /**
-     * @return \common\models\queries\CustomersQuery
-     */
-    public function getCustomersWithBonusPointsQuery()
-    {
-        return $this->customersRepository->getCustomersWithBonusPointsQuery();
-    }
-
-    /**
-     * @return \common\models\queries\CustomersQuery
-     */
-    public function getCustomerIdentityWithBonusPointsQuery()
-    {
-        return $this->customersRepository->getCustomerIdentityWithBonusPointsQuery();
-    }
-
-    public function bonusPointsToAmount(TransferData $data): float
-    {
-        $defaultCurrency = DEFAULT_CURRENCY;
-        $amount = $this->bonusPointsService->getAmount($data->getBonusPoints(), $data->getBonusPointsCosts());
-        $total = $data->getCustomer()->credit_amount + $amount;
-        $response = $this->customersRepository->edit($data->getCustomer(), [
-            'customers_bonus_points' => $data->getCustomer()->customers_bonus_points - $data->getBonusPoints(),
-            'credit_amount' => $total,
-        ]);
-        if ($response !== true) {
-            \Yii::error('Convert Fault' . print_r($response, 1));
-            throw new \DomainException('Convert Fault');
-        }
-        $data->getCustomer()->saveCreditHistory($data->getCustomer()->customers_id, $data->getBonusPoints(), '-', '', 1, TEXT_CONVERT_TO_AMOUNT, 1, (int)$data->isNotifyCustomerBonus());
-        $data->getCustomer()->saveCreditHistory($data->getCustomer()->customers_id, $amount, '+', $defaultCurrency, 1, TEXT_CONVERT_FROM_BONUS_POINTS, 0, (int)$data->isNotifyCustomerAmount());
-        return $amount;
-    }
 }

@@ -51,7 +51,9 @@
   </div>
   <div class="right-area">
 
-    <div class="heading-3"><div class="right-text"><strong>{$smarty.const.WEIGHT}</strong> {$cart_weight}Kgs</div>{$smarty.const.SHIPPING_METHOD}</div>
+    {if $display_weight}
+    <div class="heading-3"><div class="right-text"><strong>{$smarty.const.WEIGHT}</strong> {$weight}{$weight_unit}</div>{$smarty.const.SHIPPING_METHOD}</div>
+    {/if}
 
     <div class="shipping-method">
         <div>

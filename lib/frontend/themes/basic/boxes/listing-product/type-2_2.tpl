@@ -148,7 +148,11 @@
       {Html::beginForm($product.action_buy, 'post', ['class' => 'form-buy'])}
         <div class="qty-input"{if $product.product_in_cart} style="display: none"{/if}>
           {*<label>{output_label const="QTY"}</label>*}
-          <input type="text" name="qty" value="1" class="qty-inp"{if $product.stock_indicator.quantity_max>0} data-max="{$product.stock_indicator.quantity_max}"{/if}{if \common\helpers\Acl::checkExtensionAllowed('MinimumOrderQty', 'allowed')}{\common\extensions\MinimumOrderQty\MinimumOrderQty::setLimit($product.order_quantity_data)}{/if}{if \common\helpers\Acl::checkExtensionAllowed('OrderQuantityStep', 'allowed')}{\common\extensions\OrderQuantityStep\OrderQuantityStep::setLimit($product.order_quantity_data)}{/if} />
+          <input type="text" name="qty" value="1" class="qty-inp"
+                  {if $product.stock_indicator.quantity_max>0} data-max="{$product.stock_indicator.quantity_max}"{/if}
+                  {if $moq = \common\helpers\Extensions::isAllowed('MinimumOrderQty')}{$moq::setLimit($product.order_quantity_data)}{/if}
+                  {if $oqs = \common\helpers\Extensions::isAllowed('OrderQuantityStep')}{$oqs::setLimit($product.order_quantity_data)}{/if}
+          />
           <input type="hidden" name="products_id" value="{$product.id}"/>
         </div>
         {/if}

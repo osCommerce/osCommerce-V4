@@ -2,7 +2,7 @@
 <script type="text/javascript" src="{$app->request->baseUrl}/plugins/jquery-ui/jquery.maskMoney.js"></script>
 {/if}
 {if $js_mask_type == 'accounting'}
-<script type="text/javascript" src="{$app->request->baseUrl}/js/accounting.min.js"></script>
+<script type="text/javascript" src="{$app->request->baseUrl}/plugins/accounting.min.js"></script>
 <script type="text/javascript" src="{$app->request->baseUrl}/plugins/jquery-ui/jquery.maskedinput.js"></script>
 {/if}
 <script type="text/javascript">

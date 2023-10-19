@@ -13,18 +13,21 @@
 namespace backend\assets;
 
 use yii\web\AssetBundle;
+use yii\web\View;
 
 class BDPAsset extends AssetBundle
 {
     public $basePath = '@webroot';
     public $baseUrl = '@web';
     public $css = [
-        '@web/../plugins/bootstrap-datepicker/bootstrap-datepicker.min.css',
-        '@web/../plugins/multiple-select/multiple-select.css',
+        'plugins/bootstrap-datepicker/css/bootstrap-datepicker.min.css',
+        'plugins/multiple-select/multiple-select.css',
     ];
     public $js = [
-//        '@web/../plugins/bootstrap-datepicker/nonconflict.js',
-        '@web/../plugins/bootstrap-datepicker/bootstrap-datepicker.js',
-        '@web/../plugins/multiple-select/multiple-select.js',
+        'plugins/bootstrap-datepicker/js/bootstrap-datepicker.min.js',
+        'plugins/multiple-select/multiple-select.js',
+    ];
+    public $jsOptions = [
+        'position' => View::POS_HEAD,
     ];
 }

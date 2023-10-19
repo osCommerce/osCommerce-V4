@@ -661,8 +661,8 @@ class StocktakingCostController extends Sceleton {
 
         $filename = 'stocktaking_report_' . strftime('%Y%b%d_%H%M');
         $writer = \common\helpers\Export::getWriter($filename);
-        $writer->addRow($header);
-        
+        \common\helpers\Export::addRowToWriter($writer, $header);
+
         foreach($data['responseList'] as $row){
             $newArray = [];
             foreach ($row as $k => $v) {
@@ -685,7 +685,7 @@ class StocktakingCostController extends Sceleton {
                 $vv = str_replace(['&nbsp;&raquo;&nbsp;', '&nbsp;', ], [' / ', '', ], $vv);
                 return $vv;
             }, $row);*/
-             $writer->addRow($newArray);
+            \common\helpers\Export::addRowToWriter($writer, $newArray);
         }
         
         $writer->close();

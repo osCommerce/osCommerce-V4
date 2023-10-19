@@ -101,12 +101,6 @@
 {/if}
 
 {$smarty.capture.body}
-{if (\common\helpers\Acl::checkExtensionAllowed('BonusActions'))}
-    {\frontend\design\boxes\promotions\PromoTrigger::widget()}
-{/if}
-{if (\common\helpers\Acl::checkExtensionAllowed('BonusActions'))}
-    {\common\extensions\BonusActions\models\PromotionsBonusObserver::checkAlertPromoAction()}
-{/if}
 <script type="text/javascript" src="{Info::themeFile('/js/jquery.min.js')}" {$this->async}></script>
 {Info::createJs()}
 <script>

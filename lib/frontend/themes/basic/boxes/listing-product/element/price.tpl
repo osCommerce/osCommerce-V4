@@ -26,5 +26,12 @@
       {if $product.special_promote_type>0 && $product.special_promo_str != ''}
         <div class="save-price-box"><div><span class="save-title">{$smarty.const.SALE_TEXT_SAVE}</span><span class="save-price">{$product.special_promo_str}</span></div></div>
       {/if}
+{if $ext = \common\helpers\Acl::checkExtensionAllowed('QuickOrder', 'allowed')}
+    {foreach $ext::getPricesForGroups(null, $product.products_id, $product.products_tax_class_id) as $gr => $pr}
+        {if strlen($gr) > 1 && strlen($pr) > 1}
+            <br><span class="price-hierarchy"><small>{$gr}: {$pr}</small></span>
+        {/if}
+    {/foreach}
+{/if}
     {/if}
 {/if}

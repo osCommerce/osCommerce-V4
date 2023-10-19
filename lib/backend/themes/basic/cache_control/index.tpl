@@ -51,50 +51,50 @@
                     <div class="row">
                         <div class="col-md-2 select-col select-col-1">
 
-                            <label class="checkbox  select-all">
+                            <label class="  select-all">
                                 <input name="first-col" type="checkbox" class="checkinput" value="1"><span></span> {$smarty.const.TEXT_SELECT_ALL}
                             </label>
-                            <label class="checkbox">
+                            <label>
                                 <input name="system" type="checkbox" class="checkinput" value="1"><span></span> {$smarty.const.TEXT_SYSTEM}
                             </label>
-                            <label class="checkbox">
+                            <label>
                                 <input name="smarty" type="checkbox" class="checkinput" value="1"><span></span> {$smarty.const.TEXT_SMARTY}
                             </label>
-                            <label class="checkbox">
+                            <label>
                                 <input name="debug"  type="checkbox" class="checkinput" value="1"><span></span> {$smarty.const.TEXT_DEBUG}
                             </label>
-                            <label class="checkbox">
+                            <label>
                                 <input name="opcache_reset"  type="checkbox" class="checkinput" value="1"><span></span> OPcache
                             </label>
-                            <label class="checkbox">
+                            <label>
                                 <input name="hooks"  type="checkbox" class="checkinput" value="1"><span></span> Hooks
                             </label>
-                            <label class="checkbox">
+                            <label>
                                 <input name="theme"  type="checkbox" class="checkinput" value="1"><span></span> {$smarty.const.BOX_HEADING_THEMES}
                             </label>
-                            <label class="checkbox">
+                            <label>
                                 <input name="categories_cache"  type="checkbox" class="checkinput" value="1"><span></span> {$smarty.const.PRODUCTS_IN_CATEGORIES}
                             </label>
                         </div>
                         <div class="col-md-1">&nbsp;</div>
                         <div class="col-md-2 select-col select-col-2">
 
-                            <label class="checkbox select-all">
+                            <label class=" select-all">
                                 <input name="second-col"  type="checkbox" class="checkinput" value="1"><span></span> {$smarty.const.TEXT_SELECT_ALL}
                             </label>
-                            <label class="checkbox">
+                            <label>
                                 <input name="logs"  type="checkbox" class="checkinput" value="1"><span></span> {$smarty.const.TEXT_LOGS}
                             </label>
-                            <label class="checkbox">
+                            <label>
                                 <input name="image_cache"  type="checkbox" class="checkinput" value="1"><span></span> {$smarty.const.TEXT_IMAGE_CACHE}
                             </label>
-                            <label class="checkbox">
+                            <label>
                                 <input name="prod_stock_cache"  type="checkbox" class="checkinput" value="1"><span></span> Product Stock Cache
                             </label>
-                            <label class="checkbox">
+                            <label>
                                 <input name="app_shop_cache"  type="checkbox" class="checkinput" value="1"><span></span> {$smarty.const.TEXT_INSTALL_CACHE}
                             </label>
-                            <label class="checkbox">
+                            <label>
                                 <input name="do_migrations"  type="checkbox" class="checkinput" value="1"><span></span> Migrations apply
                             </label>
                         </div>

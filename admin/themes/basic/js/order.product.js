@@ -1,8 +1,144 @@
 function getProduct(url, products_id, is_pack, is_modified, holder){
+
+    const componentsValues = {};
+    const addedEvents = {};
+
+    function setComponent(val, name, selector, type = 'value') {
+        const $component = $(selector, holder);
+        if ($component.length && type === 'value' && !addedEvents[name]) {
+            addedEvents[name] = true;
+            $component.on('change', function () {
+                componentsValues[name] = $component.val();
+            });
+        }
+        if (typeof val === 'undefined') {
+            if (componentsValues[name]) {
+                return componentsValues[name];
+            } else {
+                if (!$component.length) {
+                    return undefined;
+                }
+                switch (type) {
+                    case 'value':
+                        return $component.val();
+                    case 'placeholder':
+                        return $component.attr('placeholder');
+                    case 'text':
+                        return $component.text();
+                }
+            }
+        } else {
+            componentsValues[name] = val;
+            if (!$component.length) {
+                return val;
+            }
+            if (typeof val === 'number') {
+                val = parseFloat(val).toFixed(2);
+            }
+            switch (type) {
+                case 'value':
+                    $component.val(val).trigger('update-state', [true]);
+                    return val;
+                case 'placeholder':
+                    $component.attr('placeholder', val).trigger('update-state', [true]);
+                    return val;
+                case 'text':
+                    $component.html(val);
+                    return val;
+            }
+        }
+    }
+
+    function startPrice(val) {
+        return setComponent(val, 'startPrice', 'input[name="product_info[][final_price]"]', 'placeholder') || 0;
+    }
+    function startPriceTax(val) {
+        return setComponent(val, 'startPriceTax', 'input[name="product_info[][final_price_tax]"]', 'placeholder') || 0;
+    }
+    function startPriceModified(val) {
+        return setComponent(val, 'startPriceModified', 'input[name="product_info[][final_price]"]') || 0;
+    }
+    function startPriceModifiedTax(val) {
+        return setComponent(val, 'startPriceModifiedTax', 'input[name="product_info[][final_price_tax]"]') || 0;
+    }
+    function discountPercent(val) {
+        return setComponent(val, 'discountPercent', '.spinner-percent') || 0;
+    }
+    function discountPercentAction(val) {
+        return setComponent(val, 'discountPercentAction', '.action-percent') || '-';
+    }
+    function discountFixed(val) {
+        return setComponent(val, 'discountFixed', '.spinner-fixed') || 0;
+    }
+    function discountFixedTax(val) {
+        return setComponent(val, 'discountFixedTax', '.spinner-fixed-tax') || 0;
+    }
+    function discountFixedAction(val) {
+        return setComponent(val, 'discountFixedAction', '.action-fixed') || '-';
+    }
+    function resultPrice(val) {
+        return setComponent(val, 'resultPrice', '.result-price-item') || 0;
+    }
+    function resultPriceTax(val) {
+        return setComponent(val, 'resultPriceTax', '.result-price-item-tax') || 0;
+    }
+    function totalSum(val) {
+        return setComponent(val+'', 'totalSum', '.total_summ', 'text') || '';
+    }
+    function totalSumTax(val) {
+        return setComponent(val, 'totalSumTax', '.total_summ_tax', 'text') || '';
+    }
+    function quantity(val) {
+        return setComponent(val, 'quantity', '.qty') || 1;
+    }
+    const dec = 1000000;
+
         var product = {
             total:0,
             uprid: products_id,
             products_id : parseInt(products_id),
+            updatePrices(){
+                startPriceTax(this.addTax(startPrice()));
+
+                const _startPriceModifiedTax = Math.round(this.addTax(parseFloat(startPriceModified()))*dec)/dec;
+                startPriceModifiedTax(_startPriceModifiedTax);
+
+                const _discountFixedTax = Math.round(this.addTax(parseFloat(discountFixed()))*dec)/dec;
+                discountFixedTax(_discountFixedTax);
+
+                let _resultPrice = eval(`${startPriceModified()}${discountPercentAction()}(${startPriceModified()||0}*(${discountPercent()}/100))${discountFixedAction()}${discountFixed()}`);
+                _resultPrice = Math.round(_resultPrice*dec)/dec;
+                resultPrice(_resultPrice);
+                let _resultPriceTax = this.addTax(_resultPrice);
+                _resultPriceTax = Math.round(_resultPriceTax*dec)/dec;
+                resultPriceTax(_resultPriceTax);
+
+                let total = resultPrice() * quantity();
+                let totalTax = this.addTax(total);
+                if (typeof accounting == 'object'){
+                    if (curr_hex[currency_id].symbol_left){
+                        total = accounting.formatMoney(total, curr_hex[currency_id].symbol_left,curr_hex[currency_id].decimal_places,curr_hex[currency_id].thousands_point,curr_hex[currency_id].decimal_point);
+                        totalTax = accounting.formatMoney(totalTax, curr_hex[currency_id].symbol_left,curr_hex[currency_id].decimal_places,curr_hex[currency_id].thousands_point,curr_hex[currency_id].decimal_point);
+                    } else {
+                        const format = {
+                            symbol: curr_hex[currency_id].symbol_right,
+                            precision : curr_hex[currency_id].decimal_places,
+                            thousand: curr_hex[currency_id].thousands_point,
+                            decimal: curr_hex[currency_id].decimal_point,
+                            format: '%v%s'
+                        };
+                        total = accounting.formatMoney(total, format);
+                        totalTax = accounting.formatMoney(totalTax, format);
+                    }
+                }
+                totalSum(total);
+                totalSumTax(totalTax);
+
+            },
+            addTax(price) {
+                price = parseFloat(price);
+                return price + this.getTax(price);
+            },
             getTax: function(price, nearestTax){
                 var tax = 0;
                 if (this.rates.hasOwnProperty(this.getSelectedRate(nearestTax))){
@@ -30,25 +166,30 @@ function getProduct(url, products_id, is_pack, is_modified, holder){
             },
             changeTax: function(){
                if (!this.multi_qty){
-                    $('input[name="product_info[][final_price_tax]"]', holder).val(this.getPrice(true));
-                    $('.final_price_tax', holder).html(this.getFormatted(this.getPrice(true)));
-                    $('.total_summ', holder).html(this.calucalteTotal(false));
-                    $('.total_summ_tax', holder).html(this.calucalteTotal(true));
-                    $('.gift_wrap span.gift_wrap_price', holder).html(this.getGiftWrapPrice());
+                   this.updatePrices();
+                   this.renderDiscountTable();
+                   if (this.rates[this.getSelectedRate()]) {
+                       $(holder).removeClass('no-tax');
+                   } else {
+                       $(holder).addClass('no-tax');
+                   }
                 } else {
                     this.multiTotal();
                 }
             },
             changeConfTax: function(obj){
-                let $parent =  $(obj, holder).parents('.pc_row');
+                let $parent =  $(obj, holder).parents('.pc-row');
                 let price = $($parent).find('.element_total_summ', holder).data('price');
                 $($parent).find('.element_total_summ_tax', holder).html(this.showPrice(price * $($parent).find('.qty').val(), true, obj));
+                this.showConfTotal()
             },
             showConfTotal:function(){
                 let $total = 0;
                 product = this;
                 $('.element_total_summ').each(function(i, e){
-                    let price = $(e).data('price'), qty = $(e).parents('.pc_row').find('.qty').val(), tax = product.getTax(price * qty, $(e).parents('.pc_row').find('select.tax'));
+                    let price = $(e).data('price'),
+                        qty = $(e).parents('.pc-row').find('.qty').val(),
+                        tax = product.getTax(price * qty, $(e).parents('.pc-row').find('select.tax'));
                     $total = (parseFloat(price) * qty + tax ) + $total;
                 })
                 $total = product.calucalteTotal(true, true) + $total;
@@ -82,14 +223,11 @@ function getProduct(url, products_id, is_pack, is_modified, holder){
                 }
                 return value;
             },
-            setPrice:function(price){
-                this.newDetails.price = price;
-                return;
-                var tax = 0;
-                if (this.rates.hasOwnProperty(this.getSelectedRate())){
-                    tax = parseFloat(this.rates[this.getSelectedRate()]);
+            cutPrice: function(value){
+                if (typeof accounting == 'object'){
+                    return accounting.formatMoney(value, '', 2, '', '.');
                 }
-                this.newDetails.price = (price * 100 / (100 + tax));
+                return value;
             },
             resetDetails: function(){
                 this.newDetails.price = this.oldDetails.price;
@@ -110,11 +248,6 @@ function getProduct(url, products_id, is_pack, is_modified, holder){
                 $('.edit_product_popup select[name="product_info[][tax]['+this.uprid+']"]').val(this.oldDetails.selected_rate);
                 $('.total_summ', holder).html(product.calucalteTotal(false));
                 $('.total_summ_tax', holder).html(product.calucalteTotal(true));
-                $('input[data-reg="final_price"]', holder).val(product.getPrice(false));
-                $('input[data-reg="final_price_tax"]', holder).val(product.getPrice(true));
-                $('.final_price', holder).html(product.getFormatted(product.getPrice(false)));
-                $('.final_price_tax', holder).html(product.getFormatted(product.getPrice(true)));
-
             },
             rates: getOrderRates(),
             gift_wrap_price: 0,
@@ -164,10 +297,29 @@ function getProduct(url, products_id, is_pack, is_modified, holder){
                         } else {
                             limit = '+';
                         }
-                        $('.quantity-discounts-content .item[data-id='+item+'] .count', holder).html(start_count + limit);
-                        $('.quantity-discounts-content .item[data-id='+item+']', holder).attr("data-min",start_count).attr("data-max",(till>0?till:99999));
+
+                        const $item = $('.quantity-discounts-content .item[data-id='+item+']', holder);
+                        $item.attr('data-min', start_count).attr('data-max', (till>0?till:99999));
+
+                        $item.html('')
+                            .append(`
+                                <div class="count">${'' + start_count + limit}</div>
+                                <div>
+                                    <div>
+                                        <span class="vat-title">${entryData.tr.TEXT_EXC_VAT}</span>
+                                        <span class="ex-vat-price price"></span>
+                                    </div>
+                                    <div class="vat-aria">
+                                        <span class="vat-title">${entryData.tr.TEXT_INC_VAT}</span>
+                                        <span class="inc-vat-price price"></span>
+                                    </div>
+                                </div>
+                            `);
+
                         start_count = parseInt(till)+1;
-                        $('.quantity-discounts-content .item[data-id='+item+'] .price', holder).html(product.getFormatted(product.getTax(e.price) + parseFloat(e.price)));
+                        $('.ex-vat-price', $item).html(product.getFormatted(parseFloat(e.price)));
+                        $('.inc-vat-price', $item).html(product.getFormatted(product.getTax(e.price) + parseFloat(e.price)));
+
                         item++;
                     });
 
@@ -241,7 +393,7 @@ function getProduct(url, products_id, is_pack, is_modified, holder){
                 if (this.multi_qty){
                     var summ = 0;
                     $.each(this.multi_qty_data, function(i, e){
-                        if($('input[data-type='+i+']').size()){
+                        if($('input[data-type='+i+']').length){
                             if ($('input[data-type='+i+']').val() == '') $('input[data-type='+i+']').val(1);
                             summ += parseInt($('input[data-type='+i+']').val()) * e;
                         }
@@ -257,7 +409,7 @@ function getProduct(url, products_id, is_pack, is_modified, holder){
             checkAttributes:function(){
                 let attributes = $('select[name*="product_info[][id]"]', holder);
                 let success = true;
-                if ($(attributes).size()> 0 ){
+                if ($(attributes).length> 0 ){
                     $.each($(attributes), function(i, e){
                         if ($(e).val() == 0) success = false;
                     })
@@ -286,7 +438,7 @@ function getProduct(url, products_id, is_pack, is_modified, holder){
                     var correct = true;
                     var summ = 0;
                     $.each(this.multi_qty_data, function(i, e){
-                        if($('input[data-type='+i+']').size()){
+                        if($('input[data-type='+i+']').length){
                             if ($('input[data-type='+i+']').val() == '') $('input[data-type='+i+']').val(0);
                             summ += parseInt($('input[data-type='+i+']').val()) * e;
                         }
@@ -316,6 +468,8 @@ function getProduct(url, products_id, is_pack, is_modified, holder){
                 $('input[name="product_info[][qty]"]', holder).val(qty);
                 return;
             },
+            info: {},
+            firstLoadParams: {},
             oldDetails: {
                 price :0,
                 name: '',
@@ -370,7 +524,7 @@ function getProduct(url, products_id, is_pack, is_modified, holder){
                 if (product.edit){
                     products.push({ 'name': 'edit', 'value': true});
                 }
-                if (product.newDetails.price != product.oldDetails.price){
+                if (startPrice() || startPrice() != startPriceModified()){
                     products.push({ 'name': 'product_info['+index+'][price_changed]', 'value': 1});
                 }
 
@@ -380,15 +534,30 @@ function getProduct(url, products_id, is_pack, is_modified, holder){
 
                 return products;
             },
+            startedInfo: {},
+            final_price: 0,
+            // changeUprid: function(newUprid) {
+            //     $(`.product-details *[name*="[${product.uprid}"]`).each(function () {
+            //         const name = $(this).attr('name').replace(`[${product.uprid}]`, `[${newUprid}]`);
+            //         $(this).attr({name});
+            //     });
+            //     product.uprid = newUprid;
+            // },
             getDetails:function(obj, reProd){
                 var product = this;
                 var params = product.getProducts(obj, reProd);
+                const getTax = this.getTax.bind(this);
 
-                params.push({ 'name': 'action', 'value': 'get_details'});
+                params.push({ 'name': 'action', 'value': 'get_details_ex'});
 
                 $.post(url, params, function(data){
                     var multi_qty = product.multi_qty;
                     var info = data.product_info;
+                    product.info = data.product_info;
+
+                    if (Object.keys(product.startedInfo).length === 0) {
+                        product.startedInfo = info;
+                    }
 
                     if (info.hasOwnProperty('html_attributes')){
                         if (info.html_attributes.length > 0){
@@ -396,6 +565,9 @@ function getProduct(url, products_id, is_pack, is_modified, holder){
                         } else {
                             $('.attributes-parent', holder).hide();
                         }
+                        // if (data.attributes_box && data.attributes_box.data && data.attributes_box.data.current_uprid) {
+                        //     product.changeUprid(data.attributes_box.data.current_uprid)
+                        // }
                     }
 
                     $('.product-attributes select', holder).addClass('form-control');
@@ -501,7 +673,7 @@ function getProduct(url, products_id, is_pack, is_modified, holder){
                                 $('.qty', holder).attr('data-virtual-item-step', JSON.stringify(product.stockInfo.virtual_item_step));
                             }
                         }
-                        $('.qty', holder).each(function(){
+                        $('.qty.new-product-product', holder).each(function(){
                             $(this).trigger('check_quantity', [$(this).val()])
                         })
                         //$('.qty', holder).trigger('check_quantity');
@@ -519,25 +691,44 @@ function getProduct(url, products_id, is_pack, is_modified, holder){
                         }
                     }
 
-                    if (info.special_unit_price > 0 ){
-                        if (!product.price_manualy_modified){
-                            product.oldDetails.price = info.special_unit_price;
-                            product.newDetails.price = info.special_unit_price;
-                        }
-                        //$('.old_price', holder).html(info.product_price);
-                        $('input[name="product_info[][final_price]"]', holder).val(product.getPrice(false));
-                        $('input[name="product_info[][final_price_tax]"]', holder).val(product.getPrice(true))
-                        $('.final_price', holder).html(product.getFormatted(product.getPrice(false)));
-                        $('.final_price_tax', holder).html(product.getFormatted(product.getPrice(true)));
+                    let prevPrice = parseFloat(startPriceModified());
+                    if (!prevPrice) {
+                        prevPrice = info.final_price;
+                        startPriceModified(info.final_price);
+                    }
+                    startPrice(parseFloat(info.current_product_price));
+                    if (product.rates[product.getSelectedRate()]) {
+                        $(holder).removeClass('no-tax');
                     } else {
-                        if (!product.price_manualy_modified){
-                            product.oldDetails.price = info.product_unit_price;
-                            product.newDetails.price = info.product_unit_price;
+                        $(holder).addClass('no-tax');
+                    }
+
+                    if (parseFloat(product.startedInfo.product_unit_price) != parseFloat(info.product_unit_price) &&
+                        parseFloat(prevPrice) != parseFloat(info.product_unit_price)
+                    ) {
+                        product.startedInfo.product_unit_price = info.product_unit_price;
+                        let text = entryData.tr.QUANTITY_DISCOUNT_DIFFERENT;
+                        if (obj && obj.localName == 'select') {
+                            text = entryData.tr.ATTRIBUTE_PRICE_DIFFERENT;
                         }
-                        $('input[name="product_info[][final_price]"]', holder).val(product.getPrice(false));
-                        $('input[name="product_info[][final_price_tax]"]', holder).val(product.getPrice(true))
-                        $('.final_price', holder).html(product.getFormatted(product.getPrice(false)));
-                        $('.final_price_tax', holder).html(product.getFormatted(product.getPrice(true)));
+                        const popup = alertMessage(`
+                            <div class="popup-content">${text}</div>
+                            <div class="popup-buttons">
+                                <span class="btn btn-primary btn-change">${entryData.tr.TEXT_CHANGE_TO}: ${product.getFormatted(info.product_unit_price)}</span>
+                                <span class="btn btn-cancel">${entryData.tr.TEXT_LEAVE}: ${prevPrice}</span>
+                            </div>
+                        `);
+
+                        $('.pop-up-close', popup).remove();
+                        $('.around-pop-up', popup).off('click');
+
+                        $('.btn-change', popup).on('click', function () {
+                            startPriceModified(parseFloat(info.product_unit_price));
+                            product.updatePrices();
+                            popup.remove();
+                        });
+                    } else if (parseFloat(product.startedInfo.product_unit_price) != parseFloat(info.product_unit_price)) {
+                        product.startedInfo.product_unit_price = info.product_unit_price;
                     }
 
                     if (product.multi_qty && info.hasOwnProperty('cartoon_details')){
@@ -562,12 +753,13 @@ function getProduct(url, products_id, is_pack, is_modified, holder){
 
 
                     if (info.hasOwnProperty('html_bundles')){
-                        $('.bundles-row', holder).html(info.html_bundles)
+                        $('.bundles-row', holder).html(info.html_bundles);
                         $('.bundles-row', holder).show();
                     }
 
                     if (info.hasOwnProperty('html_configurator')){
-                        $('.product-configurator', holder).html(info.html_configurator);
+                        const $htmlConfigurator = $(info.html_configurator);
+                        $('.product-configurator', holder).html('').append($htmlConfigurator);
                         $('.configurator-row', holder).show();
                         if (info.hasOwnProperty('configurator_price')){
                             $('.product-price-configurator', holder).html(info.configurator_price);
@@ -593,6 +785,8 @@ function getProduct(url, products_id, is_pack, is_modified, holder){
                             }
                             //
                         }
+
+                        $('select.tax', $htmlConfigurator).trigger('change');
                     }
 
                     if(info.hasOwnProperty('html_discount') ){
@@ -603,34 +797,10 @@ function getProduct(url, products_id, is_pack, is_modified, holder){
                         product.renderDiscountTable();
                     }
 
-                    product.changeTax();
+                    product.updatePrices();
                 }, 'json');
             },
             started: true,
-            manualPriceEdit:function(mode){
-                var product = this;
-                if (mode){
-                    $('input[data-reg="final_price"]', holder).keyup(function(){
-                        var p = parseFloat($(this).val())+product.getTax(parseFloat($(this).val()));
-                        $('input[data-reg="final_price_tax"]', holder).val(p.toFixed(6));
-                    })
-                    $('input[data-reg="final_price_tax"]', holder).keyup(function(){
-                        var p = product.getunTaxed(parseFloat($(this).val()));
-                        $('input[data-reg="final_price"]', holder).val(p.toFixed(6));
-                    })
-                } else {
-                    if (product.newDetails.price != $('[data-reg="final_price"]', holder).val()){
-                        product.price_manualy_modified = true;
-                    }
-                    product.setPrice($('[data-reg="final_price"]', holder).val());
-                    $('.final_price', holder).html(product.getFormatted(product.getPrice(false)));
-                    $('.final_price_tax', holder).html(product.getFormatted(product.getPrice(true)));
-                    $('.total_summ', holder).html(product.calucalteTotal(false));
-                    $('.total_summ_tax', holder).html(product.calucalteTotal(true));
-                    if (product.is_conf) product.showConfTotal();
-
-                }
-            },
             manualNameEdit: function(mode){
                 if (mode){
                     //
@@ -641,8 +811,6 @@ function getProduct(url, products_id, is_pack, is_modified, holder){
             },
             manualEdit: function(item){
                 var product = this;
-                var is_price = $(item).parent().hasClass('edit_price')? true: false;
-                var is_name = $(item).parent().hasClass('edit_name')? true: false;
                 //var name = $('.'+$(item).data('element'), holder).attr('name');
                 var f_class = $(item).data('element');
 
@@ -651,27 +819,82 @@ function getProduct(url, products_id, is_pack, is_modified, holder){
                     $.each($('.'+f_class), function(i, e){
                         $(e).attr('type','hidden');
                         $('.'+$(e).data('reg'), holder).css('display', 'inline-block');
-                    })
-                    if (is_price){
-                        product.manualPriceEdit(false);
-                    }
-                    if (is_name){
-                        product.manualNameEdit(false);
-                    }
+                    });
+                    product.manualNameEdit(false);
                 } else {
                     $(item).parent().addClass('btn');
                     $.each($('.'+f_class), function(i, e){
                         $(e).attr('type','input');
                         $('.'+$(e).data('reg'), holder).css('display', 'none');
-                        if (is_price){
-                            product.manualPriceEdit(true);
-                        }
-                        if (is_name){
-                            product.manualNameEdit(true);
-                        }
-                    })
+                        product.manualNameEdit(true);
+                    });
                 }
+            },
+            changedFinalPriceTax: function(){
+                const val = $('input[name="product_info[][final_price_tax]"]', holder).val();
+                const tmp = Math.round(this.getunTaxed(val)*dec)/dec;
+                startPriceModified(tmp);
+                this.updatePrices();
+            },
+            changedFixedDiscount: function(){
+                const val = $('.spinner-fixed', holder).val();
+                discountFixed(val);
+                this.updatePrices();
+            },
+            changedFixedDiscountTax: function(){
+                const val = $('.spinner-fixed-tax', holder).val();
+                discountFixed(this.getunTaxed(val));
+                this.updatePrices();
+            },
+            changedResultPrice: function(){
+                const val = $('.result-price-item', holder).val();
+                let _discountFixed = eval(`${val}-(${startPriceModified()}${discountPercentAction()}${startPriceModified()}*(${discountPercent()}/100))`);
+                if (_discountFixed > 0) {
+                    discountFixedAction('+');
+                } else {
+                    discountFixedAction('-');
+                }
+                _discountFixed = Math.abs(_discountFixed);
+                discountFixed(_discountFixed);
+                this.updatePrices();
+                $('.overwritten-choose').val('fixed').trigger('change');
+            },
+            changedResultPriceTax: function(){
+                const val = $('.result-price-item-tax', holder).val();
+                const tmp = this.getunTaxed(val);
+
+                let _discountFixed = eval(`${tmp}-(${startPriceModified()}${discountPercentAction()}${startPriceModified()}*(${discountPercent()}/100))`);
+                if (_discountFixed > 0) {
+                    discountFixedAction('+');
+                } else {
+                    discountFixedAction('-');
+                }
+                _discountFixed = Math.abs(_discountFixed);
+                discountFixed(_discountFixed);
+                this.updatePrices();
+                $('.overwritten-choose').val('fixed').trigger('change');
             }
         };
-        return product;
+
+    $('input[name="product_info[][final_price]"]', holder).on('change', () => product.updatePrices());
+    $('input[name="product_info[][final_price_tax]"]', holder).on('change', () => product.changedFinalPriceTax());
+    $('.result-price-item', holder).on('change', () => product.changedResultPrice());
+    $('.result-price-item-tax', holder).on('change', () => product.changedResultPriceTax());
+    $('.qty', holder).on('change', () => product.updatePrices());
+    $('.action-fixed', holder).on('change', () => product.updatePrices());
+    $('.action-percent', holder).on('change', () => product.updatePrices());
+
+    $('.spinner-percent', holder)
+        .spinner({ step: 1, min:0, max:100, stop: () => product.updatePrices() })
+        .on('change', () => product.updatePrices());
+
+    $('.spinner-fixed', holder)
+        .spinner({ step: 0.01, min:0, stop: () => product.changedFixedDiscount() })
+        .on('change', () => product.changedFixedDiscount());
+
+    $('.spinner-fixed-tax', holder)
+        .spinner({ step: 0.01, min:0, stop: () => product.changedFixedDiscountTax() })
+        .on('change', () => product.changedFixedDiscountTax());
+
+    return product;
     }

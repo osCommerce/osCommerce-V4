@@ -72,6 +72,7 @@ class ModulesMigrations {
             }
 
             $migrate = new $class();
+            $migrate->compact = true;
             $migrate->$func();
 
             if ($up) {

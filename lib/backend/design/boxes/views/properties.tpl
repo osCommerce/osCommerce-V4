@@ -12,10 +12,10 @@
     <div class="tabbable tabbable-custom">
       <ul class="nav nav-tabs">
 
-        <li class="active"><a href="#type" data-toggle="tab">{$smarty.const.BOX_CATALOG_PROPERTIES}</a></li>
-        <li><a href="#style" data-toggle="tab">{$smarty.const.HEADING_STYLE}</a></li>
-        <li><a href="#align" data-toggle="tab">{$smarty.const.HEADING_WIDGET_ALIGN}</a></li>
-        <li><a href="#visibility" data-toggle="tab">{$smarty.const.TEXT_VISIBILITY_ON_PAGES}</a></li>
+        <li class="active" data-bs-toggle="tab" data-bs-target="#type"><a>{$smarty.const.BOX_CATALOG_PROPERTIES}</a></li>
+        <li data-bs-toggle="tab" data-bs-target="#style"><a>{$smarty.const.HEADING_STYLE}</a></li>
+        <li data-bs-toggle="tab" data-bs-target="#align"><a>{$smarty.const.HEADING_WIDGET_ALIGN}</a></li>
+        <li data-bs-toggle="tab" data-bs-target="#visibility"><a>{$smarty.const.TEXT_VISIBILITY_ON_PAGES}</a></li>
 
       </ul>
       <div class="tab-content">
@@ -59,6 +59,13 @@
             <select name="setting[0][show_isbn]" id="" class="form-control">
               <option value=""{if $settings[0].show_isbn == ''} selected{/if}>{$smarty.const.TEXT_BTN_YES}</option>
               <option value="no"{if $settings[0].show_isbn == 'no'} selected{/if}>{$smarty.const.TEXT_BTN_NO}</option>
+            </select>
+          </div>
+          <div class="setting-row">
+            <label for="">{$smarty.const.TEXT_SHOW_ASIN}</label>
+            <select name="setting[0][show_asin]" id="" class="form-control">
+              <option value=""{if $settings[0].show_asin == ''} selected{/if}>{$smarty.const.TEXT_BTN_YES}</option>
+              <option value="no"{if $settings[0].show_asin == 'no'} selected{/if}>{$smarty.const.TEXT_BTN_NO}</option>
             </select>
           </div>
           <div class="setting-row">

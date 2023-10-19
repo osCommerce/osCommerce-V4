@@ -204,6 +204,7 @@ class Output {
         }
         if ($msearch_enable == 'true') {
             $pares = array();
+            $_tmpMinLenght=((defined('BACKEND_MSEARCH_WORD_LENGTH') && \frontend\design\Info::isTotallyAdmin()) ? (int)BACKEND_MSEARCH_WORD_LENGTH : (int)MSEARCH_WORD_LENGTH);
             for ($i = 0; $i < sizeof($objects); $i++) {
                 $objects[$i] = str_replace(array(",", ";", ".", "&", "!", ":", "\""), array("", "", "", "", "", "", ""), $objects[$i]);
                 if (($objects[$i] == 'and') || ($objects[$i] == 'or') || ($objects[$i] == '(') || ($objects[$i] == ')')) {
@@ -211,7 +212,7 @@ class Output {
                 } else {
                     $pieces = preg_split('/[\s]+/', $objects[$i]);
                     foreach ($pieces as $piece) {
-                        if (strlen($piece) >= MSEARCH_WORD_LENGTH) {
+                        if (strlen($piece) >= $_tmpMinLenght) {
                             $ks_hash = tep_db_fetch_array(tep_db_query("select soundex('" . addslashes($piece) . "') as sx"));
                             $pares[] = $ks_hash["sx"];
                         } else {
@@ -293,7 +294,7 @@ class Output {
           }
         }
         if (!empty($re)) {
-          $text = preg_replace('/(' . join('|', $re) . ')/i',
+          $text = preg_replace('/(' . join('|', $re) . ')/iu',
               '<span ' . (defined('MSEARCH_HIGHLIGHT_BGCOLOR')?'style="background:' . MSEARCH_HIGHLIGHT_BGCOLOR . '"':'') . ' class="typed">\1</span>',
               $text);
         }

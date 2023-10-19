@@ -22,7 +22,7 @@ abstract class ModulePayment extends Module {
   protected $transactionInfo = [];
   protected $doCheckoutInitializationOnInactive = false; //express modules which requires extra HTML from checkout_initialization_method and could be disabled by zone should set this property to true.
   //access via getStatusBeforeUpdate()
-  protected $_transactionDetails = false; //transaction details received from gateway to avoid extra trequests.
+  protected $_transactionDetails = false; //transaction details received from gateway to avoid extra requests.
 
   public function getStatusBeforeUpdate() {
       return $this->doCheckoutInitializationOnInactive;
@@ -289,8 +289,10 @@ abstract class ModulePayment extends Module {
 /**
  * part of checkout /process after after_process. for modules which save usual order and call after_process in before_process method.
  * redirect to success page
+ * @param Order $order
+ * @param bool $redirect
  */
-    protected function no_process_after($order) {
+    protected function no_process_after($order, $redirect=true) {
 
         $this->trackCredits();
         $this->manager->clearAfterProcess();
@@ -298,7 +300,9 @@ abstract class ModulePayment extends Module {
         foreach (\common\helpers\Hooks::getList('checkout/after-process', '') as $filename) {
             include($filename);
         }
-        tep_redirect(tep_href_link(FILENAME_CHECKOUT_SUCCESS, 'order_id=' . $order->order_id, 'SSL'));
+        if ($redirect) {
+            tep_redirect(tep_href_link(FILENAME_CHECKOUT_SUCCESS, 'order_id=' . $order->order_id, 'SSL'));
+        }
     }
 
     protected function getOrderClassBeforePayment($config_key) {
@@ -756,9 +760,9 @@ abstract class ModulePayment extends Module {
   }
 
   /**
-   * save token in DB, update only default flag
+   * save token in DB, update only default flag, set old_payment_token to update existing token
    * @param int $customersId
-   * @param array $tokenData [token => '', cardType => '', lastDigits =>'', fistDigits =>'', maskedCC =>'', expDate =>]
+   * @param array $tokenData [old_payment_token=>'', token => '', cardType => '', lastDigits =>'', fistDigits =>'', maskedCC =>'', expDate =>]
    * @return type
    */
   public function saveToken($customersId, $tokenData) {
@@ -897,11 +901,11 @@ EOD;
     $currencies = \Yii::$container->get('currencies');
 
     if (empty($currency_code) || !$currencies->is_set($currency_code)) {
-      $currency_code = \Yii::$app->settings->get('currency');
+        $currency_code = \Yii::$app->settings->get('currency');
     }
 
     if (empty($currency_value) || !is_numeric($currency_value)) {
-      $currency_value = $currencies->currencies[$currency_code]['value'];
+        $currency_value = $currencies->currencies[$currency_code]['value'];
     }
 
     return number_format(round($number * $currency_value, $currencies->currencies[$currency_code]['decimal_places']), $currencies->currencies[$currency_code]['decimal_places'], '.', '');
@@ -971,7 +975,7 @@ EOD;
           if (d < 0) d = 0;
           $('.popup-box-wrap').css('top', $(window).scrollTop() + d);
           //paymentPopup.position($('.popup-box:last'));
-          $(".pop-up-content").html('<iframe src="{$url}" frameborder="0" style="width:100%;height:' + (h-15) +'px" class="payment-iframe"></iframe>');
+          $(".pop-up-content").html('<iframe src="{$url}" frameborder="0" style="width:100%;height:' + (h-15) +'px" class="payment-iframe payment-iframe-{$this->code}"></iframe>');
         }
 EOD;
 
@@ -1081,7 +1085,7 @@ EOD;
     return $detectedStatus;
   }
 
-  public function updatePaidTotalsAndNotify($commentary = '') {
+  public function updatePaidTotalsAndNotify($commentary = '', $notify = false) {
     $updateOrder = true;
     /** @var \common\services\PaymentTransactionManager $tm */
     $tm = $this->manager->getTransactionManager($this);
@@ -1112,7 +1116,7 @@ EOD;
         }
 
         if (1 && !empty($status) && $status != $order->info['order_status']) {
-          $order->update_status_and_notify($status, false, $commentary, [], [], false);
+          $order->update_status_and_notify($status, false, $commentary, [], [], $notify);
         }
       }
     }
@@ -1360,6 +1364,55 @@ padding-left: 10px;
             }
         }
         return $telephone;
+    }
+
+/*
+ * Force turn on PreAuthorization transaction method if payment supports it.
+ * PreAuthorize mode can be called differently in different payments:
+ * - Authorize in paypal
+ * - AuthOnlyTransaction in Authorize.net
+ * - CaptureDelay in worldpay
+ * etc
+ */
+    protected function forcePreAuthorizeMethod() {
+        foreach (\common\helpers\Hooks::getList('module-payment/force-pre-authorize-method', '') as $filename) {
+            $force_pre_authorize = include($filename);
+            if ($force_pre_authorize === true) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public function getChargeFromOrder($order) {
+        $orderAmount = 0;
+        if (is_array($order->totals) && $order->info['orders_id'] > 0) {
+            foreach ($order->totals as $key => $total) {
+                if ($total['class'] === 'ot_due' || $total['code'] === 'ot_due') {
+                    $orderAmount = (float) $order->totals[$key]['value_inc_tax'];
+                    break;
+                }
+            }
+        } else {
+            $orderAmount = (float) ($order->info['total_inc_tax'] ? $order->info['total_inc_tax'] : $order->info['total']);
+        }
+        return $orderAmount;
+    }
+
+/**
+ * override with return true if your payment module allows guest checkout without any customer and address details (ex PayPal express checkout)
+ * @return boolean
+ */
+    public function hasGuestCheckout() {
+        return false;
+    }
+
+    public function customerDetailsOptional() {
+        return !static::isOnline() || static::hasGuestCheckout();
+    }
+
+    public function customerDetailsRequired() {
+        return static::isOnline() && !static::hasGuestCheckout();
     }
 
 }

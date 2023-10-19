@@ -13,6 +13,8 @@
 
 namespace common\classes;
 
+use common\helpers\System;
+
 class Migration extends \yii\db\Migration {
 
     /**
@@ -739,6 +741,27 @@ class Migration extends \yii\db\Migration {
         return is_array($str_or_array) ? implode(',', $str_or_array) : $str_or_array;
     }
 
+    public function addConfigurationKey($attrArray, $changeIfExists = false)
+    {
+        if (!isset($attrArray['configuration_key'])) {
+            if (System::isDevelopment()) throw new \Exception("Param 'configuration_key' is not set");
+            return false;
+        }
+        unset($attrArray['date_added']);
+        $model = \common\models\Configuration::findOne(['configuration_key' => $attrArray['configuration_key']]);
+        if (empty($model)) {
+            $model = new \common\models\Configuration();
+            $model->loadDefaultValues();
+            $model->date_added = new \yii\db\Expression('now()');
+        } else {
+            if (!$changeIfExists) return false;
+        }
+        $model->setAttributes($attrArray);
+        $model->last_modified = new \yii\db\Expression('now()');
+        $model->save(false);
+        return true;
+    }
+
     public function removeConfigurationKeys($key_or_array)
     {
         $this->print('Remove configuration keys: '. self::varToStr($key_or_array) . "\n" );
@@ -774,6 +797,42 @@ class Migration extends \yii\db\Migration {
     public function isWidgetExist($widgetNameOrArray)
     {
         return !empty(\common\models\DesignBoxes::findOne(['widget_name' => $widgetNameOrArray]));
+    }
+
+    /**
+     * @param string $newWidgetName - new widget name like 'Extension\widgets\WidgetName'. For zipped widget 'Extension\widgets\WidgetName=>lib/common/extensions/ExtName/widget/WidgetName.zip'
+     * @param string|array $toPlaceholders - placeholder to put new widget (may be null if need rename only)
+     * @param $oldWidgetName - old widget name if exists
+     * @param $renameWidgetStylesArray - array to rename old widget styles ['oldStyleName' => 'newStyleName']
+     * @param string $position position for installed widget in placeholder
+     * @see Migration::addWidget()
+     * @return void
+     */
+    public function addOrRenameWidget(string $newWidgetName, $toPlaceholders, $oldWidgetName = null, $renameWidgetStylesArray = null, $position = 'end')
+    {
+        $tmp = explode("=>", $newWidgetName);
+        if (count($tmp) > 1) {
+            list($newWidgetName, $newWidgetNameOrZipFile) = $tmp;
+        } else {
+            $newWidgetNameOrZipFile = $newWidgetName;
+        }
+
+        $oldWidgetExists = !empty($oldWidgetName) && $this->isWidgetExist($oldWidgetName);
+        $newWidgetExists = $this->isWidgetExist($newWidgetName);
+        if(!$newWidgetExists && !$oldWidgetExists)
+        {
+            if (!empty($toPlaceholders)) {
+                $errMsg = $this->addWidget($toPlaceholders, $newWidgetNameOrZipFile, null, null, $position);
+                if(!empty($errMsg)) {
+                    \Yii::warning("Widget $newWidgetName AddWidget error: $errMsg");
+                }
+            }
+        } else {
+            \Yii::warning("Widget $newWidgetName not added because:" . ($newWidgetExists? ' widget already exists' : '') . ($oldWidgetExists? ' old widget already exists' : '') );
+            if ($oldWidgetExists) {
+                $this->renameWidgetAndStyles($oldWidgetName, $newWidgetName, $renameWidgetStylesArray??[]);
+            }
+        }
     }
 
     /**
@@ -828,92 +887,106 @@ class Migration extends \yii\db\Migration {
             $themes = [['theme_name' => $themeName]];
         } else {
             $themes = \common\models\Themes::find()->asArray()->all();
+            $themesMobile = [];
+            foreach ($themes as $theme) {
+                if (\common\models\DesignBoxesTmp::findOne(['theme_name' => $theme['theme_name'] . '-mobile'])) {
+                    $themesMobile[] = ['theme_name' => $theme['theme_name'] . '-mobile'];
+                }
+            }
+            $themes = array_merge($themes, $themesMobile);
         }
         foreach ($themes as $theme) {
             $params = [];
+            $blockNames = [];
             foreach ($placeholders as $blockName) {
                 if (!str_contains($blockName, '-')) {
-                    $params['block_name'] = $blockName;
+                    $blockNames = [$blockName];
                     break;
                 }
 
-                $box = \common\models\DesignBoxesTmp::find()->where([
-                    'widget_params' => $placeholder, 'theme_name' => $theme['theme_name']
-                ])->asArray()->one();
-                if ($box && is_array($box)) {
-                    $params['block_name'] = 'block-' . $box['id'];
+                $boxes = \common\models\DesignBoxesTmp::find()->where([
+                    'widget_params' => $blockName, 'theme_name' => $theme['theme_name']
+                ])->asArray()->all();
+                if ($boxes && is_array($boxes)) {
+                    foreach ($boxes as $box) {
+                        $blockNames[] = 'block-' . $box['id'];
+                    }
                     break;
                 }
             }
-            if (!$params['block_name']) {
-                if (str_contains($placeholder, '-')) {
-                    $message = "Placeholder '$placeholder' not found in theme '$theme', widget '$widget' could not be installed in the theme\n";
+            if (!count($blockNames)) {
+                if (str_contains(end($placeholders), '-')) {
+                    $message = 'Placeholder "' . end($placeholders) . '" not found in theme "'. $theme['theme_name'] .'", widget "' . $widget . '" could not be installed in the theme' . "\n";
                     $this->print($message);
                     \Yii::warning($message);
                 }
-                $params['block_name'] = end($placeholders);
+                $blockNames = [end($placeholders)];
             }
 
             $params['theme_name'] = $theme['theme_name'];
 
-            if ($ifNoWidget) {
-                $widgets = \backend\design\Theme::getWidgetsInPlaceholder($params['block_name'], $theme['theme_name']);
-                foreach ($widgets as $_widget) {
-                    if ($_widget['widget_name'] == $ifNoWidget) {
-                        continue 2;
+            foreach ($blockNames as $blockName) {
+                $params['block_name'] = $blockName;
+
+                if ($ifNoWidget) {
+                    $widgets = \backend\design\Theme::getWidgetsInPlaceholder($blockName, $theme['theme_name']);
+                    foreach ($widgets as $_widget) {
+                        if ($_widget['widget_name'] == $ifNoWidget) {
+                            continue 2;
+                        }
                     }
                 }
-            }
 
-            if ($position == 'end') {
-                $max = \common\models\DesignBoxesTmp::find()->where([
-                    'block_name' => $params['block_name'], 'theme_name' => $theme['theme_name']
-                ])->max('sort_order');
-                $params['sort_order'] = $max + 1;
-            } else {
-                $boxes = \common\models\DesignBoxesTmp::find()->where([
-                    'block_name' => $params['block_name'], 'theme_name' => $theme['theme_name']
-                ])->orderBy('sort_order')->all();
+                if ($position == 'end') {
+                    $max = \common\models\DesignBoxesTmp::find()->where([
+                        'block_name' => $blockName, 'theme_name' => $theme['theme_name']
+                    ])->max('sort_order');
+                    $params['sort_order'] = $max + 1;
+                } else {
+                    $boxes = \common\models\DesignBoxesTmp::find()->where([
+                        'block_name' => $blockName, 'theme_name' => $theme['theme_name']
+                    ])->orderBy('sort_order')->all();
 
-                if ($position == 'middle') {
-                    $params['sort_order'] = round(count($boxes)/2) + 1;
-                    $sortOrder = 1;
-                    foreach ($boxes as $box) {
-                        if ($sortOrder == $params['sort_order']) {
+                    if ($position == 'middle') {
+                        $params['sort_order'] = round(count($boxes)/2) + 1;
+                        $sortOrder = 1;
+                        foreach ($boxes as $box) {
+                            if ($sortOrder == $params['sort_order']) {
+                                $sortOrder++;
+                            }
+                            $box->sort_order = $sortOrder;
+                            $box->save();
                             $sortOrder++;
                         }
-                        $box->sort_order = $sortOrder;
-                        $box->save();
-                        $sortOrder++;
-                    }
-                } elseif ($position == 'start') {
-                    $params['sort_order'] = 1;
-                    $sortOrder = 2;
-                    foreach ($boxes as $box) {
-                        $box->sort_order = $sortOrder;
-                        $box->save();
-                        $sortOrder++;
+                    } elseif ($position == 'start') {
+                        $params['sort_order'] = 1;
+                        $sortOrder = 2;
+                        foreach ($boxes as $box) {
+                            $box->sort_order = $sortOrder;
+                            $box->save();
+                            $sortOrder++;
+                        }
                     }
                 }
-            }
 
 
-            if ($widgetLocation ?? null) {
-                $importBlock = \backend\design\Theme::importBlock($widgetLocation, $params);
-                if (!is_array($importBlock)) {
-                    $this->print("\n" . $importBlock . "\n");
-                    $themeError .= $theme['theme_name'] . ': error in ' . $importBlock . "\n";
-                }
-            } elseif ($widgetName ?? null) {
-                $designBoxes = new \common\models\DesignBoxesTmp();
-                $designBoxes->microtime = microtime(true);
-                $designBoxes->theme_name = $theme['theme_name'];
-                $designBoxes->block_name = $params['block_name'];
-                $designBoxes->widget_name = $widgetName;
-                $designBoxes->sort_order = $params['sort_order'];
-                $designBoxes->save();
-                if ($designBoxes->errors) {
-                    $themeError .= $theme['theme_name'] . ': sql error ' . "\n";
+                if ($widgetLocation ?? null) {
+                    $importBlock = \backend\design\Theme::importBlock($widgetLocation, $params);
+                    if (!is_array($importBlock)) {
+                        $this->print("\n" . $importBlock . "\n");
+                        $themeError .= $theme['theme_name'] . ': error in ' . $importBlock . "\n";
+                    }
+                } elseif ($widgetName ?? null) {
+                    $designBoxes = new \common\models\DesignBoxesTmp();
+                    $designBoxes->microtime = microtime(true);
+                    $designBoxes->theme_name = $theme['theme_name'];
+                    $designBoxes->block_name = $blockName;
+                    $designBoxes->widget_name = $widgetName;
+                    $designBoxes->sort_order = $params['sort_order'];
+                    $designBoxes->save();
+                    if ($designBoxes->errors) {
+                        $themeError .= $theme['theme_name'] . ': sql error ' . "\n";
+                    }
                 }
             }
 
@@ -943,13 +1016,16 @@ class Migration extends \yii\db\Migration {
 
     /**
      * @param string $pageName block_name in design_boxes_tmp table
+     * @param string $themeName
      * @return void
      */
-    public function removePage(string $pageName)
+    public function removePage(string $pageName, string $themeName = '')
     {
-        $boxes = \common\models\DesignBoxesTmp::find()
-            ->where(['block_name' => $pageName])
-            ->asArray()->all();
+        $designBoxes = \common\models\DesignBoxesTmp::find()->where(['block_name' => $pageName]);
+        if ($themeName) {
+            $designBoxes->andWhere(['theme_name' => $themeName]);
+        }
+        $boxes = $designBoxes->asArray()->all();
         foreach ($boxes as $box) {
             \backend\design\Theme::deleteBlock($box['id'], true);
             \common\models\DesignBoxesSettings::deleteAll(['box_id' => $box['id']]);
@@ -965,6 +1041,24 @@ class Migration extends \yii\db\Migration {
     }
 
     /**
+     * @param string $placeholder widget_params in design_boxes_tmp table
+     * @return void
+     */
+    public function removeBlock(string $placeholder)
+    {
+        $boxes = \common\models\DesignBoxesTmp::find()
+            ->where(['widget_params' => $placeholder])
+            ->asArray()->all();
+        foreach ($boxes as $box) {
+            \backend\design\Theme::deleteBlock($box['id'], true);
+            \common\models\DesignBoxesSettings::deleteAll(['box_id' => $box['id']]);
+            \common\models\DesignBoxesSettingsTmp::deleteAll(['box_id' => $box['id']]);
+            \common\models\DesignBoxes::deleteAll(['id' => $box['id']]);
+            \common\models\DesignBoxesTmp::deleteAll(['id' => $box['id']]);
+        }
+    }
+
+    /**
      * @param string $oldName existing name into design_boxes_tmp table. Looks like 'promotions\PromoList'
      * @param string $newName like 'Promotions\widgets\PromoList'
      * @return void
@@ -976,6 +1070,17 @@ class Migration extends \yii\db\Migration {
         $count = \common\models\DesignBoxesTmp::updateAll(['widget_name' => $newName], 'widget_name = :old_name', ['old_name' => $oldName]);
         $this->print(sprintf("Widget renamed from %s to %s into design_boxes_tmp: %d records\n", $oldName, $newName, $count));
         \common\models\DesignBoxesCache::deleteAll();
+    }
+
+    public function renameWidgetAndStyles(string $oldName, string $newName, array $renameWidgetStylesArray = [])
+    {
+        if (!$this->isWidgetExist($oldName)) return;
+        $this->renameWidget($oldName, $newName);
+        if (is_array($renameWidgetStylesArray)) {
+            foreach ($renameWidgetStylesArray as $oldStyleName => $newStyleName) {
+                $this->renameWidgetStyle($oldStyleName, $newStyleName);
+            }
+        }
     }
 
     /**
@@ -994,7 +1099,7 @@ class Migration extends \yii\db\Migration {
         );
         $this->print(sprintf("Widget style renamed from %s to %s: %d records\n", $oldName, $newName, $count));
         if ($count) {
-            \Yii::$app->db->createCommand()->truncateTable(TABLE_THEMES_STYLES_CACHE)->execute();
+            \backend\design\Style::invalidateCache();
         }
     }
 
@@ -1079,6 +1184,123 @@ class Migration extends \yii\db\Migration {
             }
         }
         return  $res;
+    }
+
+    /**
+     * Add page for all themes
+     * @param string $pageName
+     * @param string $pageGroup
+     * @return void
+     */
+    public function addThemePage(string $pageName, string $pageGroup = 'info')
+    {
+        $arr = [
+            'setting_group' => 'added_page', // special sign to add page
+            'setting_name'  => $pageGroup,
+            'setting_value' => $pageName,
+        ];
+        foreach (\common\models\Themes::find()->all() as $theme)
+        {
+            $arr['theme_name'] = $theme->theme_name;
+            if (empty(\common\models\ThemesSettings::findOne($arr))) {
+                $settings = new \common\models\ThemesSettings();
+                $settings->setAttributes($arr);
+                $settings->save(false);
+            }
+
+            $arr['theme_name'] = $theme->theme_name . '-mobile';
+            if (empty(\common\models\ThemesSettings::findOne($arr))) {
+                $settings = new \common\models\ThemesSettings();
+                $settings->setAttributes($arr);
+                $settings->save(false);
+            }
+        }
+    }
+
+    public function removeThemePage(string $pageName)
+    {
+        $this->removePage($pageName);
+    }
+
+    /**
+     * @param array $attrOrigin
+     * @param $makePublicAndActive
+     * @return void
+     * @example
+     *   $migrate->addInfoPage([
+     *     'info_title' => 'Support',
+     *     'page_title' => 'Support',
+     *     'seo_page_name' => 'support',
+     *     'template_name' => 'ext-support-system',
+     *   ]);
+     */
+    public function addInfoPage(array $attrOrigin, $makePublicAndActive = true)
+    {
+        static $information_id = null;
+        $defaults = [
+            'visible' => 1,
+            'type' => 1,
+            'date_added' => new \yii\db\Expression('NOW()'),
+            'last_modified' => new \yii\db\Expression('NOW()'),
+        ];
+        $attr = array_merge($defaults, $attrOrigin);
+
+        $languages = \common\helpers\Language::get_languages();
+        $platforms = \common\classes\platform::getList(false);
+
+        foreach ($languages as $language) {
+            $attrOrigin['languages_id'] = $language['id'];
+            $attr['languages_id'] = $language['id'];
+            foreach ($platforms as $platform) {
+                $attrOrigin['platform_id'] = $platform['id'];
+                $attr['platform_id'] = $platform['id'];
+                if (!empty(\common\models\Information::findOne($attrOrigin))) continue;
+                $model = new \common\models\Information();
+                $model->loadDefaultValues();
+                $model->setAttributes($attr);
+                if (!is_null($information_id)) {
+                    $model->information_id = $information_id;
+                }
+                try {
+                    $model->save(false);
+                    $information_id = $model->information_id;
+                } catch (\Throwable $e) {
+                    \Yii::warning($e->getMessage() . ' ' . $e->getTraceAsString());
+                }
+            }
+        }
+        if ($makePublicAndActive) {
+            \common\helpers\PageStatus::saveScheduledStatuses('information', $information_id, [
+                'action' => ['public'],
+                'period' => ['once'],
+                'day' => [''],
+                'date' => [''],
+            ]);
+            $status = \common\models\PageStatus::findOne(['page_id' => $information_id]);
+            if($status)
+            {
+                $status->status = 'public';
+                $status->save(false);
+            }
+        }
+
+        $information_id = null;
+    }
+
+    public function removeInfoPage(array $attrArray, bool $moreThanOne = false)
+    {
+        $ids = \common\models\Information::find()
+            ->select('information_id')
+            ->where($attrArray)
+            ->distinct()
+            ->column();
+        if (!$moreThanOne && count($ids) > 1) {
+            \Yii::warning("More than one information pages found: deletion failed");
+            return false;
+        }
+        \common\models\PageStatus::deleteAll(['page_id' => $ids]);
+        \common\models\Information::deleteAll(['information_id' => $ids]);
+        return true;
     }
 
     public function print($msg)

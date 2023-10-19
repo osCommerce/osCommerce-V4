@@ -76,8 +76,10 @@ class MultiInventory extends Widget {
                 
                     if (\Yii::$app->request->isAjax || $type=='listing' || $type=='productListing') {
                         $details['image_widget'] = \frontend\design\boxes\product\Images::widget(['params'=>['uprid'=>$details['current_uprid']], 'settings' => \frontend\design\Info::widgetSettings('product\Images', false, 'product')]);
-                        $details['images'] = \frontend\design\Info::$jsGlobalData['products'][$details['products_id']]['images'] ?? null;
-                        $details['defaultImage'] = \frontend\design\Info::$jsGlobalData['products'][$details['products_id']]['defaultImage'];
+//                        $details['images'] = \frontend\design\Info::$jsGlobalData['products'][$details['products_id']]['images'] ?? null;
+//                        $details['defaultImage'] = \frontend\design\Info::$jsGlobalData['products'][$details['products_id']]['defaultImage'];
+                        $details['images'] = \frontend\design\Info::$jsGlobalData['products'][$params['products_id']]['images'] ?? null;
+                        $details['defaultImage'] = \frontend\design\Info::$jsGlobalData['products'][$params['products_id']]['defaultImage'];
                         $details['productId'] = $params['products_id'];
                         if ($type=='productListing'){
                             $details['product_attributes'] = \frontend\design\IncludeTpl::widget([
@@ -97,7 +99,7 @@ class MultiInventory extends Widget {
                         } else {
                             $tmp = $details;
                             $lastRow = array_pop($tmp['attributes_array']);
-                            $details['product_attributes'] = IncludeTpl::widget(['file' => 'boxes/product/attributes/mix.tpl', 'params' => ['item' => $lastRow, 'products_id' => $params['products_id'], 'isAjax' => true, 'settings' => $this->settings[0],'boxId' => $this->id,]]);
+                            $details['product_attributes'] = IncludeTpl::widget(['file' => 'boxes/product/attributes/mix.tpl', 'params' => ['item' => $lastRow, 'products_id' => $params['products_id'], 'isAjax' => true, 'settings' => ($this->settings[0]??null),'boxId' => $this->id,]]);
                         }
                         return json_encode($details);
                     } else {
@@ -120,7 +122,7 @@ class MultiInventory extends Widget {
         foreach($details['attributes_array'] as $attributes ){
             if (is_array($attributes['options'])){
                 foreach($attributes['options'] as $option){
-                    if ($option['mix']){
+                    if (!empty($option['mix'])){
                         foreach ($details['stock_indicator'] as $key => &$flag){
                             $flag = $flag || ($option['mix']['flags'][$key] ?? false);
                             if ($key == 'add_to_cart'){

@@ -42,6 +42,7 @@ class CreateAccount extends Widget
             $this->params['manager'] = $this->manager;
         }
 
+        $this->params['manager']->createCaptchaWidget();
         return IncludeTpl::widget(['file' => 'boxes/checkout/create-account.tpl', 'params' => array_merge($this->params, [
             'settings' => $this->settings,
             'id' => $this->id,

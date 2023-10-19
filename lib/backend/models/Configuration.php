@@ -303,9 +303,9 @@ class Configuration {
         }else{
             foreach ($variants as $value => $valueText) {
                 if ($type=='radio'){
-                    $string .= '<div><label>'.\common\helpers\Html::radio($name, in_array($value, $selected_values), ['value'=>$value, 'class' => 'uniform']). ' '.$valueText.'</label></div>';
+                    $string .= '<div><label>'.\common\helpers\Html::radio($name, in_array($value, $selected_values), ['value'=>$value, 'class' => 'multiOption']). ' '.$valueText.'</label></div>';
                 }else{
-                    $string .= '<div><label>'.\common\helpers\Html::checkbox($name.'[]', in_array($value, $selected_values), ['value'=>$value, 'class' => 'uniform']). ' '.$valueText.'</label></div>';
+                    $string .= '<div><label>'.\common\helpers\Html::checkbox($name.'[]', in_array($value, $selected_values), ['value'=>$value, 'class' => 'multiOption']). ' '.$valueText.'</label></div>';
                     $string .= \common\helpers\Html::hiddenInput($name.'[]', '--none--');
                 }
             }
@@ -398,28 +398,30 @@ class Configuration {
                   'affiliate_id' => 0,
                   'platform_id' => \common\classes\platform::defaultId()
                 ])->asArray()->orderBy('info_title')->all();
-    $i = array_merge(['id' => 0, 'text' => TEXT_NONE], $i);
+    $i = array_merge([['id' => 0, 'text' => TEXT_NONE]], $i);
 
     return tep_draw_pull_down_menu('configuration_value', $i, $info_id);
   }
 
-  public static function tep_cfg_select_download_status() {//$key_value
+  public static function tep_cfg_select_download_status() {//$value, $key
 
     $keys = func_get_args();
-    eval('list($key_value,) = array(' . $keys[0] . ');');
+    $vals = str_getcsv($keys[0], ',', '\'');
+    list($key_value, $key) = $vals;
+    $name = $key ? 'configuration[' . $key . '][]' : 'configuration_value[]';
 
-    $select_array = \common\helpers\Order::get_status();
+    $select_array = \common\helpers\Order::get_status('', true);
     $key_value_array = explode(',', $key_value);
     $string = '';
     for ($i=0; $i<sizeof($select_array); $i++) {
       //$string .= '<br><input type="checkbox" name="' . $select_array[$i]['text'] . '" value="' . $select_array[$i]['id'] . '"';
-      $string .= '<br><input type="checkbox" name="configuration_value[]" value="' . $select_array[$i]['id'] . '"';
+      $string .= '<br><input type="checkbox" name="'.$name.'" value="' . $select_array[$i]['id'] . '"';
       for ($j=0;$j<sizeof($key_value_array);$j++) {
         if ($key_value_array[$j] == $select_array[$i]['id']) $string .= ' CHECKED';
       }
       $string .= '> ' . $select_array[$i]['text'];
     }
-    $string .= '<br><input type="hidden" name="flag" value="exist"';
+    $string .= '<br><input type="hidden" name="flag" value="exist">';
     return $string;
   }
 
@@ -472,7 +474,7 @@ class Configuration {
 <div class="colors-inp">
   <div id="cp3" class="input-group colorpicker-component">
     <input type="text" name="configuration_value" value="' . $color . '" class="form-control" placeholder="' . TEXT_COLOR_ . '" />
-    <span class="input-group-addon"><i></i></span>
+    <span class="input-group-append"><span class="input-group-text colorpicker-input-addon"><i></i></span></span>
   </div>
 </div>
 <script>
@@ -551,9 +553,9 @@ $(function(){
             }
             array_multisort($offsets, array_keys($timeZonesVariants[$tzGroupLabel]), $timeZonesVariants[$tzGroupLabel]);
         }
-        $js  = '<script src="plugins/moment/min/moment.min.js"></script>';
+        $js  = '<script src="plugins/moment.min.js"></script>';
         //$js .= '<script src="plugins/moment-timezone/builds/moment-timezone.min.js"></script>';
-        $js .= '<script src="plugins/moment-timezone/builds/moment-timezone-with-data.min.js"></script>';
+        $js .= '<script src="plugins/moment-timezone.min.js"></script>';
         $js .= '<script type="text/javascript" src="plugins/timezone-picker/timezone-picker.min.js"></script>';
         ob_start();
         ?>

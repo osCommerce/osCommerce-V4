@@ -24,6 +24,7 @@ use common\helpers\Customer;
 use common\models\Products;
 use common\models\ProductsPrices;
 
+#[\AllowDynamicProperties]
 class BasePrice {
 
     //use \common\helpers\SqlTrait;
@@ -714,7 +715,7 @@ class BasePrice {
         $_uprid = InventoryHelper::normalizeInventoryPriceId($this->uprid, $vids, $virtual_vids);
         InventoryHelper::normalizeInventoryPriceId($this->origin_uprid, $__vids, $virtual_vids);
 
-        if (\common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed') && strpos($_uprid,'{')!==false && !InventoryHelper::disabledOnProduct($_uprid)) {
+        if (\common\helpers\Extensions::isAllowed('Inventory') && strpos($this->uprid,'{')!==false && !InventoryHelper::disabledOnProduct($_uprid)) {
 
             $check_inventory = tep_db_fetch_array(tep_db_query("select inventory_id, if(price_prefix = '-', -inventory_price, inventory_price) as inventory_price, inventory_full_price as inventory_full_price from " . TABLE_INVENTORY . " i where products_id = '" . tep_db_input($_uprid) . "' and non_existent = '0' " . InventoryHelper::get_sql_inventory_restrictions(array('i', 'ip')) . " limit 1"));
             if ($check_inventory) {
@@ -776,6 +777,12 @@ class BasePrice {
             $bundle_products = $ext::getBundleProducts(\common\helpers\Inventory::get_prid($this->uprid), \common\classes\platform::currentId());
             if (count($bundle_products) > 0) {
                 $check = Products::find()->select('use_sets_discount, products_sets_discount, products_sets_price_formula')->where('products_id=:products_id', [':products_id' => (int)\common\helpers\Inventory::get_prid($this->uprid)])->asArray()->one();
+// {{
+                $customer_groups_id = (int) \Yii::$app->storage->get('customer_groups_id');
+                $_currency_id = (int) (isset($params['curr_id']) && $params['curr_id'] ? $params['curr_id'] : \Yii::$app->settings->get('currency_id'));
+                $_customer_groups_id = (int) (isset($params['group_id']) && $params['group_id'] ? $params['group_id'] : $customer_groups_id);
+                $check_group = \common\models\ProductsPrices::find()->select('products_sets_discount')->where('products_id=:products_id and groups_id=:groups_id and currencies_id=:currencies_id', [':products_id' => (int)\common\helpers\Inventory::get_prid($this->uprid), ':groups_id' => $_customer_groups_id, ':currencies_id' => (USE_MARKET_PRICES == 'True' ? $_currency_id : '0')])->asArray()->one();
+// }}
                 if ($check['use_sets_discount'] && $this->dSettings->applyBundleDiscount()) {
                     if (!empty($check['products_sets_price_formula'])) {
                         $products_sets_price_formula = json_decode($check['products_sets_price_formula'], true);
@@ -783,13 +790,13 @@ class BasePrice {
                             $this->inventory_price['value'] = \common\helpers\PriceFormula::apply(
                                             $products_sets_price_formula, [
                                         'price' => floatval($this->inventory_price['value']),
-                                        'discount' => floatval($check['products_sets_discount']),
+                                        'discount' => floatval($check['products_sets_discount'] + $check_group['products_sets_discount']),
                                         'margin' => 0,
                                         'surcharge' => 0,
                             ]);
                         }
-                    } elseif ($check['products_sets_discount'] > 0) {
-                        $this->inventory_price['value'] *= (1 - ($check['products_sets_discount'] / 100));
+                    } elseif (($check['products_sets_discount'] + $check_group['products_sets_discount']) > 0) {
+                        $this->inventory_price['value'] *= (1 - (($check['products_sets_discount'] + $check_group['products_sets_discount']) / 100));
                     }
                 }
             }
@@ -1039,7 +1046,7 @@ class BasePrice {
         $apply_discount = true;
         $this->special_price['specials_id'] = $this->special_price['specials_id'] ?? null;
         if ($apply_discount) {
-          if (\common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed') && $this->dSettings->applySale()) { //2do specials for inventory
+          if (strpos($this->origin_uprid, '{') && $this->dSettings->applySale()) { //2do specials for inventory
                 if ($this->calculate_full_price) {
                     if ($this->special_price['value'] !== false) {
                         $this->inventory_special_price['value'] = $this->special_price['value'];

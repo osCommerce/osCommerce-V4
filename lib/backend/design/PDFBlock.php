@@ -683,7 +683,7 @@ class PDFBox extends \TCPDF {
                 );
             }
             if ($settings[0]['border-bottom-width'] ?? false){
-                if ($mainStyles[$settings[0]['border-bottom-color']] ?? false) {
+                if (($settings[0]['border-bottom-color'] ?? false) && ($mainStyles[$settings[0]['border-bottom-color']] ?? false)) {
                     $settings[0]['border-bottom-color'] = $mainStyles[$settings[0]['border-bottom-color']];
                 }
                 if ($settings[0]['border-bottom-color'] ?? false) {
@@ -761,7 +761,7 @@ class PDFBox extends \TCPDF {
                 //$this->Set_FontBold($settings[0]['font-weight'], $name);
                 //$this->Set_FontColor($settings[0]['color'], $name);
 
-                if (($settings[0]['color'] ?? false) && $mainStyles[$settings[0]['color']] ?? false) {
+                if (($settings[0]['color'] ?? false) && ($mainStyles[$settings[0]['color']] ?? false)) {
                     $settings[0]['color'] = $mainStyles[$settings[0]['color']];
                 }
                 $htm = $this->fontStyles($settings, $widget);

@@ -10,3 +10,76 @@
 .working-timetable {
     max-width: 1000px;
 }
+
+.themes {
+    display: flex;
+    flex-wrap: wrap;
+}
+.themes .item {
+    width: 300px;
+    background: var(--background-color);
+    border: 1px solid var(--border-color-midle);
+    margin: 10px;
+    display: flex;
+    flex-direction: column;
+}
+.themes .image {
+    height: 250px;
+}
+.themes .image img {
+    width: 100%;
+    height: 250px;
+    object-fit: scale-down;
+    object-position: top center;
+}
+.themes .image .no-image {
+    width: 100%;
+    height: 250px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 100px;
+    line-height: 1;
+    font-family: FontAwesome;
+    color: var(--color-dim);
+    opacity: 0.2;
+}
+.themes .image .no-image:before {
+    content: '\f03e';
+}
+.themes .title {
+    flex-grow: 1;
+    width: 100%;
+    padding: 10px 20px;
+    font-size: 20px;
+    font-weight: 500;
+}
+.themes .buttons {
+    padding: 0 20px 20px;
+    text-align: right;
+    width: 100%;
+}
+.themes .assigned {
+    padding: 0 20px 20px;
+    text-align: right;
+    width: 100%;
+    display: none;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--border-color-selected);
+}
+.themes .selected {
+    background: var(--background-color-3);
+}
+.themes .selected .buttons {
+    display: none;
+}
+.themes .selected .assigned {
+    display: block;
+}
+.btn-theme:before {
+    content: '\f108';
+    font-family: FontAwesome;
+    font-weight: 400;
+    margin: 0 7px 0 -7px;
+}

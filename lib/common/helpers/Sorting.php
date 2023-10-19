@@ -97,7 +97,7 @@ class Sorting
 
       //get all sort option positions from settings, if something's missed fill in with 0
       for($i=0; $i<17; $i++) {
-        $orders['sort_pos_' . $i] = $settings['sort_pos_' . $i] ? $settings['sort_pos_' . $i] : 0;
+        $orders['sort_pos_' . $i] = ($settings['sort_pos_' . $i]??0) ? $settings['sort_pos_' . $i] : 0;
       }
       // new to top ....
       asort($orders, SORT_NUMERIC);
@@ -109,28 +109,28 @@ class Sorting
       }
 
       for ($i = 0; $i < 17; $i++) {
-        if ($settings['sort_hide_' . $i]) {
+        if ($settings['sort_hide_' . $i] ?? false) {
           $orders['sort_pos_' . $i] = 100 + $i;
         }
       }
 
-      if (!$settings['sort_hide_0']) {
+      //if (!($settings['sort_hide_0'] ?? false)) {
           $sorting[$orders['sort_pos_0']] = ['title' => TEXT_NO_SORTING,
-              'hide' => ($settings['sort_hide_0'] ? '0' : '1'),
+              'hide' => (($settings['sort_hide_0'] ?? 1) ? '0' : '1'),
               'name' => '0',
               'id' => '0'
           ];
-      }
+      //}
 
       foreach (self::SORT_OPTIONS as $j => $d) {
         $k = 2*$j + 1;
         if (!$onlyVisible || !$settings['sort_hide_' . $k]) {
-          $sorting[$orders['sort_pos_' . $k]] = ['title' => (!$settings['hide_icons'] ? ' <span class="ico">' . $downChar . '</span>' : '') . $d[0],
+          $sorting[$orders['sort_pos_' . $k]] = ['title' => (empty($settings['hide_icons']) ? ' <span class="ico">' . $downChar . '</span>' : '') . $d[0],
             'hide' => ($settings['sort_hide_' . $k]? '0' : '1'), 'name' => $k, 'id' => $d[1] . 'a'];
         }
         $k++;
         if (!$onlyVisible || !$settings['sort_hide_' . $k]) {
-          $sorting[$orders['sort_pos_' . $k]] = ['title' => (!$settings['hide_icons'] ? ' <span class="ico">' . $upChar . '</span>' : '') . $d[3],
+          $sorting[$orders['sort_pos_' . $k]] = ['title' => (empty($settings['hide_icons']) ? ' <span class="ico">' . $upChar . '</span>' : '') . $d[3],
             'hide' => ($settings['sort_hide_' . $k]? '0' : '1'), 'name' => $k, 'id' => $d[1] . 'd'];
         }
       }

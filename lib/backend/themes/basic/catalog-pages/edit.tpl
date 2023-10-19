@@ -18,10 +18,10 @@
         <div class="prop_wrapper">
             <div class="tabbable tabbable-custom">
                 <ul class="nav nav-tabs">
-                    <li class="active"><a href="#tab_main" data-toggle="tab"><span>{$smarty.const.TEXT_NAME_DESCRIPTION}</span></a></li>
-                    <li><a href="#tab_details" data-toggle="tab"><span>{$smarty.const.TEXT_MAIN}</span></a></li>
-                    <li><a href="#tab_seo" data-toggle="tab"><span>{$smarty.const.TEXT_SEO}</span></a></li>
-                    <li><a href="#tab_products" data-toggle="tab"><span>{$smarty.const.TEXT_INFORMATION}</span></a></li>
+                    <li class="active" data-bs-toggle="tab" data-bs-target="#tab_main"><a><span>{$smarty.const.TEXT_NAME_DESCRIPTION}</span></a></li>
+                    <li data-bs-toggle="tab" data-bs-target="#tab_details"><a><span>{$smarty.const.TEXT_MAIN}</span></a></li>
+                    <li data-bs-toggle="tab" data-bs-target="#tab_seo"><a><span>{$smarty.const.TEXT_SEO}</span></a></li>
+                    <li data-bs-toggle="tab" data-bs-target="#tab_products"><a><span>{$smarty.const.TEXT_INFORMATION}</span></a></li>
                 </ul>
                 <div class="tab-content">
                     <div class="tab-pane topTabPane tabbable-custom active" id="tab_main">

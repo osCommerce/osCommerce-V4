@@ -6,6 +6,8 @@
     {assign var=re1 value='.{'}
     {assign var=re2 value='}'}
     {Html::activeHiddenInput($model, 'address_book_id')}
+    {Html::activeHiddenInput($model, 'drop_ship', ['value' => $drop_ship])}
+    {Html::activeHiddenInput($model, 'type')}
     {if $model->has('GENDER')}
         <div class="col-full genders-title">
             <div class="">{field_label const="ENTRY_GENDER" configuration=$model->get('GENDER')}</div>
@@ -18,9 +20,9 @@
                 <label>
                     <span>{field_label const="ENTRY_FIRST_NAME" configuration=$model->get('FIRSTNAME')}</span>
                     {if $model->has('FIRSTNAME', false)}
-                        {Html::activeTextInput($model, 'firstname', ['data-pattern' => "{$re1}{$smarty.const.ENTRY_FIRST_NAME_MIN_LENGTH}{$re2}", 'data-required' => "{sprintf($smarty.const.ENTRY_FIRST_NAME_ERROR, $smarty.const.ENTRY_FIRST_NAME_MIN_LENGTH)}"])}
+                        {Html::activeTextInput($model, 'firstname', ['data-pattern' => "{$re1}{$smarty.const.ENTRY_FIRST_NAME_MIN_LENGTH}{$re2}", 'data-required' => "{sprintf($smarty.const.ENTRY_FIRST_NAME_ERROR, $smarty.const.ENTRY_FIRST_NAME_MIN_LENGTH)}", 'autocomplete' => 'given-name'])}
                     {else}
-                        {Html::activeTextInput($model, 'firstname')}
+                        {Html::activeTextInput($model, 'firstname', ['autocomplete' => 'given-name'])}
                     {/if}
                 </label>
             </div>
@@ -30,9 +32,9 @@
                 <label>
                     <span>{field_label const="ENTRY_LAST_NAME" configuration=$model->get('LASTNAME')}</span>
                     {if $model->has('LASTNAME', false)}
-                        {Html::activeTextInput($model, 'lastname', ['data-pattern' => "{$re1}{$smarty.const.ENTRY_LAST_NAME_MIN_LENGTH}{$re2}", 'data-required' => "{sprintf($smarty.const.ENTRY_LAST_NAME_ERROR, $smarty.const.ENTRY_LAST_NAME_MIN_LENGTH)}"])}
+                        {Html::activeTextInput($model, 'lastname', ['data-pattern' => "{$re1}{$smarty.const.ENTRY_LAST_NAME_MIN_LENGTH}{$re2}", 'data-required' => "{sprintf($smarty.const.ENTRY_LAST_NAME_ERROR, $smarty.const.ENTRY_LAST_NAME_MIN_LENGTH)}", 'autocomplete' => 'family-name'])}
                     {else}
-                        {Html::activeTextInput($model, 'lastname')}
+                        {Html::activeTextInput($model, 'lastname', ['autocomplete' => 'family-name'])}
                     {/if}
                 </label>
             </div>
@@ -42,9 +44,9 @@
                 <label>
                     <span>{field_label const="ENTRY_STREET_ADDRESS" configuration=$model->get('STREET_ADDRESS')}</span>
                     {if $model->has('STREET_ADDRESS', false)}
-                        {Html::activeTextInput($model, 'street_address', ['data-pattern' => "{$re1}{$smarty.const.ENTRY_STREET_ADDRESS_MIN_LENGTH}{$re2}", 'data-required' => "{sprintf($smarty.const.ENTRY_STREET_ADDRESS_ERROR, ENTRY_STREET_ADDRESS_MIN_LENGTH)}"])}
+                        {Html::activeTextInput($model, 'street_address', ['data-pattern' => "{$re1}{$smarty.const.ENTRY_STREET_ADDRESS_MIN_LENGTH}{$re2}", 'data-required' => "{sprintf($smarty.const.ENTRY_STREET_ADDRESS_ERROR, ENTRY_STREET_ADDRESS_MIN_LENGTH)}", 'autocomplete' => 'street-address'])}
                     {else}
-                        {Html::activeTextInput($model, 'street_address')}
+                        {Html::activeTextInput($model, 'street_address', ['autocomplete' => 'street-address'])}
                     {/if}
                 </label>
             </div>
@@ -54,9 +56,9 @@
                 <label>
                     <span>{field_label const="ENTRY_SUBURB" configuration=$model->get('SUBURB')}</span>
                     {if $model->has('SUBURB', false)}
-                        {Html::activeTextInput($model, 'suburb', ['data-pattern' => "{$re1}1{$re2}", 'data-required' => "{$smarty.const.ENTRY_SUBURB_ERROR}"])}
+                        {Html::activeTextInput($model, 'suburb', ['data-pattern' => "{$re1}1{$re2}", 'data-required' => "{$smarty.const.ENTRY_SUBURB_ERROR}", 'autocomplete' => 'address-line1'])}
                     {else}
-                        {Html::activeTextInput($model, 'suburb')}
+                        {Html::activeTextInput($model, 'suburb', ['autocomplete' => 'address-line1'])}
                     {/if}
                 </label>
             </div>
@@ -66,9 +68,9 @@
                 <label>
                     <span>{field_label const="ENTRY_POST_CODE" configuration=$model->get('POSTCODE')}</span>
                     {if $model->has('POSTCODE', false)}
-                        {Html::activeTextInput($model, 'postcode', ['data-pattern' => "{$re1}{$smarty.const.ENTRY_POSTCODE_MIN_LENGTH}{$re2}", 'data-required' => "{sprintf($smarty.const.ENTRY_POST_CODE_ERROR, ENTRY_POSTCODE_MIN_LENGTH)}"])}
+                        {Html::activeTextInput($model, 'postcode', ['data-pattern' => "{$re1}{$smarty.const.ENTRY_POSTCODE_MIN_LENGTH}{$re2}", 'data-required' => "{sprintf($smarty.const.ENTRY_POST_CODE_ERROR, ENTRY_POSTCODE_MIN_LENGTH)}", 'autocomplete' => 'postal-code'])}
                     {else}
-                        {Html::activeTextInput($model, 'postcode')}
+                        {Html::activeTextInput($model, 'postcode', ['autocomplete' => 'postal-code'])}
                     {/if}
                 </label>
             </div>
@@ -78,9 +80,9 @@
                 <label>
                     <span>{field_label const="ENTRY_CITY" configuration=$model->get('CITY')}</span>
                     {if $model->has('CITY', false)}
-                        {Html::activeTextInput($model, 'city', ['data-pattern' => "{$re1}{$smarty.const.ENTRY_CITY_MIN_LENGTH}{$re2}", 'data-required' => "{sprintf($smarty.const.ENTRY_CITY_ERROR, ENTRY_CITY_MIN_LENGTH)}"])}
+                        {Html::activeTextInput($model, 'city', ['data-pattern' => "{$re1}{$smarty.const.ENTRY_CITY_MIN_LENGTH}{$re2}", 'data-required' => "{sprintf($smarty.const.ENTRY_CITY_ERROR, ENTRY_CITY_MIN_LENGTH)}", 'autocomplete' => 'address-level2'])}
                     {else}
-                        {Html::activeTextInput($model, 'city')}
+                        {Html::activeTextInput($model, 'city', ['autocomplete' => 'address-level2'])}
                     {/if}
                 </label>
             </div>
@@ -90,9 +92,9 @@
                 <label>
                     <span>{field_label const="ENTRY_STATE" configuration=$model->get('STATE')}</span>
                     {if $model->has('STATE', false)}
-                        {Html::activeTextInput($model, 'state', ['data-pattern' => "{$re1}{$smarty.const.ENTRY_STATE_MIN_LENGTH}{$re2}", 'data-required' => "{sprintf($smarty.const.ENTRY_STATE_ERROR, ENTRY_STATE_MIN_LENGTH)}"])}
+                        {Html::activeTextInput($model, 'state', ['data-pattern' => "{$re1}{$smarty.const.ENTRY_STATE_MIN_LENGTH}{$re2}", 'data-required' => "{sprintf($smarty.const.ENTRY_STATE_ERROR, ENTRY_STATE_MIN_LENGTH)}", 'autocomplete' => 'address-level1'])}
                     {else}
-                        {Html::activeTextInput($model, 'state')}
+                        {Html::activeTextInput($model, 'state', ['autocomplete' => 'address-level1'])}
                     {/if}
                 </label>
             </div>
@@ -110,9 +112,9 @@
                 <label>
                     <span>{field_label const="ENTRY_COMPANY" configuration=$model->get('COMPANY')}</span>
                     {if $model->has('COMPANY', false)}
-                        {Html::activeTextInput($model, 'company', ['data-pattern' => "{$re1}1{$re2}", 'data-required' => "{$smarty.const.ENTRY_COMPANY_ERROR}"])}
+                        {Html::activeTextInput($model, 'company', ['data-pattern' => "{$re1}1{$re2}", 'data-required' => "{$smarty.const.ENTRY_COMPANY_ERROR}", 'autocomplete' => 'organization'])}
                     {else}
-                        {Html::activeTextInput($model, 'company')}
+                        {Html::activeTextInput($model, 'company', ['autocomplete' => 'organization'])}
                     {/if}
                 </label>
             </div>
@@ -122,9 +124,9 @@
                 <label>
                     <span>{field_label const="ENTRY_BUSINESS" configuration=$model->get('COMPANY_VAT')}</span>
                     {if $model->has('COMPANY_VAT', false)}
-                        {Html::activeTextInput($model, 'company_vat', ['data-pattern' => "{$re1}1{$re2}", 'data-required' => "{$smarty.const.ENTRY_VAT_ID_ERROR}"])}
+                        {Html::activeTextInput($model, 'company_vat', ['data-pattern' => "{$re1}1{$re2}", 'data-required' => "{$smarty.const.ENTRY_VAT_ID_ERROR}", 'autocomplete' => 'company_vat'])}
                     {else}
-                        {Html::activeTextInput($model, 'company_vat')}
+                        {Html::activeTextInput($model, 'company_vat', ['autocomplete' => 'company_vat'])}
                     {/if}
                     <i class="company_vat_status"></i>
                 </label>
@@ -135,9 +137,9 @@
                 <label>
                     <span>{field_label const="TEXT_CUSTOMS_NUMBER" configuration=$model->get('CUSTOMS_NUMBER')}</span>
                     {if $model->has('CUSTOMS_NUMBER', false)}
-                        {Html::activeTextInput($model, 'customs_number', ['data-pattern' => "{$re1}1{$re2}", 'data-required' => "{$smarty.const.TEXT_CUSTOMS_NUMBER_ERROR}"])}
+                        {Html::activeTextInput($model, 'customs_number', ['data-pattern' => "{$re1}1{$re2}", 'data-required' => "{$smarty.const.TEXT_CUSTOMS_NUMBER_ERROR}", 'autocomplete' => 'customs_number'])}
                     {else}
-                        {Html::activeTextInput($model, 'customs_number')}
+                        {Html::activeTextInput($model, 'customs_number', ['autocomplete' => 'customs_number'])}
                     {/if}
                     <i class="customs_number_status"></i>
                 </label>
@@ -148,11 +150,23 @@
                 <label>
                     <span>{field_label const="ENTRY_TELEPHONE_ADRESS_BOOK" configuration=$model->get('TELEPHONE')}</span>
                     {if $model->has('TELEPHONE', false)}
-                        {Html::activeTextInput($model, 'telephone', ['data-pattern' => "{$re1}1{$re2}", 'data-required' => "{$smarty.const.ENTRY_TELEPHONE_ADRESS_BOOK_ERROR}"])}
+                        {Html::activeTextInput($model, 'telephone', ['data-pattern' => "{$re1}1{$re2}", 'data-required' => "{$smarty.const.ENTRY_TELEPHONE_ADRESS_BOOK_ERROR}", 'autocomplete' => 'tel'])}
                     {else}
-                        {Html::activeTextInput($model, 'telephone')}
+                        {Html::activeTextInput($model, 'telephone', ['autocomplete' => 'tel'])}
                     {/if}
                     <i class="telephone_status"></i>
+                </label>
+            </div>
+        {/if}
+        {if $model->has('EMAIL_ADDRESS')}
+            <div class="col-2">
+                <label>
+                    <span>{field_label const="ENTRY_EMAIL_ADDRESS_ADRESS_BOOK" configuration=$model->get('EMAIL_ADDRESS')}</span>
+                    {if $model->has('EMAIL_ADDRESS', false)}
+                        {Html::activeTextInput($model, 'email_address', ['data-pattern' => "{$re1}1{$re2}", 'data-required' => "{$smarty.const.ENTRY_EMAIL_ADDRESS_ADRESS_BOOK_ERROR}", 'autocomplete' => 'email'])}
+                    {else}
+                        {Html::activeTextInput($model, 'email_address', ['autocomplete' => 'email'])}
+                    {/if}
                 </label>
             </div>
         {/if}

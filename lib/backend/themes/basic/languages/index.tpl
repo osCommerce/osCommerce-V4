@@ -16,7 +16,7 @@
                   <i data-dismiss="alert" class="icon-remove close"></i>
                   <span id="message_plce"></span>
               </div>   	
-			  {if {$messages|@count} > 0}
+			  {if {$messages|default:array()|@count} > 0}
 			   {foreach $messages as $messageType => $message}
               <div class="alert fade in alert-{$messageType}">
                   <i data-dismiss="alert" class="icon-remove close"></i>

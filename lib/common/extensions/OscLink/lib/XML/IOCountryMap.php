@@ -46,6 +46,8 @@ class IOCountryMap extends IOMap
                 $parentResult->internalId = $internalId;
                 $parentResult->value = $internalId;
                 IOCore::get()->getAttributeMapper()->mapIds($parentResult, $parentResult->internalId, $parentResult->externalId );
+            } else {
+                \OscLink\Logger::printf("Country not found: ISO2=$fromIso2 externalID=%s", $node['internalId'] ?? null);
             }
         }
         return $parentResult;

@@ -97,7 +97,7 @@ class ViewAttributes
                 $price0 = 0;
                 $fullpriceTmp = 0;
             }else
-            if (!$without_inventory && \common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed') && ($options_count==1) && !$is_virtual_option) {
+            if (!$without_inventory && \common\helpers\Extensions::isAllowed('Inventory') && ($options_count==1) && !$is_virtual_option) {
                 // else price column is not shown in assigned attributes list
                 // with inventory the attributes price is not saved!!! (can't be split)
                 $price0 = \common\helpers\Inventory::get_inventory_price_by_uprid($pInfo->products_id . '{' . $data['products_options_id'] .'}' . $data['products_options_values_id'], 1, 0, $view->defaultCurrency);

@@ -302,12 +302,13 @@ class ListingSql
         $relevance_keywords = $searchBuilder->relevanceWords;
       
         if (isset($relevance_keywords) && (sizeof($relevance_keywords) > 0)) {
-            if ( $ext = \common\helpers\Acl::checkExtensionAllowed('GoogleAnalyticsTools') ){
-                $filters_left_join .= $ext::joinListingSql();
-            }
-
             $relevance_order .= " (match(pd.products_name) against ('" . implode(' ', $relevance_keywords) . "') * 1.2) + (match(p.products_model) against ('" . implode(' ', $relevance_keywords) . "') * 1.0) ";
-            if ( $ext = \common\helpers\Acl::checkExtensionAllowed('GoogleAnalyticsTools') ){
+
+            /**
+             * @var $ext \common\extensions\GoogleAnalyticsTools\GoogleAnalyticsTools
+             */
+            if ( $ext = \common\helpers\Extensions::isAllowed('GoogleAnalyticsTools') ){
+                $filters_left_join .= $ext::joinListingSql();
                 $relevance_order .= $ext::relevanceListingSql($relevance_keywords);
             }
             if (isset($_GET['search_in_description']) && ($_GET['search_in_description'] == '1')) {
@@ -337,8 +338,11 @@ class ListingSql
           $products_join .= self::sqlProductsToPlatformCategories();
         }
 
-        $ext = \common\helpers\Acl::checkExtensionAllowed('ProductPriceIndex', 'allowed');
-        if($ext && $ext::isEnabled() ){
+          /**
+           * @var $ext \common\extensions\ProductPriceIndex\ProductPriceIndex
+           * @var $extModel \common\extensions\ProductPriceIndex\models\ProductPriceIndex
+           */
+        if(($ext = \common\helpers\Extensions::isAllowed('ProductPriceIndex')) && !empty($extModel = $ext::getModel('ProductPriceIndex'))){
           $_tax_rates = [];
           $r = tep_db_query("select tax_class_id from " . TABLE_TAX_CLASS);
           while ($d = tep_db_fetch_array($r)) {
@@ -368,8 +372,8 @@ class ListingSql
           $where_price .= ") ";
 
           $ext::checkUpdateStatus();
-//echo htmlspecialchars( "select distinct p.products_id from " . TABLE_PRODUCTS . " p join " . TABLE_PRODUCT_PRICE_INDEX . " ppi on ppi.products_id=p.products_id and groups_id='" . (int)$customer_groups_id . "' and currencies_id='" . (defined('USE_MARKET_PRICES') && USE_MARKET_PRICES=='True'?(int)$currency_id:0) . "' {$products_join} where " . \common\helpers\Product::getState() . Product::get_sql_product_restrictions(array('p', 'pd', 's', 'sp', 'pp')) . $where_price) . " <br>";
-          $products_query = tep_db_query("select distinct p.products_id from " . TABLE_PRODUCTS . " p join " . TABLE_PRODUCT_PRICE_INDEX . " ppi on ppi.products_id=p.products_id and groups_id='" . (int)$customer_groups_id . "' and currencies_id='" . (defined('USE_MARKET_PRICES') && USE_MARKET_PRICES=='True' ? (int)$currency_id : 0) . "' {$products_join} where " . \common\helpers\Product::getState() . \common\helpers\Product::get_sql_product_restrictions(array('p', 'pd', 's', 'sp', 'pp')) . $where_price . " ");
+//echo htmlspecialchars( "select distinct p.products_id from " . TABLE_PRODUCTS . " p join " . $extModel::tableName() . " ppi on ppi.products_id=p.products_id and groups_id='" . (int)$customer_groups_id . "' and currencies_id='" . (defined('USE_MARKET_PRICES') && USE_MARKET_PRICES=='True'?(int)$currency_id:0) . "' {$products_join} where " . \common\helpers\Product::getState() . Product::get_sql_product_restrictions(array('p', 'pd', 's', 'sp', 'pp')) . $where_price) . " <br>";
+          $products_query = tep_db_query("select distinct p.products_id from " . TABLE_PRODUCTS . " p join " . $extModel::tableName() . " ppi on ppi.products_id=p.products_id and groups_id='" . (int)$customer_groups_id . "' and currencies_id='" . (defined('USE_MARKET_PRICES') && USE_MARKET_PRICES=='True' ? (int)$currency_id : 0) . "' {$products_join} where " . \common\helpers\Product::getState() . \common\helpers\Product::get_sql_product_restrictions(array('p', 'pd', 's', 'sp', 'pp')) . $where_price . " ");
           while ($data = tep_db_fetch_array($products_query)) {
             $ids[] = $data['products_id'];
           }
@@ -410,21 +414,23 @@ class ListingSql
 
     // Categories selected
     if ($exclude !== 'cat') {
-      if (is_array($_GET['cat'])) {
+      $cat = Yii::$app->request->get('cat');
+      if (is_array($cat)) {
         $filters_left_join .= " left join " . TABLE_PRODUCTS_TO_CATEGORIES . " p2c2 on p.products_id = p2c2.products_id ";
-        $filters_where .= " and p2c2.categories_id in ('" . implode("','", array_map('intval', $_GET['cat'])) . "') ";
-      } elseif ($_GET['cat'] > 0) {
+        $filters_where .= " and p2c2.categories_id in ('" . implode("','", array_map('intval', $cat)) . "') ";
+      } elseif ($cat > 0) {
         $filters_left_join .= " left join " . TABLE_PRODUCTS_TO_CATEGORIES . " p2c2 on p.products_id = p2c2.products_id ";
-        $filters_where .= " and p2c2.categories_id = '" . (int)$_GET['cat'] . "' ";
+        $filters_where .= " and p2c2.categories_id = '" . (int)$cat . "' ";
       }
     }
 
     // Brands selected
     if ($exclude !== 'brand') {
-      if (is_array($_GET['brand'])) {
-        $filters_where .= " and p.manufacturers_id in ('" . implode("','", array_map('intval', $_GET['brand'])) . "') ";
-      } elseif ($_GET['brand'] > 0) {
-        $filters_where .= " and p.manufacturers_id = '" . (int)$_GET['brand'] . "' ";
+        $brand = Yii::$app->request->get('brand');
+        if (is_array($brand)) {
+        $filters_where .= " and p.manufacturers_id in ('" . implode("','", array_map('intval', $brand)) . "') ";
+      } elseif ($brand > 0) {
+        $filters_where .= " and p.manufacturers_id = '" . (int)$brand . "' ";
       }
     }
 

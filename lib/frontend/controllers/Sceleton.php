@@ -49,11 +49,10 @@ class Sceleton extends Controller {
      */
     public $selectedMenu = array();
 
-    function __construct($id,$module=null) {
+    private $use_social = false;
+    public $show_socials = false;
 
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('UserTwoStepAuth', 'allowed')) {
-            $ext::checkRoute();
-        }
+    function __construct($id,$module=null) {
 
         global $cart;
 
@@ -68,8 +67,8 @@ class Sceleton extends Controller {
         }
 
         $allowedClient = false;
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('Maintenance', 'allowed')) {
-            $allowedClient = $ext::allowedClient();
+        foreach (\common\helpers\Hooks::getList('frontend/sceleton/construct') as $filename) {
+            include($filename);
         }
 
         // {{ dev basic auth
@@ -157,7 +156,7 @@ class Sceleton extends Controller {
         if (isset($params['max_items'])){
             $_SESSION['max_items'] = intval($params['max_items']);
         }
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('ShowInactive', 'allowed')) {
+        if ($ext = \common\helpers\Extensions::isAllowed('ShowInactive')) {
             $ext::changeStatus();
         }
 
@@ -208,6 +207,13 @@ class Sceleton extends Controller {
         }
 
         \common\components\Socials::loadSocialAddons(PLATFORM_ID);
+        $platform_config = new \common\classes\platform_config(\common\classes\platform::currentId());
+        $this->use_social = $platform_config->checkNeedSocials();
+        if ($this->use_social) {
+            \common\components\Socials::loadComponents(PLATFORM_ID);
+            $this->show_socials = true;
+        }
+
         if (\common\helpers\Acl::checkExtensionAllowed('BonusActions')) {
             $this->promoActionsObs = \common\extensions\BonusActions\models\PromotionsBonusObserver::getInstance();
             $this->promoActionsObs->checkRequestPromoAction();
@@ -222,10 +228,8 @@ class Sceleton extends Controller {
         $this->setMeta($id, $params);
 
         /** @var \common\extensions\FrontendsSession\FrontendsSession $ext */
-        if ($ext = \common\helpers\Acl::checkExtension('FrontendsSession', 'allowed')) {
-          if ($ext::allowed() ) {
+        if ($ext = \common\helpers\Extensions::isAllowed('FrontendsSession')) {
             $ext::registerJsFile($this->getView());
-          }
         }
 
       }
@@ -414,6 +418,7 @@ class Sceleton extends Controller {
                 if ( tep_db_num_rows($the_product_info_query)>0 ) {
                     $the_product_info = tep_db_fetch_array($the_product_info_query);
                 }
+                \common\helpers\Php8::nullArrProps($the_product_info, ['products_id', 'products_head_title_tag', 'products_model', 'manufacturers_id', 'products_description', 'products_description_short', 'products_name', 'products_head_title_tag', 'products_self_service', 'products_head_keywords_tag', 'overwrite_head_desc_tag']);
 
                 if (!is_array($the_product_info) || empty($the_product_info['products_head_title_tag']) || !$the_product_info['overwrite_head_title_tag']) {
                     $the_title = (defined('HEAD_TITLE_TAG_PRODUCT_INFO') && tep_not_null(HEAD_TITLE_TAG_PRODUCT_INFO) ? HEAD_TITLE_TAG_PRODUCT_INFO : $HEAD_TITLE_TAG_ALL);
@@ -432,6 +437,9 @@ class Sceleton extends Controller {
                             }
                         }
                         $the_title = str_replace('##DOCUMENTS##', implode(', ', $documents_array), $the_title);
+                    }
+                    if (strstr($the_title, '##PRODUCT_MODEL##')) {
+                        $the_title = str_replace('##PRODUCT_MODEL##', $the_product_info['products_model'], $the_title);
                     }
                     if (strstr($the_title, '##BRAND_NAME##')) {
                         $the_title = str_replace('##BRAND_NAME##', \common\helpers\Manufacturers::get_manufacturer_info('manufacturers_name', $the_product_info['manufacturers_id'] ?? null), $the_title);
@@ -534,7 +542,7 @@ class Sceleton extends Controller {
                         $the_desc = str_replace('##DOCUMENTS##', implode(', ', $documents_array), $the_desc);
                     }
                     if (strstr($the_desc, '##BRAND_NAME##')) {
-                        $the_desc = str_replace('##BRAND_NAME##', \common\helpers\Manufacturers::get_manufacturer_info('manufacturers_name', $the_product_info['manufacturers_id'] ?? null), $the_desc);
+                        $the_desc = str_replace('##BRAND_NAME##', \common\helpers\Manufacturers::get_manufacturer_info('manufacturers_name', $the_product_info['manufacturers_id'] ?? null) ?? '', $the_desc);
                     }
                     if (strstr($the_desc, '##CATEGORY_NAME##') || strstr($the_desc, '##BREADCRUMB##')) {
                         $product_cPath = \common\helpers\Product::get_product_path($the_product_info['products_id'] ?? null);
@@ -752,6 +760,13 @@ class Sceleton extends Controller {
         $the_desc = preg_replace('/\s{2,}/', ' ', $the_desc);
         $the_desc = trim(trim($the_desc),',');
 
+        foreach (\common\helpers\Hooks::getList('sceleton/set-meta', '') as $filename) {
+            include($filename);
+        }
+        foreach (\common\helpers\Hooks::getList('frontend/sceleton/set-meta', '') as $filename) {
+            include($filename);
+        }
+
         if ( !empty($the_title) ) {
             \Yii::$app->view->title = $the_title;
         }else{
@@ -811,13 +826,14 @@ class Sceleton extends Controller {
         if ($settings['use_hraflang_metatag']){
             $_l = \yii\helpers\ArrayHelper::index($lng->catalog_languages, 'code');
             $platforms_languages = array_intersect_key($_l, array_flip($lng->paltform_languages));
-            if(count($platforms_languages) == 1) return;
+            //if(count($platforms_languages) == 1) return;
             $map = \yii\helpers\ArrayHelper::getColumn($platforms_languages, 'id');
             $pageParams = [$action];
             $params = Yii::$app->request->getQueryParams();
             if ( !is_array($params) ) $params = [];
             $pageParams = array_merge($pageParams, $params);
 
+            if (count($platforms_languages) > 1)
             foreach ( $map as $_lang_code=>$_lang_id ) {
 
                 $_hrefLang = $platforms_languages[$_lang_code]['code'];
@@ -834,6 +850,14 @@ class Sceleton extends Controller {
                     'href' => $url,
                 ],'alternate_lang_'.$_hrefLang);
             }
+
+            foreach (\common\helpers\Hooks::getList('sceleton/register-href-lang', '') as $filename) {
+                include($filename);
+            }
+            foreach (\common\helpers\Hooks::getList('frontend/sceleton/register-href-lang', '') as $filename) {
+                include($filename);
+            }
+
             return ;
 
 
@@ -901,8 +925,8 @@ class Sceleton extends Controller {
     {
         global $language, $languages_id;
 
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('Maintenance', 'allowed')) {
-            $ext::bindParams($action);
+        foreach (\common\helpers\Hooks::getList('frontend/sceleton/bindactionparams') as $filename) {
+            include($filename);
         }
 
         if ( IS_IMAGE_CDN_SERVER && $action->controller->id!='image' ) {
@@ -997,6 +1021,13 @@ class Sceleton extends Controller {
         if (stripos(\Yii::$app->request->getUserAgent(), 'MSIE')) {
             $this->getView()->registerJsFile(Info::themeFile('/js/promise/es6-promise.auto.min.js'), ['position' => \yii\web\View::POS_HEAD], 'promise_polyfill');
         }
-        return parent::beforeAction($action);
+        $response =  parent::beforeAction($action);
+        if ( \Yii::$app->request->isAjax ) {
+            return $response;
+        }
+        if($this->enableCsrfValidation && \Yii::$app->request->isPost && \Yii::$app->request->validateCsrfToken()) {
+            \Yii::$app->request->getCsrfToken(true);
+        }
+        return $response;
     }
 }

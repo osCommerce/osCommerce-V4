@@ -25,4 +25,30 @@ class Products2Categories extends ActiveRecord
     {
         return 'products_to_categories';
     }
+
+    public function getPlatformsCategories()
+    {
+        return $this->hasMany(PlatformsCategories::class, ['categories_id' => 'categories_id']);
+    }
+
+    public function getCategories()
+    {
+        return $this->hasOne(Categories::class, ['categories_id' => 'categories_id']);
+    }
+
+    public function getProducts()
+    {
+        return $this->hasOne(Products::class, ['products_id' => 'products_id']);
+    }
+
+    public function getPlatformsProducts()
+    {
+        return $this->hasMany(PlatformsProducts::class, ['products_id' => 'products_id']);
+    }
+
+    public function getProductsPrices()
+    {
+        return $this->hasMany(ProductsPrices::class, ['products_id' => 'products_id']);
+    }
+
 }

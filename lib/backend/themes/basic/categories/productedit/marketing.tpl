@@ -1,11 +1,6 @@
 
 <div class="btn-box-inv-price btn-market after">
-  <span class="btn-xl-pr active" id="btn-xl0-pr">{$smarty.const.FIELDSET_ASSIGNED_XSELL_PRODUCTS}</span>
-  {foreach $app->controller->view->xsellTypes as $xsellTypeId=>$sellTypeName}
-    <span class="btn-xl-pr" id="btn-xl{$xsellTypeId}-pr">{$sellTypeName}</span>
-  {/foreach}
   {if !isset($category)}
-  <span class="btn-up-pr" id="btn-up-pr">{$smarty.const.FIELDSET_ASSIGNED_UPSELL_PRODUCTS}</span>
   <span class="btn-gaw-pr" id="btn-gaw-pr">{$smarty.const.FIELDSET_ASSIGNED_AS_GIVEAWAY}</span>
   <span class="btn-pop-pr" id="btn-pop-pr">{$smarty.const.TEXT_POPULARITY}</span>
   {/if}
@@ -13,18 +8,8 @@
     {include file=$filename category=$category|default:null}
   {/foreach}
 </div>
-{assign var="xsellTypeId" value="0"}
-{include file="productedit/xsell.tpl"}
-{foreach $app->controller->view->xsellTypes as $xsellTypeId=>$sellTypeName}
-  {include file="productedit/xsell.tpl"}
-{/foreach}
 
 {if !isset($category)}
-{if \common\helpers\Acl::checkExtensionAllowed('UpSell', 'allowed')}
-    {\common\extensions\UpSell\UpSell::productBlock()}
-{else}                           
-    {include 'productedit/upsell.tpl'}
-{/if}
 <div class="gaw-pr-box" id="box-gaw-pr">
   {include 'give-away.tpl'}
 </div>

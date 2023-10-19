@@ -1,6 +1,9 @@
 {use class="frontend\design\Info"}
 <div class="messages"></div>
 <div class="address-book">
+{if $SplitCustomerAddresses = \common\helpers\Acl::checkExtensionAllowed('SplitCustomerAddresses', 'allowed')}
+    {$SplitCustomerAddresses::viewAccountAddressBook($address_array, $settings, $link_add, $text_add)}
+{else}
 		<div class="item add_item">
 			<div class="wrap">
 				<a href="{$link_add}" class="{if isset($settings[0].popup_add) && $settings[0].popup_add} popup-link {/if}">{$text_add}</a>			
@@ -33,6 +36,7 @@
 			</div>
 		</div>
         {/foreach}
+{/if}
 </div>
 <script type="text/javascript">
     tl('{Info::themeFile('/js/bootstrap-switch.js')}', function(){

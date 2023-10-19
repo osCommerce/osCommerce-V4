@@ -31,7 +31,7 @@ font-weight: 600">{$smarty.const.MENU_IS_NOT_EMPTY}</div>
     </div>
     <div class="noti-btn">
         <div><span class="btn btn-cancel">{$smarty.const.IMAGE_CANCEL}</span></div>
-        <div><button class="btn btn-primary btn-save">Copy</button></div>
+        <div><button class="btn btn-primary btn-save">{$smarty.const.IMAGE_COPY}</button></div>
     </div>
 </form>
 <script type="text/javascript">

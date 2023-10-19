@@ -69,7 +69,8 @@ class Suppliers extends ProviderAbstract implements ImportInterface, ExportInter
         $this->fields[] = array('name' => 'company_vat', 'value' => 'Company VAT Number',);
         $this->fields[] = array('name' => 'supplier_prices_with_tax', 'value' => 'Price incl. tax',);
         $this->fields[] = array('name' => 'tax_rate', 'value' => 'Tax rate',);
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('EventSystem', 'allowed')){
+
+        if ($ext = \common\helpers\Extensions::isAllowed('EventSystem')) {
             $this->fields = array_merge($this->fields, $ext::partner()->getExportAdditionalFields());
         }        
     }
@@ -117,7 +118,7 @@ class Suppliers extends ProviderAbstract implements ImportInterface, ExportInter
             }
         }
         
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('EventSystem', 'allowed')){
+        if ($ext = \common\helpers\Extensions::isAllowed('EventSystem')) {
             $ext::partner()->exportAdditionalFieldsValues($this->data);
         }
         
@@ -177,7 +178,7 @@ class Suppliers extends ProviderAbstract implements ImportInterface, ExportInter
             
             $authParams = [];
             if ($supplier->load($update_data_array, '') && $supplier->validate() && $supplier->saveSupplier($authParams)) {
-                if ($ext = \common\helpers\Acl::checkExtensionAllowed('EventSystem', 'allowed')){
+                if ($ext = \common\helpers\Extensions::isAllowed('EventSystem')) {
                     $ext::partner()->savePartnerAdditionalFields($supplier->suppliers_id, $this->data);
                 }
                 $this->entry_counter++;

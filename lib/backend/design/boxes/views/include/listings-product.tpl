@@ -2,9 +2,9 @@
   {if $widget_listing}
   <ul class="nav nav-tabs">
 
-    <li class="active"><a href="#columns" data-toggle="tab">{$smarty.const.TEXT_COLUMNS}</a></li>
-    <li><a href="#rows" data-toggle="tab">{$smarty.const.TEXT_ROWS}</a></li>
-    <li><a href="#b2b" data-toggle="tab">{$smarty.const.TEXT_B2B}</a></li>
+    <li class="active" data-bs-toggle="tab" data-bs-target="#columns"><a>{$smarty.const.TEXT_COLUMNS}</a></li>
+    <li data-bs-toggle="tab" data-bs-target="#rows"><a>{$smarty.const.TEXT_ROWS}</a></li>
+    <li data-bs-toggle="tab" data-bs-target="#b2b"><a>{$smarty.const.TEXT_B2B}</a></li>
 
   </ul>
 

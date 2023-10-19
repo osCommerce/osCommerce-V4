@@ -4,17 +4,36 @@
 
 {Html::hiddenInput('currentCart', $currentCart)}
 
-<div class="order-herlpers">
+<div class="order-helpers">
     <div class="btn-bar btn-bar-top after">
-        <div class="btn-left"><a href="javascript:void(0)" onclick="return backStatement();" class="btn btn-back">{$smarty.const.IMAGE_BACK}</a></div>
+        <div class="btn-left">
+            <span onclick="return backStatement();" class="btn btn-back" title="{$smarty.const.IMAGE_BACK}">{$smarty.const.IMAGE_BACK}</span>
+        </div>
         <div class="btn-right">
-        {$manager->render('DeleteOrder', ['manager'=> $manager])}
-        {$manager->render('AdminCarts', ['manager'=> $manager, 'admin' => $admin])}
-        {$manager->render('OrderStatuses', ['manager'=> $manager, 'admin' => $admin])}
-        {$manager->render('PlatformDetails', ['manager'=> $manager, 'admin' => $admin])}
-        {if $order_id}
-        <a href="{$app->urlManager->createUrl(['orders/order-history', 'orders_id' => $order_id])}" class="btn-link-create popup" data-class="legend-info">{$smarty.const.TEXT_ORDER_LEGEND}</a><a href="javascript:void(0)" onclick="return deleteOrder({$order_id});" class="btn btn-delete">{$smarty.const.IMAGE_DELETE}</a>
-        {/if}
+            <span onclick="return saveCheckoutForm();" id="save_checkout" class="btn btn-primary btn-save-checkout" title="{$smarty.const.IMAGE_SAVE}">{$smarty.const.IMAGE_SAVE}</span>
+            {if \common\helpers\Extensions::isAllowed('UpdateAndPay')}
+                <button class="btn btn-right btn-confirm btn-update-pay" data-class="popup-update-pay" onclick="return updatePay(this);" title="{$smarty.const.IMAGE_UPDATE_PAY}"{if !$order_state['UpdateAndPay_available']} style="display: none"{/if}>{$smarty.const.IMAGE_UPDATE_PAY}</button>
+                <script type="text/javascript">
+                    $(document).on('ajaxComplete', function( event, xhr, settings ) {
+                        if (xhr && xhr.responseJSON && xhr.responseJSON.order_state) {
+                            if (xhr.responseJSON.order_state.UpdateAndPay_available === true) {
+                                $('.btn-update-pay').show()
+                            } else if (xhr.responseJSON.order_state.UpdateAndPay_available === false) {
+                                $('.btn-update-pay').hide()
+                            }
+                        }
+                    } );
+                </script>
+            {/if}
+            {$manager->render('DeleteOrder', ['manager'=> $manager])}
+            {$manager->render('AdminCarts', ['manager'=> $manager, 'admin' => $admin])}
+            {$manager->render('OrderStatuses', ['manager'=> $manager, 'admin' => $admin])}
+            {$manager->render('PlatformDetails', ['manager'=> $manager, 'admin' => $admin])}
+
+            {if $paramOrderId}
+                <a href="{$app->urlManager->createUrl(['orders/order-history', 'orders_id' => $paramOrderId])}" class="btn btn-link-legend popup" data-class="legend-info" title="{$smarty.const.TEXT_ORDER_LEGEND}">{$smarty.const.TEXT_ORDER_LEGEND}</a>
+                {*<span onclick="return deleteOrder({$paramOrderId});" class="btn btn-delete">{$smarty.const.IMAGE_DELETE}</span>*}
+            {/if}
         </div>
     </div>
 
@@ -25,40 +44,30 @@
 </div>
 
 <div class="order-content">
-    <div class="tabbable tabbable-custom">
-        <ul class="nav nav-tabs">
-            <li class="active"><a href="#tab_products" data-toggle="tab"><span>{$smarty.const.TEXT_PROD_DET}</span></a></li>
-            <li><a href="#tab_contact" data-toggle="tab"><span>{$smarty.const.TEXT_TAB_ORDER_DETAILS}</span></a></li>
-        </ul>
-        <div class="tab-content">
-            <div class="tab-pane active" id="tab_products">
-                <div class="products-listing-table">
+
+    <div class="row">
+        <div class="col-12 col-xl-8">
+
+            <div class="products-listing-table mb-3">
                 {$manager->render('ProductsListing', ['manager' => $manager])}
-                </div>
-                <div style="overflow:auto;">
-                    <div class="left-box">&nbsp;</div>
-                    <div class="totals-box">
-                        {$manager->render('OrderTotals', ['manager' => $manager])}
-                    </div>
-                </div>
-                <div class = "_btn-tools">
-                  <div class="btn-left">
-                    <a href="javascript:void(0)" id="reset_cart" class="btn btn-cancel">{$smarty.const.IMAGE_CANCEL}</a>
-                  </div>
-                  <div class="btn-left">
-                    <a href="javascript:void(0)" id="save_changes"  class="btn btn-primary btn-save-cart">{$smarty.const.IMAGE_SAVE_SESSION}</a>
-                  </div>
-                 </div>
             </div>
-            <div class="tab-pane" id="tab_contact">
-              {$manager->render('Contact', ['manager' => $manager, 'admin'=> $admin])}
-            </div>
+
+            {$manager->render('Contact', ['manager' => $manager, 'admin'=> $admin])}
+
         </div>
-        
+        <div class="col-12 col-xl-4">
+            {$manager->render('OrderTotals', ['manager' => $manager])}
+        </div>
     </div>
+
+
+
+
+
+
     {if $manager->showSettings|default:null}
         <div class="order-content-disabled product-frontend disable">
-            {Html::a('', ['editor/settings', 'back' => $app->controller->view->backOptionTrue], ['class' => 'popup order-settings', 'data-class' => 'order-settings-box', 'style'=>'display:none;'])}
+            {Html::a('', ['editor/settings', 'currentCurrent' => $currentCart, 'back' => $app->controller->view->backOptionTrue], ['class' => 'popup order-settings', 'data-class' => 'order-settings-box', 'style'=>'display:none;'])}
         </div>
     {/if}
     {if $manager->showAdminOwnerNotification}
@@ -451,6 +460,8 @@ $('.datatable').DataTable( {
 var user_work = false;
 var tout;
 
+let openedDropdown = '';
+
 function setPlugin(data){
     $('a.popup').off().popUp({
 		box_class: $(this).data('class'),
@@ -465,7 +476,11 @@ function setPlugin(data){
         $('.admin-owner').trigger('click');
     {/if}
     
-    $('.spinner-percent').off().spinner({
+    $('.spinner-percent').off().on('change', function(e, ui){
+        //order.getExtraCharge(e.target, 'extra_charge');
+        //$(this).val(parseInt($(this).val())+'%');
+
+    }).spinner({
         step: 1,
         min:0,
         max:100,
@@ -479,12 +494,15 @@ function setPlugin(data){
         }
     })
     
-    $('.spinner-fixed').off().spinner({    
+    $('.spinner-fixed').off().on('change', function(e, ui){
+        order.getExtraCharge(e.target, 'extra_charge');
+        $(e.taget).setMaskMoney();
+    }).spinner({
         step: 0.01,
         min:0,
         start: function( event, ui ) {
             unformatMaskMoney('.spinner-fixed');
-        },    
+        },
         stop: function(e, ui){
             order.getExtraCharge(e.target, 'extra_charge');
             $(e.taget).setMaskMoney();
@@ -495,14 +513,33 @@ function setPlugin(data){
      
     $('.action-percent, .action-fixed').off().change(function(){
         order.getExtraCharge(this, 'extra_charge');
-    })
+    });
 
-    $(".check_on_off").off().bootstrapSwitch({
+    $('.overwritten-choose').each(overwrittenChoose)
+    $('.overwritten-choose').on('change', overwrittenChoose)
+
+    function overwrittenChoose(){
+        $(this).closest('.price-editing').find('.extra-disc-box').hide();
+        $(this).closest('.price-editing').find('.overwritten-' + $(this).val()).show()
+    }
+
+    $('.dropdown').off('show.bs.dropdown').on('show.bs.dropdown', function () {
+        openedDropdown = $(this).data('id');
+    })
+    $('.dropdown').off('hidden.bs.dropdown').on('hidden.bs.dropdown', function () {
+        openedDropdown = '';
+    });
+
+    if (openedDropdown) {
+        $(`.dropdown[data-id="${ openedDropdown }"] .price-edit`).trigger('click')
+    }
+
+    /*$(".check_on_off").off().bootstrapSwitch({
         onText: "{$smarty.const.SW_ON}",
         offText: "{$smarty.const.SW_OFF}",
                     handleWidth: '20px',
                     labelWidth: '24px'
-    });
+    });*/
     
     $('.btn-save-cart').off().click(function(e){
         e.preventDefault();
@@ -533,7 +570,7 @@ $(document).ready(function() {
         box: "<div class='popup-box-wrap'><div class='around-pop-up'></div><div class='popup-box popup-update-pay'><div class='popup-heading up-head'>{$smarty.const.IMAGE_UPDATE_PAY}</div><div class='pop-up-close'></div><div class='pop-up-content'><div class='preloader'></div></div></div></div>"
     });	
 	
-    $('#reset_cart').click(function(){
+    $('#reset-cart').click(function(){
         order.resetCart();
     })
     //order.activate_plus_minus('.edit_product_popup');	

@@ -73,7 +73,7 @@ class Properties extends EPMap
                     foreach ($levelNameArray as $lang_id=>$prop_name){
                         if ( PropertyDescription::updateAll([
                             'properties_name' => $prop_name,
-                            'properties_seo_page_name' => Seo::makeSlug([
+                            'properties_seo_page_name' => Seo::makePropertySlug([
                                 'properties_id' => (int)$lookupId,
                                 'properties_name' => $prop_name,
                             ]),
@@ -94,6 +94,13 @@ class Properties extends EPMap
                 $langId = $langCode=='*'?0:\common\classes\language::get_id($langCode);
                 $valueNames[$langId] = $prop_value;
             }
+            if ( isset($valueNames[0]) ){
+                foreach(\common\classes\language::get_all() as $__lang_all){
+                    if ( isset($valueNames[(int)$__lang_all['id']]) ) continue;
+                    $valueNames[(int)$__lang_all['id']] = $valueNames[0];
+                }
+                unset($valueNames[0]);
+            }
             reset($valueNames);
 
             $prop_value = current($valueNames);
@@ -109,16 +116,19 @@ class Properties extends EPMap
             }else{
                 $max_value = tep_db_fetch_array(tep_db_query("SELECT MAX(values_id) AS current_max_id FROM " . TABLE_PROPERTIES_VALUES));
                 $values_id = intval($max_value['current_max_id'])+1;
-
+                $prop_value_slug = Seo::makePropertyValueSlug([
+                    'properties_id' => $data['properties_id'],
+                    'values_text' => $prop_value,
+                ]);
                 if ( $this->property_type=='number' ) {
                     tep_db_query(
                         "INSERT INTO " . TABLE_PROPERTIES_VALUES . " (values_id, properties_id, language_id, values_text, values_number, values_seo_page_name ) " .
-                        "SELECT '{$values_id}', '" . $data['properties_id'] . "', languages_id, '" . tep_db_input($prop_value) . "', '".tep_db_input($prop_value)."', '" . tep_db_input(Seo::makeSlug($prop_value)) . "' FROM " . TABLE_LANGUAGES . " WHERE languages_status=1 "
+                        "SELECT '{$values_id}', '" . $data['properties_id'] . "', languages_id, '" . tep_db_input($prop_value) . "', '".tep_db_input($prop_value)."', '" . tep_db_input($prop_value_slug) . "' FROM " . TABLE_LANGUAGES . " WHERE languages_status=1 "
                     );
                 }else {
                     tep_db_query(
                         "INSERT INTO " . TABLE_PROPERTIES_VALUES . " (values_id, properties_id, language_id, values_text, values_seo_page_name ) " .
-                        "SELECT '{$values_id}', '" . $data['properties_id'] . "', languages_id, '" . tep_db_input($prop_value) . "', '" . tep_db_input(Seo::makeSlug($prop_value)) . "' FROM " . TABLE_LANGUAGES . " WHERE languages_status=1 "
+                        "SELECT '{$values_id}', '" . $data['properties_id'] . "', languages_id, '" . tep_db_input($prop_value) . "', '" . tep_db_input($prop_value_slug) . "' FROM " . TABLE_LANGUAGES . " WHERE languages_status=1 "
                     );
                 }
                 $data['values_id'] = $values_id;
@@ -126,14 +136,20 @@ class Properties extends EPMap
 
             if (count($valueNames)>1){
                 foreach ($valueNames as $lang_id=>$prop_value) {
+                    $prop_value_slug = Seo::makePropertyValueSlug([
+                        'values_id' => $data['values_id'],
+                        'language_id' => $lang_id,
+                        'properties_id' => $data['properties_id'],
+                        'values_text' => $prop_value,
+                    ]);
                     if ( $this->property_type=='number' ) {
                         PropertiesValues::updateAll(
-                            ['values_text' => $prop_value, 'values_number'=> $prop_value, 'values_seo_page_name'=>Seo::makeSlug($prop_value)],
+                            ['values_text' => $prop_value, 'values_number'=> $prop_value, 'values_seo_page_name'=>$prop_value_slug],
                             ['values_id' => $data['values_id'], 'properties_id' => $data['properties_id'], 'language_id' => $lang_id]
                         );
                     }else{
                         PropertiesValues::updateAll(
-                            ['values_text' => $prop_value, 'values_seo_page_name'=>Seo::makeSlug($prop_value)],
+                            ['values_text' => $prop_value, 'values_seo_page_name'=>$prop_value_slug],
                             ['values_id' => $data['values_id'], 'properties_id' => $data['properties_id'], 'language_id' => $lang_id]
                         );
                     }

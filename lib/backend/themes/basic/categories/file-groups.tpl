@@ -15,7 +15,7 @@
       <div class="nav nav-tabs">
 
         {foreach $languages as $language}
-            <div{if $language.id == $languages_id} class="active"{/if}><a href="#{$item.id}_{$language.id}" data-toggle="tab" title="{$language.name}">{$language.image}<span>{$language.name}</span></a></div>
+            <div{if $language.id == $languages_id} class="active"{/if} data-bs-toggle="tab" data-bs-target="#{$item.id}_{$language.id}"><a title="{$language.name}">{$language.image}<span>{$language.name}</span></a></div>
         {/foreach}
 
       </div>
@@ -49,8 +49,8 @@
 
                   <div class="tabbable tabbable-custom">
                     <div class="nav nav-tabs">
-                        <div class="active"><a href="#comp_{$type_id}" data-toggle="tab">{$smarty.const.TEXT_FROM_COMPUTER}</a></div>
-                        <div><a href="#gallery_{$type_id}" data-toggle="tab">{$smarty.const.UPLOAD_FROM_GALLERY}</a></div>
+                        <div class="active" data-bs-toggle="tab" data-bs-target="#comp_{$type_id}"><a>{$smarty.const.TEXT_FROM_COMPUTER}</a></div>
+                        <div data-bs-toggle="tab" data-bs-target="#gallery_{$type_id}"><a>{$smarty.const.UPLOAD_FROM_GALLERY}</a></div>
                     </div>
                     <div class="tab-content">
 

@@ -263,8 +263,15 @@ class PaymentTransactionManager {
             if (!empty($transactionDetails['deferred'])) {
               $op->deferred = $transactionDetails['deferred'];
             }
-            if (!empty($transactionDetails['currency'])) {
+            $currencies = \Yii::$container->get('currencies');
+            if (!empty($transactionDetails['currency_value'])) {
+              $op->orders_payment_currency_rate = $transactionDetails['currency_value'];
+            }
+            if (!empty($transactionDetails['currency']) ) {
               $op->orders_payment_currency = $transactionDetails['currency'];
+              if (empty($transactionDetails['currency_value']) && $currencies->is_set($transactionDetails['currency'])) {
+                  $op->orders_payment_currency_rate = $currencies->get_value($transactionDetails['currency']);
+              }
             }
             if (!empty($transactionDetails['transaction_date'])) {
               $op->orders_payment_transaction_date = $transactionDetails['transaction_date'];

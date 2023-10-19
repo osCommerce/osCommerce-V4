@@ -10,11 +10,14 @@
                         </button>
                     </div>
                 {/if}
-                <div style="float: left; padding: 5px 10px 0 5px;">
-                    <button id = "refresh" class="btn btn-redo" style="float: right;">{$smarty.const.TEXT_REFRESH}</button>
-                </div>
-                <div class="btn-wr after btn-wr-top disable-btn data-table-top-left">
+                <div class="btn-wr after btn-wr-top data-table-top-left">
                     <div>
+                        <div>
+                            <button id = "refresh" class="btn btn-redo">{$smarty.const.TEXT_REFRESH}</button>
+                        </div>
+                        <div class="p-l-1 switchable disable-btn">
+                            <a href="javascript:void(0)" onclick="deleteSelectedLogs();" class="btn btn-del">{$smarty.const.TEXT_DELETE_SELECTED}</a>
+                        </div>
                         <div>
                             <div style="padding: 4px 10px 0 0;">
                                 <b>{$smarty.const.TEXT_SEARCH_BY}</b>
@@ -27,12 +30,6 @@
                                 </select>
                             </div>
                         </div>
-                        <div class="p-l-1">
-                            <a href="javascript:void(0)" onclick="deleteSelectedLogs();" class="btn btn-del">{$smarty.const.TEXT_DELETE_SELECTED}</a>
-                        </div>
-                    </div>
-                    <div>
-
                     </div>
                 </div>
 
@@ -45,7 +42,7 @@
                     </tr>
                     </thead>
                 </table>
-                <div class="btn-wr after disable-btn">
+                <div class="btn-wr after switchable disable-btn">
                     <div>
                         <a href="javascript:void(0)" onclick="deleteSelectedLogs();" class="btn btn-del">{$smarty.const.TEXT_DELETE_SELECTED}</a>
                     </div>
@@ -106,7 +103,7 @@
                         label: "{$smarty.const.TEXT_YES}",
                         className: "btn-delete",
                         callback: function() {
-                            $.post("{$app->urlManager->createUrl('error-log-viewer/logs-delete')}", { 'logs' : file }, function(data, status){
+                            $.post("{$app->urlManager->createUrl('error-log-viewer/logs-delete')}", { 'logs' : file.replaceAll('.', '|') }, function(data, status){
                                 if(status == "success")
                                 {
                                     applyFilter()
@@ -229,10 +226,10 @@
                 if($(this).is(':checked'))
                 {
                     $('td .checkbox').prop('checked', true);
-                    $('.order-box-list .btn-wr').removeClass('disable-btn');
+                    $('.switchable').removeClass('disable-btn');
                 }else{
                     $('td .checkbox').prop('checked', false);
-                    $('.order-box-list .btn-wr').addClass('disable-btn');
+                    $('.switchable').addClass('disable-btn');
                 }
             });
             $('#logList tbody').on('click', 'tr td', function (){
@@ -254,14 +251,14 @@
             $('#logList tbody').on('click', 'tr td .checkbox', function (){
                 if($(this).is(':checked'))
                 {
-                    $('.order-box-list .btn-wr').removeClass('disable-btn');
+                    $('.switchable').removeClass('disable-btn');
                 }else{
-                    $('.order-box-list .btn-wr').addClass('disable-btn');
+                    $('.switchable').addClass('disable-btn');
                 }
             });
             $('tbody').on('dblclick', 'tr td', function (){
                 var file = $('#logList tbody tr.selected').find('input.cell_identify').val();
-                window.location.href = "{$app->urlManager->createUrl('error-log-viewer/view')}?log="+file;
+                window.location.href = "{$app->urlManager->createUrl('error-log-viewer/view')}?log="+file.replaceAll('.', '|');
             });
 
         });

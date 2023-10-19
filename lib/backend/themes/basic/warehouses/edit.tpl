@@ -1,6 +1,7 @@
 {use class="yii\helpers\Html"}
 {use class="common\helpers\Acl"}
 {\backend\assets\BDPAsset::register($this)|void}
+{\backend\assets\BDTPAsset::register($this)|void}
 <!--=== Page Content ===-->
 <div id="warehouses_management_data">
 <!--===Customers List ===-->
@@ -196,7 +197,7 @@
                                         </div>
                         </div>
                     </div>
-                    <div class="time_int"><div class="time_int_1">
+                    <div class="time_int ps-3"><div class="time_int_1">
                         <label>{$smarty.const.ENTRY_TIME}<span class="fieldRequired">*</span></label>
                         <span class="time_title">{$smarty.const.ENTRY_TIME_FROM}</span>{Html::input('text', 'open_time_from[]', $open_hour->open_time_from|default:null, ['class' => 'pt-time form-control'])}</div>
                         <div class="time_int_2">
@@ -239,7 +240,7 @@
                 </div>
             </div>
         </div>
-        <div class="time_int">
+        <div class="time_int ps-3">
             <div class="time_int_1">
                 <label>{$smarty.const.ENTRY_TIME}<span class="fieldRequired">*</span></label>
                 <span class="time_title">{$smarty.const.ENTRY_TIME_FROM}</span>{Html::input('text', 'open_time_from[]', '', ['class' => 'pt-time-new form-control'])}
@@ -299,16 +300,25 @@ function removeOpenHours(obj) {
     $(obj).parent('div').parent('div').parent('div.opening_hours').remove();
     return false;
 }
+var timePicker = {
+    display: {
+        viewMode: 'clock',
+        components: {
+            calendar: false,
+        },
+    },
+    localization: {
+        format: 'h:mm T'
+    }
+};
 function addOpenHours() {
     nextKey = nextKey +1;
     $('#opening_hours_template').find('select[name*="open_days"]').attr('name', 'open_days_'+nextKey+'[]');
     $('#opening_hours_template').find('input[name="warehouses_open_hours_key[]"]').val(nextKey);
-    $('#opening_hours_list').append($('#opening_hours_template').html());
-    $("form select[data-role=multiselect-new]").attr('data-role', 'multiselect');
-    $("form select[data-role=multiselect]").multiselect({
-        selectedList: 1 // 0-based index
-     });
-    $('form .pt-time-new').ptTimeSelect();
+    const $newLine = $($('#opening_hours_template').html());
+    $('#opening_hours_list').append($newLine);
+    $("form select[data-role=multiselect-new]").multipleSelect().attr('data-role', 'multiselect');
+    $('form .pt-time-new').tempusDominus(timePicker);
     
     return false;
 }
@@ -329,17 +339,9 @@ function backStatement() {
 }
 $(document).ready(function(){
 
-    $('.pt-time').ptTimeSelect();
+    $('.pt-time').tempusDominus(timePicker);
 
-    $("select[data-role=multiselect]").multiselect({
-        selectedList: 1, // 0-based index
-        click: function(e, ui){ 
-            console.log($(this).multiselect("widget").find("input:checked"));
-            if(ui['value'] > 0){ 
-                
-            }
-        }
-    });
+    $("select[data-role=multiselect]").multipleSelect();
         
     $(window).resize(function(){
 

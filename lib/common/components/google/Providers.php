@@ -15,6 +15,7 @@ namespace common\components\google;
 
 use Yii;
 
+#[\AllowDynamicProperties]
 class Providers {
 
     public $hasConfigFile = false;

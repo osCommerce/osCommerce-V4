@@ -399,7 +399,7 @@ class System {
 
     public static function isProduction()
     {
-        return YII_ENV == 'prod' && YII_DEBUG !== true;
+        return YII_ENV == 'prod';
     }
 
     public static function isDevelopment()

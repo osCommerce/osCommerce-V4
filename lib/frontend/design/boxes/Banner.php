@@ -80,6 +80,9 @@ class Banner extends Widget
         if (($this->settings[0]['ban_id'] ?? false) && isset($this->settings[0]['banners_type']) && $this->settings[0]['banners_type'] == 'single') {
             $andWhere = ' and bl.banners_id = ' . $this->settings[0]['ban_id'] . ' ';
         }
+        foreach (\common\helpers\Hooks::getList('box/banner') as $filename) {
+            include($filename);
+        }
 
         $use_phys_platform = true;
         if ($ext = \common\helpers\Acl::checkExtensionAllowed('AdditionalPlatforms', 'allowed')){
@@ -193,6 +196,7 @@ class Banner extends Widget
 
         $settings = array_merge(self::$defaultSettings, $this->settings[0]);
         $template = '';
+        $this->settings[0]['template'] = $this->settings[0]['template'] ?? null;
         if ((!$this->settings[0]['template'] && $this->params['microtime'] > '1675836928') || !$this->params['microtime']) {
             $this->settings[0]['template'] = 1;
         }

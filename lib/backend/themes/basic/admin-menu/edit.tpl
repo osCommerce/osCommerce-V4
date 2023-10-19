@@ -5,8 +5,8 @@
   <div class="popup-content box-img">
     <div class="tabbable tabbable-custom">
       <ul class="nav nav-tabs">
-        <li class="active"><a href="#text" data-toggle="tab">{$smarty.const.TEXT_TEXT}</a></li>
-        <li><a href="#icons" data-toggle="tab">{$smarty.const.TEXT_IMAGE_}</a></li>
+        <li class="active" data-bs-toggle="tab" data-bs-target="#text"><a>{$smarty.const.TEXT_TEXT}</a></li>
+        <li data-bs-toggle="tab" data-bs-target="#icons"><a>{$smarty.const.TEXT_IMAGE_}</a></li>
       </ul>
       <div class="tab-content">
         <div class="tab-pane active menu-list" id="text">
@@ -17,7 +17,7 @@
               {foreach $languages as $lang}
                 {foreach $currentMenu as $menu_lang}
                     {if $lang.id == $menu_lang.language_id}
-                  <li{if $menu_lang.language_id == $languages_id} class="active"{/if}><a href="#item_{$menu_lang.language_id}" data-toggle="tab">{$lang.logo} {$lang.name}</a></li>
+                  <li{if $menu_lang.language_id == $languages_id} class="active"{/if} data-bs-toggle="tab" data-bs-target="#item_{$menu_lang.language_id}"><a>{$lang.logo} {$lang.name}</a></li>
                     {/if}
                 {/foreach}
               {/foreach}

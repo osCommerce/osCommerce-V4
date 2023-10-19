@@ -12,6 +12,7 @@
 
 namespace backend\controllers;
 
+use common\helpers\Translation;
 use Yii;
 use yii\web\Controller;
 
@@ -28,6 +29,15 @@ class LogoutController extends Controller
         global $login_id, $device_hash;
 
         $alslHash = trim(Yii::$app->request->get('hash'));
+        if ( !empty($alslHash) ) {
+            Translation::init('admin/logout');
+            $this->layout = false;
+            return $this->render('sessions', [
+                'formAction' => \yii\helpers\Url::to(['logout/', 'hash'=>null]),
+                'alslHash' => $alslHash,
+            ]);
+        }
+        $alslHash = trim(Yii::$app->request->post('hash'));
         if ($alslHash != '') {
             \common\models\AdminLoginSessionLogoff::deleteAll(['<', 'alsl_date_expire', date('Y-m-d H:i:s')]);
             $alslRecord = \common\models\AdminLoginSessionLogoff::findOne(['alsl_hash' => $alslHash]);

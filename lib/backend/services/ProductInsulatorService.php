@@ -48,6 +48,21 @@ class ProductInsulatorService {
 
     public function setData($post = []) {
         $this->data = $post;
+        $this->data['uprid_new'] = Inventory::get_uprid(Inventory::get_prid($this->uprid), $this->data['id'] ?? null); // if attributes was changed while editing
+        $this->data['uprid_changed'] = $this->data['uprid_new'] != $this->uprid;
+    }
+
+    /**
+     * If attributes were changed due editing, $this->uprid and $this->>data['uprid'] point to old uprid
+     * new uprid is calculated in $this->setData
+     * @return mixed
+     */
+    public function getUpridActual() {
+        return $this->isUpridChanged() ? $this->data['uprid_new'] : $this->uprid;
+    }
+
+    public function isUpridChanged() {
+        return $this->data['uprid_changed'] ?? false;
     }
 
     public function setManager($manager) {
@@ -56,7 +71,8 @@ class ProductInsulatorService {
 
     public function getWorkingProduct() {
         if ($this->edit) {
-            $product = array_shift($this->manager->getCart()->get_products($this->uprid)); //details from basket
+            $products = $this->manager->getCart()->get_products($this->uprid);
+            $product = array_shift($products); //details from basket
         } else {
             $product = $this->product->getAttributes();
             $product['qty'] = 1;
@@ -97,6 +113,34 @@ class ProductInsulatorService {
         $product['edit'] = $this->edit;
 
         return $product;
+    }
+
+    public function getOverwritten() {
+        $cart = $this->manager->getCart();
+        $overwritten = $cart->getOwerwritten($this->uprid) ?? [];
+//        if (!isset($overwritten['tax_selected'])) {
+//            $productInfo = $cart->get_products($this->uprid);
+//            if (!empty($productInfo)) {
+//                $taxClassId = $productInfo['tax_class_id'] ?? null;
+//                if (is_null($taxClassId)) {
+//                    $taxClassId = \common\models\Products::findOne(['products_id' => \common\helpers\Inventory::get_prid($this->uprid)])->products_tax_class_id ?? 0;
+//                }
+//                $taxRate = $productInfo['tax_rate'] ?? 0;
+//
+//                $rates = \common\helpers\Tax::getOrderTaxRates($taxClassId);
+//                if (is_array($rates)) {
+//                    foreach ($rates as $key => $rate) {
+//                        if ($rate == $taxRate) {
+//                            $selected = $key;
+//                            break;
+//                        }
+//                    }
+//                }
+//                $this->_setProductsTax($this->uprid, $selected??'', $taxRate, $taxClassId);
+//                $overwritten = $cart->getOwerwritten($this->uprid) ?? [];
+//            }
+//        }
+        return $overwritten;
     }
 
     public function getProductDetails() {
@@ -163,7 +207,7 @@ class ProductInsulatorService {
                 $this->result['product_info']['html_attributes'] = $this->result['attributes_box']['product_attributes_html'];
                 //$this->result['product_info']['attributes_array'] = $this->result['attributes_box']['attributes_array'] ?? $this->result['attributes_box']['inventory_array'];
                 $this->result['product_info']['product_qty'] = $this->result['attributes_box']['data']['product_qty'];
-                $this->result['product_info']['product_qty_virtual'] = \common\helpers\Product::getVirtualItemQuantity($this->result['attributes_box']['data']['current_uprid'], $this->data['qty']);// $this->data['qty'];//
+                $this->result['product_info']['product_qty_virtual'] = \common\helpers\Product::getVirtualItemQuantity($this->result['attributes_box']['data']['current_uprid'], $this->data['qty']??1);// $this->data['qty'];//
                 $this->result['product_info']['product_valid'] = $this->result['attributes_box']['data']['product_valid'];
                 $this->result['product_info']['product_unit_price'] = $this->result['attributes_box']['data']['product_unit_price'];
                 $this->result['product_info']['special_unit_price'] = (float) $this->result['attributes_box']['data']['special_unit_price'];
@@ -187,7 +231,7 @@ class ProductInsulatorService {
                 }
             }
             if ($this->product->products_pctemplates_id) {
-                if ($this->result['configurator_box']['data']['configurator_elements']) {
+                if ($this->result['configurator_box']['data']['configurator_elements'] ?? false) {
                     $this->result['product_info']['html_configurator'] = $this->result['configurator_box']['product_configurator_html'];
                     $this->result['product_info']['configurator_price'] = $this->result['configurator_box']['data']['configurator_price'];
                     $this->result['product_info']['configurator_price_unit'] = $this->result['configurator_box']['data']['configurator_price_unit'];
@@ -284,11 +328,11 @@ class ProductInsulatorService {
         if (!\common\helpers\Acl::checkExtensionAllowed('ProductConfigurator')) {
             return null;
         }
+        $cart = $this->manager->getCart();
         $response['data'] = \common\extensions\ProductConfigurator\helpers\Configurator::getDetails($this->data, $this->result['attributes_box']['data']);
         $response['product_configurator_html'] = '';
-        if ($response['data']['configurator_elements']) {
+        if (isset($response['data']['configurator_elements'])) {
             if ($this->edit) {
-                $cart = $this->manager->getCart();
                 $sproducts = $cart->get_subproducts($this->uprid);
                 if (is_array($sproducts)) {
                     foreach ($sproducts as $sproduct) {
@@ -298,6 +342,22 @@ class ProductInsulatorService {
                             }
                         }
                     }
+                }
+            }
+            $overwritten = $cart->getOwerwritten($this->uprid);
+            // correct qty: when editing qty is count in one template
+            // so, when start editing use dividing, when continue do nothing
+            if (is_array($response['data']['configurator_elements'])) {
+                foreach ($response['data']['configurator_elements'] as &$element) {
+                    if (!isset($this->data['elements_qty']) && ($this->data['qty']??0)) {
+                        $element['elements_qty'] = $element['elements_qty'] / $this->data['qty'];
+                    }
+                    // correct tax_selected from overwriten
+                    $name = 'tax_selected_' . $element['selected_id'];
+                    if (isset($overwritten[$name])) {
+                        $element['tax_selected'] = $overwritten[$name];
+                    }
+
                 }
             }
             $response['product_configurator_html'] = $this->manager->render('Configurator', ['elements' => $response['data']['configurator_elements'], 'pctemplates_id' => $response['data']['pctemplates_id'], 'manager' => $this->manager]);
@@ -317,11 +377,12 @@ class ProductInsulatorService {
         }
     }
 
-    public function addProduct() {
+    public function addProduct($replaceExistingProduct = true) {
         $cart = $this->manager->getCart();
         $_qty = (int) (is_array($this->data['qty']) ? array_sum($this->data['qty']) : $this->data['qty']);
         $_uprid = Inventory::get_uprid($this->uprid, $this->data['id'] ?? null);
         $_uprid = Inventory::normalize_id($_uprid);
+        $upridNew = Inventory::get_uprid(Inventory::get_prid($this->uprid), $this->data['id'] ?? null); // if attributes was changed while editing
         $reserved_qty = $cart->get_reserved_quantity($_uprid); //+$_qty;
         if (is_array($this->data['qty_'] ?? null)) {
             $packQty = [
@@ -353,7 +414,7 @@ class ProductInsulatorService {
                     $pDesc = \common\models\ProductsDescription::find()
                             ->select('products_name')->where(['products_id' => intval($this->uprid), 'language_id' => $this->manager->get('language_id'), 'platform_id' => $this->manager->getPlatformId()])
                             ->one();
-                    $messageStack->add_session($pDesc->products_name . " has not enought quantity", 'edit_order');
+                    $messageStack->add_session(($pDesc->products_name ?? '') . " has not enought quantity", 'edit_order');
                     return false;
                 }
             }
@@ -380,6 +441,13 @@ class ProductInsulatorService {
                 $added = $cart->add_custom_bundle(true, 'add');
             } else {
                 $props = Yii::$app->get('PropsHelper')::ParamsToXml($this->data, $this->uprid);
+                if ($replaceExistingProduct) {
+                    if ($this->uprid != $upridNew) {                  // after editing product with old uprid ($this->uprid) was changed to new uprid ($_uprid)
+                        $packQty += $cart->get_quantity($upridNew);   // so add to exisitng qty
+                    }
+                } else {
+                    $packQty += $cart->get_quantity($_uprid);
+                }
                 $added = $cart->add_cart(Inventory::get_prid($this->uprid), $packQty, $this->data['id'] ?? null, false, 0, $this->data['gift_wrap'] ?? null, $props);
             }
         }
@@ -431,17 +499,23 @@ class ProductInsulatorService {
     public function setPrice($cartUprids) {
         $cart = $this->manager->getCart();
         $_uprid = is_array($cartUprids) ? array_shift($cartUprids) : $cartUprids;
-        if (!is_null($this->data['final_price'] ?? null) && ($this->data['price_changed'] ?? null)) {
-            $final_price = $this->data['final_price'] * Yii::$container->get('currencies')->get_market_price_rate($this->manager->get('currency'), DEFAULT_CURRENCY);
+        $product_final_price = $cart->get_products($_uprid)[0]['final_price'] ?? null;
+        $final_price = null;
+        if (!is_null($this->data['final_price'] ?? null) && !is_null($product_final_price)) {
+            $final_price = (float)$this->data['final_price'] * (float)Yii::$container->get('currencies')->get_market_price_rate($this->manager->get('currency'), DEFAULT_CURRENCY);
+            if (round($final_price,2) == round($product_final_price, 2)) {
+                $final_price = null;
+            }
+        }
+        if (!is_null($final_price)) {
             $cart->setOverwrite($_uprid, 'final_price', $final_price);
-            $cart->setOverwrite($_uprid, 'price_changed', true);
         } else {
             $cart->clearOverwritenKey($_uprid, 'final_price');
-            $cart->clearOverwritenKey($_uprid, 'price_changed');
         }
     }
 
-    public function setName($cartUprids) {
+    public function setName($cartUprids = null) {
+        if (is_null($cartUprids)) $cartUprids = $this->uprid;
         $cart = $this->manager->getCart();
         $_uprid = is_array($cartUprids) ? array_shift($cartUprids) : $cartUprids;
         if (!is_null($this->data['name']) && ($this->data['name_changed'] ?? null)) {
@@ -463,6 +537,22 @@ class ProductInsulatorService {
             return (preg_match("/^$_partUprid/", $cartUprids) ? $cartUprids : false);
         }
         return false;
+    }
+
+
+    private function _setProductsTaxStr($uprid, $taxSelected) {
+        $ex = explode("_", $taxSelected);
+        $tax_value = 0;
+        if (count($ex) == 2) {
+            if ($ex[1] == 0) { // class
+                $tax_value = $this->manager->getOrderTaxRates($ex[0]);
+            } else {
+                $tax_value = \common\helpers\Tax::get_tax_rate_value_edit_order($ex[0], $ex[1]);
+            }
+            $this->_setProductsTax($uprid, $taxSelected, $tax_value, $ex[0]);
+        } else {
+            $this->_setProductsTaxZero($uprid);
+        }
     }
 
     private function _setProductsTax($cartUprid, $selected, $rate, $id) {
@@ -490,33 +580,41 @@ class ProductInsulatorService {
             $cart = $this->manager->getCart();
             if (is_array($this->data['tax'])) {
                 foreach ($this->data['tax'] as $_partUprid => $tax) {
-                    $cartUprid = $this->getCartUprid($_partUprid, $cartUprids);
+                    if ($this->isUpridChanged()) {
+                        $cartUprid = $this->getCartUprid($_partUprid, $this->uprid) ? $this->getUpridActual() : null;
+                    } else {
+                        $cartUprid = $this->getCartUprid($_partUprid, $cartUprids);
+                    }
                     if ($cartUprid) {
-                        $ex = explode("_", $tax);
-                        $tax_value = 0;
-                        if (count($ex) == 2) {
-                            $tax_value = \common\helpers\Tax::get_tax_rate_value_edit_order($ex[0], $ex[1]);
-                            $this->_setProductsTax($cartUprid, $tax, $tax_value, $ex[0]);
-                        } else {
-                            $this->_setProductsTaxZero($cartUprid);
-                        }
+                        $this->_setProductsTaxStr($cartUprid, $tax);
                         break;
                     }
                 }
             } else {
-                $ex = explode("_", $this->data['tax']);
-                $tax_value = 0;
-                if (count($ex) == 2) {
-                    $tax_value = \common\helpers\Tax::get_tax_rate_value_edit_order($ex[0], $ex[1]);
-                    $this->_setProductsTax($cartUprids, $this->data['tax'], $tax_value, $ex[0]);
-                } else {
-                    $this->_setProductsTaxZero($cartUprids);
-                }
+                $this->_setProductsTaxStr($cartUprids, $this->data['tax']);
             }
         } else {
             if (is_array($cartUprids)) {
                 foreach ($cartUprids as $cartUprid) {
                     $this->_setProductsTaxZero($cartUprid);
+                }
+            }
+        }
+        $this->setConfiguratorTax();
+    }
+
+    private function setConfiguratorTax() {
+        if ($this->product->products_pctemplates_id) {
+            if (is_array($this->data['tax'])) {
+                $cart = $this->manager->getCart();
+                $tax = $this->data['tax'];
+                // remove the master tax, array_shift dont suit
+                reset($tax); // sets internal array pointer to start
+                unset($tax[key($tax)]);
+                foreach ($tax as $id => $selectedRate) {
+                    if (!empty($selectedRate)) {
+                        $cart->setOverwrite($this->getUpridActual(), 'tax_selected_' . $id, $selectedRate);
+                    }
                 }
             }
         }
@@ -526,8 +624,8 @@ class ProductInsulatorService {
 
     public function setExtraCharge(){
         $cart = $this->manager->getCart();
-        $cart->clearOverwritenKey($this->uprid, 'final_price_formula');
-        $cart->clearOverwritenKey($this->uprid, 'final_price_formula_data');
+        $cart->clearOverwritenKey($this->getUpridActual(), 'final_price_formula');
+        $cart->clearOverwritenKey($this->getUpridActual(), 'final_price_formula_data');
 
         $product = array_shift($cart->get_products($this->uprid));
         $uprid = $this->uprid;
@@ -545,27 +643,37 @@ class ProductInsulatorService {
                     }
                     $this->data['dis_action_percent'][$uprid] = '-';
                     $this->data['dis_action_percent_value'][$uprid] = 0;
-                    $cart->setOverwrite($uprid, 'price_changed', true);
+                    $cart->setOverwrite($this->getUpridActual(), 'price_changed', true);
                 }
             }
-            if (isset($this->data['dis_action_percent_value'][$uprid]) || $this->data['dis_action_fixed_value'][$uprid]){
+            if (($this->data['dis_action_fixed_value'][$uprid] ?? false) || ($this->data['dis_action_percent_value'][$uprid] ?? false)){
                 $this->data['dis_action_fixed_value'][$uprid] /= $virtualQuantity;
                 $formula = ['final_price', [
                         'action' => 'extra_charge',
                         'vars' => [
-                            'init_value' => $product['final_price'],
+                            'init_value' => $this->data['final_price'],
                             'percent_action' => $this->data['dis_action_percent'][$uprid],
                             'percent_value' => floatval($this->data['dis_action_percent_value'][$uprid]),
                             'fixed_action' => $this->data['dis_action_fixed'][$uprid],
                             'fixed_value' => abs(floatval($this->data['dis_action_fixed_value'][$uprid])),
                         ],
-                        'formula' => '{init_value}{percent_action}{init_value}*({percent_value}/100){fixed_action}{fixed_value}',
+                        'formula' => '{init_value}{percent_action}({init_value}*({percent_value}/100)){fixed_action}{fixed_value}',
                 ]];
-                $cart->setOverwrite($uprid, 'final_price_formula', ['\common\helpers\PriceFormula', 'calculateExtraOrderPrice']);
-                $cart->setOverwrite($uprid, 'final_price_formula_data', $formula);
+                $cart->setOverwrite($this->getUpridActual(), 'final_price_formula', ['\common\helpers\PriceFormula', 'calculateExtraOrderPrice']);
+                $cart->setOverwrite($this->getUpridActual(), 'final_price_formula_data', $formula);
 
-                if ($cart->getOwerwrittenKey($uprid, 'final_price') === false) {
-                    $cart->setOverwrite($uprid, 'final_price', $product['final_price']);
+            }
+        }
+    }
+
+    private function fixDataIfAttrChanged()
+    {
+        $upridNew = Inventory::get_uprid(Inventory::get_prid($this->uprid), $this->data['id'] ?? null); // if attributes was changed while editing
+        if ($upridNew != $this->uprid) {  // fix: discount losses if attribute was changed
+            foreach (['dis_action_fixed', 'dis_action_fixed_value', 'dis_action_percent', 'dis_action_percent_value'] as $itemName) {
+                if (!isset($this->data[$itemName][$upridNew]) && isset($this->data[$itemName][$this->uprid])) {
+                    $this->data[$itemName][$upridNew] = $this->data[$itemName][$this->uprid];
+                    unset($this->data[$itemName][$this->uprid]);
                 }
             }
         }

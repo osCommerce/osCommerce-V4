@@ -12,10 +12,10 @@
     <div class="tabbable tabbable-custom">
       <ul class="nav nav-tabs">
 
-        <li class="active"><a href="#text" data-toggle="tab">Html</a></li>
-        <li><a href="#style" data-toggle="tab">{$smarty.const.HEADING_STYLE}</a></li>
-        <li><a href="#align" data-toggle="tab">{$smarty.const.HEADING_WIDGET_ALIGN}</a></li>
-        <li><a href="#visibility" data-toggle="tab">{$smarty.const.TEXT_VISIBILITY_ON_PAGES}</a></li>
+        <li class="active" data-bs-toggle="tab" data-bs-target="#text"><a>Html</a></li>
+        <li data-bs-toggle="tab" data-bs-target="#style"><a>{$smarty.const.HEADING_STYLE}</a></li>
+        <li data-bs-toggle="tab" data-bs-target="#align"><a>{$smarty.const.HEADING_WIDGET_ALIGN}</a></li>
+        <li data-bs-toggle="tab" data-bs-target="#visibility"><a>{$smarty.const.TEXT_VISIBILITY_ON_PAGES}</a></li>
 
       </ul>
       <div class="tab-content">
@@ -31,6 +31,12 @@
                   <option value="{$property['id']}" {if $settings[0].products_id == 'category'} style="font-weight:bold;" disabled {else} {if $property['id'] == $settings[0].property} selected {/if} {/if} >{$property['text']}</option>
                 {/foreach}
               </select>
+            </div>
+          </div>
+          <div class="setting-row">
+            <label for="">Count properties</label>
+            <div class="search">
+                <input type="text" name="setting[0][count_properties]" class="form-control" value="{$settings[0].count_properties}"/>
             </div>
           </div>
 

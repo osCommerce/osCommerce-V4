@@ -63,6 +63,7 @@ class shopping_cart {
     private $paid = [];
     private $order_status;
     private $collections;
+    public $ignoreHooks;
 
     function __construct($id = '') {
         global $languages_id;
@@ -95,6 +96,10 @@ class shopping_cart {
 
     public function notEmpty(){
         return count($this->contents) > 0;
+    }
+
+    public function isEmptyProducts() {
+        return count($this->get_products()) == 0;
     }
 
     function restore_order() {
@@ -343,8 +348,12 @@ class shopping_cart {
         if (!\frontend\design\Info::isTotallyAdmin())
             return false;
         if (isset($this->totals[$code]))
-            return $this->totals[$code]['value'];
+            return $this->totals[$code]['value'] ?? 0;
         return false;
+    }
+
+    public function getTotalKeyEx($code) {
+        return $this->totals[$code]??null;
     }
 
     public function getTotalTitle($code) {
@@ -485,7 +494,7 @@ class shopping_cart {
 
 // {{ Virtual Gift Card
         if ($customer_id > 0 && Session::getSession()->has('gift_handler')) {
-            tep_db_query("update " . TABLE_VIRTUAL_GIFT_CARD_BASKET . " set customers_id = '" . (int) $customer_id . "', session_id = '' where length(virtual_gift_card_code) = 0 and customers_id = '0' and session_id = '" . Session::getSession()->get('gift_handler') . "'");
+            tep_db_query("update " . TABLE_VIRTUAL_GIFT_CARD_BASKET . " set customers_id = '" . (int) $customer_id . "', session_id = '' where (length(virtual_gift_card_code) = 0 || !activated) and customers_id = '0' and session_id = '" . Session::getSession()->get('gift_handler') . "'");
             Session::getSession()->remove('gift_handler');
         }
 // }}
@@ -549,6 +558,9 @@ class shopping_cart {
         }
 
         if ($products_basket){
+            foreach (\common\helpers\Hooks::getList('shopping-cart/restore-content-products/products-basket') as $filename) {
+                include($filename);
+            }
             foreach($products_basket as $products){
                 if (!\common\helpers\Product::check_product($products['products_id'], true, false, true) && !tep_not_null($products['parent_product'])) {
                     $this->remove($products['products_id']);
@@ -634,8 +646,10 @@ class shopping_cart {
         if (tep_session_is_registered('cartID'))
             tep_session_unregister('cartID');
 
-        foreach (\common\helpers\Hooks::getList('shopping-cart/reset') as $filename) {
-            include($filename);
+        if (!$this->ignoreHooks && (get_class($this) == 'common\classes\shopping_cart')) {
+            foreach (\common\helpers\Hooks::getList('shopping-cart/reset') as $filename) {
+                include($filename);
+            }
         }
     }
 
@@ -724,7 +738,7 @@ class shopping_cart {
                 }
             }
 // }}
-            if ($ext = \common\helpers\Acl::checkExtensionAllowed('LinkedProducts', 'allowed')) {
+            if ($ext = \common\helpers\Extensions::isAllowed('LinkedProducts')) {
                 $bundle_products = $ext::getChildrenProducts($products_id);
                 if (count($bundle_products) > 0) {
                     return $this->add_bundle($products_id, $bundle_products, $qty, $attributes, $notify, 'linked');
@@ -732,12 +746,10 @@ class shopping_cart {
             }
 
             $normalized = false;
-            if ($ext = \common\helpers\Acl::checkExtensionAllowed('SupplierPurchase', 'allowed')){
-                if ($ext::allowed()){
-                    $products_id = $ext::make_uprid($products_id, $attributes);
-                    $products_id = $ext::normalize_id($products_id);
-                    $normalized = true;
-                }
+            if ($ext = \common\helpers\Extensions::isAllowed('SupplierPurchase')) {
+                $products_id = $ext::make_uprid($ext::getSupplierFromUprid($original_products_id) ? $original_products_id : $products_id, $attributes);
+                $products_id = $ext::normalize_id($products_id);
+                $normalized = true;
             }
             if (!$normalized){
                 $products_id = InventoryHelper::get_uprid($products_id, $attributes);
@@ -942,14 +954,20 @@ class shopping_cart {
         $this->max_length = 0;
         $this->max_height = 0;
 
+        foreach (\common\helpers\Hooks::getList('shopping-cart/cleanup/before') as $filename) {
+            include($filename);
+        }
+
         if (is_array($this->contents)) {
             $user = Yii::$app->user->getIdentity();
             if ($user){
                 $customer_groups_id = $user->get('customer_groups_id');
             }
 
-            foreach (\common\helpers\Hooks::getList('shopping-cart/cleanup') as $filename) {
-                include($filename);
+            if (!$this->ignoreHooks) {
+                foreach (\common\helpers\Hooks::getList('shopping-cart/cleanup') as $filename) {
+                    include($filename);
+                }
             }
 
             foreach (array_reverse($this->contents, true) as $key => $value) {
@@ -981,7 +999,7 @@ class shopping_cart {
                 if (tep_not_null($this->contents[$key]['parent']) && !isset($this->contents[$this->contents[$key]['parent']])) {
                     $this->contents[$key]['qty'] = 0; // No parent - clear
                 }
-                if (\common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed')) {
+                if (\common\helpers\Extensions::isAllowed('Inventory')) {
                     if (!\common\helpers\Inventory::isValidVariant($key)) {
                         $this->contents[$key]['qty'] = 0; // bad uprid - clear
                     }
@@ -1009,6 +1027,10 @@ class shopping_cart {
                     }
                 }
             }
+        }
+
+        foreach (\common\helpers\Hooks::getList('shopping-cart/cleanup/after') as $filename) {
+            include($filename);
         }
     }
 
@@ -1048,7 +1070,9 @@ class shopping_cart {
             }
         }
 // }}
-
+        foreach (\common\helpers\Hooks::getList('shopping-cart/count_contents/after') as $filename) {
+            include($filename);
+        }
         return $total_items;
     }
 
@@ -1150,17 +1174,24 @@ class shopping_cart {
 
         /* PC configurator addon begin */
         if (is_array($this->contents)) {
+            $removeChildren = [];
             foreach ($this->contents as $key => $val) {
                 if ($this->contents[$key]['parent'] == $products_id) {
                     $this->contents[$key]['qty'] = 0;
                     if ($this->existOwerwritten($key))
                         $this->clearOverwriten($key);
+                    $removeChildren[] = $key;
                 }
             }
         }
-        if (empty($this->order_id)) { // don't clean up saved orders
+        if (empty($this->order_id)) { // don't clean up saved orders because disabled products disapear
             $this->cleanup();
+        } else {
+            foreach ($removeChildren as $key) {
+                unset($this->contents[$key]);
+            }
         }
+        unset($removeChildren);
         /* PC configurator addon end */
 
         if (!tep_session_is_registered('last_removed')){
@@ -1183,7 +1214,7 @@ class shopping_cart {
 
 // {{ Virtual Gift Card
         if (preg_match("/(\d+)\{0\}(\d+)/", $products_id, $arr)) {
-            tep_db_query("delete from " . TABLE_VIRTUAL_GIFT_CARD_BASKET . " where length(virtual_gift_card_code) = 0 and virtual_gift_card_basket_id = '" . (int) $arr[2] . "' and products_id = '" . (int) $arr[1] . "' and " . ($customer_id > 0 ? " customers_id = '" . (int) $customer_id . "'" : " session_id = '" . Session::getSession()->get('gift_handler') . "'"));
+            tep_db_query("delete from " . TABLE_VIRTUAL_GIFT_CARD_BASKET . " where (length(virtual_gift_card_code) = 0 || !activated) and virtual_gift_card_basket_id = '" . (int) $arr[2] . "' and products_id = '" . (int) $arr[1] . "' and " . ($customer_id > 0 ? " customers_id = '" . (int) $customer_id . "'" : " session_id = '" . Session::getSession()->get('gift_handler') . "'"));
         }
 // }}
         // assign a temporary unique ID to the order contents to prevent hack attempts during the checkout procedure
@@ -1384,7 +1415,7 @@ class shopping_cart {
                     $products_volume = 0;
                 }
 
-                if (\common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed') && !InventoryHelper::disabledOnProduct($products_id)){
+                if (\common\helpers\Extensions::isAllowed('Inventory') && !InventoryHelper::disabledOnProduct($products_id)){
                     $simpleUprid = InventoryHelper::normalize_id($products_id);
                     if (($inventory_weight = InventoryHelper::get_inventory_weight_by_uprid($simpleUprid)) > 0) {
                         $products_weight += $inventory_weight;
@@ -1448,7 +1479,7 @@ class shopping_cart {
 
 // {{ Virtual Gift Card
         if ($customer_id > 0 || Session::getSession()->get('gift_handler')){
-            $virtual_gift_card_query = tep_db_query("select vgcb.virtual_gift_card_basket_id, vgcb.products_id, if(length(pd1.products_name), pd1.products_name, pd.products_name) as products_name, p.products_model, p.products_image, p.products_weight, p.products_tax_class_id, vgcb.products_price, vgcb.virtual_gift_card_recipients_name, vgcb.virtual_gift_card_recipients_email, vgcb.virtual_gift_card_message, vgcb.virtual_gift_card_senders_name, c.code as currency_code from " . TABLE_VIRTUAL_GIFT_CARD_BASKET . " vgcb, " . TABLE_CURRENCIES . " c, " . TABLE_PRODUCTS_DESCRIPTION . " pd, " . TABLE_PRODUCTS . " p left join " . TABLE_PRODUCTS_DESCRIPTION . " pd1 on pd1.products_id = p.products_id and pd1.language_id = '" . (int) $languages_id . "' and pd1.platform_id = '" . intval(Yii::$app->get('platform')->config()->getPlatformToDescription()) . "' where length(vgcb.virtual_gift_card_code) = 0 and p.products_id = vgcb.products_id and pd.platform_id = '".intval(\common\classes\platform::defaultId())."' and pd.products_id = p.products_id and pd.language_id = '" . (int) $languages_id . "' and vgcb.currencies_id = c.currencies_id and c.status = 1 and " . ($customer_id > 0 ? " vgcb.customers_id = '" . (int) $customer_id . "'" : " vgcb.customers_id = '0' and vgcb.session_id = '" . Session::getSession()->get('gift_handler') . "'"));
+            $virtual_gift_card_query = tep_db_query("select vgcb.virtual_gift_card_basket_id, vgcb.products_id, if(length(pd1.products_name), pd1.products_name, pd.products_name) as products_name, p.products_model, p.products_image, p.products_weight, p.products_tax_class_id, vgcb.products_price, vgcb.virtual_gift_card_recipients_name, vgcb.virtual_gift_card_recipients_email, vgcb.virtual_gift_card_message, vgcb.virtual_gift_card_senders_name, c.code as currency_code from " . TABLE_VIRTUAL_GIFT_CARD_BASKET . " vgcb, " . TABLE_CURRENCIES . " c, " . TABLE_PRODUCTS_DESCRIPTION . " pd, " . TABLE_PRODUCTS . " p left join " . TABLE_PRODUCTS_DESCRIPTION . " pd1 on pd1.products_id = p.products_id and pd1.language_id = '" . (int) $languages_id . "' and pd1.platform_id = '" . intval(Yii::$app->get('platform')->config()->getPlatformToDescription()) . "' where (length(vgcb.virtual_gift_card_code) = 0 || !vgcb.activated) and p.products_id = vgcb.products_id and pd.platform_id = '".intval(\common\classes\platform::defaultId())."' and pd.products_id = p.products_id and pd.language_id = '" . (int) $languages_id . "' and vgcb.currencies_id = c.currencies_id and c.status = 1 and " . ($customer_id > 0 ? " vgcb.customers_id = '" . (int) $customer_id . "'" : " vgcb.customers_id = '0' and vgcb.session_id = '" . Session::getSession()->get('gift_handler') . "'"));
             while ($virtual_gift_card = tep_db_fetch_array($virtual_gift_card_query)) {
                 $virtual_gift_card['products_price'] *= $currencies->get_market_price_rate($virtual_gift_card['currency_code'], $currency);
                 $this->total_virtual += $currencies->calculate_price($virtual_gift_card['products_price'], Tax::get_tax_rate($virtual_gift_card['products_tax_class_id']));
@@ -1523,7 +1554,7 @@ class shopping_cart {
         $current_products_array_cache_key = sha1(json_encode(array_merge($this->contents, $this->giveaway, $virtual_gift_cards)));
         if ( empty($selected_products_id) && !empty($this->products_array) ) {
             if ($last_products_array_cache_key == $current_products_array_cache_key && !\frontend\design\Info::isTotallyAdmin()) {
-                if (!Yii::$app->params['reset_static_product_prices_cache']) return array_values($this->products_array);
+                if (!(Yii::$app->params['reset_static_product_prices_cache'] ?? false)) return array_values($this->products_array);
             }
         }
 
@@ -1634,14 +1665,12 @@ class shopping_cart {
                     }
                 } else {
                   /** @var \common\extensions\SupplierPurchase\SupplierPurchase $ext */
-                    if ($ext = \common\helpers\Acl::checkExtension('SupplierPurchase', 'allowed')){
-                        if($ext::allowed()){
-                            $swProduct = $ext::getWSProduct($products_id, \common\classes\platform::currentId());
-                            if ($swProduct){
-                                $products_price = $swProduct->getProductPrice();
-                                $special_price = false;
-                                $products['products_name'] = $swProduct->getProductName();
-                            }
+                    if ($ext = \common\helpers\Extensions::isAllowed('SupplierPurchase')){
+                        $swProduct = $ext::getWSProduct($products_id, \common\classes\platform::currentId());
+                        if ($swProduct){
+                            $products_price = $swProduct->getProductPrice();
+                            $special_price = false;
+                            $products['products_name'] = $swProduct->getProductName();
                         }
                     }
                     if ($products_price === false){
@@ -1683,7 +1712,8 @@ class shopping_cart {
                     $gift_wrap_price = 0;
                 }
 
-                if ($ext = \common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed')) {
+                /** @var \common\extensions\Inventory\Inventory $ext */
+                if ($ext = \common\helpers\Extensions::isAllowed('Inventory')) {
                     $products = array_replace($products, $ext::getInventorySettings((int)$stock_products_id, $stock_products_id));
                 }
 /*              // bundle products are included to shopping cart, so their weight is calculated separately
@@ -1694,7 +1724,8 @@ class shopping_cart {
                 if ($swProduct){
                     $stock_info = $swProduct->getStock();
                 } else {
-                    if ($products['is_bundle'] && ($ext = \common\helpers\Acl::checkExtensionAllowed('ProductBundles', 'allowed')) ) {
+                    /** @var \common\extensions\ProductBundles\ProductBundles $ext */
+                    if ($products['is_bundle'] && ($ext = \common\helpers\Extensions::isAllowed('ProductBundles')) ) {
                         $stock_info = \common\classes\StockIndication::product_info($ext::getStockIndicationData(array(
                             'products_id' => $products_id,
                             'stock_indication_id' => $products['stock_indication_id'],
@@ -1705,7 +1736,7 @@ class shopping_cart {
                         $stock_info['quantity_max'] = \common\helpers\Product::filter_product_order_quantity($stock_products_id, $stock_info['max_qty'], true);
                     }else
                   /** @var \common\extensions\Inventory\Inventory $ext */
-                    if ( ($ext = \common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed')) && !InventoryHelper::disabledOnProduct($stock_products_id) ) {
+                    if ( ($ext = \common\helpers\Extensions::isAllowed('Inventory')) && !InventoryHelper::disabledOnProduct($stock_products_id) ) {
                         $stock_info = $ext::getInventoryStock($stock_products_id, $products['stock_indication_id'], $this->contents[$products_id]['qty']);
                     } else {
                         $stock_info = \common\classes\StockIndication::product_info(array(
@@ -1828,22 +1859,15 @@ class shopping_cart {
                 }
 
 // {{ Bonus Points
-                if (defined('MODULE_ORDER_TOTAL_BONUS_POINTS_STATUS') && MODULE_ORDER_TOTAL_BONUS_POINTS_STATUS == 'true'){
-                    $products_array[$products_id]['bonus_points_price'] = $products['bonus_points_price'];
-                    $products_array[$products_id]['bonus_points_cost'] = $products['bonus_points_cost'];
-
-                    $bonuses = \common\helpers\Product::getBonuses($products_id, $customer_groups_id, $products_price);
-
-                    if ($bonuses){
-                        if ($bonuses['bonus_points_price']){
-                            $products_array[$products_id]['bonus_points_price'] = $bonuses['bonus_points_price'];
+                /** @var \common\extensions\BonusActions\BonusActions $extBonusAction */
+                if ($extBonusAction = \common\helpers\Extensions::isAllowedAnd('BonusActions', 'isProductPointsEnabled')) {
+                    $bonuses = $extBonusAction::getProductBonuses($products_id, $customer_groups_id, null, $products_array[$products_id]['quantity'], $products_array[$products_id]['parent']);
+                    if (is_array($bonuses)) {
+                        foreach($bonuses as $keyBonus=>$valueBonus) {
+                            $products_array[$products_id][$keyBonus] = $valueBonus;
                         }
-                        if ($bonuses['bonus_points_cost']){
-                            $products_array[$products_id]['bonus_points_cost'] = $bonuses['bonus_points_cost'];
-                        }
-                        $products_array[$products_id]['bonus_coefficient'] = $bonuses['bonus_coefficient'] ?? 0;
-                        $products_array[$products_id]['bonus_price_cost_currency_formatted'] = $bonuses['bonus_price_cost_currency_formatted'] ?? '';
                     }
+                    unset($bonuses);
                 }
 // }}
 
@@ -1964,6 +1988,9 @@ class shopping_cart {
         if (sizeof($this->giveaway) > 0) { // if we also have GA add them too
             foreach ($this->giveaway as $products_id => $product) {
                 $products = tep_db_fetch_array(tep_db_query("select p.products_id, p.is_virtual, p.stock_indication_id, pd.products_name, p.products_model, p.products_image, p.products_price, p.products_weight, p.products_tax_class_id, p.length_cm, p.width_cm, p.height_cm, p.bundle_volume_calc, p.is_bundle from " . TABLE_PRODUCTS . " p, " . TABLE_PRODUCTS_DESCRIPTION . " pd where p.products_id = '" . (int) $products_id . "' and pd.products_id = p.products_id and pd.language_id = '" . (int) $languages_id . "' and pd.platform_id = '".intval(\common\classes\platform::defaultId())."'"));
+                if ($ext = \common\helpers\Extensions::isAllowed('Inventory')) {
+                    $products = array_replace($products, $ext::getInventorySettings($products_id, InventoryHelper::normalizeInventoryId($products_id)));
+                }
                 // {{ stock info
                 /* $stock_info = \common\classes\StockIndication::product_info(array(
                   'products_id' => InventoryHelper::normalize_id($products_id),
@@ -2039,6 +2066,10 @@ class shopping_cart {
         }
 // }}
 
+        foreach (\common\helpers\Hooks::getList('shopping-cart/get-products') as $filename) {
+            include($filename);
+        }
+
         // Sort sub-products to be listed after parent product
         $sorted_products_array = array();
         foreach ($products_array as $prid => $prod) {
@@ -2079,31 +2110,8 @@ class shopping_cart {
 
     protected function compactLinkedProducts()
     {
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('LinkedProducts', 'allowed')) {
-            $_parent_ref = [];
-            $_linked_children = [];
-            foreach ( $this->products_array as $_idx=>$product ){
-                if ( $product['relation_type']=='linked' ){
-                    if (!empty($product['parent'])){
-                        if ( !is_array($_linked_children[$product['parent']]) ) $_linked_children[$product['parent']] = [];
-                        $_linked_children[$product['parent']][$product['id']] = $_idx;
-                    }elseif ( !empty($product['sub_products']) ){
-                        $_parent_ref[$product['id']] = $_idx;
-                    }
-                }
-            }
-            if (count($_linked_children)>0) {
-                foreach ($_linked_children as $parent => $childrenRefs) {
-                    if (!isset($_parent_ref[$parent])) continue;
-                    $parent_idx = $_parent_ref[$parent];
-                    $this->products_array[$parent_idx]['linked_products'] = [];
-                    foreach ($childrenRefs as $childrenRef) {
-                        $this->products_array[$parent_idx]['linked_products'][] = $this->products_array[$childrenRef];
-                        unset($this->products_array[$childrenRef]);
-                    }
-                }
-                $this->products_array = array_values($this->products_array);
-            }
+        if ($ext = \common\helpers\Extensions::isAllowed('LinkedProducts')) {
+            $this->products_array = $ext::hookCompactLinkedProducts($this->products_array)??$this->products_array;
         }
     }
 
@@ -2605,7 +2613,7 @@ class shopping_cart {
             foreach ($details as $key => $value) {
                 if (is_callable($value)){
                     $product[$details[$key.'_data'][0]] = call_user_func_array($value, $details[$key.'_data']);
-                } elseif (is_scalar($value)) {
+                } elseif (is_scalar($value) && !($key == 'final_price' && isset($details['final_price_formula']))) { // don't overwrite final_price if formula exists
                     $product[$key] = $value;
                 }
             }
@@ -2704,7 +2712,7 @@ class shopping_cart {
         }
         \common\components\google\widgets\GoogleTagmanger::setEvent('addToCart');
         $this->cartID = $this->generate_cart_id();
-        foreach (\common\helpers\Hooks::getList('shopping-cart/add-cart') as $filename) {
+        foreach (\common\helpers\Hooks::getList('shopping-cart/add-cart-cfg') as $filename) {
             include($filename);
         }
         return $products_id;
@@ -2726,12 +2734,12 @@ class shopping_cart {
 // {{
             if ($ext = \common\helpers\Acl::checkExtension('ProductBundles', 'getBundleProducts')) {
                 $bundle_products[$key . '-' . $value] = $ext::getBundleProducts($value, \common\classes\platform::currentId());
-                if (count($bundle_products[$key . '-' . $value]) > 0) {
+                if (is_array($bundle_products[$key . '-' . $value]) && count($bundle_products[$key . '-' . $value]) > 0) {
                     $bundle_products_attributes[$key . '-' . $value] = array();
-                    if (is_array($post_data['elements_attr'][$key][$value])) {
+                    if (is_array($post_data['elements_attr'][$key][$value]??null)) {
                         $attributes = $post_data['elements_attr'][$key][$value];
                     } else {
-                        $attributes = $post_data['elements_attr'][$value];
+                        $attributes = $post_data['elements_attr'][$value]??null;
                     }
                     if (is_array($attributes)) {
                         foreach ($attributes as $pk => $pv) {
@@ -2744,7 +2752,7 @@ class shopping_cart {
                         }
                     }
                     foreach ($bundle_products[$key . '-' . $value] as $prid => $bundle_qty) {
-                        $sub_product_id = InventoryHelper::normalize_id(InventoryHelper::get_uprid($prid, $bundle_products_attributes[$key . '-' . $value][$prid])) . '{sub}' . $sub;
+                        $sub_product_id = InventoryHelper::normalize_id(InventoryHelper::get_uprid($prid, $bundle_products_attributes[$key . '-' . $value][$prid]??null)) . '{sub}' . $sub;
                         $products_uprid .= ($key + \common\extensions\ProductConfigurator\helpers\Configurator::BUNDLE_ELEMENTS_SHIFT) . '|' . $sub_product_id . '|';
                     }
                     continue;
@@ -2774,7 +2782,11 @@ class shopping_cart {
             $this->contents[$post_data['previous_id']]['qty'] = 0;
             $this->cleanup();
         } elseif (isset($this->contents[$products_uprid])) {
-            $qty = $this->contents[$products_uprid]['qty'] + (is_numeric($post_data['qty']) ? (int) $post_data['qty'] : 1);
+            if ($post_data['pconfig_dont_inc_qty'] ?? false) {
+                $qty = (is_numeric($post_data['qty']) ? (int)$post_data['qty'] : 1);
+            } else { // have no idea why he increments here
+                $qty = $this->contents[$products_uprid]['qty'] + (is_numeric($post_data['qty']) ? (int)$post_data['qty'] : 1);
+            }
             $type = 'update';
         }
         if ($notify == true) {
@@ -2791,20 +2803,21 @@ class shopping_cart {
             $post_data['elements_attr'][$value]['id'] = $post_data['elements_attr'][$value]['id'] ?? null;
             $elements_qty = ($post_data['elements_qty'][$key] > 0 ? $post_data['elements_qty'][$key] : 1);
 // {{
+            \common\helpers\Php8::nullArrProps($bundle_products, [$key . '-' . $value]);
             if (is_array($bundle_products[$key . '-' . $value]) && count($bundle_products[$key . '-' . $value]) > 0) {
                 foreach ($bundle_products[$key . '-' . $value] as $prid => $bundle_qty) {
-                    $sub_product_id = InventoryHelper::normalize_id(InventoryHelper::get_uprid($prid, $bundle_products_attributes[$key . '-' . $value][$prid])) . '{sub}' . $sub;
-                    $__ids[] = $this->add_cart_cfg($sub_product_id, $qty * $elements_qty * $bundle_qty, $bundle_products_attributes[$key . '-' . $value][$prid], false, $products_uprid, $type);
+                    $sub_product_id = InventoryHelper::normalize_id(InventoryHelper::get_uprid($prid, $bundle_products_attributes[$key . '-' . $value][$prid]??null)) . '{sub}' . $sub;
+                    $__ids[] = $this->add_cart_cfg($sub_product_id, $qty * $elements_qty * $bundle_qty, $bundle_products_attributes[$key . '-' . $value][$prid]??null, false, $products_uprid, $type);
                 }
                 continue;
             }
 // }}
             if (is_array($post_data['elements_attr'][$key][$value])) {
-                $sub_product_id = InventoryHelper::normalize_id(InventoryHelper::get_uprid($value, $post_data['elements_attr'][$key][$value])) . '{sub}' . $sub;
-                $__ids[] = $this->add_cart_cfg($sub_product_id, $qty * $elements_qty, $post_data['elements_attr'][$key][$value], false, $products_uprid, $type);
+                $sub_product_id = InventoryHelper::normalize_id(InventoryHelper::get_uprid($value, $post_data['elements_attr'][$key][$value]??null)) . '{sub}' . $sub;
+                $__ids[] = $this->add_cart_cfg($sub_product_id, $qty * $elements_qty, $post_data['elements_attr'][$key][$value]??null, false, $products_uprid, $type);
             } else {
-                $sub_product_id = InventoryHelper::normalize_id(InventoryHelper::get_uprid($value, $post_data['elements_attr'][$value]['id'])) . '{sub}' . $sub;
-                $__ids[] = $this->add_cart_cfg($sub_product_id, $qty * $elements_qty, $post_data['elements_attr'][$value], false, $products_uprid, $type);
+                $sub_product_id = InventoryHelper::normalize_id(InventoryHelper::get_uprid($value, $post_data['elements_attr'][$value]['id']??null)) . '{sub}' . $sub;
+                $__ids[] = $this->add_cart_cfg($sub_product_id, $qty * $elements_qty, $post_data['elements_attr'][$value]??null, false, $products_uprid, $type);
             }
         }
         $this->cleanup();
@@ -3072,7 +3085,8 @@ class shopping_cart {
             return false;
         }
 
-        if ( ($ext = \common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed')) && !InventoryHelper::disabledOnProduct($products_id)) {
+        /** @var \common\extensions\Inventory\Inventory $ext */
+        if ( ($ext = \common\helpers\Extensions::isAllowed('Inventory')) && !InventoryHelper::disabledOnProduct($products_id)) {
             $stock_info = $ext::getInventoryStock($products_id, 0, 1);
         } else {
             $stock_info = \common\classes\StockIndication::product_info(array(

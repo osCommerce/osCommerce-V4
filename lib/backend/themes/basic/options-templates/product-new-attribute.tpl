@@ -173,8 +173,8 @@
                                                 <input name="products_attributes_weight[{$option['products_options_id']}][{$option['products_options_values_id']}]" value="{$option['products_attributes_weight']}" type="text" class="form-control form-control-small" placeholder="0.00" />
                                             </div>
                                         </div>
-                                        {if \common\helpers\Acl::checkExtensionAllowed('TypicalOperatingTemp', 'allowed')}
-                                            {\common\extensions\TypicalOperatingTemp\TypicalOperatingTemp::attributesTemplateBlock($option)}
+                                        {if $tot = \common\helpers\Extensions::isAllowed('TypicalOperatingTemp')}
+                                            {$tot::attributesTemplateBlock($option)}
                                         {/if}
                                     {/function}
 

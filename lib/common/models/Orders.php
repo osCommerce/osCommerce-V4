@@ -129,6 +129,27 @@ class Orders extends ActiveRecord
         return 'orders';
     }
 
+    public static function findByVar($orderOrId)
+    {
+        if ($orderOrId instanceof self) {
+            return $orderOrId;
+        } elseif (is_numeric($orderOrId)) {
+            return self::findOne(['orders_id' => (int)$orderOrId]);
+        }
+    }
+
+    /**
+     * @param Orders|int $orderOrId
+     * @return Orders
+     * @throws \Exception
+     */
+    public static function findByVarCheck($orderOrId)
+    {
+        $res = self::findByVar($orderOrId);
+        \common\helpers\Assert::instanceOf($orderOrId, self::class);
+        return $res;
+    }
+
     /**
      * one-to-many
      * @return array

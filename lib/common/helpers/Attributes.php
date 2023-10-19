@@ -13,6 +13,7 @@
 namespace common\helpers;
 
 use backend\models\EP\Tools;
+use frontend\design\Info;
 
 class Attributes {
 
@@ -201,7 +202,7 @@ class Attributes {
                 }
                 
                 /** @var \common\extensions\Inventory\Inventory $iExt */
-                if ( ($iExt = \common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed')) 
+                if ( ($iExt = \common\helpers\Extensions::isAllowed('Inventory'))
                     && !\common\helpers\Inventory::disabledOnProduct($toProductsId) 
                     && !\common\helpers\Inventory::disabledOnProduct($fromProductsId) 
                     ) {
@@ -320,7 +321,7 @@ class Attributes {
         $real_products_id = \common\helpers\Inventory::normalizeInventoryId($products_id);
 
         /** @var \common\extensions\Inventory\Inventory $ext */
-        if ( ($ext = \common\helpers\Acl::checkExtensionAllowed('Inventory', 'allowed')) && !\common\helpers\Inventory::disabledOnProduct($real_products_id) ) {
+        if ( ($ext = \common\helpers\Extensions::isAllowed('Inventory')) && !\common\helpers\Inventory::disabledOnProduct($real_products_id) ) {
             return $ext::getDetails($products_id, $attributes, $params);
         }
         global $languages_id, $cart;
@@ -428,7 +429,7 @@ class Attributes {
                             = self::get_options_values_price($products_options['products_attributes_id'], !empty($params['qty'])?$params['qty']:1);
               $attributePirces[$products_options_name['products_options_id']][$products_options['products_options_values_id']]['price_prefix'] = $products_options['price_prefix'];
               if ($curPrice >= 0 ) { // usual or discounted for group (-2)
-                if ($curPrice > 0 && $priceOption == 0) {
+                if ($curPrice > 0 && ($priceOption == 0 || Info::isTotallyAdmin())) {
                     if ( strpos($products_options['price_prefix'],'%')!==false ) {
                         $products_options['products_options_values_name'] .= ' (' . substr($products_options['price_prefix'],0,1).''.\common\helpers\Output::percent($curPrice).') ';
                     }else{
@@ -469,7 +470,7 @@ class Attributes {
         if ($product = tep_db_fetch_array($product_query)) {
 //          $product_price = \common\helpers\Product::get_products_price($product['products_id'], !empty($params['qty'])?$params['qty']:1, $product['products_price']);
 //          $special_price = \common\helpers\Product::get_products_special_price($product['products_id'], !empty($params['qty'])?$params['qty']:1);
-          if (isset($attributes) && is_array($attributes)) {
+          if (!empty($attributes) && is_array($attributes)) {
               $_price_uprid = \common\helpers\Inventory::get_uprid($product['products_id'], $attributes);
               $attrPriceInstance = \common\models\Product\Price::getInstance($_price_uprid);
               $product_price = $attrPriceInstance->getInventoryPrice(['qty' => !empty($params['qty'])?$params['qty']:1]);
@@ -525,7 +526,7 @@ class Attributes {
             //'dynamic_prop' => $dynamic_prop,
         ];
 
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('TypicalOperatingTemp', 'allowed')){
+        if ($ext = \common\helpers\Extensions::isAllowed('TypicalOperatingTemp')) {
             $ext_data = $ext::runAttributes($current_uprid);
             if ( is_array($ext_data) ) $return_data = array_merge($return_data, $ext_data);
         }
@@ -535,7 +536,8 @@ class Attributes {
          * 1 - hide
          * 2 - hide if zero
          */
-        if (($stock_indicator_public['request_for_quote'] /*&& $stock_indicator_public['display_price_options'] != 0*/) ||
+        /** @var \common\extensions\Quotations\Quotations $quotesExt */
+        if (($stock_indicator_public['request_for_quote'] && ($quotesExt = \common\helpers\Extensions::isAllowed('Quotations')) && !$quotesExt::optionIsPriceShow()) ||
             ($stock_indicator_public['display_price_options'] == 1) ||
             (abs($product_price + $bundle_attributes_price)<0.01 && $stock_indicator_public['display_price_options'] == 2)
             ) {

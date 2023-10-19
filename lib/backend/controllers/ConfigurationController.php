@@ -266,7 +266,7 @@ class ConfigurationController extends Sceleton {
                 <div class="tabbable tabbable-custom">
                     <ul class="nav nav-tabs">
                         <?php foreach($languages as $lKey => $lItem) {?>
-                        <li <?php if($lKey == 0) {?> class="active"<?php }?> ><a href="#tab_2_<?php echo $lItem['id'];?>" class="flag-span" data-toggle="tab"><?php echo $lItem['image'];?><span><?php echo $lItem['name'];?></span></a></li>
+                        <li <?php if($lKey == 0) {?> class="active"<?php }?> data-bs-toggle="tab" data-bs-target="#tab_2_<?php echo $lItem['id'];?>"><a class="flag-span"><?php echo $lItem['image'];?><span><?php echo $lItem['name'];?></span></a></li>
                         <?php }?>
                     </ul>
                     <div class="tab-content">
@@ -415,6 +415,10 @@ class ConfigurationController extends Sceleton {
             $title = Translation::getTranslationValue($configuration['configuration_key'].'_TITLE', 'configuration', $languages_id);
             if (!tep_not_null($title)) {
               $title = $cInfo_array['configuration_title'];
+            }
+
+            if (is_array($overwrittenKey = \common\helpers\Extensions::getOverwrittenCfgKey($configuration['configuration_key'])) && !empty($overwrittenKey['value'])) {
+                $cfgValue = $overwrittenKey['value'];
             }
 
             $responseList[] = array(

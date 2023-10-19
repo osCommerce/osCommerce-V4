@@ -18,7 +18,11 @@
 					<div class="widget-header filter-title">
                         <h4 class="s_filter_title">{$app->controller->view->headingTitle}</h4>
                         <div class="s_filter_saved">
-                            <label>{$app->controller->view->headingTitle}</label>{Html::dropDownList('filters', $selected_filter, $filters, ['class' => 'form-control', 'prompt'=> TEXT_SELECT, 'onchange' => 'document.location=this.value'])}<label>{$smarty.const.TEXT_SAVE_AS_FILTER}</label>{tep_draw_input_field('filter_name', '','class="form-control"')}<button class="btn" onClick="saveFilter();">{$smarty.const.IMAGE_SAVE}</button>
+                            <label>{$app->controller->view->headingTitle}</label>
+                            {Html::dropDownList('filters', $selected_filter, $filters, ['class' => 'form-control', 'prompt'=> TEXT_SELECT, 'onchange' => 'document.location=this.value'])}
+                            {if strlen($filters[$selected_filter]) > 0} <button class="btn" onClick="deleteFilter();">{$smarty.const.IMAGE_DELETE}</button>&nbsp;{/if}
+                            <label>{$smarty.const.TEXT_SAVE_AS_FILTER}</label>{tep_draw_input_field('filter_name', '','class="form-control"')}
+                            <button class="btn" onClick="saveFilter();">{$smarty.const.IMAGE_SAVE}</button>
                         </div>
                         <div class="toolbar no-padding">
                           <div class="btn-group">
@@ -196,7 +200,15 @@
             }, "json");
         }
     }
-    
+
+    function deleteFilter(){
+        $.post('sales_statistics/delete-filter', {
+            'filter_vals': $('select[name=filters]').val()
+        }, function(data, status){
+            alertMessage(getWrapedMessage(data.message));
+        }, "json");
+    }
+
     var oTable;
     var chartsArray = {};
     var $settings = {
@@ -490,7 +502,7 @@
                 var id = 0;
                 var _groups = $settings.groups;
                 _groups = [];
-                if (selected_charts.size() > 0){
+                if (selected_charts.length > 0){
                     $.each(selected_charts, function(i, e){
                         id = $(e).parents('.chart_group').attr('data-id');
                         if (typeof _groups[id] != 'object') _groups[id] = { 'elements':[], 'colors':[] };

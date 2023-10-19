@@ -89,12 +89,20 @@
 <input type="hidden" id="row_id">
 <div class="row order-box-list" id="featured_list">
     <div class="col-md-12">
-                <div class="btn-wr after btn-wr-top disable-btn data-table-top-left">
-                        <a href="javascript:void(0)" onclick="deleteSelectedFeatured();" class="btn btn-del">{$smarty.const.TEXT_DELETE_SELECTED}</a>
+        <div class="btn-wr after btn-wr-top data-table-top-left">
+            <div>
+                <div class="p-l-1 switchable disable-btn">
+                    <a href="javascript:void(0)" onclick="deleteSelectedFeatured();" class="btn btn-del">{$smarty.const.TEXT_DELETE_SELECTED}</a>
                 </div>
+                <div id>
+                    <button id = "loadCurrentSort" class="btn btn-undo">{$smarty.const.TEXT_LOAD_SORT}</button>
+                    <button id = "saveCurrentSort" class="btn btn-save">{$smarty.const.TEXT_SAVE_SORT}</button>
+                </div>
+            </div>
+        </div>
 
             <div class="widget-content" id="featured_list_data">
-                <table class="table table-striped table-bordered table-hover table-responsive table-checkable datatable double-grid table-statuses table-featured"
+                <table class="table table-striped table-bordered table-hover table-responsive table-checkable table-sortable datatable double-grid table-statuses table-featured"
                        checkable_list="{$app->controller->view->sortColumns}" data_ajax="featured/list">
                     <thead>
                     <tr>
@@ -111,6 +119,86 @@
 
 <script type="text/javascript">
     $(document).ready(function(){
+        var dt = $('.datatable').DataTable();
+        // init default sorting
+        dt.column(0).visible(false);
+        dt.column(0).order('asc').draw();
+
+        let loadSortBtn = $('#loadCurrentSort');
+        let saveSortBtn = $('#saveCurrentSort');
+
+        function switchBtnState(mode) {
+            if (mode === false) {
+                loadSortBtn.addClass('disable-btn');
+                saveSortBtn.addClass('disable-btn');
+            } else {
+                loadSortBtn.removeClass('disable-btn');
+                saveSortBtn.removeClass('disable-btn');
+            }
+        }
+
+        switchBtnState(false);
+
+        loadSortBtn.on('click', function () {
+            dt.column(0).order('asc').draw();
+            switchBtnState(false);
+        });
+        $( ".table tbody" ).sortable({
+            axis: 'y',
+            update: function( event, ui ) {
+                var post_data = { };
+                let sort_data = { };
+                let current = $('.cell_id', ui.item).val();
+
+                sort_data.current = current;
+                let items = event.target.childNodes;
+                items.forEach(function (item, key) {
+                    var id = $('.cell_id', item).val();
+                    if (id === current) {
+                        var prev = items[key-1];
+                        var next = items[key+1];
+                        sort_data.before = (prev === undefined) ? null : $('.cell_id', prev).val();
+                        sort_data.after = (next === undefined) ? null : $('.cell_id', next).val();
+                    }
+                });
+                post_data.sort_data = sort_data;
+                $.post("{Yii::$app->urlManager->createUrl('featured/sort-order')}", post_data, function(data, status){
+                    if (status == "success") {
+                        resetStatement();
+                    } else {
+                        alert("Request error.");
+                    }
+                },"html");
+            },
+            handle: ".handle"
+        }).disableSelection();
+
+        saveSortBtn.on('click', function () {
+            var post_data = { };
+            let sort = "";
+            dt.rows().every( function ( rowIdx, tableLoop, rowLoop ) {
+                var data = this.nodes();
+                data.each(function (item) {
+                    if ($('.current_sort', item).val() !== undefined) {
+                        sort = $('.current_sort', item).val();
+                    }
+                });
+            });
+
+            post_data.order_by = sort;
+            $.post("{Yii::$app->urlManager->createUrl('featured/save-current-sort')}", post_data, function(data, status){
+                if (status == "success") {
+                    resetStatement();
+                } else {
+                    alert("Request error.");
+                }
+            },"html");
+            switchBtnState(false);
+        });
+
+        $('th.sorting').on('click', function () {
+            switchBtnState(true);
+        });
 
       $( ".datepicker" ).datepicker({
           changeMonth: true,
@@ -127,19 +215,21 @@
 
       $('#filterForm').on('submit', applyFilter);
 
+
       $('th.checkbox-column .uniform').click(function() {
           if($(this).is(':checked')){
             $('input:checkbox.uniform-bulkProcess').each(function(j, cb) {
               $(this).prop('checked', true).uniform('refresh');
             });
-            $('.order-box-list .btn-wr').removeClass('disable-btn');
+            $('.switchable').removeClass('disable-btn');
           }else{
             $('input:checkbox:checked.uniform-bulkProcess').each(function(j, cb) {
               $(this).prop('checked', false).uniform('refresh');
             });
-              $('.order-box-list .btn-wr').addClass('disable-btn');
+              $('.switchable').addClass('disable-btn');
           }
       });
+
     });
 
     function resetFilter() {

@@ -77,7 +77,7 @@ class ListingFunctionality extends Widget
           'list_link' => $list_link,
           'b2b_link' => $b2b_link,
           'gl' => $_SESSION['gl'],
-          'fbl' => Info::widgetSettings('Listing', 'fbl'),
+          'fbl' => Info::widgetSettings('Listing', 'fbl', ($this->params['page_name'] ?? false)),
           'compare_button' => $this->settings[0]['compare_button']
         ]
       ]);

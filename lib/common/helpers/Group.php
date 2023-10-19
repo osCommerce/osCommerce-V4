@@ -42,6 +42,7 @@ class Group {
       } else {
 
         if (!isset($e_groups[$code]) || !is_array($e_groups[$code])) {
+          $e_groups = []; //php8
           $e_groups[$code] = $ext::getGroupsArray($code);
           if (!is_array($e_groups[$code])) {
             $e_groups[$code] = [];
@@ -78,6 +79,7 @@ class Group {
         if ($id == 0) {
             $ret = TEXT_MAIN;
         } else {
+          $ret = '';
           $group = \common\models\Groups::findOne($id);
           if ($group) {
             $ret = $group->groups_name;
@@ -85,5 +87,17 @@ class Group {
         }
         return $ret;
     }
+
+    public static function isTaxApplicable($groupId = null)
+    {
+        if (!\common\helpers\Extensions::isAllowed('BusinessToBusiness')) return true;
+
+        if (is_null($groupId)) {
+            $groupId = (int) \Yii::$app->storage->get('customer_groups_id');
+        }
+        if ($groupId == 0) return true;
+        return \common\helpers\Customer::check_customer_groups($groupId, 'groups_is_tax_applicable');
+    }
+
 
 }

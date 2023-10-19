@@ -52,7 +52,8 @@ class Meta_tagsController extends Sceleton {
 //        $key2 = $get_ex_values['platform_id'].'_'.$get_ex_values['language_id'].'_'.$get_ex_values['affiliate_id'];
 //        if ( !isset($data[$key1]) ) $data[$key1] = array();
 //        $data[$key1][$key2] = $get_ex_values['meta_tags_value'];
-        define($get_ex_values['meta_tags_key'].'_'.$get_ex_values['language_id'].'_'.$get_ex_values['platform_id'], $get_ex_values['meta_tags_value']);
+        $constName = $get_ex_values['meta_tags_key'].'_'.$get_ex_values['language_id'].'_'.$get_ex_values['platform_id'];
+        defined($constName) or define($constName, $get_ex_values['meta_tags_value']);
       }
     }
 

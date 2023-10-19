@@ -40,7 +40,7 @@ class TwoStepAuthorizationIntervalController extends Sceleton
             )
         );
 
-        $messages = $_SESSION['messages'];
+        $messages = $_SESSION['messages']??null;
         unset($_SESSION['messages']);
         if (!is_array($messages)) $messages = [];
         return $this->render('index', array('messages' => $messages));

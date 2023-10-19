@@ -32,9 +32,9 @@ class Assert {
         if (is_object($obj)) {
             $value = get_class($obj);
         } elseif (is_array($obj)) {
-            $value = 'cnt='.count($obj);
+            $value = var_export($obj, true);
         } else {
-            $value = strval($obj);
+            $value = (string)$obj;
         }
         return sprintf('%s(%s)', $type, $value);
     }
@@ -45,6 +45,16 @@ class Assert {
         static::error( sprintf($message, $message_def) );
     }
 
+    public static function isSet(bool $isSet, $varName, string $message = null)
+    {
+        if (!$isSet) {
+            static::errorMsg($message, 'variable "$varName" is not set');
+        }
+    }
+
+    /**
+     * @deprecated Use isNotNull
+     */
     public static function assertNotNull($value, string $message = null)
     {
         self::isNotNull($value, $message);
@@ -57,6 +67,9 @@ class Assert {
         }
     }
 
+    /**
+     * @deprecated Use isNotEmpty
+     */
     public static function assertNotEmpty($value, string $message = null)
     {
         self::isNotEmpty($value, $message);
@@ -66,6 +79,13 @@ class Assert {
     {
         if (empty($value)) {
             static::errorMsg($message, 'unexpected value: empty');
+        }
+    }
+
+    public static function isEmpty($value, string $message = null)
+    {
+        if (!empty($value)) {
+            static::errorMsg($message, 'expect empty value, but given: ' . self::ident($value) );
         }
     }
 
@@ -89,6 +109,14 @@ class Assert {
     {
         if (!file_exists($fn)) {
             $def = sprintf("file %s does not exist", self::ident($fn));
+            static::errorMsg($message, $def);
+        }
+    }
+
+    public static function isObject($obj, string $message = null)
+    {
+        if (!is_object($obj)) {
+            $def = sprintf("%s is not object", self::ident($obj));
             static::errorMsg($message, $def);
         }
     }

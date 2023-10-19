@@ -100,8 +100,11 @@
             <div class="qty-input">
                 {if $can_buy}
                     <label>{output_label const="QTY"}</label>
-                    <input autocomplete="off" type="text" name="qty[]" value="0" data-price="{$product.calculated_price}" data-zero-init="1"
-                           class="qty-inp"{if $product.stock_indicator.quantity_max>0} data-max="{$product.stock_indicator.quantity_max}"{/if}{if \common\helpers\Acl::checkExtensionAllowed('MinimumOrderQty', 'allowed')}{\common\extensions\MinimumOrderQty\MinimumOrderQty::setLimit($product.order_quantity_data)}{/if}{if \common\helpers\Acl::checkExtensionAllowed('OrderQuantityStep', 'allowed')}{\common\extensions\OrderQuantityStep\OrderQuantityStep::setLimit($product.order_quantity_data)}{/if} />
+                    <input autocomplete="off" type="text" name="qty[]" value="0" data-price="{$product.calculated_price}" data-zero-init="1" class="qty-inp"
+                        {if $product.stock_indicator.quantity_max>0} data-max="{$product.stock_indicator.quantity_max}"{/if}
+                        {if $moq = \common\helpers\Extensions::isAllowed('MinimumOrderQty')}{$moq::setLimit($product.order_quantity_data)}{/if}
+                        {if $oqs = \common\helpers\Extensions::isAllowed('OrderQuantityStep')}{$oqs::setLimit($product.order_quantity_data)}{/if}
+                    />
                     <input type="hidden" name="products_id[]" value="{$product.uprid}"/>
                 {/if}	
             </div>

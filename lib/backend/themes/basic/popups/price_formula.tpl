@@ -91,8 +91,8 @@
         }
 		
     </style>
-    <script type="text/javascript" src="{$app->view->theme->baseUrl}/js/libs/jquery-1.10.2.min.js"></script>
-    <script type="text/javascript" src="{$app->request->baseUrl}/plugins/jquery-ui/jquery-ui-1.10.2.custom.min.js"></script>
+    <script type="text/javascript" src="{$app->request->baseUrl}/plugins/jquery.min.js"></script>
+    <script type="text/javascript" src="{$app->request->baseUrl}/plugins/jquery-ui/jquery-ui.min.js"></script>
     <script>
         function deleteMe(obj) {
             $(obj).parent('li').remove();

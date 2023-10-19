@@ -32,7 +32,7 @@
   <div class="col-1" style="clear:both;">
     <label>
       <span>{field_label const="PERSONAL_MESSAGE" required_text=""}</span>
-      <textarea cols="30" rows="10" name="virtual_gift_card_message" class="gift-message">{$gift->virtual_gift_card_message}</textarea>
+      <textarea maxlength="160" cols="30" rows="10" name="virtual_gift_card_message" class="gift-message">{$gift->virtual_gift_card_message}</textarea>
     </label>
     <div class="limitation">{sprintf($smarty.const.CHARACTERS_REMAINING, '160')}</div>
   </div>
@@ -147,9 +147,9 @@
                 });
 
                 giftCodeView.html('XXXXX');
-                messageView.html(giftMessage.val());
+                messageView.text(giftMessage.val());
                 giftMessage.off().on('keyup change', function(){
-                    messageView.html(giftMessage.val());
+                    messageView.text(giftMessage.val());
                 });
 
             })

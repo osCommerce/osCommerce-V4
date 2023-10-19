@@ -12,6 +12,9 @@
 
 namespace frontend\design\boxes\catalog;
 
+use common\classes\platform;
+use common\models\CategoriesImages;
+use common\models\ImageTypes;
 use Yii;
 use yii\base\Widget;
 use frontend\design\IncludeTpl;
@@ -34,6 +37,7 @@ class Image extends Widget
         global $current_category_id;
         $languages_id = \Yii::$app->settings->get('languages_id');
         $manufacturers_id = (int)Yii::$app->request->get('manufacturers_id', 0);
+        $platformId = platform::currentId();
         if ($current_category_id > 0) {
 
             $category = \common\models\Categories::find()->andWhere(['categories_id' => (int)$current_category_id])->with(['description', 'platformSettings'])->asArray()->one();
@@ -49,14 +53,44 @@ class Image extends Widget
                 return '';
             }
 
+            $categoriesImages = CategoriesImages::find()->alias('ci')
+                ->leftJoin(ImageTypes::tableName() . ' it', "ci.image_types_id = it.image_types_id")
+                ->where([
+                    'ci.categories_id' => $current_category_id,
+                    'it.image_types_name' => 'Category hero'
+                ])
+                ->andWhere(['or', ['ci.platform_id' => $platformId], ['ci.platform_id' => 0]])
+                ->asArray()->all();
+            $responsiveImagesPlatform = [];
+            if (is_array($categoriesImages)) {
+                foreach ($categoriesImages as $image) {
+                    $responsiveImagesPlatform[$image['image_types_id']][$image['platform_id']] = [
+                        'image' => $image['image'],
+                        'position' => $image['position'],
+                        'fit' => $image['fit'],
+                    ];
+                }
+            }
+            $responsiveImages = [];
+            if (is_array($responsiveImagesPlatform)) {
+                foreach ($responsiveImagesPlatform as $typeId => $image) {
+                    if ($image[$platformId]) {
+                        $responsiveImages[$typeId] = $image[$platformId];
+                    } elseif ($image[0]) {
+                        $responsiveImages[$typeId] = $image[0];
+                    }
+                }
+            }
+
             $category['img'] = \common\classes\Images::getImageSet(
                 $category['categories_image_2'],
                 'Category hero',
                 [
                     'alt' => $category['categories_name'],
                     'title' => $category['categories_name'],
+                    'id' => 'cat-img-' . $this->id
                 ],
-                false
+                false, false, $responsiveImages
             );
 
             if ($category['img'] === false) {

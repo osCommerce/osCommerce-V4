@@ -18,6 +18,7 @@ use common\classes\shopping_cart;
 use common\classes\Images;
 use common\models\ProductsAttributes;
 
+#[\AllowDynamicProperties]
 class CartDecorator
 {
     private $_cart;
@@ -58,6 +59,9 @@ class CartDecorator
         /** @var \common\classes\Currencies $currencies */
         $currencies = \Yii::$container->get('currencies');
         $this->products = $this->_cart->get_products();
+        foreach (\common\helpers\Hooks::getList('frontend/cart-decorator/decorate-products/products') as $filename) {
+            include($filename);
+        }
         $container = Yii::$container->get('products');
         for ($i=0, $n=sizeof($this->products); $i<$n; $i++) {
             $this->products[$i]['id_link'] = $this->products[$i]['id'];
@@ -200,10 +204,8 @@ class CartDecorator
                 }
             }
             
-            if($ext = \common\helpers\Acl::checkExtension('MultiCart', 'allowed')){
-                if ($ext::allowed()){
-                    $ext::productsBlock($this->products[$i]);
-                }
+            if($ext = \common\helpers\Extensions::isAllowed('MultiCart')) {
+                $ext::productsBlock($this->products[$i]);
             }
             \Yii::$app->get('PropsHelper')::describeProduct($this->products[$i]);
         }

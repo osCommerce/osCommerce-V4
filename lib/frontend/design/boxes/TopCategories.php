@@ -51,7 +51,11 @@ class TopCategories extends Widget
 
 
         if (isset($this->settings[0]['max_items']) && $this->settings[0]['max_items']) {
-            $categories->limit((int)$this->settings[0]['max_items']);
+            if (!Info::themeSetting('show_empty_categories')) {
+                $categories->limit((int)$this->settings[0]['max_items'] * 2);
+            } else {
+                $categories->limit((int)$this->settings[0]['max_items']);
+            }
         }
 
         $cats = $categories->asArray()->all();
@@ -60,11 +64,19 @@ class TopCategories extends Widget
         if (!$cats || !is_array($cats)) {
             return '';
         }
+        $cats_count = 0;
         foreach ($cats as $k => $category) {
 
             if (!Info::themeSetting('show_empty_categories') && \common\helpers\Categories::count_products_in_category($category['categories_id']) == 0) {
                 unset($cats[$k]);
                 continue;
+            }
+            if (isset($this->settings[0]['max_items']) && $this->settings[0]['max_items']) {
+                $cats_count++;
+                if ($cats_count > (int)$this->settings[0]['max_items']) {
+                    unset($cats[$k]);
+                    continue;
+                }
             }
 
             $cats[$k]['link'] = tep_href_link('catalog', 'cPath=' . $category['categories_id']);

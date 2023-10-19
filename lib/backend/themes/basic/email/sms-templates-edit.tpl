@@ -23,8 +23,8 @@
                 <div class="tabbable tabbable-custom">
                     <ul class="nav nav-tabs">
                         {foreach $platforms as $platform}
-                            <li class="{if $platform['id']==$default_platform_id}active {/if}">
-                                <a href="#platform_{$platform['id']}" data-toggle="tab">{$platform['text']}</a>
+                            <li class="{if $platform['id']==$default_platform_id}active {/if}" data-bs-toggle="tab" data-bs-target="#platform_{$platform['id']}">
+                                <a>{$platform['text']}</a>
                             </li>
                         {/foreach}
                     </ul>
@@ -35,7 +35,7 @@
                             <div class="tabbable tabbable-custom">
                                 <ul class="nav nav-tabs under_tabs_ul">
                                     {foreach $languages as $lKey => $lItem}
-                                        <li{if $lKey == 0} class="active"{/if}><a href="#tab_{$platform['id']}_text_{$lItem['code']}" data-toggle="tab">{$lItem['logo']}<span>{$lItem['name']}</span></a></li>
+                                        <li{if $lKey == 0} class="active"{/if} data-bs-toggle="tab" data-bs-target="#tab_{$platform['id']}_text_{$lItem['code']}"><a>{$lItem['logo']}<span>{$lItem['name']}</span></a></li>
                                     {/foreach}
                                 </ul>
                                 <div class="tab-content">

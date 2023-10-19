@@ -1,37 +1,20 @@
 {use class="\yii\helpers\Html"}
 {use class="\yii\helpers\Url"}
 {assign var = same value = $manager->isBillAsShip()}
-<div class="widget box box-no-shadow {if $same}widget-closed{/if}">
+<div class="widget box box-no-shadow">
     <div class="widget-header widget-header-billing">
-        <h4 {if $same}class="disabled"{/if}>
-            <span>Billing Address</span>
-            {if $manager->isShippingNeeded()}
-                <div class="same-address"><input type="checkbox" name="ship_as_bill" value="1" id="as-shipping"{if $same} checked {/if}/>same as Shipping Address</div>
-            {/if}
-            {if $manager->has('billto')}
-                {assign var=bAddress value=$manager->getBillingAddress()}
-                <span class="header-address">{\common\helpers\Address::address_format($bAddress['country']['address_format_id']|default:null, ['postcode' => $bAddress['postcode']|default:null, 'country_id' => $bAddress['country_id'], 'city' => $bAddress['city']|default:null ], true, '', '|')}</span>
-            {/if}
-        </h4>
-        {if $same}
-            {$manager->render('Toolbar', ['expanded' => false, 'visible'=>false])}
-        {else}
-            {$manager->render('Toolbar')}
-        {/if}
+        <h4>{$smarty.const.TEXT_BILLING_ADDRESS}</h4>
     </div>
-    <div class="widget-content after">
-        <div class="w-line-row-2">
-            <div>&nbsp;</div>
-            <div>
-                {if $manager->isCustomerAssigned() && count($manager->getCustomersIdentity()->getAddressBooks())>1}
-                <label>
-                    {Html::a('Show All Addresses', $urlCheckout, ['class' => 'popup albilling address-list'])}
-                </label>
-                {/if}
-            </div>
+    <div class="widget-content address-block">
+
+        <div>
+        {if $manager->isShippingNeeded()}
+            <div class="same-address mb-2"><input type="checkbox" name="ship_as_bill" value="1" id="as-shipping"{if $same} checked {/if}/>{$smarty.const.SAME_AS_SHIPPING_ADDRESS}</div>
+        {/if}
         </div>
-        <div class="billing-address form-inputs">
-        {$manager->render('AddressesList', ['manager' => $manager, 'type' => 'billing', 'mode' => 'edit'])}        
+
+        <div class="billing-address form-inputs {if $same} disabled{/if}">
+            {$manager->render('AddressesList', ['manager' => $manager, 'type' => 'billing', 'mode' => 'single'])}
         </div>
     </div>
     <script>

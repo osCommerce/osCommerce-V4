@@ -28,6 +28,8 @@ class IncludeTpl extends Widget
 
     public function run()
     {
+        if (empty(Yii::$app->view->theme->pathMap['@app/views'])) return '';
+
         if ( substr($this->file, 0, 1)==='@' && is_file(Yii::getAlias($this->file)) ) {
             return $this->render($this->file, $this->params);
         }

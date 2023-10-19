@@ -13,8 +13,9 @@
     </thead>
     {$withComments=0}
     {foreach $orders_history_items as $row => $orders_history name="ordersHistoryItems"}
-      {if $smarty.foreach.ordersHistoryItems.last && ($orders_history_items|@count)>1}
+      {if $smarty.foreach.ordersHistoryItems.last && ($orders_history_items|default:array()|@count)>1}
         <tr><td colspan="6" align="center" id="order_history_collapse_td">
+                <div class="row">
           <div class="col-md-3 tr-more" id="oStatusHistoryShow">
             <label class="plus-right">{$smarty.const.TEXT_SHOW_ALL}</label></div>
           <div class="col-md-3 tr-more {if $withComments>0}dis_module{/if}" id="oStatusHistoryShowComents">
@@ -23,6 +24,7 @@
             <label class="minus-right">{$smarty.const.TEXT_HIDE_WITH_COMMENTS}</label></div>
           <div class="col-md-3 tr-least" id="oStatusHistoryHide">
             <label class="minus-right">{$smarty.const.TEXT_HIDE}</label></div>
+                </div>
           </td><tr>
       {/if}
         <tr class="{if ($row < count($orders_history_items) -1) && empty(trim($orders_history['comments'])) }collapse use-collapse{/if}{if !empty(trim($orders_history['comments'])) && !$smarty.foreach.ordersHistoryItems.last }{$withComments=1}collapse-comments{/if}">
@@ -51,7 +53,7 @@
 </table>
 <script>
     $(document).ready(function(){
-        if ($('#order_history_collapse_td').size()){
+        if ($('#order_history_collapse_td').length){
 
             $('#oStatusHistoryHideComents, #oStatusHistoryShowComents').on('click', function(e){
               if (!$(this).hasClass("dis_module")) {
@@ -59,7 +61,7 @@
                 $('#oStatusHistoryHideComents').toggleClass('dis_module');
                 $('#oStatusHistoryShowComents').toggleClass('dis_module');
               }
-            });
+            }).trigger('click');
 
             $('#oStatusHistoryShow').on('click', function(e){
               if (!$(this).hasClass("dis_module")) {

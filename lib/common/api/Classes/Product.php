@@ -134,11 +134,11 @@ class Product extends AbstractClass
             /**
              * Cross Sell
              */
-            $this->productsXsellRecordArray = \common\models\ProductsXsell::find()->where(['products_id' => $productId])->asArray(true)->all();
-            /**
-             * Up Sell
-             */
-            $this->productsUpsellRecordArray = \common\models\ProductsUpsell::find()->where(['products_id' => $productId])->asArray(true)->all();
+            $xsellModel = \common\helpers\Extensions::getModel('UpSell', 'ProductsXsell');
+            $this->productsXsellRecordArray = (!empty($xsellModel)) ? $xsellModel::find()->where(['products_id' => $productId])->asArray(true)->all() : [];
+
+            $upsellModel = \common\helpers\Extensions::getModel('UpSell', 'ProductsUpsell');
+            $this->productsUpsellRecordArray = (!empty($upsellModel)) ? $upsellModel::find()->where(['products_id' => $productId])->asArray(true)->all() : [];
             /**
              * Properties To Propducts
              */
@@ -359,7 +359,7 @@ class Product extends AbstractClass
                 unset($descriptionRecord['language_id']);
                 unset($descriptionRecord['platform_id']);
                 unset($descriptionRecord['department_id']);
-                if (($languageId > 0) AND ($platformId >= 0)) {
+                if (($languageId > 0) and ($platformId >= 0)) {
                     $descriptionClass = \common\models\ProductsDescription::find()->where(['products_id' => $this->productId, 'language_id' => $languageId, 'platform_id' => $platformId, 'department_id' => $departmentId])->one();
                     if (!($descriptionClass instanceof \common\models\ProductsDescription)) {
                         $descriptionClass = new \common\models\ProductsDescription();
@@ -391,7 +391,7 @@ class Product extends AbstractClass
                 unset($priceRecord['products_id']);
                 unset($priceRecord['currencies_id']);
                 unset($priceRecord['groups_id']);
-                if (($currenciesId >= 0) AND ($groupsId >= 0)) {
+                if (($currenciesId >= 0) and ($groupsId >= 0)) {
                     $priceClass = \common\models\ProductsPrices::find()->where(['products_id' => $this->productId, 'groups_id' => $groupsId, 'currencies_id' => $currenciesId])->one();
                     if (!($priceClass instanceof \common\models\ProductsPrices)) {
                         $priceClass = new \common\models\ProductsPrices();
@@ -448,20 +448,21 @@ class Product extends AbstractClass
                             $this->messageAdd($atributeClass->getErrorSummary(true));
                         }
                     }
-                } catch (\Exception $exc) {}
+                } catch (\Exception $exc) {
+                }
                 unset($atributeClass);
                 if ($isSave != true) {
                     unset($this->productsAttributesRecordArray[$key]);
                 }
                 unset($isSave);
-                if (($productsAttributesId > 0) AND (count($productsAttributesRecord['productsAttributesPricesRecordArray']) > 0)) {
+                if (($productsAttributesId > 0) and (count($productsAttributesRecord['productsAttributesPricesRecordArray']) > 0)) {
                     foreach ($productsAttributesRecord['productsAttributesPricesRecordArray'] as $productsAttributesPricesRecord) {
                         $currenciesId = (int)(isset($productsAttributesPricesRecord['currencies_id']) ? $productsAttributesPricesRecord['currencies_id'] : -1);
                         $groupsId = (int)(isset($productsAttributesPricesRecord['groups_id']) ? $productsAttributesPricesRecord['groups_id'] : -1);
                         unset($productsAttributesPricesRecord['products_attributes_id']);
                         unset($productsAttributesPricesRecord['currencies_id']);
                         unset($productsAttributesPricesRecord['groups_id']);
-                        if (($currenciesId >= 0) AND ($groupsId >= 0)) {
+                        if (($currenciesId >= 0) and ($groupsId >= 0)) {
                             $productsAttributesClass = \common\models\ProductsAttributesPrices::find()->where(['products_attributes_id' => $productsAttributesId, 'groups_id' => $groupsId, 'currencies_id' => $currenciesId])->one();
                             if (!($productsAttributesClass instanceof \common\models\ProductsAttributesPrices)) {
                                 $productsAttributesClass = new \common\models\ProductsAttributesPrices();
@@ -481,7 +482,7 @@ class Product extends AbstractClass
                     }
                     unset($productsAttributesPricesRecord);
                 }
-                if (($productsAttributesId > 0) AND is_array($productsAttributesRecord['productsAttributesDownloadRecord'])) {
+                if (($productsAttributesId > 0) and is_array($productsAttributesRecord['productsAttributesDownloadRecord'])) {
                     $productsAttributesDownloadRecord = $productsAttributesRecord['productsAttributesDownloadRecord'];
                     unset($productsAttributesDownloadRecord['products_attributes_id']);
                     $productsAttributesDownloadClass = \common\models\ProductsAttributesDownload::find()->where(['products_attributes_id' => $productsAttributesId])->one();
@@ -605,14 +606,15 @@ class Product extends AbstractClass
                     } else {
                         $this->messageAdd($imageClass->getErrorSummary(true));
                     }
-                } catch (\Exception $exc) {}
+                } catch (\Exception $exc) {
+                }
                 unset($imageClass);
                 if ($isSave != true) {
                     $productImageId = 0;
                     unset($this->productsImagesRecordArray[$key]);
                 }
                 unset($isSave);
-                if (($productImageId > 0) AND (count($productsImagesRecord['productsImagesDescriptionRecordArray']) > 0)) {
+                if (($productImageId > 0) and (count($productsImagesRecord['productsImagesDescriptionRecordArray']) > 0)) {
                     foreach ($productsImagesRecord['productsImagesDescriptionRecordArray'] as $productsImagesDescriptionRecord) {
                         $languageId = (int)(isset($productsImagesDescriptionRecord['language_id']) ? $productsImagesDescriptionRecord['language_id'] : -1);
                         unset($productsImagesDescriptionRecord['products_images_id']);
@@ -637,14 +639,14 @@ class Product extends AbstractClass
                     }
                     unset($productsImagesDescriptionRecord);
                 }
-                if (($productImageId > 0) AND (count($productsImagesRecord['productsImagesAttributesRecordArray']) > 0)) {
+                if (($productImageId > 0) and (count($productsImagesRecord['productsImagesAttributesRecordArray']) > 0)) {
                     foreach ($productsImagesRecord['productsImagesAttributesRecordArray'] as $productsImagesAttributesRecord) {
                         $productsOptionsId = (int)(isset($productsImagesAttributesRecord['products_options_id']) ? $productsImagesAttributesRecord['products_options_id'] : 0);
                         $productsOptionsValuesId = (int)(isset($productsImagesAttributesRecord['products_options_values_id']) ? $productsImagesAttributesRecord['products_options_values_id'] : 0);
                         unset($productsImagesAttributesRecord['products_images_id']);
                         unset($productsImagesAttributesRecord['products_options_id']);
                         unset($productsImagesAttributesRecord['products_options_values_id']);
-                        if (($productsOptionsId > 0) AND ($productsOptionsValuesId >= 0)) {
+                        if (($productsOptionsId > 0) and ($productsOptionsValuesId >= 0)) {
                             $imagesAttributesClass = \common\models\ProductsImagesAttributes::find()->where(['products_images_id' => $productImageId, 'products_options_id' => $productsOptionsId, 'products_options_values_id' => $productsOptionsValuesId])->one();
                             if (!($imagesAttributesClass instanceof \common\models\ProductsImagesAttributes)) {
                                 $imagesAttributesClass = new \common\models\ProductsImagesAttributes();
@@ -666,14 +668,14 @@ class Product extends AbstractClass
                     }
                     unset($productsImagesAttributesRecord);
                 }
-                if (($productImageId > 0) AND (count($productsImagesRecord['productsImagesExternalUrlRecordArray']) > 0)) {
+                if (($productImageId > 0) and (count($productsImagesRecord['productsImagesExternalUrlRecordArray']) > 0)) {
                     foreach ($productsImagesRecord['productsImagesExternalUrlRecordArray'] as $productsImagesExternalUrlRecord) {
                         $languageId = (int)(isset($productsImagesExternalUrlRecord['language_id']) ? $productsImagesExternalUrlRecord['language_id'] : -1);
                         $imageTypesId = (int)(isset($productsImagesExternalUrlRecord['image_types_id']) ? $productsImagesExternalUrlRecord['image_types_id'] : 0);
                         unset($productsImagesExternalUrlRecord['products_images_id']);
                         unset($productsImagesExternalUrlRecord['image_types_id']);
                         unset($productsImagesExternalUrlRecord['language_id']);
-                        if (($languageId >= 0) AND ($imageTypesId >= 0)) {
+                        if (($languageId >= 0) and ($imageTypesId >= 0)) {
                             $imagesExternalUrlClass = \common\models\ProductsImagesExternalUrl::find()->where(['products_images_id' => $productImageId, 'image_types_id' => $imageTypesId, 'language_id' => $languageId])->one();
                             if (!($imagesExternalUrlClass instanceof \common\models\ProductsImagesExternalUrl)) {
                                 $imagesExternalUrlClass = new \common\models\ProductsImagesExternalUrl();
@@ -695,7 +697,7 @@ class Product extends AbstractClass
                     }
                     unset($productsImagesExternalUrlRecord);
                 }
-                if (($productImageId > 0) AND (count($productsImagesRecord['productsImagesInventoryRecordArray']) > 0)) {
+                if (($productImageId > 0) and (count($productsImagesRecord['productsImagesInventoryRecordArray']) > 0)) {
                     foreach ($productsImagesRecord['productsImagesInventoryRecordArray'] as $productsImagesInventoryRecord) {
                         $inventoryId = (int)(isset($productsImagesInventoryRecord['inventory_id']) ? $productsImagesInventoryRecord['inventory_id'] : 0);
                         unset($productsImagesInventoryRecord['products_images_id']);
@@ -730,9 +732,9 @@ class Product extends AbstractClass
             unset($newProductsImages);
             $isDefault = false;
             foreach (\common\models\ProductsImages::find()
-                ->where(['products_id' => $this->productId])
-                ->orderBy(['default_image' => SORT_DESC, 'products_images_id' => SORT_ASC])
-                ->asArray(false)->all() as $productImageRecord
+                         ->where(['products_id' => $this->productId])
+                         ->orderBy(['default_image' => SORT_DESC, 'products_images_id' => SORT_ASC])
+                         ->asArray(false)->all() as $productImageRecord
             ) {
                 if ($isDefault == false) {
                     $productImageRecord->default_image = 1;
@@ -742,7 +744,8 @@ class Product extends AbstractClass
                 }
                 try {
                     $productImageRecord->save();
-                } catch (\Exception $exc) {}
+                } catch (\Exception $exc) {
+                }
             }
             unset($productImageRecord);
             unset($isDefault);
@@ -777,7 +780,8 @@ class Product extends AbstractClass
                         $this->messageAdd($inventoryClass->getErrorSummary(true));
                     }
 
-                } catch (\Exception $exc) {}
+                } catch (\Exception $exc) {
+                }
                 unset($inventoryClass);
 
                 if ($isSave != true) {
@@ -785,14 +789,14 @@ class Product extends AbstractClass
                 }
                 unset($isSave);
                 // TODO
-                if (($inventoryId > 0) AND (count($inventoryRecord['inventoryPricesRecordArray']) > 0)) {
+                if (($inventoryId > 0) and (count($inventoryRecord['inventoryPricesRecordArray']) > 0)) {
                     foreach ($inventoryRecord['inventoryPricesRecordArray'] as $inventoryPricesRecord) {
                         $currenciesId = (int)(isset($inventoryPricesRecord['currencies_id']) ? $inventoryPricesRecord['currencies_id'] : -1);
                         $groupsId = (int)(isset($inventoryPricesRecord['groups_id']) ? $inventoryPricesRecord['groups_id'] : -1);
                         unset($inventoryPricesRecord['inventory_id']);
                         unset($inventoryPricesRecord['groups_id']);
                         unset($inventoryPricesRecord['currencies_id']);
-                        if (($currenciesId >= 0) AND ($groupsId >= 0)) {
+                        if (($currenciesId >= 0) and ($groupsId >= 0)) {
                             $inventoryClass = \common\models\InventoryPrices::find()->where(['prid' => $this->productId, 'products_id' => $uprid, 'groups_id' => $groupsId, 'currencies_id' => $currenciesId])->one();
                             if (!($inventoryClass instanceof \common\models\InventoryPrices)) {
                                 $inventoryClass = new \common\models\InventoryPrices();
@@ -862,7 +866,7 @@ class Product extends AbstractClass
                 unset($giveAwayProductsRecord['products_id']);
                 unset($giveAwayProductsRecord['currencies_id']);
                 unset($giveAwayProductsRecord['groups_id']);
-                if (($currenciesId >= 0) AND ($groupsId >= 0)) {
+                if (($currenciesId >= 0) and ($groupsId >= 0)) {
                     $giveAwayClass = \common\models\GiveAwayProducts::find()->where(['products_id' => $this->productId, 'groups_id' => $groupsId, 'currencies_id' => $currenciesId])->one();
                     if (!($giveAwayClass instanceof \common\models\GiveAwayProducts)) {
                         $giveAwayClass = new \common\models\ProductsPrices();
@@ -910,55 +914,63 @@ class Product extends AbstractClass
             /**
              * Cross Sell
              */
-            foreach ($this->productsXsellRecordArray as $productsXsellRecord) {
-                $xsellId = (int)(isset($productsXsellRecord['xsell_id']) ? $productsXsellRecord['xsell_id'] : 0);
-                unset($productsXsellRecord['products_id']);
-                unset($productsXsellRecord['xsell_id']);
-                if ($xsellId > 0) {
-                    $xsellClass = \common\models\ProductsXsell::find()->where(['products_id' => $this->productId, 'xsell_id' => $xsellId])->one();
-                    if (!($xsellClass instanceof \common\models\ProductsXsell)) {
-                        $xsellClass = new \common\models\ProductsXsell();
-                        $xsellClass->loadDefaultValues();
-                        $xsellClass->products_id = $this->productId;
-                        $xsellClass->xsell_id = $xsellId;
-                    }
-                    $xsellClass->setAttributes($productsXsellRecord, false);
-                    if ($xsellClass->save(false)) {
+            $xsellModel = \common\helpers\Extensions::getModel('UpSell', 'ProductsXsell');
+            if (!empty($xsellModel)) {
 
-                    } else {
-                        $this->messageAdd($xsellClass->getErrorSummary(true));
+                foreach ($this->productsXsellRecordArray as $productsXsellRecord) {
+                    $xsellId = (int)(isset($productsXsellRecord['xsell_id']) ? $productsXsellRecord['xsell_id'] : 0);
+                    unset($productsXsellRecord['products_id']);
+                    unset($productsXsellRecord['xsell_id']);
+                    if ($xsellId > 0) {
+                        $xsellClass = $xsellModel::find()->where(['products_id' => $this->productId, 'xsell_id' => $xsellId])->one();
+                        if (!($xsellClass instanceof $xsellModel)) {
+                            $xsellClass = new $xsellModel();
+                            $xsellClass->loadDefaultValues();
+                            $xsellClass->products_id = $this->productId;
+                            $xsellClass->xsell_id = $xsellId;
+                        }
+                        $xsellClass->setAttributes($productsXsellRecord, false);
+                        if ($xsellClass->save(false)) {
+
+                        } else {
+                            $this->messageAdd($xsellClass->getErrorSummary(true));
+                        }
+                        unset($xsellClass);
                     }
-                    unset($xsellClass);
+                    unset($xsellId);
                 }
-                unset($xsellId);
+                unset($productsXsellRecord);
             }
-            unset($productsXsellRecord);
             /**
              * Up Sell
              */
-            foreach ($this->productsUpsellRecordArray as $productsUpsellRecord) {
-                $upsellId = (int)(isset($productsUpsellRecord['upsell_id']) ? $productsUpsellRecord['upsell_id'] : 0);
-                unset($productsUpsellRecord['products_id']);
-                unset($productsUpsellRecord['upsell_id']);
-                if ($upsellId > 0) {
-                    $upsellClass = \common\models\ProductsUpsell::find()->where(['products_id' => $this->productId, 'upsell_id' => $upsellId])->one();
-                    if (!($upsellClass instanceof \common\models\ProductsUpsell)) {
-                        $upsellClass = new \common\models\ProductsUpsell();
-                        $upsellClass->loadDefaultValues();
-                        $upsellClass->products_id = $this->productId;
-                        $upsellClass->upsell_id = $upsellId;
-                    }
-                    $upsellClass->setAttributes($productsUpsellRecord, false);
-                    if ($upsellClass->save(false)) {
+            $upsellModel = \common\helpers\Extensions::getModel('UpSell', 'ProductsUpsell');
+            if (!empty($upsellModel)) {
 
-                    } else {
-                        $this->messageAdd($upsellClass->getErrorSummary(true));
+                foreach ($this->productsUpsellRecordArray as $productsUpsellRecord) {
+                    $upsellId = (int)(isset($productsUpsellRecord['upsell_id']) ? $productsUpsellRecord['upsell_id'] : 0);
+                    unset($productsUpsellRecord['products_id']);
+                    unset($productsUpsellRecord['upsell_id']);
+                    if ($upsellId > 0) {
+                        $upsellClass = $upsellModel::find()->where(['products_id' => $this->productId, 'upsell_id' => $upsellId])->one();
+                        if (!($upsellClass instanceof $upsellModel)) {
+                            $upsellClass = new $upsellModel();
+                            $upsellClass->loadDefaultValues();
+                            $upsellClass->products_id = $this->productId;
+                            $upsellClass->upsell_id = $upsellId;
+                        }
+                        $upsellClass->setAttributes($productsUpsellRecord, false);
+                        if ($upsellClass->save(false)) {
+
+                        } else {
+                            $this->messageAdd($upsellClass->getErrorSummary(true));
+                        }
+                        unset($upsellClass);
                     }
-                    unset($upsellClass);
+                    unset($upsellId);
                 }
-                unset($upsellId);
+                unset($productsUpsellRecord);
             }
-            unset($productsUpsellRecord);
             /**
              * Properties To Propducts
              */
@@ -1027,7 +1039,7 @@ class Product extends AbstractClass
                 unset($giftWrapProductsRecord['products_id']);
                 unset($giftWrapProductsRecord['currencies_id']);
                 unset($giftWrapProductsRecord['groups_id']);
-                if (($currenciesId >= 0) AND ($groupsId >= 0)) {
+                if (($currenciesId >= 0) and ($groupsId >= 0)) {
                     $giftWrapClass = \common\models\GiftWrapProducts::find()->where(['products_id' => $this->productId, 'groups_id' => $groupsId, 'currencies_id' => $currenciesId])->one();
                     if (!($giftWrapClass instanceof \common\models\GiftWrapProducts)) {
                         $giftWrapClass = new \common\models\GiftWrapProducts();
@@ -1146,34 +1158,39 @@ class Product extends AbstractClass
 
             // ...
             // OLD SEO REDIRECT
-            foreach ($this->oldSeoRedirectArray as $seoRedirectArray) {
-                try {
-                    $platformId = (int)(isset($seoRedirectArray['platform_id']) ? $seoRedirectArray['platform_id'] : 0);
-                    if ($platformId > 0) {
-                        $languageId = (int)(isset($seoRedirectArray['language_id']) ? $seoRedirectArray['language_id'] : 0);
-                        if (isset($seoRedirectArray['language_code'])) {
-                            $languageId = $this->getLanguageIdByCode($seoRedirectArray['language_code'], $languageId);
+            $seoModel = \common\helpers\Extensions::getModel('SeoRedirectsNamed', 'SeoRedirectsNamed');
+            if (!empty($seoModel)) {
+                foreach ($this->oldSeoRedirectArray as $seoRedirectArray) {
+                    try {
+                        $platformId = (int)(isset($seoRedirectArray['platform_id']) ? $seoRedirectArray['platform_id'] : 0);
+                        if ($platformId > 0) {
+                            $languageId = (int)(isset($seoRedirectArray['language_id']) ? $seoRedirectArray['language_id'] : 0);
+                            if (isset($seoRedirectArray['language_code'])) {
+                                $languageId = $this->getLanguageIdByCode($seoRedirectArray['language_code'], $languageId);
+                            }
+                            $searchArray = [
+                                'platform_id' => $platformId,
+                                'language_id' => $languageId,
+                                'redirects_type' => 'product',
+                                'owner_id' => $this->productId,
+                                'old_seo_page_name' => $seoRedirectArray['old_seo_page_name']
+                            ];
+                            $seoRedirectRecord = $seoModel::findOne($searchArray);
+                            if (!($seoRedirectRecord instanceof $seoModel)) {
+                                $seoRedirectRecord = new $seoModel();
+                                $seoRedirectRecord->loadDefaultValues();
+                                $seoRedirectRecord->setAttributes($searchArray);
+                                $seoRedirectRecord->save();
+                            }
                         }
-                        $searchArray = [
-                            'platform_id' => $platformId,
-                            'language_id' => $languageId,
-                            'redirects_type' => 'product',
-                            'owner_id' => $this->productId,
-                            'old_seo_page_name' => $seoRedirectArray['old_seo_page_name']
-                        ];
-                        $seoRedirectRecord = \common\models\SeoRedirectsNamed::findOne($searchArray);
-                        if (!($seoRedirectRecord instanceof \common\models\SeoRedirectsNamed)) {
-                            $seoRedirectRecord = new \common\models\SeoRedirectsNamed();
-                            $seoRedirectRecord->loadDefaultValues();
-                            $seoRedirectRecord->setAttributes($searchArray);
-                            $seoRedirectRecord->save();
-                        }
+                    } catch (\Exception $exc) {
+                        \Yii::warning($exc->getMessage().' '.$exc->getTraceAsString(), 'SeoRedirectNammed');
                     }
-                } catch (\Exception $exc) {}
-                unset($seoRedirectRecord);
-                unset($searchArray);
-                unset($languageId);
-                unset($platformId);
+                    unset($seoRedirectRecord);
+                    unset($searchArray);
+                    unset($languageId);
+                    unset($platformId);
+                }
             }
             unset($seoRedirectArray);
             // EOF OLD SEO REDIRECT

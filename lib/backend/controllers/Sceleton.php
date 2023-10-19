@@ -54,7 +54,7 @@ class Sceleton extends Controller {
         if (($this->acl[0] ?? null) === 'BOX_HEADING_DEPARTMENTS') {
             //skip superadmin menu
         } elseif (!is_null($this->acl)) {
-            $lastElement = end($this->acl);
+            $lastElement = is_array($this->acl) ? end($this->acl) : $this->acl;
             $wtf = \common\helpers\AdminBox::buildNavigation($lastElement);
             if (!empty($wtf)) {
                 $this->acl = $wtf; // have no idea why $this->acl was always overrided before
@@ -97,9 +97,6 @@ class Sceleton extends Controller {
     
     public function actions() {
         $actions = parent::actions();
-        if ($es =\common\helpers\Acl::checkExtensionAllowed('EventSystem', 'allowed')){
-            $actions = array_merge($es::getActions($this->id));
-        }
         $actions = array_merge($actions, \common\helpers\Acl::getExtensionActions($this->id));
         return $actions;
     }

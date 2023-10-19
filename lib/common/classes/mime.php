@@ -12,6 +12,7 @@
 
 namespace common\classes;
 
+#[\AllowDynamicProperties]
   class mime {
     var $_encoding;
     var $_subparts;

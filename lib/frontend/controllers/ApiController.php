@@ -33,13 +33,4 @@ class ApiController extends Sceleton
 
     }
 
-    public function actionFlexifi()
-    {
-        $this->layout = false;
-        if (Yii::$app->request->get('action') == 'credit-plan') {
-            echo \common\extensions\FlexiFi\FlexiFi::getPopupHtml(Yii::$app->request->get('uProductId'), Yii::$app->request->get('amount'));
-        }
-        die();
-    }
-
 }

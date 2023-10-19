@@ -44,7 +44,7 @@ class BundlePrice extends Price {
     }
 
     public static function getInstance($uprid) {
-        if (!isset(self::$instanses[$uprid]) || Yii::$app->params['reset_static_product_prices_cache']) {
+        if (!isset(self::$instanses[$uprid]) || (Yii::$app->params['reset_static_product_prices_cache']??false)) {
             self::$instanses[$uprid] = new self();
             self::$instanses[$uprid]->uprid = $uprid;
             self::$instanses[$uprid]->bundle_price = [
@@ -72,10 +72,16 @@ class BundlePrice extends Price {
 
         //$check_parent = \common\models\Products::find()->select('use_sets_discount, products_sets_discount')->where('products_id=:products_id', [':products_id' => (int)\common\helpers\Inventory::get_prid($params['parent'])])->asArray()->one();
         $check_parent = \common\helpers\Product::getProductColumns((int)\common\helpers\Inventory::get_prid($params['parent']), ['use_sets_discount', 'products_sets_discount']);
+// {{
+        $customer_groups_id = (int) \Yii::$app->storage->get('customer_groups_id');
+        $_currency_id = (int) (isset($params['curr_id']) && $params['curr_id'] ? $params['curr_id'] : \Yii::$app->settings->get('currency_id'));
+        $_customer_groups_id = (int) (isset($params['group_id']) && $params['group_id'] ? $params['group_id'] : $customer_groups_id);
+        $check_parent_group = \common\models\ProductsPrices::find()->select('products_sets_discount')->where('products_id=:products_id and groups_id=:groups_id and currencies_id=:currencies_id', [':products_id' => (int)\common\helpers\Inventory::get_prid($params['parent']), ':groups_id' => $_customer_groups_id, ':currencies_id' => (USE_MARKET_PRICES == 'True' ? $_currency_id : '0')])->asArray()->one();
+// }}
         $check_product = \common\models\SetsProducts::find()->select('discount')->where('sets_id=:sets_id and product_id=:product_id', [':sets_id' => (int)\common\helpers\Inventory::get_prid($params['parent']), ':product_id' => (int)\common\helpers\Inventory::get_prid($this->uprid)])->asArray()->one();
         if ($check_parent['use_sets_discount']) {
             if ($this->relative->dSettings->applyBundleDiscount()) {
-                $this->bundle_price['value'] *= (1 - (($check_parent['products_sets_discount'] + $check_product['discount']) / 100));
+                $this->bundle_price['value'] *= (1 - (($check_parent['products_sets_discount'] + $check_parent_group['products_sets_discount'] + $check_product['discount']) / 100));
             }
         } else {
             // Attributes price only

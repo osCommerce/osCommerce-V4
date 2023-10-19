@@ -1,5 +1,6 @@
 {use class="common\helpers\Html"}
 {use class="yii\helpers\Url"}
+{\backend\assets\BDTPAsset::register($this)|void}
 
 <link href="{$app->view->theme->baseUrl}/css/platforms.css" rel="stylesheet" type="text/css" />
 {$message}
@@ -169,12 +170,29 @@
         return false;
     }
 
+    const timeSettings = {
+        display: {
+            viewMode: 'clock',
+            components: {
+                calendar: false,
+                date: false,
+                month: false,
+                year: false,
+                decades: false,
+            },
+        },
+        localization: {
+            locale: 'en',
+            format: 'h:mm T'
+        }
+    };
+
     $(document).ready(function(){
         $('.buttons_holidays .popup').popUp({
             box: "<div class='popup-box-wrap'><div class='around-pop-up'></div><div class='popup-box'><div class='pop-up-close pop-up-close-alert'></div><div class='popup-heading theme_choose'>{$smarty.const.BANK_HOLIDAYS}</div><div class='pop-up-content'><div class='preloader'></div></div></div></div>"
         })
 
-        $('.pt-time').ptTimeSelect();
+        $('.pt-time').tempusDominus(timeSettings);
     });
     var nextKey = {$count_open_hours};
     function removeOpenHours(obj) {
@@ -190,7 +208,7 @@
         $("form select[data-role=multiselect]").multiselect({
             selectedList: 1 // 0-based index
         });
-        $('form .pt-time-new').ptTimeSelect();
+        $('form .pt-time-new').tempusDominus(timeSettings);
 
         return false;
     }
@@ -204,7 +222,7 @@
         $("form select[data-role=multiselect]").multiselect({
             selectedList: 1 // 0-based index
         });
-        $('form .pt-time-new').ptTimeSelect();
+        $('form .pt-time-new').tempusDominus(timeSettings);
         return false;
     }
     function removeCutOffTimes(obj) {

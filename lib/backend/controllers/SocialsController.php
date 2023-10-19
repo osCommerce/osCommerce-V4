@@ -95,10 +95,12 @@ class SocialsController extends Sceleton {
         $_split = new \splitPageResults($current_page_number, $length, $socialsRaw, $recordsTotal, 'socials_id');
         $socialsQuery = tep_db_query($socialsRaw);
         while ($social = tep_db_fetch_array($socialsQuery)) {
-            $responseList[] = array(
-                $social['module'] . '<input class="cell_identify" type="hidden" value="' . $social['socials_id'] . '">',
-                (!in_array($social['module'], ['instagram', 'youtube']) ? '<input name="active" type="checkbox" class="check_on_off" ' . ($social['active'] ? " checked" : "") . '>' : ''),
-            );
+            if (!empty(\common\components\Socials::getSiteUrl($social['module']))) {
+                $responseList[] = array(
+                    $social['module'] . '<input class="cell_identify" type="hidden" value="' . $social['socials_id'] . '">',
+                    (!in_array($social['module'], ['instagram', 'youtube']) ? '<input name="active" type="checkbox" class="check_on_off" ' . ($social['active'] ? " checked" : "") . '>' : ''),
+                );
+            }
         }
 
         $response = [
@@ -276,15 +278,15 @@ class SocialsController extends Sceleton {
             }
 
             if (ArrayHelper::getValue($settings, 'image') || ArrayHelper::getValue($settings, 'image_upload')) {
-                $image = $settings['image'];
-
-                $imgPath = DIR_WS_IMAGES . DIRECTORY_SEPARATOR . 'socials' . DIRECTORY_SEPARATOR;
-                if ($settings['image_upload']) {
-                    $image = \backend\design\Uploads::move($settings['image_upload'], $imgPath, true);
-                    $image = str_replace(DIR_WS_IMAGES, '', $image);
-                }
-
                 $socials = \common\models\Socials::findOne($socials_id);
+
+                $image = \common\helpers\Image::prepareSavingImage(
+                    $socials->image ?? '',
+                    $settings['image'],
+                    $settings['image_upload'],
+                    'socials',
+                    false
+                );
 
                 if ($socials && $socials->image != $image) {
                     $socials->image = $image;

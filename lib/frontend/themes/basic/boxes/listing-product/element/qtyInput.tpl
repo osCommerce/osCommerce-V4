@@ -1,14 +1,13 @@
 {use class="Yii"}
+{$PackUnits = \common\helpers\Acl::checkExtensionAllowed('PackUnits', 'allowed')}
 {if Yii::$app->user->isGuest && \common\helpers\PlatformConfig::getFieldValue('platform_please_login')}
     
-{elseif $product.pack_unit > 0 || $product.packaging > 0}
+{elseif $PackUnits && ($product.pack_unit > 0 || $product.packaging > 0)}
     {$quantity_max = $product.stock_indicator.quantity_max}
     {if $product.pack_unit > 0 || $product.packaging > 0}
         {$product.order_quantity_data.order_quantity_minimal = 0}
     {/if}
-    {if $ext = \common\helpers\Acl::checkExtensionAllowed('PackUnits', 'allowed')}
-        {$pack_units_data = $ext::quantityBoxFrontend([], ['products_id' => $product.products_id])}
-    {/if}
+    {$pack_units_data = $PackUnits::quantityBoxFrontend([], ['products_id' => $product.products_id])}
     <div class="qty-input">
         <div class="qty_t">{$smarty.const.UNIT_QTY}:</div>
         <div class="input">
@@ -62,11 +61,7 @@
             {if $product.stock_indicator.quantity_max > 0 }
                 data-max="{$product.stock_indicator.quantity_max}"
             {/if}
-            {if \common\helpers\Acl::checkExtensionAllowed('MinimumOrderQty', 'allowed')}
-                {\common\extensions\MinimumOrderQty\MinimumOrderQty::setLimit($product.order_quantity_data)}
-            {/if}
-            {if \common\helpers\Acl::checkExtensionAllowed('OrderQuantityStep', 'allowed')}
-                {\common\extensions\OrderQuantityStep\OrderQuantityStep::setLimit($product.order_quantity_data)}
-            {/if}
+            {if $moq = \common\helpers\Extensions::isAllowed('MinimumOrderQty')}{$moq::setLimit($product.order_quantity_data)}{/if}
+            {if $oqs = \common\helpers\Extensions::isAllowed('OrderQuantityStep')}{$oqs::setLimit($product.order_quantity_data)}{/if}
     />
 {/if}

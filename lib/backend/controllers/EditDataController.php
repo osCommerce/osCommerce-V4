@@ -78,7 +78,7 @@ class EditDataController extends Sceleton {
                     $value = $arr[$split];
 
                 } else {
-                    $value = $data[$fieldName];
+                    $value = $data[$fieldName] ?? '';
                 }
                 $fields[$platform['id']][$language['id']] = $value;
             }
@@ -291,7 +291,7 @@ class EditDataController extends Sceleton {
                 ->one();
 
 
-            $menuItems[$language['id']] = $menuTitle['title'];
+            $menuItems[$language['id']] = $menuTitle['title'] ?? '';
 
             switch ($linkType) {
                 case 'info':

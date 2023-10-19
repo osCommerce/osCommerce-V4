@@ -66,16 +66,6 @@ class SaveSubProductMainDetails
 
         $sql_data_array['manual_stock_unlimited'] = $parent_data['manual_stock_unlimited'];
 
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('MinimumOrderQty', 'allowed')) {
-            $sql_data_array = array_replace($sql_data_array, $ext::saveProduct());
-        }
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('MaxOrderQty', 'allowed')) {
-            $sql_data_array = array_replace($sql_data_array, $ext::saveProduct());
-        }
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('OrderQuantityStep', 'allowed')) {
-            $sql_data_array = array_replace($sql_data_array, $ext::saveProduct());
-        }
-
         $products_date_available = Yii::$app->request->post('products_date_available');
         if (!empty($products_date_available)) {
             $sql_data_array['products_date_available'] = \common\helpers\Date::prepareInputDate($products_date_available);

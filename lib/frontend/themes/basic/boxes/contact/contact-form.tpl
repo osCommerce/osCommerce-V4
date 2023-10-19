@@ -31,6 +31,9 @@
       {Html::activeInput('email', $contact, 'email_address', ['data-required' => "{$smarty.const.EMAIL_REQUIRED}", 'data-pattern' => "email"])}
     </label>
   </div>
+  {if $ext = \common\helpers\Extensions::isAllowed('CustomerAdditionalFields')}
+    {$ext::contactBlock()}
+  {/if}
   <div class="col-full">
     <label>
       <span>{field_label const="TEXT_ENQUIRY" required_text="*"}</span>

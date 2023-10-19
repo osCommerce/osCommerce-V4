@@ -27,7 +27,10 @@ class PostArrayHelper
      */
     public static function getFromPostArrays($field, $curr_id, $group_id=0)
     {
-        $data = $field['dbdef'];
+        $data = $field['dbdef'] ?? null;
+        if (isset($field['f']) && is_array($field['f']) && reset($field['f']) == 'self') { // php 8.2
+            $field['f'][ array_key_first($field['f'])] = self::class;
+        }
 
         if (USE_MARKET_PRICES == 'True' && \common\helpers\Extensions::isCustomerGroupsAllowed()) {
             if (isset($field['flag'])) {

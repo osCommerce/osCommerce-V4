@@ -22,9 +22,24 @@
 </div>
 <div class="btn-toolbar btn-toolbar-order">
     {Html::a(TEXT_PROCESS_ORDER_BUTTON, \Yii::$app->urlManager->createUrl(['orders/process-order', 'orders_id' => $oInfo->orders_id]), ['class' => 'btn btn-primary btn-process-order'])}
-    <span class="disable_wr"><span class="dis_popup"><span class="dis_popup_img"></span><span class="dis_popup_content">{$smarty.const.TEXT_COMPLITED}</span></span>
-    {if \common\helpers\Acl::rule(['ACL_ORDER', 'IMAGE_EDIT'])}{Html::a(IMAGE_EDIT, \Yii::$app->urlManager->createUrl(['editor/order-edit', 'orders_id' => $oInfo->orders_id]), ['class' => 'btn btn-no-margin btn-edit'])}{/if}</span>{if !common\helpers\Affiliate::isLogged() && \common\helpers\Acl::rule(['ACL_ORDER', 'IMAGE_DELETE'])}{Html::button(IMAGE_DELETE, ['class' => 'btn btn-delete', 'onclick' => "confirmDeleteOrder("|cat:$oInfo->orders_id|cat:")"])}<br>{/if}
 
+    {if \common\helpers\Acl::rule(['ACL_ORDER', 'IMAGE_EDIT'])}
+        <a href="{\Yii::$app->urlManager->createUrl(['editor/order-edit', 'orders_id' => $oInfo->orders_id])}"
+           class="btn btn-no-margin btn-edit"
+           {*data-bs-toggle="tooltip" data-bs-placement="left"
+           data-bs-custom-class="custom-tooltip"
+           data-bs-title="{$smarty.const.TEXT_COMPLITED}"*}
+        >{$smarty.const.IMAGE_EDIT}</a>
+        <script>
+            $(function(){
+                new bootstrap.Tooltip($('.btn-edit')[0])
+            })
+        </script>
+    {/if}
+
+    {if !common\helpers\Affiliate::isLogged() && \common\helpers\Acl::rule(['ACL_ORDER', 'IMAGE_DELETE'])}
+        {Html::button(IMAGE_DELETE, ['class' => 'btn btn-delete', 'onclick' => "confirmDeleteOrder("|cat:$oInfo->orders_id|cat:")"])}
+    {/if}
 
     {if is_array($addedPages['invoice'])}
       <div id="choose-invoice" style="display: none">
@@ -50,9 +65,14 @@
             </script>
           </div>
     {/if}
+
     {if is_array($addedPages['invoice'])}
-      <a href="#choose-invoice" class="btn btn-choose-invoice btn-no-margin">{$smarty.const.TEXT_INVOICE}</a>{else}
-    {Html::a(TEXT_INVOICE, \Yii::$app->urlManager->createUrl(['orders/ordersbatch', 'pdf' => 'invoice', 'action' => 'selected', 'orders_id' => $oInfo->orders_id]), ['class' => "btn btn-no-margin", 'target'=>"_blank"])}{/if}{if is_array($addedPages['packingslip'])}<a href="#choose-packingslip" class="btn btn-choose-packingslip">{$smarty.const.IMAGE_ORDERS_PACKINGSLIP}</a>
+        <a href="#choose-invoice" class="btn btn-choose-invoice btn-no-margin">{$smarty.const.TEXT_INVOICE}</a>
+    {else}
+        {Html::a(TEXT_INVOICE, \Yii::$app->urlManager->createUrl(['orders/ordersbatch', 'pdf' => 'invoice', 'action' => 'selected', 'orders_id' => $oInfo->orders_id]), ['class' => "btn btn-no-margin", 'target'=>"_blank"])}
+    {/if}
+
+    {if is_array($addedPages['packingslip'])}<a href="#choose-packingslip" class="btn btn-choose-packingslip">{$smarty.const.IMAGE_ORDERS_PACKINGSLIP}</a>
           <div id="choose-packingslip" style="display: none">
             <div class="popup-heading">{$smarty.const.IMAGE_ORDERS_PACKINGSLIP}</div>
             <div class="popup-content packingslip-links">
@@ -78,11 +98,16 @@
         {else}{Html::a(IMAGE_ORDERS_PACKINGSLIP, \Yii::$app->urlManager->createUrl(['orders/ordersbatch', 'pdf' => 'packingslip', 'action' => 'selected', 'orders_id' => $oInfo->orders_id]), ['class' => "btn", 'target'=>"_blank"])}
         {/if}
 
+    {if \common\helpers\Acl::rule(['ACL_ORDER', 'IMAGE_REASSIGN'])}
+        {Html::input('button', '', IMAGE_REASSIGN, ['class' => "btn btn-primary btn-process-order", 'onclick' => "reassignOrder("|cat:$oInfo->orders_id|cat:")" ])}
+    {/if}
 
-    {if \common\helpers\Acl::rule(['ACL_ORDER', 'IMAGE_REASSIGN'])}{Html::input('button', '', IMAGE_REASSIGN, ['class' => "btn btn-primary btn-process-order", 'onclick' => "reassignOrder("|cat:$oInfo->orders_id|cat:")" ])}{/if}
-    {if $ext = \common\helpers\Acl::checkExtensionAllowed('MergeOrders', 'allowed')}{$ext::actionOrderactions($oInfo->orders_id)}{/if}
+    {if $ext = \common\helpers\Acl::checkExtensionAllowed('MergeOrders', 'allowed')}
+        {$ext::actionOrderactions($oInfo->orders_id)}
+    {/if}
+
     {if $canAnonimize}
-      <br />{Html::a(TEXT_ANONIMIZE_ORDER, '', ['class' => 'btn btn-no-margin', 'onclick'=>'return anonimizeOrder();'])}
+        {Html::a(TEXT_ANONIMIZE_ORDER, '', ['class' => 'btn btn-no-margin', 'onclick'=>'return anonimizeOrder();'])}
     {/if}
 </div>
 {if $canAnonimize}
@@ -114,3 +139,6 @@
       }
     </script>
 {/if}
+
+
+

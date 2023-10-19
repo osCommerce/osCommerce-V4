@@ -1,8 +1,11 @@
 {use class="common\helpers\Html"}
 {use class="\common\classes\platform"}
 {use class="\common\classes\department"}
+{\backend\assets\Categories::register($this)|void}
 {include file='../assets/tabs.tpl' scope="global"}
-
+{if $ext = \common\helpers\Extensions::isAllowed('GoogleTranslate')}
+    {$ext::includeCategoriesJs($cInfo->categories_id)}
+{/if}
 {if $infoBreadCrumb}
     <div class="breadcrumb-additional_info breadcrumb-for-category">{$infoBreadCrumb}
 {if $app->controller->view->usePopupMode == false}
@@ -22,23 +25,23 @@
     <div class="tabbable tabbable-custom">
         <ul class="nav nav-tabs">
             {if count(platform::getCategoriesAssignList())>1 || \common\helpers\Acl::checkExtensionAllowed('UserGroupsRestrictions', 'allowed')}
-            <li><a href="#tab_platform" data-toggle="tab">{$smarty.const.TEXT_ASSIGN_TAB}</a></li>
+            <li data-bs-toggle="tab" data-bs-target="#tab_platform"><a>{$smarty.const.TEXT_ASSIGN_TAB}</a></li>
             {/if}
             {if $departments == true && count(department::getCatalogAssignList())>1 }
-            <li><a href="#tab_department" data-toggle="tab">{$smarty.const.TEXT_DEPARTMENT_TAB}</a></li>
-            {*<li><a href="#tab_department_price" data-toggle="tab">{$smarty.const.TEXT_DEPARTMENT_API_PRICE}</a></li>*}
+            <li data-bs-toggle="tab" data-bs-target="#tab_department"><a>{$smarty.const.TEXT_DEPARTMENT_TAB}</a></li>
+            {*<li data-bs-toggle="tab" data-bs-target="#tab_department_price"><a>{$smarty.const.TEXT_DEPARTMENT_API_PRICE}</a></li>*}
             {/if}
-            <li class="active"><a href="#tab_2" data-toggle="tab">{$smarty.const.TEXT_NAME_DESCRIPTION}</a></li>
-            <li><a href="#tab_3" data-toggle="tab">{$smarty.const.TEXT_MAIN_DETAILS}</a></li>
-            <li><a href="#tab_4" data-toggle="tab">{$smarty.const.TEXT_SEO}</a></li>
+            <li data-bs-toggle="tab" data-bs-target="#tab_2" class="active"><a>{$smarty.const.TEXT_NAME_DESCRIPTION}</a></li>
+            <li data-bs-toggle="tab" data-bs-target="#tab_3"><a>{$smarty.const.TEXT_MAIN_DETAILS}</a></li>
+            <li data-bs-toggle="tab" data-bs-target="#tab_4"><a>{$smarty.const.TEXT_SEO}</a></li>
 {if {$categories_id > 0}}
-            <li><a href="#tab_5" data-toggle="tab">{$smarty.const.TEXT_FILTERS}</a></li>
+            <li data-bs-toggle="tab" data-bs-target="#tab_5"><a>{$smarty.const.TEXT_FILTERS}</a></li>
 {/if}
-            <li><a href="#tab_6" data-toggle="tab">Templates</a></li>
-            <li><a href="#tab_supplier" data-toggle="tab">{$smarty.const.TEXT_TAB_SUPPLIERS}</a></li>
-            <li><a href="#marketing" data-toggle="tab">{$smarty.const.TEXT_MARKETING}</a></li>
+            <li data-bs-toggle="tab" data-bs-target="#tab_6"><a>Templates</a></li>
+            <li data-bs-toggle="tab" data-bs-target="#tab_supplier"><a>{$smarty.const.TEXT_TAB_SUPPLIERS}</a></li>
+            <li data-bs-toggle="tab" data-bs-target="#marketing"><a>{$smarty.const.TEXT_MARKETING}</a></li>
             {if $es = \common\helpers\Acl::checkExtensionAllowed('EventSystem', 'allowed')}
-            <li><a href="#tab_event_mails" data-toggle="tab">{$smarty.const.TAB_EVENT_EMAILS}</a></li>
+            <li data-bs-toggle="tab" data-bs-target="#tab_event_mails"><a>{$smarty.const.TAB_EVENT_EMAILS}</a></li>
             {/if}
             {foreach \common\helpers\Hooks::getList('categories/categoryedit', 'tab-navs') as $filename}
                 {include file=$filename}
@@ -124,12 +127,17 @@
                 </div>*}
             {/if}
             <div class="tab-pane active topTabPane tabbable-custom" id="tab_2">
-               {if count($languages) > 1}
-               <ul class="nav nav-tabs">
-                    {foreach $languages as $lKey => $lItem}
-                    <li{if $lKey == 0} class="active"{/if}><a href="#tab_{$lItem['code']}" data-toggle="tab">{$lItem['logo']}<span>{$lItem['name']}</span></a></li>
-                    {/foreach}
-                </ul>
+                {if count($languages) > 1}
+                    <ul class="nav nav-tabs">
+                        {foreach $languages as $lKey => $lItem}
+                            <li data-bs-toggle="tab" data-bs-target="#tab_{$lItem['code']}"{if $lKey == 0} class="active"{/if}><a>{$lItem['logo']}<span>{$lItem['name']}</span>
+                                    <i class="language-actions icon-copy" data-language-id="{$lItem['id']}"></i>
+                            </a></li>
+                        {/foreach}
+                    </ul>
+                    {if $ext = \common\helpers\Extensions::isAllowed('GoogleTranslate')}
+                        {$ext::getCategoryButton()}
+                    {/if}
                 {/if}
                 <div class="tab-content {if count($languages) < 2}tab-content-no-lang{/if}">
                     {foreach $cDescription  as $mKey => $mItem}
@@ -173,6 +181,127 @@
                     {/foreach}
                     {if $es = \common\helpers\Acl::checkExtensionAllowed('EventSystem', 'allowed')}{$es::event()->exec('getEventAdditionalFields', [$categories_id, 'main'])}{/if}
                 </div>
+                <script>
+                    function getAllLanguages(currentLanguage = 0) {
+                        let allLanguages = { };
+                        {foreach \common\helpers\Language::get_languages() as $lang}
+                            if (currentLanguage !== {$lang['id']}) {
+                                allLanguages[{$lang['id']}] = { 'code': "{$lang['code']}", 'name': "{$lang['name']}" };
+                            }
+                        {/foreach}
+                        return allLanguages;
+                    }
+
+                    function getLanguagesForChoose(currentLanguage){
+                        let options = [];
+                        {foreach $languages as $lang}
+                            if ({$lang['id']} !== currentLanguage) {
+                                options.push('<input type="checkbox" value="{$lang['id']}" class="selected-lang">&nbsp; {$lang['name']}');
+                            }
+                        {/foreach}
+                        return options.join("<br>");
+                    }
+
+                    function collect(currentLanguage, operation, toProduct, toCategory, overwrite) {
+                        let requestData = { };
+                        let languages = getAllLanguages();
+                        let box = $('#tab_'+languages[currentLanguage].code);
+                        let from = $('input[name*="categories"], textarea[name*="categories"]', box);
+
+                        $.each(from, function (unused, element) {
+                            let nameAttr = element.name;
+                            let fieldName = nameAttr.replace(/\[[0-9]+\]/, '', nameAttr);
+                            let DOMElement = $('[name="'+nameAttr+'"]');
+                            requestData[fieldName] = DOMElement.is('input') ? DOMElement.val() : DOMElement.text();
+                        });
+
+                        if (operation === 'translate') {
+                            {if \common\helpers\Extensions::isAllowed('GoogleTranslate')}
+                                translate({$categories_id}, currentLanguage, toProduct, toCategory, requestData, getSelectedLanguages(), overwrite)
+                            {/if}
+                        }else{
+                            copyData(requestData, currentLanguage, overwrite);
+                        }
+                    }
+
+                    function copyData(data, currentLanguage, overwrite) {
+                        $.each(data, function (field, value) {
+                            $.each(getSelectedLanguages(), function (index /*unused*/, langId ) {
+                                if (langId !== currentLanguage) {
+                                    let element = $('[name$="'+field+'['+langId+']"]');
+                                    if (element.is('input')) {
+                                        if ( (element.val().length && overwrite) || !element.val().length ) {
+                                            element.val(value);
+                                        }
+                                    } else {
+                                        if ((element.text().length && overwrite) || !element.text().length) {
+                                            element.text(value);
+                                            let _id = element.attr('id');
+                                            if (_id && $('#' + _id).hasClass('ck-editor')) {
+                                                CKEDITOR.instances[_id].setData(value);
+                                            }
+                                        }
+                                    }
+                                }
+                            });
+                        });
+                        bootbox.hideAll();
+                    }
+
+                    function getSelectedLanguages() {
+                        let selectedLang = [];
+                        $.each($('.selected-lang:checked'), function (index /*unused*/, element) {
+                            let langId = $(element).val();
+                            selectedLang.push(langId);
+                        });
+                        return selectedLang;
+                    }
+
+                    {\common\helpers\Translation::init('admin/categories/productedit')}
+                    $('.language-actions').click(function(e){
+                        let currentLanguage = $(this).data('language-id');
+                        bootbox.dialog({
+                            title: "{$smarty.const.TEXT_PLATFORM_LANGUAGE_MESSAGE|escape:javascript} " + $(this).prev().text(),
+                            message: "" +
+                                {if $ext = \common\helpers\Extensions::isAllowed('GoogleTranslate')}
+                                    '{Html::radio('type', true, ['id' => 'op_type', 'value' => 'copy'])} + {$smarty.const.IMAGE_COPY_TO|escape:javascript}<br>'+
+                                    '{Html::radio('type', false, ['id' => 'op_type', 'value' => 'translate'])} + {$ext::getLabel()}<br>'+
+                                {else}
+                                    "+ {$smarty.const.IMAGE_COPY_TO|escape:javascript}<br>" +
+                                {/if}
+                                getLanguagesForChoose(currentLanguage) + '<br><br>{Html::checkbox('overwrite', false, ['class' => 'overwrite'])}' + '\xa0\xa0{$smarty.const.TEXT_OVERWRITE_NON_EMPTY_FIELDS}<br><br>' +
+                                {if $ext = \common\helpers\Extensions::isAllowed('GoogleTranslate')}
+                                    '{$ext::getProductsCount(intval($cInfo->categories_id))}' + "<br>" +
+                                    '{Html::checkbox('to_product', false, ['class' => 'to_product'])}' + '\xa0\xa0{$smarty.const.EXT_GOOGLE_TRANSLATE_TEXT_APPLY_TO_PRODUCTS}<br>' +
+                                    '{Html::checkbox('to_category', false, ['class' => 'to_category'])}' + '\xa0\xa0{$smarty.const.EXT_GOOGLE_TRANSLATE_TEXT_APPLY_TO_CATEGORIES}' +
+                                {/if}
+                            "",
+                            buttons: {
+                                cancel: {
+                                    label: "{$smarty.const.IMAGE_CANCEL}",
+                                    className: 'btn btn-cancel',
+                                    callback: function (e) {
+                                        {if \common\helpers\Extensions::isAllowed('GoogleTranslate')}
+                                            destroyProgress();
+                                        {/if}
+                                    }
+                                },
+                                ok: {
+                                    label: "{$smarty.const.IMAGE_CONFIRM}",
+                                    className: 'btn btn-confirm',
+                                    callback: function (event) {
+                                        let overwriteFlag = $('.overwrite').is(':checked');
+                                        let operation = $('#op_type:checked').val();
+                                        let toProduct = $('.to_product').is(':checked');
+                                        let toCategory = $('.to_category').is(':checked');
+                                        collect(currentLanguage, operation, toProduct, toCategory, overwriteFlag);
+                                        return false;
+                                    }
+                                },
+                            },
+                        });
+                    });
+                </script>
             </div>
             <div class="tab-pane topTabPane tabbable-custom" id="tab_3">
                 <div class="after big-form">
@@ -225,7 +354,7 @@
                                 <div class="col-md-4">
                                     <label>{$smarty.const.TEXT_BANNERS_GROUP}</label>
                                 </div>
-                                <div class="col-md-7">
+                                <div class="col-md-7 banner-groups-holder">
                                     {\common\helpers\Html::listBox('banners_group',
                                     {$cInfo->banners_group|default},
                                     $bannerGroups,
@@ -269,7 +398,7 @@
                 {if count($languages) > 1}
                 <ul class="nav nav-tabs">
                     {foreach $languages as $lKey => $lItem}
-                    <li{if $lKey == 0} class="active"{/if}><a href="#seo_tab_{$lItem['code']}" data-toggle="tab">{$lItem['logo']}<span>{$lItem['name']}</span></a></li>
+                    <li{if $lKey == 0} class="active"{/if} data-bs-toggle="tab" data-bs-target="#seo_tab_{$lItem['code']}"><a>{$lItem['logo']}<span>{$lItem['name']}</span></a></li>
                     {/foreach}
                 </ul>
                 {/if}
@@ -307,11 +436,21 @@
                             </tr>
                             <tr>
                                 <td class="label_name">{$smarty.const.TEXT_H2_TAG}</td>
-                                <td class="label_value"><span id="categories_h2_tag-{$mItem['languageId']}">{foreach explode("\n", $mItem['categories_h2_tag']) as $value}<span class="row"><input type="text" name="categories_h2_tag[{$mItem['languageId']}][]" value="{$value|escape}" class="form-control" /><span class="del-pt del-tag"></span></span>{/foreach}</span><span onclick="addInput('categories_h2_tag-{$mItem['languageId']}', '{htmlspecialchars('<span class="row"><input type="text" name="categories_h2_tag['|cat:$mItem['languageId']|cat:'][]" value="" class="form-control" /><span class="del-pt del-tag"></span></span>')}')" class="btn btn-add-more">{$smarty.const.TEXT_AND_MORE}</span></td>
+                                <td class="label_value">
+                                    <span id="categories_h2_tag-{$mItem['languageId']}" class="adding-tag-row">
+                                        {foreach explode("\n", $mItem['categories_h2_tag']) as $value}
+                                            <span class="adding-tag">
+                                                <input type="text" name="categories_h2_tag[{$mItem['languageId']}][]" value="{$value|escape}" class="form-control" />
+                                                <span class="del-pt del-tag"></span>
+                                            </span>
+                                        {/foreach}
+                                    </span>
+                                    <span onclick="addInput('categories_h2_tag-{$mItem['languageId']}', '{htmlspecialchars('<span class="adding-tag"><input type="text" name="categories_h2_tag['|cat:$mItem['languageId']|cat:'][]" value="" class="form-control" /><span class="del-pt del-tag"></span></span>')}')" class="btn btn-add-more">{$smarty.const.TEXT_AND_MORE}</span>
+                                </td>
                             </tr>
                             <tr>
                                 <td class="label_name">{$smarty.const.TEXT_H3_TAG}</td>
-                                <td class="label_value"><span id="categories_h3_tag-{$mItem['languageId']}">{foreach explode("\n", $mItem['categories_h3_tag']) as $value}<span class="row"><input type="text" name="categories_h3_tag[{$mItem['languageId']}][]" value="{$value|escape}" class="form-control" /><span class="del-pt del-tag"></span></span>{/foreach}</span><span onclick="addInput('categories_h3_tag-{$mItem['languageId']}', '{htmlspecialchars('<span class="row"><input type="text" name="categories_h3_tag['|cat:$mItem['languageId']|cat:'][]" value="" class="form-control" /><span class="del-pt del-tag"></span></span>')}')" class="btn btn-add-more">{$smarty.const.TEXT_AND_MORE}</span></td>
+                                <td class="label_value"><span id="categories_h3_tag-{$mItem['languageId']}" class="adding-tag-row">{foreach explode("\n", $mItem['categories_h3_tag']) as $value}<span class="adding-tag"><input type="text" name="categories_h3_tag[{$mItem['languageId']}][]" value="{$value|escape}" class="form-control" /><span class="del-pt del-tag"></span></span>{/foreach}</span><span onclick="addInput('categories_h3_tag-{$mItem['languageId']}', '{htmlspecialchars('<span class="adding-tag"><input type="text" name="categories_h3_tag['|cat:$mItem['languageId']|cat:'][]" value="" class="form-control" /><span class="del-pt del-tag"></span></span>')}')" class="btn btn-add-more">{$smarty.const.TEXT_AND_MORE}</span></td>
                             </tr>
                             <tr>
                                 <td class="label_name">{$smarty.const.TEXT_IMAGE_ALT_TAG_MASK}</td>

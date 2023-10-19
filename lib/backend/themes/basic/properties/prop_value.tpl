@@ -75,37 +75,23 @@
         <div class="colors-inp">
             <div id="cp3" class="input-group colorpicker-component">
                 {Html::textInput('values_color['|cat:$val_id|cat:']['|cat:$lang_id|cat:']', $value['values_color'], ['class'=>'form-control'])}
-                <span class="input-group-addon"><i></i></span>
+                <span class="input-group-append"><span class="input-group-text colorpicker-input-addon"><i></i></span></span>
             </div>
         </div>
     </div>
 
     <div class="icon-field">
 
-        <div class="gallery-filedrop-container-{$val_id}-{$lang_id}">
-            <div class="gallery-filedrop">
-          <span class="gallery-filedrop-message">
-              <a href="#gallery-filedrop" class="gallery-filedrop-fallback-trigger-{$val_id}-{$lang_id} btn" rel="nofollow">{$smarty.const.IMAGE_UPLOAD}</a>
-          </span>
-                <input size="30" id="gallery-filedrop-fallback-{$val_id}-{$lang['id']}" name="values_image[{$val_id}][{$lang['id']}]" class="elgg-input-file-{$val_id}-{$lang_id} hidden" type="file">
-                <input type="hidden" name="values_image_loaded[{$val_id}][{$lang['id']}]" class="elgg-input-hidden">
 
-                <div class="gallery-filedrop gallery-filedrop-queue-{$val_id}-{$lang_id}">
-                    <img style="max-height:48px;{if empty($value['values_image'])}display:none;{/if}" src="{if $value['values_image']}{$smarty.const.DIR_WS_CATALOG_IMAGES}{$value['values_image']}{else}{$app->view->theme->baseUrl}/img/no-icon.png{/if}" class="option_image" />
-                </div>
-            </div>
-            <div class="hidden" id="image_wrapper">
-                <div class="gallery-template-{$val_id}-{$lang_id}">
-                    <div class="gallery-media-summary">
-                        <div class="gallery-album-image-placeholder">
-                            <img src="">
-                            <span class="elgg-state-uploaded"></span>
-                            <span class="elgg-state-failed"></span>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div class="upload-box-{$val_id}-{$lang['id']} upload-box upload-box-wrap upload-box-inline-small"
+             data-name="values_image[{$val_id}][{$lang['id']}]"
+             data-value="{$value['values_image']}"
+             data-upload="values_image_loaded[{$val_id}][{$lang['id']}]"
+             data-delete="values_image_delete[{$val_id}][{$lang['id']}]"
+             data-type="image"
+             data-acceptedFiles="image/*">
         </div>
+
 
     </div>
     <div class="remove-field">
@@ -113,78 +99,3 @@
 
     </div>
 </div>
-<script type="text/javascript">
-    var createColorpicker_{$val_id}_{$lang_id} = function (){
-        setTimeout(function(){
-            var cp = $('.colorpicker-component');
-            cp.colorpicker({ sliders: {
-                saturation: { maxLeft: 200, maxTop: 200 },
-                hue: { maxTop: 200 },
-                alpha: { maxTop: 200 }
-            }});
-
-            var removeColorpicker_{$val_id}_{$lang_id} = function() {
-                cp.colorpicker('destroy');
-                cp.closest('.popup-box-wrap').off('remove', removeColorpicker_{$val_id}_{$lang_id})
-                $('.style-tabs-content').off('st_remove', removeColorpicker_{$val_id}_{$lang_id})
-            };
-
-            cp.closest('.popup-box-wrap').on('remove', removeColorpicker_{$val_id}_{$lang_id});
-            $('.style-tabs-content').on('st_remove', removeColorpicker_{$val_id}_{$lang_id});
-        }, 200)
-    };
-
-    createColorpicker_{$val_id}_{$lang_id}();
-
-    $('.gallery-filedrop-container-{$val_id}-{$lang_id}').each(function() {
-
-        var $filedrop = $(this);
-
-        function createImage_{$val_id}_{$lang_id} (file, $container) {
-            var $preview = $('.gallery-template-{$val_id}-{$lang_id}', $filedrop);
-            $image = $('img', $preview);
-            var reader = new FileReader();
-            $image.height(48);
-            reader.onload = function(e) {
-                $image.attr('src',e.target.result);
-            };
-            reader.readAsDataURL(file);
-            $preview.appendTo($('.gallery-filedrop-queue-{$val_id}-{$lang_id}', $container));
-            $.data(file, $preview);
-        }
-
-//  $(function () {
-
-        $('.gallery-filedrop-fallback-trigger-{$val_id}-{$lang_id}', $filedrop)
-            .on('click', function(e) {
-                e.preventDefault();
-                $('#' + $('.elgg-input-file-{$val_id}-{$lang_id}', $filedrop).attr('id')).trigger('click');
-            })
-
-        $filedrop.filedrop({
-            fallback_id : $('.elgg-input-file-{$val_id}-{$lang_id}', $filedrop).attr('id'),
-            url: "{Yii::$app->urlManager->createUrl('upload/index')}",
-            paramname: 'file',
-            maxFiles: 1,
-            maxfilesize : 20,
-            allowedfiletypes: ['image/jpeg','image/png','image/gif'],
-            allowedfileextensions: ['.jpg','.jpeg','.png','.gif'],
-            error: function(err, file) {
-                console.log(err);
-            },
-            uploadStarted: function(i, file, len) {
-                $('.option_image', $filedrop).hide();
-                createImage_{$val_id}_{$lang_id}(file, $filedrop);
-            },
-            progressUpdated: function(i, file, progress) {
-                $.data(file).find('.gallery-filedrop-progress').width(progress);
-            },
-            uploadFinished: function (i, file, response, time) {
-                $('.elgg-input-hidden', $filedrop).val(file.name);
-            }
-        });
-//  });
-
-    });
-
-</script>

@@ -30,7 +30,7 @@ class Mail {
         $data_query = tep_db_query("select ett.email_templates_subject, ett.email_templates_body, et.email_templates_id from " . TABLE_EMAIL_TEMPLATES . " et, " . TABLE_EMAIL_TEMPLATES_TEXTS . " ett where et.email_templates_id = ett.email_templates_id and et.email_templates_key = '" . tep_db_input($template_key) . "' and ett.language_id = '" . (int) ($language_id > 0 ? $language_id : $languages_id) . "' and ett.affiliate_id = '" . (int) ($aff_id >= 0 ? $aff_id : 0) . "' and et.email_template_type = '" . (EMAIL_USE_HTML != 'true' ? 'plaintext' : 'html') . "' and ett.platform_id = '" . $platform_id . "'");
         $data = tep_db_fetch_array($data_query);
         if ( empty($data['email_templates_subject']) || empty($data['email_templates_body']) ){
-            $data_query = tep_db_query("select ett.email_templates_subject, ett.email_templates_body from " . TABLE_EMAIL_TEMPLATES . " et, " . TABLE_EMAIL_TEMPLATES_TEXTS . " ett where et.email_templates_id = ett.email_templates_id and et.email_templates_key = '" . tep_db_input($template_key) . "' and ett.language_id = '" . (int) ($language_id > 0 ? $language_id : $languages_id) . "' and ett.affiliate_id = '" . (int) ($aff_id >= 0 ? $aff_id : 0) . "' and et.email_template_type = '" . (EMAIL_USE_HTML != 'true' ? 'plaintext' : 'html') . "' and ett.platform_id = '" . \common\classes\platform::defaultId() . "'");
+            $data_query = tep_db_query("select ett.email_templates_subject, ett.email_templates_body from " . TABLE_EMAIL_TEMPLATES . " et, " . TABLE_EMAIL_TEMPLATES_TEXTS . " ett where et.email_templates_id = ett.email_templates_id and et.email_templates_key = '" . tep_db_input($template_key) . "' and ett.language_id = '" . (int) ($language_id > 0 ? $language_id : $languages_id) . "' and ett.affiliate_id = '" . (int) ($aff_id >= 0 ? $aff_id : 0) . "' and et.email_template_type = '" . (EMAIL_USE_HTML != 'true' ? 'plaintext' : 'html') . "' and ett.platform_id = '" . \common\classes\platform::realDefaultId() . "'");
             $default_data = tep_db_fetch_array($data_query);
             if ( empty($data['email_templates_subject']) ) $data['email_templates_subject'] = $default_data['email_templates_subject'];
             if ( empty($data['email_templates_body']) ) $data['email_templates_body'] = $default_data['email_templates_body'];
@@ -104,7 +104,7 @@ class Mail {
         $params = self::fillStoreRelatedKeys($params, $platform_id, ($language_id > 0 ? $language_id : $languages_id));
 
         self::$templateParams = $params;
-        $data['email_templates_body'] = preg_replace_callback("/{{([^}]+)}}/", "self::removeEmptyKeysBox", $data['email_templates_body']);
+        $data['email_templates_body'] = preg_replace_callback("/{{([^}]+)}}/", self::class . "::removeEmptyKeysBox", $data['email_templates_body']);
 
         if (is_array($params) && count($params) > 0) {
             $escape_params = [
@@ -134,7 +134,7 @@ class Mail {
     }
 
     public static function removeEmptyKeysBox($matches){
-        $str = preg_replace_callback("/##([A-Za-z0-9_]+)##/", "self::removeEmptyKeys", $matches[0]);
+        $str = preg_replace_callback("/##([A-Za-z0-9_]+)##/", self::class . "::removeEmptyKeys", $matches[0]);
         if (strlen($str) == strlen($matches[0])) {
             return $matches[1];
         } else {
@@ -224,7 +224,7 @@ class Mail {
         }
         $data_query = tep_db_query("select email_templates_body from " . TABLE_EMAIL_TEMPLATES_TEXTS . " where email_templates_id = '" . (int) $email_templates_id . "' and language_id = '" . (int) $language_id . "' and platform_id = '" . $platform_id . "'");
         $data = tep_db_fetch_array($data_query);
-        return $data['email_templates_body'];
+        return $data['email_templates_body']??null;
     }
 
     public static function get_email_templates_subject($email_templates_id, $language_id, $platform_id = -1) {
@@ -233,7 +233,7 @@ class Mail {
         }
         $data_query = tep_db_query("select email_templates_subject from " . TABLE_EMAIL_TEMPLATES_TEXTS . " where email_templates_id = '" . (int) $email_templates_id . "' and language_id = '" . (int) $language_id . "' and platform_id = '" . $platform_id . "'");
         $data = tep_db_fetch_array($data_query);
-        return $data['email_templates_subject'];
+        return $data['email_templates_subject']??null;
     }
 
     public static function get_email_design_templates($email_templates_id, $platform_id = -1) {
@@ -246,7 +246,7 @@ class Mail {
         ])->email_design_template ?? null;
 
         $theme_id = \common\models\PlatformsToThemes::findOne($platform_id)->theme_id;
-        $theme_name = \common\models\Themes::findOne(['id' => $theme_id])->theme_name;
+        $theme_name = \common\models\Themes::findOne(['id' => $theme_id])->theme_name ?? null;
         $designTemplates = \common\models\ThemesSettings::find()
             ->select(['setting_value'])
             ->where([
@@ -281,6 +281,11 @@ class Mail {
         return $list;
     }
 
+    /**
+     * @param \common\classes\extended\OrderAbstract $order
+     * @return array
+     * @throws \yii\base\InvalidConfigException
+     */
     public static function emailParamsFromOrder($order)
     {
         /**
@@ -393,11 +398,8 @@ class Mail {
         $to_email_address = implode(',', $toEmailArray);
         unset($toEmailArray);
         try {
-            $message = \common\modules\email\Transport::getTransport();
-        } catch (\Exception $e) {
-            \Yii::warning($e->getMessage() . "\n" . $e->getTraceAsString());
-            echo $e->getMessage();
-        }
+        $message = \common\modules\email\Transport::getTransport();
+        if (!is_object($message)) throw new \Exception('Could not create a message object: ' . var_export($message, true));
 
         $text = strip_tags(preg_replace('/<br( \/)?>/ims', "\n", $email_text));
         if (EMAIL_USE_HTML == 'true') {
@@ -466,12 +468,12 @@ class Mail {
         }
         // }} admin bcc
         $errMsg = '';
-        try {
-            $res = ((int)$message->send($to_name, $to_email_address, $from_email_name, $from_email_address, $email_subject, $headers) > 0);
-            if (!$res) {
-                $errMsg = 'Unknown error';
-                \Yii::warning(sprintf("Email was not sent. Unknown error while sending email to %s <%s> from %s <%s>", $to_name, $to_email_address, $from_email_name, $from_email_address));
-            }
+
+        $res = ((int)$message->send($to_name, $to_email_address, $from_email_name, $from_email_address, $email_subject, $headers) > 0);
+        if (!$res) {
+            $errMsg = 'Unknown error';
+            \Yii::warning(sprintf("Email was not sent. Unknown error while sending email to %s <%s> from %s <%s>", $to_name, $to_email_address, $from_email_name, $from_email_address));
+        }
         } catch (\Throwable $e) {
             $errMsg = 'Error: ' . $e->getMessage();
             \Yii::warning(sprintf("Email was not sent. Error while sending email to %s <%s> from %s <%s>: %s\n %s", $to_name, $to_email_address, $from_email_name, $from_email_address, $e->getMessage(), $e->getTraceAsString()));
@@ -638,7 +640,7 @@ class Mail {
             }
         }
         self::$templateParams = $params;
-        $smsTemplateArray['sms_templates_body'] = preg_replace_callback("/{{([^}]+)}}/", "self::removeEmptyKeysBox", $smsTemplateArray['sms_templates_body'] ?? null);
+        $smsTemplateArray['sms_templates_body'] = preg_replace_callback("/{{([^}]+)}}/", self::class . "::removeEmptyKeysBox", $smsTemplateArray['sms_templates_body'] ?? null);
         if (is_array($params) && count($params) > 0) {
             $patterns = array();
             $replace = array();
@@ -700,7 +702,7 @@ class Mail {
         }
         try {
             $res = \frontend\design\Block::widget(['name' => $pageName, 'params' => ['type' => 'email', 'params' => ['absoluteUrl' => true, 'theme_name' => $themeName, 'page_block' => 'email']]]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             \Yii::warning(__FUNCTION__ . ' : ' . $e->getMessage() . "\n" . $e->getTraceAsString());
         }
         return empty($res)? '##EMAIL_TEXT##' : $res;

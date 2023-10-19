@@ -96,7 +96,7 @@ class StructuredProducts extends Widget {
             $rows = [];
             foreach ($this->order->getOrderedProducts('invoice') as $product) {
                 $html = '';
-                if ((!$this->params['from'] && !$this->params['to']) || ($counter >= $this->params['from'] && $counter < $this->params['to'])) {
+                if ((!($this->params['from'] ?? false) && !($this->params['to'] ?? false)) || ($counter >= ($this->params['from']??0) && $counter < ($this->params['to'] ?? 0))) {
                     foreach ($this->fields as $field) {
                         $pos = $this->settings[0]["position_" . $field] ?? "left";
                         $key = $this->structure->getKey($field);

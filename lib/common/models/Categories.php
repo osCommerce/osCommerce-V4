@@ -224,13 +224,14 @@ class Categories extends ActiveRecord
        return $this->hasMany(Products2Categories::class, ['categories_id' => 'categories_id'])           ;
     }
 
-/**
- * link to seo_redirects_named
- * @return \yii\db\ActiveQuery
- */
-    public function getSeoRedirects() {
-       return $this->hasMany(SeoRedirectsNamed::class, ['owner_id' => 'categories_id'])->andOnCondition('redirects_type = "category"');
+    public function getProducts() {
+        return $this->hasMany(Products::class, ['products_id' => 'products_id'])->via('productsIds');
     }
+
+// SeoRedirectsNamed model moved to extensions/SeoRedirectsNamed/models
+//    public function getSeoRedirects() {
+//       return $this->hasMany(SeoRedirectsNamed::class, ['owner_id' => 'categories_id'])->andOnCondition('redirects_type = "category"');
+//    }
 
 /**
  * return active parents linked to current platform
@@ -294,9 +295,10 @@ class Categories extends ActiveRecord
         return $this->hasMany(PlatformsCategories::className(), ['categories_id' => 'categories_id']);
     }
 
-    public function getSeoRedirectsNamed()
-    {
-        return $this->hasMany(SeoRedirectsNamed::className(), ['owner_id' => 'categories_id'])->andWhere(['redirects_type'=>'category']);
-    }
+// SeoRedirectsNamed model moved to extensions/SeoRedirectsNamed/models
+//    public function getSeoRedirectsNamed()
+//    {
+//        return $this->hasMany(SeoRedirectsNamed::className(), ['owner_id' => 'categories_id'])->andWhere(['redirects_type'=>'category']);
+//    }
 
 }

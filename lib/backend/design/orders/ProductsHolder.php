@@ -36,11 +36,16 @@ class ProductsHolder extends Widget {
         unset($opsRecord);
 
         $handlers_array = [];
-        if (\common\helpers\Acl::checkExtensionAllowed('Handlers', 'allowed')) {
-            $handlers_query = tep_db_query("select handlers_id from handlers_access_levels where access_levels_id='" . (int)$_SESSION['access_levels_id'] . "'");
-            while ($handlers = tep_db_fetch_array($handlers_query)) {
-                $handlers_array[] = $handlers['handlers_id'];
-            }
+
+        /**
+         * @var $ext \common\extensions\Handlers\Handlers
+         */
+        if ($ext = \common\helpers\Extensions::isAllowed('Handlers')) {
+//            $handlers_query = tep_db_query("select handlers_id from handlers_access_levels where access_levels_id='" . (int)$_SESSION['access_levels_id'] . "'");
+//            while ($handlers = tep_db_fetch_array($handlers_query)) {
+//                $handlers_array[] = $handlers['handlers_id'];
+//            }
+            $handlers_array = $ext::getHandlersQuery((int)$_SESSION['access_levels_id']);
         }
         
         $warehouses_allocated_array = [];

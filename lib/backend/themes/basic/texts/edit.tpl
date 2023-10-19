@@ -7,7 +7,7 @@
             <i data-dismiss="alert" class="icon-remove close"></i>
             <span id="message_plce"></span>
          </div>   	
-			  {if {$messages|@count} > 0}
+			  {if {$messages|default:array()|@count} > 0}
 			   {foreach $messages as $messageType=>$message}
               <div class="alert fade in alert-{$messageType}">
                   <i data-dismiss="alert" class="icon-remove close"></i>
@@ -48,7 +48,7 @@
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-xs-6 after">
+                        <div class="col-6 after">
                             <div class="filter_row row_with_label">
                                 <label>{$smarty.const.TEXT_BY_LANGUAGE}</label>
                                 <div class="filter_checkboxes">
@@ -61,7 +61,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-xs-6 after">
+                        <div class="col-6 after">
                             <div class="">
                                 <label class="f_td_group1 f_td_group-pr">
                                     <input type="checkbox" name="sensitive" value="1" {if $app->controller->view->filters->sensitive}checked{/if} title="{$smarty.const.TEXT_SENSITIVE}" class="sens-input uniform"/>
@@ -215,7 +215,7 @@ function saveItem() {
 }
 
 function backStatement() {
-  window.location.href = "{$app->urlManager->createUrl(['texts/'])}?" + ($('input[name=selected_entity]').size()>0 && $('input[name=selected_entity]').val().length > 0? 'by=translation_entity&search='+ encodeURIComponent($('input[name=selected_entity]').val()) + '&': ($('input[name=search]').size()>0 && $('input[name=search]').val().length>0 ? 'by='+$('select[name=by]').val()+'&search='+encodeURIComponent($('input[name=search]').val())+'&' : '')) + ($('input[name=sensitive]').prop('checked')? 'sensitive=1&': '') + ($('input[name=skip_admin]').prop('checked')? 'skip_admin=1&': '') + ($('input[name=untranslated]').prop('checked')? 'untranslated=1&': '') + ($('input[name=unverified]').prop('checked')? 'unverified=1&': '') + 'row='+localStorage.lastRow;
+  window.location.href = "{$app->urlManager->createUrl(['texts/'])}?" + ($('input[name=selected_entity]').length>0 && $('input[name=selected_entity]').val().length > 0? 'by=translation_entity&search='+ encodeURIComponent($('input[name=selected_entity]').val()) + '&': ($('input[name=search]').length>0 && $('input[name=search]').val().length>0 ? 'by='+$('select[name=by]').val()+'&search='+encodeURIComponent($('input[name=search]').val())+'&' : '')) + ($('input[name=sensitive]').prop('checked')? 'sensitive=1&': '') + ($('input[name=skip_admin]').prop('checked')? 'skip_admin=1&': '') + ($('input[name=untranslated]').prop('checked')? 'untranslated=1&': '') + ($('input[name=unverified]').prop('checked')? 'unverified=1&': '') + 'row='+localStorage.lastRow;
   return false;
 }
 

@@ -12,8 +12,39 @@ namespace common\helpers;
 
 use Yii;
 
+class DbgNull
+{
+    public static function __callStatic($name, $arguments) {}
+}
+
+
 class Dbg
 {
+
+    public static function defineConsts()
+    {
+        //$s= \common\models\Configuration::findOne(['configuration_key' => 'DEFINE_DBG_CONST'])->configuration_value ?? '';
+        $str = defined('DEFINE_DBG_CONST') ? DEFINE_DBG_CONST : '';
+        if (!empty($str)) {
+            foreach (explode(',', $str) as $constName) {
+                $name = 'DBG_' . $constName;
+                defined($name) or define($name, true);
+            }
+        }
+    }
+
+
+    /**
+     * @param $debugConst - part of debug constant
+     * @return Dbg
+     */
+    public static function ifDefined($debugConst)
+    {
+        if (!empty($debugConst) && defined('DBG_'.$debugConst) && constant('DBG_'.$debugConst) === true) {
+            return self::class;
+        }
+        return DbgNull::class;
+    }
 
     private static function export($var)
     {
@@ -28,14 +59,41 @@ class Dbg
         }
     }
 
+    private static function exportVarArray($vars)
+    {
+        $res = '';
+        foreach ($vars as $var) {
+            if (!empty($res)) {
+                $res .= (is_object($var) || is_array($var)) ? "\n" : ',';
+            }
+            $res .= self::export($var);
+        }
+        return $res;
+    }
+
     public static function log($msg)
     {
-        \Yii::info($msg, 'dbg/log');
+        if (class_exists('\Yii')) {
+            $tmp = \Yii::$app->log->traceLevel;
+            \Yii::$app->log->traceLevel = 0;
+            \Yii::info($msg, 'dbg/log');
+            \Yii::$app->log->traceLevel = $tmp;
+        }
+    }
+
+    public static function logf($msg)
+    {
+        self::log(\common\helpers\Php::vsprintfSafe($msg, array_slice(func_get_args(), 1)));
     }
 
     public static function logVar($var, $msg = 'var')
     {
         self::log($msg . '=' . self::export($var));
+    }
+
+    public static function logVars()
+    {
+        self::log(self::exportVarArray(func_get_args()));
     }
 
     public static function logQuery($var, $msg = 'query')
@@ -44,14 +102,22 @@ class Dbg
             $var = $var->createCommand()->getRawSql();
         }
         self::logVar($var, $msg);
+        return $var;
     }
 
     public static function echo($msg)
     {
-        if (\common\helpers\System::isDevelopment()) {
+        if (!class_exists('\common\helpers\System') || \common\helpers\System::isDevelopment() || \common\helpers\System::isConsole()) {
             echo "<pre>" . $msg . '</pre>';
         }
         self::log($msg);
+    }
+
+    public static function out($msg, $dest)
+    {
+        if (method_exists(self::class, $dest)) {
+            self::$dest($msg);
+        }
     }
 
     public static function echoVar($var, $msg = 'var')
@@ -60,12 +126,20 @@ class Dbg
         self::logVar($var, $msg);
     }
 
+    public static function echoVars()
+    {
+        $vars = self::exportVarArray(func_get_args());
+        self::echo($vars);
+        self::logVar($vars);
+    }
+
     public static function echoQuery($var, $msg = 'query')
     {
         if ($var instanceof \yii\db\query) {
             $var = $var->createCommand()->getRawSql();
         }
         self::echoVar($var, $msg);
+        return $var;
     }
 
     private static function getFileName($fn, $ext)
@@ -113,20 +187,20 @@ class Dbg
         return json_decode($txt, $associative);
     }
 
-    public static function logStack($msg = 'Stack')
+    public static function logStack($msg = 'Stack', $full = false)
     {
-        self::logVar(self::getStack(), $msg);
+        self::logVar(self::getStack($full), $msg);
     }
 
-    public static function echoStack($msg = 'Stack')
+    public static function echoStack($msg = 'Stack', $full = false)
     {
-        self::echoVar(self::getStack(), $msg);
+        self::echoVar(self::getStack($full), $msg);
     }
 
-    public static function getStack()
+    public static function getStack($full = false)
     {
         ob_start();
-        debug_print_backtrace(/*DEBUG_BACKTRACE_IGNORE_ARGS*/);
+        debug_print_backtrace($full? 0 : DEBUG_BACKTRACE_IGNORE_ARGS);
         $ret = ob_get_contents();
         ob_end_clean();
         return $ret;
@@ -200,6 +274,31 @@ class Dbg
         foreach (self::$timeLoop as $loopName => $val) {
             self::timeLoopLog($loopName);
         }
+    }
+
+    private static $mem = null;
+    private static $memReal = null;
+    private static $memCount = 0;
+    public static function outMem($msg = '', $force = false, $dest = 'log')
+    {
+        $newReal = memory_get_peak_usage(false);
+        $new = memory_get_peak_usage(true);
+        if (is_null(self::$mem)) {
+            self::$memReal = $newReal;
+            self::$mem = $new;
+        } else {
+            if ($force || $newReal != self::$memReal || $new != self::$mem) {
+                if (!empty($msg)) $msg .= ': ';
+                $realStr = $force? '=' . memory_get_usage(true) : '';
+                self::out( sprintf('%sMax=%d (+%d) Real%s+%d Count=%d', $msg, $new, $new-self::$mem, $realStr, $newReal-self::$memReal, self::$memCount), $dest);
+                self::$memCount = 0;
+                self::$mem = $new;
+                self::$memReal = $newReal;
+            } else {
+                self::$memCount++;
+            }
+        }
+
     }
 
 }

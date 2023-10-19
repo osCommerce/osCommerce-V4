@@ -266,4 +266,9 @@ class SuppliersProducts extends ActiveRecord
         }
         return $sProduct['suppliers_price'] ?? null;
     }
+
+    public function getPriceWithTax():bool
+    {
+        return is_null($this->price_with_tax) || $this->price_with_tax > 0;
+    }
 }

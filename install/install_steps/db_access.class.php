@@ -54,12 +54,12 @@ class db_access extends install_generic {
                     <tr>
                         <td align="right">' . $this->lang['dbhost'] . ':<span class="requared">*</span></td>
                         <td><input type="text" name="dbhost" size="25" value="' . $this->dbhost . '" class="input" required /></td>
-                        <td align="right">' . $this->lang['dbuser'] . ':<span class="requared">*</span></td>
-                        <td><input type="text" name="dbuser" size="25" value="' . $this->dbuser . '" class="input" required /></td>
-                    </tr>
-                    <tr>
                         <td align="right">' . $this->lang['dbname'] . ':<span class="requared">*</span></td>
                         <td><input type="text" name="dbname" size="25" value="' . $this->dbname . '" placeholder="must exist empty database" class="input" required /></td>
+                    </tr>
+                    <tr>
+                        <td align="right">' . $this->lang['dbuser'] . ':<span class="requared">*</span></td>
+                        <td><input type="text" name="dbuser" size="25" value="' . $this->dbuser . '" class="input" required /></td>
                         <td align="right">' . $this->lang['dbpass'] . ':<span class="requared">*</span></td>
                         <td><input type="password" name="dbpass" size="25" value="" class="input" id="db_password" required /><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABUAAAARCAYAAAAyhueAAAAACXBIWXMAAAsTAAALEwEAmpwYAAADdklEQVR42l2US09TURSFT3vbKiUBiTxDIigkwtBEJ8wM1dJggATCm4I82goEKMQC5f0uz4KQEJ3o0L/g1J+hI4eCUQkjB1LXdwOkOGhve+7ea6+99trHLCwsOJeWlkwsFnvc3t6+vbOzY2ZnZy2dm+XlZbO1tWUODw/N0dGR/dzc3DS8U4xLT8fi4qL9n+fVx8zPz1srKysmGo0+zcjI+NvS0jIE0NzcnFufvHA4HGhsbBxWwZn6+vrBoaGhZ2tra7eIAUz5zv+B7S+9cKyurholRhwOR6q1tXUwmUyampqaj9nZ2Rf5+fkn5eXl33Nzc39mZWWlCgsLfzU0NCREJps8Fb8BfP2Dlvf29kxPT0+HMSalAqH19XX35ORkmZ6u4+NjB4UEdKe5uTlWXFz8o6io6GRsbOw5kqQD24AcbGxsmIGBgZcCzxdwEMYCHjg4ODBqO1laWnpaUlLyRV285kzx3urq6ndutzvV3d09nkgkwLFspjMzMy700Yuox+NJRSKRrt3dXdPW1mZL0dnZGdLAvB0dHbHa2tr9zMzMi6qqqk9i74RhV1dXlLj+/n57FsKzzPb2NkN6YVlWSolRKk5PT9+m1WAw2IMUAu7d39+3J69OHnq93gt1EZcUToD0fhzGwgmQb1TxUV5e3q9AIPAWO8XjcUvTdYlpUq1kikkvwCr4Suc2cF1d3ZvKysqvzGBqaspDHvkFBQVnOrtnKioqvgn0XMF38Z50IdGtQfwR0xEYCzDsdDoBDl92MMJ74ognT4xz5IxzSfQZcz+RZX77fL4PaEllGMAERjCDIUxhDHM6oBM6ojPylP9eljvTEB8YqMsWATSRNhNoJO850Qzt0BBgNEVbgNEaxmiPhoqduNS0BhehoZth9fX1DTNFMRkHRFpbTJlpM3WmjwtwA3G4g45CodBLXCM7hq6nf+lTiwqylV0R/4mBFz/iS/yJTyVHEsb4F2D8jK8FHCT/agGuN4oDGI6Ojvq1hqdsjO6B12wQrbJRKuRSy+XS0i3mIaRgA2HMRt7YqHRgdpmd1hYl2HF2nZ0vKyv7rv8nOTk5Kb/f/5FC3BEwpgDD5A65vlDSgbl1+I0+CvToVvLp8ohIy3hTU9Ogbi2/iudyixHDrYZk6tDHbUf+jXsw/fpSkksBtp2wDC7hqQGmx1hIpqmj7f0rjH9upA5bbnfKaAAAAABJRU5ErkJggg==" class="eye" id="togglePassword" /></td>
                         <script>
@@ -122,6 +122,11 @@ class db_access extends install_generic {
             $this->log('install_error', 'Can\'t connect to database server.', mysqli_connect_error());
             return false;
         }
+        if (function_exists('mysqli_get_server_version') && ($ver = mysqli_get_server_version($link)) < 50610) {
+            $this->log('install_error', "MySQL/MariaDB version does not meet minimum requirements: $ver");
+            return false;
+        }
+
         $db_selected = mysqli_select_db($link, $this->dbname);
         if (!$db_selected)
         {
@@ -233,8 +238,13 @@ class db_access extends install_generic {
             if (empty($sql)) continue;
             $result = mysqli_query($link, $sql);
             if (!$result) {
-                $this->log('install_error', 'Can\'t update database: ' . $link->error, $sql);
-                return false;
+                $errorMsg = 'Can\'t update database: ' . $link->error;
+                if ( strpos($sql, 'SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT') !== false ) { // session may be terminated due large sql file
+                    Log::write($errorMsg, 'install_error', $sql);
+                } else {
+                    $this->log('install_error', $errorMsg, $sql);
+                    return false;
+                }
             }
         }
         //exec('mysql -h' . $this->dbhost . ' -u' . $this->dbuser . ' -p' . $this->dbpass . ' ' . $this->dbname . ' < ' . $restore_from);

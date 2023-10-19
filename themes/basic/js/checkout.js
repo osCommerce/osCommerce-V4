@@ -174,10 +174,11 @@ function checkout($url){
                 }
             }, 'json');
         },
-        edit_address_popup: function(type, ab_id){
+        edit_address_popup: function(type, ab_id, drop_ship){
             $.get($url, {
                 'type': type,
                 'ab_id': ab_id,
+                'drop_ship': drop_ship,
                 'subaction': 'edit_address'
             }, function(data){
                 if (data.hasOwnProperty('address')){

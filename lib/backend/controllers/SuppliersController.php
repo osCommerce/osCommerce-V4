@@ -161,7 +161,7 @@ class SuppliersController extends Sceleton  {
                     $supplier->clearCurrencies();
                     $supplier->saveCurrencies($suppliers_data['currencies']);
                 }
-                if ($es = \common\helpers\Acl::checkExtensionAllowed('EventSystem', 'allowed')){
+                if ($es = \common\helpers\Extensions::isAllowed('EventSystem')) {
                     $es::partner()->exec('savePartnerAdditionalFields', [$supplier->suppliers_id, Yii::$app->request->post()]);
                 }
                 if ($supplier->suppliers_id > 0) {
@@ -240,7 +240,7 @@ class SuppliersController extends Sceleton  {
       echo tep_draw_form('suppliers', 'suppliers/', \common\helpers\Output::get_all_get_params(array('sID', 'action')) . 'dID=' . $sInfo->suppliers_id . '&action=deleteconfirm', 'post', 'id="item_delete" onSubmit="return supplierDelete();"');
 
       echo '<div class="or_box_head">' . TEXT_HEADING_DELETE_SUPPLIER . '</div>';
-      echo TEXT_DELETE_INTRO . '<br><br><b>' . $sInfo->suppliers_name . '</b>';
+      echo \common\helpers\Translation::getTranslationValue( 'TEXT_DELETE_INTRO', 'admin/suppliers') . '<br><br><b>' . $sInfo->suppliers_name . '</b>';
       echo '<div class="btn-toolbar btn-toolbar-order">';
       echo '<button type="submit" class="btn btn-primary btn-no-margin">' . IMAGE_CONFIRM . '</button>';
       echo '<button class="btn btn-cancel" onClick="return resetStatement(' . (int)$suppliers_id . ')">' . IMAGE_CANCEL . '</button>';      

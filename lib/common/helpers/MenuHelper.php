@@ -446,7 +446,7 @@ class MenuHelper {
                 'menu' => $category['id']??false,
                 'platform_id' => $platform['id']??false,
             ]));
-            \Yii::$container->get('message_stack')->add($message, 'alert', 'info menu-message');
+            \Yii::$container->get('message_stack')->add($message, 'alert', 'info menu-message', 'menu-message');
             return '';
         }
     }
@@ -654,8 +654,16 @@ class MenuHelper {
 
     public static function getComponents($platformId)
     {
-        $themeId = \common\models\PlatformsToThemes::findOne(['platform_id' => $platformId])->theme_id;
-        $themeName = \common\models\Themes::findOne(['id' => $themeId])->theme_name;
+        $theme = \common\models\PlatformsToThemes::findOne(['platform_id' => $platformId]);
+        if (!$theme || !$theme->theme_id) {
+            return [];
+        }
+        $themeId = $theme->theme_id;
+        $theme = \common\models\Themes::findOne(['id' => $themeId]);
+        if (!$theme || !$theme->theme_name) {
+            return [];
+        }
+        $themeName = $theme->theme_name;
 
         $pages = \common\models\ThemesSettings::find()->select(['setting_value'])->distinct()->where([
             'setting_group' => 'added_page',

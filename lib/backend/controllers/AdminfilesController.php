@@ -166,11 +166,18 @@ class AdminfilesController extends Sceleton {
             echo '<button class="btn btn-copy btn-no-margin" onclick="confirmAclCopy(' . $item_id . ')">' . IMAGE_COPY_TO . '</button>';
             echo '<button class="btn btn-copy" onclick="confirmAclDublicate(' . $item_id . ')">' . IMAGE_DUBLICATE . '</button>';
 
-            if ($ext = \common\helpers\Acl::checkExtensionAllowed('Messages', 'allowed')) {
+            /**
+             * @var $ext \common\extensions\Messages\Messages
+             */
+            if ($ext = \common\helpers\Extensions::isAllowed('Messages', 'allowed')) {
                 $ext::adminActionPreEdit($access);
             }
-            if ($ext = \common\helpers\Acl::checkExtensionAllowed('Handlers', 'allowed')) {
-                $ext::adminActionPreEdit($item_id);
+
+            /**
+             * @var $handlers \common\extensions\Handlers\Handlers
+             */
+            if ($handlers = \common\helpers\Extensions::isAllowed('Handlers')) {
+                $handlers::adminActionPreEdit($item_id);
             }
             echo '</div>';
         }

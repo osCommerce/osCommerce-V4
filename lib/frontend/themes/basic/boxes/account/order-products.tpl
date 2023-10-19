@@ -31,17 +31,14 @@
                 {else}
                     {$order_product_array.order_product_name}
                 {/if}
-                {foreach \common\helpers\Hooks::getList('account/order_history_info', 'order-product') as $filename}
+                {foreach \common\helpers\Hooks::getList('account/order_history_info', 'order-product') as $filename}{*deprecated*}
+                    {include file=$filename}
+                {/foreach}
+                {foreach \common\helpers\Hooks::getList('box/account/order-products', 'order-product') as $filename}
                     {include file=$filename}
                 {/foreach}
                 {if ($ext = \common\helpers\Acl::checkExtensionAllowed('ProductAssets', 'allowed'))}
                     <div class="orderProductAsset">{$ext::renderOrderProductAsset($order_product_array['orders_products_id'], true)}</div>
-                {/if}
-                {if ($ext = \common\helpers\Acl::checkExtensionAllowed('Rma', 'allowed'))}
-                    {$ext::getButtonReturnHtml($order_product_array['orders_products_id'])}
-                {/if}
-				{if ($ext = \common\helpers\Acl::checkExtensionAllowed('Rma', 'allowed'))}
-                    {$ext::getButtonReturnPrintHtml($order_product_array['orders_products_id'])}
                 {/if}
                 {if count($order_product_array['attr_array'])>0}
                     <div class="history_attr">

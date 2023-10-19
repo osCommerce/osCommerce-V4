@@ -30,6 +30,6 @@ class ConfirmBtn extends Widget
 
     public function run()
     {
-        return IncludeTpl::widget(['file' => 'boxes/checkout/confirm-btn.tpl', 'params' => ['link' => tep_href_link('index')]]);
+        return IncludeTpl::widget(['file' => 'boxes/checkout/confirm-btn.tpl', 'params' => $this->params]);
     }
 }

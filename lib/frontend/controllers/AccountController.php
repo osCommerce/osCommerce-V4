@@ -28,7 +28,6 @@ use common\models\Reviews;
 use common\models\TrackingNumbersToOrdersProducts;
 use common\models\Zones;
 use common\models\ThemesSettings;
-use common\services\BonusPointsService\DTO\TransferData;
 use frontend\design\Info;
 use Yii;
 use yii\web\NotFoundHttpException;
@@ -95,7 +94,10 @@ class AccountController extends Sceleton
         $topAcc['credit_amount'] = $currencies->format($customer->credit_amount);
         $topAcc['count_credit_amount'] = $customer->credit_amount;
 
-        if ($GroupAdministrator = \common\helpers\Acl::checkExtensionAllowed('GroupAdministrator', 'allowed')) {
+        /**
+         * @var $GroupAdministrator \common\extensions\GroupAdministrator\GroupAdministrator
+         */
+        if ($GroupAdministrator = \common\helpers\Extensions::isAllowed('GroupAdministrator')) {
             $cIds = $GroupAdministrator::getCustomerIdsByAdministrator((int) $customer_id);
         } else {
             $cIds = [$customer_id];
@@ -114,7 +116,7 @@ class AccountController extends Sceleton
         $topAcc['last_purchased'] = DateHelper::date_long($lastPurchased);
         $topAcc['last_purchased_days'] = DateHelper::getDateRange(date('Y-m-d'), $lastPurchased);
         $topAcc['customer_points'] = $customer->customers_bonus_points;
-        $topAcc['has_customer_points_history'] = $customer->hasBonusHistory($customer_id);
+        $topAcc['has_customer_points_history'] = ($extBonusActions = \common\helpers\Extensions::isAllowed('BonusActions')) && $extBonusActions::hasBonusHistory($customer_id);
         $orders = $cOrders->orderBy('o.orders_id desc')->all();
 
         $regular_offers_value = 0;
@@ -361,8 +363,28 @@ class AccountController extends Sceleton
 
             if (!$authContainer->hasErrors()){
 
-                if ($ext = \common\helpers\Acl::checkExtensionAllowed('UserTwoStepAuth', 'allowed')) {
+                if ($ext = \common\helpers\Extensions::isAllowed('UserTwoStepAuth')) {
                     $ext::checkLogin();
+                }
+
+                $customer_id = Yii::$app->user->getId();
+                if ($customer_id > 0) {
+                    $AddressBooks = \common\models\AddressBook::find()
+                            ->where(['customers_id' => $customer_id])
+                            ->andWhere('drop_ship > 0')
+                            ->all();
+                    if (is_array($AddressBooks)) {
+                        foreach ($AddressBooks as $AB) {
+                            tep_db_query('UPDATE orders SET drop_ship=1, delivery_address_book_id=0 WHERE delivery_address_book_id='.$AB->address_book_id);
+                            $AB->delete();
+                        }
+                    }
+                    unset($AddressBooks);
+                }
+                unset($customer_id);
+
+                foreach (\common\helpers\Hooks::getList('frontend/account/login-success') as $filename) {
+                    include($filename);
                 }
 
                 if (sizeof($navigation->snapshot) > 0 && !Yii::$app->request->post('reviews')) {
@@ -468,15 +490,21 @@ class AccountController extends Sceleton
 
             if (!$authContainer->hasErrors()){
                 if ($customer_id = Yii::$app->user->getId() ){
+
+                    foreach (\common\helpers\Hooks::getList('frontend/account/create-success') as $filename) {
+                        include($filename);
+                    }
+
                     if ($wExt = \common\helpers\Acl::checkExtensionAllowed('WeddingRegistry', 'allowed')){
                         //if register via wedding registry partner invite
                         $wExt::processWeddingRegistryInviting();
 
-                        $fields = Yii::$app->request->post('field');
-                        if (\common\helpers\Acl::checkExtensionAllowed('TradeForm')) {
-                            \common\extensions\TradeForm\helpers\TradeForm::saveAdditionalFields($fields, $customer_id);
-                        }
                     }
+                    // seems not used
+                    // $fields = Yii::$app->request->post('field');
+                    // if (\common\helpers\Acl::checkExtensionAllowed('TradeForm')) {
+                    //     \common\extensions\TradeForm\helpers\TradeForm::saveAdditionalFields($fields, $customer_id);
+                    // }
                 }
 
                 if (sizeof($navigation->snapshot) > 0) {
@@ -556,14 +584,27 @@ class AccountController extends Sceleton
       if (!Yii::$app->user->isGuest){
         \Yii::$app->settings->clear();
 
+        $customer_id = Yii::$app->user->getId();
+        if ($customer_id > 0) {
+            $AddressBooks = \common\models\AddressBook::find()
+                    ->where(['customers_id' => $customer_id])
+                    ->andWhere('drop_ship > 0')
+                    ->all();
+            if (is_array($AddressBooks)) {
+                foreach ($AddressBooks as $AB) {
+                    tep_db_query('UPDATE orders SET drop_ship=1, delivery_address_book_id=0 WHERE delivery_address_book_id='.$AB->address_book_id);
+                    $AB->delete();
+                }
+            }
+            unset($AddressBooks);
+        }
+        unset($customer_id);
+
         Yii::$app->user->getIdentity()->logoffCustomer();
 
         //$customer_groups_id = DEFAULT_USER_GROUP;
         $cart->reset();
 
-        if( $ext = \common\helpers\Acl::checkExtensionAllowed( 'MultiCart', 'allowed' ) ) {
-            $ext::resetCarts();
-        }
         if ($this->forever){
             return $this->redirect(Yii::$app->urlManager->createAbsoluteUrl(['account/logoff', 'forever' => 1]));
         } else {
@@ -614,6 +655,7 @@ class AccountController extends Sceleton
             $cId = $aup['customers_id'];
             $customerEmail = $aup['customers_email'];
             $auth_type = $aup['auth_type'];
+            $auth_key = $aup['auth_key'];
 
             Yii::$app->settings->clear();
             if (!Yii::$app->user->isGuest){
@@ -644,20 +686,29 @@ class AccountController extends Sceleton
             $cart = new \common\classes\shopping_cart();
             Yii::$app->getSession()->set('cart',$cart);
 
-            if( $ext = \common\helpers\Acl::checkExtensionAllowed( 'MultiCart', 'allowed' ) ) {
-                if ($ext::allowed()){
-                    $ext::initCarts();
-                }
-            }
-            if ($ext = \common\helpers\Acl::checkExtensionAllowed('Quotations', 'allowed')) {
-                $ext::initCart();
-            }
-
-            if ($ext = \common\helpers\Acl::checkExtensionAllowed('Samples', 'allowed')) {
-                $ext::initCart();
+            $cInfo = Customers::find()
+                    ->where(['customers_id' => $cId])
+                    ->andWhere(['auth_key' => $auth_key])
+                    ->one();
+            if (!($cInfo instanceof Customers)) {
+                return $this->redirect(Yii::$app->urlManager->createAbsoluteUrl(['account/login']));
             }
 
             $model = new \common\components\Customer(\common\components\Customer::LOGIN_WITHOUT_CHECK);
+
+            if ($cId > 0) {
+                $AddressBooks = \common\models\AddressBook::find()
+                        ->where(['customers_id' => (int)$cId])
+                        ->andWhere('drop_ship > 0')
+                        ->all();
+                if (is_array($AddressBooks)) {
+                    foreach ($AddressBooks as $AB) {
+                        tep_db_query('UPDATE orders SET drop_ship=1, delivery_address_book_id=0 WHERE delivery_address_book_id='.$AB->address_book_id);
+                        $AB->delete();
+                    }
+                }
+                unset($AddressBooks);
+            }
 
             $passLogin = false;
             if ( $auth_type=='payment' && !empty($customerEmail) && $model->loginCustomer($customerEmail, $cId) ) {
@@ -865,6 +916,9 @@ class AccountController extends Sceleton
                     $messageStack->add_session(SUCCESS_PASSWORD_SENT, 'login', 'success');
                 }
 
+                foreach (\common\helpers\Hooks::getList('frontend/account/password-forgotten') as $filename) {
+                    include($filename);
+                }
 
                 if (!Yii::$app->request->isAjax) {
                     tep_redirect(tep_href_link('account/login', '', 'SSL'));
@@ -1035,24 +1089,30 @@ class AccountController extends Sceleton
 
                 $editModel->processCustomerAuth($customer);
 
-              /** @var \common\extensions\CustomersMultiEmails\CustomersMultiEmails $CustomersMultiEmails */
+                $hasErrors = false;
+                foreach (\common\helpers\Hooks::getList('frontend/account/edit') as $filename) {
+                    include($filename);
+                }
+
+                /** @var \common\extensions\CustomersMultiEmails\CustomersMultiEmails $CustomersMultiEmails */
                 if ($CustomersMultiEmails = \common\helpers\Acl::checkExtensionAllowed('CustomersMultiEmails', 'allowed')) {
-                  $hasErrors = '';
                   $ret = $CustomersMultiEmails::saveCustomer((int) $customer->customers_id, $hasErrors);
                   if (!$ret && !$hasErrors) {
                     $hasErrors = true;
                   }
                 }
 
-                if (is_object($this->promoActionsObs)) {
+                if (!$hasErrors && is_object($this->promoActionsObs)) {
                     $this->promoActionsObs->triggerAction('complete_profile');
                 }
 
-                if (Yii::$app->request->isAjax) {
-                    $messageStack->add(SUCCESS_ACCOUNT_UPDATED, 'account_edit', 'success');
-                } else {
-                    $messageStack->add_session(SUCCESS_ACCOUNT_UPDATED, 'account_edit', 'success');
-                    tep_redirect(tep_href_link(FILENAME_ACCOUNT, '', 'SSL'));
+                if (!$hasErrors) {
+                    if (Yii::$app->request->isAjax) {
+                        $messageStack->add(SUCCESS_ACCOUNT_UPDATED, 'account_edit', 'success');
+                    } else {
+                        $messageStack->add_session(SUCCESS_ACCOUNT_UPDATED, 'account_edit', 'success');
+                        tep_redirect(tep_href_link(FILENAME_ACCOUNT, '', 'SSL'));
+                    }
                 }
             }
         }
@@ -1459,7 +1519,21 @@ class AccountController extends Sceleton
 
         $message = '';
 
-        $bookModel = new AddressForm(['scenario' => AddressForm::BILLING_ADDRESS]);
+        $type = Yii::$app->request->post('type', '');
+        switch ($type) {
+            case 'billing':
+                $scenario = AddressForm::BILLING_ADDRESS;
+                break;
+            case 'shipping':
+                $scenario = AddressForm::SHIPPING_ADDRESS;
+                break;
+            default:
+                $scenario = AddressForm::CUSTOM_ADDRESS;
+                $type = '';
+                break;
+        }
+
+        $bookModel = new AddressForm(['scenario' => $scenario]);
 
         if (isset($_POST['action']) && (($_POST['action'] == 'process') || ($_POST['action'] == 'update'))) {
 
@@ -1484,14 +1558,21 @@ class AccountController extends Sceleton
                 }
 
                 if ($bookModel->as_preferred && $dbBook){
-                  //update customer if set new default address
-                    $customer->customers_firstname = $bookModel->firstname;
-                    $customer->customers_lastname = $bookModel->lastname;
-                    $customer->customers_default_address_id = $dbBook->address_book_id;
-                    if ($bookModel->gender){
-                        $customer->customers_gender = $bookModel->gender;
+                    if ($type == 'shipping') {
+                        if (\common\helpers\Acl::checkExtensionAllowed('SplitCustomerAddresses', 'allowed')) {
+                            $customer->customers_shipping_address_id = $dbBook->address_book_id;
+                            $customer->save(false);
+                        }
+                    } else {
+                        //update customer if set new default address
+                        $customer->customers_firstname = $bookModel->firstname;
+                        $customer->customers_lastname = $bookModel->lastname;
+                        $customer->customers_default_address_id = $dbBook->address_book_id;
+                        if ($bookModel->gender) {
+                            $customer->customers_gender = $bookModel->gender;
+                        }
+                        $customer->save(false);
                     }
-                    $customer->save(false);
                 }
                 if ($dbBook && $customer->customers_default_address_id == $dbBook->address_book_id){
 
@@ -1674,7 +1755,17 @@ class AccountController extends Sceleton
         $customer = Yii::$app->user->getIdentity();
 
         $aBook = $customer->getAddressBook((int)$id);
-        if ( $aBook ) {
+
+        $updateCustomer = true;
+        if (\common\helpers\Acl::checkExtensionAllowed('SplitCustomerAddresses', 'allowed')) {
+            if ($aBook->entry_type == AddressForm::SHIPPING_ADDRESS) {
+                $customer->customers_shipping_address_id = $aBook->address_book_id;
+                $customer->save(false);
+                $updateCustomer = false;
+            }
+        }
+
+        if ( $updateCustomer && $aBook ) {
             $customer->set('customer_default_address_id', (int)$id, true);
             $customer->set('customer_country_id', (int)$aBook->entry_country_id, true);
             $customer->set('customer_zone_id', (int)$aBook->entry_zone_id, true);
@@ -2515,34 +2606,6 @@ class AccountController extends Sceleton
 
       return json_encode($ret);
     }
-    public function actionMoveBonusPointsToAmount()
-    {
-        if (!\common\helpers\Acl::checkExtensionAllowed('BonusActions')) return '';
-        $result = true;
-        try {
-            $transferPoints = (int)\Yii::$app->request->post('bonus', 0);
-            /** @var \common\services\BonusPointsService\BonusPointsService $bonusPointsService */
-            $bonusPointsService = \Yii::createObject(\common\services\BonusPointsService\BonusPointsService::class);
-            $customer = \Yii::$app->user->isGuest ? false : \Yii::$app->user->getIdentity();
-            if ($customer === false || $bonusPointsService->allowCustomerConvertBonusPointsToAmount() === false) {
-                throw new \DomainException('Operation not allowed');
-            }
-            $customerGroupId = (int) \Yii::$app->storage->get('customer_groups_id');
-            $bonusPointsCosts = \common\helpers\Points::getCurrencyCoefficient($customerGroupId);
-            if ($bonusPointsCosts === false) {
-                throw new \DomainException('Operation not allowed');
-            }
-            /** @var \common\services\CustomersService $customerService */
-            $customersService = \Yii::createObject(\common\services\CustomersService::class);
-            $transfer = TransferData::create($customer, $bonusPointsCosts, $transferPoints);
-            $customersService->bonusPointsToAmount($transfer);
-        } catch (\Exception $e) {
-            $result = $e->getMessage();
-        }
-        $this->asJson([
-           'result' => $result,
-        ]);
-    }
 
   	public function actionRma() {
 
@@ -2586,8 +2649,8 @@ class AccountController extends Sceleton
             ]
         ]);
     }
-    
-    public function actionSendValidationRequest() 
+
+    public function actionSendValidationRequest()
     {
         if (Yii::$app->request->isAjax) {
             $email = trim(filter_var(htmlentities(Yii::$app->request->get('email')), FILTER_SANITIZE_STRING));

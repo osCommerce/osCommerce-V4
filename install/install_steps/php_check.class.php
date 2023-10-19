@@ -25,17 +25,20 @@ class php_check extends install_generic {
                 'installed' => phpversion(),
                 'recommended' => VERSION_PHP_REC,
                 'passfail' => (version_compare(PHP_VERSION, VERSION_PHP_RQ, '>=')) ? true : false,
-                'adviced_fail' => (version_compare(PHP_VERSION, VERSION_PHP_REC, '<=')) ? true : false
+                'adviced_fail' => (version_compare(PHP_VERSION, VERSION_PHP_REC, '<')) ? true : false,
+                'fail_link' => 'https://www.oscommerce.com/wiki/Pre-installation_Check_-_PHP_Version'
             ),
             'mysql' => array(
-                'required' => $this->lang['yes'],
+                'required' => "MySQL 5.6.31+\nMariaDB 10+",
                 'installed' => (extension_loaded('mysqli') || extension_loaded('pdo_mysql')) ? $this->lang['yes'] : $this->lang['no'],
-                'passfail' => (extension_loaded('mysqli') || extension_loaded('pdo_mysql')) ? true : false
+                'passfail' => (extension_loaded('mysqli') || extension_loaded('pdo_mysql')) ? true : false,
+                'fail_link' => 'https://www.oscommerce.com/wiki/Pre-installation_Check_-_MySQL_Database'
             ),
             'zLib' => array(
                 'required' => $this->lang['yes'],
                 'installed' => (extension_loaded('zlib')) ? $this->lang['yes'] : $this->lang['no'],
-                'passfail' => (extension_loaded('zlib')) ? true : false
+                'passfail' => (extension_loaded('zlib')) ? true : false,
+                'fail_link' => 'https://www.oscommerce.com/wiki/Pre-installation_Check_-_zLib_PHP_Module'
             ),
             'memory' => array(
                 'required' => REQ_PHP_MEMORY,
@@ -43,58 +46,69 @@ class php_check extends install_generic {
                 'passfail' => $this->check_php_limit(REQ_PHP_MEMORY),
                 'adviced_fail' => ($this->check_php_limit(REQ_PHP_MEMORY_REC) ? false : true),
                 'recommended' => REQ_PHP_MEMORY_REC,
+                'fail_link' => 'https://www.oscommerce.com/wiki/Pre-installation_Check_-_PHP_Memory_Limit'
             ),
             'curl' => array(
                 'required' => $this->lang['yes'],
                 'installed' => (function_exists('curl_version')) ? $this->lang['yes'] : $this->lang['no'],
                 'passfail' => true,
                 'adviced_fail' => (!function_exists('curl_version')) ? true : false,
-                'ignore' => true
+                'ignore' => true,
+                'fail_link' => 'https://www.oscommerce.com/wiki/Pre-installation_Check_-_cURL_PHP_Module'
             ),
             'fopen' => array(
                 'required' => $this->lang['yes'],
                 'installed' => (function_exists('fopen')) ? $this->lang['yes'] : $this->lang['no'],
-                'passfail' => (function_exists('fopen')) ? true : false
+                'passfail' => (function_exists('fopen')) ? true : false,
+                'fail_link' => 'https://www.oscommerce.com/wiki/Pre-installation_Check_-_Fopen_PHP_Function'
             ),
             'hash' => array(
                 'required' => $this->lang['yes'],
                 'installed' => (function_exists('hash')) ? $this->lang['yes'] : $this->lang['no'],
-                'passfail' => (function_exists('hash')) ? true : false
+                'passfail' => (function_exists('hash')) ? true : false,
+                'fail_link' => 'https://www.oscommerce.com/wiki/Pre-installation_Check_-_Hash_PHP_Function'
             ),
             'xml' => array(
                 'required' => $this->lang['yes'],
                 'installed' => (function_exists('simplexml_load_string')) ? $this->lang['yes'] : $this->lang['no'],
-                'passfail' => (function_exists('simplexml_load_string')) ? true : false
+                'passfail' => (function_exists('simplexml_load_string')) ? true : false,
+                'fail_link' => 'https://www.oscommerce.com/wiki/Pre-installation_Check_-_XML_PHP_Module'
             ),
             'autoload' => array(
                 'required' => $this->lang['yes'],
                 'installed' => (function_exists('spl_autoload_register')) ? $this->lang['yes'] : $this->lang['no'],
-                'passfail' => (function_exists('spl_autoload_register')) ? true : false
+                'passfail' => (function_exists('spl_autoload_register')) ? true : false,
+                'fail_link' => 'https://www.oscommerce.com/wiki/Pre-installation_Check_-_Spl_autoload_register_PHP_Function'
             ),
             'json' => array(
                 'required' => $this->lang['yes'],
                 'installed' => (extension_loaded('json')) ? $this->lang['yes'] : $this->lang['no'],
-                'passfail' => (extension_loaded('json')) ? true : false
+                'passfail' => (extension_loaded('json')) ? true : false,
+                'fail_link' => 'https://www.oscommerce.com/wiki/Pre-installation_Check_-_JSON_PHP_Module'
             ),
             'gd' => array(
                 'required' => $this->lang['yes'],
                 'installed' => (extension_loaded('gd') && function_exists('gd_info')) ? $this->lang['yes'] : $this->lang['no'],
-                'passfail' => (extension_loaded('gd') && function_exists('gd_info')) ? true : false
+                'passfail' => (extension_loaded('gd') && function_exists('gd_info')) ? true : false,
+                'fail_link' => 'https://www.oscommerce.com/wiki/Pre-installation_Check_-_CD_Image_Module'
             ),
             'pathinfo' => array(
                 'required' => $this->lang['yes'],
                 'installed' => $this->lang['yes'],
-                'passfail' => (function_exists('pathinfo')) ? true : false
+                'passfail' => (function_exists('pathinfo')) ? true : false,
+                'fail_link' => 'https://www.oscommerce.com/wiki/Pre-installation_Check_-_PathInfo-Support'
             ),
             'intl' => array(
                 'required' => $this->lang['yes'],
                 'installed' => (extension_loaded('intl') && function_exists('transliterator_transliterate')) ? $this->lang['yes'] : $this->lang['no'],
-                'passfail' => (extension_loaded('intl') && function_exists('transliterator_transliterate')) ? true : false
+                'passfail' => (extension_loaded('intl') && function_exists('transliterator_transliterate')) ? true : false,
+                'fail_link' => 'https://www.oscommerce.com/wiki/Pre-installation_Check_-_Intl_Internationalization_PHP_Module'
             ),
             'openssl' => array( // needed in Yii: lib/vendor/yiisoft/yii2/base/Security.php:251
                 'required' => $this->lang['yes'],
                 'installed' => (extension_loaded('openssl')) ? $this->lang['yes'] : $this->lang['no'],
-                'passfail' => (extension_loaded('openssl')) ? true : false
+                'passfail' => (extension_loaded('openssl')) ? true : false,
+                'fail_link' => 'https://www.oscommerce.com/wiki/Pre-installation_Check_-_Openssl'
             ),
         );
     }
@@ -152,15 +166,19 @@ class php_check extends install_generic {
 		<table class="colorswitch tableWrap" style="border-collapse: collapse;">
                     <thead>
                     <tr>
-                        <th width="54%">' . $this->lang['table_pcheck_name'] . '</th>
+                        <th width="52%">' . $this->lang['table_pcheck_name'] . '</th>
                         <th width="13%">' . $this->lang['table_pcheck_installed'] . '</th>
-                        <th width="13%">' . $this->lang['table_pcheck_rec'] . '</th>
-                        <th width="13%">' . $this->lang['table_pcheck_required'] . '</th>
+                        <th width="15%">' . $this->lang['table_pcheck_rec'] . '</th>
+                        <th width="15%">' . $this->lang['table_pcheck_required'] . '</th>
                         <th width="6%"></th>
                     </tr>
                     </thead>
                     <tbody>';
         foreach ($phpcheckdata as $fname => $fdata) {
+            $nameUser = $this->lang['module_' . $fname] ? $this->lang['module_' . $fname] : $fname;
+            if ((isset($fdata['adviced_fail']) && $fdata['adviced_fail']) || !$fdata['passfail']) {
+                $nameUser = '<a href="' .$fdata['fail_link']. '">' . $nameUser . '</a>';
+            }
             if (isset($fdata['adviced_fail']) && $fdata['passfail']) {
                 $passfail_color = ($fdata['adviced_fail']) ? 'neutral' : (($fdata['passfail']) ? 'positive' : 'negative');
                 $passfail_icon = ($fdata['adviced_fail']) ? 'fa-exclamation-triangle' : (($fdata['passfail']) ? 'fa-check' : 'fa-times-circle');
@@ -169,7 +187,7 @@ class php_check extends install_generic {
                 $passfail_icon = (($fdata['passfail']) ? 'fa-check' : 'fa-times-circle');
             }
             $content .= '<tr>
-                            <td>' . (($this->lang['module_' . $fname]) ? $this->lang['module_' . $fname] : $fname) . '</td>
+                            <td>' . $nameUser . '</td>
                             <td class="' . $passfail_color . '">' . $fdata['installed'] . '</td>
                             <td class="positive">' . ((isset($fdata['recommended'])) ? $fdata['recommended'] : $fdata['required']) . '</td>
                             <td class="positive">' . $fdata['required'] . '</td>

@@ -1,4 +1,5 @@
-<div class="widget box box-no-shadow">
+{$paymentsAllowed = $manager->isPaymentAllowedTpl()}
+<div class="widget box box-no-shadow{if !$paymentsAllowed['allowed']} dis_module" title="{$paymentsAllowed['reason']}"{else}"{/if}>
     <div class="widget-header">
         <h4>{$smarty.const.ENTRY_PAYMENT_METHOD}</h4>
         {$manager->render('Toolbar')}        
@@ -10,18 +11,18 @@
                     <div class="item-radio">
                         <label>
                             <input type="radio" name="payment" value="" checked />
-                            <span>Payment is not selected</span>
+                            <span>{$smarty.const.PAYMENT_IS_NOT_SELECTED}</span>
                         </label>
                     </div>
                 </div>
             {/if}
-            {foreach $manager->getPaymentSelection() as $i}
+            {foreach $manager->getPaymentSelection(false, false, 'auto') as $i}
                 <div class="item payment_item payment_class_{$i.id}"  {if $i.hide_row|default:null} style="display: none"{/if}>
                     {if isset($i.methods)}
                         {foreach $i.methods as $m}
                             <div class="item-radio">
                                 <label>
-                                    <input type="radio" name="payment" value="{$m.id}"{if $i.hide_input|default:null} style="display: none"{/if}{if $m.checked|default:null} checked{/if}/>
+                                    <input type="radio" name="payment" value="{$m.id}"{if $i.hide_input|default:null} style="display: none"{/if}{if $m.checked|default:null} checked{/if} {if !$manager->isPaymentAllowed()} disabled{/if}/>
                                     <span>{$m.module}</span>
                                 </label>
                             </div>
@@ -29,7 +30,7 @@
                     {else}
                         <div class="item-radio">
                             <label>
-                                <input type="radio" name="payment" value="{$i.id}"{if $i.hide_input|default:null} style="display: none"{/if}{if $i.checked|default:null} checked{/if}/>
+                                <input type="radio" name="payment" value="{$i.id}"{if $i.hide_input|default:null} style="display: none"{/if}{if $i.checked|default:null} checked{/if} {if !$manager->isPaymentAllowed()} disabled{/if}/>
                                 <span>{$i.module}</span>
                             </label>
                         </div>

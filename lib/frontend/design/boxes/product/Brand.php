@@ -65,14 +65,14 @@ class Brand extends Widget
                     '@type' => 'Brand',
                     'name' => $manufacture['manufacturers_name']
                 ],
-            ]]);
+            ]], ['Product', 'brand', '@type']);
         }
         if (isset($manufacture['manufacturers_image']) && is_file(\common\classes\Images::getFSCatalogImagesPath() . $manufacture['manufacturers_image'])) {
             \frontend\design\JsonLd::addData(['Product' => [
                 'brand' => [
                     'image' => Yii::$app->urlManager->createAbsoluteUrl($manufacture['manufacturers_image'])
                 ],
-            ]]);
+            ]], ['Product', 'brand', 'image']);
         }
 
         return IncludeTpl::widget(['file' => 'boxes/product/brand.tpl', 'params' => [

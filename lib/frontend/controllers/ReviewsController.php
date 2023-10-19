@@ -71,7 +71,7 @@ class ReviewsController extends Sceleton
             return $this->render('index.tpl', [
                 'reviews' => $reviews,
                 'link_write' => tep_href_link('reviews/write', 'products_id='. $params['products_id']),
-                'rating' => round($rating['average']),
+                'rating' => round($rating['average']??0),
                 'count' => $rating['count'],
                 'number_of_rows' => $reviews_split->number_of_rows,
                 'links' => $links,
@@ -229,7 +229,7 @@ class ReviewsController extends Sceleton
             
         }else{
             //return Yii::$app->runAction('catalog/product',['products_id'=>$params['products_id']]);
-            return $this->redirect('catalog/product',['products_id'=>$params['products_id']]);
+            return $this->redirect(['catalog/product','products_id'=>$params['products_id']]);
         }
     }
 

@@ -281,7 +281,7 @@ class StockIndication
             $uprid = $data_array['products_id'];
         }
 
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('LinkedProducts', 'allowed')) {
+        if ($ext = \common\helpers\Extensions::isAllowed('LinkedProducts')) {
             $data_array = $ext::filterStockIndication($data_array);
         }
         $actionOnOutOfStock = 1;
@@ -354,7 +354,7 @@ class StockIndication
  * ??? default state details by "show inactive" switcher at frontend..... O_O
  */
         /** @var \common\extensions\ShowInactive\ShowInactive $ext */
-        if ($ext = \common\helpers\Acl::checkExtensionAllowed('ShowInactive', 'allowed'))
+        if ($ext = \common\helpers\Extensions::isAllowed('ShowInactive'))
         {
             if (!$products_status)
             {
@@ -373,7 +373,7 @@ class StockIndication
         }
 
         if ($ext = \common\helpers\Acl::checkExtensionAllowed('UserGroupsRestrictions', 'isAllowed')) {
-            if ($data_array['products_id']) {
+            if ($data_array['products_id'] && !($data_array['ignore_user_groups_restrictions'] ?? false)) {
                 if (!$ext::isStockAvailable($data_array['products_id'])) {
                     $stock_indication_id = 0;
                     $data_array['stock_indication_id'] = 0;
@@ -534,7 +534,7 @@ class StockIndication
         }
         $orderQuantityMax = (!empty($oProduct->order_quantity_max) && $oProduct->order_quantity_max>0)?$oProduct->order_quantity_max:MAX_CART_QTY;
 
-        \common\helpers\Php8::nullProps($oProduct, ['request_quote', 'request_quote_out_stock', 'ask_sample', 'allow_backorder', 'cart_button']);
+        \common\helpers\Php8::nullObjProps($oProduct, ['request_quote', 'request_quote_out_stock', 'ask_sample', 'allow_backorder', 'cart_button']);
         // product flags
         // RFQ only if product.request_quote eq 1 and
         // 1) stock >0
@@ -763,6 +763,10 @@ class StockIndication
             if ($stock_info['stock_code'] == 'in-stock')
             {
             }
+        }
+
+        foreach (\common\helpers\Hooks::getList('stock-indication/product-info') as $filename) {
+            include($filename);
         }
 
         return $stock_info;

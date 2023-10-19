@@ -224,22 +224,24 @@ class Password {
         $encrypted = false;
         $sc = new \yii\base\Security();
         if ($aup = $sc->decryptByKey($auth_param,date('\s\me\c\rYkd\ey'))){
-            $aup = explode("\t",$aup,3);
+            $aup = explode("\t",$aup,4);
             $encrypted = [
                 'customers_id' => $aup[0],
                 'customers_email' => $aup[1],
                 'auth_type' => $aup[2],
+                'auth_key' => $aup[3],
             ];
         }
         return $encrypted;
     }
-    public static function encryptAuthUserParam($customer_id, $customers_email_address, $auth_type='login')
+    public static function encryptAuthUserParam($customer_id, $customers_email_address, $auth_type='login', $auth_key = '')
     {
         $sc = new \yii\base\Security();
         $aup = base64_encode($sc->encryptByKey(
             strval($customer_id)."\t".
             strval($customers_email_address)."\t".
-            strval($auth_type),
+            strval($auth_type)."\t".
+            strval($auth_key),
             date('\s\me\c\rYkd\ey')));
         return $aup;
     }

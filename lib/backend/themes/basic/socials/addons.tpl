@@ -1,7 +1,7 @@
 {use class="yii\helpers\Url"}
 {use class="yii\helpers\Html"}
 <div class="language_edit">
-			  {if {$messages|@count} > 0}
+			  {if {$messages|default:array()|@count} > 0}
 			   {foreach $messages as $type => $message}
               <div class="alert alert-{$type} fade in">
                   <i data-dismiss="alert" class="icon-remove close"></i>
@@ -14,7 +14,7 @@
     <input type="hidden" name="row_id" value="{$row}">
     <div class="tabbable tabbable-custom">
               <ul class="nav nav-tabs top_tabs_ul main_tabs">
-                <li class="active"><a href="#tab_main" data-toggle="tab"><span>{$smarty.const.TEXT_MAIN_DETAILS}</span></a></li>
+                <li class="active" data-bs-toggle="tab" data-bs-target="#tab_main"><a><span>{$smarty.const.TEXT_MAIN_DETAILS}</span></a></li>
               </ul>
               <div class="tab-content">
                 <div class="tab-pane topTabPane tabbable-custom" id="tab_main">
