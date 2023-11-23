@@ -127,6 +127,9 @@ class ShoppingCartController extends Sceleton {
 
         if (Yii::$app->request->isPost) {
             $post = Yii::$app->request->post('estimate');
+            if (isset($post['country_id'])) {
+                $post['country_id'] = (int) $post['country_id'];
+            }
 
             if ($this->manager->isCustomerAssigned()){
                 if ($post['sendto']){
