@@ -36,7 +36,7 @@ class Compare extends Widget
     {
         global $current_category_id, $manufacturers_id;
 
-        $compare = Yii::$app->request->get('compare');
+        $compare = tep_db_prepare_input(Yii::$app->request->get('compare'));
         $currencies = Yii::$container->get('currencies');
 
         $error_text = '';
