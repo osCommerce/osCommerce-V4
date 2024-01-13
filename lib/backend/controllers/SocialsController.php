@@ -59,11 +59,11 @@ class SocialsController extends Sceleton {
     }
 
     public function actionList() {
-        $draw = Yii::$app->request->get('draw', 1);
-        $start = Yii::$app->request->get('start', 0);
-        $length = Yii::$app->request->get('length', 10);
+        $draw = (int) Yii::$app->request->get('draw', 1);
+        $start = (int) Yii::$app->request->get('start', 0);
+        $length = (int) Yii::$app->request->get('length', 10);
         
-        $platform_id = Yii::$app->request->get('platform_id');
+        $platform_id = (int) Yii::$app->request->get('platform_id');
 
         $responseList = [];
         if ($length == -1)
