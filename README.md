@@ -42,7 +42,7 @@ INSTALLATION
 You can then install this project using the following command from directory (e.g. `oscommerce`):
 
 ~~~
-git clone https://github.com/osCommerce/osCommerce-V4.git ./ 
+git clone https://github.com/osCommerce/osCommerce-V4.git ./ --depth 1
 ~~~
 
 Make sure your web user has write permissions to the following directories:
