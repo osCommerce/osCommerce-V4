@@ -1,8 +1,0 @@
-JMS\Serializer\Tests\Fixtures\ParentSkipWithEmptyChild:
-    properties:
-        c:
-          type: string
-        d:
-          type: string
-        child:
-          skip_when_empty: true

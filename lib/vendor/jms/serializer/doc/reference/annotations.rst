@@ -431,20 +431,28 @@ Available Types:
 |                                                            | string (''). DeserializeFormats can either be a  |
 |                                                            | string or an array of string.                    |
 +------------------------------------------------------------+--------------------------------------------------+
-| DateTimeInterface                                          | PHP's DateTimeImmutable object (default format*/ |
-|                                                            | timezone).                                       |
+| DateTimeInterface                                          | PHP's DateTimeInterface interface (default       |
+|                                                            | format*/timezone).                               |
+|                                                            | Data will be always deserialised into            |
+|                                                            | `\DateTime` object                               |
 +------------------------------------------------------------+--------------------------------------------------+
-| DateTimeInterface<'format'>                                | PHP's DateTimeImmutable object (custom format/   |
-|                                                            | default timezone)                                |
+| DateTimeInterface<'format'>                                | PHP's DateTimeInterface interface (custom        |
+|                                                            | format/default timezone)                         |
+|                                                            | Data will be deserialised into                   |
+|                                                            | `\\DateTime` object                              |
 +------------------------------------------------------------+--------------------------------------------------+
-| DateTimeInterface<'format', 'zone'>                        | PHP's DateTimeImmutable object (custom format/   |
-|                                                            | timezone)                                        |
+| DateTimeInterface<'format', 'zone'>                        | PHP's DateTimeInterface interface (custom        |
+|                                                            | format/timezone)                                 |
+|                                                            | Data will be deserialised into                   |
+|                                                            | `\\DateTime` object                              |
 +------------------------------------------------------------+--------------------------------------------------+
-| DateTimeInterface<'format', 'zone', 'deserializeFormats'>  | PHP's DateTimeImmutable object (custom format/   |
-|                                                            | timezone/deserialize format). If you do not want |
-|                                                            | to specify a specific timezone, use an empty     |
-|                                                            | string (''). DeserializeFormats can either be a  |
-|                                                            | string or an array of string.                    |
+| DateTimeInterface<'format', 'zone', 'deserializeFormats'>  | PHP's DateTimeInterface interface (custom        |
+|                                                            | format/timezone/deserialize format). If you do   |
+|                                                            | not want to specify a specific timezone, use an  |
+|                                                            | empty string (''). DeserializeFormats can either |
+|                                                            | be a string or an array of string.               |
+|                                                            | Data will be deserialised into                   |
+|                                                            | `\\DateTime` object                              |
 +------------------------------------------------------------+--------------------------------------------------+
 | DateInterval                                               | PHP's DateInterval object using ISO 8601 format  |
 +------------------------------------------------------------+--------------------------------------------------+
@@ -568,6 +576,34 @@ Examples:
          */
         private $keyValueStore;
     }
+
+.. note ::
+
+    if you are using ``PHP attributes`` with PHP 8.1 you can pass an object which implements ``__toString()`` method as a value for ``#[Type]`` attribute.
+    
+    .. code-block :: php
+
+		  <?php
+
+		  namespace MyNamespace;
+
+		  use JMS\Serializer\Annotation\Type;
+
+		  class BlogPost
+		  {
+		      #[Type(new ArrayOf(Comment::class))]
+		      private $comments;
+		  }
+		  
+		  class ArrayOf
+		  {
+		  		public function __construct(private string $className) {}
+		  		
+		  		public function __toString(): string
+		  		{
+		  				return "array<$className>";
+		  		}
+		  }
 
 .. _configuration: https://jmsyst.com/bundles/JMSSerializerBundle/master/configuration#configuration-block-2-0
 

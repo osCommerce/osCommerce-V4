@@ -16,6 +16,8 @@ use OpenApi\Generator;
 class SecurityScheme extends AbstractAnnotation
 {
     /**
+     * The relative or absolute path to a security scheme.
+     *
      * @see [Using refs](https://swagger.io/docs/specification/using-ref/)
      *
      * @var string|class-string|object
@@ -32,7 +34,7 @@ class SecurityScheme extends AbstractAnnotation
     /**
      * The type of the security scheme.
      *
-     * @var string
+     * @var string|non-empty-array<string>
      */
     public $type = Generator::UNDEFINED;
 

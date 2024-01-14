@@ -132,19 +132,14 @@ class View extends \yii\base\View
     public $jsFiles = [];
 
     private $_assetManager;
-    
-    /**
-     * @var string the page title
-     */
-    public $async = 'async';
-    
+
+
     /**
      * Whether [[endPage()]] has been called and all files have been registered
      * @var bool
      * @since 2.0.44
      */
     protected $isPageEnded = false;
-
 
     /**
      * Marks the position of an HTML head section.

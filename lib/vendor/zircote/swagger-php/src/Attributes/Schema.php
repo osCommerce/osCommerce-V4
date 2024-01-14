@@ -12,18 +12,19 @@ use OpenApi\Generator;
 class Schema extends \OpenApi\Annotations\Schema
 {
     /**
-     * @param string|class-string|object|null                 $ref
-     * @param string[]                                        $required
-     * @param Property[]                                      $properties
-     * @param int|float                                       $maximum
-     * @param int|float                                       $minimum
-     * @param string[]|int[]|float[]|\UnitEnum[]|class-string $enum
-     * @param array<Schema|\OpenApi\Annotations\Schema>       $allOf
-     * @param array<Schema|\OpenApi\Annotations\Schema>       $anyOf
-     * @param array<Schema|\OpenApi\Annotations\Schema>       $oneOf
-     * @param mixed                                           $const
-     * @param array<string,mixed>|null                        $x
-     * @param Attachable[]|null                               $attachables
+     * @param string|non-empty-array<string>|null                    $type
+     * @param string|class-string|object|null                        $ref
+     * @param string[]                                               $required
+     * @param Property[]                                             $properties
+     * @param int|float                                              $maximum
+     * @param int|float                                              $minimum
+     * @param string[]|int[]|float[]|bool[]|\UnitEnum[]|class-string $enum
+     * @param array<Schema|\OpenApi\Annotations\Schema>              $allOf
+     * @param array<Schema|\OpenApi\Annotations\Schema>              $anyOf
+     * @param array<Schema|\OpenApi\Annotations\Schema>              $oneOf
+     * @param mixed                                                  $const
+     * @param array<string,mixed>|null                               $x
+     * @param Attachable[]|null                                      $attachables
      */
     public function __construct(
         // schema
@@ -35,15 +36,15 @@ class Schema extends \OpenApi\Annotations\Schema
         ?int $minProperties = null,
         ?array $required = null,
         ?array $properties = null,
-        ?string $type = null,
+        string|array|null $type = null,
         ?string $format = null,
         ?Items $items = null,
         ?string $collectionFormat = null,
         mixed $default = Generator::UNDEFINED,
         $maximum = null,
-        ?bool $exclusiveMaximum = null,
+        bool|int|float|null $exclusiveMaximum = null,
         $minimum = null,
-        ?bool $exclusiveMinimum = null,
+        bool|int|float|null $exclusiveMinimum = null,
         ?int $maxLength = null,
         ?int $minLength = null,
         ?int $maxItems = null,
