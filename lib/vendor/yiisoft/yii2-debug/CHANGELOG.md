@@ -1,6 +1,28 @@
 Yii Framework 2 debug extension Change Log
 ==========================================
 
+2.1.25 September 26, 2023
+-------------------------
+
+- Bug #503: Fix accessing toolbar data if it's not available (xepozz)
+
+
+2.1.24 July 10, 2023
+--------------------
+
+- Bug #504: Reduced db panel warnings for "critical query threshold" and "excessive callers" (rhertogh)
+- Bug #506: Correctly handle null values for `DbPanel::$criticalQueryThreshold` and `::$excessiveCallerThreshold` (MarkoNV, rhertogh)
+- Bug #507: Convert Symfony mailer headers to string in Mail panel (squio)
+- Enh #512: Changed default value for `yii\debug\panels\DbPanel::$excessiveCallerThreshold` to `null` (rhertogh)
+
+
+2.1.23 May 22, 2023
+-------------------
+
+- Enh #498: Add yii2-symfonymailer Support in src/panels/MailPanel.php (vansari)
+- Enh #501: Show DB query call location in DB panel (rhertogh)
+
+
 2.1.22 November 18, 2022
 ------------------------
 

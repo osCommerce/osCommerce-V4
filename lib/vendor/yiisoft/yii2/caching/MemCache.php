@@ -71,7 +71,7 @@ class MemCache extends Cache
      * If false, [memcache](https://pecl.php.net/package/memcache) will be used.
      * Defaults to false.
      */
-    public $useMemcached = 'useMemcached';
+    public $useMemcached = false;
     /**
      * @var string an ID that identifies a Memcached instance. This property is used only when [[useMemcached]] is true.
      * By default the Memcached instances are destroyed at the end of the request. To create an instance that

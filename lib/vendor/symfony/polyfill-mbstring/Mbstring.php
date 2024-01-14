@@ -69,7 +69,7 @@ final class Mbstring
 {
     public const MB_CASE_FOLD = \PHP_INT_MAX;
 
-    private const CASE_FOLD = [
+    private const SIMPLE_CASE_FOLD = [
         ['µ', 'ſ', "\xCD\x85", 'ς', "\xCF\x90", "\xCF\x91", "\xCF\x95", "\xCF\x96", "\xCF\xB0", "\xCF\xB1", "\xCF\xB5", "\xE1\xBA\x9B", "\xE1\xBE\xBE"],
         ['μ', 's', 'ι',        'σ', 'β',        'θ',        'φ',        'π',        'κ',        'ρ',        'ε',        "\xE1\xB9\xA1", 'ι'],
     ];
@@ -301,7 +301,11 @@ final class Mbstring
                 $map = $upper;
             } else {
                 if (self::MB_CASE_FOLD === $mode) {
-                    $s = str_replace(self::CASE_FOLD[0], self::CASE_FOLD[1], $s);
+                    static $caseFolding = null;
+                    if (null === $caseFolding) {
+                        $caseFolding = self::getData('caseFolding');
+                    }
+                    $s = strtr($s, $caseFolding);
                 }
 
                 static $lower = null;
@@ -658,8 +662,10 @@ final class Mbstring
 
     public static function mb_stripos($haystack, $needle, $offset = 0, $encoding = null)
     {
-        $haystack = self::mb_convert_case($haystack, self::MB_CASE_FOLD, $encoding);
-        $needle = self::mb_convert_case($needle, self::MB_CASE_FOLD, $encoding);
+        [$haystack, $needle] = str_replace(self::SIMPLE_CASE_FOLD[0], self::SIMPLE_CASE_FOLD[1], [
+            self::mb_convert_case($haystack, \MB_CASE_LOWER, $encoding),
+            self::mb_convert_case($needle, \MB_CASE_LOWER, $encoding),
+        ]);
 
         return self::mb_strpos($haystack, $needle, $offset, $encoding);
     }
@@ -694,8 +700,11 @@ final class Mbstring
 
     public static function mb_strripos($haystack, $needle, $offset = 0, $encoding = null)
     {
-        $haystack = self::mb_convert_case($haystack, self::MB_CASE_FOLD, $encoding);
-        $needle = self::mb_convert_case($needle, self::MB_CASE_FOLD, $encoding);
+        $haystack = self::mb_convert_case($haystack, \MB_CASE_LOWER, $encoding);
+        $needle = self::mb_convert_case($needle, \MB_CASE_LOWER, $encoding);
+
+        $haystack = str_replace(self::SIMPLE_CASE_FOLD[0], self::SIMPLE_CASE_FOLD[1], $haystack);
+        $needle = str_replace(self::SIMPLE_CASE_FOLD[0], self::SIMPLE_CASE_FOLD[1], $needle);
 
         return self::mb_strrpos($haystack, $needle, $offset, $encoding);
     }
@@ -816,6 +825,50 @@ final class Mbstring
         }
 
         return $code;
+    }
+
+    public static function mb_str_pad(string $string, int $length, string $pad_string = ' ', int $pad_type = \STR_PAD_RIGHT, string $encoding = null): string
+    {
+        if (!\in_array($pad_type, [\STR_PAD_RIGHT, \STR_PAD_LEFT, \STR_PAD_BOTH], true)) {
+            throw new \ValueError('mb_str_pad(): Argument #4 ($pad_type) must be STR_PAD_LEFT, STR_PAD_RIGHT, or STR_PAD_BOTH');
+        }
+
+        if (null === $encoding) {
+            $encoding = self::mb_internal_encoding();
+        }
+
+        try {
+            $validEncoding = @self::mb_check_encoding('', $encoding);
+        } catch (\ValueError $e) {
+            throw new \ValueError(sprintf('mb_str_pad(): Argument #5 ($encoding) must be a valid encoding, "%s" given', $encoding));
+        }
+
+        // BC for PHP 7.3 and lower
+        if (!$validEncoding) {
+            throw new \ValueError(sprintf('mb_str_pad(): Argument #5 ($encoding) must be a valid encoding, "%s" given', $encoding));
+        }
+
+        if (self::mb_strlen($pad_string, $encoding) <= 0) {
+            throw new \ValueError('mb_str_pad(): Argument #3 ($pad_string) must be a non-empty string');
+        }
+
+        $paddingRequired = $length - self::mb_strlen($string, $encoding);
+
+        if ($paddingRequired < 1) {
+            return $string;
+        }
+
+        switch ($pad_type) {
+            case \STR_PAD_LEFT:
+                return self::mb_substr(str_repeat($pad_string, $paddingRequired), 0, $paddingRequired, $encoding).$string;
+            case \STR_PAD_RIGHT:
+                return $string.self::mb_substr(str_repeat($pad_string, $paddingRequired), 0, $paddingRequired, $encoding);
+            default:
+                $leftPaddingLength = floor($paddingRequired / 2);
+                $rightPaddingLength = $paddingRequired - $leftPaddingLength;
+
+                return self::mb_substr(str_repeat($pad_string, $leftPaddingLength), 0, $leftPaddingLength, $encoding).$string.self::mb_substr(str_repeat($pad_string, $rightPaddingLength), 0, $rightPaddingLength, $encoding);
+        }
     }
 
     private static function getSubpart($pos, $part, $haystack, $encoding)

@@ -1,8 +1,0 @@
-JMS\Serializer\Tests\Fixtures\ObjectWithOnlyLifecycleCallbacks:
-    callback_methods:
-        pre_serialize:
-            - prepareForSerialization
-        post_serialize:
-            - cleanUpAfterSerialization
-        post_deserialize:
-            - afterDeserialization

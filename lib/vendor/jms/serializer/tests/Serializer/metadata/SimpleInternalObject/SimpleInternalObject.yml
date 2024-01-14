@@ -1,7 +1,0 @@
-JMS\Serializer\Tests\Fixtures\SimpleInternalObject:
-    properties:
-        bar:
-            type: string
-            serialized_name: moo
-        camelCase:
-            type: string
