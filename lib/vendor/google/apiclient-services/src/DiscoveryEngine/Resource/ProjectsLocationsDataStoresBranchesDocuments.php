@@ -20,6 +20,7 @@ namespace Google\Service\DiscoveryEngine\Resource;
 use Google\Service\DiscoveryEngine\GoogleCloudDiscoveryengineV1betaDocument;
 use Google\Service\DiscoveryEngine\GoogleCloudDiscoveryengineV1betaImportDocumentsRequest;
 use Google\Service\DiscoveryEngine\GoogleCloudDiscoveryengineV1betaListDocumentsResponse;
+use Google\Service\DiscoveryEngine\GoogleCloudDiscoveryengineV1betaPurgeDocumentsRequest;
 use Google\Service\DiscoveryEngine\GoogleLongrunningOperation;
 use Google\Service\DiscoveryEngine\GoogleProtobufEmpty;
 
@@ -45,12 +46,13 @@ class ProjectsLocationsDataStoresBranchesDocuments extends \Google\Service\Resou
    * @opt_param string documentId Required. The ID to use for the Document, which
    * will become the final component of the Document.name. If the caller does not
    * have permission to create the Document, regardless of whether or not it
-   * exists, a PERMISSION_DENIED error is returned. This field must be unique
-   * among all Documents with the same parent. Otherwise, an ALREADY_EXISTS error
-   * is returned. This field must conform to
+   * exists, a `PERMISSION_DENIED` error is returned. This field must be unique
+   * among all Documents with the same parent. Otherwise, an `ALREADY_EXISTS`
+   * error is returned. This field must conform to
    * [RFC-1034](https://tools.ietf.org/html/rfc1034) standard with a length limit
-   * of 63 characters. Otherwise, an INVALID_ARGUMENT error is returned.
+   * of 63 characters. Otherwise, an `INVALID_ARGUMENT` error is returned.
    * @return GoogleCloudDiscoveryengineV1betaDocument
+   * @throws \Google\Service\Exception
    */
   public function create($parent, GoogleCloudDiscoveryengineV1betaDocument $postBody, $optParams = [])
   {
@@ -65,10 +67,11 @@ class ProjectsLocationsDataStoresBranchesDocuments extends \Google\Service\Resou
    * ts/{project}/locations/{location}/collections/{collection}/dataStores/{data_s
    * tore}/branches/{branch}/documents/{document}`. If the caller does not have
    * permission to delete the Document, regardless of whether or not it exists, a
-   * PERMISSION_DENIED error is returned. If the Document to delete does not
-   * exist, a NOT_FOUND error is returned.
+   * `PERMISSION_DENIED` error is returned. If the Document to delete does not
+   * exist, a `NOT_FOUND` error is returned.
    * @param array $optParams Optional parameters.
    * @return GoogleProtobufEmpty
+   * @throws \Google\Service\Exception
    */
   public function delete($name, $optParams = [])
   {
@@ -83,10 +86,11 @@ class ProjectsLocationsDataStoresBranchesDocuments extends \Google\Service\Resou
    * ts/{project}/locations/{location}/collections/{collection}/dataStores/{data_s
    * tore}/branches/{branch}/documents/{document}`. If the caller does not have
    * permission to access the Document, regardless of whether or not it exists, a
-   * PERMISSION_DENIED error is returned. If the requested Document does not
-   * exist, a NOT_FOUND error is returned.
+   * `PERMISSION_DENIED` error is returned. If the requested Document does not
+   * exist, a `NOT_FOUND` error is returned.
    * @param array $optParams Optional parameters.
    * @return GoogleCloudDiscoveryengineV1betaDocument
+   * @throws \Google\Service\Exception
    */
   public function get($name, $optParams = [])
   {
@@ -105,6 +109,7 @@ class ProjectsLocationsDataStoresBranchesDocuments extends \Google\Service\Resou
    * @param GoogleCloudDiscoveryengineV1betaImportDocumentsRequest $postBody
    * @param array $optParams Optional parameters.
    * @return GoogleLongrunningOperation
+   * @throws \Google\Service\Exception
    */
   public function import($parent, GoogleCloudDiscoveryengineV1betaImportDocumentsRequest $postBody, $optParams = [])
   {
@@ -120,21 +125,22 @@ class ProjectsLocationsDataStoresBranchesDocuments extends \Google\Service\Resou
    * jects/{project}/locations/{location}/collections/{collection}/dataStores/{dat
    * a_store}/branches/{branch}`. Use `default_branch` as the branch ID, to list
    * documents under the default branch. If the caller does not have permission to
-   * list Documentss under this branch, regardless of whether or not this branch
-   * exists, a PERMISSION_DENIED error is returned.
+   * list Documents under this branch, regardless of whether or not this branch
+   * exists, a `PERMISSION_DENIED` error is returned.
    * @param array $optParams Optional parameters.
    *
    * @opt_param int pageSize Maximum number of Documents to return. If
    * unspecified, defaults to 100. The maximum allowed value is 1000. Values above
-   * 1000 will be coerced to 1000. If this field is negative, an INVALID_ARGUMENT
-   * error is returned.
+   * 1000 will be coerced to 1000. If this field is negative, an
+   * `INVALID_ARGUMENT` error is returned.
    * @opt_param string pageToken A page token
    * ListDocumentsResponse.next_page_token, received from a previous
    * DocumentService.ListDocuments call. Provide this to retrieve the subsequent
    * page. When paginating, all other parameters provided to
    * DocumentService.ListDocuments must match the call that provided the page
-   * token. Otherwise, an INVALID_ARGUMENT error is returned.
+   * token. Otherwise, an `INVALID_ARGUMENT` error is returned.
    * @return GoogleCloudDiscoveryengineV1betaListDocumentsResponse
+   * @throws \Google\Service\Exception
    */
   public function listProjectsLocationsDataStoresBranchesDocuments($parent, $optParams = [])
   {
@@ -155,12 +161,35 @@ class ProjectsLocationsDataStoresBranchesDocuments extends \Google\Service\Resou
    * @opt_param bool allowMissing If set to true, and the Document is not found, a
    * new Document will be created.
    * @return GoogleCloudDiscoveryengineV1betaDocument
+   * @throws \Google\Service\Exception
    */
   public function patch($name, GoogleCloudDiscoveryengineV1betaDocument $postBody, $optParams = [])
   {
     $params = ['name' => $name, 'postBody' => $postBody];
     $params = array_merge($params, $optParams);
     return $this->call('patch', [$params], GoogleCloudDiscoveryengineV1betaDocument::class);
+  }
+  /**
+   * Permanently deletes all selected Documents in a branch. This process is
+   * asynchronous. Depending on the number of Documents to be deleted, this
+   * operation can take hours to complete. Before the delete operation completes,
+   * some Documents might still be returned by DocumentService.GetDocument or
+   * DocumentService.ListDocuments. To get a list of the Documents to be deleted,
+   * set PurgeDocumentsRequest.force to false. (documents.purge)
+   *
+   * @param string $parent Required. The parent resource name, such as `projects/{
+   * project}/locations/{location}/collections/{collection}/dataStores/{data_store
+   * }/branches/{branch}`.
+   * @param GoogleCloudDiscoveryengineV1betaPurgeDocumentsRequest $postBody
+   * @param array $optParams Optional parameters.
+   * @return GoogleLongrunningOperation
+   * @throws \Google\Service\Exception
+   */
+  public function purge($parent, GoogleCloudDiscoveryengineV1betaPurgeDocumentsRequest $postBody, $optParams = [])
+  {
+    $params = ['parent' => $parent, 'postBody' => $postBody];
+    $params = array_merge($params, $optParams);
+    return $this->call('purge', [$params], GoogleLongrunningOperation::class);
   }
 }
 

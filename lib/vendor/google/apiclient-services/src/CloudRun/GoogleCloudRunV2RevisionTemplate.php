@@ -24,6 +24,10 @@ class GoogleCloudRunV2RevisionTemplate extends \Google\Collection
    * @var string[]
    */
   public $annotations;
+  /**
+   * @var GoogleCloudRunV2Container[]
+   */
+  public $containers;
   protected $containersType = GoogleCloudRunV2Container::class;
   protected $containersDataType = 'array';
   /**
@@ -46,6 +50,10 @@ class GoogleCloudRunV2RevisionTemplate extends \Google\Collection
    * @var string
    */
   public $revision;
+  /**
+   * @var GoogleCloudRunV2RevisionScaling
+   */
+  public $scaling;
   protected $scalingType = GoogleCloudRunV2RevisionScaling::class;
   protected $scalingDataType = '';
   /**
@@ -53,11 +61,23 @@ class GoogleCloudRunV2RevisionTemplate extends \Google\Collection
    */
   public $serviceAccount;
   /**
+   * @var bool
+   */
+  public $sessionAffinity;
+  /**
    * @var string
    */
   public $timeout;
+  /**
+   * @var GoogleCloudRunV2Volume[]
+   */
+  public $volumes;
   protected $volumesType = GoogleCloudRunV2Volume::class;
   protected $volumesDataType = 'array';
+  /**
+   * @var GoogleCloudRunV2VpcAccess
+   */
+  public $vpcAccess;
   protected $vpcAccessType = GoogleCloudRunV2VpcAccess::class;
   protected $vpcAccessDataType = '';
 
@@ -186,6 +206,20 @@ class GoogleCloudRunV2RevisionTemplate extends \Google\Collection
   public function getServiceAccount()
   {
     return $this->serviceAccount;
+  }
+  /**
+   * @param bool
+   */
+  public function setSessionAffinity($sessionAffinity)
+  {
+    $this->sessionAffinity = $sessionAffinity;
+  }
+  /**
+   * @return bool
+   */
+  public function getSessionAffinity()
+  {
+    return $this->sessionAffinity;
   }
   /**
    * @param string

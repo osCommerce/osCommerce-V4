@@ -685,6 +685,11 @@ function actionSeoproductsname($products_id){
             'type' => $type,
             'page_id' => $pageId
         ]);
+        if (!$pageStatus) {
+            $pageStatus = new \common\models\PageStatus();
+            $pageStatus->type = $type;
+            $pageStatus->page_id = $pageId;
+        }
         $pageStatus->status = $status;
         $pageStatus->save();
         if (!$pageStatus->errors) {

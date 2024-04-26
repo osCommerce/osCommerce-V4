@@ -132,18 +132,18 @@ class V1 extends \Google\Service\Resource
    * the result will output the relevant parent/child relationships between
    * resources. Default is false.
    * @opt_param string analysisQuery.resourceSelector.fullResourceName Required.
-   * The [full resource name] (https://cloud.google.com/asset-inventory/docs
-   * /resource-name-format) of a resource of [supported resource
+   * The [full resource name] (https://cloud.google.com/asset-
+   * inventory/docs/resource-name-format) of a resource of [supported resource
    * types](https://cloud.google.com/asset-inventory/docs/supported-asset-
    * types#analyzable_asset_types).
    * @opt_param string executionTimeout Optional. Amount of time executable has to
-   * complete. See JSON representation of [Duration](https://developers.google.com
-   * /protocol-buffers/docs/proto3#json). If this field is set with a value less
-   * than the RPC deadline, and the execution of your query hasn't finished in the
-   * specified execution timeout, you will get a response with partial result.
-   * Otherwise, your query's execution will continue until the RPC deadline. If
-   * it's not finished until then, you will get a DEADLINE_EXCEEDED error. Default
-   * is empty.
+   * complete. See JSON representation of
+   * [Duration](https://developers.google.com/protocol-buffers/docs/proto3#json).
+   * If this field is set with a value less than the RPC deadline, and the
+   * execution of your query hasn't finished in the specified execution timeout,
+   * you will get a response with partial result. Otherwise, your query's
+   * execution will continue until the RPC deadline. If it's not finished until
+   * then, you will get a DEADLINE_EXCEEDED error. Default is empty.
    * @opt_param string savedAnalysisQuery Optional. The name of a saved query,
    * which must be in the format of: *
    * projects/project_number/savedQueries/saved_query_id *
@@ -151,7 +151,7 @@ class V1 extends \Google\Service\Resource
    * organizations/organization_number/savedQueries/saved_query_id If both
    * `analysis_query` and `saved_analysis_query` are provided, they will be merged
    * together with the `saved_analysis_query` as base and the `analysis_query` as
-   * overrides. For more details of the merge behavior, please refer to the
+   * overrides. For more details of the merge behavior, refer to the
    * [MergeFrom](https://developers.google.com/protocol-
    * buffers/docs/reference/cpp/google.protobuf.message#Message.MergeFrom.details)
    * page. Note that you cannot override primitive fields with default value, such
@@ -235,11 +235,13 @@ class V1 extends \Google\Service\Resource
    * organization policies for. The response only contains analyzed organization
    * policies for the provided constraint.
    * @opt_param string filter The expression to filter
-   * AnalyzeOrgPoliciesResponse.org_policy_results. The only supported field is
-   * `consolidated_policy.attached_resource`, and the only supported operator is
-   * `=`. Example: consolidated_policy.attached_resource="//cloudresourcemanager.g
-   * oogleapis.com/folders/001" will return the org policy results
-   * of"folders/001".
+   * AnalyzeOrgPoliciesResponse.org_policy_results. Filtering is currently
+   * available for bare literal values and the following fields: *
+   * consolidated_policy.attached_resource * consolidated_policy.rules.enforce
+   * When filtering by a specific field, the only supported operator is `=`. For
+   * example, filtering by consolidated_policy.attached_resource="//cloudresourcem
+   * anager.googleapis.com/folders/001" will return all the Organization Policy
+   * results attached to "folders/001".
    * @opt_param int pageSize The maximum number of items to return per page. If
    * unspecified, AnalyzeOrgPoliciesResponse.org_policy_results will contain 20
    * items with a maximum of 200.
@@ -261,9 +263,9 @@ class V1 extends \Google\Service\Resource
    * gcp.resourceLocations * compute.trustedImageProjects *
    * compute.skipDefaultNetworkCreation * compute.requireOsLogin *
    * compute.disableNestedVirtualization This RPC only returns either resources of
-   * types supported by [searchable asset types](https://cloud.google.com/asset-
-   * inventory/docs/supported-asset-types#searchable_asset_types), or IAM
-   * policies. (v1.analyzeOrgPolicyGovernedAssets)
+   * types [supported by search APIs](https://cloud.google.com/asset-
+   * inventory/docs/supported-asset-types) or IAM policies.
+   * (v1.analyzeOrgPolicyGovernedAssets)
    *
    * @param string $scope Required. The organization to scope the request. Only
    * organization policies within the scope will be analyzed. The output assets
@@ -275,16 +277,25 @@ class V1 extends \Google\Service\Resource
    * @opt_param string constraint Required. The name of the constraint to analyze
    * governed assets for. The analysis only contains analyzed organization
    * policies for the provided constraint.
-   * @opt_param string filter The expression to filter the governed assets in
-   * result. The only supported fields for governed resources are
-   * `governed_resource.project` and `governed_resource.folders`. The only
-   * supported fields for governed iam policies are `governed_iam_policy.project`
-   * and `governed_iam_policy.folders`. The only supported operator is `=`.
-   * Example 1: governed_resource.project="projects/12345678" filter will return
-   * all governed resources under projects/12345678 including the project ifself,
-   * if applicable. Example 2: governed_iam_policy.folders="folders/12345678"
-   * filter will return all governed iam policies under folders/12345678, if
-   * applicable.
+   * @opt_param string filter The expression to filter
+   * AnalyzeOrgPolicyGovernedAssetsResponse.governed_assets. For governed
+   * resources, filtering is currently available for bare literal values and the
+   * following fields: * governed_resource.project * governed_resource.folders *
+   * consolidated_policy.rules.enforce When filtering by
+   * `governed_resource.project` or `consolidated_policy.rules.enforce`, the only
+   * supported operator is `=`. When filtering by `governed_resource.folders`, the
+   * supported operators are `=` and `:`. For example, filtering by
+   * `governed_resource.project="projects/12345678"` will return all the governed
+   * resources under "projects/12345678", including the project itself if
+   * applicable. For governed IAM policies, filtering is currently available for
+   * bare literal values and the following fields: * governed_iam_policy.project *
+   * governed_iam_policy.folders * consolidated_policy.rules.enforce When
+   * filtering by `governed_iam_policy.project` or
+   * `consolidated_policy.rules.enforce`, the only supported operator is `=`. When
+   * filtering by `governed_iam_policy.folders`, the supported operators are `=`
+   * and `:`. For example, filtering by
+   * `governed_iam_policy.folders:"folders/12345678"` will return all the governed
+   * IAM policies under "folders/001".
    * @opt_param int pageSize The maximum number of items to return per page. If
    * unspecified, AnalyzeOrgPolicyGovernedAssetsResponse.governed_assets will
    * contain 100 items with a maximum of 200.
@@ -311,10 +322,13 @@ class V1 extends \Google\Service\Resource
    * @opt_param string constraint Required. The name of the constraint to analyze
    * governed containers for. The analysis only contains organization policies for
    * the provided constraint.
-   * @opt_param string filter The expression to filter the governed containers in
-   * result. The only supported field is `parent`, and the only supported operator
-   * is `=`. Example: parent="//cloudresourcemanager.googleapis.com/folders/001"
-   * will return all containers under "folders/001".
+   * @opt_param string filter The expression to filter
+   * AnalyzeOrgPolicyGovernedContainersResponse.governed_containers. Filtering is
+   * currently available for bare literal values and the following fields: *
+   * parent * consolidated_policy.rules.enforce When filtering by a specific
+   * field, the only supported operator is `=`. For example, filtering by
+   * parent="//cloudresourcemanager.googleapis.com/folders/001" will return all
+   * the containers under "folders/001".
    * @opt_param int pageSize The maximum number of items to return per page. If
    * unspecified, AnalyzeOrgPolicyGovernedContainersResponse.governed_containers
    * will contain 100 items with a maximum of 200.
@@ -399,14 +413,14 @@ class V1 extends \Google\Service\Resource
   }
   /**
    * Issue a job that queries assets using a SQL statement compatible with
-   * [BigQuery Standard SQL](http://cloud/bigquery/docs/reference/standard-sql
-   * /enabling-standard-sql). If the query execution finishes within timeout and
-   * there's no pagination, the full query results will be returned in the
-   * `QueryAssetsResponse`. Otherwise, full query results can be obtained by
-   * issuing extra requests with the `job_reference` from the a previous
-   * `QueryAssets` call. Note, the query result has approximately 10 GB limitation
-   * enforced by BigQuery https://cloud.google.com/bigquery/docs/best-practices-
-   * performance-output, queries return larger results will result in errors.
+   * [BigQuery SQL](https://cloud.google.com/bigquery/docs/introduction-sql). If
+   * the query execution finishes within timeout and there's no pagination, the
+   * full query results will be returned in the `QueryAssetsResponse`. Otherwise,
+   * full query results can be obtained by issuing extra requests with the
+   * `job_reference` from the a previous `QueryAssets` call. Note, the query
+   * result has approximately 10 GB limitation enforced by
+   * [BigQuery](https://cloud.google.com/bigquery/docs/best-practices-performance-
+   * output). Queries return larger results will result in errors.
    * (v1.queryAssets)
    *
    * @param string $parent Required. The relative name of the root asset. This can
@@ -443,13 +457,13 @@ class V1 extends \Google\Service\Resource
    *
    * @opt_param string assetTypes Optional. A list of asset types that the IAM
    * policies are attached to. If empty, it will search the IAM policies that are
-   * attached to all the [searchable asset types](https://cloud.google.com/asset-
-   * inventory/docs/supported-asset-types#searchable_asset_types). Regular
-   * expressions are also supported. For example: * "compute.googleapis.com.*"
-   * snapshots IAM policies attached to asset type starts with
-   * "compute.googleapis.com". * ".*Instance" snapshots IAM policies attached to
-   * asset type ends with "Instance". * ".*Instance.*" snapshots IAM policies
-   * attached to asset type contains "Instance". See
+   * attached to all the asset types [supported by search
+   * APIs](https://cloud.google.com/asset-inventory/docs/supported-asset-types)
+   * Regular expressions are also supported. For example: *
+   * "compute.googleapis.com.*" snapshots IAM policies attached to asset type
+   * starts with "compute.googleapis.com". * ".*Instance" snapshots IAM policies
+   * attached to asset type ends with "Instance". * ".*Instance.*" snapshots IAM
+   * policies attached to asset type contains "Instance". See
    * [RE2](https://github.com/google/re2/wiki/Syntax) for all supported regular
    * expression syntax. If the regular expression does not match any supported
    * asset type, an INVALID_ARGUMENT error will be returned.
@@ -461,10 +475,10 @@ class V1 extends \Google\Service\Resource
    * assetType * project All the other fields such as repeated fields (e.g.,
    * `folders`) and non-primitive fields (e.g., `policy`) are not supported.
    * @opt_param int pageSize Optional. The page size for search result pagination.
-   * Page size is capped at 500 even if a larger value is given. If set to zero,
-   * server will pick an appropriate default. Returned results may be fewer than
-   * requested. When this happens, there could be more results as long as
-   * `next_page_token` is returned.
+   * Page size is capped at 500 even if a larger value is given. If set to zero or
+   * a negative value, server will pick an appropriate default. Returned results
+   * may be fewer than requested. When this happens, there could be more results
+   * as long as `next_page_token` is returned.
    * @opt_param string pageToken Optional. If present, retrieve the next batch of
    * results from the preceding call to this method. `page_token` must be the
    * value of `next_page_token` from the previous response. The values of all
@@ -527,30 +541,27 @@ class V1 extends \Google\Service\Resource
    * @param array $optParams Optional parameters.
    *
    * @opt_param string assetTypes Optional. A list of asset types that this
-   * request searches for. If empty, it will search all the [searchable asset
-   * types](https://cloud.google.com/asset-inventory/docs/supported-asset-
-   * types#searchable_asset_types). Regular expressions are also supported. For
-   * example: * "compute.googleapis.com.*" snapshots resources whose asset type
-   * starts with "compute.googleapis.com". * ".*Instance" snapshots resources
-   * whose asset type ends with "Instance". * ".*Instance.*" snapshots resources
-   * whose asset type contains "Instance". See
-   * [RE2](https://github.com/google/re2/wiki/Syntax) for all supported regular
-   * expression syntax. If the regular expression does not match any supported
-   * asset type, an INVALID_ARGUMENT error will be returned.
+   * request searches for. If empty, it will search all the asset types [supported
+   * by search APIs](https://cloud.google.com/asset-inventory/docs/supported-
+   * asset-types). Regular expressions are also supported. For example: *
+   * "compute.googleapis.com.*" snapshots resources whose asset type starts with
+   * "compute.googleapis.com". * ".*Instance" snapshots resources whose asset type
+   * ends with "Instance". * ".*Instance.*" snapshots resources whose asset type
+   * contains "Instance". See [RE2](https://github.com/google/re2/wiki/Syntax) for
+   * all supported regular expression syntax. If the regular expression does not
+   * match any supported asset type, an INVALID_ARGUMENT error will be returned.
    * @opt_param string orderBy Optional. A comma-separated list of fields
    * specifying the sorting order of the results. The default order is ascending.
    * Add " DESC" after the field name to indicate descending order. Redundant
-   * space characters are ignored. Example: "location DESC, name". Only singular
-   * primitive fields in the response are sortable: * name * assetType * project *
+   * space characters are ignored. Example: "location DESC, name". Only the
+   * following fields in the response are sortable: * name * assetType * project *
    * displayName * description * location * createTime * updateTime * state *
-   * parentFullResourceName * parentAssetType All the other fields such as
-   * repeated fields (e.g., `networkTags`, `kmsKeys`), map fields (e.g., `labels`)
-   * and struct fields (e.g., `additionalAttributes`) are not supported.
+   * parentFullResourceName * parentAssetType
    * @opt_param int pageSize Optional. The page size for search result pagination.
-   * Page size is capped at 500 even if a larger value is given. If set to zero,
-   * server will pick an appropriate default. Returned results may be fewer than
-   * requested. When this happens, there could be more results as long as
-   * `next_page_token` is returned.
+   * Page size is capped at 500 even if a larger value is given. If set to zero or
+   * a negative value, server will pick an appropriate default. Returned results
+   * may be fewer than requested. When this happens, there could be more results
+   * as long as `next_page_token` is returned.
    * @opt_param string pageToken Optional. If present, then retrieve the next
    * batch of results from the preceding call to this method. `page_token` must be
    * the value of `next_page_token` from the previous response. The values of all
@@ -560,54 +571,81 @@ class V1 extends \Google\Service\Resource
    * resources#how_to_construct_a_query) for more information. If not specified or
    * empty, it will search all the resources within the specified `scope`.
    * Examples: * `name:Important` to find Google Cloud resources whose name
-   * contains "Important" as a word. * `name=Important` to find the Google Cloud
-   * resource whose name is exactly "Important". * `displayName:Impor*` to find
-   * Google Cloud resources whose display name contains "Impor" as a prefix of any
+   * contains `Important` as a word. * `name=Important` to find the Google Cloud
+   * resource whose name is exactly `Important`. * `displayName:Impor*` to find
+   * Google Cloud resources whose display name contains `Impor` as a prefix of any
    * word in the field. * `location:us-west*` to find Google Cloud resources whose
-   * location contains both "us" and "west" as prefixes. * `labels:prod` to find
-   * Google Cloud resources whose labels contain "prod" as a key or value. *
-   * `labels.env:prod` to find Google Cloud resources that have a label "env" and
-   * its value is "prod". * `labels.env:*` to find Google Cloud resources that
-   * have a label "env". * `kmsKey:key` to find Google Cloud resources encrypted
-   * with a customer-managed encryption key whose name contains "key" as a word.
-   * This field is deprecated. Please use the `kmsKeys` field to retrieve Cloud
-   * KMS key information. * `kmsKeys:key` to find Google Cloud resources encrypted
-   * with customer-managed encryption keys whose name contains the word "key". *
+   * location contains both `us` and `west` as prefixes. * `labels:prod` to find
+   * Google Cloud resources whose labels contain `prod` as a key or value. *
+   * `labels.env:prod` to find Google Cloud resources that have a label `env` and
+   * its value is `prod`. * `labels.env:*` to find Google Cloud resources that
+   * have a label `env`. * `tagKeys:env` to find Google Cloud resources that have
+   * directly attached tags where the
+   * [`TagKey.namespacedName`](https://cloud.google.com/resource-
+   * manager/reference/rest/v3/tagKeys#resource:-tagkey) contains `env`. *
+   * `tagValues:prod*` to find Google Cloud resources that have directly attached
+   * tags where the [`TagValue.namespacedName`](https://cloud.google.com/resource-
+   * manager/reference/rest/v3/tagValues#resource:-tagvalue) contains a word
+   * prefixed by `prod`. * `tagValueIds=tagValues/123` to find Google Cloud
+   * resources that have directly attached tags where the
+   * [`TagValue.name`](https://cloud.google.com/resource-
+   * manager/reference/rest/v3/tagValues#resource:-tagvalue) is exactly
+   * `tagValues/123`. * `effectiveTagKeys:env` to find Google Cloud resources that
+   * have directly attached or inherited tags where the
+   * [`TagKey.namespacedName`](https://cloud.google.com/resource-
+   * manager/reference/rest/v3/tagKeys#resource:-tagkey) contains `env`. *
+   * `effectiveTagValues:prod*` to find Google Cloud resources that have directly
+   * attached or inherited tags where the
+   * [`TagValue.namespacedName`](https://cloud.google.com/resource-
+   * manager/reference/rest/v3/tagValues#resource:-tagvalue) contains a word
+   * prefixed by `prod`. * `effectiveTagValueIds=tagValues/123` to find Google
+   * Cloud resources that have directly attached or inherited tags where the
+   * [`TagValue.name`](https://cloud.google.com/resource-
+   * manager/reference/rest/v3/tagValues#resource:-tagvalue) is exactly
+   * `tagValues/123`. * `kmsKey:key` to find Google Cloud resources encrypted with
+   * a customer-managed encryption key whose name contains `key` as a word. This
+   * field is deprecated. Use the `kmsKeys` field to retrieve Cloud KMS key
+   * information. * `kmsKeys:key` to find Google Cloud resources encrypted with
+   * customer-managed encryption keys whose name contains the word `key`. *
    * `relationships:instance-group-1` to find Google Cloud resources that have
-   * relationships with "instance-group-1" in the related resource name. *
+   * relationships with `instance-group-1` in the related resource name. *
    * `relationships:INSTANCE_TO_INSTANCEGROUP` to find Compute Engine instances
-   * that have relationships of type "INSTANCE_TO_INSTANCEGROUP". *
+   * that have relationships of type `INSTANCE_TO_INSTANCEGROUP`. *
    * `relationships.INSTANCE_TO_INSTANCEGROUP:instance-group-1` to find Compute
-   * Engine instances that have relationships with "instance-group-1" in the
+   * Engine instances that have relationships with `instance-group-1` in the
    * Compute Engine instance group resource name, for relationship type
-   * "INSTANCE_TO_INSTANCEGROUP". * `state:ACTIVE` to find Google Cloud resources
-   * whose state contains "ACTIVE" as a word. * `NOT state:ACTIVE` to find Google
-   * Cloud resources whose state doesn't contain "ACTIVE" as a word. *
-   * `createTime<1609459200` to find Google Cloud resources that were created
-   * before "2021-01-01 00:00:00 UTC". 1609459200 is the epoch timestamp of
-   * "2021-01-01 00:00:00 UTC" in seconds. * `updateTime>1609459200` to find
-   * Google Cloud resources that were updated after "2021-01-01 00:00:00 UTC".
-   * 1609459200 is the epoch timestamp of "2021-01-01 00:00:00 UTC" in seconds. *
-   * `Important` to find Google Cloud resources that contain "Important" as a word
-   * in any of the searchable fields. * `Impor*` to find Google Cloud resources
-   * that contain "Impor" as a prefix of any word in any of the searchable fields.
-   * * `Important location:(us-west1 OR global)` to find Google Cloud resources
-   * that contain "Important" as a word in any of the searchable fields and are
-   * also located in the "us-west1" region or the "global" location.
-   * @opt_param string readMask Optional. A comma-separated list of fields
-   * specifying which fields to be returned in ResourceSearchResult. Only '*' or
-   * combination of top level fields can be specified. Field names of both
-   * snake_case and camelCase are supported. Examples: `"*"`, `"name,location"`,
-   * `"name,versionedResources"`. The read_mask paths must be valid field paths
-   * listed but not limited to (both snake_case and camelCase are supported): *
-   * name * assetType * project * displayName * description * location * tagKeys *
-   * tagValues * tagValueIds * labels * networkTags * kmsKey (This field is
-   * deprecated. Please use the `kmsKeys` field to retrieve Cloud KMS key
-   * information.) * kmsKeys * createTime * updateTime * state *
-   * additionalAttributes * versionedResources If read_mask is not specified, all
-   * fields except versionedResources will be returned. If only '*' is specified,
-   * all fields including versionedResources will be returned. Any invalid field
-   * path will trigger INVALID_ARGUMENT error.
+   * `INSTANCE_TO_INSTANCEGROUP`. * `sccSecurityMarks.key=value` to find Cloud
+   * resources that are attached with security marks whose key is `key` and value
+   * is `value`. * `sccSecurityMarks.key:*` to find Cloud resources that are
+   * attached with security marks whose key is `key`. * `state:ACTIVE` to find
+   * Google Cloud resources whose state contains `ACTIVE` as a word. * `NOT
+   * state:ACTIVE` to find Google Cloud resources whose state doesn't contain
+   * `ACTIVE` as a word. * `createTime<1609459200` to find Google Cloud resources
+   * that were created before `2021-01-01 00:00:00 UTC`. `1609459200` is the epoch
+   * timestamp of `2021-01-01 00:00:00 UTC` in seconds. * `updateTime>1609459200`
+   * to find Google Cloud resources that were updated after `2021-01-01 00:00:00
+   * UTC`. `1609459200` is the epoch timestamp of `2021-01-01 00:00:00 UTC` in
+   * seconds. * `Important` to find Google Cloud resources that contain
+   * `Important` as a word in any of the searchable fields. * `Impor*` to find
+   * Google Cloud resources that contain `Impor` as a prefix of any word in any of
+   * the searchable fields. * `Important location:(us-west1 OR global)` to find
+   * Google Cloud resources that contain `Important` as a word in any of the
+   * searchable fields and are also located in the `us-west1` region or the
+   * `global` location.
+   * @opt_param string readMask Optional. A comma-separated list of fields that
+   * you want returned in the results. The following fields are returned by
+   * default if not specified: * `name` * `assetType` * `project` * `folders` *
+   * `organization` * `displayName` * `description` * `location` * `labels` *
+   * `tags` * `effectiveTags` * `networkTags` * `kmsKeys` * `createTime` *
+   * `updateTime` * `state` * `additionalAttributes` * `parentFullResourceName` *
+   * `parentAssetType` Some fields of large size, such as `versionedResources`,
+   * `attachedResources`, `effectiveTags` etc., are not returned by default, but
+   * you can specify them in the `read_mask` parameter if you want to include
+   * them. If `"*"` is specified, all [available
+   * fields](https://cloud.google.com/asset-inventory/docs/reference/rest/v1/TopLe
+   * vel/searchAllResources#resourcesearchresult) are returned. Examples:
+   * `"name,location"`, `"name,versionedResources"`, `"*"`. Any invalid field path
+   * will trigger INVALID_ARGUMENT error.
    * @return SearchAllResourcesResponse
    */
   public function searchAllResources($scope, $optParams = [])

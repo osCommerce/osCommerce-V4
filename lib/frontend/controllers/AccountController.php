@@ -81,6 +81,19 @@ class AccountController extends Sceleton
 
         $this->checkIsGuest();
 
+        $page_name = tep_db_prepare_input(Yii::$app->request->get('page_name'));
+        if (!$page_name) {
+            $page_name = 'account';
+        }
+        $page_name = \common\classes\design::pageName($page_name);
+        Info::addBlockToPageName($page_name);
+
+        if (Yii::$app->user->isGuest && Info::isAdmin()) {
+            return $this->render('main.tpl', [
+                'page_name' => $page_name,
+            ]);
+        }
+
         if ($messageStack->size('account') > 0) {
             $account_links['message'] = '<div class="main">' . $messageStack->output('account') . '</div>';
         }
@@ -160,13 +173,6 @@ class AccountController extends Sceleton
             \common\helpers\Translation::init('account/quotation-history-info');
             \common\helpers\Translation::init('account/update');
             \common\helpers\Translation::init('account/wishlist');
-
-            $page_name = tep_db_prepare_input(Yii::$app->request->get('page_name'));
-            if (!$page_name) {
-                $page_name = 'account';
-            }
-            $page_name = \common\classes\design::pageName($page_name);
-            Info::addBlockToPageName($page_name);
 
             return $this->render('main.tpl', [
                 'page_name' => $page_name,
@@ -380,6 +386,11 @@ class AccountController extends Sceleton
                         }
                     }
                     unset($AddressBooks);
+                    
+                    if (defined('MULTI_SESSION_ENABLED') && MULTI_SESSION_ENABLED != 'true') {
+                        $wo_session_id = tep_session_id();
+                        \common\helpers\Session::deleteCustomerSessions($customer_id, $wo_session_id);
+                    }
                 }
                 unset($customer_id);
 
@@ -2022,7 +2033,7 @@ class AccountController extends Sceleton
         if ($customerId <= 0 && !Yii::$app->request->get('document')) {
             die;
         }
-        $file = Yii::$app->request->get('file');
+        $file = basename(Yii::$app->request->get('file'));
 
         if (Yii::$app->request->get('document')) {
             $path = DIR_FS_DOWNLOAD . 'documents' . DIRECTORY_SEPARATOR;
@@ -2470,7 +2481,7 @@ class AccountController extends Sceleton
 
     public function checkIsGuest($snapshotPage = null){
         global $navigation;
-        if (Yii::$app->user->isGuest) {
+        if (Yii::$app->user->isGuest && !Info::isAdmin()) {
             if (is_object($navigation) && method_exists($navigation, 'set_snapshot')){
                 if (!empty($snapshotPage)){
                     $navigation->set_snapshot(array('mode' => 'SSL', 'page' => $snapshotPage));

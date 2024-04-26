@@ -17,8 +17,9 @@
 
 namespace Google\Service\Contentwarehouse;
 
-class QualityFringeFringeQueryPriorPerDocData extends \Google\Model
+class QualityFringeFringeQueryPriorPerDocData extends \Google\Collection
 {
+  protected $collection_key = 'sensitiveEntitiesIndices';
   /**
    * @var string
    */
@@ -27,6 +28,10 @@ class QualityFringeFringeQueryPriorPerDocData extends \Google\Model
    * @var string
    */
   public $encodedChardXlqHoaxPrediction;
+  /**
+   * @var string
+   */
+  public $encodedChardXlqTranslatedPrediction;
   /**
    * @var string
    */
@@ -59,6 +64,10 @@ class QualityFringeFringeQueryPriorPerDocData extends \Google\Model
    * @var string
    */
   public $encodedProximityScore;
+  /**
+   * @var int[]
+   */
+  public $sensitiveEntitiesIndices;
 
   /**
    * @param string
@@ -87,6 +96,20 @@ class QualityFringeFringeQueryPriorPerDocData extends \Google\Model
   public function getEncodedChardXlqHoaxPrediction()
   {
     return $this->encodedChardXlqHoaxPrediction;
+  }
+  /**
+   * @param string
+   */
+  public function setEncodedChardXlqTranslatedPrediction($encodedChardXlqTranslatedPrediction)
+  {
+    $this->encodedChardXlqTranslatedPrediction = $encodedChardXlqTranslatedPrediction;
+  }
+  /**
+   * @return string
+   */
+  public function getEncodedChardXlqTranslatedPrediction()
+  {
+    return $this->encodedChardXlqTranslatedPrediction;
   }
   /**
    * @param string
@@ -199,6 +222,20 @@ class QualityFringeFringeQueryPriorPerDocData extends \Google\Model
   public function getEncodedProximityScore()
   {
     return $this->encodedProximityScore;
+  }
+  /**
+   * @param int[]
+   */
+  public function setSensitiveEntitiesIndices($sensitiveEntitiesIndices)
+  {
+    $this->sensitiveEntitiesIndices = $sensitiveEntitiesIndices;
+  }
+  /**
+   * @return int[]
+   */
+  public function getSensitiveEntitiesIndices()
+  {
+    return $this->sensitiveEntitiesIndices;
   }
 }
 

@@ -47,7 +47,8 @@ abstract class CPCBase implements CPCGetInterface, CPCCacheInterface, CPCInterfa
             ->innerJoinWith('categories c', false)
             ->innerJoin('categories c1', 'c.categories_left >= c1.categories_left AND c.categories_right <= c1.categories_right AND c.categories_status = 1')
             // products
-            ->innerJoinWith('products p')
+            //->innerJoinWith('products p', false)
+            ->innerJoin('products p USE INDEX(idx_id_status)', 'p.products_id = p2c.products_id') // sometimes uses idx_status. also may be used FORCE INDEX(idx_id_status)
             ->andWhere('p.products_status = 1')
             ->groupBy('c1.categories_id')
             ->asArray()

@@ -1500,6 +1500,22 @@ class Style
 
             if (isset($item['value']) && isset($mainStyles[$item['value']])) {
                 $item['value'] = $mainStyles[$item['value']];
+            } elseif (isset($item['value']) && preg_match('/^(\$[0-9a-zA-Z\-\_]+\-)[0-9]+$/', $item['value'], $match)) {
+                if (isset($mainStyles[$match[1] . '1'])) {
+                    $item['value'] = $mainStyles[$match[1] . '1'];
+                }
+            }
+            if ($item['attribute'] == 'background' && isset($item['value']) && str_contains($item['value'], '$')) {
+                preg_match_all('/(\$[0-9a-zA-Z\-\_]+)/', $item['value'], $match2);
+                foreach ($match2[0] as $colorVar) {
+                    if ($mainStyles[$colorVar] ?? false) {
+                        $item['value'] = str_replace($colorVar, $mainStyles[$colorVar], $item['value']);
+                    } elseif (preg_match_all('/(\$[0-9a-zA-Z\-\_]+\-)[0-9]+/', $item['value'], $match3)) {
+                        foreach ($match3[1] as $key => $colorVar3) {
+                            $item['value'] = str_replace($match3[0][$key], $mainStyles[$colorVar3 . '1'], $item['value']);
+                        }
+                    }
+                }
             }
 
             if ($visibility) {
@@ -3459,18 +3475,34 @@ class Style
     public static function mainStyles($themeName)
     {
         static $styles = [];
-        $styles[$themeName] = false;
-        if ($styles[$themeName]) {
+        if ($styles[$themeName]??null) {
             return $styles[$themeName];
         }
         $styles[$themeName] = [];
 
         $themesStylesMain = ThemesStylesMain::find()->where(['theme_name' => $themeName])->asArray()->all();
         foreach ($themesStylesMain as $style) {
-            $styles[$themeName]['$' . $style['name']] = $style['value'];
+            if (in_array($style['type'], ['color-var', 'font-var'])) {
+                $styles[$themeName]['$' . $style['name']] = self::getStyleValue($style['value'], $themesStylesMain);
+            } else {
+                $styles[$themeName]['$' . $style['name']] = $style['value'];
+            }
         }
 
         return $styles[$themeName];
+    }
+
+    public static function getStyleValue($name, $styles) {
+        foreach ($styles as $style) {
+            if ($style['name'] != $name) {
+                continue;
+            }
+            if (in_array($style['type'], ['color-var', 'font-var'])) {
+                return self::getStyleValue($style['value'], $styles);
+            } else {
+                return $style['value'];
+            }
+        }
     }
 
     private static function flushCacheTheme($themeName, $needDelete = true)
@@ -3528,6 +3560,89 @@ class Style
         if (self::$needResetStyleCache) {
             self::flushCacheAll();
             self::$needResetStyleCache = false;
+        }
+    }
+
+    public static function getCssElements($themeName, $element)
+    {
+        $selectors = [];
+        switch ($element) {
+            case 'buttons':
+                $selectors = [
+                    '.btn', '.btn-1', '.btn-2', '.btn-3', '.btn-del', '.btn-edit',
+                ];
+                break;
+            case 'headings':
+                $selectors = [
+                    'h1, .heading-1',
+                    '.heading-2, h2, .h-block h2', '.heading-3, h3, .h-block h3', '.heading-3, h3, .h-block h3',
+                    '.heading-4, h4, .h-block h4', '.heading-5, h5, .h-block h5', '.heading-6, h6, .h-block h6',
+                    '.heading-2 .edit, h2 .edit', '.heading-3 .edit, h3 .edit', '.heading-4 .edit, h4 .edit',
+                ];
+                break;
+            case 'price':
+                $selectors = [
+                    '.price', '.price .old', '.price .special', '.price .specials',
+                ];
+                break;
+            case 'form':
+                $selectors = [
+                    "input[type='text'], input[type='password'], input[type='number'], input[type='email'], input[type='search'], select", 'textarea',
+                ];
+        }
+
+        $themesStyles = ThemesStyles::find()->where(['selector' => $selectors, 'theme_name' => $themeName])
+            ->asArray()->all();
+
+        foreach ($themesStyles as $key => $style) {
+            if (strlen($style['visibility']) > 1) {
+                $arr = explode(',', $style['visibility']);
+                $width = ThemesSettings::find()->select('setting_value')->where(['id' => $arr[0]])->scalar();
+                $themesStyles[$key]['visibility'] = $width . (($arr[1]??false) ? ',' . $arr[1] : '');
+            }
+        }
+
+        return $themesStyles;
+    }
+
+    public static function setCssElements($themeName, $styles)
+    {
+        $selectors = [];
+        foreach ($styles as $style) {
+            $selectors[$style['selector']] = $style['selector'];
+        }
+        ThemesStyles::deleteAll(['theme_name' => $themeName, 'selector' => $selectors]);
+
+        foreach ($styles as $style) {
+            if (strlen($style['visibility']) > 1) {
+                $arr = explode(',', $style['visibility']);
+                $widthId = ThemesSettings::find()->select('id')->where([
+                    'theme_name' => $themeName,
+                    'setting_group' => 'extend',
+                    'setting_name' => 'media_query',
+                    'setting_value' => $arr[0]
+                ])->scalar();
+
+                if (!$widthId) {
+                    $themesSettings = new ThemesSettings();
+                    $themesSettings->theme_name = $themeName;
+                    $themesSettings->setting_group = 'extend';
+                    $themesSettings->setting_name = 'media_query';
+                    $themesSettings->setting_value = $arr[0];
+                }
+
+                $style['visibility'] = $widthId . (($arr[1] ?? false) ? ',' . $arr[1] : '');
+            }
+
+            $themesStyles = new ThemesStyles();
+            $themesStyles->theme_name = $themeName;
+            $themesStyles->selector = $style['selector'];
+            $themesStyles->attribute = $style['attribute'];
+            $themesStyles->value = $style['value'];
+            $themesStyles->visibility = $style['visibility'];
+            $themesStyles->media = $style['media'];
+            $themesStyles->accessibility = $style['accessibility'];
+            $themesStyles->save();
         }
     }
 

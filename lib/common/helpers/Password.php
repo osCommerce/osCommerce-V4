@@ -223,7 +223,7 @@ class Password {
     {
         $encrypted = false;
         $sc = new \yii\base\Security();
-        if ($aup = $sc->decryptByKey($auth_param,date('\s\me\c\rYkd\ey'))){
+        if ($aup = $sc->decryptByKey($auth_param, gmdate('\s\me\c\rYkd\ey'))){
             $aup = explode("\t",$aup,4);
             $encrypted = [
                 'customers_id' => $aup[0],
@@ -242,7 +242,7 @@ class Password {
             strval($customers_email_address)."\t".
             strval($auth_type)."\t".
             strval($auth_key),
-            date('\s\me\c\rYkd\ey')));
+            gmdate('\s\me\c\rYkd\ey')));
         return $aup;
     }
 /**

@@ -28,6 +28,10 @@ class AssistantContextAppProviderId extends \Google\Model
    */
   public $androidPackageName;
   /**
+   * @var string
+   */
+  public $castAppId;
+  /**
    * @var int
    */
   public $versionCode;
@@ -59,6 +63,20 @@ class AssistantContextAppProviderId extends \Google\Model
   public function getAndroidPackageName()
   {
     return $this->androidPackageName;
+  }
+  /**
+   * @param string
+   */
+  public function setCastAppId($castAppId)
+  {
+    $this->castAppId = $castAppId;
+  }
+  /**
+   * @return string
+   */
+  public function getCastAppId()
+  {
+    return $this->castAppId;
   }
   /**
    * @param int

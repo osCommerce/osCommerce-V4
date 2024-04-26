@@ -1101,9 +1101,9 @@ EOD;
                             'transaction_id' => $order->info['order_id'],
                             'currency' => $order->info['currency'],
                             'affiliation' => \common\classes\platform::name($order->info['platform_id']),
-                            'value' => $_total,
-                            'shipping' => $_shipping,
-                            'tax' => $_tax,
+                            'value' => (float)$_total,
+                            'shipping' => (float)$_shipping,
+                            'tax' => (float)$_tax,
                             'items' => $ga4list
                          ]]));
                 }

@@ -19,13 +19,65 @@ namespace Google\Service\ContainerAnalysis;
 
 class ContaineranalysisGoogleDevtoolsCloudbuildV1Source extends \Google\Model
 {
+  /**
+   * @var ContaineranalysisGoogleDevtoolsCloudbuildV1ConnectedRepository
+   */
+  public $connectedRepository;
+  protected $connectedRepositoryType = ContaineranalysisGoogleDevtoolsCloudbuildV1ConnectedRepository::class;
+  protected $connectedRepositoryDataType = '';
+  /**
+   * @var ContaineranalysisGoogleDevtoolsCloudbuildV1GitSource
+   */
+  public $gitSource;
+  protected $gitSourceType = ContaineranalysisGoogleDevtoolsCloudbuildV1GitSource::class;
+  protected $gitSourceDataType = '';
+  /**
+   * @var ContaineranalysisGoogleDevtoolsCloudbuildV1RepoSource
+   */
+  public $repoSource;
   protected $repoSourceType = ContaineranalysisGoogleDevtoolsCloudbuildV1RepoSource::class;
   protected $repoSourceDataType = '';
+  /**
+   * @var ContaineranalysisGoogleDevtoolsCloudbuildV1StorageSource
+   */
+  public $storageSource;
   protected $storageSourceType = ContaineranalysisGoogleDevtoolsCloudbuildV1StorageSource::class;
   protected $storageSourceDataType = '';
+  /**
+   * @var ContaineranalysisGoogleDevtoolsCloudbuildV1StorageSourceManifest
+   */
+  public $storageSourceManifest;
   protected $storageSourceManifestType = ContaineranalysisGoogleDevtoolsCloudbuildV1StorageSourceManifest::class;
   protected $storageSourceManifestDataType = '';
 
+  /**
+   * @param ContaineranalysisGoogleDevtoolsCloudbuildV1ConnectedRepository
+   */
+  public function setConnectedRepository(ContaineranalysisGoogleDevtoolsCloudbuildV1ConnectedRepository $connectedRepository)
+  {
+    $this->connectedRepository = $connectedRepository;
+  }
+  /**
+   * @return ContaineranalysisGoogleDevtoolsCloudbuildV1ConnectedRepository
+   */
+  public function getConnectedRepository()
+  {
+    return $this->connectedRepository;
+  }
+  /**
+   * @param ContaineranalysisGoogleDevtoolsCloudbuildV1GitSource
+   */
+  public function setGitSource(ContaineranalysisGoogleDevtoolsCloudbuildV1GitSource $gitSource)
+  {
+    $this->gitSource = $gitSource;
+  }
+  /**
+   * @return ContaineranalysisGoogleDevtoolsCloudbuildV1GitSource
+   */
+  public function getGitSource()
+  {
+    return $this->gitSource;
+  }
   /**
    * @param ContaineranalysisGoogleDevtoolsCloudbuildV1RepoSource
    */

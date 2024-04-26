@@ -17,12 +17,17 @@
 
 namespace Google\Service\Compute;
 
-class SecurityPolicyRuleRateLimitOptions extends \Google\Model
+class SecurityPolicyRuleRateLimitOptions extends \Google\Collection
 {
+  protected $collection_key = 'enforceOnKeyConfigs';
   /**
    * @var int
    */
   public $banDurationSec;
+  /**
+   * @var SecurityPolicyRuleRateLimitOptionsThreshold
+   */
+  public $banThreshold;
   protected $banThresholdType = SecurityPolicyRuleRateLimitOptionsThreshold::class;
   protected $banThresholdDataType = '';
   /**
@@ -34,6 +39,12 @@ class SecurityPolicyRuleRateLimitOptions extends \Google\Model
    */
   public $enforceOnKey;
   /**
+   * @var SecurityPolicyRuleRateLimitOptionsEnforceOnKeyConfig[]
+   */
+  public $enforceOnKeyConfigs;
+  protected $enforceOnKeyConfigsType = SecurityPolicyRuleRateLimitOptionsEnforceOnKeyConfig::class;
+  protected $enforceOnKeyConfigsDataType = 'array';
+  /**
    * @var string
    */
   public $enforceOnKeyName;
@@ -41,8 +52,16 @@ class SecurityPolicyRuleRateLimitOptions extends \Google\Model
    * @var string
    */
   public $exceedAction;
+  /**
+   * @var SecurityPolicyRuleRedirectOptions
+   */
+  public $exceedRedirectOptions;
   protected $exceedRedirectOptionsType = SecurityPolicyRuleRedirectOptions::class;
   protected $exceedRedirectOptionsDataType = '';
+  /**
+   * @var SecurityPolicyRuleRateLimitOptionsThreshold
+   */
+  public $rateLimitThreshold;
   protected $rateLimitThresholdType = SecurityPolicyRuleRateLimitOptionsThreshold::class;
   protected $rateLimitThresholdDataType = '';
 
@@ -101,6 +120,20 @@ class SecurityPolicyRuleRateLimitOptions extends \Google\Model
   public function getEnforceOnKey()
   {
     return $this->enforceOnKey;
+  }
+  /**
+   * @param SecurityPolicyRuleRateLimitOptionsEnforceOnKeyConfig[]
+   */
+  public function setEnforceOnKeyConfigs($enforceOnKeyConfigs)
+  {
+    $this->enforceOnKeyConfigs = $enforceOnKeyConfigs;
+  }
+  /**
+   * @return SecurityPolicyRuleRateLimitOptionsEnforceOnKeyConfig[]
+   */
+  public function getEnforceOnKeyConfigs()
+  {
+    return $this->enforceOnKeyConfigs;
   }
   /**
    * @param string

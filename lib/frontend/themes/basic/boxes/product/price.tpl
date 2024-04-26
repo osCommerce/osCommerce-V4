@@ -41,7 +41,7 @@
             {if $current}<span id="product-price-current" class="current">{$current}</span>{/if}
             {if $current_ex}<span id="product-price-current-ex" class="current current-ex">{$current_ex}</span>{/if}
             {if $special_promote_type>0 && $special_promo_str}
-              <span class="special-promote">{$special_promo_str}</span>
+              <span class="special-promote">{if defined('SALE_TEXT_SAVE_PRODUCT_INFO')}{sprintf(SALE_TEXT_SAVE_PRODUCT_INFO, $special_promo_str)}{else}{$special_promo_str}{/if}</span>
             {/if}
             {if $special}
               {if $special_total_qty>0 && !$special_max_per_order }
@@ -70,7 +70,7 @@
             {if $current != '' && ($tax_rate>0 || $smarty.const.DISPLAY_BOTH_PRICES !='True')}<span id="product-price-current" class="current">{$current}{if $smarty.const.DISPLAY_BOTH_PRICES =='True'} <small class="inc-vat-title">{$smarty.const.TEXT_INC_VAT}</small>{/if}</span>{/if}
             {if $current_ex != ''}<span id="product-price-current-ex" class="current current-ex">{$current_ex} <small class="ex-vat-title">{$smarty.const.TEXT_EXC_VAT}</small></span>{/if}
             {if $special_promote_type>0 && $special_promo_str != ''}
-              <span class="special-promote">{$special_promo_str}</span>
+              <span class="special-promote">{if defined('SALE_TEXT_SAVE_PRODUCT_INFO')}{sprintf(SALE_TEXT_SAVE_PRODUCT_INFO, $special_promo_str)}{else}{$special_promo_str}{/if}</span>
             {/if}
             {if $special}
               {if $special_total_qty>0 && !$special_max_per_order }

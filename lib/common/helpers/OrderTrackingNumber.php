@@ -16,6 +16,9 @@ namespace common\helpers;
 use common\models\TrackingCarriers;
 use yii\helpers\ArrayHelper;
 
+/**
+ * @deprecated Use TrackingCarriers extensions instead this
+ */
 class OrderTrackingNumber
 {
 

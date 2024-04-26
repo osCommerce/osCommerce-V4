@@ -8,6 +8,9 @@ $finder = PhpCsFixer\Finder::create()
         '.github/',
         'vendor-bin/',
     ])
+    ->notPath([
+        'test/Fixture/Enum/BackedEnum.php',
+    ])
     ->ignoreDotFiles(false)
     ->in(__DIR__);
 
@@ -51,8 +54,9 @@ return $config
                 'yield',
             ],
         ],
-        'braces' => [
-            'allow_single_line_anonymous_class_with_empty_body' => true,
+        'blank_lines_before_namespace' => [
+            'max_line_breaks' => 2,
+            'min_line_breaks' => 2,
         ],
         'cast_spaces' => true,
         'class_attributes_separation' => [
@@ -65,8 +69,11 @@ return $config
         'concat_space' => [
             'spacing' => 'one',
         ],
+        'control_structure_braces' => true,
+        'control_structure_continuation_position' => true,
+        'curly_braces_position' => true,
         'declare_equal_normalize' => true,
-        'function_typehint_space' => true,
+        'declare_parentheses' => true,
         'general_phpdoc_annotation_remove' => [
             'annotations' => [
                 'author',
@@ -99,6 +106,7 @@ return $config
         'no_extra_blank_lines' => true,
         'no_leading_import_slash' => true,
         'no_leading_namespace_whitespace' => true,
+        'no_multiple_statements_per_line' => true,
         'no_spaces_around_offset' => true,
         'no_superfluous_elseif' => true,
         'no_superfluous_phpdoc_tags' => true,
@@ -179,13 +187,29 @@ return $config
         'random_api_migration' => true,
         'return_assignment' => true,
         'return_type_declaration' => true,
+        'self_static_accessor' => true,
         'semicolon_after_instruction' => true,
         'short_scalar_cast' => true,
-        'single_blank_line_before_namespace' => true,
         'single_line_comment_style' => true,
         'single_quote' => true,
+        'single_space_around_construct' => [
+            'constructs_contain_a_single_space' => [],
+            'constructs_followed_by_a_single_space' => [
+                'elseif',
+                'for',
+                'foreach',
+                'if',
+                'match',
+                'while',
+                'use_lambda',
+            ],
+            'constructs_preceded_by_a_single_space' => [
+                'use_lambda',
+            ],
+        ],
         'single_trait_insert_per_statement' => true,
         'standardize_not_equals' => true,
+        'statement_indentation' => true,
         'static_lambda' => true,
         'strict_param' => true,
         'switch_case_space' => true,
@@ -198,6 +222,11 @@ return $config
             ],
         ],
         'trim_array_spaces' => true,
+        'type_declaration_spaces' => [
+            'elements' => [
+                'function',
+            ],
+        ],
         'unary_operator_spaces' => true,
         'visibility_required' => [
             'elements' => [

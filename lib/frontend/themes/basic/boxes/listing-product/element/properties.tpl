@@ -1,5 +1,5 @@
 {if is_array($product.properties) && count($product.properties) > 0}
-    <div class="properties">
+    <div class="properties-box">
         {foreach $product.properties as $key => $property}
             {if {$property['values']|@count} > 0}
                 {if $property['properties_type'] == 'flag' && $property['properties_image']}

@@ -15,6 +15,10 @@
     <div style="padding-bottom: 10px">{$smarty.const.TEXT_NO_HTML}</div>
   </div>
 
+{if $ext = \common\helpers\Acl::checkExtensionAllowed('UploadProductReviewImages', 'allowed')}
+    {$ext::showUploadProductReviewImages($products_id)}
+{/if}
+
   <div class="buttons">
     <div class="left-buttons"><span class="btn btn-cancel">{$smarty.const.CANCEL}</span></div>
     <div class="right-buttons"><span class="btn btn-submit">{$smarty.const.SEND_REVIEW}</span></div>
@@ -39,6 +43,9 @@
                 action: 'process',
                 rating: $('.rating', box).val(),
                 review: $('.review-text', box).val(),
+{if \common\helpers\Acl::checkExtensionAllowed('UploadProductReviewImages', 'allowed')}
+                review_images: $('input[name="review_images[]"]', box).serialize(),
+{/if}
                 _csrf: '{Yii::$app->request->getCsrfToken()}',
                 products_id: '{$products_id}'
             }, function(d){

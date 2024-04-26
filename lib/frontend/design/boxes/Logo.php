@@ -119,6 +119,7 @@ class Logo extends Widget
                 return '<a href="' . $url . '"><img src="' . $image . '" style="border: none;"></a>';
             }
 
+            $imageUrl = \common\classes\Images::getWebp($imageUrl);
             return IncludeTpl::widget([
                 'file' => 'boxes/logo.tpl',
                 'params' => [

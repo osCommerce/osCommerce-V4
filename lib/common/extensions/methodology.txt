@@ -120,7 +120,7 @@ the first hook parameter must be named depending on its location:
 - for backend controllers: controller/action/[/place-in-action]
 - for common files: file-name/function[/place-in-function]
 - for widgets: 'box/widget-class'
-- for extensions: 'ext/extension-class/unique-name'
+- for extensions: 'ext/extension-class/unique-name' - such names are not checked, so you may not add them to this file
 
 In addition a list of available values page_name and page_area:
 <HOOKS>
@@ -131,8 +131,10 @@ In addition a list of available values page_name and page_area:
 'adminmembers/adminedit', 'form-top'
 'adminmembers/adminedit', 'form-middle'
 'adminmembers/adminedit', 'form-bottom'
+'customers/customerlist', ''
 'customers/customeredit', ''
 'customers/customeredit/before-render', ''
+'customers/customeredit', 'btn-bar-right'
 'customers/customeredit', 'personal-block'
 'customers/customeredit', 'left-column'
 'customers/customeredit', 'right-column'
@@ -141,6 +143,7 @@ In addition a list of available values page_name and page_area:
 'customergroups/groupedit/before-save', ''
 'customergroups/groupedit/before-render', ''
 'customergroups/groupedit', 'right-column'
+'categories/index', 'right-buttons-bottom'
 'categories/brandedit', ''
 'categories/brandedit', 'tab-navs'
 'categories/brandedit', 'tab-content'
@@ -156,6 +159,7 @@ In addition a list of available values page_name and page_area:
 'categories/productedit', 'details-left-column-subproduct'
 'categories/productedit', 'details-right-column'
 'categories/productedit', 'details-right-column-subproduct'
+'categories/productedit', 'details-before-actions'
 'categories/productedit', 'details-actions'
 'categories/productedit', 'details-actions-subproduct'
 'categories/productedit', 'details-after-actions'
@@ -175,12 +179,14 @@ In addition a list of available values page_name and page_area:
 'categories/categoryedit', 'desc-tab'
 'categories/categoryedit', 'seo-tab'
 'categories/categoryedit', 'seo-tab-without-lang' // after languages tabs
+'categories/categoryedit', 'breadcrumb-buttons'
 'categories/supplier-price', ''
 'categories/auto-supplier-price', ''
 'filters/orders', 'filter-1-column'
 'orders/orderlist', '',
 'orders/process-order', ''
 'orders/process-order/before-next-prev-query', ''
+'orders/process-order/check-query', ''
 'orders/process-order', 'totals-block'
 'orders/process-order', 'btn-bar-top'
 'orders/process-order', 'btn-bar-bottom'
@@ -204,13 +210,18 @@ In addition a list of available values page_name and page_area:
 'coupon_admin/voucher-submit', ''
 'coupon_admin/voucheredit', 'tab-content/main-detail/bottom'
 'reviews/after-status-change', ''
+'editor/checkout/after', ''
+'sceleton/before-action', ''
+
+### BACKEND OTHERS ###
+'components/breadcrumbs/before-render', ''
 
 ### FRONTEND CONTROLLERS ###
+'frontend/index/index', ''
 'frontend/account/edit', ''
 'frontend/account/create-success', ''
 'frontend/account/login-success', ''
 'frontend/account/password-forgotten', ''
-'frontend/index/index', ''
 'frontend/checkout/index', ''
 'frontend/checkout/index/before-render', ''
 'frontend/checkout/process/cart-loaded', ''
@@ -240,8 +251,11 @@ In addition a list of available values page_name and page_area:
 'box/account/order-products', 'order-product' // was account/order_history_info, order-product
 'box/banner', ''
 'box/block/hide-widget', ''
+'box/invoice/products', 'product-name'
+'box/heading', ''
 
 ### EXTENSIONS ###
+// names like 'ext/*' are not checked
 'departments/after-create', ''
 'departments/after-update', ''
 'departments/after-delete', ''
@@ -261,6 +275,7 @@ In addition a list of available values page_name and page_area:
 'customers/login-customer/after-validate', ''   // common/components/Customer.php
 'customers/logoff', ''                          // common/components/Customer.php
 'customers/after-auth', ''                      // common/components/Customer.php
+'customers/update-address/before', '' // return true if extension did work and no need standard way
 'customers/after-trunk', ''     // helpers/customer.php
 'customers/after-delete', ''    // helpers/customer.php
 'customers/order-anonymize', '' // helpers/customer.php
@@ -295,10 +310,19 @@ In addition a list of available values page_name and page_area:
 'order/after-save', ''
 'order/notify_customer', ''
 'order/cart/after', ''
+'order/query/each-product', ''
 'order/query/after', ''
+'order/before-save-product', ''
+'order/after-save-product', ''
+'order/prepare-products/before-loop', ''
+'order/prepare-products/after-loop', ''
 'order-manager/check-free-shipping', ''
 'order-manager/reset-delivery-address', ''
 'order-manager/total-process', ''
+'order-manager/change-customer-address-selection/after', ''
+'order-manager/collect-data', ''
+'order-manager/clear-after-process', ''
+'order-manager/validate-additional-fields', ''
 
 'init-factory/init', ''
 'cart-factory/add-product', ''  // return true if extension did work and no need standard way
@@ -312,8 +336,12 @@ In addition a list of available values page_name and page_area:
 'shopping-cart/cleanup/before', ''
 'shopping-cart/cleanup', ''
 'shopping-cart/cleanup/after', ''
+'shopping-cart/cleanup/delete-product', ''
 'shopping-cart/count_contents/after', ''
 'shopping-cart/get-products', ''
+'shopping-cart/get-products/product', ''
+'shopping-cart/save-contents', ''
+'shopping-cart/update-quantity', ''
 
 'module-payment/force-pre-authorize-method', '' // return true if extension wants to force pre-authorize transaction method
 'module-payment/process-notification', ''
@@ -322,6 +350,7 @@ In addition a list of available values page_name and page_area:
 'shipping/after-quote', ''
 'ot-shipping/process', ''
 'ot-coupon/get-coupon-by-id', ''
+'ot-coupon/process/calculate_credit/after', ''
 
 'comment-template/visibility-variants', ''
 'email/template-keys', ''
@@ -339,4 +368,15 @@ In addition a list of available values page_name and page_area:
 'console-tools/logs-cleanup', ''
 
 'catalog/products-list-info', ''
+'billing/billing-points', ''
+
+'opc/remove-temp-customer', ''
+
+///brands restrictions
+'products-query/init', ''
+'product/check-product', ''
+'frontend/brands', ''
+'boxes/menu', ''
+'menu-helper/get-brands-list', ''
+
 </HOOKS>

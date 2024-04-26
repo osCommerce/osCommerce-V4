@@ -41,9 +41,9 @@ class ProjectsMuteConfigs extends \Google\Service\Resource
    * @param array $optParams Optional parameters.
    *
    * @opt_param string muteConfigId Required. Unique identifier provided by the
-   * client within the parent scope. It must consist of lower case letters,
-   * numbers, and hyphen, with the first character a letter, the last a letter or
-   * a number, and a 63 character maximum.
+   * client within the parent scope. It must consist of only lowercase letters,
+   * numbers, and hyphens, must start with a letter, must end with either a letter
+   * or a number, and must be 63 characters or less.
    * @return GoogleCloudSecuritycenterV1MuteConfig
    */
   public function create($parent, GoogleCloudSecuritycenterV1MuteConfig $postBody, $optParams = [])
@@ -57,8 +57,11 @@ class ProjectsMuteConfigs extends \Google\Service\Resource
    *
    * @param string $name Required. Name of the mute config to delete. Its format
    * is organizations/{organization}/muteConfigs/{config_id},
-   * folders/{folder}/muteConfigs/{config_id}, or
-   * projects/{project}/muteConfigs/{config_id}
+   * folders/{folder}/muteConfigs/{config_id},
+   * projects/{project}/muteConfigs/{config_id},
+   * organizations/{organization}/locations/global/muteConfigs/{config_id},
+   * folders/{folder}/locations/global/muteConfigs/{config_id}, or
+   * projects/{project}/locations/global/muteConfigs/{config_id}.
    * @param array $optParams Optional parameters.
    * @return SecuritycenterEmpty
    */
@@ -73,8 +76,11 @@ class ProjectsMuteConfigs extends \Google\Service\Resource
    *
    * @param string $name Required. Name of the mute config to retrieve. Its format
    * is organizations/{organization}/muteConfigs/{config_id},
-   * folders/{folder}/muteConfigs/{config_id}, or
-   * projects/{project}/muteConfigs/{config_id}
+   * folders/{folder}/muteConfigs/{config_id},
+   * projects/{project}/muteConfigs/{config_id},
+   * organizations/{organization}/locations/global/muteConfigs/{config_id},
+   * folders/{folder}/locations/global/muteConfigs/{config_id}, or
+   * projects/{project}/locations/global/muteConfigs/{config_id}.
    * @param array $optParams Optional parameters.
    * @return GoogleCloudSecuritycenterV1MuteConfig
    */
@@ -115,6 +121,9 @@ class ProjectsMuteConfigs extends \Google\Service\Resource
    * creation. Format "organizations/{organization}/muteConfigs/{mute_config}"
    * "folders/{folder}/muteConfigs/{mute_config}"
    * "projects/{project}/muteConfigs/{mute_config}"
+   * "organizations/{organization}/locations/global/muteConfigs/{mute_config}"
+   * "folders/{folder}/locations/global/muteConfigs/{mute_config}"
+   * "projects/{project}/locations/global/muteConfigs/{mute_config}"
    * @param GoogleCloudSecuritycenterV1MuteConfig $postBody
    * @param array $optParams Optional parameters.
    *

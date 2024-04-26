@@ -23,10 +23,28 @@ class GoogleCloudDocumentaiV1TrainProcessorVersionRequest extends \Google\Model
    * @var string
    */
   public $baseProcessorVersion;
+  /**
+   * @var GoogleCloudDocumentaiV1TrainProcessorVersionRequestCustomDocumentExtractionOptions
+   */
+  public $customDocumentExtractionOptions;
+  protected $customDocumentExtractionOptionsType = GoogleCloudDocumentaiV1TrainProcessorVersionRequestCustomDocumentExtractionOptions::class;
+  protected $customDocumentExtractionOptionsDataType = '';
+  /**
+   * @var GoogleCloudDocumentaiV1DocumentSchema
+   */
+  public $documentSchema;
   protected $documentSchemaType = GoogleCloudDocumentaiV1DocumentSchema::class;
   protected $documentSchemaDataType = '';
+  /**
+   * @var GoogleCloudDocumentaiV1TrainProcessorVersionRequestInputData
+   */
+  public $inputData;
   protected $inputDataType = GoogleCloudDocumentaiV1TrainProcessorVersionRequestInputData::class;
   protected $inputDataDataType = '';
+  /**
+   * @var GoogleCloudDocumentaiV1ProcessorVersion
+   */
+  public $processorVersion;
   protected $processorVersionType = GoogleCloudDocumentaiV1ProcessorVersion::class;
   protected $processorVersionDataType = '';
 
@@ -43,6 +61,20 @@ class GoogleCloudDocumentaiV1TrainProcessorVersionRequest extends \Google\Model
   public function getBaseProcessorVersion()
   {
     return $this->baseProcessorVersion;
+  }
+  /**
+   * @param GoogleCloudDocumentaiV1TrainProcessorVersionRequestCustomDocumentExtractionOptions
+   */
+  public function setCustomDocumentExtractionOptions(GoogleCloudDocumentaiV1TrainProcessorVersionRequestCustomDocumentExtractionOptions $customDocumentExtractionOptions)
+  {
+    $this->customDocumentExtractionOptions = $customDocumentExtractionOptions;
+  }
+  /**
+   * @return GoogleCloudDocumentaiV1TrainProcessorVersionRequestCustomDocumentExtractionOptions
+   */
+  public function getCustomDocumentExtractionOptions()
+  {
+    return $this->customDocumentExtractionOptions;
   }
   /**
    * @param GoogleCloudDocumentaiV1DocumentSchema

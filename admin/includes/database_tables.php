@@ -65,7 +65,6 @@
   define('TABLE_ZONES_TO_GEO_ZONES', 'zones_to_geo_zones');
   define('TABLE_TAX_ZONES', 'tax_zones');
   define('TABLE_ZONES_TO_TAX_ZONES', 'zones_to_tax_zones');
-  define('TABLE_WHOS_ONLINE', 'whos_online');
   define('TABLE_ZONES', 'zones');
   define('TABLE_PAYPALIPN_TXN', 'paypalipn_txn'); // PAYPALIPN
 

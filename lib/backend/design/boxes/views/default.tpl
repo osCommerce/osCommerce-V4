@@ -40,6 +40,11 @@
                   {assign var="tabs" value = $settings['tabs']['class']::$method($settings)}
                   {$counter = 0}
                   {foreach $tabs as $t}
+                      {if $t.params}
+                          {foreach $t.params as $key => $value}
+                              {assign var=$key value = $value}
+                          {/foreach}
+                      {/if}
                     <div class="tab-pane{if $counter == 0} active{/if}" id="{$t['title']}">
                         {include $t['path']}
                     </div>

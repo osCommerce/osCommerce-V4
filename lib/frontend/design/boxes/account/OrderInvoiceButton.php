@@ -41,12 +41,23 @@ class OrderInvoiceButton extends Widget
         if ($ext = \common\helpers\Acl::checkExtensionAllowed('UpdateAndPay', 'allowed')) {
             $pay_link = $ext::payLink($order_id);
         }
+        
+        $showCreditNote = defined('CREDIT_NOTE_AVAILABLE') && CREDIT_NOTE_AVAILABLE == 'True';
+        if ($showCreditNote) {
+            $splitter = \common\services\OrderManager::loadManager()->getOrderSplitter();
+            $cn2 = $splitter->getInstancesFromSplinters($order_id, $splitter::STATUS_RETURNED);
+            $cn1 = $splitter->getInstancesFromSplinters($order_id, $splitter::STATUS_RETURNING);
+            $showCreditNote = !empty($cn1) || !empty($cn2);
+        }
+        
 
         return IncludeTpl::widget(['file' => 'boxes/account/order-invoice-button.tpl', 'params' => [
             'settings' => $this->settings,
             'id' => $this->id,
             'pay_link' => $pay_link,
             'print_order_link' => tep_href_link(FILENAME_ORDERS_PRINTABLE, \common\helpers\Output::get_all_get_params(array('orders_id')) . 'orders_id=' . $order_id),
+            'showCreditNote' => $showCreditNote,
+            'linkCreditNote' => Yii::$app->urlManager->createUrl(['orders/credit-note', 'orders_id' => $order_id]),
         ]]);
     }
 }

@@ -97,6 +97,17 @@ class order_total extends modules\ModuleCollection {
             foreach($processinModules as $module){
                 $module->setProcessingOrder($processing_order);
                 if ($this->manager->hasCart() && $this->manager->getCart()->existHiddenModule($module->code))  continue;//shoul work only for manual edited modules
+// {{
+                $groups_id = 0;
+                if ($groups_id == 0 && !\Yii::$app->user->isGuest) {
+                    $groups_id = \Yii::$app->user->getIdentity()->groups_id;
+                } elseif (empty($groups_id) && \Yii::$app->user->isGuest && defined('DEFAULT_USER_GROUP')) {
+                    $groups_id = (int) DEFAULT_USER_GROUP;
+                }
+                if (!$module->getGroupVisibily(\common\classes\platform::currentId(), $groups_id)) {
+                    continue;
+                }
+// }}
                 if ($module->getVisibily($module->manager->getPlatformId(), $module->manager->getModulesVisibility())){
                     $replacing_value = $this->getCustomValue($module);
                     $module->process($replacing_value, (is_array($replacing_value)? true: false));

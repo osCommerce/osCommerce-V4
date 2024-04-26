@@ -88,10 +88,15 @@ class Banner extends Widget
         if ($ext = \common\helpers\Acl::checkExtensionAllowed('AdditionalPlatforms', 'allowed')){
             if ($ext::checkSattelite()){
                 $s_platform_id = $ext::getSatteliteId();
-                $sql = tep_db_query("select * from " . TABLE_BANNERS_TO_PLATFORM .
-                        " nb2p, " . Banners::tableName() . " nb, " . TABLE_BANNERS_LANGUAGES .
-                        " bl where bl.banners_id = nb.banners_id AND bl.language_id='" . $languages_id . "' AND nb2p.banners_id=nb.banners_id "
-                        . "AND nb2p.platform_id='" . $s_platform_id . "'  and nb.group_id = '" . $groupId . "' "
+                $fromPlatform = '';
+                $andPlatform = '';
+                if (!Info::isAdmin()) {
+                    $fromPlatform = " " . TABLE_BANNERS_TO_PLATFORM . " nb2p, ";
+                    $andPlatform = " and nb2p.banners_id=nb.banners_id and nb2p.platform_id='" . $s_platform_id . "' ";
+                }
+                $sql = tep_db_query("select * from " . $fromPlatform . Banners::tableName() . " nb, " . TABLE_BANNERS_LANGUAGES .
+                        " bl where bl.banners_id = nb.banners_id AND bl.language_id='" . $languages_id . "' "
+                        . $andPlatform . " and nb.group_id = '" . $groupId . "' "
                         . $andWhere
                         ." and (nb.expires_date is null or nb.expires_date >= now()) and (nb.date_scheduled is null or nb.date_scheduled <= now()) "
                         . "AND (bl.banners_html_text!='' OR bl.banners_image!='' OR bl.banners_url)
@@ -103,10 +108,16 @@ class Banner extends Widget
                 }
             }
         }
+        $fromPlatform = '';
+        $andPlatform = '';
+        if (!Info::isAdmin()) {
+            $fromPlatform = " " . TABLE_BANNERS_TO_PLATFORM . " nb2p, ";
+            $andPlatform = " and nb2p.banners_id=nb.banners_id and nb2p.platform_id='" . $_platform_id . "' ";
+        }
         if ($use_phys_platform){
-            $sql = tep_db_query("select * from " . TABLE_BANNERS_TO_PLATFORM . " nb2p, " . Banners::tableName() . " nb, " . TABLE_BANNERS_LANGUAGES .
-                    " bl where bl.banners_id = nb.banners_id AND bl.language_id='" . $languages_id . "' AND nb2p.banners_id=nb.banners_id AND"
-                    . " nb2p.platform_id='" . $_platform_id . "'  and nb.group_id = '" . $groupId . "' "
+            $sql = tep_db_query("select * from " . $fromPlatform . Banners::tableName() . " nb, " . TABLE_BANNERS_LANGUAGES .
+                    " bl where bl.banners_id = nb.banners_id AND bl.language_id='" . $languages_id . "' "
+                    . $andPlatform . " and nb.group_id = '" . $groupId . "' "
                     . $andWhere
                     ." AND (nb.expires_date is null or nb.expires_date >= now()) and (nb.date_scheduled is null or nb.date_scheduled <= now()) and "
                     . "(bl.banners_html_text!='' OR bl.banners_image!='' OR bl.banners_url)
@@ -118,7 +129,7 @@ class Banner extends Widget
         }
         
         if (!@$this->settings[0]['banners_type']) {
-            $type_sql_query = tep_db_query("select nb.banner_type from " . TABLE_BANNERS_TO_PLATFORM . " nb2p, " . Banners::tableName() . " nb where nb.group_id = '" . $groupId . "' AND nb2p.banners_id=nb.banners_id AND nb2p.platform_id='" . $_platform_id . "' limit 1");
+            $type_sql_query = tep_db_query("select nb.banner_type from " . $fromPlatform . Banners::tableName() . " nb where nb.group_id = '" . $groupId . "' " . $andPlatform . " limit 1");
             if (tep_db_num_rows($type_sql_query) > 0) {
                 $type_sql = tep_db_fetch_array($type_sql_query);
                 $type_array = $type_sql['banner_type'];
@@ -154,7 +165,7 @@ class Banner extends Widget
                     $row['banners_id'],
                     $row['svg']
                 );
-            } else {
+            } elseif ($row['banners_image'] ?? false) {
                 $row['image'] = self::bannerGroupImages(
                     $bannerGroupSettings,
                     $row['banners_id'],
@@ -339,6 +350,9 @@ class Banner extends Widget
         }
 
         if ($mainType == 'image') {
+            $attributes['width'] = '100%';
+            $attributes['height'] = '100%';
+            $attributes['loading'] = 'lazy';
             $img = Html::img($mainImage, $attributes);
             return Html::tag('picture', $sources . $img, $pictureAttributes);
         } elseif ($mainType == 'video') {

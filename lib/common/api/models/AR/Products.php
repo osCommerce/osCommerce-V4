@@ -126,8 +126,10 @@ class Products extends EPMap
         $this->afterSaveHooks['Product::SpecialClean'] = 'removeInvalidSpecials';
 
         if (!($ext = \common\helpers\Acl::checkExtensionAllowed('UserGroupsRestrictions', 'allowed'))) {
-            unset($this->childCollections['assigned_customer_groups']);
-            unset($this->indexedCollections['assigned_customer_groups']);
+            if (array_key_exists('assigned_customer_groups', $this->childCollections))
+                unset($this->childCollections['assigned_customer_groups']);
+            if (array_key_exists('assigned_customer_groups', $this->indexedCollections))
+                unset($this->indexedCollections['assigned_customer_groups']);
         }
         parent::__construct($config);
     }
@@ -791,7 +793,7 @@ class Products extends EPMap
         }
         static::updateAll(['products_price_full'=>$this->products_price_full],['parent_products_id'=>$this->products_id, 'products_id_price'=>$this->products_id]);
 
-        if ( $insert && !is_array($this->childCollections['assigned_customer_groups']) ) {
+        if ( $insert && !is_array(($this->childCollections['assigned_customer_groups']??null)) ) {
             if ( $ext = \common\helpers\Acl::checkExtensionAllowed('UserGroupsRestrictions', 'allowed')) {
                 if ( $ext::select() ){
                     /** @var \backend\services\GroupsService $groupService */

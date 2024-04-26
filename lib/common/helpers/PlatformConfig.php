@@ -77,12 +77,12 @@ class PlatformConfig {
 
     public static function getVal($key, $default = null, $platform_id = 0)
     {
-        if (isset(self::$_cache[$platform_id . $key])) {
+        if (array_key_exists($platform_id . $key, self::$_cache)) {
             return self::$_cache[$platform_id . $key] ?? $default;
         } else {
-            $row = \common\models\PlatformsConfiguration::findOne(['platform_id' => $platform_id, 'configuration_key' => $key]);
-            self::$_cache[$platform_id . $key] = $row->configuration_value ?? null;
-            return $row->configuration_value ?? $default;
+            $configuration_value = \common\models\PlatformsConfiguration::find()->where(['platform_id' => $platform_id, 'configuration_key' => $key])->select('configuration_value')->scalar();
+            self::$_cache[$platform_id . $key] = $configuration_value ?? null;
+            return $configuration_value ?? $default;
         }
     }
 

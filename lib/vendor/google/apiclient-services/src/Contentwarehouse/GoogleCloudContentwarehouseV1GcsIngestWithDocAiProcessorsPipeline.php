@@ -20,6 +20,10 @@ namespace Google\Service\Contentwarehouse;
 class GoogleCloudContentwarehouseV1GcsIngestWithDocAiProcessorsPipeline extends \Google\Collection
 {
   protected $collection_key = 'extractProcessorInfos';
+  /**
+   * @var GoogleCloudContentwarehouseV1ProcessorInfo[]
+   */
+  public $extractProcessorInfos;
   protected $extractProcessorInfosType = GoogleCloudContentwarehouseV1ProcessorInfo::class;
   protected $extractProcessorInfosDataType = 'array';
   /**
@@ -27,9 +31,23 @@ class GoogleCloudContentwarehouseV1GcsIngestWithDocAiProcessorsPipeline extends 
    */
   public $inputPath;
   /**
+   * @var GoogleCloudContentwarehouseV1IngestPipelineConfig
+   */
+  public $pipelineConfig;
+  protected $pipelineConfigType = GoogleCloudContentwarehouseV1IngestPipelineConfig::class;
+  protected $pipelineConfigDataType = '';
+  /**
    * @var string
    */
   public $processorResultsFolderPath;
+  /**
+   * @var bool
+   */
+  public $skipIngestedDocuments;
+  /**
+   * @var GoogleCloudContentwarehouseV1ProcessorInfo
+   */
+  public $splitClassifyProcessorInfo;
   protected $splitClassifyProcessorInfoType = GoogleCloudContentwarehouseV1ProcessorInfo::class;
   protected $splitClassifyProcessorInfoDataType = '';
 
@@ -62,6 +80,20 @@ class GoogleCloudContentwarehouseV1GcsIngestWithDocAiProcessorsPipeline extends 
     return $this->inputPath;
   }
   /**
+   * @param GoogleCloudContentwarehouseV1IngestPipelineConfig
+   */
+  public function setPipelineConfig(GoogleCloudContentwarehouseV1IngestPipelineConfig $pipelineConfig)
+  {
+    $this->pipelineConfig = $pipelineConfig;
+  }
+  /**
+   * @return GoogleCloudContentwarehouseV1IngestPipelineConfig
+   */
+  public function getPipelineConfig()
+  {
+    return $this->pipelineConfig;
+  }
+  /**
    * @param string
    */
   public function setProcessorResultsFolderPath($processorResultsFolderPath)
@@ -74,6 +106,20 @@ class GoogleCloudContentwarehouseV1GcsIngestWithDocAiProcessorsPipeline extends 
   public function getProcessorResultsFolderPath()
   {
     return $this->processorResultsFolderPath;
+  }
+  /**
+   * @param bool
+   */
+  public function setSkipIngestedDocuments($skipIngestedDocuments)
+  {
+    $this->skipIngestedDocuments = $skipIngestedDocuments;
+  }
+  /**
+   * @return bool
+   */
+  public function getSkipIngestedDocuments()
+  {
+    return $this->skipIngestedDocuments;
   }
   /**
    * @param GoogleCloudContentwarehouseV1ProcessorInfo

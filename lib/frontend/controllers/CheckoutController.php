@@ -36,17 +36,17 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
         global $breadcrumb;
         global $session_started, $cart;
 
-        if (GROUPS_DISABLE_CHECKOUT) {
+        if (GROUPS_DISABLE_CHECKOUT && !Info::isAdmin()) {
             tep_redirect(tep_href_link(FILENAME_DEFAULT));
         }
 
         $messageStack = \Yii::$container->get('message_stack');
         $currencies = \Yii::$container->get('currencies');
 // redirect the customer to a friendly cookie-must-be-enabled page if cookies are disabled (or the session has not started)
-        if ($session_started == false) {
+        if ($session_started == false && !Info::isAdmin()) {
             tep_redirect(tep_href_link(FILENAME_COOKIE_USAGE));
         }
-        if ($cart->count_contents() < 1 || $cart->hasBlockedProducts()) {
+        if (($cart->count_contents() < 1 || $cart->hasBlockedProducts()) && !Info::isAdmin()) {
             tep_redirect(tep_href_link(FILENAME_SHOPPING_CART));
         }
 
@@ -105,10 +105,9 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
         }
 
         if (Yii::$app->request->isPost) {
+            
+            $this->manager->collectPostData();
 
-            if (tep_not_null($_POST['comments'])) {
-                $this->manager->set('comments', tep_db_prepare_input($_POST['comments']));
-            }
             if(!$this->manager->validateShipping(\Yii::$app->request->post())) {
                 $error = true;
             }
@@ -299,11 +298,11 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
 
         $this->manager->remove('guest_email_address');
 
-        if ($cart->count_contents() == 0) {
+        if ($cart->count_contents() == 0 && !Info::isAdmin()) {
             tep_redirect(tep_href_link(FILENAME_SHOPPING_CART));
         }
 
-        if (!Yii::$app->user->isGuest) {
+        if (!Yii::$app->user->isGuest && !Info::isAdmin()) {
             tep_redirect(tep_href_link(FILENAME_CHECKOUT_SHIPPING, '', 'SSL'));
         }
 
@@ -389,7 +388,7 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
         global $navigation, $cart;
         $customer_groups_id = (int) \Yii::$app->storage->get('customer_groups_id');
 
-        if (Yii::$app->user->isGuest) {
+        if (Yii::$app->user->isGuest && !Info::isAdmin()) {
             $navigation->set_snapshot(array('mode' => 'SSL', 'page' => FILENAME_CHECKOUT_PAYMENT));
             tep_redirect(tep_href_link(FILENAME_LOGIN, '', 'SSL'));
         }
@@ -398,43 +397,43 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
         if ($ext = \common\helpers\Acl::checkExtensionAllowed('BusinessToBusiness', 'allowed')) {
             $ext::checkDisableCheckout($customer_groups_id); // shit - incorrect extension
         }
-        if (\common\helpers\Customer::check_customer_groups($customer_groups_id, 'groups_disable_checkout')) {
+        if (\common\helpers\Customer::check_customer_groups($customer_groups_id, 'groups_disable_checkout') && !Info::isAdmin()) {
             tep_redirect(tep_href_link(FILENAME_CHECKOUT_SHIPPING, '', 'SSL')); //same as b2b, not part of extension
         }
 
         $this->manager->loadCart($cart);
 
-        if ($cart->order_id) {
+        if ($cart->order_id && !Info::isAdmin()) {
             $orderModel = \common\models\Orders::find()->where(['orders_id' => (int) $cart->order_id])->one();
             if ($orderModel) {
                 tep_redirect(tep_href_link('checkout/restart', 'order_id=' . $cart->order_id, 'SSL'));
             }
         }
 // if there is nothing in the customers cart, redirect them to the shopping cart page
-        if ($cart->count_contents() < 1 || $cart->hasBlockedProducts()) {
+        if (($cart->count_contents() < 1 || $cart->hasBlockedProducts()) && !Info::isAdmin()) {
             tep_redirect(tep_href_link(FILENAME_SHOPPING_CART));
         }
 
 // avoid hack attempts during the checkout procedure by checking the internal cartID
-        if ($cart->cartID !== $this->manager->get('cartID')) {
+        if ($cart->cartID !== $this->manager->get('cartID') && !Info::isAdmin()) {
             tep_redirect(tep_href_link(FILENAME_CHECKOUT_SHIPPING, 'cartChanged', 'SSL'));
         }
 
-        if ($this->manager->get('shipping_choice') && !$this->manager->has('sendto')) {
+        if ($this->manager->get('shipping_choice') && !$this->manager->has('sendto') && !Info::isAdmin()) {
             tep_redirect(tep_href_link(FILENAME_CHECKOUT_SHIPPING, 'shipping', 'SSL'));
         }
 
-        if (!$this->manager->has('billto')) {
+        if (!$this->manager->has('billto') && !Info::isAdmin()) {
             tep_redirect(tep_href_link(FILENAME_CHECKOUT_SHIPPING, 'billing', 'SSL'));
         }
 
 // if no shipping method has been selected, redirect the customer to the shipping method selection page
 
-        if ($this->manager->isShippingNeeded() && $this->manager->get('shipping_choice') && !$this->manager->has('shipping')) {
+        if ($this->manager->isShippingNeeded() && $this->manager->get('shipping_choice') && !$this->manager->has('shipping') && !Info::isAdmin()) {
             tep_redirect(tep_href_link(FILENAME_CHECKOUT_SHIPPING, 'error_message=' . urlencode(ERROR_NO_SHIPPING_METHOD), 'SSL'));
         }
 
-        if (defined('GERMAN_SITE') && GERMAN_SITE == 'True') {
+        if (defined('GERMAN_SITE') && GERMAN_SITE == 'True' && !Info::isAdmin()) {
             if (!$this->manager->has('conditions')) {
                 tep_redirect(tep_href_link(FILENAME_CHECKOUT_PAYMENT, 'error_message=' . urlencode(ERROR_CONDITIONS_NOT_ACCEPTED), 'SSL', true, false));
             }
@@ -445,14 +444,8 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
                 $_POST[str_replace('one_page_checkout_', '', $key)] = $value;
             }
         }
-
-        if (tep_not_null($_POST['comments'] ?? null)) {
-            $this->manager->set('comments', tep_db_prepare_input($_POST['comments']));
-        }
-
-        if (tep_not_null($_POST['pointto'] ?? null)) {
-            $this->manager->set('pointto', tep_db_prepare_input($_POST['pointto']));
-        }
+        
+        $this->manager->collectPostData();
 
         //global PO
         if (!empty($_POST['purchase_order'] ?? '')) {
@@ -468,7 +461,7 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
         $order = $this->manager->createOrderInstance('\common\classes\Order');
         $this->manager->checkoutOrderWithAddresses();
 
-        if ($this->manager->isShippingNeeded() && !$this->manager->checkShippingIsValid()) {
+        if ($this->manager->isShippingNeeded() && !$this->manager->checkShippingIsValid() && !Info::isAdmin()) {
             tep_redirect(tep_href_link(FILENAME_CHECKOUT_SHIPPING, 'error_message=' . urlencode(ERROR_NO_SHIPPING_METHOD), 'SSL'));
         }
 
@@ -489,7 +482,7 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
         $withoutPayment = count($paymentCollection->getEnabledModules()) == 0;
 
         if (!$withoutPayment) {
-            if (!$paymentCollection->isPaymentSelected() && !$this->manager->get('credit_covers')) {
+            if (!$paymentCollection->isPaymentSelected() && !$this->manager->get('credit_covers') && !Info::isAdmin()) {
                 $this->manager->remove('payment');
                 tep_redirect(tep_href_link(FILENAME_CHECKOUT_PAYMENT, 'error_message=' . urlencode(ERROR_NO_PAYMENT_MODULE_SELECTED), 'SSL'));
             }
@@ -500,7 +493,7 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
         }
 
 // Stock Check
-        if (!$order->stockAllowCheckout()) {
+        if (!$order->stockAllowCheckout() && !Info::isAdmin()) {
             // Out of Stock
             tep_redirect(tep_href_link(FILENAME_SHOPPING_CART));
         }
@@ -626,6 +619,9 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
         ];
 
         $noShipping = Yii::$app->request->get('no_shipping', 0);
+        if (Info::isAdmin() && !$noShipping && Yii::$app->request->get('page_name', 0) == 'checkout_no_shipping') {
+            $noShipping = true;
+        }
         if (!$render_data['is_shipable_order'] || (Info::isAdmin() && $noShipping)) {
             $render_data['noShipping'] = true;
             Info::addBlockToPageName('no_shipping');
@@ -654,7 +650,7 @@ class CheckoutController extends \frontend\classes\AbstractCheckoutController {
     public function actionSuccess() {
         global $breadcrumb, $platform_code, $cart;
 
-        if (!$this->manager->isCustomerAssigned() && !\frontend\design\Info::isAdmin()) {
+        if (!$this->manager->isCustomerAssigned() && !Info::isAdmin()) {
             tep_redirect(tep_href_link(FILENAME_SHOPPING_CART));
         }
         $this->layout = 'main.tpl';

@@ -146,7 +146,7 @@ class Orders extends ActiveRecord
     public static function findByVarCheck($orderOrId)
     {
         $res = self::findByVar($orderOrId);
-        \common\helpers\Assert::instanceOf($orderOrId, self::class);
+        \common\helpers\Assert::instanceOf($res, self::class);
         return $res;
     }
 

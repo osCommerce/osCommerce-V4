@@ -83,8 +83,11 @@ class ot_paymentfee extends ModuleTotal {
 
             if (tep_db_num_rows($check_query) > 0) {
                 $check = tep_db_fetch_array($check_query);
-                $of_amount += ($check['fixed_prefix'] * $check['fixed_value']);
-                $of_amount += ($check['percent_prefix'] * $order->info['total_exc_tax'] * ($check['percent_value'] / 100));
+                $orderTotal = ($order->info['total_inc_tax'] ? $order->info['total_inc_tax'] : $order->info['total']);
+                if ($orderTotal >= $check['minimum_order'] && (!($check['maximum_order'] > 0) || $orderTotal <= $check['maximum_order'])) {
+                    $of_amount += ($check['fixed_prefix'] * $check['fixed_value']);
+                    $of_amount += ($check['percent_prefix'] * $order->info['total_exc_tax'] * ($check['percent_value'] / 100));
+                }
             }
 
             $of_amount = round($of_amount, 2);
@@ -124,6 +127,12 @@ class ot_paymentfee extends ModuleTotal {
                 $this->title = sprintf(defined('MODULE_ORDER_TOTAL_PAYMENTFEE__FRONTEND_TITLE') && !empty(MODULE_ORDER_TOTAL_PAYMENTFEE__FRONTEND_TITLE)?MODULE_ORDER_TOTAL_PAYMENTFEE__FRONTEND_TITLE:$this->title,
                     $moduleTitle
                     );
+
+                if (defined('MODULE_ORDER_TOTAL_PAYMENTFEE_DISCOUNT_FRONTEND_TITLE') && !empty(MODULE_ORDER_TOTAL_PAYMENTFEE_DISCOUNT_FRONTEND_TITLE) && $of_amount < 0) {
+                    $this->title = sprintf(MODULE_ORDER_TOTAL_PAYMENTFEE_DISCOUNT_FRONTEND_TITLE, $moduleTitle);
+                } elseif (defined('MODULE_ORDER_TOTAL_PAYMENTFEE_FEE_FRONTEND_TITLE') && !empty(MODULE_ORDER_TOTAL_PAYMENTFEE_FEE_FRONTEND_TITLE) && $of_amount > 0) {
+                    $this->title = sprintf(MODULE_ORDER_TOTAL_PAYMENTFEE_FEE_FRONTEND_TITLE, $moduleTitle);
+                }
 
                 $this->output[] = array('title' => $this->title . ':',
                     'text' => $currencies->format(\common\helpers\Tax::add_tax($of_amount, $tax), true, $order->info['currency'], $order->info['currency_value']),
@@ -207,6 +216,8 @@ class ot_paymentfee extends ModuleTotal {
   `percent_value` double(11,2) NOT NULL DEFAULT '0.00',
   `fixed_prefix` int(4) NOT NULL DEFAULT '1',
   `fixed_value` decimal(11,2) NOT NULL DEFAULT '0.00',
+  `minimum_order` decimal(11,2) NOT NULL DEFAULT '0.00',
+  `maximum_order` decimal(11,2) NOT NULL DEFAULT '0.00',
   PRIMARY KEY (`payment_fee_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;");
 
@@ -294,6 +305,20 @@ class ot_paymentfee extends ModuleTotal {
             }
         }
 
+        $updates = \Yii::$app->request->post('minimum_order', array());
+        if (is_array($updates)) {
+            foreach ($updates as $key => $value) {
+                tep_db_query("update payment_fee set minimum_order = '" . $value . "' where payment_fee_id = '" . $key . "'");
+            }
+        }
+
+        $updates = \Yii::$app->request->post('maximum_order', array());
+        if (is_array($updates)) {
+            foreach ($updates as $key => $value) {
+                tep_db_query("update payment_fee set maximum_order = '" . $value . "' where payment_fee_id = '" . $key . "'");
+            }
+        }
+
         $html = '';
         if (!\Yii::$app->request->isAjax) {
             $html .= '<div id="modules_extra_params">';
@@ -307,6 +332,7 @@ class ot_paymentfee extends ModuleTotal {
 
         $modules_files = [];
         $avaiable_files = [];
+        $this->manager->set('platform_id', $platform_id);
         foreach($this->manager->getPaymentCollection()->getEnabledModules() as $module){
             $modules_files[$module->code] = $module->title;
             $check_query = tep_db_query("select * from payment_fee where platform_id='" . $platform_id . "' and payment_code='" . $module->code . "'");
@@ -326,7 +352,7 @@ class ot_paymentfee extends ModuleTotal {
             ],
         ];
         $html .= '<table width="100%" class="selected-methods">';
-        $html .= '<tr><th width="10%">' . TABLE_HEADING_ACTION . '</th><th width="20%">' . TABLE_HEADING_TITLE . '</th><th width="70%">' . IMAGE_DETAILS . '</th></tr>';
+        $html .= '<tr><th width="10%">' . TABLE_HEADING_ACTION . '</th><th width="20%">' . TABLE_HEADING_TITLE . '</th><th width="40%">' . IMAGE_DETAILS . '</th><th width="30%">' . TABLE_HEADING_ORDER_LIMIT . '</th></tr>';
         $payment_modules_query = tep_db_query("select * from payment_fee where platform_id='" . $platform_id . "' order by payment_code");
         while ($payment_modules = tep_db_fetch_array($payment_modules_query)) {
             $html .= '<tr><td><span class="delMethod" onclick="delShipMethod(\'' . $payment_modules['payment_fee_id'] . '\')"></span></td><td>';
@@ -334,6 +360,9 @@ class ot_paymentfee extends ModuleTotal {
             $html .= '</td><td>';
             $html .= TEXT_PERCENT . ':' . tep_draw_pull_down_menu('percent_prefix[' . $payment_modules['payment_fee_id'] . ']', $prefixes, $payment_modules['percent_prefix'], 'style="width: 44px;"') . tep_draw_input_field('percent_value[' . $payment_modules['payment_fee_id'] . ']', $payment_modules['percent_value']) . '<br>';
             $html .= TEXT_FIXED . ':' . tep_draw_pull_down_menu('fixed_prefix[' . $payment_modules['payment_fee_id'] . ']', $prefixes, $payment_modules['fixed_prefix'], 'style="width: 44px;"') . tep_draw_input_field('fixed_value[' . $payment_modules['payment_fee_id'] . ']', $payment_modules['fixed_value']) . '<br>';
+            $html .= '</td><td>';
+            $html .= TEXT_MINIMUM_ORDER . ': ' . tep_draw_input_field('minimum_order[' . $payment_modules['payment_fee_id'] . ']', $payment_modules['minimum_order']) . '<br>';
+            $html .= TEXT_MAXIMUM_ORDER . ': ' . tep_draw_input_field('maximum_order[' . $payment_modules['payment_fee_id'] . ']', $payment_modules['maximum_order']) . '<br>';
             $html .= '</td></tr>';
         }
         $html .= '</table><br><br>';

@@ -343,6 +343,7 @@ abstract class OrderAbstract extends OrderShadowAbstract{
                 'parent_product' => $orders_products['parent_product'],
                 'sub_products' => (tep_not_null($orders_products['sub_products']) ? explode(',', $orders_products['sub_products']) : ''),
                 'relation_type' => strval($orders_products['relation_type'] ?? null),
+                'bonus_points_cost' => $orders_products['bonus_points_cost'] ?? null,
                 //'configurator_price' => $cart->configurator_price($products[$i]['id'], $products), // TODO
                 /* PC configurator addon end */
                 'sort_order' => $orders_products['sort_order'] ?? null,
@@ -360,6 +361,9 @@ abstract class OrderAbstract extends OrderShadowAbstract{
             );
             if ($ext = \common\helpers\Acl::checkExtensionAllowed('PackUnits', 'allowed')) {
                 $this->products[$index] = array_merge($ext::queryOrderFrontend($order_id, $orders_products, $this->table_prefix), $this->products[$index]);
+            }
+            foreach (\common\helpers\Hooks::getList('order/query/each-product') as $filename) {
+                include($filename);
             }
 
             /*if (is_object($cart) && $cart->existOwerwritten($this->products[$index]['id'])) {
@@ -952,16 +956,18 @@ abstract class OrderAbstract extends OrderShadowAbstract{
         if (!is_null($ref_id)) {
             $this->addLegend(TEXT_REORDER_FROM . $ref_id, $cart->admin_id);
 
-            foreach ($this->collectAdminComments($ref_id) as $_comment) {
-                $sql_data_array = array(
-                    'orders_id' => $this->order_id,
-                    'orders_status_id' => $this->info['order_status'],
-                    'comments' => TEXT_COMMENT_FROM_REORDERED . "\n" . $_comment['comments'],
-                    'customer_notified' => 0,
-                    'admin_id' => (int) $cart->admin_id,
-                    'date_added' => 'now()'
-                );
-                tep_db_perform($this->table_prefix . TABLE_ORDERS_STATUS_HISTORY, $sql_data_array);
+            if (!defined('ADD_COMMENT_FROM_REORDERED') || strtolower(ADD_COMMENT_FROM_REORDERED) == 'true') {
+                foreach ($this->collectAdminComments($ref_id) as $_comment) {
+                    $sql_data_array = array(
+                        'orders_id' => $this->order_id,
+                        'orders_status_id' => $this->info['order_status'],
+                        'comments' => TEXT_COMMENT_FROM_REORDERED . "\n" . $_comment['comments'],
+                        'customer_notified' => 0,
+                        'admin_id' => (int) $cart->admin_id,
+                        'date_added' => 'now()'
+                    );
+                    tep_db_perform($this->table_prefix . TABLE_ORDERS_STATUS_HISTORY, $sql_data_array);
+                }
             }
         }
 
@@ -1006,7 +1012,7 @@ abstract class OrderAbstract extends OrderShadowAbstract{
                 return;
             }
             $module = $this->manager->getShippingCollection()->get($moduleName);
-            if ($refId > 0 && $refId !== $this->order_id && method_exists($module, 'reorderShippingData')) {
+            if ($refId > 0 && $refId !== $this->order_id && !empty($module) && method_exists($module, 'reorderShippingData')) {
                 $module->reorderShippingData($this->order_id, $refId, $this->table_prefix);
             }
             if(!empty($module) && method_exists($module, 'setAdditionalOrderParams')){
@@ -1038,7 +1044,7 @@ abstract class OrderAbstract extends OrderShadowAbstract{
             while ($row = tep_db_fetch_array($query)) {
                 if (empty($row['comments']))
                     continue;
-                if ($tracking && strpos($row['comments'], $tracking))
+                if ($tracking && strstr($row['comments'], $tracking))
                     continue;
                 $comments[] = $row;
             }
@@ -1113,6 +1119,18 @@ abstract class OrderAbstract extends OrderShadowAbstract{
                 \common\helpers\Warehouses::update_stock_of_order($this->order_id, (strlen($this->products[$i]['template_uprid']) > 0 ? $this->products[$i]['template_uprid'] : $this->products[$i]['id']), $this->products[$i]['qty'],0, 0, $this->info['platform_id']);
                 $stock_update_flag = true;
             }
+// {{
+            if (!$dontUpdateStock && $this->table_prefix != 'purchase_' && $this->table_prefix != 'tmp_') {
+                if ($ext = \common\helpers\Acl::checkExtension('SupplierPurchase', 'allowed')) {
+                    if ($ext::allowed()) {
+                        $swProduct = $ext::getWSProduct($this->products[$i]['template_uprid'], $this->info['platform_id']);
+                        if ($swProduct && method_exists($ext, 'updateSupplierProductStock')) {
+                            $ext::updateSupplierProductStock($swProduct, $this->products[$i]['qty']);
+                        }
+                    }
+                }
+            }
+// }}
 
 // Update products_ordered (for bestsellers list)
             tep_db_query("update " . TABLE_PRODUCTS . " set products_ordered = products_ordered + " . sprintf('%d', $this->products[$i]['qty']) . " where products_id = '" . \common\helpers\Inventory::get_prid($this->products[$i]['id']) . "'");
@@ -1166,6 +1184,9 @@ abstract class OrderAbstract extends OrderShadowAbstract{
               $sql_data_array['qty_rcvd'] = $this->products[$i]['qty_rcvd'];
             }
 
+            foreach (\common\helpers\Hooks::getList('order/before-save-product') as $filename) {
+                include($filename);
+            }
 
             $order_products_id = $this->searchOrderProduct($sql_data_array);
             if ($order_products_id){
@@ -1289,6 +1310,10 @@ abstract class OrderAbstract extends OrderShadowAbstract{
             $this->products[$i]['tpl_attributes'] = ($products_ordered_attributes ? implode("\n\t", $products_ordered_attributes) :'');
             if (($this->table_prefix != 'quote_' ||  ( ($ext = \common\helpers\Extensions::isAllowed('Quotations')) && $ext::optionIsPriceShow() )) && !(defined('GROUPS_IS_SHOW_PRICE') && GROUPS_IS_SHOW_PRICE==false)) {
                 $this->products[$i]['tpl_price'] = $currencies->display_price($this->products[$i]['final_price'], $this->products[$i]['tax'], $this->products[$i]['qty']);
+            }
+
+            foreach (\common\helpers\Hooks::getList('order/after-save-product') as $filename) {
+                include($filename);
             }
 
             /*if ($this->table_prefix == '' AND $order_products_id > 0) {

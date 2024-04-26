@@ -52,6 +52,18 @@
             </select>
           </div>
 
+          {if $selectCategory}
+          <div class="setting-row">
+            <label for="">{$smarty.const.TEXT_CATEGORY}</label>
+
+            <select name="setting[0][parent_category_id]" class="form-control categories-select">
+              {foreach \common\helpers\Categories::get_category_tree(0, '', '', '', false, true) as $item}
+                <option value="{$item.id}"{if $settings[0].parent_category_id == $item.id} selected{/if}>{$item.text}</option>
+              {/foreach}
+            </select>
+          </div>
+          {/if}
+
             {include 'include/lazy_load.tpl'}
 
             {include 'include/ajax.tpl'}
@@ -82,3 +94,89 @@
     <span class="btn btn-cancel">{$smarty.const.IMAGE_CANCEL}</span>
   </div>
 </form>
+
+<script type="text/javascript">
+  (function($) {
+    $('.categories-select').multipleSelect({
+      filter: true,
+      place: '{$smarty.const.TEXT_SEARCH_ITEMS}',
+      maxHeight: 300,
+      selectAll: false,
+      data: [
+        {foreach \common\helpers\Categories::get_category_tree(0, '', '', '', false, true) as $item}
+        {
+          text: wrapCategory(`{$item.text}`),
+          value: `{$item.id}`,
+          {if $settings[0].parent_category_id == $item.id} selected: true{/if}
+        },
+        {/foreach}
+      ],
+      onFilter: function (t) {
+        if (t) {
+          $('.categories-select').addClass('searching')
+        } else {
+          $('.categories-select').removeClass('searching')
+        }
+      }
+    });
+
+
+    function wrapCategory(str) {
+      let lastIndex = str.lastIndexOf("&nbsp;&nbsp;&gt;&nbsp;&nbsp;");
+
+      if (lastIndex !== -1) {
+        lastIndex = lastIndex + 28;
+        const startCategory = str.substring(0, lastIndex);
+        const endCategory = str.substring(lastIndex);
+
+        return `<span class="in-category">${ startCategory}</span>${ endCategory}`.replaceAll('&nbsp;', '<span class="nbsp">&nbsp;</span>');
+      }
+
+      return str;
+    }
+  })(jQuery)
+</script>
+<style type="text/css">
+  .categories-select .ms-drop {
+    border-radius: 0;
+    box-shadow: none;
+    border-color: var(--border-color-midle);
+    margin-top: 0;
+  }
+  .categories-select .ms-drop ul {
+    height: 400px;
+  }
+
+  .categories-select .popup-box {
+    width: 1000px;
+  }
+  .categories-select .in-category {
+    font-size: 0;
+  }
+  .categories-select.searching ul .in-category {
+    font-size: 9px;
+  }
+  .categories-select .nbsp {
+    width: 6px;
+    display: inline-block;
+  }
+  .categories-select.searching .nbsp {
+    width: 1px;
+  }
+  .categories-select .ms-choice .in-category {
+    display: none;
+  }
+  .categories-select .ms-drop ul>li.hide-radio.selected {
+    color: var(--main-color);
+    background: none;
+  }
+  .categories-select .ms-drop ul>li.hide-radio.selected + .selected {
+    color: var(--main-color);
+  }
+  .categories-select .ms-drop ul>li:hover {
+    background: var(--background-color-1);
+  }
+  .categories-select .ms-drop ul>li input:checked + span {
+    color: var(--primary-color);
+  }
+</style>

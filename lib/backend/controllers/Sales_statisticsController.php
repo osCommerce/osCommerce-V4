@@ -48,6 +48,7 @@ class Sales_statisticsController extends Sceleton {
         $this->view->filter->shipping_methods = $report->getShippings();
         $this->view->filter->platforms = $report->getPlatforms();
         $this->view->filter->customer_groups = $report->getCustomerGroups('', true);
+        $this->view->filter->currencies = $report->getCurrencies();
 
         $this->view->filter->walkin = Yii::$app->request->get('walkin') ?? false;
         $this->view->filter->admin = [];
@@ -101,11 +102,13 @@ class Sales_statisticsController extends Sceleton {
             'selected_shippings' => $report->getSelectedShippings(),
             'selected_platforms' => $report->getSelectedPlatforms(),
             'selected_customer_groups' => $report->getSelectedCustomerGroups(),
+            'selected_currency' => $report->getSelectedCurrency(),
             'undisabled' => $report->getUndisabledCharts(),
             'class_range' => array_keys($model->getClassRange()),
             'geo_details' => $this->getGeoDetails($report),
             'with_products' => $report->getWithProducts(),
             'walkin' => $report->getWalkInAdmins(),
+            'currencies' => Yii::$container->get('currencies'),
         ];
         //echo '<pre>';print_r($params);die;
 
@@ -170,6 +173,9 @@ class Sales_statisticsController extends Sceleton {
             case "state" :
                 $term = Yii::$app->request->get('term', '');
                 $country = Yii::$app->request->get('country');
+                if (!empty($country)) {
+                    $country = \common\models\Countries::find()->select('countries_name')->where(['countries_id' => explode(',', $country)])->column();
+                }
                 $delivery_states = \common\helpers\Order::getOrdersQuery(['delivery_state' => $term, 'delivery_country' => $country])
                         ->groupBy('delivery_state')->orderBy('delivery_state')->all();
                 $response = \yii\helpers\ArrayHelper::getColumn($delivery_states, 'delivery_state');

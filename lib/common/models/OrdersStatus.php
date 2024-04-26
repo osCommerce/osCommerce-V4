@@ -131,6 +131,11 @@ class OrdersStatus extends ActiveRecord
         return $this->hasMany(OrdersStatusHistory::className(), ['orders_status_id' => 'orders_status_id']);
     }
 
+    public function getOrdersStatusGroups()
+    {
+        return $this->hasOne(OrdersStatusGroups::class, ['orders_status_groups_id' => 'orders_status_groups_id', 'language_id' => 'language_id']);
+    }
+
 /**
  * preferred (if it's has appropriate state id)|default|first (by id) order status Id in appropriate state id
  * @param int $orderEvaluationStateId

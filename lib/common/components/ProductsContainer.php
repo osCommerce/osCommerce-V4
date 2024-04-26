@@ -56,6 +56,11 @@ class ProductsContainer
                 }
             }
         } elseif(!empty($params['products_id'])) {
+            if (isset($this->container[$params['products_id']]) && isset($params['exclude_from_container']) && $params['exclude_from_container']) {
+                unset($this->container[$params['products_id']]);
+                return $this;
+            }
+
             if (isset($this->container[$params['products_id']]) && $this->container[$params['products_id']] instanceof ProductItem){
                 $diff = @array_diff_assoc($params, (array)$this->container[$params['products_id']]);
                 if (count($diff)) {

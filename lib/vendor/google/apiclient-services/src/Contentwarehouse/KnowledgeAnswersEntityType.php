@@ -19,11 +19,17 @@ namespace Google\Service\Contentwarehouse;
 
 class KnowledgeAnswersEntityType extends \Google\Collection
 {
-  protected $collection_key = 'stbrDomain';
+  protected $collection_key = 'identifier';
   /**
    * @var string[]
    */
   public $collection;
+  /**
+   * @var NlpMeaningComponentSpecificContracts
+   */
+  public $componentSpecificContracts;
+  protected $componentSpecificContractsType = NlpMeaningComponentSpecificContracts::class;
+  protected $componentSpecificContractsDataType = '';
   /**
    * @var string[]
    */
@@ -32,6 +38,10 @@ class KnowledgeAnswersEntityType extends \Google\Collection
    * @var string[]
    */
   public $id;
+  /**
+   * @var KnowledgeAnswersIntentQueryIdentifier[]
+   */
+  public $identifier;
   protected $identifierType = KnowledgeAnswersIntentQueryIdentifier::class;
   protected $identifierDataType = 'array';
   /**
@@ -42,12 +52,12 @@ class KnowledgeAnswersEntityType extends \Google\Collection
    * @var bool
    */
   public $includeGeolocationData;
+  /**
+   * @var NlpMeaningMeaningRemodelings
+   */
+  public $remodelings;
   protected $remodelingsType = NlpMeaningMeaningRemodelings::class;
   protected $remodelingsDataType = '';
-  /**
-   * @var string[]
-   */
-  public $stbrDomain;
 
   /**
    * @param string[]
@@ -62,6 +72,20 @@ class KnowledgeAnswersEntityType extends \Google\Collection
   public function getCollection()
   {
     return $this->collection;
+  }
+  /**
+   * @param NlpMeaningComponentSpecificContracts
+   */
+  public function setComponentSpecificContracts(NlpMeaningComponentSpecificContracts $componentSpecificContracts)
+  {
+    $this->componentSpecificContracts = $componentSpecificContracts;
+  }
+  /**
+   * @return NlpMeaningComponentSpecificContracts
+   */
+  public function getComponentSpecificContracts()
+  {
+    return $this->componentSpecificContracts;
   }
   /**
    * @param string[]
@@ -146,20 +170,6 @@ class KnowledgeAnswersEntityType extends \Google\Collection
   public function getRemodelings()
   {
     return $this->remodelings;
-  }
-  /**
-   * @param string[]
-   */
-  public function setStbrDomain($stbrDomain)
-  {
-    $this->stbrDomain = $stbrDomain;
-  }
-  /**
-   * @return string[]
-   */
-  public function getStbrDomain()
-  {
-    return $this->stbrDomain;
   }
 }
 

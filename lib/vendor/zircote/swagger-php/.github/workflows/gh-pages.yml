@@ -1,0 +1,42 @@
+name: gh-pages
+
+on:
+  workflow_dispatch:
+    inputs:
+      dryrun:
+        description: Dry run
+        type: boolean
+        required: false
+
+jobs:
+  gh-pages:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+
+      - uses: ramsey/composer-install@v2
+        with:
+          dependency-versions: 'highest'
+
+      - name: Install vitepress and deps
+        run: cd docs && npm install
+
+      - name: Build site
+        run: composer docs:build
+
+      - name: Deploy to GitHub Pages
+        if: success()
+        uses: crazy-max/ghaction-github-pages@v4
+        with:
+          target_branch: gh-pages
+          build_dir: docs/.vitepress/dist
+          dry_run: ${{ github.event.inputs.dryrun }}
+          verbose: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

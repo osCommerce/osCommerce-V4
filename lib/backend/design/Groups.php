@@ -219,6 +219,10 @@ class Groups
                 'name' => 'footer',
                 'title' => TEXT_FOOTER
             ],
+            'header-menu' => [
+                'name' => 'header-menu',
+                'title' => 'Header menu'
+            ],
             'pages' => [
                 'name' => 'pages',
                 'title' => TEXT_PAGES

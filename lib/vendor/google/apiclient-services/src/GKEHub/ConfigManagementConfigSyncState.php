@@ -17,10 +17,21 @@
 
 namespace Google\Service\GKEHub;
 
-class ConfigManagementConfigSyncState extends \Google\Model
+class ConfigManagementConfigSyncState extends \Google\Collection
 {
+  protected $collection_key = 'errors';
   protected $deploymentStateType = ConfigManagementConfigSyncDeploymentState::class;
   protected $deploymentStateDataType = '';
+  protected $errorsType = ConfigManagementConfigSyncError::class;
+  protected $errorsDataType = 'array';
+  /**
+   * @var string
+   */
+  public $reposyncCrd;
+  /**
+   * @var string
+   */
+  public $rootsyncCrd;
   protected $syncStateType = ConfigManagementSyncState::class;
   protected $syncStateDataType = '';
   protected $versionType = ConfigManagementConfigSyncVersion::class;
@@ -39,6 +50,48 @@ class ConfigManagementConfigSyncState extends \Google\Model
   public function getDeploymentState()
   {
     return $this->deploymentState;
+  }
+  /**
+   * @param ConfigManagementConfigSyncError[]
+   */
+  public function setErrors($errors)
+  {
+    $this->errors = $errors;
+  }
+  /**
+   * @return ConfigManagementConfigSyncError[]
+   */
+  public function getErrors()
+  {
+    return $this->errors;
+  }
+  /**
+   * @param string
+   */
+  public function setReposyncCrd($reposyncCrd)
+  {
+    $this->reposyncCrd = $reposyncCrd;
+  }
+  /**
+   * @return string
+   */
+  public function getReposyncCrd()
+  {
+    return $this->reposyncCrd;
+  }
+  /**
+   * @param string
+   */
+  public function setRootsyncCrd($rootsyncCrd)
+  {
+    $this->rootsyncCrd = $rootsyncCrd;
+  }
+  /**
+   * @return string
+   */
+  public function getRootsyncCrd()
+  {
+    return $this->rootsyncCrd;
   }
   /**
    * @param ConfigManagementSyncState

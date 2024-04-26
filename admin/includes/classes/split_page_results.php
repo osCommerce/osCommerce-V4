@@ -40,7 +40,8 @@
         $pos_order_by = strpos($sql_query, ' order by', $pos_from);
         if (($pos_order_by < $pos_to) && ($pos_order_by != false)) $pos_to = $pos_order_by;
 
-        $pos_limit = strpos($sql_query, ' limit', $pos_from);
+        preg_match('/\slimit\s+\d/i', $sql_query, $matches, PREG_OFFSET_CAPTURE);
+        $pos_limit = $matches[0][1] ?? false; // strpos
         if (($pos_limit < $pos_to) && ($pos_limit != false)) $pos_to = $pos_limit;
 
         $pos_procedure = strpos($sql_query, ' procedure', $pos_from);

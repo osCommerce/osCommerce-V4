@@ -1405,7 +1405,7 @@ class Order extends ProviderAbstract implements ExportInterface, ImportInterface
                 }
 
                 $free_shipping = false;
-                if (($pass == true) && ($order->info['total'] >= MODULE_ORDER_TOTAL_SHIPPING_FREE_SHIPPING_OVER)) {
+                if (($pass == true) && ($order->info['subtotal_inc_tax'] >= MODULE_ORDER_TOTAL_SHIPPING_FREE_SHIPPING_OVER)) {
                     $free_shipping = true;
                 }
             } else {

@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Faker\Test\Extension;
 
 use Faker\Container\ContainerBuilder;
-use Faker\Container\ContainerInterface;
 use Faker\Core\File;
-use Faker\Extension\Extension;
+use Faker\Core\Number;
+use Faker\Extension;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -30,7 +30,7 @@ final class ContainerBuilderTest extends TestCase
             ContainerBuilder::class,
         ));
 
-        $containerBuilder->add($value);
+        $containerBuilder->add('foo', $value);
     }
 
     /**
@@ -59,106 +59,91 @@ final class ContainerBuilderTest extends TestCase
         }
     }
 
-    public function testAddRejectsNameWhenValueIsCallableAndNameIsNull(): void
-    {
-        $value = [
-            new class() {
-                public static function create(): Extension
-                {
-                    return new class() implements Extension {
-                    };
-                }
-            },
-            'create',
-        ];
-
-        $containerBuilder = new ContainerBuilder();
-
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage(sprintf(
-            'Second argument to "%s::add()" is required not passing a string or object as first argument',
-            ContainerBuilder::class,
-        ));
-
-        $containerBuilder->add($value);
-    }
-
-    public function testAddAcceptsValueWhenItIsAnObjectAndNameIsNull(): void
-    {
-        $value = new class() implements Extension {};
-
-        $name = get_class($value);
-
-        $containerBuilder = new ContainerBuilder();
-
-        $containerBuilder->add($value);
-
-        $container = $containerBuilder->build();
-
-        self::assertTrue($container->has($name));
-        self::assertSame($value, $container->get($name));
-    }
-
-    public function testBuildEmpty(): void
+    public function testBuildReturnsContainerWhenContainerBuilderDoesNotHaveDefinitions(): void
     {
         $builder = new ContainerBuilder();
 
         $container = $builder->build();
 
-        self::assertInstanceOf(ContainerInterface::class, $container);
+        self::assertFalse($container->has('foo'));
     }
 
-    public function testBuild(): void
+    public function testBuildReturnsContainerWhenContainerBuilderHasDefinitions(): void
     {
+        $id = 'foo';
+        $definition = File::class;
+
         $builder = new ContainerBuilder();
 
-        $builder->add(File::class);
+        $builder->add($id, $definition);
 
         $container = $builder->build();
 
-        self::assertInstanceOf(ContainerInterface::class, $container);
+        self::assertTrue($container->has($id));
+        self::assertInstanceOf($definition, $container->get($id));
     }
 
-    public function testBuildWithDuplicates(): void
+    public function testBuildReturnsContainerWhenContainerBuilderHasOverriddenDefinitions(): void
     {
+        $id = 'foo';
+        $definition = Number::class;
+
         $builder = new ContainerBuilder();
 
-        $builder->add(File::class);
-        $builder->add(File::class);
+        $builder->add($id, File::class);
+        $builder->add($id, $definition);
 
         $container = $builder->build();
 
-        self::assertInstanceOf(ContainerInterface::class, $container);
+        self::assertTrue($container->has($id));
+        self::assertInstanceOf($definition, $container->get($id));
     }
 
-    public function testBuildWithObject(): void
+    public function testBuildReturnsContainerWhenContainerBuilderHasObjectAsDefinition(): void
     {
+        $id = 'foo';
+        $definition = new File();
+
         $builder = new ContainerBuilder();
 
-        $builder->add(new File(), 'foo');
+        $builder->add($id, $definition);
 
         $container = $builder->build();
 
-        self::assertInstanceOf(ContainerInterface::class, $container);
+        self::assertTrue($container->has($id));
+        self::assertSame($definition, $container->get($id));
     }
 
-    public function testBuildWithCallable(): void
+    public function testBuildReturnsContainerWhenContainerBuilderHasCallableAsDefinition(): void
     {
-        $builder = new ContainerBuilder();
-
-        $builder->add(static function () {
+        $id = 'foo';
+        $definition = static function (): File {
             return new File();
-        }, 'foo');
+        };
+
+        $builder = new ContainerBuilder();
+
+        $builder->add($id, $definition);
 
         $container = $builder->build();
 
-        self::assertInstanceOf(ContainerInterface::class, $container);
+        self::assertTrue($container->has($id));
+        self::assertEquals($definition(), $container->get($id));
     }
 
-    public function testBuildDefault(): void
+    public function testWithDefaultExtensionsReturnsContainerBuilderWithDefaultExtensions(): void
     {
-        $container = ContainerBuilder::getDefault();
+        $builder = ContainerBuilder::withDefaultExtensions();
 
-        self::assertInstanceOf(ContainerInterface::class, $container);
+        $container = $builder->build();
+
+        self::assertTrue($container->has(Extension\BarcodeExtension::class));
+        self::assertTrue($container->has(Extension\BloodExtension::class));
+        self::assertTrue($container->has(Extension\ColorExtension::class));
+        self::assertTrue($container->has(Extension\DateTimeExtension::class));
+        self::assertTrue($container->has(Extension\FileExtension::class));
+        self::assertTrue($container->has(Extension\NumberExtension::class));
+        self::assertTrue($container->has(Extension\UuidExtension::class));
+        self::assertTrue($container->has(Extension\VersionExtension::class));
     }
 }

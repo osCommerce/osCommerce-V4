@@ -366,14 +366,11 @@ class Order
             if (stripos($tracking_url, '17track') !== false && strtolower($carrier) == 'dhl') {
                 $tracking_url .= '&fc=100001';
             }
-            if ($carrier) {
-                $tracking_carriers_id = \common\helpers\OrderTrackingNumber::getCarrierId($carrier);
-                if ($tracking_carriers_id && $carrier = \common\models\TrackingCarriers::findOne(['tracking_carriers_id' => $tracking_carriers_id])) {
-                    if ($carrier->tracking_carriers_url) {
-                        $tracking_url = $carrier->tracking_carriers_url . $tracking_number;
-                    }
-                    $carrier = $carrier->tracking_carriers_name;
+            if ($carrier && ($carrierRecord = \common\helpers\Extensions::callIfAllowed('TrackingCarriers', 'getTrackingCarriersRecord', [$carrier]))) {
+                if ($carrierRecord->tracking_carriers_url) {
+                    $tracking_url = $carrierRecord->tracking_carriers_url . $tracking_number;
                 }
+                $carrier = $carrierRecord->tracking_carriers_name;
             }
             return array(
                 'number' => $tracking_number,
@@ -819,6 +816,7 @@ class Order
             $isHistory = false;
             $orderStatus = (int)$orderStatus;
             $return = (int)$orderRecord->orders_status;
+            $prevStatus = (int)$orderRecord->orders_status;
             $isAlternativeBehaviour = ((int)$isAlternativeBehaviour > 0);
             $historyArray = (is_array($historyArray) ? $historyArray : []);
             $isIgnoreBindEvaluationState = ((int)$isIgnoreBindEvaluationState > 0);
@@ -896,6 +894,55 @@ class Order
             unset($isHistory);
             unset($comments);
             self::doRefresh($orderRecord, $isAlternativeBehaviour, $return);
+
+            try {
+                $newStatus = (\common\models\Orders::find()->select('orders_status')->where(['orders_id' => $__orders_id])->one()->orders_status ?? 0);
+                if (!Status::isCanceledGroup($prevStatus) && Status::isCanceledGroup($newStatus)) {
+                    // Credit amount used on a cancelled order is returned to the customer automatically
+                    $creditAmount = \common\models\OrdersTotal::find()->where(['orders_id' => $__orders_id, 'class' => 'ot_gv'])->sum('value_inc_tax');
+                    if ($creditAmount > 0) {
+                        $check = \common\models\CustomersCreditHistory::find()
+                            ->andWhere(
+                                new \yii\db\Expression('abs(credit_amount - ' . (float) $creditAmount . ') < 0.2')
+                            )
+                            ->andWhere(['like', 'comments', $__orders_id])
+                            ->andWhere([
+                                'customers_id' => (int) $orderRecord->customers_id,
+                                'credit_prefix' => '-',
+                            ])->exists();
+                        if ($check) {
+                            if ($customer = \common\components\Customer::findOne(['customers_id' => $orderRecord->customers_id])) {
+                                $customer->credit_amount += $creditAmount;
+                                $customer->save();
+                                $customer->saveCreditHistory($orderRecord->customers_id, $creditAmount, '+', $orderRecord->currency, $orderRecord->currency_value, 'Cancel Order #' . $__orders_id);
+                            }
+                        }
+                    }
+                } elseif (Status::isCanceledGroup($prevStatus) && !Status::isCanceledGroup($newStatus)) {
+                    // Undo - Credit amount used on a cancelled order is returned to the customer automatically
+                    $creditAmount = \common\models\OrdersTotal::find()->where(['orders_id' => $__orders_id, 'class' => 'ot_gv'])->sum('value_inc_tax');
+                    if ($creditAmount > 0) {
+                        $check = \common\models\CustomersCreditHistory::find()
+                            ->andWhere(
+                                new \yii\db\Expression('abs(credit_amount - ' . (float) $creditAmount . ') < 0.2')
+                            )
+                            ->andWhere(['like', 'comments', $__orders_id])
+                            ->andWhere([
+                                'customers_id' => (int) $orderRecord->customers_id,
+                                'credit_prefix' => '+',
+                            ])->exists();
+                        if ($check) {
+                            if ($customer = \common\components\Customer::findOne(['customers_id' => $orderRecord->customers_id])) {
+                                $customer->credit_amount -= $creditAmount;
+                                $customer->save();
+                                $customer->saveCreditHistory($orderRecord->customers_id, $creditAmount, '-', $orderRecord->currency, $orderRecord->currency_value, 'Undo Cancel Order #' . $__orders_id);
+                            }
+                        }
+                    }
+                }
+            } catch (\Exception $e) {
+                \Yii::warning(print_r($e->getMessage(), true), 'TLDEBUG');
+            }
 
             foreach (\common\helpers\Hooks::getList('orders/after-setstatus') as $filename) {
                 include($filename);

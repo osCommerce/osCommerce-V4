@@ -408,7 +408,7 @@ class install {
 			</div>
 		</div>
 		<div id="footer">
-        Copyright &copy; 2000 - ' . date('Y', time()) . ' <a target="_blank" href="https://www.oscommerce.com">osCommerce Ltd</a> is provided under <a href="https://www.oscommerce.com/legal-policies" target="_blank">Terms and Conditions</a> and this <a href="https://www.oscommerce.com/legal-policies" target="_blank">Disclaimer</a><br>osCommerce the eCommerce Engine Copyright © 2000 – 2021 osCommerce Ltd<br>osCommerce ® is a Trademark owned by Holbi Group Ltd
+        Copyright &copy; 2000 - ' . date('Y', time()) . ' <a target="_blank" href="https://www.oscommerce.com">osCommerce Ltd</a> is provided under <a href="https://www.oscommerce.com/legal-policies" target="_blank">Terms and Conditions</a> and this <a href="https://www.oscommerce.com/legal-policies" target="_blank">Disclaimer</a><br>osCommerce the eCommerce Engine Copyright © 2000 – 2024 osCommerce Ltd<br>osCommerce ® is a Trademark owned by Holbi Group Ltd
 		</div>
 		</div>
 		</form>

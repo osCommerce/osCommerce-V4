@@ -23,10 +23,22 @@ class NetworkConfig extends \Google\Model
    * @var string
    */
   public $datapathProvider;
+  /**
+   * @var DefaultSnatStatus
+   */
+  public $defaultSnatStatus;
   protected $defaultSnatStatusType = DefaultSnatStatus::class;
   protected $defaultSnatStatusDataType = '';
+  /**
+   * @var DNSConfig
+   */
+  public $dnsConfig;
   protected $dnsConfigType = DNSConfig::class;
   protected $dnsConfigDataType = '';
+  /**
+   * @var bool
+   */
+  public $enableFqdnNetworkPolicy;
   /**
    * @var bool
    */
@@ -35,6 +47,14 @@ class NetworkConfig extends \Google\Model
    * @var bool
    */
   public $enableL4ilbSubsetting;
+  /**
+   * @var bool
+   */
+  public $enableMultiNetworking;
+  /**
+   * @var GatewayAPIConfig
+   */
+  public $gatewayApiConfig;
   protected $gatewayApiConfigType = GatewayAPIConfig::class;
   protected $gatewayApiConfigDataType = '';
   /**
@@ -42,9 +62,19 @@ class NetworkConfig extends \Google\Model
    */
   public $network;
   /**
+   * @var ClusterNetworkPerformanceConfig
+   */
+  public $networkPerformanceConfig;
+  protected $networkPerformanceConfigType = ClusterNetworkPerformanceConfig::class;
+  protected $networkPerformanceConfigDataType = '';
+  /**
    * @var string
    */
   public $privateIpv6GoogleAccess;
+  /**
+   * @var ServiceExternalIPsConfig
+   */
+  public $serviceExternalIpsConfig;
   protected $serviceExternalIpsConfigType = ServiceExternalIPsConfig::class;
   protected $serviceExternalIpsConfigDataType = '';
   /**
@@ -97,6 +127,20 @@ class NetworkConfig extends \Google\Model
   /**
    * @param bool
    */
+  public function setEnableFqdnNetworkPolicy($enableFqdnNetworkPolicy)
+  {
+    $this->enableFqdnNetworkPolicy = $enableFqdnNetworkPolicy;
+  }
+  /**
+   * @return bool
+   */
+  public function getEnableFqdnNetworkPolicy()
+  {
+    return $this->enableFqdnNetworkPolicy;
+  }
+  /**
+   * @param bool
+   */
   public function setEnableIntraNodeVisibility($enableIntraNodeVisibility)
   {
     $this->enableIntraNodeVisibility = $enableIntraNodeVisibility;
@@ -121,6 +165,20 @@ class NetworkConfig extends \Google\Model
   public function getEnableL4ilbSubsetting()
   {
     return $this->enableL4ilbSubsetting;
+  }
+  /**
+   * @param bool
+   */
+  public function setEnableMultiNetworking($enableMultiNetworking)
+  {
+    $this->enableMultiNetworking = $enableMultiNetworking;
+  }
+  /**
+   * @return bool
+   */
+  public function getEnableMultiNetworking()
+  {
+    return $this->enableMultiNetworking;
   }
   /**
    * @param GatewayAPIConfig
@@ -149,6 +207,20 @@ class NetworkConfig extends \Google\Model
   public function getNetwork()
   {
     return $this->network;
+  }
+  /**
+   * @param ClusterNetworkPerformanceConfig
+   */
+  public function setNetworkPerformanceConfig(ClusterNetworkPerformanceConfig $networkPerformanceConfig)
+  {
+    $this->networkPerformanceConfig = $networkPerformanceConfig;
+  }
+  /**
+   * @return ClusterNetworkPerformanceConfig
+   */
+  public function getNetworkPerformanceConfig()
+  {
+    return $this->networkPerformanceConfig;
   }
   /**
    * @param string

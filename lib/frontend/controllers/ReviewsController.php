@@ -59,7 +59,7 @@ class ReviewsController extends Sceleton
                     if (defined('TEXT_RATE_' . $review['reviews_rating'])) {
                       $review['reviews_rating_description'] = constant('TEXT_RATE_' . $review['reviews_rating']);
                     }
-                    $review['link'] = tep_href_link(FILENAME_PRODUCT_REVIEWS_INFO, 'products_id=' . $params['products_id'] . '&reviews_id=' . $review['reviews_id']);
+                    $review['link'] = tep_href_link(FILENAME_PRODUCT_REVIEWS_INFO, 'products_id=' . (int)$params['products_id'] . '&reviews_id=' . (int)$review['reviews_id']);
                     $review['date'] = \common\helpers\Date::date_long($review['date_added']);
                     $reviews[] = $review;
                 }
@@ -70,7 +70,7 @@ class ReviewsController extends Sceleton
 
             return $this->render('index.tpl', [
                 'reviews' => $reviews,
-                'link_write' => tep_href_link('reviews/write', 'products_id='. $params['products_id']),
+                'link_write' => tep_href_link('reviews/write', 'products_id='. (int)$params['products_id']),
                 'rating' => round($rating['average']??0),
                 'count' => $rating['count'],
                 'number_of_rows' => $reviews_split->number_of_rows,
@@ -193,7 +193,7 @@ class ReviewsController extends Sceleton
             if ($error == false)
             {
                 tep_db_perform(TABLE_REVIEWS, array(
-                  'products_id' => $params['products_id'],
+                  'products_id' => (int)$params['products_id'],
                   'customers_id' => Yii::$app->user->getId(),
                   'customers_name' => $customer['customers_firstname'] . ' ' . $customer['customers_lastname'],
                   'reviews_rating' => $rating,
@@ -207,8 +207,12 @@ class ReviewsController extends Sceleton
                   'reviews_text' => $review,
                 ));
 
+                if ($ext = \common\helpers\Acl::checkExtensionAllowed('UploadProductReviewImages', 'allowed')) {
+                    $ext::saveUploadProductReviewImages($insert_id);
+                }
+
                 $messageStack->add_session(REVIEW_ADDED, 'review', 'success');
-                tep_redirect(tep_href_link('reviews/index', 'products_id=' . $params['products_id']));
+                tep_redirect(tep_href_link('reviews/index', 'products_id=' . (int)$params['products_id']));
             }
         }
 
@@ -222,14 +226,14 @@ class ReviewsController extends Sceleton
               'review_rate' => $rating,
               'review_text' => $review,
               'link' => tep_href_link('reviews'),
-              'link_cancel' => tep_href_link('reviews/index', 'products_id=' . $params['products_id']),
-              'link_write' => tep_href_link('reviews/write', 'products_id=' . $params['products_id'].'&action=process'),
-              'products_id' => $params['products_id']
+              'link_cancel' => tep_href_link('reviews/index', 'products_id=' . (int)$params['products_id']),
+              'link_write' => tep_href_link('reviews/write', 'products_id=' . (int)$params['products_id'].'&action=process'),
+              'products_id' => (int)$params['products_id']
             ]);
             
         }else{
-            //return Yii::$app->runAction('catalog/product',['products_id'=>$params['products_id']]);
-            return $this->redirect(['catalog/product','products_id'=>$params['products_id']]);
+            //return Yii::$app->runAction('catalog/product',['products_id'=>(int)$params['products_id']]);
+            return $this->redirect(['catalog/product','products_id'=>(int)$params['products_id']]);
         }
     }
 

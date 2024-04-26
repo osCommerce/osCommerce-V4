@@ -19,7 +19,7 @@ namespace Google\Service\Bigquery;
 
 class Model extends \Google\Collection
 {
-  protected $collection_key = 'trainingRuns';
+  protected $collection_key = 'transformColumns';
   /**
    * @var string
    */
@@ -80,8 +80,12 @@ class Model extends \Google\Collection
    * @var string[]
    */
   public $optimalTrialIds;
+  protected $remoteModelInfoType = RemoteModelInfo::class;
+  protected $remoteModelInfoDataType = '';
   protected $trainingRunsType = TrainingRun::class;
   protected $trainingRunsDataType = 'array';
+  protected $transformColumnsType = TransformColumn::class;
+  protected $transformColumnsDataType = 'array';
 
   /**
    * @param string
@@ -336,6 +340,20 @@ class Model extends \Google\Collection
     return $this->optimalTrialIds;
   }
   /**
+   * @param RemoteModelInfo
+   */
+  public function setRemoteModelInfo(RemoteModelInfo $remoteModelInfo)
+  {
+    $this->remoteModelInfo = $remoteModelInfo;
+  }
+  /**
+   * @return RemoteModelInfo
+   */
+  public function getRemoteModelInfo()
+  {
+    return $this->remoteModelInfo;
+  }
+  /**
    * @param TrainingRun[]
    */
   public function setTrainingRuns($trainingRuns)
@@ -348,6 +366,20 @@ class Model extends \Google\Collection
   public function getTrainingRuns()
   {
     return $this->trainingRuns;
+  }
+  /**
+   * @param TransformColumn[]
+   */
+  public function setTransformColumns($transformColumns)
+  {
+    $this->transformColumns = $transformColumns;
+  }
+  /**
+   * @return TransformColumn[]
+   */
+  public function getTransformColumns()
+  {
+    return $this->transformColumns;
   }
 }
 

@@ -87,7 +87,7 @@ class OrdersHistory extends Widget
         }
         
         //$orders_total = \common\helpers\Customer::count_customer_orders();
-        $history_query_raw = "select o.orders_id, o.order_number, o.date_purchased, o.delivery_name, o.billing_name, ot.text as order_total, s.orders_status_name, o.orders_status from " . TABLE_ORDERS . " o, " . TABLE_ORDERS_TOTAL . " ot, " . TABLE_ORDERS_STATUS . " s where o.customers_id IN (" . implode(", ", $cIds) . ") and o.orders_id = ot.orders_id and ot.class = 'ot_total' and o.orders_status = s.orders_status_id and s.language_id = '" . (int) $languages_id . "' order by o.date_purchased DESC";
+        $history_query_raw = "select o.orders_id, o.order_number, o.date_purchased, o.delivery_name, o.delivery_postcode, o.billing_name, ot.text as order_total, s.orders_status_name, o.orders_status from " . TABLE_ORDERS . " o, " . TABLE_ORDERS_TOTAL . " ot, " . TABLE_ORDERS_STATUS . " s where o.customers_id IN (" . implode(", ", $cIds) . ") and o.orders_id = ot.orders_id and ot.class = 'ot_total' and o.orders_status = s.orders_status_id and s.language_id = '" . (int) $languages_id . "' order by o.date_purchased DESC";
         $history_split = new splitPageResults($history_query_raw, $max_orders);
         $history_query = tep_db_query($history_split->sql_query);
         $history_links = $history_split->display_links(MAX_DISPLAY_PAGE_LINKS, \common\helpers\Output::get_all_get_params(array('page', 'info', 'x', 'y')), 'account');

@@ -2,17 +2,26 @@
 
 namespace PHPStan\PhpDocParser\Parser;
 
+use Doctrine\Common\Annotations\DocParser;
 use Iterator;
+use PHPStan\PhpDocParser\Ast\Attribute;
 use PHPStan\PhpDocParser\Ast\ConstExpr\ConstExprArrayItemNode;
 use PHPStan\PhpDocParser\Ast\ConstExpr\ConstExprArrayNode;
 use PHPStan\PhpDocParser\Ast\ConstExpr\ConstExprIntegerNode;
 use PHPStan\PhpDocParser\Ast\ConstExpr\ConstExprStringNode;
 use PHPStan\PhpDocParser\Ast\ConstExpr\ConstFetchNode;
+use PHPStan\PhpDocParser\Ast\ConstExpr\DoctrineConstExprStringNode;
 use PHPStan\PhpDocParser\Ast\Node;
+use PHPStan\PhpDocParser\Ast\NodeTraverser;
 use PHPStan\PhpDocParser\Ast\PhpDoc\AssertTagMethodValueNode;
 use PHPStan\PhpDocParser\Ast\PhpDoc\AssertTagPropertyValueNode;
 use PHPStan\PhpDocParser\Ast\PhpDoc\AssertTagValueNode;
 use PHPStan\PhpDocParser\Ast\PhpDoc\DeprecatedTagValueNode;
+use PHPStan\PhpDocParser\Ast\PhpDoc\Doctrine\DoctrineAnnotation;
+use PHPStan\PhpDocParser\Ast\PhpDoc\Doctrine\DoctrineArgument;
+use PHPStan\PhpDocParser\Ast\PhpDoc\Doctrine\DoctrineArray;
+use PHPStan\PhpDocParser\Ast\PhpDoc\Doctrine\DoctrineArrayItem;
+use PHPStan\PhpDocParser\Ast\PhpDoc\Doctrine\DoctrineTagValueNode;
 use PHPStan\PhpDocParser\Ast\PhpDoc\ExtendsTagValueNode;
 use PHPStan\PhpDocParser\Ast\PhpDoc\GenericTagValueNode;
 use PHPStan\PhpDocParser\Ast\PhpDoc\ImplementsTagValueNode;
@@ -26,6 +35,8 @@ use PHPStan\PhpDocParser\Ast\PhpDoc\PhpDocNode;
 use PHPStan\PhpDocParser\Ast\PhpDoc\PhpDocTagNode;
 use PHPStan\PhpDocParser\Ast\PhpDoc\PhpDocTextNode;
 use PHPStan\PhpDocParser\Ast\PhpDoc\PropertyTagValueNode;
+use PHPStan\PhpDocParser\Ast\PhpDoc\RequireExtendsTagValueNode;
+use PHPStan\PhpDocParser\Ast\PhpDoc\RequireImplementsTagValueNode;
 use PHPStan\PhpDocParser\Ast\PhpDoc\ReturnTagValueNode;
 use PHPStan\PhpDocParser\Ast\PhpDoc\SelfOutTagValueNode;
 use PHPStan\PhpDocParser\Ast\PhpDoc\TemplateTagValueNode;
@@ -51,6 +62,8 @@ use PHPStan\PhpDocParser\Ast\Type\OffsetAccessTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\UnionTypeNode;
 use PHPStan\PhpDocParser\Lexer\Lexer;
 use PHPUnit\Framework\TestCase;
+use function count;
+use function sprintf;
 use const PHP_EOL;
 
 class PhpDocParserTest extends TestCase
@@ -71,12 +84,12 @@ class PhpDocParserTest extends TestCase
 	protected function setUp(): void
 	{
 		parent::setUp();
-		$this->lexer = new Lexer();
+		$this->lexer = new Lexer(true);
 		$constExprParser = new ConstExprParser();
 		$typeParser = new TypeParser($constExprParser);
-		$this->phpDocParser = new PhpDocParser($typeParser, $constExprParser);
-		$this->phpDocParserWithRequiredWhitespaceBeforeDescription = new PhpDocParser($typeParser, $constExprParser, true);
-		$this->phpDocParserWithPreserveTypeAliasesWithInvalidTypes = new PhpDocParser($typeParser, $constExprParser, true, true);
+		$this->phpDocParser = new PhpDocParser($typeParser, $constExprParser, false, false, [], true);
+		$this->phpDocParserWithRequiredWhitespaceBeforeDescription = new PhpDocParser($typeParser, $constExprParser, true, false, [], true);
+		$this->phpDocParserWithPreserveTypeAliasesWithInvalidTypes = new PhpDocParser($typeParser, $constExprParser, true, true, [], true);
 	}
 
 
@@ -89,6 +102,8 @@ class PhpDocParserTest extends TestCase
 	 * @dataProvider provideReturnTagsData
 	 * @dataProvider provideThrowsTagsData
 	 * @dataProvider provideMixinTagsData
+	 * @dataProvider provideRequireExtendsTagsData
+	 * @dataProvider provideRequireImplementsTagsData
 	 * @dataProvider provideDeprecatedTagsData
 	 * @dataProvider providePropertyTagsData
 	 * @dataProvider provideMethodTagsData
@@ -104,6 +119,9 @@ class PhpDocParserTest extends TestCase
 	 * @dataProvider provideTagsWithBackslash
 	 * @dataProvider provideSelfOutTagsData
 	 * @dataProvider provideParamOutTagsData
+	 * @dataProvider provideDoctrineData
+	 * @dataProvider provideDoctrineWithoutDoctrineCheckData
+	 * @dataProvider provideCommentLikeDescriptions
 	 */
 	public function testParse(
 		string $label,
@@ -142,8 +160,8 @@ class PhpDocParserTest extends TestCase
 		$actualPhpDocNode = $phpDocParser->parse($tokens);
 
 		$this->assertEquals($expectedPhpDocNode, $actualPhpDocNode, $label);
-		$this->assertSame((string) $expectedPhpDocNode, (string) $actualPhpDocNode);
-		$this->assertSame(Lexer::TOKEN_END, $tokens->currentTokenType());
+		$this->assertSame((string) $expectedPhpDocNode, (string) $actualPhpDocNode, $label);
+		$this->assertSame(Lexer::TOKEN_END, $tokens->currentTokenType(), $label);
 	}
 
 
@@ -309,7 +327,9 @@ class PhpDocParserTest extends TestCase
 							'*/',
 							Lexer::TOKEN_CLOSE_PHPDOC,
 							11,
-							Lexer::TOKEN_IDENTIFIER
+							Lexer::TOKEN_IDENTIFIER,
+							null,
+							1
 						)
 					)
 				),
@@ -328,7 +348,9 @@ class PhpDocParserTest extends TestCase
 							'#desc',
 							Lexer::TOKEN_OTHER,
 							11,
-							Lexer::TOKEN_IDENTIFIER
+							Lexer::TOKEN_IDENTIFIER,
+							null,
+							1
 						)
 					)
 				),
@@ -347,7 +369,9 @@ class PhpDocParserTest extends TestCase
 							'*/',
 							Lexer::TOKEN_CLOSE_PHPDOC,
 							16,
-							Lexer::TOKEN_CLOSE_PARENTHESES
+							Lexer::TOKEN_CLOSE_PARENTHESES,
+							null,
+							1
 						)
 					)
 				),
@@ -366,7 +390,9 @@ class PhpDocParserTest extends TestCase
 							'$foo',
 							Lexer::TOKEN_VARIABLE,
 							16,
-							Lexer::TOKEN_CLOSE_PARENTHESES
+							Lexer::TOKEN_CLOSE_PARENTHESES,
+							null,
+							1
 						)
 					)
 				),
@@ -385,7 +411,9 @@ class PhpDocParserTest extends TestCase
 							'$foo',
 							Lexer::TOKEN_VARIABLE,
 							19,
-							Lexer::TOKEN_CLOSE_ANGLE_BRACKET
+							Lexer::TOKEN_CLOSE_ANGLE_BRACKET,
+							null,
+							1
 						)
 					)
 				),
@@ -404,7 +432,9 @@ class PhpDocParserTest extends TestCase
 							'$foo',
 							Lexer::TOKEN_VARIABLE,
 							16,
-							Lexer::TOKEN_IDENTIFIER
+							Lexer::TOKEN_IDENTIFIER,
+							null,
+							1
 						)
 					)
 				),
@@ -423,7 +453,32 @@ class PhpDocParserTest extends TestCase
 							'*/',
 							Lexer::TOKEN_CLOSE_PHPDOC,
 							15,
-							Lexer::TOKEN_VARIABLE
+							Lexer::TOKEN_VARIABLE,
+							null,
+							1
+						)
+					)
+				),
+			]),
+		];
+
+		yield [
+			'invalid without parameter name and description - multiline',
+			'/**
+			  * @param Foo
+			  */',
+			new PhpDocNode([
+				new PhpDocTagNode(
+					'@param',
+					new InvalidTagValueNode(
+						'Foo',
+						new ParserException(
+							"\n\t\t\t  ",
+							Lexer::TOKEN_PHPDOC_EOL,
+							21,
+							Lexer::TOKEN_VARIABLE,
+							null,
+							2
 						)
 					)
 				),
@@ -442,10 +497,44 @@ class PhpDocParserTest extends TestCase
 							'optional',
 							Lexer::TOKEN_IDENTIFIER,
 							15,
-							Lexer::TOKEN_VARIABLE
+							Lexer::TOKEN_VARIABLE,
+							null,
+							1
 						)
 					)
 				),
+			]),
+		];
+
+		yield [
+			'Ok Wordpress @param tag',
+			'/**' . PHP_EOL .
+			' * @param array $parameters {' . PHP_EOL .
+			' *     Optional. Parameters for filtering the list of user assignments. Default empty array.' . PHP_EOL .
+			' *' . PHP_EOL .
+			' *     @type bool $is_active                Pass `true` to only return active user assignments and `false` to' . PHP_EOL .
+			' *                                          return  inactive user assignments.' . PHP_EOL .
+			' *     @type DateTime|string $updated_since Only return user assignments that have been updated since the given' . PHP_EOL .
+			' *                                          date and time.' . PHP_EOL .
+			' * }' . PHP_EOL .
+			' */',
+			new PhpDocNode([
+				new PhpDocTagNode(
+					'@param',
+					new ParamTagValueNode(
+						new IdentifierTypeNode('array'),
+						false,
+						'$parameters',
+						'{' . PHP_EOL .
+						'    Optional. Parameters for filtering the list of user assignments. Default empty array.'
+					)
+				),
+				new PhpDocTextNode(''),
+				new PhpDocTagNode('@type', new GenericTagValueNode('bool $is_active                Pass `true` to only return active user assignments and `false` to' . PHP_EOL .
+					'                                         return  inactive user assignments.')),
+				new PhpDocTagNode('@type', new GenericTagValueNode('DateTime|string $updated_since Only return user assignments that have been updated since the given' . PHP_EOL .
+					'                                         date and time.' . PHP_EOL .
+				'}')),
 			]),
 		];
 	}
@@ -797,7 +886,9 @@ class PhpDocParserTest extends TestCase
 							'*/',
 							Lexer::TOKEN_CLOSE_PHPDOC,
 							9,
-							Lexer::TOKEN_IDENTIFIER
+							Lexer::TOKEN_IDENTIFIER,
+							null,
+							1
 						)
 					)
 				),
@@ -816,7 +907,9 @@ class PhpDocParserTest extends TestCase
 							'#desc',
 							Lexer::TOKEN_OTHER,
 							9,
-							Lexer::TOKEN_IDENTIFIER
+							Lexer::TOKEN_IDENTIFIER,
+							null,
+							1
 						)
 					)
 				),
@@ -835,7 +928,9 @@ class PhpDocParserTest extends TestCase
 							'*/',
 							Lexer::TOKEN_CLOSE_PHPDOC,
 							14,
-							Lexer::TOKEN_CLOSE_PARENTHESES
+							Lexer::TOKEN_CLOSE_PARENTHESES,
+							null,
+							1
 						)
 					)
 				),
@@ -854,7 +949,9 @@ class PhpDocParserTest extends TestCase
 							'$foo',
 							Lexer::TOKEN_VARIABLE,
 							14,
-							Lexer::TOKEN_CLOSE_PARENTHESES
+							Lexer::TOKEN_CLOSE_PARENTHESES,
+							null,
+							1
 						)
 					)
 				),
@@ -873,7 +970,9 @@ class PhpDocParserTest extends TestCase
 							'$foo',
 							Lexer::TOKEN_VARIABLE,
 							17,
-							Lexer::TOKEN_CLOSE_ANGLE_BRACKET
+							Lexer::TOKEN_CLOSE_ANGLE_BRACKET,
+							null,
+							1
 						)
 					)
 				),
@@ -892,7 +991,9 @@ class PhpDocParserTest extends TestCase
 							'$foo',
 							Lexer::TOKEN_VARIABLE,
 							14,
-							Lexer::TOKEN_IDENTIFIER
+							Lexer::TOKEN_IDENTIFIER,
+							null,
+							1
 						)
 					)
 				),
@@ -906,12 +1007,14 @@ class PhpDocParserTest extends TestCase
 				new PhpDocTagNode(
 					'@psalm-type',
 					new InvalidTagValueNode(
-						'Unexpected token "{", expected \'*/\' at offset 46',
+						'Unexpected token "{", expected \'*/\' at offset 46 on line 1',
 						new ParserException(
 							'{',
 							Lexer::TOKEN_OPEN_CURLY_BRACKET,
 							46,
-							Lexer::TOKEN_CLOSE_PHPDOC
+							Lexer::TOKEN_CLOSE_PHPDOC,
+							null,
+							1
 						)
 					)
 				),
@@ -928,7 +1031,8 @@ class PhpDocParserTest extends TestCase
 								Lexer::TOKEN_OPEN_CURLY_BRACKET,
 								46,
 								Lexer::TOKEN_PHPDOC_EOL,
-								null
+								null,
+								1
 							)
 						)
 					)
@@ -982,7 +1086,9 @@ class PhpDocParserTest extends TestCase
 							'*/',
 							Lexer::TOKEN_CLOSE_PHPDOC,
 							14,
-							Lexer::TOKEN_IDENTIFIER
+							Lexer::TOKEN_IDENTIFIER,
+							null,
+							1
 						)
 					)
 				),
@@ -1001,7 +1107,9 @@ class PhpDocParserTest extends TestCase
 							'#desc',
 							Lexer::TOKEN_OTHER,
 							14,
-							Lexer::TOKEN_IDENTIFIER
+							Lexer::TOKEN_IDENTIFIER,
+							null,
+							1
 						)
 					)
 				),
@@ -1020,7 +1128,9 @@ class PhpDocParserTest extends TestCase
 							'*/',
 							Lexer::TOKEN_CLOSE_PHPDOC,
 							19,
-							Lexer::TOKEN_CLOSE_PARENTHESES
+							Lexer::TOKEN_CLOSE_PARENTHESES,
+							null,
+							1
 						)
 					)
 				),
@@ -1039,7 +1149,9 @@ class PhpDocParserTest extends TestCase
 							'$foo',
 							Lexer::TOKEN_VARIABLE,
 							19,
-							Lexer::TOKEN_CLOSE_PARENTHESES
+							Lexer::TOKEN_CLOSE_PARENTHESES,
+							null,
+							1
 						)
 					)
 				),
@@ -1058,7 +1170,9 @@ class PhpDocParserTest extends TestCase
 							'$foo',
 							Lexer::TOKEN_VARIABLE,
 							22,
-							Lexer::TOKEN_CLOSE_ANGLE_BRACKET
+							Lexer::TOKEN_CLOSE_ANGLE_BRACKET,
+							null,
+							1
 						)
 					)
 				),
@@ -1077,7 +1191,9 @@ class PhpDocParserTest extends TestCase
 							'$foo',
 							Lexer::TOKEN_VARIABLE,
 							19,
-							Lexer::TOKEN_IDENTIFIER
+							Lexer::TOKEN_IDENTIFIER,
+							null,
+							1
 						)
 					)
 				),
@@ -1096,7 +1212,9 @@ class PhpDocParserTest extends TestCase
 							'*/',
 							Lexer::TOKEN_CLOSE_PHPDOC,
 							18,
-							Lexer::TOKEN_VARIABLE
+							Lexer::TOKEN_VARIABLE,
+							null,
+							1
 						)
 					)
 				),
@@ -1115,7 +1233,9 @@ class PhpDocParserTest extends TestCase
 							'optional',
 							Lexer::TOKEN_IDENTIFIER,
 							18,
-							Lexer::TOKEN_VARIABLE
+							Lexer::TOKEN_VARIABLE,
+							null,
+							1
 						)
 					)
 				),
@@ -1186,6 +1306,20 @@ class PhpDocParserTest extends TestCase
 		];
 
 		yield [
+			'OK with HTML description',
+			'/** @return MongoCollection <p>Returns a collection object representing the new collection.</p> */',
+			new PhpDocNode([
+				new PhpDocTagNode(
+					'@return',
+					new ReturnTagValueNode(
+						new IdentifierTypeNode('MongoCollection'),
+						'<p>Returns a collection object representing the new collection.</p>'
+					)
+				),
+			]),
+		];
+
+		yield [
 			'invalid without type and description',
 			'/** @return */',
 			new PhpDocNode([
@@ -1197,7 +1331,9 @@ class PhpDocParserTest extends TestCase
 							'*/',
 							Lexer::TOKEN_CLOSE_PHPDOC,
 							12,
-							Lexer::TOKEN_IDENTIFIER
+							Lexer::TOKEN_IDENTIFIER,
+							null,
+							1
 						)
 					)
 				),
@@ -1216,7 +1352,9 @@ class PhpDocParserTest extends TestCase
 							'[',
 							Lexer::TOKEN_OPEN_SQUARE_BRACKET,
 							12,
-							Lexer::TOKEN_IDENTIFIER
+							Lexer::TOKEN_IDENTIFIER,
+							null,
+							1
 						)
 					)
 				),
@@ -1235,7 +1373,9 @@ class PhpDocParserTest extends TestCase
 							'#desc',
 							Lexer::TOKEN_OTHER,
 							18,
-							Lexer::TOKEN_IDENTIFIER
+							Lexer::TOKEN_IDENTIFIER,
+							null,
+							1
 						)
 					)
 				),
@@ -1254,7 +1394,9 @@ class PhpDocParserTest extends TestCase
 							'|',
 							Lexer::TOKEN_UNION,
 							18,
-							Lexer::TOKEN_OTHER
+							Lexer::TOKEN_OTHER,
+							null,
+							1
 						)
 					)
 				),
@@ -1273,7 +1415,9 @@ class PhpDocParserTest extends TestCase
 							'&',
 							Lexer::TOKEN_INTERSECTION,
 							18,
-							Lexer::TOKEN_OTHER
+							Lexer::TOKEN_OTHER,
+							null,
+							1
 						)
 					)
 				),
@@ -1292,7 +1436,9 @@ class PhpDocParserTest extends TestCase
 							'*/',
 							Lexer::TOKEN_CLOSE_PHPDOC,
 							24,
-							Lexer::TOKEN_CLOSE_ANGLE_BRACKET
+							Lexer::TOKEN_CLOSE_ANGLE_BRACKET,
+							null,
+							1
 						)
 					)
 				),
@@ -1500,7 +1646,9 @@ class PhpDocParserTest extends TestCase
 							'$foo',
 							Lexer::TOKEN_VARIABLE,
 							12,
-							Lexer::TOKEN_IDENTIFIER
+							Lexer::TOKEN_IDENTIFIER,
+							null,
+							1
 						)
 					)
 				),
@@ -1561,7 +1709,9 @@ class PhpDocParserTest extends TestCase
 							'(',
 							Lexer::TOKEN_OPEN_PARENTHESES,
 							20,
-							Lexer::TOKEN_HORIZONTAL_WS
+							Lexer::TOKEN_HORIZONTAL_WS,
+							null,
+							1
 						)
 					)
 				),
@@ -1626,7 +1776,9 @@ class PhpDocParserTest extends TestCase
 							'*/',
 							Lexer::TOKEN_CLOSE_PHPDOC,
 							12,
-							Lexer::TOKEN_IDENTIFIER
+							Lexer::TOKEN_IDENTIFIER,
+							null,
+							1
 						)
 					)
 				),
@@ -1645,7 +1797,9 @@ class PhpDocParserTest extends TestCase
 							'#desc',
 							Lexer::TOKEN_OTHER,
 							18,
-							Lexer::TOKEN_IDENTIFIER
+							Lexer::TOKEN_IDENTIFIER,
+							null,
+							1
 						)
 					)
 				),
@@ -1709,7 +1863,9 @@ class PhpDocParserTest extends TestCase
 							'*/',
 							Lexer::TOKEN_CLOSE_PHPDOC,
 							11,
-							Lexer::TOKEN_IDENTIFIER
+							Lexer::TOKEN_IDENTIFIER,
+							null,
+							1
 						)
 					)
 				),
@@ -1728,7 +1884,9 @@ class PhpDocParserTest extends TestCase
 							'#desc',
 							Lexer::TOKEN_OTHER,
 							17,
-							Lexer::TOKEN_IDENTIFIER
+							Lexer::TOKEN_IDENTIFIER,
+							null,
+							1
 						)
 					)
 				),
@@ -1748,6 +1906,138 @@ class PhpDocParserTest extends TestCase
 							GenericTypeNode::VARIANCE_INVARIANT,
 						]),
 						''
+					)
+				),
+			]),
+		];
+	}
+
+	public function provideRequireExtendsTagsData(): Iterator
+	{
+		yield [
+			'OK without description',
+			'/** @phpstan-require-extends Foo */',
+			new PhpDocNode([
+				new PhpDocTagNode(
+					'@phpstan-require-extends',
+					new RequireExtendsTagValueNode(
+						new IdentifierTypeNode('Foo'),
+						''
+					)
+				),
+			]),
+		];
+
+		yield [
+			'OK with description',
+			'/** @phpstan-require-extends Foo optional description */',
+			new PhpDocNode([
+				new PhpDocTagNode(
+					'@phpstan-require-extends',
+					new RequireExtendsTagValueNode(
+						new IdentifierTypeNode('Foo'),
+						'optional description'
+					)
+				),
+			]),
+		];
+
+		yield [
+			'OK with psalm-prefix description',
+			'/** @psalm-require-extends Foo optional description */',
+			new PhpDocNode([
+				new PhpDocTagNode(
+					'@psalm-require-extends',
+					new RequireExtendsTagValueNode(
+						new IdentifierTypeNode('Foo'),
+						'optional description'
+					)
+				),
+			]),
+		];
+
+		yield [
+			'invalid without type and description',
+			'/** @phpstan-require-extends */',
+			new PhpDocNode([
+				new PhpDocTagNode(
+					'@phpstan-require-extends',
+					new InvalidTagValueNode(
+						'',
+						new ParserException(
+							'*/',
+							Lexer::TOKEN_CLOSE_PHPDOC,
+							29,
+							Lexer::TOKEN_IDENTIFIER,
+							null,
+							1
+						)
+					)
+				),
+			]),
+		];
+	}
+
+	public function provideRequireImplementsTagsData(): Iterator
+	{
+		yield [
+			'OK without description',
+			'/** @phpstan-require-implements Foo */',
+			new PhpDocNode([
+				new PhpDocTagNode(
+					'@phpstan-require-implements',
+					new RequireImplementsTagValueNode(
+						new IdentifierTypeNode('Foo'),
+						''
+					)
+				),
+			]),
+		];
+
+		yield [
+			'OK with description',
+			'/** @phpstan-require-implements Foo optional description */',
+			new PhpDocNode([
+				new PhpDocTagNode(
+					'@phpstan-require-implements',
+					new RequireImplementsTagValueNode(
+						new IdentifierTypeNode('Foo'),
+						'optional description'
+					)
+				),
+			]),
+		];
+
+		yield [
+			'OK with psalm-prefix description',
+			'/** @psalm-require-implements Foo optional description */',
+			new PhpDocNode([
+				new PhpDocTagNode(
+					'@psalm-require-implements',
+					new RequireImplementsTagValueNode(
+						new IdentifierTypeNode('Foo'),
+						'optional description'
+					)
+				),
+			]),
+		];
+
+		yield [
+			'invalid without type and description',
+			'/** @phpstan-require-implements */',
+			new PhpDocNode([
+				new PhpDocTagNode(
+					'@phpstan-require-implements',
+					new InvalidTagValueNode(
+						'',
+						new ParserException(
+							'*/',
+							Lexer::TOKEN_CLOSE_PHPDOC,
+							32,
+							Lexer::TOKEN_IDENTIFIER,
+							null,
+							1
+						)
 					)
 				),
 			]),
@@ -2190,7 +2480,9 @@ class PhpDocParserTest extends TestCase
 							'*/',
 							Lexer::TOKEN_CLOSE_PHPDOC,
 							16,
-							Lexer::TOKEN_OPEN_PARENTHESES
+							Lexer::TOKEN_OPEN_PARENTHESES,
+							null,
+							1
 						)
 					)
 				),
@@ -2209,7 +2501,9 @@ class PhpDocParserTest extends TestCase
 							'*/',
 							Lexer::TOKEN_CLOSE_PHPDOC,
 							23,
-							Lexer::TOKEN_OPEN_PARENTHESES
+							Lexer::TOKEN_OPEN_PARENTHESES,
+							null,
+							1
 						)
 					)
 				),
@@ -2228,7 +2522,9 @@ class PhpDocParserTest extends TestCase
 							')',
 							Lexer::TOKEN_CLOSE_PARENTHESES,
 							17,
-							Lexer::TOKEN_VARIABLE
+							Lexer::TOKEN_VARIABLE,
+							null,
+							1
 						)
 					)
 				),
@@ -2399,7 +2695,11 @@ class PhpDocParserTest extends TestCase
 			new PhpDocNode([
 				new PhpDocTagNode(
 					'@foo',
-					new GenericTagValueNode('lorem @bar ipsum')
+					new GenericTagValueNode('lorem')
+				),
+				new PhpDocTagNode(
+					'@bar',
+					new GenericTagValueNode('ipsum')
 				),
 			]),
 		];
@@ -2413,6 +2713,25 @@ class PhpDocParserTest extends TestCase
 					new GenericTagValueNode(
 						'$foo'
 					)
+				),
+			]),
+		];
+
+		yield [
+			'@example with description starting at next line',
+			'/** ' . PHP_EOL .
+			' * @example' . PHP_EOL .
+			' *   entity_managers:' . PHP_EOL .
+			' *     default:' . PHP_EOL .
+			' */',
+			new PhpDocNode([
+				new PhpDocTagNode(
+					'@example',
+					new GenericTagValueNode('')
+				),
+				new PhpDocTextNode(
+					'entity_managers:' . PHP_EOL .
+					'    default:'
 				),
 			]),
 		];
@@ -2475,7 +2794,9 @@ class PhpDocParserTest extends TestCase
 							'(',
 							Lexer::TOKEN_OPEN_PARENTHESES,
 							17,
-							Lexer::TOKEN_HORIZONTAL_WS
+							Lexer::TOKEN_HORIZONTAL_WS,
+							null,
+							1
 						)
 					)
 				),
@@ -2483,10 +2804,12 @@ class PhpDocParserTest extends TestCase
 		];
 	}
 
-
-	public function provideMultiLinePhpDocData(): array
+	/**
+	 * @return iterable<array<mixed>>
+	 */
+	public function provideMultiLinePhpDocData(): iterable
 	{
-		return [
+		yield from [
 			[
 				'multi-line with two tags',
 				'/**
@@ -3388,6 +3711,40 @@ some text in the middle'
 				]),
 			],
 		];
+
+		yield [
+			'Empty lines before end',
+			'/**' . PHP_EOL .
+			' * Real description' . PHP_EOL .
+			' * @param int $a' . PHP_EOL .
+			' *' . PHP_EOL .
+			' *' . PHP_EOL .
+			' */',
+			new PhpDocNode([
+				new PhpDocTextNode('Real description'),
+				new PhpDocTagNode('@param', new ParamTagValueNode(new IdentifierTypeNode('int'), false, '$a', '')),
+				new PhpDocTextNode(''),
+				new PhpDocTextNode(''),
+			]),
+		];
+
+		yield [
+			'Empty lines before end 2',
+			'/**' . PHP_EOL .
+			' * Real description' . PHP_EOL .
+			' * @param int $a' . PHP_EOL .
+			' *' . PHP_EOL .
+			' *' . PHP_EOL .
+			' * test' . PHP_EOL .
+			' */',
+			new PhpDocNode([
+				new PhpDocTextNode('Real description'),
+				new PhpDocTagNode('@param', new ParamTagValueNode(new IdentifierTypeNode('int'), false, '$a', '')),
+				new PhpDocTextNode(''),
+				new PhpDocTextNode(''),
+				new PhpDocTextNode('test'),
+			]),
+		];
 	}
 
 	public function provideTemplateTagsData(): Iterator
@@ -3494,7 +3851,9 @@ some text in the middle'
 							'*/',
 							Lexer::TOKEN_CLOSE_PHPDOC,
 							14,
-							Lexer::TOKEN_IDENTIFIER
+							Lexer::TOKEN_IDENTIFIER,
+							null,
+							1
 						)
 					)
 				),
@@ -3513,7 +3872,9 @@ some text in the middle'
 							'#desc',
 							Lexer::TOKEN_OTHER,
 							14,
-							Lexer::TOKEN_IDENTIFIER
+							Lexer::TOKEN_IDENTIFIER,
+							null,
+							1
 						)
 					)
 				),
@@ -3725,7 +4086,9 @@ some text in the middle'
 							'*/',
 							Lexer::TOKEN_CLOSE_PHPDOC,
 							13,
-							Lexer::TOKEN_IDENTIFIER
+							Lexer::TOKEN_IDENTIFIER,
+							null,
+							1
 						)
 					)
 				),
@@ -3744,7 +4107,9 @@ some text in the middle'
 							'*/',
 							Lexer::TOKEN_CLOSE_PHPDOC,
 							17,
-							Lexer::TOKEN_OPEN_ANGLE_BRACKET
+							Lexer::TOKEN_OPEN_ANGLE_BRACKET,
+							null,
+							1
 						)
 					)
 				),
@@ -3860,7 +4225,9 @@ some text in the middle'
 							'*/',
 							Lexer::TOKEN_CLOSE_PHPDOC,
 							28,
-							Lexer::TOKEN_IDENTIFIER
+							Lexer::TOKEN_IDENTIFIER,
+							null,
+							1
 						)
 					)
 				),
@@ -3876,7 +4243,8 @@ some text in the middle'
 							Lexer::TOKEN_CLOSE_PHPDOC,
 							28,
 							Lexer::TOKEN_IDENTIFIER,
-							null
+							null,
+							1
 						))
 					)
 				),
@@ -3897,7 +4265,9 @@ some text in the middle'
 							"\n\t\t\t  ",
 							Lexer::TOKEN_PHPDOC_EOL,
 							34,
-							Lexer::TOKEN_IDENTIFIER
+							Lexer::TOKEN_IDENTIFIER,
+							null,
+							2
 						)
 					)
 				),
@@ -3913,7 +4283,8 @@ some text in the middle'
 							Lexer::TOKEN_PHPDOC_EOL,
 							34,
 							Lexer::TOKEN_IDENTIFIER,
-							null
+							null,
+							2
 						))
 					)
 				),
@@ -3935,7 +4306,9 @@ some text in the middle'
 							"\n\t\t\t  * ",
 							Lexer::TOKEN_PHPDOC_EOL,
 							34,
-							Lexer::TOKEN_IDENTIFIER
+							Lexer::TOKEN_IDENTIFIER,
+							null,
+							2
 						)
 					)
 				),
@@ -3958,7 +4331,8 @@ some text in the middle'
 							Lexer::TOKEN_PHPDOC_EOL,
 							34,
 							Lexer::TOKEN_IDENTIFIER,
-							null
+							null,
+							2
 						))
 					)
 				),
@@ -3982,13 +4356,14 @@ some text in the middle'
 				new PhpDocTagNode(
 					'@phpstan-type',
 					new InvalidTagValueNode(
-						"Unexpected token \"{\", expected '*/' at offset 65",
+						"Unexpected token \"{\", expected '*/' at offset 65 on line 3",
 						new ParserException(
 							'{',
 							Lexer::TOKEN_OPEN_CURLY_BRACKET,
 							65,
 							Lexer::TOKEN_CLOSE_PHPDOC,
-							null
+							null,
+							3
 						)
 					)
 				),
@@ -4011,7 +4386,8 @@ some text in the middle'
 							Lexer::TOKEN_OPEN_CURLY_BRACKET,
 							65,
 							Lexer::TOKEN_PHPDOC_EOL,
-							null
+							null,
+							3
 						))
 					)
 				),
@@ -4029,13 +4405,14 @@ some text in the middle'
 				new PhpDocTagNode(
 					'@phpstan-type',
 					new InvalidTagValueNode(
-						"Unexpected token \"{\", expected '*/' at offset 65",
+						"Unexpected token \"{\", expected '*/' at offset 65 on line 3",
 						new ParserException(
 							'{',
 							Lexer::TOKEN_OPEN_CURLY_BRACKET,
 							65,
 							Lexer::TOKEN_CLOSE_PHPDOC,
-							null
+							null,
+							3
 						)
 					)
 				),
@@ -4058,7 +4435,8 @@ some text in the middle'
 							Lexer::TOKEN_OPEN_CURLY_BRACKET,
 							65,
 							Lexer::TOKEN_PHPDOC_EOL,
-							null
+							null,
+							3
 						))
 					)
 				),
@@ -4084,7 +4462,9 @@ some text in the middle'
 							'*/',
 							Lexer::TOKEN_CLOSE_PHPDOC,
 							18,
-							Lexer::TOKEN_IDENTIFIER
+							Lexer::TOKEN_IDENTIFIER,
+							null,
+							1
 						)
 					)
 				),
@@ -4136,7 +4516,9 @@ some text in the middle'
 							'42',
 							Lexer::TOKEN_INTEGER,
 							40,
-							Lexer::TOKEN_IDENTIFIER
+							Lexer::TOKEN_IDENTIFIER,
+							null,
+							1
 						)
 					)
 				),
@@ -4150,12 +4532,14 @@ some text in the middle'
 				new PhpDocTagNode(
 					'@phpstan-import-type',
 					new InvalidTagValueNode(
-						'Unexpected token "[", expected \'*/\' at offset 52',
+						'Unexpected token "[", expected \'*/\' at offset 52 on line 1',
 						new ParserException(
 							'[',
 							Lexer::TOKEN_OPEN_SQUARE_BRACKET,
 							52,
-							Lexer::TOKEN_CLOSE_PHPDOC
+							Lexer::TOKEN_CLOSE_PHPDOC,
+							null,
+							1
 						)
 					)
 				),
@@ -4175,7 +4559,8 @@ some text in the middle'
 							Lexer::TOKEN_CLOSE_PHPDOC,
 							35,
 							Lexer::TOKEN_IDENTIFIER,
-							'from'
+							'from',
+							1
 						)
 					)
 				),
@@ -4195,7 +4580,8 @@ some text in the middle'
 							Lexer::TOKEN_IDENTIFIER,
 							35,
 							Lexer::TOKEN_IDENTIFIER,
-							'from'
+							'from',
+							1
 						)
 					)
 				),
@@ -4214,7 +4600,9 @@ some text in the middle'
 							'*/',
 							Lexer::TOKEN_CLOSE_PHPDOC,
 							25,
-							Lexer::TOKEN_IDENTIFIER
+							Lexer::TOKEN_IDENTIFIER,
+							null,
+							1
 						)
 					)
 				),
@@ -4326,19 +4714,56 @@ some text in the middle'
 		];
 
 		yield [
-			'invalid $this',
+			'OK $this',
 			'/** @phpstan-assert Type $this */',
 			new PhpDocNode([
 				new PhpDocTagNode(
 					'@phpstan-assert',
-					new InvalidTagValueNode(
-						'Type $this',
-						new ParserException(
-							'*/',
-							Lexer::TOKEN_CLOSE_PHPDOC,
-							31,
-							Lexer::TOKEN_ARROW
-						)
+					new AssertTagValueNode(
+						new IdentifierTypeNode('Type'),
+						'$this',
+						false,
+						''
+					)
+				),
+			]),
+		];
+
+		yield [
+			'OK $this with description',
+			'/** @phpstan-assert Type $this assert Type to $this */',
+			new PhpDocNode([
+				new PhpDocTagNode(
+					'@phpstan-assert',
+					new AssertTagValueNode(
+						new IdentifierTypeNode('Type'),
+						'$this',
+						false,
+						'assert Type to $this'
+					)
+				),
+			]),
+		];
+
+		yield [
+			'OK $this with generic type',
+			'/** @phpstan-assert GenericType<T> $this */',
+			new PhpDocNode([
+				new PhpDocTagNode(
+					'@phpstan-assert',
+					new AssertTagValueNode(
+						new GenericTypeNode(
+							new IdentifierTypeNode('GenericType'),
+							[
+								new IdentifierTypeNode('T'),
+							],
+							[
+								GenericTypeNode::VARIANCE_INVARIANT,
+							]
+						),
+						'$this',
+						false,
+						''
 					)
 				),
 			]),
@@ -4680,7 +5105,7 @@ Finder::findFiles('*.php')
 			'malformed const fetch',
 			'/** @param Foo::** $a */',
 			new PhpDocNode([
-				new PhpDocTagNode('@param', new InvalidTagValueNode('Foo::** $a', new ParserException('*', Lexer::TOKEN_WILDCARD, 17, Lexer::TOKEN_VARIABLE))),
+				new PhpDocTagNode('@param', new InvalidTagValueNode('Foo::** $a', new ParserException('*', Lexer::TOKEN_WILDCARD, 17, Lexer::TOKEN_VARIABLE, null, 1))),
 			]),
 		];
 
@@ -5127,8 +5552,10 @@ Finder::findFiles('*.php')
 						new ParserException(
 							'Important',
 							Lexer::TOKEN_IDENTIFIER,
-							27,
-							Lexer::TOKEN_HORIZONTAL_WS
+							PHP_EOL === "\n" ? 27 : 28,
+							Lexer::TOKEN_HORIZONTAL_WS,
+							null,
+							2
 						)
 					)
 				),
@@ -5136,6 +5563,9 @@ Finder::findFiles('*.php')
 		];
 	}
 
+	/**
+	 * @return array<mixed>
+	 */
 	public function dataParseTagValue(): array
 	{
 		return [
@@ -5158,7 +5588,9 @@ Finder::findFiles('*.php')
 						'$foo',
 						Lexer::TOKEN_VARIABLE,
 						0,
-						Lexer::TOKEN_IDENTIFIER
+						Lexer::TOKEN_IDENTIFIER,
+						null,
+						1
 					)
 				),
 			],
@@ -5198,7 +5630,10 @@ Finder::findFiles('*.php')
 			new PhpDocNode([
 				new PhpDocTagNode(
 					'@ORM\Mapping\JoinColumn',
-					new GenericTagValueNode('(name="column_id", referencedColumnName="id")')
+					new DoctrineTagValueNode(new DoctrineAnnotation('@ORM\Mapping\JoinColumn', [
+						new DoctrineArgument(new IdentifierTypeNode('name'), new DoctrineConstExprStringNode('column_id')),
+						new DoctrineArgument(new IdentifierTypeNode('referencedColumnName'), new DoctrineConstExprStringNode('id')),
+					]), '')
 				),
 			]),
 		];
@@ -5277,6 +5712,98 @@ Finder::findFiles('*.php')
 		];
 	}
 
+	public function provideCommentLikeDescriptions(): Iterator
+	{
+		yield [
+			'Comment after @param',
+			'/** @param int $a // this is a description */',
+			new PhpDocNode([
+				new PhpDocTagNode('@param', new ParamTagValueNode(
+					new IdentifierTypeNode('int'),
+					false,
+					'$a',
+					'// this is a description'
+				)),
+			]),
+		];
+
+		yield [
+			'Comment on a separate line',
+			'/**' . PHP_EOL .
+			' * @param int $a' . PHP_EOL .
+			' * // this is a comment' . PHP_EOL .
+			' */',
+			new PhpDocNode([
+				new PhpDocTagNode('@param', new ParamTagValueNode(
+					new IdentifierTypeNode('int'),
+					false,
+					'$a',
+					''
+				)),
+				new PhpDocTextNode('// this is a comment'),
+			]),
+		];
+		yield [
+			'Comment on a separate line 2',
+			'/**' . PHP_EOL .
+			' * @param int $a' . PHP_EOL .
+			' *' . PHP_EOL .
+			' * // this is a comment' . PHP_EOL .
+			' */',
+			new PhpDocNode([
+				new PhpDocTagNode('@param', new ParamTagValueNode(
+					new IdentifierTypeNode('int'),
+					false,
+					'$a',
+					''
+				)),
+				new PhpDocTextNode(''),
+				new PhpDocTextNode('// this is a comment'),
+			]),
+		];
+		yield [
+			'Comment after Doctrine tag 1',
+			'/** @ORM\Doctrine // this is a description */',
+			new PhpDocNode([
+				new PhpDocTagNode('@ORM\Doctrine', new GenericTagValueNode('// this is a description')),
+			]),
+		];
+		yield [
+			'Comment after Doctrine tag 2',
+			'/** @\ORM\Doctrine // this is a description */',
+			new PhpDocNode([
+				new PhpDocTagNode('@\ORM\Doctrine', new DoctrineTagValueNode(
+					new DoctrineAnnotation('@\ORM\Doctrine', []),
+					'// this is a description'
+				)),
+			]),
+		];
+		yield [
+			'Comment after Doctrine tag 3',
+			'/** @\ORM\Doctrine() // this is a description */',
+			new PhpDocNode([
+				new PhpDocTagNode('@\ORM\Doctrine', new DoctrineTagValueNode(
+					new DoctrineAnnotation('@\ORM\Doctrine', []),
+					'// this is a description'
+				)),
+			]),
+		];
+		yield [
+			'Comment after Doctrine tag 4',
+			'/** @\ORM\Doctrine() @\ORM\Entity() // this is a description */',
+			new PhpDocNode([
+				new PhpDocTagNode('@\ORM\Doctrine', new DoctrineTagValueNode(
+					new DoctrineAnnotation('@\ORM\Doctrine', []),
+					''
+				)),
+				new PhpDocTagNode('@\ORM\Entity', new DoctrineTagValueNode(
+					new DoctrineAnnotation('@\ORM\Entity', []),
+					'// this is a description'
+				)),
+			]),
+		];
+	}
+
 	public function provideParamOutTagsData(): Iterator
 	{
 		yield [
@@ -5306,6 +5833,915 @@ Finder::findFiles('*.php')
 						'description'
 					)
 				),
+			]),
+		];
+	}
+
+	public function provideDoctrineData(): Iterator
+	{
+		yield [
+			'single tag node with empty parameters',
+			'/**' . PHP_EOL .
+			' * @X() Content' . PHP_EOL .
+			' */',
+			new PhpDocNode([
+				new PhpDocTagNode(
+					'@X',
+					new DoctrineTagValueNode(
+						new DoctrineAnnotation('@X', []),
+						'Content'
+					)
+				),
+			]),
+			null,
+			null,
+			[new Doctrine\X()],
+		];
+
+		$xWithZ = new Doctrine\X();
+		$xWithZ->a = new Doctrine\Z();
+		yield [
+			'single tag node with nested PHPDoc tag',
+			'/**' . PHP_EOL .
+			' * @X(@Z) Content' . PHP_EOL .
+			' */',
+			new PhpDocNode([
+				new PhpDocTagNode(
+					'@X',
+					new DoctrineTagValueNode(
+						new DoctrineAnnotation('@X', [
+							new DoctrineArgument(null, new DoctrineAnnotation('@Z', [])),
+						]),
+						'Content'
+					)
+				),
+			]),
+			null,
+			null,
+			[$xWithZ],
+		];
+
+		yield [
+			'single tag node with nested PHPDoc tag with field name',
+			'/**' . PHP_EOL .
+			' * @X(a=@Z) Content' . PHP_EOL .
+			' */',
+			new PhpDocNode([
+				new PhpDocTagNode(
+					'@X',
+					new DoctrineTagValueNode(
+						new DoctrineAnnotation('@X', [
+							new DoctrineArgument(new IdentifierTypeNode('a'), new DoctrineAnnotation('@Z', [])),
+						]),
+						'Content'
+					)
+				),
+			]),
+			null,
+			null,
+			[$xWithZ],
+		];
+
+		yield [
+			'single tag node with nested Doctrine tag',
+			'/**' . PHP_EOL .
+			' * @X(@\PHPStan\PhpDocParser\Parser\Doctrine\Z) Content' . PHP_EOL .
+			' */',
+			new PhpDocNode([
+				new PhpDocTagNode(
+					'@X',
+					new DoctrineTagValueNode(
+						new DoctrineAnnotation('@X', [
+							new DoctrineArgument(null, new DoctrineAnnotation('@\PHPStan\PhpDocParser\Parser\Doctrine\Z', [])),
+						]),
+						'Content'
+					)
+				),
+			]),
+			null,
+			null,
+			[$xWithZ],
+		];
+
+		yield [
+			'single tag node with nested Doctrine tag with field name',
+			'/**' . PHP_EOL .
+			' * @X( a = @\PHPStan\PhpDocParser\Parser\Doctrine\Z) Content' . PHP_EOL .
+			' */',
+			new PhpDocNode([
+				new PhpDocTagNode(
+					'@X',
+					new DoctrineTagValueNode(
+						new DoctrineAnnotation('@X', [
+							new DoctrineArgument(new IdentifierTypeNode('a'), new DoctrineAnnotation('@\PHPStan\PhpDocParser\Parser\Doctrine\Z', [])),
+						]),
+						'Content'
+					)
+				),
+			]),
+			null,
+			null,
+			[$xWithZ],
+		];
+
+		yield [
+			'single tag node with empty parameters with crazy whitespace',
+			'/**' . PHP_EOL .
+			' * @X  (   ' . PHP_EOL .
+			' * ) Content' . PHP_EOL .
+			' */',
+			new PhpDocNode([
+				new PhpDocTagNode(
+					'@X',
+					new DoctrineTagValueNode(
+						new DoctrineAnnotation('@X', []),
+						'Content'
+					)
+				),
+			]),
+			null,
+			null,
+			[new Doctrine\X()],
+		];
+
+		yield [
+			'single tag node with empty parameters with crazy whitespace with extra text node',
+			'/**' . PHP_EOL .
+			' * @X ()' . PHP_EOL .
+			' * Content' . PHP_EOL .
+			' */',
+			new PhpDocNode([
+				new PhpDocTagNode(
+					'@X',
+					new DoctrineTagValueNode(
+						new DoctrineAnnotation('@X', []),
+						''
+					)
+				),
+				new PhpDocTextNode('Content'),
+			]),
+			null,
+			null,
+			[new Doctrine\X()],
+		];
+
+		yield [
+			'single FQN tag node without parentheses',
+			'/**' . PHP_EOL .
+			' * @\PHPStan\PhpDocParser\Parser\Doctrine\X Content' . PHP_EOL .
+			' */',
+			new PhpDocNode([
+				new PhpDocTagNode(
+					'@\PHPStan\PhpDocParser\Parser\Doctrine\X',
+					new DoctrineTagValueNode(
+						new DoctrineAnnotation('@\PHPStan\PhpDocParser\Parser\Doctrine\X', []),
+						'Content'
+					)
+				),
+			]),
+			null,
+			null,
+			[new Doctrine\X()],
+		];
+
+		yield [
+			'single FQN tag node with empty parameters',
+			'/**' . PHP_EOL .
+			' * @\PHPStan\PhpDocParser\Parser\Doctrine\X() Content' . PHP_EOL .
+			' */',
+			new PhpDocNode([
+				new PhpDocTagNode(
+					'@\PHPStan\PhpDocParser\Parser\Doctrine\X',
+					new DoctrineTagValueNode(
+						new DoctrineAnnotation('@\PHPStan\PhpDocParser\Parser\Doctrine\X', []),
+						'Content'
+					)
+				),
+			]),
+			null,
+			null,
+			[new Doctrine\X()],
+		];
+
+		$x = new Doctrine\X();
+		$x->a = Doctrine\Y::SOME;
+
+		$z = new Doctrine\Z();
+		$z->code = 123;
+		$x->b = [$z];
+		yield [
+			'single tag node with other tags in parameters',
+			'/**' . PHP_EOL .
+			' * @X(' . PHP_EOL .
+			' *     a=Y::SOME,' . PHP_EOL .
+			' *     b={' . PHP_EOL .
+			' *         @Z(' . PHP_EOL .
+			' *             code=123' . PHP_EOL .
+			' *         )' . PHP_EOL .
+			' *     }' . PHP_EOL .
+			' * ) Content' . PHP_EOL .
+			' */',
+			new PhpDocNode([
+				new PhpDocTagNode(
+					'@X',
+					new DoctrineTagValueNode(
+						new DoctrineAnnotation(
+							'@X',
+							[
+								new DoctrineArgument(new IdentifierTypeNode('a'), new ConstFetchNode('Y', 'SOME')),
+								new DoctrineArgument(new IdentifierTypeNode('b'), new DoctrineArray([
+									new DoctrineArrayItem(null, new DoctrineAnnotation('@Z', [
+										new DoctrineArgument(new IdentifierTypeNode('code'), new ConstExprIntegerNode('123')),
+									])),
+								])),
+							]
+						),
+						'Content'
+					)
+				),
+			]),
+			null,
+			null,
+			[$x],
+		];
+
+		yield [
+			'single tag node with other tags in parameters with crazy whitespace inbetween',
+			'/**' . PHP_EOL .
+			' * @X   (' . PHP_EOL .
+			' *     a' . PHP_EOL .
+			' *      =  Y::SOME,' . PHP_EOL .
+			' *     b = ' . PHP_EOL .
+			' *     {' . PHP_EOL .
+			' *         @Z (' . PHP_EOL .
+			' *             code=123,' . PHP_EOL .
+			' *         ),' . PHP_EOL .
+			' *     },' . PHP_EOL .
+			' * ) Content' . PHP_EOL .
+			' */',
+			new PhpDocNode([
+				new PhpDocTagNode(
+					'@X',
+					new DoctrineTagValueNode(
+						new DoctrineAnnotation(
+							'@X',
+							[
+								new DoctrineArgument(new IdentifierTypeNode('a'), new ConstFetchNode('Y', 'SOME')),
+								new DoctrineArgument(new IdentifierTypeNode('b'), new DoctrineArray([
+									new DoctrineArrayItem(null, new DoctrineAnnotation('@Z', [
+										new DoctrineArgument(new IdentifierTypeNode('code'), new ConstExprIntegerNode('123')),
+									])),
+								])),
+							]
+						),
+						'Content'
+					)
+				),
+			]),
+			null,
+			null,
+			[$x],
+		];
+
+		yield [
+			'Multiline tag behaviour 1',
+			'/**' . PHP_EOL .
+			' * @X() test' . PHP_EOL .
+			' */',
+			new PhpDocNode([
+				new PhpDocTagNode('@X', new DoctrineTagValueNode(new DoctrineAnnotation(
+					'@X',
+					[]
+				), 'test')),
+			]),
+			null,
+			null,
+			[new Doctrine\X()],
+		];
+
+		yield [
+			'Multiline tag behaviour 2',
+			'/**' . PHP_EOL .
+			' * @X() test' . PHP_EOL .
+			' * test2' . PHP_EOL .
+			' */',
+			new PhpDocNode([
+				new PhpDocTagNode('@X', new DoctrineTagValueNode(new DoctrineAnnotation(
+					'@X',
+					[]
+				), 'test' . PHP_EOL . 'test2')),
+			]),
+			null,
+			null,
+			[new Doctrine\X()],
+		];
+		yield [
+			'Multiline tag behaviour 3',
+			'/**' . PHP_EOL .
+			' * @X() test' . PHP_EOL .
+			' *' . PHP_EOL .
+			' * test2' . PHP_EOL .
+			' */',
+			new PhpDocNode([
+				new PhpDocTagNode('@X', new DoctrineTagValueNode(new DoctrineAnnotation(
+					'@X',
+					[]
+				), 'test')),
+				new PhpDocTextNode(''),
+				new PhpDocTextNode('test2'),
+			]),
+			null,
+			null,
+			[new Doctrine\X()],
+		];
+		yield [
+			'Multiline tag behaviour 4',
+			'/**' . PHP_EOL .
+			' * @X() test' . PHP_EOL .
+			' *' . PHP_EOL .
+			' * test2' . PHP_EOL .
+			' * @Z()' . PHP_EOL .
+			' */',
+			new PhpDocNode([
+				new PhpDocTagNode('@X', new DoctrineTagValueNode(new DoctrineAnnotation(
+					'@X',
+					[]
+				), 'test')),
+				new PhpDocTextNode(''),
+				new PhpDocTextNode('test2'),
+				new PhpDocTagNode('@Z', new DoctrineTagValueNode(new DoctrineAnnotation(
+					'@Z',
+					[]
+				), '')),
+			]),
+			null,
+			null,
+			[new Doctrine\X(), new Doctrine\Z()],
+		];
+
+		yield [
+			'Multiline generic tag behaviour 1',
+			'/**' . PHP_EOL .
+			' * @X test' . PHP_EOL .
+			' */',
+			new PhpDocNode([
+				new PhpDocTagNode('@X', new GenericTagValueNode('test')),
+			]),
+			null,
+			null,
+			[new Doctrine\X()],
+		];
+
+		yield [
+			'Multiline generic tag behaviour 2',
+			'/**' . PHP_EOL .
+			' * @X test' . PHP_EOL .
+			' * test2' . PHP_EOL .
+			' */',
+			new PhpDocNode([
+				new PhpDocTagNode('@X', new GenericTagValueNode('test' . PHP_EOL . 'test2')),
+			]),
+			null,
+			null,
+			[new Doctrine\X()],
+		];
+		yield [
+			'Multiline generic tag behaviour 3',
+			'/**' . PHP_EOL .
+			' * @X test' . PHP_EOL .
+			' *' . PHP_EOL .
+			' * test2' . PHP_EOL .
+			' */',
+			new PhpDocNode([
+				new PhpDocTagNode('@X', new GenericTagValueNode('test')),
+				new PhpDocTextNode(''),
+				new PhpDocTextNode('test2'),
+			]),
+			null,
+			null,
+			[new Doctrine\X()],
+		];
+		yield [
+			'Multiline generic tag behaviour 4',
+			'/**' . PHP_EOL .
+			' * @X test' . PHP_EOL .
+			' *' . PHP_EOL .
+			' * test2' . PHP_EOL .
+			' * @Z' . PHP_EOL .
+			' */',
+			new PhpDocNode([
+				new PhpDocTagNode('@X', new GenericTagValueNode('test')),
+				new PhpDocTextNode(''),
+				new PhpDocTextNode('test2'),
+				new PhpDocTagNode('@Z', new GenericTagValueNode('')),
+			]),
+			null,
+			null,
+			[new Doctrine\X(), new Doctrine\Z()],
+		];
+
+		yield [
+			'More tags on the same line',
+			'/** @X() @Z() */',
+			new PhpDocNode([
+				new PhpDocTagNode('@X', new DoctrineTagValueNode(new DoctrineAnnotation('@X', []), '')),
+				new PhpDocTagNode('@Z', new DoctrineTagValueNode(new DoctrineAnnotation('@Z', []), '')),
+			]),
+			null,
+			null,
+			[new Doctrine\X(), new Doctrine\Z()],
+		];
+
+		yield [
+			'More tags on the same line with description inbetween',
+			'/** @X() test @Z() */',
+			new PhpDocNode([
+				new PhpDocTagNode('@X', new DoctrineTagValueNode(new DoctrineAnnotation('@X', []), 'test')),
+				new PhpDocTagNode('@Z', new DoctrineTagValueNode(new DoctrineAnnotation('@Z', []), '')),
+			]),
+			null,
+			null,
+			[new Doctrine\X(), new Doctrine\Z()],
+		];
+
+		yield [
+			'More tags on the same line with description inbetween, first one generic',
+			'/** @X test @Z() */',
+			new PhpDocNode([
+				new PhpDocTagNode('@X', new GenericTagValueNode('test')),
+				new PhpDocTagNode('@Z', new DoctrineTagValueNode(new DoctrineAnnotation('@Z', []), '')),
+			]),
+			null,
+			null,
+			[new Doctrine\X(), new Doctrine\Z()],
+		];
+
+		yield [
+			'More generic tags on the same line with description inbetween, 2nd one @param which should become description',
+			'/** @X @phpstan-param int $z */',
+			new PhpDocNode([
+				new PhpDocTagNode('@X', new GenericTagValueNode('@phpstan-param int $z')),
+			]),
+			null,
+			null,
+			[new Doctrine\X()],
+		];
+
+		yield [
+			'More generic tags on the same line with description inbetween, 2nd one @param which should become description can have a parse error',
+			'/** @X @phpstan-param |int $z */',
+			new PhpDocNode([
+				new PhpDocTagNode('@X', new GenericTagValueNode('@phpstan-param |int $z')),
+			]),
+			null,
+			null,
+			[new Doctrine\X()],
+		];
+
+		yield [
+			'More tags on the same line with description inbetween, 2nd one @param which should become description',
+			'/** @X() @phpstan-param int $z */',
+			new PhpDocNode([
+				new PhpDocTagNode('@X', new DoctrineTagValueNode(new DoctrineAnnotation('@X', []), '@phpstan-param int $z')),
+			]),
+			null,
+			null,
+			[new Doctrine\X()],
+		];
+
+		yield [
+			'More tags on the same line with description inbetween, 2nd one @param which should become description can have a parse error',
+			'/** @X() @phpstan-param |int $z */',
+			new PhpDocNode([
+				new PhpDocTagNode('@X', new DoctrineTagValueNode(new DoctrineAnnotation('@X', []), '@phpstan-param |int $z')),
+			]),
+			null,
+			null,
+			[new Doctrine\X()],
+		];
+
+		$apiResource = new Doctrine\ApiResource();
+		$apiResource->itemOperations = [
+			'get' => [
+				'security' => 'is_granted(' . PHP_EOL .
+					"constant('REDACTED')," . PHP_EOL .
+					'object' . PHP_EOL . ')',
+				'normalization_context' => [
+					'groups' => ['Redacted:read'],
+				],
+			],
+		];
+		yield [
+			'Regression test for issue #207',
+			'/**' . PHP_EOL .
+			' * @ApiResource(' . PHP_EOL .
+			' *     itemOperations={' . PHP_EOL .
+			' *         "get"={' . PHP_EOL .
+			' *             "security"="is_granted(' . PHP_EOL .
+			"constant('REDACTED')," . PHP_EOL .
+			'object' . PHP_EOL .
+			')",' . PHP_EOL .
+			' *              "normalization_context"={"groups"={"Redacted:read"}}' . PHP_EOL .
+			' *         }' . PHP_EOL .
+			' *     }' . PHP_EOL .
+			' * )' . PHP_EOL .
+			'  */',
+			new PhpDocNode([
+				new PhpDocTagNode('@ApiResource', new DoctrineTagValueNode(
+					new DoctrineAnnotation('@ApiResource', [
+						new DoctrineArgument(new IdentifierTypeNode('itemOperations'), new DoctrineArray([
+							new DoctrineArrayItem(
+								new DoctrineConstExprStringNode('get'),
+								new DoctrineArray([
+									new DoctrineArrayItem(
+										new DoctrineConstExprStringNode('security'),
+										new DoctrineConstExprStringNode('is_granted(' . PHP_EOL .
+											"constant('REDACTED')," . PHP_EOL .
+											'object' . PHP_EOL .
+											')')
+									),
+									new DoctrineArrayItem(
+										new DoctrineConstExprStringNode('normalization_context'),
+										new DoctrineArray([
+											new DoctrineArrayItem(
+												new DoctrineConstExprStringNode('groups'),
+												new DoctrineArray([
+													new DoctrineArrayItem(null, new DoctrineConstExprStringNode('Redacted:read')),
+												])
+											),
+										])
+									),
+								])
+							),
+						])),
+					]),
+					''
+				)),
+			]),
+			null,
+			null,
+			[$apiResource],
+		];
+
+		$xWithString = new Doctrine\X();
+		$xWithString->a = '"bar"';
+		yield [
+			'Escaped strings',
+			'/** @X(a="""bar""") */',
+			new PhpDocNode([
+				new PhpDocTagNode('@X', new DoctrineTagValueNode(
+					new DoctrineAnnotation('@X', [
+						new DoctrineArgument(new IdentifierTypeNode('a'), new DoctrineConstExprStringNode($xWithString->a)),
+					]),
+					''
+				)),
+			]),
+			null,
+			null,
+			[$xWithString],
+		];
+
+		$xWithString2 = new Doctrine\X();
+		$xWithString2->a = 'Allowed choices are "bar" or "baz".';
+		yield [
+			'Escaped strings 2',
+			'/** @X(a="Allowed choices are ""bar"" or ""baz"".") */',
+			new PhpDocNode([
+				new PhpDocTagNode('@X', new DoctrineTagValueNode(
+					new DoctrineAnnotation('@X', [
+						new DoctrineArgument(new IdentifierTypeNode('a'), new DoctrineConstExprStringNode($xWithString2->a)),
+					]),
+					''
+				)),
+			]),
+			null,
+			null,
+			[$xWithString2],
+		];
+
+		$xWithString3 = new Doctrine\X();
+		$xWithString3->a = 'In PHP, "" is an empty string';
+		yield [
+			'Escaped strings 3',
+			'/** @X(a="In PHP, """" is an empty string") */',
+			new PhpDocNode([
+				new PhpDocTagNode('@X', new DoctrineTagValueNode(
+					new DoctrineAnnotation('@X', [
+						new DoctrineArgument(new IdentifierTypeNode('a'), new DoctrineConstExprStringNode($xWithString3->a)),
+					]),
+					''
+				)),
+			]),
+			null,
+			null,
+			[$xWithString3],
+		];
+
+		$xWithString4 = new Doctrine\X();
+		$xWithString4->a = '"May the Force be with you," he said.';
+		yield [
+			'Escaped strings 4',
+			'/** @X(a="""May the Force be with you,"" he said.") */',
+			new PhpDocNode([
+				new PhpDocTagNode('@X', new DoctrineTagValueNode(
+					new DoctrineAnnotation('@X', [
+						new DoctrineArgument(new IdentifierTypeNode('a'), new DoctrineConstExprStringNode($xWithString4->a)),
+					]),
+					''
+				)),
+			]),
+			null,
+			null,
+			[$xWithString4],
+		];
+	}
+
+	public function provideDoctrineWithoutDoctrineCheckData(): Iterator
+	{
+		yield [
+			'Dummy 1',
+			'/** @DummyAnnotation(dummyValue="hello") */',
+			new PhpDocNode([
+				new PhpDocTagNode('@DummyAnnotation', new DoctrineTagValueNode(
+					new DoctrineAnnotation('@DummyAnnotation', [
+						new DoctrineArgument(new IdentifierTypeNode('dummyValue'), new DoctrineConstExprStringNode('hello')),
+					]),
+					''
+				)),
+			]),
+		];
+		yield [
+			'Dummy 2',
+			'/**
+ * @DummyJoinTable(name="join_table",
+ *      joinColumns={@DummyJoinColumn(name="col1", referencedColumnName="col2")},
+ *      inverseJoinColumns={
+ *          @DummyJoinColumn(name="col3", referencedColumnName="col4")
+ *      })
+ */',
+			new PhpDocNode([
+				new PhpDocTagNode('@DummyJoinTable', new DoctrineTagValueNode(
+					new DoctrineAnnotation('@DummyJoinTable', [
+						new DoctrineArgument(new IdentifierTypeNode('name'), new DoctrineConstExprStringNode('join_table')),
+						new DoctrineArgument(new IdentifierTypeNode('joinColumns'), new DoctrineArray([
+							new DoctrineArrayItem(null, new DoctrineAnnotation('@DummyJoinColumn', [
+								new DoctrineArgument(new IdentifierTypeNode('name'), new DoctrineConstExprStringNode('col1')),
+								new DoctrineArgument(new IdentifierTypeNode('referencedColumnName'), new DoctrineConstExprStringNode('col2')),
+							])),
+						])),
+						new DoctrineArgument(new IdentifierTypeNode('inverseJoinColumns'), new DoctrineArray([
+							new DoctrineArrayItem(null, new DoctrineAnnotation('@DummyJoinColumn', [
+								new DoctrineArgument(new IdentifierTypeNode('name'), new DoctrineConstExprStringNode('col3')),
+								new DoctrineArgument(new IdentifierTypeNode('referencedColumnName'), new DoctrineConstExprStringNode('col4')),
+							])),
+						])),
+					]),
+					''
+				)),
+			]),
+		];
+
+		yield [
+			'Annotation in annotation',
+			'/** @AnnotationTargetAll(@AnnotationTargetAnnotation) */',
+			new PhpDocNode([
+				new PhpDocTagNode('@AnnotationTargetAll', new DoctrineTagValueNode(
+					new DoctrineAnnotation('@AnnotationTargetAll', [
+						new DoctrineArgument(null, new DoctrineAnnotation('@AnnotationTargetAnnotation', [])),
+					]),
+					''
+				)),
+			]),
+		];
+
+		yield [
+			'Dangling comma annotation',
+			'/** @DummyAnnotation(dummyValue = "bar",) */',
+			new PhpDocNode([
+				new PhpDocTagNode('@DummyAnnotation', new DoctrineTagValueNode(
+					new DoctrineAnnotation('@DummyAnnotation', [
+						new DoctrineArgument(new IdentifierTypeNode('dummyValue'), new DoctrineConstExprStringNode('bar')),
+					]),
+					''
+				)),
+			]),
+		];
+
+		yield [
+			'Multiple on one line',
+			'/**
+			 * @DummyId @DummyColumn(type="integer") @DummyGeneratedValue
+			 * @var int
+			 */',
+			new PhpDocNode([
+				new PhpDocTagNode('@DummyId', new GenericTagValueNode('')),
+				new PhpDocTagNode('@DummyColumn', new DoctrineTagValueNode(
+					new DoctrineAnnotation('@DummyColumn', [
+						new DoctrineArgument(new IdentifierTypeNode('type'), new DoctrineConstExprStringNode('integer')),
+					]),
+					''
+				)),
+				new PhpDocTagNode('@DummyGeneratedValue', new GenericTagValueNode('')),
+				new PhpDocTagNode('@var', new VarTagValueNode(new IdentifierTypeNode('int'), '', '')),
+			]),
+		];
+
+		yield [
+			'Parse error with dashes',
+			'/** @AlsoDoNot\Parse-me */',
+			new PhpDocNode([
+				new PhpDocTagNode('@AlsoDoNot\Parse-me', new GenericTagValueNode('')),
+			]),
+		];
+
+		yield [
+			'Annotation with constant',
+			'/** @AnnotationWithConstants(PHP_EOL) */',
+			new PhpDocNode([
+				new PhpDocTagNode('@AnnotationWithConstants', new DoctrineTagValueNode(
+					new DoctrineAnnotation('@AnnotationWithConstants', [
+						new DoctrineArgument(null, new IdentifierTypeNode('PHP_EOL')),
+					]),
+					''
+				)),
+			]),
+		];
+
+		yield [
+			'Nested arrays with nested annotations',
+			'/** @Name(foo={1,2, {"key"=@Name}}) */',
+			new PhpDocNode([
+				new PhpDocTagNode('@Name', new DoctrineTagValueNode(
+					new DoctrineAnnotation('@Name', [
+						new DoctrineArgument(new IdentifierTypeNode('foo'), new DoctrineArray([
+							new DoctrineArrayItem(null, new ConstExprIntegerNode('1')),
+							new DoctrineArrayItem(null, new ConstExprIntegerNode('2')),
+							new DoctrineArrayItem(null, new DoctrineArray([
+								new DoctrineArrayItem(new DoctrineConstExprStringNode('key'), new DoctrineAnnotation(
+									'@Name',
+									[]
+								)),
+							])),
+						])),
+					]),
+					''
+				)),
+			]),
+		];
+
+		yield [
+			'Namespaced constant',
+			'/** @AnnotationWithConstants(Doctrine\Tests\Common\Annotations\Fixtures\AnnotationWithConstants::FLOAT) */',
+			new PhpDocNode([
+				new PhpDocTagNode('@AnnotationWithConstants', new DoctrineTagValueNode(
+					new DoctrineAnnotation('@AnnotationWithConstants', [
+						new DoctrineArgument(null, new ConstFetchNode('Doctrine\Tests\Common\Annotations\Fixtures\AnnotationWithConstants', 'FLOAT')),
+					]),
+					''
+				)),
+			]),
+		];
+
+		yield [
+			'Another namespaced constant',
+			'/** @AnnotationWithConstants(\Doctrine\Tests\Common\Annotations\Fixtures\AnnotationWithConstants::FLOAT) */',
+			new PhpDocNode([
+				new PhpDocTagNode('@AnnotationWithConstants', new DoctrineTagValueNode(
+					new DoctrineAnnotation('@AnnotationWithConstants', [
+						new DoctrineArgument(null, new ConstFetchNode('\Doctrine\Tests\Common\Annotations\Fixtures\AnnotationWithConstants', 'FLOAT')),
+					]),
+					''
+				)),
+			]),
+		];
+
+		yield [
+			'Array with namespaced constants',
+			'/** @AnnotationWithConstants({
+    Doctrine\Tests\Common\Annotations\Fixtures\InterfaceWithConstants::SOME_KEY = AnnotationWithConstants::INTEGER
+}) */',
+			new PhpDocNode([
+				new PhpDocTagNode('@AnnotationWithConstants', new DoctrineTagValueNode(
+					new DoctrineAnnotation('@AnnotationWithConstants', [
+						new DoctrineArgument(null, new DoctrineArray([
+							new DoctrineArrayItem(
+								new ConstFetchNode('Doctrine\Tests\Common\Annotations\Fixtures\InterfaceWithConstants', 'SOME_KEY'),
+								new ConstFetchNode('AnnotationWithConstants', 'INTEGER')
+							),
+						])),
+					]),
+					''
+				)),
+			]),
+		];
+
+		yield [
+			'Array with colon',
+			'/** @Name({"foo": "bar"}) */',
+			new PhpDocNode([
+				new PhpDocTagNode('@Name', new DoctrineTagValueNode(
+					new DoctrineAnnotation('@Name', [
+						new DoctrineArgument(null, new DoctrineArray([
+							new DoctrineArrayItem(new DoctrineConstExprStringNode('foo'), new DoctrineConstExprStringNode('bar')),
+						])),
+					]),
+					''
+				)),
+			]),
+		];
+
+		yield [
+			'More tags on the same line with description inbetween, second Doctrine one cannot have parse error',
+			'/** @X test @Z(test= */',
+			new PhpDocNode([
+				new PhpDocTagNode('@X', new GenericTagValueNode('test')),
+				new PhpDocTagNode('@Z', new InvalidTagValueNode('(test=', new ParserException(
+					'=',
+					14,
+					19,
+					5,
+					null,
+					1
+				))),
+			]),
+			null,
+			null,
+			[new Doctrine\X()],
+		];
+
+		yield [
+			'More tags on the same line with description inbetween, second Doctrine one cannot have parse error 2',
+			'/** @X() test @Z(test= */',
+			new PhpDocNode([
+				new PhpDocTagNode('@X', new DoctrineTagValueNode(new DoctrineAnnotation('@X', []), 'test')),
+				new PhpDocTagNode('@Z', new InvalidTagValueNode('(test=', new ParserException(
+					'=',
+					14,
+					21,
+					5,
+					null,
+					1
+				))),
+			]),
+			null,
+			null,
+			[new Doctrine\X()],
+		];
+
+		yield [
+			'Doctrine tag after common tag is just a description',
+			'/** @phpstan-param int $z @X() */',
+			new PhpDocNode([
+				new PhpDocTagNode('@phpstan-param', new ParamTagValueNode(
+					new IdentifierTypeNode('int'),
+					false,
+					'$z',
+					'@X()'
+				)),
+			]),
+		];
+
+		yield [
+			'Doctrine tag after common tag is just a description 2',
+			'/** @phpstan-param int $z @\X\Y() */',
+			new PhpDocNode([
+				new PhpDocTagNode('@phpstan-param', new ParamTagValueNode(
+					new IdentifierTypeNode('int'),
+					false,
+					'$z',
+					'@\X\Y()'
+				)),
+			]),
+		];
+
+		yield [
+			'Generic tag after common tag is just a description',
+			'/** @phpstan-param int $z @X */',
+			new PhpDocNode([
+				new PhpDocTagNode('@phpstan-param', new ParamTagValueNode(
+					new IdentifierTypeNode('int'),
+					false,
+					'$z',
+					'@X'
+				)),
+			]),
+		];
+
+		yield [
+			'Slevomat CS issue #1608',
+			'/**' . PHP_EOL .
+			' * `"= "`' . PHP_EOL .
+			' * a' . PHP_EOL .
+			' * "' . PHP_EOL .
+			' *' . PHP_EOL .
+			' * @package foo' . PHP_EOL .
+			' */',
+			new PhpDocNode([
+				new PhpDocTextNode('`"= "`' . PHP_EOL .
+					' * a' . PHP_EOL .
+					' * "'),
+				new PhpDocTextNode(''),
+				new PhpDocTagNode('@package', new GenericTagValueNode('foo')),
 			]),
 		];
 	}
@@ -5374,6 +6810,624 @@ Finder::findFiles('*.php')
 		$this->assertInstanceOf(AssertTagValueNode::class, $assertNode->value);
 
 		$this->assertSame('@phpstan-assert !Type $param', $assertNode->__toString());
+	}
+
+	/**
+	 * @return array<mixed>
+	 */
+	public function dataLinesAndIndexes(): iterable
+	{
+		yield [
+			'/** @param Foo $a */',
+			[
+				[1, 1, 1, 5],
+			],
+		];
+
+		yield [
+			'/**
+			  * @param Foo $foo 1st multi world description
+			  * @param Bar $bar 2nd multi world description
+			  */',
+			[
+				[2, 2, 2, 15],
+				[3, 3, 17, 30],
+			],
+		];
+
+		yield [
+			'/**
+			  * @template TRandKey as array-key
+			  * @template TRandVal
+			  * @template TRandList as array<TRandKey, TRandVal>|XIterator<TRandKey, TRandVal>|Traversable<TRandKey, TRandVal>
+			  *
+			  * @param TRandList $list
+			  *
+			  * @return (
+			  *        TRandList is array ? array<TRandKey, TRandVal> : (
+			  *        TRandList is XIterator ?    XIterator<TRandKey, TRandVal> :
+			  *        IteratorIterator<TRandKey, TRandVal>|LimitIterator<TRandKey, TRandVal>
+			  * ))
+			  */',
+			[
+				[2, 2, 2, 8],
+				[3, 3, 10, 12],
+				[4, 4, 14, 42],
+				[5, 5, 44, 43],
+				[6, 6, 45, 49],
+				[7, 7, 51, 50],
+				[8, 12, 52, 114],
+			],
+		];
+
+		yield [
+			'/** @param Foo( */',
+			[
+				[1, 1, 1, 4],
+			],
+		];
+
+		yield [
+			'/** @phpstan-import-type TypeAlias from AnotherClass[] */',
+			[
+				[1, 1, 8, 11],
+			],
+		];
+
+		yield [
+			'/** @param Foo::** $a */',
+			[
+				[1, 1, 1, 8],
+			],
+		];
+
+		yield [
+			'/** @param Foo::** $a*/',
+			[
+				[1, 1, 1, 8],
+			],
+		];
+
+		yield [
+			'/** @return Foo */',
+			[
+				[1, 1, 1, 3],
+			],
+		];
+
+		yield [
+			'/** @return Foo*/',
+			[
+				[1, 1, 1, 3],
+			],
+		];
+
+		yield [
+			'/** @api */',
+			[
+				[1, 1, 1, 1],
+			],
+		];
+	}
+
+	/**
+	 * @dataProvider dataLinesAndIndexes
+	 * @param list<array{int, int, int, int}> $childrenLines
+	 */
+	public function testLinesAndIndexes(string $phpDoc, array $childrenLines): void
+	{
+		$tokens = new TokenIterator($this->lexer->tokenize($phpDoc));
+		$usedAttributes = [
+			'lines' => true,
+			'indexes' => true,
+		];
+		$constExprParser = new ConstExprParser(true, true, $usedAttributes);
+		$typeParser = new TypeParser($constExprParser, true, $usedAttributes);
+		$phpDocParser = new PhpDocParser($typeParser, $constExprParser, true, true, $usedAttributes);
+		$phpDocNode = $phpDocParser->parse($tokens);
+		$children = $phpDocNode->children;
+		$this->assertCount(count($childrenLines), $children);
+		foreach ($children as $i => $child) {
+			$this->assertSame($childrenLines[$i][0], $child->getAttribute(Attribute::START_LINE));
+			$this->assertSame($childrenLines[$i][1], $child->getAttribute(Attribute::END_LINE));
+			$this->assertSame($childrenLines[$i][2], $child->getAttribute(Attribute::START_INDEX));
+			$this->assertSame($childrenLines[$i][3], $child->getAttribute(Attribute::END_INDEX));
+		}
+	}
+
+
+	/**
+	 * @return iterable<array{string, list<array{int, int, int, int}>}>
+	 */
+	public function dataDeepNodesLinesAndIndexes(): iterable
+	{
+		yield [
+			'/**' . PHP_EOL .
+			' * @X({' . PHP_EOL .
+			' *     1,' . PHP_EOL .
+			' *     2' . PHP_EOL .
+			' *    ,    ' . PHP_EOL .
+			' *     3,' . PHP_EOL .
+			' * }' . PHP_EOL .
+			' * )' . PHP_EOL .
+			' */',
+			[
+				[1, 9, 0, 25], // PhpDocNode
+				[2, 8, 2, 23], // PhpDocTagNode
+				[2, 8, 3, 23], // DoctrineTagValueNode
+				[2, 8, 3, 23], // DoctrineAnnotation
+				[2, 8, 4, 21], // DoctrineArgument
+				[2, 8, 4, 21], // DoctrineArray
+				[3, 3, 7, 7], // DoctrineArrayItem
+				[3, 3, 7, 7], // ConstExprIntegerNode
+				[4, 5, 11, 11], // DoctrineArrayItem
+				[4, 5, 11, 11], // ConstExprIntegerNode
+				[6, 6, 18, 18], // DoctrineArrayItem
+				[6, 6, 18, 18], // ConstExprIntegerNode
+			],
+		];
+
+		yield [
+			'/**' . PHP_EOL .
+			' * @\Foo\Bar({' . PHP_EOL .
+			' * }' . PHP_EOL .
+			' * )' . PHP_EOL .
+			' */',
+			[
+				[1, 5, 0, 10], // PhpDocNode
+				[2, 4, 2, 8], // PhpDocTagNode
+				[2, 4, 3, 8], // DoctrineTagValueNode
+				[2, 4, 3, 8], // DoctrineAnnotation
+				[2, 4, 4, 6], // DoctrineArgument
+				[2, 4, 4, 6], // DoctrineArray
+			],
+		];
+
+		yield [
+			'/** @api */',
+			[
+				[1, 1, 0, 3],
+				[1, 1, 1, 1],
+				[1, 1, 3, 1], // GenericTagValueNode is empty so start index is higher than end index
+			],
+		];
+	}
+
+
+	/**
+	 * @dataProvider dataDeepNodesLinesAndIndexes
+	 * @param list<array{int, int, int, int}> $nodeAttributes
+	 */
+	public function testDeepNodesLinesAndIndexes(string $phpDoc, array $nodeAttributes): void
+	{
+		$tokens = new TokenIterator($this->lexer->tokenize($phpDoc));
+		$usedAttributes = [
+			'lines' => true,
+			'indexes' => true,
+		];
+		$constExprParser = new ConstExprParser(true, true, $usedAttributes);
+		$typeParser = new TypeParser($constExprParser, true, $usedAttributes);
+		$phpDocParser = new PhpDocParser($typeParser, $constExprParser, true, true, $usedAttributes, true);
+		$visitor = new NodeCollectingVisitor();
+		$traverser = new NodeTraverser([$visitor]);
+		$traverser->traverse([$phpDocParser->parse($tokens)]);
+		$nodes = $visitor->nodes;
+		$this->assertCount(count($nodeAttributes), $nodes);
+		foreach ($nodes as $i => $node) {
+			$this->assertSame($nodeAttributes[$i][0], $node->getAttribute(Attribute::START_LINE), sprintf('Start line of %d. node', $i + 1));
+			$this->assertSame($nodeAttributes[$i][1], $node->getAttribute(Attribute::END_LINE), sprintf('End line of %d. node', $i + 1));
+			$this->assertSame($nodeAttributes[$i][2], $node->getAttribute(Attribute::START_INDEX), sprintf('Start index of %d. node', $i + 1));
+			$this->assertSame($nodeAttributes[$i][3], $node->getAttribute(Attribute::END_INDEX), sprintf('End index of %d. node', $i + 1));
+		}
+	}
+
+	/**
+	 * @return array<mixed>
+	 */
+	public function dataReturnTypeLinesAndIndexes(): iterable
+	{
+		yield [
+			'/** @return Foo */',
+			[1, 1, 3, 3],
+		];
+
+		yield [
+			'/** @return Foo*/',
+			[1, 1, 3, 3],
+		];
+
+		yield [
+			'/**
+			  * @param Foo $foo
+			  * @return Foo
+			  */',
+			[3, 3, 10, 10],
+		];
+
+		yield [
+			'/**
+			  * @return Foo
+			  * @param Foo $foo
+			  */',
+			[2, 2, 4, 4],
+		];
+
+		yield [
+			'/**
+			  * @param Foo $foo
+			  * @return Foo */',
+			[3, 3, 10, 10],
+		];
+
+		yield [
+			'/**
+			  * @param Foo $foo
+			  * @return Foo*/',
+			[3, 3, 10, 10],
+		];
+	}
+
+	/**
+	 * @dataProvider dataReturnTypeLinesAndIndexes
+	 * @param array{int, int, int, int} $lines
+	 */
+	public function testReturnTypeLinesAndIndexes(string $phpDoc, array $lines): void
+	{
+		$tokens = new TokenIterator($this->lexer->tokenize($phpDoc));
+		$usedAttributes = [
+			'lines' => true,
+			'indexes' => true,
+		];
+		$constExprParser = new ConstExprParser(true, true, $usedAttributes);
+		$typeParser = new TypeParser($constExprParser, true, $usedAttributes);
+		$phpDocParser = new PhpDocParser($typeParser, $constExprParser, true, true, $usedAttributes);
+		$phpDocNode = $phpDocParser->parse($tokens);
+		$returnTag = $phpDocNode->getReturnTagValues()[0];
+		$type = $returnTag->type;
+		$this->assertInstanceOf(IdentifierTypeNode::class, $type);
+
+		$this->assertSame($lines[0], $type->getAttribute(Attribute::START_LINE));
+		$this->assertSame($lines[1], $type->getAttribute(Attribute::END_LINE));
+		$this->assertSame($lines[2], $type->getAttribute(Attribute::START_INDEX));
+		$this->assertSame($lines[3], $type->getAttribute(Attribute::END_INDEX));
+	}
+
+	/**
+	 * @dataProvider provideTagsWithNumbers
+	 * @dataProvider provideSpecializedTags
+	 * @dataProvider provideParamTagsData
+	 * @dataProvider provideTypelessParamTagsData
+	 * @dataProvider provideVarTagsData
+	 * @dataProvider provideReturnTagsData
+	 * @dataProvider provideThrowsTagsData
+	 * @dataProvider provideMixinTagsData
+	 * @dataProvider provideDeprecatedTagsData
+	 * @dataProvider providePropertyTagsData
+	 * @dataProvider provideMethodTagsData
+	 * @dataProvider provideSingleLinePhpDocData
+	 * @dataProvider provideMultiLinePhpDocData
+	 * @dataProvider provideTemplateTagsData
+	 * @dataProvider provideExtendsTagsData
+	 * @dataProvider provideTypeAliasTagsData
+	 * @dataProvider provideTypeAliasImportTagsData
+	 * @dataProvider provideAssertTagsData
+	 * @dataProvider provideRealWorldExampleData
+	 * @dataProvider provideDescriptionWithOrWithoutHtml
+	 * @dataProvider provideTagsWithBackslash
+	 * @dataProvider provideSelfOutTagsData
+	 * @dataProvider provideParamOutTagsData
+	 * @dataProvider provideDoctrineData
+	 * @dataProvider provideDoctrineWithoutDoctrineCheckData
+	 */
+	public function testVerifyAttributes(string $label, string $input): void
+	{
+		$usedAttributes = ['lines' => true, 'indexes' => true];
+		$constExprParser = new ConstExprParser(true, true, $usedAttributes);
+		$typeParser = new TypeParser($constExprParser, true, $usedAttributes);
+		$phpDocParser = new PhpDocParser($typeParser, $constExprParser, true, true, $usedAttributes);
+		$tokens = new TokenIterator($this->lexer->tokenize($input));
+
+		$visitor = new NodeCollectingVisitor();
+		$traverser = new NodeTraverser([$visitor]);
+		$traverser->traverse([$phpDocParser->parse($tokens)]);
+
+		foreach ($visitor->nodes as $node) {
+			$this->assertNotNull($node->getAttribute(Attribute::START_LINE), sprintf('%s: %s', $label, $node));
+			$this->assertNotNull($node->getAttribute(Attribute::END_LINE), sprintf('%s: %s', $label, $node));
+			$this->assertNotNull($node->getAttribute(Attribute::START_INDEX), sprintf('%s: %s', $label, $node));
+			$this->assertNotNull($node->getAttribute(Attribute::END_INDEX), sprintf('%s: %s', $label, $node));
+		}
+	}
+
+	/**
+	 * @dataProvider provideDoctrineData
+	 * @param list<object> $expectedAnnotations
+	 */
+	public function testDoctrine(
+		string $label,
+		string $input,
+		PhpDocNode $expectedPhpDocNode,
+		?PhpDocNode $withRequiredWhitespaceBeforeDescriptionExpectedPhpDocNode = null,
+		?PhpDocNode $withPreserveTypeAliasesWithInvalidTypesExpectedPhpDocNode = null,
+		array $expectedAnnotations = []
+	): void
+	{
+		$parser = new DocParser();
+		$parser->addNamespace('PHPStan\PhpDocParser\Parser\Doctrine');
+		$this->assertEquals($expectedAnnotations, $parser->parse($input, $label), $label);
+	}
+
+	/**
+	 * @return iterable<array{string, PhpDocNode}>
+	 */
+	public function dataTextBetweenTagsBelongsToDescription(): iterable
+	{
+		yield [
+			'/**' . PHP_EOL .
+			  ' * Real description' . PHP_EOL .
+			  ' * @param int $a' . PHP_EOL .
+			  ' *   paramA description' . PHP_EOL .
+			  ' * @param int $b' . PHP_EOL .
+			  ' *   paramB description' . PHP_EOL .
+			  ' */',
+			new PhpDocNode([
+				new PhpDocTextNode('Real description'),
+				new PhpDocTagNode('@param', new ParamTagValueNode(new IdentifierTypeNode('int'), false, '$a', PHP_EOL . '  paramA description')),
+				new PhpDocTagNode('@param', new ParamTagValueNode(new IdentifierTypeNode('int'), false, '$b', PHP_EOL . '  paramB description')),
+			]),
+		];
+
+		yield [
+			'/**' . PHP_EOL .
+			' * Real description' . PHP_EOL .
+			' * @param int $a' . PHP_EOL .
+			' *' . PHP_EOL .
+			' * @param int $b' . PHP_EOL .
+			' */',
+			new PhpDocNode([
+				new PhpDocTextNode('Real description'),
+				new PhpDocTagNode('@param', new ParamTagValueNode(new IdentifierTypeNode('int'), false, '$a', '')),
+				new PhpDocTextNode(''),
+				new PhpDocTagNode('@param', new ParamTagValueNode(new IdentifierTypeNode('int'), false, '$b', '')),
+			]),
+		];
+
+		yield [
+			'/**' . PHP_EOL .
+			' * Real description' . PHP_EOL .
+			' * @param int $a aaaa' . PHP_EOL .
+			' *   bbbb' . PHP_EOL .
+			' *' . PHP_EOL .
+			' * ccc' . PHP_EOL .
+			' */',
+			new PhpDocNode([
+				new PhpDocTextNode('Real description'),
+				new PhpDocTagNode('@param', new ParamTagValueNode(new IdentifierTypeNode('int'), false, '$a', 'aaaa' . PHP_EOL . '  bbbb' . PHP_EOL . PHP_EOL . 'ccc')),
+			]),
+		];
+
+		yield [
+			'/**' . PHP_EOL .
+			' * Real description' . PHP_EOL .
+			' * @ORM\Column()' . PHP_EOL .
+			' *   bbbb' . PHP_EOL .
+			' *' . PHP_EOL .
+			' * ccc' . PHP_EOL .
+			' */',
+			new PhpDocNode([
+				new PhpDocTextNode('Real description'),
+				new PhpDocTagNode('@ORM\Column', new DoctrineTagValueNode(new DoctrineAnnotation('@ORM\Column', []), PHP_EOL . '  bbbb' . PHP_EOL . PHP_EOL . 'ccc')),
+			]),
+		];
+
+		yield [
+			'/**' . PHP_EOL .
+			' * Real description' . PHP_EOL .
+			' * @ORM\Column() aaaa' . PHP_EOL .
+			' *   bbbb' . PHP_EOL .
+			' *' . PHP_EOL .
+			' * ccc' . PHP_EOL .
+			' */',
+			new PhpDocNode([
+				new PhpDocTextNode('Real description'),
+				new PhpDocTagNode('@ORM\Column', new DoctrineTagValueNode(new DoctrineAnnotation('@ORM\Column', []), 'aaaa' . PHP_EOL . '  bbbb' . PHP_EOL . PHP_EOL . 'ccc')),
+			]),
+		];
+
+		yield [
+			'/**' . PHP_EOL .
+			' * Real description' . PHP_EOL .
+			' * @ORM\Column() aaaa' . PHP_EOL .
+			' *   bbbb' . PHP_EOL .
+			' *' . PHP_EOL .
+			' * ccc' . PHP_EOL .
+			' * @param int $b' . PHP_EOL .
+			' */',
+			new PhpDocNode([
+				new PhpDocTextNode('Real description'),
+				new PhpDocTagNode('@ORM\Column', new DoctrineTagValueNode(new DoctrineAnnotation('@ORM\Column', []), 'aaaa' . PHP_EOL . '  bbbb' . PHP_EOL . PHP_EOL . 'ccc')),
+				new PhpDocTagNode('@param', new ParamTagValueNode(new IdentifierTypeNode('int'), false, '$b', '')),
+			]),
+		];
+
+		yield [
+			'/**' . PHP_EOL .
+			' * Real description' . PHP_EOL .
+			' * @param int $a' . PHP_EOL .
+			' *' . PHP_EOL .
+			' *' . PHP_EOL .
+			' */',
+			new PhpDocNode([
+				new PhpDocTextNode('Real description'),
+				new PhpDocTagNode('@param', new ParamTagValueNode(new IdentifierTypeNode('int'), false, '$a', '')),
+				new PhpDocTextNode(''),
+				new PhpDocTextNode(''),
+			]),
+		];
+
+		yield [
+			'/**' . PHP_EOL .
+			' * Real description' . PHP_EOL .
+			' * @param int $a' . PHP_EOL .
+			' *' . PHP_EOL .
+			' *' . PHP_EOL .
+			' * test' . PHP_EOL .
+			' */',
+			new PhpDocNode([
+				new PhpDocTextNode('Real description'),
+				new PhpDocTagNode('@param', new ParamTagValueNode(new IdentifierTypeNode('int'), false, '$a', PHP_EOL . PHP_EOL . PHP_EOL . 'test')),
+			]),
+		];
+
+		yield [
+			'/**' . PHP_EOL .
+			' * Real description' . PHP_EOL .
+			' * @param int $a test' . PHP_EOL .
+			' *' . PHP_EOL .
+			' */',
+			new PhpDocNode([
+				new PhpDocTextNode('Real description'),
+				new PhpDocTagNode('@param', new ParamTagValueNode(new IdentifierTypeNode('int'), false, '$a', 'test')),
+				new PhpDocTextNode(''),
+			]),
+		];
+
+		yield [
+			'/**' . PHP_EOL .
+			' * Real description' . PHP_EOL .
+			' * @param int $a test' . PHP_EOL .
+			' *' . PHP_EOL .
+			' *' . PHP_EOL .
+			' */',
+			new PhpDocNode([
+				new PhpDocTextNode('Real description'),
+				new PhpDocTagNode('@param', new ParamTagValueNode(new IdentifierTypeNode('int'), false, '$a', 'test')),
+				new PhpDocTextNode(''),
+				new PhpDocTextNode(''),
+			]),
+		];
+
+		yield [
+			'/**' . PHP_EOL .
+			' * Real description' . PHP_EOL .
+			' * @param int $a' . PHP_EOL .
+			' *  test' . PHP_EOL .
+			' *' . PHP_EOL .
+			' *' . PHP_EOL .
+			' */',
+			new PhpDocNode([
+				new PhpDocTextNode('Real description'),
+				new PhpDocTagNode('@param', new ParamTagValueNode(new IdentifierTypeNode('int'), false, '$a', PHP_EOL . ' test')),
+				new PhpDocTextNode(''),
+				new PhpDocTextNode(''),
+			]),
+		];
+
+		yield [
+			'/**' . PHP_EOL .
+			' * Real description' . PHP_EOL .
+			' * @param int $a' . PHP_EOL .
+			' *  test' . PHP_EOL .
+			' *' . PHP_EOL .
+			' *' . PHP_EOL .
+			' *' . PHP_EOL .
+			' */',
+			new PhpDocNode([
+				new PhpDocTextNode('Real description'),
+				new PhpDocTagNode('@param', new ParamTagValueNode(new IdentifierTypeNode('int'), false, '$a', PHP_EOL . ' test')),
+				new PhpDocTextNode(''),
+				new PhpDocTextNode(''),
+				new PhpDocTextNode(''),
+			]),
+		];
+
+		yield [
+			'/**' . PHP_EOL .
+			' * Real description' . PHP_EOL .
+			' * @param int $a' . PHP_EOL .
+			' *  test' . PHP_EOL .
+			' *' . PHP_EOL .
+			' * test 2' . PHP_EOL .
+			' *' . PHP_EOL .
+			' */',
+			new PhpDocNode([
+				new PhpDocTextNode('Real description'),
+				new PhpDocTagNode('@param', new ParamTagValueNode(new IdentifierTypeNode('int'), false, '$a', PHP_EOL . ' test' . PHP_EOL . PHP_EOL . 'test 2')),
+				new PhpDocTextNode(''),
+			]),
+		];
+		yield [
+			'/**' . PHP_EOL .
+			' * Real description' . PHP_EOL .
+			' * @param int $a' . PHP_EOL .
+			' *  test' . PHP_EOL .
+			' *' . PHP_EOL .
+			' * test 2' . PHP_EOL .
+			' *' . PHP_EOL .
+			' *' . PHP_EOL .
+			' */',
+			new PhpDocNode([
+				new PhpDocTextNode('Real description'),
+				new PhpDocTagNode('@param', new ParamTagValueNode(new IdentifierTypeNode('int'), false, '$a', PHP_EOL . ' test' . PHP_EOL . PHP_EOL . 'test 2')),
+				new PhpDocTextNode(''),
+				new PhpDocTextNode(''),
+			]),
+		];
+
+		yield [
+			'/**' . PHP_EOL .
+			' * Real description' . PHP_EOL .
+			' * @ORM\Column()' . PHP_EOL .
+			' *  test' . PHP_EOL .
+			' *' . PHP_EOL .
+			' * test 2' . PHP_EOL .
+			' *' . PHP_EOL .
+			' *' . PHP_EOL .
+			' */',
+			new PhpDocNode([
+				new PhpDocTextNode('Real description'),
+				new PhpDocTagNode('@ORM\Column', new DoctrineTagValueNode(new DoctrineAnnotation('@ORM\Column', []), PHP_EOL . ' test' . PHP_EOL . PHP_EOL . 'test 2')),
+				new PhpDocTextNode(''),
+				new PhpDocTextNode(''),
+			]),
+		];
+
+		yield [
+			'/**' . PHP_EOL .
+			' * `"= "`' . PHP_EOL .
+			' * a' . PHP_EOL .
+			' * "' . PHP_EOL .
+			' *' . PHP_EOL .
+			' * @package foo' . PHP_EOL .
+			' */',
+			new PhpDocNode([
+				new PhpDocTextNode('`"= "`' . PHP_EOL .
+					' * a' . PHP_EOL .
+					' * "'),
+				new PhpDocTextNode(''),
+				new PhpDocTagNode('@package', new GenericTagValueNode('foo')),
+			]),
+		];
+	}
+
+	/**
+	 * @dataProvider dataTextBetweenTagsBelongsToDescription
+	 */
+	public function testTextBetweenTagsBelongsToDescription(
+		string $input,
+		PhpDocNode $expectedPhpDocNode
+	): void
+	{
+		$constExprParser = new ConstExprParser();
+		$typeParser = new TypeParser($constExprParser);
+		$phpDocParser = new PhpDocParser($typeParser, $constExprParser, true, true, [], true, true);
+
+		$tokens = new TokenIterator($this->lexer->tokenize($input));
+		$actualPhpDocNode = $phpDocParser->parse($tokens);
+
+		$this->assertEquals($expectedPhpDocNode, $actualPhpDocNode);
+		$this->assertSame((string) $expectedPhpDocNode, (string) $actualPhpDocNode);
+		$this->assertSame(Lexer::TOKEN_END, $tokens->currentTokenType());
 	}
 
 }

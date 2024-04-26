@@ -23,12 +23,24 @@ class GoogleAssistantEmbeddedV1Alarm extends \Google\Model
    * @var string
    */
   public $alarmId;
+  /**
+   * @var string
+   */
+  public $alarmSource;
+  /**
+   * @var GoogleTypeDate
+   */
+  public $datePattern;
   protected $datePatternType = GoogleTypeDate::class;
   protected $datePatternDataType = '';
   /**
    * @var string
    */
   public $label;
+  /**
+   * @var GoogleAssistantEmbeddedV1AlarmRecurrence
+   */
+  public $recurrencePattern;
   protected $recurrencePatternType = GoogleAssistantEmbeddedV1AlarmRecurrence::class;
   protected $recurrencePatternDataType = '';
   /**
@@ -39,6 +51,10 @@ class GoogleAssistantEmbeddedV1Alarm extends \Google\Model
    * @var string
    */
   public $status;
+  /**
+   * @var GoogleTypeTimeOfDay
+   */
+  public $timePattern;
   protected $timePatternType = GoogleTypeTimeOfDay::class;
   protected $timePatternDataType = '';
 
@@ -55,6 +71,20 @@ class GoogleAssistantEmbeddedV1Alarm extends \Google\Model
   public function getAlarmId()
   {
     return $this->alarmId;
+  }
+  /**
+   * @param string
+   */
+  public function setAlarmSource($alarmSource)
+  {
+    $this->alarmSource = $alarmSource;
+  }
+  /**
+   * @return string
+   */
+  public function getAlarmSource()
+  {
+    return $this->alarmSource;
   }
   /**
    * @param GoogleTypeDate

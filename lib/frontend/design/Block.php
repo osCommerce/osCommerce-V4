@@ -188,6 +188,7 @@ class Block extends Widget
                     self::inlineBlockHTags(@$settings[0]['hTagsInline']) .
                     '" ' .
                     ($widget['widget_name'] == 'BlockBox' && $widget['widget_params'] ? ' data-placeholder="' . $widget['widget_params'] . '"' : '') .
+                    (Info::isAdmin() ? ' title="' . $widget['widget_params'] . '"' : '') .
                     ($page_block == 'orders' || $page_block == 'email' || $page_block == 'packingslip' || $page_block == 'invoice' || $page_block == 'pdf' || $page_block == 'pdf_cover' || $page_block == 'gift_card' || $page_block == 'trade_form_pdf' || $page_block == 'trade_form_direct_debit_pdf' || @$this->params['params']['inline_styles'] ? self::styles($settings, true, $this->theme_name) : '') . ' data-name="' . $widget['widget_name'] . '" id="box-' . $widget['id'] . '">';
             }
             $style = self::styles($settings, false, $this->theme_name);
@@ -236,7 +237,7 @@ class Block extends Widget
             }
 
             if ($widgetHtml == ''){
-                if (Info::isAdmin() && !$adminDesign) {
+                if (Info::isAdmin() && !$adminDesign && strpos((Yii::$app->request->headers['referer'] ?? ''), DIR_WS_HTTP_ADMIN_CATALOG . 'design')) {
                     $pos = strripos($widget['widget_name'], '\\') + 1;
                     $prefix = '<span class="no-widget-prefix">' . substr($widget['widget_name'], 0, $pos) . '</span>';
                     $widgetName = '<span class="no-widget-title">' .substr($widget['widget_name'], $pos) . '</span>';
@@ -441,7 +442,7 @@ class Block extends Widget
                     Yii::$app->controller->id == 'catalog' && Yii::$app->controller->action->id == 'product' ||
                     Yii::$app->controller->id == 'catalog' && Yii::$app->controller->action->id == 'index' ||
                     Yii::$app->controller->id == 'info' && Yii::$app->controller->action->id == 'index' ||
-                    Yii::$app->controller->id == 'cart' && Yii::$app->controller->action->id == 'index' ||
+                    Yii::$app->controller->id == 'shopping-cart' && Yii::$app->controller->action->id == 'index' ||
                     Yii::$app->controller->id == 'checkout' && Yii::$app->controller->action->id != 'success' ||
                     Yii::$app->controller->id == 'checkout' && Yii::$app->controller->action->id == 'success' ||
                     Yii::$app->controller->id == 'account' && Yii::$app->controller->action->id != 'login' ||
@@ -470,6 +471,10 @@ class Block extends Widget
             foreach ($settings[0] as $key => $val) {
                 if (isset($val) && isset($mainStyles[$val])) {
                     $settings[0][$key] = $mainStyles[$val];
+                } elseif (isset($val) && preg_match('/^(\$[0-9a-zA-Z\-\_]+\-)[0-9]+$/', $val, $match)) {
+                    if (isset($mainStyles[$match[1] . '1'])) {
+                        $settings[0][$key] = $mainStyles[$match[1] . '1'];
+                    }
                 }
             }
         }

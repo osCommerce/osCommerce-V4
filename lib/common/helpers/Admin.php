@@ -106,5 +106,43 @@ class Admin
         }
         return $limited_platforms;
     }
-
+    
+    public static function isBackendStrictAccessAllowed($clientIp = null)
+    {
+        if ( !\common\helpers\System::isBackend() || !defined('STRICT_ACCESS_STATUS') || STRICT_ACCESS_STATUS != 'True' ) {
+            return true;
+        }
+        
+        $allowed = false;
+        if (is_null($clientIp)) {
+            $clientIp = \common\helpers\System::get_ip_address();
+        }
+        $ipWhiteList = preg_split('/[,;\s]/', (defined('STRICT_ACCESS_ALLOWED_IP') ? STRICT_ACCESS_ALLOWED_IP : ''), -1, PREG_SPLIT_NO_EMPTY);
+        $ipWhiteList = array_map('trim', $ipWhiteList);
+        foreach ($ipWhiteList as $white_ip){
+            if ( strpos($white_ip,'/')!==false ){
+                if (\yii\helpers\IpHelper::inRange($clientIp, $white_ip)){
+                    $allowed = true;
+                }
+            } else {
+                if ($clientIp == $white_ip) {
+                    $allowed = true;
+                }
+            }
+        }
+        return $allowed;
+    }
+    
+    public static function checkBackendStrictAccessAllowed($clientIp = null)
+    {
+        if (is_null($clientIp)) {
+            $clientIp = \common\helpers\System::get_ip_address();
+        }
+        if (!self::isBackendStrictAccessAllowed($clientIp)) {
+            header('HTTP/1.0 403 Forbidden');
+            echo (defined('TEXT_PAGE_ACCESS_FORBIDDEN') ? TEXT_PAGE_ACCESS_FORBIDDEN : 'Access Denied') . ' ' . $clientIp;
+            die();
+        }
+    }
+    
 }

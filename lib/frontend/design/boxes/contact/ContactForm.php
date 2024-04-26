@@ -33,7 +33,12 @@ class ContactForm extends Widget
     {
         \common\helpers\Translation::init('js');
         $action = filter_var(Yii::$app->request->get('action', ''), FILTER_SANITIZE_STRING);
-        $contact = new Contact(['captcha' => $this->settings[0]['show_captcha'] ]);
+        $contact = new Contact([
+            'captcha' => $this->settings[0]['show_captcha'],
+            'contact_config' => [
+                'show_honeypot' => $this->settings[0]['show_honeypot'],
+            ]
+        ]);
         $customer = null;
         if (!Yii::$app->user->isGuest) {
             $customer = Yii::$app->user->getIdentity();

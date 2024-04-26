@@ -75,6 +75,10 @@ class PhotosImageMetadata extends \Google\Collection
    */
   public $advisory;
   public $altitude;
+  /**
+   * @var PhotosAnimationMetadata
+   */
+  public $animationMetadata;
   protected $animationMetadataType = PhotosAnimationMetadata::class;
   protected $animationMetadataDataType = '';
   /**
@@ -363,6 +367,10 @@ class PhotosImageMetadata extends \Google\Collection
    * @var float
    */
   public $distance;
+  /**
+   * @var PhotosDynamicDepthMetadata
+   */
+  public $dynamicDepthMetadata;
   protected $dynamicDepthMetadataType = PhotosDynamicDepthMetadata::class;
   protected $dynamicDepthMetadataDataType = '';
   /**
@@ -385,6 +393,10 @@ class PhotosImageMetadata extends \Google\Collection
    * @var string
    */
   public $event;
+  /**
+   * @var PhotosFourCMetadata
+   */
+  public $exif4c;
   protected $exif4cType = PhotosFourCMetadata::class;
   protected $exif4cDataType = '';
   /**
@@ -567,6 +579,10 @@ class PhotosImageMetadata extends \Google\Collection
    * @var string
    */
   public $gcreationstype;
+  /**
+   * @var PhotosGDepthMetadata
+   */
+  public $gdepthMetadata;
   protected $gdepthMetadataType = PhotosGDepthMetadata::class;
   protected $gdepthMetadataDataType = '';
   /**
@@ -674,6 +690,12 @@ class PhotosImageMetadata extends \Google\Collection
    */
   public $hasAlpha;
   /**
+   * @var PhotosHdrMetadata
+   */
+  public $hdrMetadata;
+  protected $hdrMetadataType = PhotosHdrMetadata::class;
+  protected $hdrMetadataDataType = '';
+  /**
    * @var string
    */
   public $headline;
@@ -733,6 +755,10 @@ class PhotosImageMetadata extends \Google\Collection
    * @var string
    */
   public $interoperabilityindex;
+  /**
+   * @var PhotosFourCMetadata
+   */
+  public $iptc4c;
   protected $iptc4cType = PhotosFourCMetadata::class;
   protected $iptc4cDataType = '';
   /**
@@ -913,6 +939,10 @@ class PhotosImageMetadata extends \Google\Collection
    * @var string
    */
   public $ownername;
+  /**
+   * @var PhotosPanoramaMetadata
+   */
+  public $panoramaMetadata;
   protected $panoramaMetadataType = PhotosPanoramaMetadata::class;
   protected $panoramaMetadataDataType = '';
   /**
@@ -1223,6 +1253,10 @@ class PhotosImageMetadata extends \Google\Collection
    * @var int
    */
   public $width;
+  /**
+   * @var PhotosFourCMetadata
+   */
+  public $xmp4c;
   protected $xmp4cType = PhotosFourCMetadata::class;
   protected $xmp4cDataType = '';
   /**
@@ -3537,6 +3571,20 @@ class PhotosImageMetadata extends \Google\Collection
   public function getHasAlpha()
   {
     return $this->hasAlpha;
+  }
+  /**
+   * @param PhotosHdrMetadata
+   */
+  public function setHdrMetadata(PhotosHdrMetadata $hdrMetadata)
+  {
+    $this->hdrMetadata = $hdrMetadata;
+  }
+  /**
+   * @return PhotosHdrMetadata
+   */
+  public function getHdrMetadata()
+  {
+    return $this->hdrMetadata;
   }
   /**
    * @param string

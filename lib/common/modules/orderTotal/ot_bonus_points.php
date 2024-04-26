@@ -32,7 +32,7 @@ class ot_bonus_points extends ModuleTotal {
         $this->title = MODULE_ORDER_TOTAL_BONUS_POINTS_TITLE;
         $this->description = MODULE_ORDER_TOTAL_BONUS_POINTS_DESCRIPTION;
         $this->enabled = defined('MODULE_ORDER_TOTAL_BONUS_POINTS_STATUS') && MODULE_ORDER_TOTAL_BONUS_POINTS_STATUS == 'true' && \common\helpers\Extensions::isAllowedAnd('BonusActions', 'isProductPointsEnabled');
-        $this->sort_order = MODULE_ORDER_TOTAL_BONUS_POINTS_SORT_ORDER;
+        $this->sort_order = defined('MODULE_ORDER_TOTAL_BONUS_POINTS_SORT_ORDER') ? MODULE_ORDER_TOTAL_BONUS_POINTS_SORT_ORDER : 0;
         //$this->credit_class = true;
         $this->output = array();
     }

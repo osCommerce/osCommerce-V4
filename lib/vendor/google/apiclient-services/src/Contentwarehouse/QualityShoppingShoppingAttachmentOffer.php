@@ -40,6 +40,10 @@ class QualityShoppingShoppingAttachmentOffer extends \Google\Collection
    * @var string[]
    */
   public $imageId;
+  /**
+   * @var ShoppingWebentityShoppingAnnotationInferredImage[]
+   */
+  public $inferredImages;
   protected $inferredImagesType = ShoppingWebentityShoppingAnnotationInferredImage::class;
   protected $inferredImagesDataType = 'array';
   /**
@@ -71,6 +75,12 @@ class QualityShoppingShoppingAttachmentOffer extends \Google\Collection
    */
   public $nonDisplayableOrganicScoreMillis;
   /**
+   * @var ShoppingWebentityShoppingAnnotationOfferAvailabilityInfo
+   */
+  public $nonDisplayableStaleAvailability;
+  protected $nonDisplayableStaleAvailabilityType = ShoppingWebentityShoppingAnnotationOfferAvailabilityInfo::class;
+  protected $nonDisplayableStaleAvailabilityDataType = '';
+  /**
    * @var string
    */
   public $offerDocid;
@@ -78,6 +88,10 @@ class QualityShoppingShoppingAttachmentOffer extends \Google\Collection
    * @var string
    */
   public $refType;
+  /**
+   * @var ShoppingWebentityShoppingAnnotationSoriVersionId
+   */
+  public $soriVersionId;
   protected $soriVersionIdType = ShoppingWebentityShoppingAnnotationSoriVersionId::class;
   protected $soriVersionIdDataType = '';
 
@@ -262,6 +276,20 @@ class QualityShoppingShoppingAttachmentOffer extends \Google\Collection
   public function getNonDisplayableOrganicScoreMillis()
   {
     return $this->nonDisplayableOrganicScoreMillis;
+  }
+  /**
+   * @param ShoppingWebentityShoppingAnnotationOfferAvailabilityInfo
+   */
+  public function setNonDisplayableStaleAvailability(ShoppingWebentityShoppingAnnotationOfferAvailabilityInfo $nonDisplayableStaleAvailability)
+  {
+    $this->nonDisplayableStaleAvailability = $nonDisplayableStaleAvailability;
+  }
+  /**
+   * @return ShoppingWebentityShoppingAnnotationOfferAvailabilityInfo
+   */
+  public function getNonDisplayableStaleAvailability()
+  {
+    return $this->nonDisplayableStaleAvailability;
   }
   /**
    * @param string

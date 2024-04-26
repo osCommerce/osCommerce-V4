@@ -3,22 +3,124 @@
 namespace PhpOffice\PhpSpreadsheetTests\Calculation\Functions\Engineering;
 
 use PhpOffice\PhpSpreadsheet\Calculation\Calculation;
+use PhpOffice\PhpSpreadsheet\Calculation\Engineering\ComplexFunctions;
+use PhpOffice\PhpSpreadsheet\Calculation\Exception as CalculationException;
+use PhpOffice\PhpSpreadsheet\Calculation\Functions;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheetTests\Calculation\Functions\FormulaArguments;
+use PhpOffice\PhpSpreadsheetTests\Custom\ComplexAssert;
+use PHPUnit\Framework\TestCase;
 
-class ImCoshTest extends AllSetupTeardown
+class ImCoshTest extends TestCase
 {
+    const COMPLEX_PRECISION = 1E-12;
+
+    /**
+     * @var ComplexAssert
+     */
+    private $complexAssert;
+
+    protected function setUp(): void
+    {
+        Functions::setCompatibilityMode(Functions::COMPATIBILITY_EXCEL);
+        $this->complexAssert = new ComplexAssert();
+    }
+
     /**
      * @dataProvider providerIMCOSH
      *
      * @param mixed $expectedResult
      */
-    public function testIMCOSH($expectedResult, ...$args): void
+    public function testDirectCallToIMCOSH($expectedResult, ...$args): void
     {
-        $this->runComplexTestCase('IMCOSH', $expectedResult, ...$args);
+        /** @scrutinizer ignore-call */
+        $result = ComplexFunctions::IMCOSH(...$args);
+        self::assertTrue(
+            $this->complexAssert->assertComplexEquals($expectedResult, $result, self::COMPLEX_PRECISION),
+            $this->complexAssert->getErrorMessage()
+        );
     }
 
-    public function providerIMCOSH(): array
+    private function trimIfQuoted(string $value): string
+    {
+        return trim($value, '"');
+    }
+
+    /**
+     * @dataProvider providerIMCOSH
+     *
+     * @param mixed $expectedResult
+     */
+    public function testIMCOSHAsFormula($expectedResult, ...$args): void
+    {
+        $arguments = new FormulaArguments(...$args);
+
+        $calculation = Calculation::getInstance();
+        $formula = "=IMCOSH({$arguments})";
+
+        $result = $calculation->_calculateFormulaValue($formula);
+        self::assertTrue(
+            $this->complexAssert->assertComplexEquals($expectedResult, $this->trimIfQuoted((string) $result), self::COMPLEX_PRECISION),
+            $this->complexAssert->getErrorMessage()
+        );
+    }
+
+    /**
+     * @dataProvider providerIMCOSH
+     *
+     * @param mixed $expectedResult
+     */
+    public function testIMCOSHInWorksheet($expectedResult, ...$args): void
+    {
+        $arguments = new FormulaArguments(...$args);
+
+        $spreadsheet = new Spreadsheet();
+        $worksheet = $spreadsheet->getActiveSheet();
+        $argumentCells = $arguments->populateWorksheet($worksheet);
+        $formula = "=IMCOSH({$argumentCells})";
+
+        $result = $worksheet->setCellValue('A1', $formula)
+            ->getCell('A1')
+            ->getCalculatedValue();
+        self::assertTrue(
+            $this->complexAssert->assertComplexEquals($expectedResult, $result, self::COMPLEX_PRECISION),
+            $this->complexAssert->getErrorMessage()
+        );
+
+        $spreadsheet->disconnectWorksheets();
+    }
+
+    public static function providerIMCOSH(): array
     {
         return require 'tests/data/Calculation/Engineering/IMCOSH.php';
+    }
+
+    /**
+     * @dataProvider providerUnhappyIMCOSH
+     */
+    public function testIMCOSHUnhappyPath(string $expectedException, ...$args): void
+    {
+        $arguments = new FormulaArguments(...$args);
+
+        $spreadsheet = new Spreadsheet();
+        $worksheet = $spreadsheet->getActiveSheet();
+        $argumentCells = $arguments->populateWorksheet($worksheet);
+        $formula = "=IMCOSH({$argumentCells})";
+
+        $this->expectException(CalculationException::class);
+        $this->expectExceptionMessage($expectedException);
+        $worksheet->setCellValue('A1', $formula)
+            ->getCell('A1')
+            ->getCalculatedValue();
+
+        $spreadsheet->disconnectWorksheets();
+    }
+
+    public static function providerUnhappyIMCOSH(): array
+    {
+        return [
+            ['Formula Error: Wrong number of arguments for IMCOSH() function'],
+        ];
     }
 
     /**
@@ -33,7 +135,7 @@ class ImCoshTest extends AllSetupTeardown
         self::assertEquals($expectedResult, $result);
     }
 
-    public function providerImCoshArray(): array
+    public static function providerImCoshArray(): array
     {
         return [
             'row/column vector' => [

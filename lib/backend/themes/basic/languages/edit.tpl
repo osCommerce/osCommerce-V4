@@ -31,9 +31,9 @@
                       <div class="main_row">
                           <div class="main_title">
                       {if $lang['languages_status'] eq 1}
-                        {$smarty.const.IMAGE_ICON_STATUS_GREEN_LIGHT}<span class="colon">:</span>&nbsp;&nbsp;{Html::checkbox('flag', true, ['class' => 'check_on_off'])}
+                        {$smarty.const.IMAGE_ICON_STATUS_GREEN}<span class="colon">:</span>&nbsp;&nbsp;{Html::checkbox('flag', true, ['class' => 'check_on_off'])}
                       {else}
-                        {$smarty.const.IMAGE_ICON_STATUS_RED_LIGHT}<span class="colon">:</span>&nbsp;&nbsp;{Html::checkbox('flag', false, ['class' => 'check_on_off'])}
+                        {$smarty.const.IMAGE_ICON_STATUS_GREEN}<span class="colon">:</span>&nbsp;&nbsp;{Html::checkbox('flag', false, ['class' => 'check_on_off'])}
                       {/if}
                           </div>
                       {if strtolower(DEFAULT_LANGUAGE) neq strtolower($lang['code'])}

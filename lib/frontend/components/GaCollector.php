@@ -25,7 +25,7 @@ class GaCollector {
     
     public function collectData(\common\services\OrderManager $manager){
         if ($manager->isCustomerAssigned()){
-            $basketDetection = $this->repository->getBasketDetectedInstance($manager->getCustomerAssigned(), $manager->getCart()->basketID);
+            $basketDetection = $this->repository->getBasketDetectedInstance($manager->getCustomerAssigned(), ($manager->getCart()->basketID??0));
             $order_id = $order = null;
             if ($manager->isInstance()){
                 $order = $manager->getOrderInstance();

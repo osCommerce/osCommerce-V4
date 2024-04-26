@@ -19,12 +19,22 @@ namespace Google\Service\Contentwarehouse;
 
 class QualityTimebasedLastSignificantUpdate extends \Google\Model
 {
+  /**
+   * @var QualityTimebasedLastSignificantUpdateAdjustments
+   */
+  public $adjustmentInfo;
   protected $adjustmentInfoType = QualityTimebasedLastSignificantUpdateAdjustments::class;
   protected $adjustmentInfoDataType = '';
   /**
    * @var string
    */
   public $date;
+  /**
+   * @var QualityTimebasedDateUnreliability
+   */
+  public $dateUnreliabilityInfo;
+  protected $dateUnreliabilityInfoType = QualityTimebasedDateUnreliability::class;
+  protected $dateUnreliabilityInfoDataType = '';
   /**
    * @var string
    */
@@ -57,6 +67,20 @@ class QualityTimebasedLastSignificantUpdate extends \Google\Model
   public function getDate()
   {
     return $this->date;
+  }
+  /**
+   * @param QualityTimebasedDateUnreliability
+   */
+  public function setDateUnreliabilityInfo(QualityTimebasedDateUnreliability $dateUnreliabilityInfo)
+  {
+    $this->dateUnreliabilityInfo = $dateUnreliabilityInfo;
+  }
+  /**
+   * @return QualityTimebasedDateUnreliability
+   */
+  public function getDateUnreliabilityInfo()
+  {
+    return $this->dateUnreliabilityInfo;
   }
   /**
    * @param string

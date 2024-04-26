@@ -1016,7 +1016,12 @@ class OrderManager {
                 }
             }
         }
+
+        foreach (\common\helpers\Hooks::getList('order-manager/change-customer-address-selection/after') as $filename) {
+            include($filename);
+        }
     }
+
     public function changeCustomerTaxAddress($which = 2) {
       if ($this->isCustomerAssigned()) {
         $option = \common\helpers\Tax::getTaxAddressOption();
@@ -1251,7 +1256,8 @@ class OrderManager {
                         $customer = new \common\components\Customer();
                         $book = $customer->getAddressFromModel($addressForm);
                         $book['state'] = $addressForm->state;
-                        $book = array_pop(\common\helpers\Address::skipEntryKey([$book]));
+                        $addrArray = \common\helpers\Address::skipEntryKey([$book]);
+                        $book = array_pop($addrArray);
                         $country_info = \common\helpers\Country::get_countries($book['country_id'], true);
                         $book['country_iso_code_2'] = $country_info['countries_iso_code_2'];
                         if ($addressForm->scenario == AddressForm::SHIPPING_ADDRESS) {
@@ -1424,6 +1430,19 @@ class OrderManager {
                 return true;
         }
         return $different;
+    }
+
+    public function validateAdditionalFields($post)
+    {
+        $messageStack = \Yii::$container->get('message_stack');
+        $isValid = true;
+        foreach (\common\helpers\Hooks::getList('order-manager/validate-additional-fields') as $filename) {
+            include($filename);
+            if ($isValid === false) {
+                return false;
+            }
+        }
+        return $isValid;
     }
 
     public function validateContactForm($post, $admin_edit=false) {
@@ -1879,37 +1898,50 @@ class OrderManager {
         }
     }
 
-    public function clearAfterProcess() {
+    public function clearAfterProcess()
+    {
         if ($this->hasCart()) {
             $this->_cart->reset(true);
             $this->_cart->order_id = 0;
-            if (($multiCart = \common\helpers\Extensions::isAllowed('MultiCart')) && empty($this->_cart->table_prefix)){
+            if (($multiCart = \common\helpers\Extensions::isAllowed('MultiCart')) && empty($this->_cart->table_prefix)) {
                 $multiCart::reassignCart($this->_cart->basketID);
             } else {
                 $this->_cart->setBasketId(0);
             }
         }
-        $this->remove('sendto');
-        $this->remove('billto');
-        $this->remove('shipping');
-        $this->remove('sendto');
-        $this->remove('payment');
-        $this->remove('comments');
-        $this->remove('purchase_order');
-        $this->remove('shippingparam');
-        $this->remove('pointto');
-        $this->remove('credit_covers');
-        $this->remove('estimate_ship');
-        $this->remove('estimate_bill');
-        $this->remove('shipping_choice');
-        $this->remove('cartID');
-        $this->remove('sampleID');
-        $this->remove('quoteID');
-        $this->remove('guest');
-        $this->remove('account');
-        $this->remove('order_delivery_date');
-        $this->remove('pay_order_id');
+
+        $removedList = [
+            'sendto',
+            'billto',
+            'shipping',
+            'sendto',
+            'payment',
+            'comments',
+            'purchase_order',
+            'shippingparam',
+            'pointto',
+            'credit_covers',
+            'estimate_ship',
+            'estimate_bill',
+            'shipping_choice',
+            'cartID',
+            'sampleID',
+            'quoteID',
+            'guest',
+            'account',
+            'order_delivery_date',
+            'pay_order_id',
+        ];
+
+        foreach ($removedList as $item) {
+            $this->remove($item);
+        }
+
         $this->getTotalCollection()->clear_posts();
+
+        foreach (\common\helpers\Hooks::getList('order-manager/clear-after-process') as $filename) {
+            include($filename);
+        }
     }
 
     public function clearStorage() {
@@ -2436,4 +2468,25 @@ class OrderManager {
         return $res;
     }
 
+    public function collectPostData()
+    {
+        $this->collectData(\Yii::$app->request->post());
+    }
+    
+    public function collectData($data)
+    {
+        if (tep_not_null($data['comments']??null)) {
+            $this->set('comments', tep_db_prepare_input($data['comments']));
+        }
+
+        if (tep_not_null($data['pointto'] ?? null)) {
+            $this->set('pointto', tep_db_prepare_input($data['pointto']));
+        }
+        
+        foreach (\common\helpers\Hooks::getList('order-manager/collect-data') as $filename) {
+            include($filename);
+        }
+    }
+    
+    
 }

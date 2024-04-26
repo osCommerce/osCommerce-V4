@@ -33,6 +33,7 @@ class Menu extends Widget
     public $newCategories = [];
     public $jsSettingsList = ['burger_icon', 'position', 'limit_levels', 'limit_level_1', 'limit_level_2',
         'limit_level_3', 'limit_level_4', 'limit_level_5', 'limit_level_6', 'open_from', 'lev1_goto', 'lev2_goto', 'lev3_goto', 'lev4_goto', 'lev5_goto', 'lev6_goto', 'lev1_vis', 'lev2_vis', 'lev3_vis', 'lev4_vis', 'lev5_vis', 'lev6_vis', 'lev1_display', 'lev2_display', 'lev3_display', 'lev4_display', 'lev5_display', 'lev6_display', 'show_more_button', 'style', 'ofl_width', 'lev1_show_images', 'lev2_show_images', 'lev3_show_images', 'lev4_show_images', 'lev5_show_images', 'lev6_show_images'];
+    public $categoriesSorting = 'menu';
 
     public function init()
     {
@@ -75,7 +76,7 @@ class Menu extends Widget
                 $categories_join .= $ext::sqlCategoriesWhere();
             }
             $cats = Yii::$app->db->createCommand("
-                select c.categories_id, c.parent_id, cd.categories_name
+                select c.categories_id, c.parent_id, cd.categories_name, c.sort_order
                 from " . \common\models\Categories::tableName() . " c 
                   {$categories_join}
                   left join " . \common\models\CategoriesDescription::tableName() . " cd on cd.categories_id = c.categories_id and cd.language_id = " . (int)$languages_id . "
@@ -108,7 +109,7 @@ class Menu extends Widget
         $is_menu = false;
         $menu = array();
         $sql = tep_db_query("
-            select i.id, i.parent_id, i.link, i.link_id, i.link_type, i.target_blank, i.nofollow, i.class, i.sub_categories, i.custom_categories, i.sort_order, t.title, i.menu_id
+            select i.id, i.parent_id, i.link, i.link_id, i.link_type, i.target_blank, i.nofollow, i.class, i.sub_categories, i.custom_categories, i.sort_order, t.title, i.menu_id, i.settings
             , m.last_modified, cd.categories_name
             from " . TABLE_MENUS . " m
               inner join " . TABLE_MENU_ITEMS . " i on i.menu_id = m.id and i.platform_id='".$platformCurrentId."'
@@ -119,6 +120,25 @@ class Menu extends Widget
             order by i.sort_order
           ");
         while ($row = tep_db_fetch_array($sql)) {
+            //skip not assigned
+            $skip_item = false;
+            foreach (\common\helpers\Hooks::getList('boxes/menu') as $filename) {
+                include($filename);
+            }
+            if ($skip_item) {
+                continue;
+            }
+
+            if ($row['settings'] ?? false) {
+                $row['settings'] = json_decode($row['settings'], true);
+            }
+            if ($row['link_id'] == '999999999') {
+                if ($row['settings']['sorting']) {
+                    $this->categoriesSorting = $row['settings']['sorting'];
+                } else {
+                    $this->categoriesSorting = 'menu';
+                }
+            }
 
             if ($row['link_type'] == 'info') {
 
@@ -184,7 +204,7 @@ class Menu extends Widget
                             $join = $ugr::sqlCategoriesWhere();
                         }
                         $sql3 = tep_db_query(
-                            "select c.categories_id, c.parent_id, cd.categories_name ".
+                            "select c.categories_id, c.parent_id, cd.categories_name, c.sort_order ".
                             "from " . TABLE_CATEGORIES . " c ".
                             " inner join ".TABLE_PLATFORMS_CATEGORIES." pc on pc.categories_id=c.categories_id and pc.platform_id='".$platformCurrentId."' ".
                             $join.
@@ -209,6 +229,7 @@ class Menu extends Widget
                                     'new_category' => $item['categories_id'],
                                     'title' => $title,
                                     'link' => tep_href_link('catalog', 'cPath=' . $item['categories_id']),
+                                    'sort_order' => $item['sort_order'],
                                 ];
                             }
                         }
@@ -223,6 +244,10 @@ class Menu extends Widget
                     $sab_categories[] = $row['id'];
                 }
                 $row['count'] = $categories_all[$row['link_id']]['products'] ?? 0;
+
+                if ($this->categoriesSorting == 'catalog') {
+                    $row['sort_order'] =  $categories_all[$row['link_id']]['sort_order'];
+                }
 
                 $row['link'] = tep_href_link('catalog', 'cPath=' . $row['link_id']);
 
@@ -253,10 +278,6 @@ class Menu extends Widget
                 }
                 //$row['count'] = count(\common\helpers\Manufacturers::products_ids_manufacturer($row['link_id'], false, $platformCurrentId)) === 0 ? -1 : 0;
                 $row['count'] = \common\helpers\Manufacturers::hasAnyProduct($row['link_id'], false, $platformCurrentId)? -1 : 0;
-
-
-
-                $row['link'] = Yii::$app->urlManager->createUrl(['catalog', 'manufacturers_id' => $row['link_id']]);
 
                 if (Yii::$app->controller->id == 'catalog'){
                     if (
@@ -456,6 +477,13 @@ class Menu extends Widget
         while ($item = tep_db_fetch_array($media_query_arr)){
             $hide_size[] = explode('w', $item['setting_value']);
         }
+
+        usort($menu, function ($a, $b) {
+            if ($a['sort_order'] == $b['sort_order']) {
+                return 0;
+            }
+            return ($a['sort_order'] < $b['sort_order']) ? -1 : 1;
+        });
 
         $menuHtm = $this->menuTree($menu);
         $params = [

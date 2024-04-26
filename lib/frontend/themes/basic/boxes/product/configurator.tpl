@@ -121,14 +121,32 @@
     $.get("{Yii::$app->urlManager->createUrl('catalog/product-configurator')}", $(theForm).serialize(), function(data, status) {
       if (status == "success") {
         $('#product-price-old').html(data.product_price);
-        $('#product-price-current').html(data.product_price);
+        //$('#product-price-current').html(data.product_price);
         $('#product-price-special').html(data.special_price);
         $('#product-attributes').replaceWith(data.product_attributes);
         if ( !(only_element > 0) ) {
           $('#product-configurator').replaceWith(data.product_configurator);
         }
         $('#product-price-configurator').html(data.configurator_price);
-        $('#product-price-current').html(data.configurator_price);
+        //$('#product-price-current').html(data.configurator_price);
+
+        var $productPriceCurrent = $('#product-price-current', theForm);
+        var $productPriceCurrentEx = $('#product-price-current-ex', theForm);
+        var $incVatTitle = $('.inc-vat-title', $productPriceCurrent);
+        if ($incVatTitle.length) {
+            $productPriceCurrent.html(data.configurator_price + ' <small class="inc-vat-title"> ' + $incVatTitle.html() + '</small>');
+        } else {
+            $productPriceCurrent.html(data.configurator_price);
+        }
+        if ($productPriceCurrentEx && data.configurator_price_ex) {
+            var $exVatTitle = $('.ex-vat-title', $productPriceCurrentEx);
+            if ($exVatTitle.length) {
+                $productPriceCurrentEx.html(data.configurator_price_ex + ' <small class="ex-vat-title"> ' + $exVatTitle.html() + '</small>');
+            } else {
+                $productPriceCurrentEx.html(data.configurator_price_ex);
+            }
+        }
+
         if ( typeof data.configurator_selection != 'undefined' ) {
             $('#configurator-selection').html(data.configurator_selection.map(function(val) {
                 return('<span class="selection-product">' + val + '</span>');

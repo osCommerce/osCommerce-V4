@@ -12,6 +12,7 @@
 
 namespace backend\design;
 
+use common\models\ThemesStylesGroups;
 use common\models\ThemesStylesMain;
 use Yii;
 use yii\base\Widget;
@@ -34,11 +35,18 @@ class SelectStyle extends Widget
             'type' => $this->type
         ])->asArray()->all();
 
+        $groupStyles = ThemesStylesGroups::find()->where([
+            'theme_name' => $this->theme_name,
+        ])->asArray()->all();
+        $mainSubStyles = Style::mainStyles($this->theme_name);
+
         return $this->render('select-style.tpl', [
             'name' => $this->name,
             'value' => $this->value,
             'type' => $this->type,
             'styles' => $styles,
+            'groupStyles' => $groupStyles,
+            'mainSubStyles' => $mainSubStyles,
             'theme_name' => $this->theme_name,
         ]);
     }

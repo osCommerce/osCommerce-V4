@@ -179,7 +179,7 @@
             $('#order_management_data .scroll_col').text(" ");
             $("#order_management").hide();
             var table = $('#logList').DataTable();
-            table.ajax.url('error-log-viewer/list?by='+$('#filterForm option:selected').text()).load();
+            table.ajax.url('error-log-viewer/list?by='+$('#filterForm option:selected').val()).load();
             var checkbox = $('th.checkbox-column .checkbox')
             if(checkbox.is(':checked'))
             {

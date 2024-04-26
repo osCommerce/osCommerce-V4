@@ -22,10 +22,10 @@ class Recovery
   * check if customer is online
   */  
   public static function is_online($customers_id){
-    $customer_query = tep_db_fetch_array(tep_db_query("select count(*) as count, ip_address from " . TABLE_WHOS_ONLINE . " where customer_id = '" . tep_db_input($customers_id) . "'"));
-    if ($customer_query['count']){
-      return $customer_query['ip_address'];
-    }
+      /** @var \common\extensions\WhosOnline\WhosOnline $ext */
+      if ($ext = \common\helpers\Extensions::isAllowed('WhosOnline')) {
+          return $ext::getCustomerIp((int)$customers_id);
+      }
     return false;
   }
   

@@ -20,8 +20,10 @@ class DesignAsset extends AssetBundle
     public $baseUrl = '@web/themes/basic';
     public $css = [
         'css/design.css',
+        '../../plugins/multiple-select/multiple-select.css',
     ];
     public $js = [
       'js/jquery.edit-theme.js',
+        '../../plugins/multiple-select/multiple-select.js',
     ];
 }

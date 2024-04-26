@@ -31,6 +31,26 @@
       {Html::activeInput('email', $contact, 'email_address', ['data-required' => "{$smarty.const.EMAIL_REQUIRED}", 'data-pattern' => "email"])}
     </label>
   </div>
+  {if $settings[0]['show_honeypot']}
+  <div class="col-full">
+    <label>
+      <span>{field_label const="TEXT_EMAIL"}</span>
+      {Html::activeTextInput($contact, 'field1', ['id' => 'field1'])}
+    </label>
+  </div>
+  <div class="col-full">
+    <label>
+      <span>{field_label const="TEXT_EMAIL"}</span>
+      {Html::activeTextInput($contact, 'field2', ['id' => 'field2'])}
+    </label>
+  </div>
+  <div class="col-full">
+    <label>
+      <span>{field_label const="TEXT_EMAIL"}</span>
+      {Html::activeTextInput($contact, 'field3', ['id' => 'field3'])}
+    </label>
+  </div>
+  {/if}
   {if $ext = \common\helpers\Extensions::isAllowed('CustomerAdditionalFields')}
     {$ext::contactBlock()}
   {/if}
@@ -96,6 +116,15 @@
         var dob = $('.dobTmp', box);
 
         $('#contact-form input, #contact-form textarea', box).validate();
+
+{if $settings[0]['show_honeypot']}
+        $("#field1").closest(".col-full").css("display", "none");
+        $("#field2").closest(".col-full").css("display", "none");
+        $("#field3").closest(".col-full").css("display", "none");
+        $("#contact-form").submit(function() {
+            $('#field{$contact->honeypot_field}').val($("#contact-form input[name*=email]").val());
+        });
+{/if}
 
       $('head').prepend('<link rel="stylesheet" href="{Info::themeFile('/css/bootstrap-datepicker.css')}">');
 

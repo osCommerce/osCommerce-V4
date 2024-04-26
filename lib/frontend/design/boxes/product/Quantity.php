@@ -72,7 +72,7 @@ class Quantity extends Widget {
                 }
 
                 return IncludeTpl::widget(['file' => 'boxes/product/quantity.tpl', 'params' => [
-                                'qty' => Product::filter_product_order_quantity($params['products_id'], $post['qty']),
+                                'qty' => Product::filter_product_order_quantity($params['products_id'], $params['qty'] ? $params['qty'] : $post['qty']),
                                 'stock' => $product_qty ?? null,
                                 'stock_info' => $stock_info,
                                 'quantity_max' => $stock_info['quantity_max'],

@@ -8,7 +8,7 @@ trait PaypalPartnerTraitAPM {
  */
     public function apmsWithAgreement() {
         $ret = [];
-        if ($this->billing['country']['countries_iso_code_2'] == 'DE') {
+        if (($this->billing['country']['countries_iso_code_2']??null) == 'DE') {
             $ret[] = 'pui';
         }
         return $ret;
@@ -24,7 +24,7 @@ trait PaypalPartnerTraitAPM {
         if (!empty($this->getAPMTemplate('card'))) {
             $ret[] = 'card';
         }
-        if ($this->billing['country']['countries_iso_code_2'] == 'DE') {
+        if (($this->billing['country']['countries_iso_code_2']??null) == 'DE') {
             $ret[] = 'pui';
         }
         
@@ -251,7 +251,7 @@ trait PaypalPartnerTraitAPM {
 ";
           break;
             case 'pui':
-                if ($this->billing['country']['countries_iso_code_2'] == 'DE') {
+                if (($this->billing['country']['countries_iso_code_2']??null) == 'DE') {
                     $createUrl = \Yii::$app->urlManager->createAbsoluteUrl(["callback/webhooks.payment.{$this->code}", 'action' => 'createOrder', 'option' => $option]);
                     $ret = "
         window.{$this->code}_callback_{$option} = function () {
@@ -310,7 +310,7 @@ trait PaypalPartnerTraitAPM {
             case 'mybank':
             case 'sofort':
             case 'ideal':
-                if ($this->validAPMCountry($option, $this->billing['country']['countries_iso_code_2'])) {
+                if ($this->validAPMCountry($option, ($this->billing['country']['countries_iso_code_2']??null))) {
                     $createUrl = \Yii::$app->urlManager->createAbsoluteUrl(["callback/webhooks.payment.{$this->code}", 'action' => 'createOrder', 'option' => $option]);
                     $ret = "
         window.{$this->code}_callback_{$option} = function () {
@@ -485,6 +485,23 @@ window.paypal_render_subfields_{$option} = function () {
 
     } else {
         $('.item-radio.item-payment.{$this->code}_card').hide();
+    }
+}
+";
+                }
+          break;
+            case 'paypal':
+                //wallets butons and details
+                $platformId = $this->getPlatformId();
+                $seller = $this->getSeller($platformId);
+                if (!empty($seller->paypal_partner_ccp_status)) {
+                    $ret = "
+window.paypal_render_subfields_{$option} = function () {
+    if (typeof(window.{$this->code}AplpBillingDetails) != 'undefined') { 
+        window.{$this->code}AplpBillingDetails();
+
+    } else {
+        $('.paypal-button-container .{$this->code}-applepay-container').hide();
     }
 }
 ";
@@ -725,6 +742,8 @@ window.paypal_render_subfields_{$option} = function () {
                 }
                 break;
             case 'card':
+            case 'applepay':
+            case 'googlepay':
             case 'pui':
                 break;
             default:

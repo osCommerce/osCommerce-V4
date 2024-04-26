@@ -1,5 +1,5 @@
 {use class = "\yii\helpers\Html"}
-{if $ext = \common\helpers\Extensions::isAllowed('GoogleTranslate')}
+{if $ext = \common\helpers\Extensions::isAllowed('Translator')}
     {$ext::includeJs($languages)}
 {/if}
 <div class="tabbable tabbable-custom">
@@ -167,7 +167,7 @@
             title: "{$smarty.const.TEXT_PLATFORM_LANGUAGE_MESSAGE|escape:javascript} " + $('.platform-tabs-names a[data-id='+currentP+'] span').text() + " " + $(this).prev().text(),
             message: "<div><label>{$smarty.const.PULL_DOWN_DEFAULT|escape:javascript}</label><br>" +
                 "<select class='form-control action-platform-choice'>"+getOptions(except).join("")+"</select><br>" +
-                {if $ext = \common\helpers\Extensions::isAllowed('GoogleTranslate')}
+                {if $ext = \common\helpers\Extensions::isAllowed('Translator')}
                 '{Html::radio('type', true, ['id' => 'op_type', 'value' => 'copy'])} + {$smarty.const.IMAGE_COPY_TO|escape:javascript}<br>'+
                 '{Html::radio('type', false, ['id' => 'op_type', 'value' => 'translate'])} + {$ext::getLabel()}<br>'+
                 {else}
@@ -189,7 +189,7 @@
                         let translateFlag = $('#op_type:checked').val() === 'translate';
                         let overwriteFlag = $('.overwrite').is(':checked');
                         if (translateFlag) {
-                            {if \common\helpers\Extensions::isAllowed('GoogleTranslate')}
+                            {if \common\helpers\Extensions::isAllowed('Translator')}
                                 collectData(currentL, currentP, laction, overwriteFlag);
                             {/if}
                         }else {

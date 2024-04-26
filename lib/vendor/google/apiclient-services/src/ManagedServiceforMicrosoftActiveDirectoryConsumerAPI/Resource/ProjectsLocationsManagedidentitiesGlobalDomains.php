@@ -18,8 +18,14 @@
 namespace Google\Service\ManagedServiceforMicrosoftActiveDirectoryConsumerAPI\Resource;
 
 use Google\Service\ManagedServiceforMicrosoftActiveDirectoryConsumerAPI\AttachTrustRequest;
+use Google\Service\ManagedServiceforMicrosoftActiveDirectoryConsumerAPI\CheckMigrationPermissionRequest;
+use Google\Service\ManagedServiceforMicrosoftActiveDirectoryConsumerAPI\CheckMigrationPermissionResponse;
 use Google\Service\ManagedServiceforMicrosoftActiveDirectoryConsumerAPI\DetachTrustRequest;
+use Google\Service\ManagedServiceforMicrosoftActiveDirectoryConsumerAPI\DisableMigrationRequest;
 use Google\Service\ManagedServiceforMicrosoftActiveDirectoryConsumerAPI\Domain;
+use Google\Service\ManagedServiceforMicrosoftActiveDirectoryConsumerAPI\DomainJoinMachineRequest;
+use Google\Service\ManagedServiceforMicrosoftActiveDirectoryConsumerAPI\DomainJoinMachineResponse;
+use Google\Service\ManagedServiceforMicrosoftActiveDirectoryConsumerAPI\EnableMigrationRequest;
 use Google\Service\ManagedServiceforMicrosoftActiveDirectoryConsumerAPI\ExtendSchemaRequest;
 use Google\Service\ManagedServiceforMicrosoftActiveDirectoryConsumerAPI\LDAPSSettings;
 use Google\Service\ManagedServiceforMicrosoftActiveDirectoryConsumerAPI\ListDomainsResponse;
@@ -53,12 +59,30 @@ class ProjectsLocationsManagedidentitiesGlobalDomains extends \Google\Service\Re
    * @param AttachTrustRequest $postBody
    * @param array $optParams Optional parameters.
    * @return Operation
+   * @throws \Google\Service\Exception
    */
   public function attachTrust($name, AttachTrustRequest $postBody, $optParams = [])
   {
     $params = ['name' => $name, 'postBody' => $postBody];
     $params = array_merge($params, $optParams);
     return $this->call('attachTrust', [$params], Operation::class);
+  }
+  /**
+   * CheckMigrationPermission API gets the current state of DomainMigration
+   * (domains.checkMigrationPermission)
+   *
+   * @param string $domain Required. The domain resource name using the form:
+   * `projects/{project_id}/locations/global/domains/{domain_name}`
+   * @param CheckMigrationPermissionRequest $postBody
+   * @param array $optParams Optional parameters.
+   * @return CheckMigrationPermissionResponse
+   * @throws \Google\Service\Exception
+   */
+  public function checkMigrationPermission($domain, CheckMigrationPermissionRequest $postBody, $optParams = [])
+  {
+    $params = ['domain' => $domain, 'postBody' => $postBody];
+    $params = array_merge($params, $optParams);
+    return $this->call('checkMigrationPermission', [$params], CheckMigrationPermissionResponse::class);
   }
   /**
    * Creates a Microsoft AD domain. (domains.create)
@@ -76,6 +100,7 @@ class ProjectsLocationsManagedidentitiesGlobalDomains extends \Google\Service\Re
    * example above) shouldn't exceed 15 chars. * The last segment cannot be fully
    * numeric. * Must be unique within the customer project.
    * @return Operation
+   * @throws \Google\Service\Exception
    */
   public function create($parent, Domain $postBody, $optParams = [])
   {
@@ -90,6 +115,7 @@ class ProjectsLocationsManagedidentitiesGlobalDomains extends \Google\Service\Re
    * `projects/{project_id}/locations/global/domains/{domain_name}`
    * @param array $optParams Optional parameters.
    * @return Operation
+   * @throws \Google\Service\Exception
    */
   public function delete($name, $optParams = [])
   {
@@ -106,12 +132,62 @@ class ProjectsLocationsManagedidentitiesGlobalDomains extends \Google\Service\Re
    * @param DetachTrustRequest $postBody
    * @param array $optParams Optional parameters.
    * @return Operation
+   * @throws \Google\Service\Exception
    */
   public function detachTrust($name, DetachTrustRequest $postBody, $optParams = [])
   {
     $params = ['name' => $name, 'postBody' => $postBody];
     $params = array_merge($params, $optParams);
     return $this->call('detachTrust', [$params], Operation::class);
+  }
+  /**
+   * Disable Domain Migration (domains.disableMigration)
+   *
+   * @param string $domain Required. The domain resource name using the form:
+   * `projects/{project_id}/locations/global/domains/{domain_name}`
+   * @param DisableMigrationRequest $postBody
+   * @param array $optParams Optional parameters.
+   * @return Operation
+   * @throws \Google\Service\Exception
+   */
+  public function disableMigration($domain, DisableMigrationRequest $postBody, $optParams = [])
+  {
+    $params = ['domain' => $domain, 'postBody' => $postBody];
+    $params = array_merge($params, $optParams);
+    return $this->call('disableMigration', [$params], Operation::class);
+  }
+  /**
+   * DomainJoinMachine API joins a Compute Engine VM to the domain
+   * (domains.domainJoinMachine)
+   *
+   * @param string $domain Required. The domain resource name using the form:
+   * projects/{project_id}/locations/global/domains/{domain_name}
+   * @param DomainJoinMachineRequest $postBody
+   * @param array $optParams Optional parameters.
+   * @return DomainJoinMachineResponse
+   * @throws \Google\Service\Exception
+   */
+  public function domainJoinMachine($domain, DomainJoinMachineRequest $postBody, $optParams = [])
+  {
+    $params = ['domain' => $domain, 'postBody' => $postBody];
+    $params = array_merge($params, $optParams);
+    return $this->call('domainJoinMachine', [$params], DomainJoinMachineResponse::class);
+  }
+  /**
+   * Enable Domain Migration (domains.enableMigration)
+   *
+   * @param string $domain Required. The domain resource name using the form:
+   * `projects/{project_id}/locations/global/domains/{domain_name}`
+   * @param EnableMigrationRequest $postBody
+   * @param array $optParams Optional parameters.
+   * @return Operation
+   * @throws \Google\Service\Exception
+   */
+  public function enableMigration($domain, EnableMigrationRequest $postBody, $optParams = [])
+  {
+    $params = ['domain' => $domain, 'postBody' => $postBody];
+    $params = array_merge($params, $optParams);
+    return $this->call('enableMigration', [$params], Operation::class);
   }
   /**
    * Extend Schema for Domain (domains.extendSchema)
@@ -121,6 +197,7 @@ class ProjectsLocationsManagedidentitiesGlobalDomains extends \Google\Service\Re
    * @param ExtendSchemaRequest $postBody
    * @param array $optParams Optional parameters.
    * @return Operation
+   * @throws \Google\Service\Exception
    */
   public function extendSchema($domain, ExtendSchemaRequest $postBody, $optParams = [])
   {
@@ -135,6 +212,7 @@ class ProjectsLocationsManagedidentitiesGlobalDomains extends \Google\Service\Re
    * `projects/{project_id}/locations/global/domains/{domain_name}`
    * @param array $optParams Optional parameters.
    * @return Domain
+   * @throws \Google\Service\Exception
    */
   public function get($name, $optParams = [])
   {
@@ -165,6 +243,7 @@ class ProjectsLocationsManagedidentitiesGlobalDomains extends \Google\Service\Re
    * documentation](https://cloud.google.com/iam/help/conditions/resource-
    * policies).
    * @return Policy
+   * @throws \Google\Service\Exception
    */
   public function getIamPolicy($resource, $optParams = [])
   {
@@ -179,6 +258,7 @@ class ProjectsLocationsManagedidentitiesGlobalDomains extends \Google\Service\Re
    * `projects/{project_id}/locations/global/domains/{domain_name}`
    * @param array $optParams Optional parameters.
    * @return LDAPSSettings
+   * @throws \Google\Service\Exception
    */
   public function getLdapssettings($name, $optParams = [])
   {
@@ -208,6 +288,7 @@ class ProjectsLocationsManagedidentitiesGlobalDomains extends \Google\Service\Re
    * @opt_param string pageToken Optional. The `next_page_token` value returned
    * from a previous ListDomainsRequest request, if any.
    * @return ListDomainsResponse
+   * @throws \Google\Service\Exception
    */
   public function listProjectsLocationsManagedidentitiesGlobalDomains($parent, $optParams = [])
   {
@@ -228,6 +309,7 @@ class ProjectsLocationsManagedidentitiesGlobalDomains extends \Google\Service\Re
    * may only include fields from Domain: * `labels` * `locations` *
    * `authorized_networks` * `audit_logs_enabled`
    * @return Operation
+   * @throws \Google\Service\Exception
    */
   public function patch($name, Domain $postBody, $optParams = [])
   {
@@ -244,6 +326,7 @@ class ProjectsLocationsManagedidentitiesGlobalDomains extends \Google\Service\Re
    * @param ReconfigureTrustRequest $postBody
    * @param array $optParams Optional parameters.
    * @return Operation
+   * @throws \Google\Service\Exception
    */
   public function reconfigureTrust($name, ReconfigureTrustRequest $postBody, $optParams = [])
   {
@@ -259,6 +342,7 @@ class ProjectsLocationsManagedidentitiesGlobalDomains extends \Google\Service\Re
    * @param ResetAdminPasswordRequest $postBody
    * @param array $optParams Optional parameters.
    * @return ResetAdminPasswordResponse
+   * @throws \Google\Service\Exception
    */
   public function resetAdminPassword($name, ResetAdminPasswordRequest $postBody, $optParams = [])
   {
@@ -275,6 +359,7 @@ class ProjectsLocationsManagedidentitiesGlobalDomains extends \Google\Service\Re
    * @param RestoreDomainRequest $postBody
    * @param array $optParams Optional parameters.
    * @return Operation
+   * @throws \Google\Service\Exception
    */
   public function restore($name, RestoreDomainRequest $postBody, $optParams = [])
   {
@@ -294,6 +379,7 @@ class ProjectsLocationsManagedidentitiesGlobalDomains extends \Google\Service\Re
    * @param SetIamPolicyRequest $postBody
    * @param array $optParams Optional parameters.
    * @return Policy
+   * @throws \Google\Service\Exception
    */
   public function setIamPolicy($resource, SetIamPolicyRequest $postBody, $optParams = [])
   {
@@ -315,6 +401,7 @@ class ProjectsLocationsManagedidentitiesGlobalDomains extends \Google\Service\Re
    * @param TestIamPermissionsRequest $postBody
    * @param array $optParams Optional parameters.
    * @return TestIamPermissionsResponse
+   * @throws \Google\Service\Exception
    */
   public function testIamPermissions($resource, TestIamPermissionsRequest $postBody, $optParams = [])
   {
@@ -335,6 +422,7 @@ class ProjectsLocationsManagedidentitiesGlobalDomains extends \Google\Service\Re
    * https://developers.google.com/protocol-
    * buffers/docs/reference/google.protobuf#fieldmask
    * @return Operation
+   * @throws \Google\Service\Exception
    */
   public function updateLdapssettings($name, LDAPSSettings $postBody, $optParams = [])
   {
@@ -353,6 +441,7 @@ class ProjectsLocationsManagedidentitiesGlobalDomains extends \Google\Service\Re
    * @param ValidateTrustRequest $postBody
    * @param array $optParams Optional parameters.
    * @return Operation
+   * @throws \Google\Service\Exception
    */
   public function validateTrust($name, ValidateTrustRequest $postBody, $optParams = [])
   {

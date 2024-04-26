@@ -19,6 +19,16 @@ use common\helpers\Html;
  */
 class IndexController extends Sceleton {
 
+    private $default_currency = DEFAULT_CURRENCY;
+
+    public function __construct($id, $module = null) {
+        $this->default_currency = \Yii::$app->get('platform')->config()->getDefaultCurrency();
+        if ($this->default_currency) {
+            \Yii::$app->settings->set('currency', $this->default_currency);
+        }
+        parent::__construct($id, $module);
+    }
+
     private function chooseMenuItem($tree) {
         foreach ($tree as $menuItem) {
             if ($menuItem['box_type'] == 1) {
@@ -134,6 +144,10 @@ class IndexController extends Sceleton {
         }
         unset($secKeyType);
         unset($message);
+        foreach (\common\helpers\Hooks::getList('index/index') as $filename) {
+            include($filename);
+        }
+        
         $this->view->messageSystemStatusCheck = nl2br(trim($messageSystemStatusCheck));
         unset($messageSystemStatusCheck);
         return $this->render('index');
@@ -343,6 +357,15 @@ class IndexController extends Sceleton {
         $exclude_order_statuses_array = \common\helpers\Order::extractStatuses(DASHBOARD_EXCLUDE_ORDER_STATUSES);
         $currencies = \Yii::$container->get('currencies');
 
+        $filter_by_platform = array();
+        if (false === \common\helpers\Acl::rule(['SUPERUSER'])) {
+            global $login_id;
+            $platforms = \common\models\AdminPlatforms::find()->where(['admin_id' => $login_id])->asArray()->all();
+            foreach ($platforms as $platform) {
+                $filter_by_platform[] = $platform['platform_id'];
+            }
+        }
+
         $order_stats_query =
             "SELECT ".
             "  COUNT(o.orders_id) AS orders, " .
@@ -352,6 +375,7 @@ class IndexController extends Sceleton {
             "  LEFT JOIN " . TABLE_ORDERS_TOTAL . " ott ON (o.orders_id = ott.orders_id) AND ott.class = 'ot_total' ".
             "  LEFT JOIN " . TABLE_ORDERS_TOTAL . " ots ON (o.orders_id = ots.orders_id) and ots.class = 'ot_subtotal' ".
             "WHERE 1=1 ".
+                (count($filter_by_platform) > 0 ? " and o.platform_id in ('" . implode("','", $filter_by_platform) . "') " : '').
             "  AND o.orders_status not in ('" . implode("','", $exclude_order_statuses_array) . "') ";
         $range_stat = tep_db_fetch_array(tep_db_query($order_stats_query));
         $stats['all']['orders'] = number_format($range_stat['orders']);

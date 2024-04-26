@@ -36,6 +36,10 @@ class AttachedDisk extends \Google\Collection
    * @var string
    */
   public $deviceName;
+  /**
+   * @var CustomerEncryptionKey
+   */
+  public $diskEncryptionKey;
   protected $diskEncryptionKeyType = CustomerEncryptionKey::class;
   protected $diskEncryptionKeyDataType = '';
   /**
@@ -46,12 +50,20 @@ class AttachedDisk extends \Google\Collection
    * @var bool
    */
   public $forceAttach;
+  /**
+   * @var GuestOsFeature[]
+   */
+  public $guestOsFeatures;
   protected $guestOsFeaturesType = GuestOsFeature::class;
   protected $guestOsFeaturesDataType = 'array';
   /**
    * @var int
    */
   public $index;
+  /**
+   * @var AttachedDiskInitializeParams
+   */
+  public $initializeParams;
   protected $initializeParamsType = AttachedDiskInitializeParams::class;
   protected $initializeParamsDataType = '';
   /**
@@ -70,6 +82,14 @@ class AttachedDisk extends \Google\Collection
    * @var string
    */
   public $mode;
+  /**
+   * @var string
+   */
+  public $savedState;
+  /**
+   * @var InitialStateConfig
+   */
+  public $shieldedInstanceInitialState;
   protected $shieldedInstanceInitialStateType = InitialStateConfig::class;
   protected $shieldedInstanceInitialStateDataType = '';
   /**
@@ -276,6 +296,20 @@ class AttachedDisk extends \Google\Collection
   public function getMode()
   {
     return $this->mode;
+  }
+  /**
+   * @param string
+   */
+  public function setSavedState($savedState)
+  {
+    $this->savedState = $savedState;
+  }
+  /**
+   * @return string
+   */
+  public function getSavedState()
+  {
+    return $this->savedState;
   }
   /**
    * @param InitialStateConfig

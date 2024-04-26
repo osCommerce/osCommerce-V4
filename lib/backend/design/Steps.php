@@ -22,6 +22,7 @@ use common\models\ThemesSettings;
 use common\models\ThemesSteps;
 use common\models\ThemesStyles;
 use common\classes\design as DesignerHelper;
+use common\models\ThemesStylesGroups;
 use common\models\ThemesStylesMain;
 use yii\helpers\ArrayHelper;
 
@@ -774,26 +775,36 @@ class Steps
 
     public static function styleSaveUndo($step)
     {
-        self::styleSaveChange($step, 'old_styles');
+        self::styleSaveChange($step, 'old');
     }
 
     public static function styleSaveRedo($step)
     {
-        self::styleSaveChange($step, 'new_styles');
+        self::styleSaveChange($step, 'new');
     }
 
     public static function styleSaveChange($step, $detraction)
     {
         ThemesStylesMain::deleteAll(['theme_name' => $step['theme_name']]);
-        foreach ($step['data'][$detraction] as $style){
+        foreach ($step['data'][$detraction . '_styles'] as $style){
             $themesStylesMain = new ThemesStylesMain();
             $themesStylesMain->theme_name = $step['theme_name'];
             $themesStylesMain->name = $style['name'];
             $themesStylesMain->value = $style['value'];
             $themesStylesMain->type = $style['type'];
             $themesStylesMain->sort_order = $style['sort_order'];
-            $themesStylesMain->main_style = $style['main_style'];
+            $themesStylesMain->group_id = $style['group_id'];
             $themesStylesMain->save();
+        }
+        ThemesStylesGroups::deleteAll(['theme_name' => $step['theme_name']]);
+        foreach ($step['data'][$detraction . '_groups'] as $style){
+            $themesStylesGroup = new ThemesStylesGroups();
+            $themesStylesGroup->theme_name = $step['theme_name'];
+            $themesStylesGroup->group_id = $style['group_id'];
+            $themesStylesGroup->group_name = $style['group_name'];
+            $themesStylesGroup->sort_order = $style['sort_order'];
+            $themesStylesGroup->tab = $style['tab'];
+            $themesStylesGroup->save();
         }
     }
 
@@ -1478,6 +1489,7 @@ class Steps
             case 'applyMigration': $text = APPLIED_MIGRATION; break;
             case 'setGroup': $text = SET_WIDGET_GROUP; break;
             case 'setStyles': $text = SET_MAIN_THEME_STYLES; break;
+            case 'setCss': $text = 'Set css elements'; break;
         }
 
         return $text;
@@ -1745,9 +1757,35 @@ class Steps
             $themesStyles->value = $style['value'];
             $themesStyles->type = $style['type'];
             $themesStyles->sort_order = $style['sort_order'];
-            $themesStyles->main_style = $style['main_style'];
+            $themesStyles->group_id = $style['group_id'];
             $themesStyles->save();
         }
+
+        $groups = $step['data'][$event . '_groups'];
+        ThemesStylesGroups::deleteAll(['theme_name' => $themeName]);
+        foreach ($groups as $group) {
+            $themesStylesGroup = new ThemesStylesGroups();
+            $themesStylesGroup->theme_name = $themeName;
+            $themesStylesGroup->group_id = $group['group_id'];
+            $themesStylesGroup->group_name = $group['group_name'];
+            $themesStylesGroup->sort_order = $group['sort_order'];
+            $themesStylesGroup->tab = $group['tab'];
+            $themesStylesGroup->save();
+        }
+    }
+
+
+    public static function setCss($data)
+    {
+        self::stepSave('setCss', $data, $data['theme_name']);
+    }
+    public static function setCssUndo($step)
+    {
+        Style::setCssElements($step['data']['theme_name'], $step['data']['old']);
+    }
+    public static function setCssRedo($step)
+    {
+        Style::setCssElements($step['data']['theme_name'], $step['data']['new']);
     }
 
 

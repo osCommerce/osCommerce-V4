@@ -1,39 +1,52 @@
 <div class="select-style" data-type="{$type}">
     {$selected = false}
+    <div class="select-style-around"></div>
     <div class="select-style-content">
-        <div class="search-style"><input type="text" class="form-control" placeholder="{$smarty.const.IMAGE_SEARCH}"/></div>
+        <div class="search-style">
+            <input type="search" class="form-control" placeholder="{$smarty.const.IMAGE_SEARCH}"/>
+        </div>
         <div class="main-styles-list">
             <div data-value="">
                 <span class="name">&nbsp;</span>
             </div>
-            {foreach $styles as $style}
-                <div data-value="${$style.name}"{if ('$'|cat:$style.name) == $value} class="selected"{/if}>
-                    {if $type == 'color'}
-                        <span class="style-color" style="background: {$style.value}"></span>
-                    {/if}
-                    <span class="name">${$style.name}</span> - <span class="value">{$style.value}</span>
+            {foreach $groupStyles as $groupStyle}
+                <div class="group" data-name="{$groupStyle.group_name}">
+                    <h4 class="group-name" data-target="group-style-{$groupStyle.group_id}">
+                        {$groupStyle.group_name}
+                    </h4>
+                    <div class="group-styles" id="group-style-{$groupStyle.group_id}">
+                        {foreach $styles as $mainStyle}
+                            {if $mainStyle.group_id == $groupStyle.group_id}
+                                <div data-value="${$mainStyle.name}"{if ('$'|cat:$mainStyle.name) == $value} class="selected"{/if}>
+                                    {if in_array($mainStyle.type, ['color', 'color-var', 'color-opacity'])}
+                                        <span class="style-color" style="background: {$mainSubStyles['$'|cat:$mainStyle.name]}"></span>
+                                    {/if}
+                                    <span class="name">${$mainStyle.name}</span> - <span class="value">{$mainStyle.value}</span>
+                                </div>
+                            {/if}
+                        {/foreach}
+                    </div>
                 </div>
-                {if ('$'|cat:$style.name) == $value}{$selected = $style}{/if}
             {/foreach}
-            {if $type == 'color'}
+            {*if array_intersect($type, ['color', 'color-var', 'color-opacity'])}
                 <div class="add-color">
                     {$smarty.const.ADD_COLOR}
                 </div>
-            {/if}
+            {/if*}
         </div>
     </div>
     <div class="select-style-selected">
         {if $selected}
             <div>
-                {if $type == 'color'}
-                    <span class="style-color" style="background: {$selected.value}"></span>
+                {if array_intersect($type, ['color', 'color-var', 'color-opacity'])}
+                    <span class="style-color" style="background: {$mainSubStyles['$'|cat:$selected.name]}"></span>
                 {/if}
-                <span class="name">${$selected.name}</span> - <span class="value">{$selected.value}</span>
+                <span class="name">${$selected.name} </span> - <span class="value">{$selected.value}</span>
             </div>
         {elseif !$selected && $value}
             <div>
-                {if $type == 'color'}
-                    <span class="style-color" style="background: {$value}"></span>
+                {if array_intersect($type, ['color', 'color-var', 'color-opacity'])}
+                    <span class="style-color" style="background: {$mainSubStyles[$value]}"></span>
                 {/if}
                 <span class="value">{$value}</span>
             </div>
@@ -49,19 +62,31 @@ $(function(){
         $selectStyle.addClass('applied');
         const type = $(this).data('type');
 
+        $selectStyle.on('click', () => $selectStyle.addClass('opened'));
+        $('.select-style-around', $selectStyle).on('click', function () {
+            setTimeout(() => $selectStyle.removeClass('opened'), 100);
+        });
+
         $('.search-style input', $selectStyle).on('keyup', function () {
             const keys = $(this).val();
-            $('.main-styles-list > div', $selectStyle).each(function () {
+            $('.main-styles-list .name', $selectStyle).each(function () {
+                if (!keys || $(this).text().includes(keys)) {
+                    $(this).parent().show();
+                } else {
+                    $(this).parent().hide();
+                }
+            });
+            $('.main-styles-list .group', $selectStyle).each(function () {
                 if (!keys || $(this).text().includes(keys)) {
                     $(this).show();
                 } else {
                     $(this).hide();
                 }
-            })
+            });
+        });
 
-        })
-
-        $('.main-styles-list > div', $selectStyle).on('click', selectStyle);
+        $('.main-styles-list div[data-value]', $selectStyle).on('click', selectStyle);
+        $('.add-color', $selectStyle).on('click', selectStyle);
 
         function selectStyle() {
             if ($(this).hasClass('add-color')) {
@@ -144,7 +169,8 @@ $(function(){
             } else {
                 $('input[type="hidden"]', $selectStyle).val($(this).data('value')).trigger('change');
                 $('.select-style-selected', $selectStyle).html($(this).html());
-                $('.main-styles-list > div', $selectStyle).removeClass('selected')
+                $('.main-styles-list .selected', $selectStyle).removeClass('selected');
+                setTimeout(() => $selectStyle.removeClass('opened'), 100);
                 $(this).addClass('selected')
             }
         }

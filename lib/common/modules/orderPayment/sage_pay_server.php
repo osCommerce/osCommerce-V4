@@ -39,6 +39,7 @@ class sage_pay_server extends ModulePayment implements TransactionalInterface, P
     public static function getVersionHistory()
     {
         return [
+            '1.0.2' => 'The gateway urls was updated',
             '1.0.1' => 'fix missed tracking, new ref code',
         ];
     }
@@ -1020,15 +1021,19 @@ EOD;
         $gateway_url = '';
         switch ($mode) {
             case 'Live':
-                $gateway_url = 'https://live.sagepay.com';
+                //old $gateway_url = 'https://live.sagepay.com';
+                $gateway_url = 'https://live.opayo.eu.elavon.com'; //shared/server
                 break;
 
             case 'Test':
-                $gateway_url = 'https://test.sagepay.com';
+                //old $gateway_url = 'https://test.sagepay.com';
+                $gateway_url = 'https://sandbox.opayo.eu.elavon.com';  //shared/server
+
                 break;
 
             default:
-                $gateway_url = 'https://test.sagepay.com/Simulator/VSPServerGateway.asp?Service=VendorRegisterTx';
+//                $gateway_url = 'https://test.sagepay.com/Simulator/VSPServerGateway.asp?Service=VendorRegisterTx';
+                $gateway_url = 'https://sandbox.opayo.eu.elavon.com';  //shared/server
                 $action = '';
                 break;
         }

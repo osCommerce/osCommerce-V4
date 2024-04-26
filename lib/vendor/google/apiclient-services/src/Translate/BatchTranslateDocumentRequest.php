@@ -27,19 +27,35 @@ class BatchTranslateDocumentRequest extends \Google\Collection
   /**
    * @var bool
    */
+  public $enableRotationCorrection;
+  /**
+   * @var bool
+   */
   public $enableShadowRemovalNativePdf;
   /**
    * @var string[]
    */
   public $formatConversions;
+  /**
+   * @var TranslateTextGlossaryConfig[]
+   */
+  public $glossaries;
   protected $glossariesType = TranslateTextGlossaryConfig::class;
   protected $glossariesDataType = 'map';
+  /**
+   * @var BatchDocumentInputConfig[]
+   */
+  public $inputConfigs;
   protected $inputConfigsType = BatchDocumentInputConfig::class;
   protected $inputConfigsDataType = 'array';
   /**
    * @var string[]
    */
   public $models;
+  /**
+   * @var BatchDocumentOutputConfig
+   */
+  public $outputConfig;
   protected $outputConfigType = BatchDocumentOutputConfig::class;
   protected $outputConfigDataType = '';
   /**
@@ -64,6 +80,20 @@ class BatchTranslateDocumentRequest extends \Google\Collection
   public function getCustomizedAttribution()
   {
     return $this->customizedAttribution;
+  }
+  /**
+   * @param bool
+   */
+  public function setEnableRotationCorrection($enableRotationCorrection)
+  {
+    $this->enableRotationCorrection = $enableRotationCorrection;
+  }
+  /**
+   * @return bool
+   */
+  public function getEnableRotationCorrection()
+  {
+    return $this->enableRotationCorrection;
   }
   /**
    * @param bool

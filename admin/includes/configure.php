@@ -41,6 +41,8 @@ defined('DIR_FS_BACKUP') or define('DIR_FS_BACKUP', DIR_FS_ADMIN . 'backups/');
 defined('DIR_FS_CATALOG_XML') or define('DIR_FS_CATALOG_XML', DIR_FS_CATALOG . 'admin/xml/');
 defined('DIR_FS_DOWNLOAD') or define('DIR_FS_DOWNLOAD', DIR_FS_CATALOG . 'download/');
 defined('DIR_WS_DOWNLOAD') or define('DIR_WS_DOWNLOAD', DIR_WS_CATALOG . 'download/');
+defined('DIR_FS_DOWNLOAD_PUBLIC') or define('DIR_FS_DOWNLOAD_PUBLIC', DIR_FS_CATALOG . 'pub/');
+defined('DIR_WS_DOWNLOAD_PUBLIC') or define('DIR_WS_DOWNLOAD_PUBLIC', DIR_WS_CATALOG . 'pub/');
 
 // Added for Templating
 defined('DIR_FS_CATALOG_MAINPAGE_MODULES') or define('DIR_FS_CATALOG_MAINPAGE_MODULES', DIR_FS_CATALOG_MODULES . 'mainpage_modules/');

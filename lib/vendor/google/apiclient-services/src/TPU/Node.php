@@ -20,6 +20,10 @@ namespace Google\Service\TPU;
 class Node extends \Google\Collection
 {
   protected $collection_key = 'tags';
+  /**
+   * @var AcceleratorConfig
+   */
+  public $acceleratorConfig;
   protected $acceleratorConfigType = AcceleratorConfig::class;
   protected $acceleratorConfigDataType = '';
   /**
@@ -38,6 +42,10 @@ class Node extends \Google\Collection
    * @var string
    */
   public $createTime;
+  /**
+   * @var AttachedDisk[]
+   */
+  public $dataDisks;
   protected $dataDisksType = AttachedDisk::class;
   protected $dataDisksDataType = 'array';
   /**
@@ -65,27 +73,59 @@ class Node extends \Google\Collection
    */
   public $metadata;
   /**
+   * @var bool
+   */
+  public $multisliceNode;
+  /**
    * @var string
    */
   public $name;
+  /**
+   * @var NetworkConfig
+   */
+  public $networkConfig;
   protected $networkConfigType = NetworkConfig::class;
   protected $networkConfigDataType = '';
+  /**
+   * @var NetworkEndpoint[]
+   */
+  public $networkEndpoints;
   protected $networkEndpointsType = NetworkEndpoint::class;
   protected $networkEndpointsDataType = 'array';
   /**
    * @var string
    */
+  public $queuedResource;
+  /**
+   * @var string
+   */
   public $runtimeVersion;
+  /**
+   * @var SchedulingConfig
+   */
+  public $schedulingConfig;
   protected $schedulingConfigType = SchedulingConfig::class;
   protected $schedulingConfigDataType = '';
+  /**
+   * @var ServiceAccount
+   */
+  public $serviceAccount;
   protected $serviceAccountType = ServiceAccount::class;
   protected $serviceAccountDataType = '';
+  /**
+   * @var ShieldedInstanceConfig
+   */
+  public $shieldedInstanceConfig;
   protected $shieldedInstanceConfigType = ShieldedInstanceConfig::class;
   protected $shieldedInstanceConfigDataType = '';
   /**
    * @var string
    */
   public $state;
+  /**
+   * @var Symptom[]
+   */
+  public $symptoms;
   protected $symptomsType = Symptom::class;
   protected $symptomsDataType = 'array';
   /**
@@ -262,6 +302,20 @@ class Node extends \Google\Collection
     return $this->metadata;
   }
   /**
+   * @param bool
+   */
+  public function setMultisliceNode($multisliceNode)
+  {
+    $this->multisliceNode = $multisliceNode;
+  }
+  /**
+   * @return bool
+   */
+  public function getMultisliceNode()
+  {
+    return $this->multisliceNode;
+  }
+  /**
    * @param string
    */
   public function setName($name)
@@ -302,6 +356,20 @@ class Node extends \Google\Collection
   public function getNetworkEndpoints()
   {
     return $this->networkEndpoints;
+  }
+  /**
+   * @param string
+   */
+  public function setQueuedResource($queuedResource)
+  {
+    $this->queuedResource = $queuedResource;
+  }
+  /**
+   * @return string
+   */
+  public function getQueuedResource()
+  {
+    return $this->queuedResource;
   }
   /**
    * @param string

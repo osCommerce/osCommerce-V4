@@ -300,7 +300,7 @@ class IndexController extends Sceleton
                 \app\components\MetaCannonical::setStatus(403);
                 $check = tep_db_fetch_array(tep_db_query("select id from " . TABLE_DESIGN_BOXES . " where block_name = '403' and theme_name = '" . THEME_NAME . "'"));
                 return $this->render('403', [
-                    'hasTemplate' => $check['id']/* || Info::isAdmin() ? true : false*/
+                    'hasTemplate' => (is_array($check)?$check['id']:false)/* || Info::isAdmin() ? true : false*/
                 ]);
             }
             if ($statusCode == 404) {
@@ -310,6 +310,10 @@ class IndexController extends Sceleton
                 return $this->render('404', [
                     'hasTemplate' => ($check['id']??null) || Info::isAdmin() ? true : false
                 ]);
+            }
+            if ($exception instanceof \yii\web\BadRequestHttpException && $exception->getMessage() == 'Unable to verify your data submission.') {
+                $this->layout = false;
+                return \common\helpers\Translation::getValue('FORM_EXPIRED_ERROR_MESSAGE', 'main',"The form is expired. Please go back and refresh the page");
             } else {
                 $this->layout = false;
                 return (defined('CONTACT_US_ERROR_MESSAGE')?CONTACT_US_ERROR_MESSAGE:"please contact us if you see this page");

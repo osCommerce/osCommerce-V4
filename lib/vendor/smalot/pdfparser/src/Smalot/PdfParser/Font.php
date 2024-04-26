@@ -45,12 +45,12 @@ class Font extends PDFObject
     /**
      * @var array
      */
-    protected $table = null;
+    protected $table;
 
     /**
      * @var array
      */
-    protected $tableSizes = null;
+    protected $tableSizes;
 
     /**
      * Caches results from uchr.
@@ -134,9 +134,16 @@ class Font extends PDFObject
 
     /**
      * Convert unicode character code to "utf-8" encoded string.
+     *
+     * @param int|float $code Unicode character code. Will be casted to int internally!
      */
-    public static function uchr(int $code): string
+    public static function uchr($code): string
     {
+        // note:
+        // $code was typed as int before, but changed in https://github.com/smalot/pdfparser/pull/623
+        // because in some cases uchr was called with a float instead of an integer.
+        $code = (int) $code;
+
         if (!isset(self::$uchrCache[$code])) {
             // html_entity_decode() will not work with UTF-16 or UTF-32 char entities,
             // therefore, we use mb_convert_encoding() instead
@@ -276,7 +283,9 @@ class Font extends PDFObject
     {
         $index_map = array_flip($this->table);
         $details = $this->getDetails();
-        $widths = $details['Widths'];
+
+        // Usually, Widths key is set in $details array, but if it isn't use an empty array instead.
+        $widths = $details['Widths'] ?? [];
 
         // Widths array is zero indexed but table is not. We must map them based on FirstChar and LastChar
         $width_map = array_flip(range($details['FirstChar'], $details['LastChar']));
@@ -312,12 +321,12 @@ class Font extends PDFObject
         }
 
         $text = '';
-        $parts = preg_split('/(<[a-f0-9]+>)/si', $hexa, -1, \PREG_SPLIT_NO_EMPTY | \PREG_SPLIT_DELIM_CAPTURE);
+        $parts = preg_split('/(<[a-f0-9\s]+>)/si', $hexa, -1, \PREG_SPLIT_NO_EMPTY | \PREG_SPLIT_DELIM_CAPTURE);
 
         foreach ($parts as $part) {
-            if (preg_match('/^<.*>$/s', $part) && false === stripos($part, '<?xml')) {
-                // strip line breaks
-                $part = preg_replace("/[\r\n]/", '', $part);
+            if (preg_match('/^<[a-f0-9\s]+>$/si', $part)) {
+                // strip whitespace
+                $part = preg_replace("/\s/", '', $part);
                 $part = trim($part, '<>');
                 if ($add_braces) {
                     $text .= '(';
@@ -342,18 +351,20 @@ class Font extends PDFObject
      */
     public static function decodeOctal(string $text): string
     {
-        $parts = preg_split('/(\\\\[0-7]{3})/s', $text, -1, \PREG_SPLIT_NO_EMPTY | \PREG_SPLIT_DELIM_CAPTURE);
-        $text = '';
+        // Replace all double backslashes \\ with a special string
+        $text = strtr($text, ['\\\\' => '[**pdfparserdblslsh**]']);
 
-        foreach ($parts as $part) {
-            if (preg_match('/^\\\\[0-7]{3}$/', $part)) {
-                $text .= \chr(octdec(trim($part, '\\')));
-            } else {
-                $text .= $part;
-            }
-        }
+        // Now we can replace all octal codes without worrying about
+        // escaped backslashes
+        $text = preg_replace_callback('/\\\\([0-7]{1,3})/', function ($m) {
+            return \chr(octdec($m[1]));
+        }, $text);
 
-        return $text;
+        // Unescape any parentheses
+        $text = str_replace(['\\(', '\\)'], ['(', ')'], $text);
+
+        // Replace instances of the special string with a single backslash
+        return str_replace('[**pdfparserdblslsh**]', '\\', $text);
     }
 
     /**
@@ -361,18 +372,9 @@ class Font extends PDFObject
      */
     public static function decodeEntities(string $text): string
     {
-        $parts = preg_split('/(#\d{2})/s', $text, -1, \PREG_SPLIT_NO_EMPTY | \PREG_SPLIT_DELIM_CAPTURE);
-        $text = '';
-
-        foreach ($parts as $part) {
-            if (preg_match('/^#\d{2}$/', $part)) {
-                $text .= \chr(hexdec(trim($part, '#')));
-            } else {
-                $text .= $part;
-            }
-        }
-
-        return $text;
+        return preg_replace_callback('/#([0-9a-f]{2})/i', function ($m) {
+            return \chr(hexdec($m[1]));
+        }, $text);
     }
 
     /**
@@ -384,7 +386,7 @@ class Font extends PDFObject
      */
     public static function decodeUnicode(string $text): string
     {
-        if (preg_match('/^\xFE\xFF/i', $text)) {
+        if ("\xFE\xFF" === substr($text, 0, 2)) {
             // Strip U+FEFF byte order marker.
             $decode = substr($text, 2);
             $text = '';
@@ -409,16 +411,17 @@ class Font extends PDFObject
     /**
      * Decode text by commands array.
      */
-    public function decodeText(array $commands): string
+    public function decodeText(array $commands, float $fontFactor = 4): string
     {
         $word_position = 0;
         $words = [];
-        $font_space = $this->getFontSpaceLimit();
+        $font_space = $this->getFontSpaceLimit() * abs($fontFactor) / 4;
 
         foreach ($commands as $command) {
             switch ($command[PDFObject::TYPE]) {
                 case 'n':
-                    if ((float) trim($command[PDFObject::COMMAND]) < $font_space) {
+                    $offset = (float) trim($command[PDFObject::COMMAND]);
+                    if ($offset - (float) $font_space < 0) {
                         $word_position = \count($words);
                     }
                     continue 2;
@@ -434,8 +437,8 @@ class Font extends PDFObject
 
             // replace escaped chars
             $text = str_replace(
-                ['\\\\', '\(', '\)', '\n', '\r', '\t', '\f', '\ '],
-                ['\\', '(', ')', "\n", "\r", "\t", "\f", ' '],
+                ['\\\\', '\(', '\)', '\n', '\r', '\t', '\f', '\ ', '\b'],
+                [\chr(92), \chr(40), \chr(41), \chr(10), \chr(13), \chr(9), \chr(12), \chr(32), \chr(8)],
                 $text
             );
 
@@ -449,9 +452,32 @@ class Font extends PDFObject
 
         foreach ($words as &$word) {
             $word = $this->decodeContent($word);
+            $word = str_replace("\t", ' ', $word);
         }
 
-        return implode(' ', $words);
+        // Remove internal "words" that are just spaces, but leave them
+        // if they are at either end of the array of words. This fixes,
+        // for   example,   lines   that   are   justified   to   fill
+        // a whole row.
+        for ($x = \count($words) - 2; $x >= 1; --$x) {
+            if ('' === trim($words[$x], ' ')) {
+                unset($words[$x]);
+            }
+        }
+        $words = array_values($words);
+
+        // Cut down on the number of unnecessary internal spaces by
+        // imploding the string on the null byte, and checking if the
+        // text includes extra spaces on either side. If so, merge
+        // where appropriate.
+        $words = implode("\x00\x00", $words);
+        $words = str_replace(
+            [" \x00\x00 ", "\x00\x00 ", " \x00\x00", "\x00\x00"],
+            ['  ', ' ', ' ', ' '],
+            $words
+        );
+
+        return $words;
     }
 
     /**
@@ -459,8 +485,14 @@ class Font extends PDFObject
      *
      * @param bool $unicode This parameter is deprecated and might be removed in a future release
      */
-    public function decodeContent(string $text, ?bool &$unicode = null): string
+    public function decodeContent(string $text, bool &$unicode = null): string
     {
+        // If this string begins with a UTF-16BE BOM, then decode it
+        // directly as Unicode
+        if ("\xFE\xFF" === substr($text, 0, 2)) {
+            return $this->decodeUnicode($text);
+        }
+
         if ($this->has('ToUnicode')) {
             return $this->decodeContentByToUnicodeCMapOrDescendantFonts($text);
         }
@@ -603,7 +635,7 @@ class Font extends PDFObject
         // so we use iconv() here
         $iconvEncodingName = $this->getIconvEncodingNameOrNullByPdfEncodingName($pdfEncodingName);
 
-        return $iconvEncodingName ? iconv($iconvEncodingName, 'UTF-8', $text) : null;
+        return $iconvEncodingName ? iconv($iconvEncodingName, 'UTF-8//TRANSLIT//IGNORE', $text) : null;
     }
 
     /**

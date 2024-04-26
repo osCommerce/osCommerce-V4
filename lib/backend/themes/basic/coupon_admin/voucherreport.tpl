@@ -22,7 +22,7 @@
       <form id="filterForm" name="filterForm" onsubmit="return applyFilter();">
         <table width='100%' cellspacing="3" cellpadding="1" border="0">
           <tbody>
-          <tr>
+          <tr id="couponSearch">
             <td align="right">
               <label>{$smarty.const.TEXT_SEARCH_BY}</label>
             </td>
@@ -88,6 +88,7 @@
         $('select').val('');
         //$("form select[data-role=multiselect]").multipleSelect('refresh');
         $('input').val('');
+        toggleCouponSearch();
         resetStatement();
         return false;
       }
@@ -143,11 +144,20 @@
           var event_id = $(obj).find('input.cell_identify').val();
       }
 
+      function toggleCouponSearch() {
+        if ($('input[name=cid]').val() > 0) {
+          $("#couponSearch").hide();
+        } else {
+          $("#couponSearch").show();
+        }
+      }
+
       $(document).ready(function() {
         $('.js-export-search').on('click', function () {
           $(this).attr('href', '{Yii::$app->urlManager->createUrl(['coupon_admin/report-usage-list','export'=>1])}&filter=' + encodeURIComponent($('#filterForm').serialize()));
           $('#filterForm').trigger('submit');
         });
+        toggleCouponSearch();
       });
   </script>
   <!--===  reviews management ===-->

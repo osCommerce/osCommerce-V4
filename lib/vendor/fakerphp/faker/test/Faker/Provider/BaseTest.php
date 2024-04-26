@@ -3,6 +3,7 @@
 namespace Faker\Test\Provider;
 
 use Faker\Provider\Base as BaseProvider;
+use Faker\Test\Fixture;
 use Faker\Test\TestCase;
 
 /**
@@ -409,6 +410,8 @@ final class BaseTest extends TestCase
 
     /**
      * @see https://github.com/fzaninotto/Faker/issues/265
+     *
+     * @requires PHP < 8.3
      */
     public function testOptionalPercentageAndWeight(): void
     {
@@ -548,9 +551,40 @@ final class BaseTest extends TestCase
         BaseProvider::randomElements(['foo'], 2);
     }
 
+    public function testRandomElementsRejectsInvalidArgument(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage(sprintf(
+            'Argument for parameter $array needs to be array, an instance of %s, or an instance of %s, got %s instead.',
+            \UnitEnum::class,
+            \Traversable::class,
+            \stdClass::class,
+        ));
+
+        BaseProvider::randomElements(new \stdClass());
+    }
+
+    public function testRandomElementRejectsInvalidArgument(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage(sprintf(
+            'Argument for parameter $array needs to be array, an instance of %s, or an instance of %s, got %s instead.',
+            \UnitEnum::class,
+            \Traversable::class,
+            'string',
+        ));
+
+        BaseProvider::randomElement('foo');
+    }
+
     public function testRandomElementsWorksWithoutArgument(): void
     {
         self::assertCount(1, BaseProvider::randomElements(), 'Should work without any input');
+    }
+
+    public function testRandomElementsReturnsRandomCountWhenNull(): void
+    {
+        self::assertCount(2, BaseProvider::randomElements(['foo', 'bar', 'baz'], null), 'Should return random count when null');
     }
 
     public function testRandomElementsWorksWithEmptyArray(): void
@@ -584,6 +618,29 @@ final class BaseTest extends TestCase
 
         self::assertCount(3, $randomElements);
         self::assertContainsOnly('string', $randomElements);
+    }
+
+    /**
+     * @requires PHP 8.1
+     */
+    public function testRandomElementsWithEnum(): void
+    {
+        $count = 2;
+
+        $randomElements = BaseProvider::randomElements(Fixture\Enum\BackedEnum::class, $count);
+
+        self::assertCount($count, $randomElements);
+        self::assertContainsOnlyInstancesOf(Fixture\Enum\BackedEnum::class, $randomElements);
+    }
+
+    /**
+     * @requires PHP 8.1
+     */
+    public function testRandomElementWithEnum(): void
+    {
+        $randomElement = BaseProvider::randomElement(Fixture\Enum\BackedEnum::class);
+
+        self::assertInstanceOf(Fixture\Enum\BackedEnum::class, $randomElement);
     }
 }
 

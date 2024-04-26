@@ -27,6 +27,12 @@ class ExistenceFilter extends \Google\Model
    * @var int
    */
   public $targetId;
+  /**
+   * @var BloomFilter
+   */
+  public $unchangedNames;
+  protected $unchangedNamesType = BloomFilter::class;
+  protected $unchangedNamesDataType = '';
 
   /**
    * @param int
@@ -55,6 +61,20 @@ class ExistenceFilter extends \Google\Model
   public function getTargetId()
   {
     return $this->targetId;
+  }
+  /**
+   * @param BloomFilter
+   */
+  public function setUnchangedNames(BloomFilter $unchangedNames)
+  {
+    $this->unchangedNames = $unchangedNames;
+  }
+  /**
+   * @return BloomFilter
+   */
+  public function getUnchangedNames()
+  {
+    return $this->unchangedNames;
   }
 }
 

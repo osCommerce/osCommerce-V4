@@ -22,9 +22,7 @@ class m230721_163716_groups_sort_order extends Migration
      */
     public function safeUp()
     {
-        if (!$this->isFieldExists('sort_order', 'groups')) {
-            $this->addColumn('groups', 'sort_order', $this->integer(11)->notNull()->defaultValue(0));
-        }
+        $this->addColumnIfMissing('groups', 'sort_order', $this->integer(11)->notNull()->defaultValue(0));
     }
 
     /**

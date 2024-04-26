@@ -215,6 +215,10 @@ input[type=checkbox]:focus {
 .input-group input {
     order: 1;
 }
+.input-group .btn {
+    order: 2;
+    padding: 2px 10px;
+}
 .input-group .input-group-append {
     order: 2;
 }
@@ -421,7 +425,7 @@ div.checker {
 }
 .setting-row.setting-row-border .select-style {
     display: inline-block;
-    width: calc(100% - 340px);
+    width: calc(70% - 145px);;
 }
 .fade.in {
     opacity: 1;

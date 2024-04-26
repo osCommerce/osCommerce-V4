@@ -144,4 +144,101 @@ abstract class ModuleLabel extends Module {
     {
         return false;
     }
+    
+    /**
+     * Allows to show extra params for label
+     * @param $order_label_id
+     * @return string html
+     *
+     * Supports simplified method getExtraParamsArray like this:
+     *
+     * public function getExtraParamsArray($order_label_id)
+     * {
+     *    return [
+     *      'param1' => [
+     *          'label' => 'Param1',
+     *          'type'  => 'edit',
+     *          'value' => 'sample text',
+     *      ],
+     *      'param2' => [
+     *          'label' => 'Param2',
+     *          'type'  => 'checkbox',
+     *          'value' => true,
+     *      ],
+     *      'param3' => [
+     *          'label' => 'Param3',
+     *          'type'  => 'dropdown',
+     *          'dropdown' => ['one' => 'Name1', 'two' => 'Name2'],
+     *          'value' => 'one',
+     *      ],
+     *  ];
+     * }
+     *
+     */
+    public function getExtraParams($order_label_id)
+    {
+        $html = '';
+        if (method_exists($this, 'getExtraParamsArray') && !empty($extraParams = $this->getExtraParamsArray($order_label_id))) {
+            $moduleCode = static::getModuleCode();
+            $html .= '<div class="label-params">';
+            foreach ($extraParams as $name => $info) {
+                $paramName = $moduleCode . '_' . $name;
+                $html .= '<div class="label-param">';
+                try {
+                    if (!empty($info['label']) && $info['type'] != 'checkbox') {
+                        $html .= sprintf('<label for="%s">%s</label>', $paramName, $info['label']);
+                    }
+                    switch ($info['type']) {
+                        case 'edit':
+                            $html .= \common\helpers\Html::textInput($paramName, $info['value']??null, ['id' => $paramName]);
+                            break;
+                        case 'checkbox':
+                            $html .= \common\helpers\Html::checkbox($paramName, $info['value']??false, ['id' => $paramName]);
+                            if (!empty($info['label'])) {
+                                $html .= sprintf('<label for="%s">%s</label>', $paramName, $info['label']);
+                            }
+                            break;
+                        case 'dropdown':
+                            $html .= \common\helpers\Html::dropDownList($paramName, $info['value']??null, $info['dropdown'], ['id' => $paramName]);
+                            break;
+                    }
+                    
+                } catch (\Throwable $e) {
+                    \common\helpers\Php::handleErrorProd($e, __FUNCTION__, "label/$moduleCode");
+                }
+                $html .= '</div>';
+            }
+            $html .= '</div';
+        }
+        return $html;
+    }
+    
+    public function extractExtraParamsValues($params)
+    {
+        $moduleCode = static::getModuleCode();
+        if (method_exists($this, 'getExtraParamsArray') && !empty($extraParams = $this->getExtraParamsArray())) {
+            $res = [];
+            foreach ($extraParams as $name => $info) {
+                $paramName = $moduleCode . '_' . $name;
+                if (isset($params[$paramName])) {
+                    $res[$name] = $params[$paramName];
+                }
+            }
+            return $res;
+        }
+    }
+
+    public function loadExtraParams($order_label_id)
+    {
+        $rec = OrdersLabel::findOne(['orders_label_id' => $order_label_id]);
+        if (!empty($rec) && !empty($rec->extra_params)) {
+            return @json_decode($rec->extra_params, true);
+        }
+    }
+    
+    public function isExtraParamsAvailable()
+    {
+        return method_exists($this, 'getExtraParamsArray') && !empty($this->getExtraParamsArray());
+    }
+    
 }

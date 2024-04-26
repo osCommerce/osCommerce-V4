@@ -44,9 +44,11 @@ class AndroidManagement extends \Google\Service
   public $enterprises_devices;
   public $enterprises_devices_operations;
   public $enterprises_enrollmentTokens;
+  public $enterprises_migrationTokens;
   public $enterprises_policies;
   public $enterprises_webApps;
   public $enterprises_webTokens;
+  public $provisioningInfo;
   public $signupUrls;
 
   /**
@@ -376,6 +378,54 @@ class AndroidManagement extends \Google\Service
           ]
         ]
     );
+    $this->enterprises_migrationTokens = new AndroidManagement\Resource\EnterprisesMigrationTokens(
+        $this,
+        $this->serviceName,
+        'migrationTokens',
+        [
+          'methods' => [
+            'create' => [
+              'path' => 'v1/{+parent}/migrationTokens',
+              'httpMethod' => 'POST',
+              'parameters' => [
+                'parent' => [
+                  'location' => 'path',
+                  'type' => 'string',
+                  'required' => true,
+                ],
+              ],
+            ],'get' => [
+              'path' => 'v1/{+name}',
+              'httpMethod' => 'GET',
+              'parameters' => [
+                'name' => [
+                  'location' => 'path',
+                  'type' => 'string',
+                  'required' => true,
+                ],
+              ],
+            ],'list' => [
+              'path' => 'v1/{+parent}/migrationTokens',
+              'httpMethod' => 'GET',
+              'parameters' => [
+                'parent' => [
+                  'location' => 'path',
+                  'type' => 'string',
+                  'required' => true,
+                ],
+                'pageSize' => [
+                  'location' => 'query',
+                  'type' => 'integer',
+                ],
+                'pageToken' => [
+                  'location' => 'query',
+                  'type' => 'string',
+                ],
+              ],
+            ],
+          ]
+        ]
+    );
     $this->enterprises_policies = new AndroidManagement\Resource\EnterprisesPolicies(
         $this,
         $this->serviceName,
@@ -521,6 +571,26 @@ class AndroidManagement extends \Google\Service
               'httpMethod' => 'POST',
               'parameters' => [
                 'parent' => [
+                  'location' => 'path',
+                  'type' => 'string',
+                  'required' => true,
+                ],
+              ],
+            ],
+          ]
+        ]
+    );
+    $this->provisioningInfo = new AndroidManagement\Resource\ProvisioningInfo(
+        $this,
+        $this->serviceName,
+        'provisioningInfo',
+        [
+          'methods' => [
+            'get' => [
+              'path' => 'v1/{+name}',
+              'httpMethod' => 'GET',
+              'parameters' => [
+                'name' => [
                   'location' => 'path',
                   'type' => 'string',
                   'required' => true,

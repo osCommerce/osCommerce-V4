@@ -51,6 +51,12 @@ use yii\filters\AccessControl;*/
  */
 class CatalogController extends Sceleton
 {
+    public function beforeAction($action) {
+        if ($action->id == 'gift') {
+            $this->enableCsrfValidation = false;
+        }
+        return parent::beforeAction($action);
+    }
 
     public function actionIndex()
     {
@@ -391,6 +397,11 @@ class CatalogController extends Sceleton
                 return $this->redirect($redirectURL);
             }
         }
+        if ($extClass = \common\helpers\Acl::checkExtensionAllowed('ProductsGrouped', 'allowed')) {
+            if ($redirectURL = $extClass::getRedirectToParentProductURL($params['products_id'])) {
+                return $this->redirect($redirectURL);
+            }
+        }
         $message = '';
         if (isset($_SESSION['product_info'])) {
             $message = $_SESSION['product_info'];
@@ -613,6 +624,7 @@ class CatalogController extends Sceleton
                     $details['sp_collection'] = $ext::getSpCollection($details['current_uprid']);
                 }
                 $details['image_widget'] = \frontend\design\boxes\product\Images::widget(['params'=>['uprid'=>$details['current_uprid']], 'settings' => \frontend\design\Info::widgetSettings('product\Images', false, 'product')]);
+                \frontend\design\boxes\product\ImagesAdditional::widget(['params'=>['uprid'=>$details['current_uprid']]]);
                 $details['images'] = \frontend\design\Info::$jsGlobalData['products'][$products_id]['images'];
                 $details['defaultImage'] = \frontend\design\Info::$jsGlobalData['products'][$products_id]['defaultImage'];
                 $details['productId'] = $products_id;
@@ -1390,7 +1402,7 @@ class CatalogController extends Sceleton
     {
         $languages_id = \Yii::$app->settings->get('languages_id');
         \common\helpers\Translation::init('js');
-        $product_info = tep_db_fetch_array(tep_db_query("select p.products_id, p.products_tax_class_id, if(length(pd1.products_name), pd1.products_name, pd.products_name) as products_name, if(length(pd1.products_description), pd1.products_description, pd.products_description) as products_description from " . TABLE_PRODUCTS . " p left join " . TABLE_PRODUCTS_DESCRIPTION . " pd1 on pd1.products_id = p.products_id and pd1.language_id = '" . (int)$languages_id ."' and pd1.platform_id = '".(int)Yii::$app->get('platform')->config()->getPlatformToDescription()."', " . TABLE_PRODUCTS_DESCRIPTION . " pd where p.products_model = 'VIRTUAL_GIFT_CARD' and pd.products_id = p.products_id and pd.language_id = '" . (int)$languages_id ."' and pd.platform_id = '".intval(\common\classes\platform::defaultId())."'"));
+        $product_info = tep_db_fetch_array(tep_db_query("select p.products_id, p.products_tax_class_id, if(length(pd1.products_name), pd1.products_name, pd.products_name) as products_name, if(length(pd1.products_description), pd1.products_description, pd.products_description) as products_description from " . TABLE_PRODUCTS . " p left join " . TABLE_PRODUCTS_DESCRIPTION . " pd1 on pd1.products_id = p.products_id and pd1.language_id = '" . (int)$languages_id ."' and pd1.platform_id = '".(int)Yii::$app->get('platform')->config()->getPlatformToDescription()."', " . TABLE_PRODUCTS_DESCRIPTION . " pd where p.products_model = '" . tep_db_input(\common\helpers\Gifts::getVirtualGiftCardModel()) . "' and pd.products_id = p.products_id and pd.language_id = '" . (int)$languages_id ."' and pd.platform_id = '".intval(\common\classes\platform::defaultId())."'"));
 
         if ( !($product_info['products_id'] > 0) ) {
           return $this->redirect(Yii::$app->urlManager->createUrl('/'));

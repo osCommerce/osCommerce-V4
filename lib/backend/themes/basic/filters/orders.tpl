@@ -105,6 +105,10 @@
             {Html::dropDownList('fc_id[]', $app->controller->view->filters->fc_id, $app->controller->view->filters->fCoupons, ['class' => 'form-control', 'multiple' => 'multiple', 'data-role' => 'multiselect'])}
         </div>
         {/if}
+        <div class="wl-td">
+            <label>{$smarty.const.TEXT_SHOW_ORDER_STATS}</label>
+            {Html::checkbox('show_stats', \Yii::$app->request->get('show_stats', 0), ['class' => 'form-check-input'])}
+        </div>
     </div>
     <div class="item_filter item_filter_4">
         <div class="tl_filters_title {*tl_filters_title_border*}">{$smarty.const.TEXT_PAYMENT_SHIPPING}</div>

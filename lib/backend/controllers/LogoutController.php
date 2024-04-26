@@ -37,7 +37,7 @@ class LogoutController extends Controller
                 'alslHash' => $alslHash,
             ]);
         }
-        $alslHash = trim(Yii::$app->request->post('hash'));
+        $alslHash = trim(Yii::$app->request->post('hash'), '');
         if ($alslHash != '') {
             \common\models\AdminLoginSessionLogoff::deleteAll(['<', 'alsl_date_expire', date('Y-m-d H:i:s')]);
             $alslRecord = \common\models\AdminLoginSessionLogoff::findOne(['alsl_hash' => $alslHash]);

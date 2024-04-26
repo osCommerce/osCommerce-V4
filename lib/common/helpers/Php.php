@@ -82,16 +82,16 @@ class Php
         return $res;
     }
 
-    public static function logError($exception, $prefix = null)
+    public static function logError($exception, $prefix = null, $entity = 'application')
     {
         $prefix = empty($prefix)? '' : "$prefix: ";
-        \Yii::warning($prefix . $exception->getMessage() . "\n" . $exception->getTraceAsString());
+        \Yii::warning($prefix . $exception->getMessage() . "\n" . $exception->getTraceAsString(), $entity);
     }
 
-    public static function handleErrorProd($exception, $prefix = null)
+    public static function handleErrorProd($exception, $prefix = null, $entity = 'application')
     {
         if (\common\helpers\System::isProduction()) {
-            self::logError($exception, $prefix);
+            self::logError($exception, $prefix, $entity);
         } else {
             throw $exception;
         }
@@ -109,6 +109,23 @@ class Php
     public static function strInsertSpacesBeforeCapitalChar($str)
     {
         return ltrim(preg_replace('/[A-Z]/', ' $0', $str));
+    }
+
+    public static function isImplementsInterface($classOrObject, $interface)
+    {
+        if (is_object($classOrObject)) {
+            return $classOrObject instanceof $interface;
+        } else {
+            return self::isClassImplementsInterface($classOrObject, $interface);
+        }
+    }
+
+    public static function isClassImplementsInterface($className, $interface)
+    {
+        if (!class_exists($className)) return false;
+        if (!is_string($interface)) return false;
+        $interfaces = class_implements($className);
+        return isset($interfaces[$interface]);
     }
 
 }

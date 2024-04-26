@@ -57,7 +57,7 @@ class CartFactory {
         include($filename);
     }
 
-    if (count($cart->contents) > 0 && ($cart->currency != $currency || $cart->language_id != $languages_id) && method_exists($cart, 'update_basket_info')) $cart->update_basket_info();
+    if ($cart->count_contents() > 0 && ($cart->currency != $currency || $cart->language_id != $languages_id) && method_exists($cart, 'update_basket_info')) $cart->update_basket_info();
 
     static $manager = null;
     if (!$preventProcess){
@@ -103,6 +103,9 @@ class CartFactory {
     if ($_GET['action'] == 'add_product' && isset($_POST['add_to_quote']))
     {
         $_GET['action'] = 'add_quote';
+    }
+    if ($_GET['action'] == 'add_all' && isset($_POST['add_to_quote'])) {
+        $_GET['action'] = 'add_quote_all';
     }
     if ($_GET['action'] == 'add_product' && isset($_POST['add_to_sample']))
     {
@@ -483,6 +486,9 @@ class CartFactory {
 
         if (isset($_POST['products_id']) && is_array($_POST['products_id'])){
             foreach($_POST['products_id'] as $key => $products_id){
+                if (\common\helpers\Extensions::isAllowed('ProductsGrouped') && !\common\helpers\Product::get_products_stock($products_id)) {
+                    continue;
+                }
                 if (isset($_POST['mix_qty'][$products_id])){
                     foreach($_POST['mix_qty'][$products_id] as $it => $qty){
                         if ($qty){
@@ -505,7 +511,7 @@ class CartFactory {
                     }
                     $cart->add_cart((int)$_POST['products_id'][$key], $packQty, $_POST['id'][$products_id]);
                 } else {
-                    $qty = $_POST['qty'][$key];
+                    $qty = $_POST['qty'][$key] ?? null;
                     $qty = (int)($qty * \common\helpers\Product::getVirtualItemQuantityValue($products_id));
                     if ( !($qty > 0) ) continue;
                     $cart->add_cart((int)$_POST['products_id'][$key], $cart->get_quantity($_POST['products_id'][$key])+$qty, $_POST['id'][$products_id]);

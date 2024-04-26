@@ -17,6 +17,8 @@
 
 namespace Google\Service\Translate\Resource;
 
+use Google\Service\Translate\AdaptiveMtTranslateRequest;
+use Google\Service\Translate\AdaptiveMtTranslateResponse;
 use Google\Service\Translate\BatchTranslateDocumentRequest;
 use Google\Service\Translate\BatchTranslateTextRequest;
 use Google\Service\Translate\DetectLanguageRequest;
@@ -24,6 +26,8 @@ use Google\Service\Translate\DetectLanguageResponse;
 use Google\Service\Translate\ListLocationsResponse;
 use Google\Service\Translate\Location;
 use Google\Service\Translate\Operation;
+use Google\Service\Translate\RomanizeTextRequest;
+use Google\Service\Translate\RomanizeTextResponse;
 use Google\Service\Translate\SupportedLanguages;
 use Google\Service\Translate\TranslateDocumentRequest;
 use Google\Service\Translate\TranslateDocumentResponse;
@@ -40,6 +44,21 @@ use Google\Service\Translate\TranslateTextResponse;
  */
 class ProjectsLocations extends \Google\Service\Resource
 {
+  /**
+   * Translate text using Adaptive MT. (locations.adaptiveMtTranslate)
+   *
+   * @param string $parent Required. Location to make a regional call. Format:
+   * `projects/{project-number-or-id}/locations/{location-id}`.
+   * @param AdaptiveMtTranslateRequest $postBody
+   * @param array $optParams Optional parameters.
+   * @return AdaptiveMtTranslateResponse
+   */
+  public function adaptiveMtTranslate($parent, AdaptiveMtTranslateRequest $postBody, $optParams = [])
+  {
+    $params = ['parent' => $parent, 'postBody' => $postBody];
+    $params = array_merge($params, $optParams);
+    return $this->call('adaptiveMtTranslate', [$params], AdaptiveMtTranslateResponse::class);
+  }
   /**
    * Translates a large volume of document in asynchronous batch mode. This
    * function provides real-time output as the inputs are being processed. If
@@ -72,11 +91,11 @@ class ProjectsLocations extends \Google\Service\Resource
    * the status of the call. (locations.batchTranslateText)
    *
    * @param string $parent Required. Location to make a call. Must refer to a
-   * caller's project. Format: `projects/{project-number-or-id}/locations
-   * /{location-id}`. The `global` location is not supported for batch
-   * translation. Only AutoML Translation models or glossaries within the same
-   * region (have the same location-id) can be used, otherwise an INVALID_ARGUMENT
-   * (400) error is returned.
+   * caller's project. Format: `projects/{project-number-or-
+   * id}/locations/{location-id}`. The `global` location is not supported for
+   * batch translation. Only AutoML Translation models or glossaries within the
+   * same region (have the same location-id) can be used, otherwise an
+   * INVALID_ARGUMENT (400) error is returned.
    * @param BatchTranslateTextRequest $postBody
    * @param array $optParams Optional parameters.
    * @return Operation
@@ -93,9 +112,9 @@ class ProjectsLocations extends \Google\Service\Resource
    * @param string $parent Required. Project or location to make a call. Must
    * refer to a caller's project. Format: `projects/{project-number-or-
    * id}/locations/{location-id}` or `projects/{project-number-or-id}`. For global
-   * calls, use `projects/{project-number-or-id}/locations/global` or `projects
-   * /{project-number-or-id}`. Only models within the same region (has same
-   * location-id) can be used. Otherwise an INVALID_ARGUMENT (400) error is
+   * calls, use `projects/{project-number-or-id}/locations/global` or
+   * `projects/{project-number-or-id}`. Only models within the same region (has
+   * same location-id) can be used. Otherwise an INVALID_ARGUMENT (400) error is
    * returned.
    * @param DetectLanguageRequest $postBody
    * @param array $optParams Optional parameters.
@@ -137,11 +156,12 @@ class ProjectsLocations extends \Google\Service\Resource
    * localized, human readable names of supported languages. If missing, then
    * display names are not returned in a response.
    * @opt_param string model Optional. Get supported languages of this model. The
-   * format depends on model type: - AutoML Translation models: `projects
-   * /{project-number-or-id}/locations/{location-id}/models/{model-id}` - General
-   * (built-in) models: `projects/{project-number-or-id}/locations/{location-
-   * id}/models/general/nmt`, Returns languages supported by the specified model.
-   * If missing, we get supported languages of Google general NMT model.
+   * format depends on model type: - AutoML Translation models:
+   * `projects/{project-number-or-id}/locations/{location-id}/models/{model-id}` -
+   * General (built-in) models: `projects/{project-number-or-
+   * id}/locations/{location-id}/models/general/nmt`, Returns languages supported
+   * by the specified model. If missing, we get supported languages of Google
+   * general NMT model.
    * @return SupportedLanguages
    */
   public function getSupportedLanguages($parent, $optParams = [])
@@ -172,6 +192,25 @@ class ProjectsLocations extends \Google\Service\Resource
     $params = ['name' => $name];
     $params = array_merge($params, $optParams);
     return $this->call('list', [$params], ListLocationsResponse::class);
+  }
+  /**
+   * Romanize input text written in non-Latin scripts to Latin text.
+   * (locations.romanizeText)
+   *
+   * @param string $parent Required. Project or location to make a call. Must
+   * refer to a caller's project. Format: `projects/{project-number-or-
+   * id}/locations/{location-id}` or `projects/{project-number-or-id}`. For global
+   * calls, use `projects/{project-number-or-id}/locations/global` or
+   * `projects/{project-number-or-id}`.
+   * @param RomanizeTextRequest $postBody
+   * @param array $optParams Optional parameters.
+   * @return RomanizeTextResponse
+   */
+  public function romanizeText($parent, RomanizeTextRequest $postBody, $optParams = [])
+  {
+    $params = ['parent' => $parent, 'postBody' => $postBody];
+    $params = array_merge($params, $optParams);
+    return $this->call('romanizeText', [$params], RomanizeTextResponse::class);
   }
   /**
    * Translates documents in synchronous mode. (locations.translateDocument)

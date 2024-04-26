@@ -6,7 +6,7 @@ on:
   pull_request:
   push:
     branches:
-      - "1.9.x"
+      - "1.23.x"
 
 jobs:
   tests:
@@ -25,20 +25,24 @@ jobs:
 
     steps:
       - name: "Checkout"
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: "Checkout Slevomat Coding Standard"
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: slevomat/coding-standard
           path: slevomat-cs
-          ref: 8.7.1
+          ref: ad4eab6f2cf9aa099c8853e4e3a250a9ae5fb4bd
 
       - name: "Install PHP"
         uses: "shivammathur/setup-php@v2"
         with:
           coverage: "none"
           php-version: "${{ matrix.php-version }}"
+
+      - name: "Unset platform"
+        working-directory: slevomat-cs
+        run: "composer config --unset platform"
 
       - name: "Install dependencies"
         working-directory: slevomat-cs
@@ -56,12 +60,14 @@ jobs:
 
       - name: "Tests"
         working-directory: slevomat-cs
-        run: "bin/phpunit"
+        run: "bin/phpunit --no-coverage"
 
       - name: "PHPStan"
+        if: matrix.php-version == '8.0' || matrix.php-version == '8.1' || matrix.php-version == '8.2'
         working-directory: slevomat-cs
         run: "bin/phpstan analyse -c build/PHPStan/phpstan.neon"
 
       - name: "PHPStan in tests"
+        if: matrix.php-version == '8.0' || matrix.php-version == '8.1' || matrix.php-version == '8.2'
         working-directory: slevomat-cs
         run: "bin/phpstan analyse -c build/PHPStan/phpstan.tests.neon"

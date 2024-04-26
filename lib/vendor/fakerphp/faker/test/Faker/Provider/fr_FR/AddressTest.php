@@ -10,12 +10,26 @@ use Faker\Test\TestCase;
  */
 final class AddressTest extends TestCase
 {
+    public function testPostcode(): void
+    {
+        $postcode = $this->faker->postcode();
+        self::assertNotEmpty($postcode);
+        self::assertIsString($postcode);
+        self::assertMatchesRegularExpression('@^\d{5}$@', $postcode);
+    }
+
+    /**
+     * @requires PHP < 8.3
+     */
     public function testSecondaryAddress(): void
     {
         self::assertEquals('Étage 007', $this->faker->secondaryAddress());
         self::assertEquals('Bât. 932', $this->faker->secondaryAddress());
     }
 
+    /**
+     * @requires PHP < 8.3
+     */
     public function testRegion(): void
     {
         self::assertEquals('Occitanie', $this->faker->region());

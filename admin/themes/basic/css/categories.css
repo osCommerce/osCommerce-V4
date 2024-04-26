@@ -206,3 +206,64 @@ li.li-block-top {
     height: 28px;
     background-size: 28px;
 }
+
+
+.multiple-select-cat .in-category {
+    font-size: 0;
+}
+.multiple-select-cat .searching ul .in-category {
+    font-size: 10px;
+}
+.multiple-select-cat .nbsp {
+    width: 6px;
+    display: inline-block;
+}
+.multiple-select-cat .ms-choice .in-category {
+    display: none;
+}
+
+.copy-product-popup .ms-drop {
+    border-radius: 0;
+    box-shadow: none;
+    border-color: var(--border-color-midle);
+    margin-top: 0;
+}
+.copy-product-popup .ms-drop ul {
+    height: 400px;
+}
+
+.copy-product-popup-wrap .popup-box {
+    width: 1000px;
+}
+.copy-product-popup-wrap .in-category {
+    font-size: 0;
+}
+.copy-product-popup-wrap .searching ul .in-category {
+    font-size: 10px;
+}
+.copy-product-popup-wrap .nbsp {
+    width: 6px;
+    display: inline-block;
+}
+.copy-product-popup-wrap .searching .nbsp {
+    width: 1px;
+}
+.copy-product-popup-wrap .ms-choice .in-category {
+    display: none;
+}
+.copy-product-popup-wrap .ms-drop ul>li.hide-radio.selected {
+    color: var(--main-color);
+    background: none;
+}
+.copy-product-popup-wrap .ms-drop ul>li.hide-radio.selected + .selected {
+    color: var(--main-color);
+}
+.copy-product-popup-wrap .ms-drop ul>li {
+    border-top: 1px solid var(--border-color-tiny-2);
+}
+.copy-product-popup-wrap .ms-drop ul>li:hover {
+    background: var(--background-color-1);
+}
+.copy-product-popup-wrap .ms-drop ul>li input:checked + span {
+    color: var(--primary-color);
+}

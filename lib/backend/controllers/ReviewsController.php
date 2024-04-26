@@ -315,7 +315,7 @@ class ReviewsController extends Sceleton {
 
 
         ?>
-<div class="row_or_img"><?php echo  \common\helpers\Image::info_image($rInfo_array['products_image'], $rInfo_array['products_name'], SMALL_IMAGE_WIDTH, SMALL_IMAGE_HEIGHT); ?></div>
+<div class="row_or_img"><?php echo \common\classes\Images::getImage($reviews['products_id'], 'Small'); ?></div>
         <div class="or_box_head or_box_head_no_margin"><?php echo $rInfo_array['products_name'];?></div>
         <div class="row_or"><?php echo '<div>'. TEXT_INFO_DATE_ADDED . '</div><div>' . \common\helpers\Date::date_short($reviews['date_added'])  ; ?></div></div>
         
@@ -325,8 +325,9 @@ class ReviewsController extends Sceleton {
         <div class="row_or"><?php echo '<div>' . TEXT_INFO_REVIEW_SIZE . '</div><div>' . $rInfo_array['reviews_text_size'] . ' bytes'; ?></div></div>
         <div class="row_or"><?php echo '<div>' . TEXT_INFO_PRODUCTS_AVERAGE_RATING . '</div><div>' . number_format($rInfo_array['average_rating'], 2) . '%'; ?></div></div>
         <div class="btn-toolbar btn-toolbar-order">
-           <?php echo '<a href="' . \Yii::$app->urlManager->createUrl(['reviews/edit', 'reviews_id' => $item_id]) . '" class="btn btn-edit btn-no-margin">' . IMAGE_EDIT . '</a>'; ?>
+            <?php echo '<a href="' . \Yii::$app->urlManager->createUrl(['reviews/edit', 'reviews_id' => $item_id]) . '" class="btn btn-edit btn-no-margin">' . IMAGE_EDIT . '</a>'; ?>
             <button onclick="return deleteItemConfirm( <?php echo $item_id; ?>)" class="btn btn-delete btn-no-margin"><?php echo IMAGE_DELETE;?></button>
+            <button onclick="confirmItemCopy(<?php echo $item_id; ?>)" class="btn btn-copy btn-no-margin"><?php echo IMAGE_COPY; ?></button>
         </div>
     <?php
     }
@@ -378,14 +379,7 @@ class ReviewsController extends Sceleton {
             }
         }
         
-        $image = (file_exists(DIR_FS_CATALOG_IMAGES . $products['products_image']) ? '<span class="prodImgC">' . \common\helpers\Image::info_image($products['products_image'], $products_name['products_name'], 50, 50) . '</span>' : '<span class="cubic"></span>');
-//        echo tep_draw_form(
-//                'save_item_form',
-//                'reviews/index',
-//                \common\helpers\Output::get_all_get_params( array( 'action' ) ),
-//                'post',
-//                'id="save_item_form" onSubmit="return saveItem();"' ) .
-//            tep_draw_hidden_field( 'item_id', $item_id ) ;
+        $image = '<span class="prodImgC">' . \common\classes\Images::getImage($reviews['products_id'], 'Thumbnail') . '</span>';
 
         $this->navigation[] = array('link' => Yii::$app->urlManager->createUrl('reviews/'), 'title' => T_EDITING_REVIEW . ' ' . $rInfo->products_name);
         $this->selectedMenu = array('catalog', 'reviews');
@@ -480,6 +474,111 @@ class ReviewsController extends Sceleton {
         }
     }
     
+    public function actionConfirmitemcopy()
+    {
+        \common\helpers\Translation::init('admin/reviews');
+
+        $this->layout = FALSE;
+
+        $item_id = (int) Yii::$app->request->post('item_id');
+
+        $copy_to_product_html = '<div class="search"><input type="text" value="" placeholder="Enter your keywords" name="keywords" autocomplete="off"></div>';
+        $copy_to_product_html .= tep_draw_hidden_field('products_id', 0);
+
+        echo tep_draw_form(
+                'copy_item_form',
+                'reviews/itemcopy',
+                \common\helpers\Output::get_all_get_params( array( 'action' ) ),
+                'post',
+                'id="copy_item_form" onSubmit="return itemCopy();"' );
+        
+        echo '<div class="or_box_head">' . TEXT_INFO_HEADING_COPY_TO . '</div>';
+        echo '<div class="col_desc">' . TEXT_INFO_COPY_REVIEW_INTRO . '</div>';
+
+        echo ' <div class="main_row">';
+        echo '      <div class="main_title">' . TEXT_PRODUCT . '</div>';
+        echo '       <div class="main_value">       ';
+        echo "        $copy_to_product_html";
+        echo '       </div>       ';
+        echo ' </div>';
+
+        ?>
+        <div class="btn-toolbar btn-toolbar-order">
+            <?php
+                echo '<button class="btn btn-copy btn-no-margin">' . IMAGE_COPY . '</button>';
+                echo '<button class="btn btn-cancel" onclick="return resetStatement()">' . IMAGE_CANCEL . '</button>';
+
+                echo tep_draw_hidden_field( 'item_id', $item_id );
+            ?>
+        </div>
+        </form>
+
+<script type="text/javascript">
+    function searchSuggestSelected(id, value) {
+        $('input[name="keywords"]').val(value);
+        $('input[name="products_id"]').val(id);
+        return false;
+    }
+  (function($){
+    $(function(){
+      var input_s = $('.search input');
+      input_s.attr({
+        autocomplete:"off"
+      });
+
+      input_s.keyup(function(e){
+        jQuery.get('index/search-suggest', {
+          keywords: $(this).val()
+        }, function(data){
+          $('.suggest').remove();
+          $('.search').append('<div class="suggest">'+data+'</div>')
+        })
+      });
+      input_s.blur(function(){
+        setTimeout(function(){
+          $('.suggest').hide()
+        }, 200)
+      });
+      input_s.focus(function(){
+        $('.suggest').show()
+      })
+    })
+  })(jQuery)
+</script>
+<?php
+    }
+    
+    public function actionItemcopy()
+    {
+        $this->layout = FALSE;
+
+        \common\helpers\Translation::init('admin/reviews');
+        \common\helpers\Translation::init('admin/faqdesk');
+
+        $item_id   = (int) Yii::$app->request->post( 'item_id' );
+        $products_id = (int) Yii::$app->request->post( 'products_id' );
+
+        if ($item_id > 0 && $products_id > 0) {
+            $review_query = tep_db_query("select * from " . TABLE_REVIEWS . " where reviews_id = '" . (int) $item_id . "'");
+            if ($review = tep_db_fetch_array($review_query)) {
+                unset($review['reviews_id']);
+                $review['products_id'] = $products_id;
+                //$review['date_added'] = 'now()';
+                //$review['status'] = 0;
+                //$review['new'] = 1;
+                tep_db_perform(TABLE_REVIEWS, $review);
+
+                $dup_reviews_id = tep_db_insert_id();
+
+                $query = tep_db_query("select * from " . TABLE_REVIEWS_DESCRIPTION . " where reviews_id = '" . (int) $item_id . "'");
+                while ($data = tep_db_fetch_array($query)) {
+                    $data['reviews_id'] = $dup_reviews_id;
+                    tep_db_perform(TABLE_REVIEWS_DESCRIPTION, $data);
+                }
+            }
+        }
+    }
+    
     public function actionConfirmitemdelete()
     {
         $languages_id = \Yii::$app->settings->get('languages_id');
@@ -517,14 +616,14 @@ class ReviewsController extends Sceleton {
         echo '<div class="col_desc">' . TEXT_INFO_DELETE_REVIEW_INTRO . '</div>';
         echo '<div class="col_desc">' . $rInfo->products_name . '</div>';
         ?>
-        <p class="btn-toolbar">
+        <div class="btn-toolbar btn-toolbar-order">
             <?php
-                echo '<input type="submit" class="btn btn-primary" value="' . IMAGE_DELETE . '" >';
-                echo '<input type="button" class="btn btn-cancel" value="' . IMAGE_CANCEL . '" onClick="return resetStatement()">';
+                echo '<button class="btn btn-delete btn-no-margin">' . IMAGE_DELETE . '</button>';
+                echo '<button class="btn btn-cancel" onclick="return resetStatement()">' . IMAGE_CANCEL . '</button>';
 
                 echo tep_draw_hidden_field( 'item_id', $item_id );
             ?>
-        </p>
+        </div>
         </form>
     <?php
     }

@@ -62,7 +62,19 @@ class Cron
             'name' => 'Calculate products prices',
             'description' => 'Automatic calculation of product prices based on the suppliers prices and formula',
             'schedule' => '*/5 * * * *',
-            'arguments' => ["yii.php","events/auto-calc-price-by-supplier"],
+            'arguments' => ["yii.php","events/auto-calc-product-price-by-supplier", "1000", "3000"],
+            'options' => [
+                'arguments' => [
+                    2 => [
+                        'label' => 'Number of products to index at once (0 - no limit)',
+                        'editable' => true,
+                    ],
+                    3 => [
+                        'label' => 'Time limit in milliseconds (0 - no limit)',
+                        'editable' => true,
+                    ]
+                ],
+            ],
         ],
         'notify_back_in_stock' => [
             'group' => 'Products',

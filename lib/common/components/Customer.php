@@ -599,14 +599,6 @@ class Customer  extends \common\models\Customers implements \yii\web\IdentityInt
             $this->insert(false);
             $this->addCustomersInfo();
 
-            /** @var \common\extensions\Subscribers\Subscribers $subscr  */
-            if ($subscr = \common\helpers\Acl::checkExtensionAllowed('Subscribers', 'allowed')) {
-                if (defined('ENABLE_CUSTOMERS_NEWSLETTER') && ENABLE_CUSTOMERS_NEWSLETTER == 'true') {
-                    $subscr::onSaveCustomer($this);
-                    $this->saveRegularOffers($model);
-                }
-            }
-
             if (!is_null($addressModel)){
                 $address = $this->getAddressFromModel($addressModel);
             } else {
@@ -867,6 +859,12 @@ class Customer  extends \common\models\Customers implements \yii\web\IdentityInt
 
     public function updateAddress($abId, $attributes){
         $aBook = \common\models\AddressBook::findOne(['address_book_id' => $abId]);
+        foreach (\common\helpers\Hooks::getList('customers/update-address/before') as $filename) {
+            $prevent_update = include($filename);
+            if ($prevent_update === true) {
+                return $aBook;
+            }
+        }
         if ($aBook){
             $attributes['entry_company_vat_status'] = 0;
             $aBook->edit($attributes);

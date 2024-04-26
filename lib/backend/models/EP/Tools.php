@@ -933,7 +933,7 @@ class Tools
                 $columnCheck .= "AND IFNULL({$columnMap[$key]},'')='".tep_db_input(strval($val))."' ";
             }
         }
-        $columnCheck .= "AND entry_country_id='".tep_db_input(strval($orderAddressBook['country']['id']))."' ";
+        $columnCheck .= "AND entry_country_id='".tep_db_input(strval(($orderAddressBook['country']['id']??null)))."' ";
         if ( $orderAddressBook['zone_id'] ) {
             $columnCheck .= "AND IFNULL(entry_zone_id,0)='".tep_db_input(strval($orderAddressBook['zone_id']))."' ";
         }else{
@@ -962,7 +962,7 @@ class Tools
             'entry_postcode' => strval($orderAddressBook['postcode']),
             'entry_city' => strval($orderAddressBook['city']),
             'entry_state' => strval($orderAddressBook['state']),
-            'entry_country_id' => strval($orderAddressBook['country']['id']),
+            'entry_country_id' => strval(($orderAddressBook['country']['id']??null)),
             'entry_zone_id' => strval($orderAddressBook['zone_id']),
         ]);
 

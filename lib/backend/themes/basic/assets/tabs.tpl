@@ -20,7 +20,7 @@ Released under the GNU General Public License
       });
       var lastTab = localStorage.getItem('{$app->controller->id}_{$app->controller->action->id}_{$id_prefix}_lastTab');
       if (lastTab) {
-        $('#{$id_prefix}_tabbable_custom [data-bs-target=' + lastTab + ']').tab('show');
+        $('#{$id_prefix}_tabbable_custom [data-bs-target="' + lastTab + '"]').tab('show');
       } else {
         $('#{$id_prefix}_tabbable_custom [data-bs-toggle="tab"]:first').tab('show');
       }

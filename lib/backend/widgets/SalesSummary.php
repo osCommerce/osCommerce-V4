@@ -24,6 +24,15 @@ class SalesSummary extends Widget {
         $currencies = Yii::$container->get('currencies');
         $exclude_order_statuses_array = \common\helpers\Order::extractStatuses(DASHBOARD_EXCLUDE_ORDER_STATUSES);
 
+        $filter_by_platform = array();
+        if (false === \common\helpers\Acl::rule(['SUPERUSER'])) {
+            global $login_id;
+            $platforms = \common\models\AdminPlatforms::find()->where(['admin_id' => $login_id])->asArray()->all();
+            foreach ($platforms as $platform) {
+                $filter_by_platform[] = $platform['platform_id'];
+            }
+        }
+
         $q = \common\models\Products::find()->select('is_listing_product, is_bundle, products_status')
             ->addSelect(['isChild' => (new \yii\db\Expression('parent_products_id>0')), 'total' => (new \yii\db\Expression('count(*)') )])
             ->groupBy('is_listing_product, is_bundle, products_status, isChild')
@@ -54,7 +63,8 @@ class SalesSummary extends Widget {
         // Today stats
         $date_from = date('Y-m-d H:i:s', mktime(0, 0, 0, date('m'), date('d'), date('Y')));
         $date_to = date('Y-m-d H:i:s', mktime(23, 59, 59, date('m'), date('d'), date('Y')));
-        $customers = tep_db_fetch_array(tep_db_query("select count(*) as count from " . TABLE_CUSTOMERS . " c left join " . TABLE_CUSTOMERS_INFO . " ci on c.customers_id = ci.customers_info_id where customers_status = '1' and ci.customers_info_date_account_created >= '" . tep_db_input($date_from) . "' and ci.customers_info_date_account_created <= '" . tep_db_input($date_to) . "'"));
+        $customers = tep_db_fetch_array(tep_db_query("select count(*) as count from " . TABLE_CUSTOMERS . " c left join " . TABLE_CUSTOMERS_INFO . " ci on c.customers_id = ci.customers_info_id where customers_status = '1' and ci.customers_info_date_account_created >= '" . tep_db_input($date_from) . "' and ci.customers_info_date_account_created <= '" . tep_db_input($date_to) . "'" .
+            (count($filter_by_platform) > 0 ? " and platform_id in ('" . implode("','", $filter_by_platform) . "') " : '')));
         $this->stats['today']['customers'] = number_format($customers['count']);
         $order_stats_query =
             "SELECT ".
@@ -65,6 +75,7 @@ class SalesSummary extends Widget {
             "  LEFT JOIN " . TABLE_ORDERS_TOTAL . " ott ON (o.orders_id = ott.orders_id) AND ott.class = 'ot_total' ".
             "  LEFT JOIN " . TABLE_ORDERS_TOTAL . " ots ON (o.orders_id = ots.orders_id) and ots.class = 'ot_subtotal' ".
             "WHERE o.date_purchased >= '" . tep_db_input($date_from) . "' AND o.date_purchased <= '" . tep_db_input($date_to) . "' ".
+            (count($filter_by_platform) > 0 ? " and platform_id in ('" . implode("','", $filter_by_platform) . "') " : '').
             "  AND o.orders_status not in ('" . implode("','", $exclude_order_statuses_array) . "') ";
         $range_stat = tep_db_fetch_array(tep_db_query($order_stats_query));
         $this->stats['today']['orders'] = number_format($range_stat['orders']);
@@ -85,7 +96,8 @@ class SalesSummary extends Widget {
         // This week stats
         $date_from = date('Y-m-d H:i:s', strtotime('monday this week'));
         $date_to = date('Y-m-d H:i:s', mktime(23, 59, 59, date('m'), date('d'), date('Y')));
-        $customers = tep_db_fetch_array(tep_db_query("select count(*) as count from " . TABLE_CUSTOMERS . " c left join " . TABLE_CUSTOMERS_INFO . " ci on c.customers_id = ci.customers_info_id where customers_status = '1' and ci.customers_info_date_account_created >= '" . tep_db_input($date_from) . "' and ci.customers_info_date_account_created <= '" . tep_db_input($date_to) . "'"));
+        $customers = tep_db_fetch_array(tep_db_query("select count(*) as count from " . TABLE_CUSTOMERS . " c left join " . TABLE_CUSTOMERS_INFO . " ci on c.customers_id = ci.customers_info_id where customers_status = '1' and ci.customers_info_date_account_created >= '" . tep_db_input($date_from) . "' and ci.customers_info_date_account_created <= '" . tep_db_input($date_to) . "'" .
+            (count($filter_by_platform) > 0 ? " and platform_id in ('" . implode("','", $filter_by_platform) . "') " : '')));
         $this->stats['week']['customers'] = number_format($customers['count']);
         $order_stats_query =
             "SELECT ".
@@ -96,6 +108,7 @@ class SalesSummary extends Widget {
             "  LEFT JOIN " . TABLE_ORDERS_TOTAL . " ott ON (o.orders_id = ott.orders_id) AND ott.class = 'ot_total' ".
             "  LEFT JOIN " . TABLE_ORDERS_TOTAL . " ots ON (o.orders_id = ots.orders_id) and ots.class = 'ot_subtotal' ".
             "WHERE o.date_purchased >= '" . tep_db_input($date_from) . "' AND o.date_purchased <= '" . tep_db_input($date_to) . "' ".
+            (count($filter_by_platform) > 0 ? " and platform_id in ('" . implode("','", $filter_by_platform) . "') " : '').
             "  AND o.orders_status not in ('" . implode("','", $exclude_order_statuses_array) . "') ";
         $range_stat = tep_db_fetch_array(tep_db_query($order_stats_query));
         $this->stats['week']['orders'] = number_format($range_stat['orders']);
@@ -116,7 +129,8 @@ class SalesSummary extends Widget {
         // This month stats
         $date_from = date('Y-m-d H:i:s', mktime(0, 0, 0, date('m'), 1, date('Y')));
         $date_to = date('Y-m-d H:i:s', mktime(23, 59, 59, date('m'), date('d'), date('Y')));
-        $customers = tep_db_fetch_array(tep_db_query("select count(*) as count from " . TABLE_CUSTOMERS . " c left join " . TABLE_CUSTOMERS_INFO . " ci on c.customers_id = ci.customers_info_id where customers_status = '1' and ci.customers_info_date_account_created >= '" . tep_db_input($date_from) . "' and ci.customers_info_date_account_created <= '" . tep_db_input($date_to) . "'"));
+        $customers = tep_db_fetch_array(tep_db_query("select count(*) as count from " . TABLE_CUSTOMERS . " c left join " . TABLE_CUSTOMERS_INFO . " ci on c.customers_id = ci.customers_info_id where customers_status = '1' and ci.customers_info_date_account_created >= '" . tep_db_input($date_from) . "' and ci.customers_info_date_account_created <= '" . tep_db_input($date_to) . "'" .
+            (count($filter_by_platform) > 0 ? " and platform_id in ('" . implode("','", $filter_by_platform) . "') " : '')));
         $this->stats['month']['customers'] = number_format($customers['count']);
         $order_stats_query =
             "SELECT ".
@@ -127,6 +141,7 @@ class SalesSummary extends Widget {
             "  LEFT JOIN " . TABLE_ORDERS_TOTAL . " ott ON (o.orders_id = ott.orders_id) AND ott.class = 'ot_total' ".
             "  LEFT JOIN " . TABLE_ORDERS_TOTAL . " ots ON (o.orders_id = ots.orders_id) and ots.class = 'ot_subtotal' ".
             "WHERE o.date_purchased >= '" . tep_db_input($date_from) . "' AND o.date_purchased <= '" . tep_db_input($date_to) . "' ".
+            (count($filter_by_platform) > 0 ? " and platform_id in ('" . implode("','", $filter_by_platform) . "') " : '').
             "  AND o.orders_status not in ('" . implode("','", $exclude_order_statuses_array) . "') ";
         $range_stat = tep_db_fetch_array(tep_db_query($order_stats_query));
         $this->stats['month']['orders'] = number_format($range_stat['orders']);
@@ -147,7 +162,8 @@ class SalesSummary extends Widget {
         // This year stats
         $date_from = date('Y-m-d H:i:s', mktime(0, 0, 0, 1, 1, date('Y')));
         $date_to = date('Y-m-d H:i:s', mktime(23, 59, 59, date('m'), date('d'), date('Y')));
-        $customers = tep_db_fetch_array(tep_db_query("select count(*) as count from " . TABLE_CUSTOMERS . " c left join " . TABLE_CUSTOMERS_INFO . " ci on c.customers_id = ci.customers_info_id where customers_status = '1' and ci.customers_info_date_account_created >= '" . tep_db_input($date_from) . "' and ci.customers_info_date_account_created <= '" . tep_db_input($date_to) . "'"));
+        $customers = tep_db_fetch_array(tep_db_query("select count(*) as count from " . TABLE_CUSTOMERS . " c left join " . TABLE_CUSTOMERS_INFO . " ci on c.customers_id = ci.customers_info_id where customers_status = '1' and ci.customers_info_date_account_created >= '" . tep_db_input($date_from) . "' and ci.customers_info_date_account_created <= '" . tep_db_input($date_to) . "'" .
+            (count($filter_by_platform) > 0 ? " and platform_id in ('" . implode("','", $filter_by_platform) . "') " : '')));
         $this->stats['year']['customers'] = number_format($customers['count']);
         $order_stats_query =
             "SELECT ".
@@ -158,6 +174,7 @@ class SalesSummary extends Widget {
             "  LEFT JOIN " . TABLE_ORDERS_TOTAL . " ott ON (o.orders_id = ott.orders_id) AND ott.class = 'ot_total' ".
             "  LEFT JOIN " . TABLE_ORDERS_TOTAL . " ots ON (o.orders_id = ots.orders_id) and ots.class = 'ot_subtotal' ".
             "WHERE o.date_purchased >= '" . tep_db_input($date_from) . "' AND o.date_purchased <= '" . tep_db_input($date_to) . "' ".
+            (count($filter_by_platform) > 0 ? " and platform_id in ('" . implode("','", $filter_by_platform) . "') " : '').
             "  AND o.orders_status not in ('" . implode("','", $exclude_order_statuses_array) . "') ";
         $range_stat = tep_db_fetch_array(tep_db_query($order_stats_query));
         $this->stats['year']['orders'] = number_format($range_stat['orders']);
@@ -176,7 +193,8 @@ class SalesSummary extends Widget {
         */
 
         // All period stats
-        $customers = tep_db_fetch_array(tep_db_query("select count(*) as count from " . TABLE_CUSTOMERS . " c left join " . TABLE_CUSTOMERS_INFO . " ci on c.customers_id = ci.customers_info_id where customers_status = '1'"));
+        $customers = tep_db_fetch_array(tep_db_query("select count(*) as count from " . TABLE_CUSTOMERS . " c left join " . TABLE_CUSTOMERS_INFO . " ci on c.customers_id = ci.customers_info_id where customers_status = '1'" .
+            (count($filter_by_platform) > 0 ? " and platform_id in ('" . implode("','", $filter_by_platform) . "') " : '')));
         $this->stats['all']['customers'] = number_format($customers['count']);
         $lazyLoadOrderAll = false;
         $checkOrdersCount = tep_db_fetch_array(tep_db_query("SELECT COUNT(*) AS c FROM ".TABLE_ORDERS));
@@ -196,6 +214,7 @@ class SalesSummary extends Widget {
                 "  LEFT JOIN " . TABLE_ORDERS_TOTAL . " ott ON (o.orders_id = ott.orders_id) AND ott.class = 'ot_total' " .
                 "  LEFT JOIN " . TABLE_ORDERS_TOTAL . " ots ON (o.orders_id = ots.orders_id) and ots.class = 'ot_subtotal' " .
                 "WHERE 1=1 " .
+                    (count($filter_by_platform) > 0 ? " and platform_id in ('" . implode("','", $filter_by_platform) . "') " : '').
                 "  AND o.orders_status not in ('" . implode("','", $exclude_order_statuses_array) . "') ";
             $range_stat = tep_db_fetch_array(tep_db_query($order_stats_query));
             $this->stats['all']['orders'] = number_format($range_stat['orders']);

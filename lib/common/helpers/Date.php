@@ -169,7 +169,10 @@ class Date
         return strftime($format, mktime($hour, $minute, $second, $month, $day, $year));
     }
 
-    public static function date_short($raw_date, $format=DATE_FORMAT_SHORT) {
+    public static function date_short($raw_date, $format=null) {
+        if (is_null($format)) {
+            $format = defined('DATE_FORMAT_SHORT')? DATE_FORMAT_SHORT : '%d %b %Y';
+        }
         if (($raw_date == '0000-00-00 00:00:00') || ($raw_date == '0000-00-00') || ($raw_date == ''))
             return false;
 

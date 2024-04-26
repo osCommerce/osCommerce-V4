@@ -20,9 +20,9 @@ use JMS\Serializer\Tests\Fixtures\Tag;
 use JMS\Serializer\Visitor\Factory\JsonSerializationVisitorFactory;
 use JMS\Serializer\Visitor\SerializationVisitorInterface;
 
-class JsonSerializationTest extends BaseSerializationTest
+class JsonSerializationTest extends BaseSerializationTestCase
 {
-    protected function getContent($key)
+    protected static function getContent($key)
     {
         static $outputs = [];
 
@@ -135,9 +135,9 @@ class JsonSerializationTest extends BaseSerializationTest
             $outputs['user_discriminator_array'] = '[{"entityName":"User"},{"entityName":"ExtendedUser"}]';
             $outputs['user_discriminator'] = '{"entityName":"User"}';
             $outputs['user_discriminator_extended'] = '{"entityName":"ExtendedUser"}';
-            $outputs['typed_props'] = '{"id":1,"role":{"id":5},"vehicle":{"type":"car"},"created":"2010-10-01T00:00:00+00:00","updated":"2011-10-01T00:00:00+00:00","tags":["a","b"]}';
+            $outputs['typed_props'] = '{"virtual_role":{"id":5},"id":1,"role":{"id":5},"vehicle":{"type":"car"},"created":"2010-10-01T00:00:00+00:00","updated":"2011-10-01T00:00:00+00:00","tags":["a","b"]}';
             $outputs['typed_props_constructor_promotion_with_default_values'] = '{"color":"blue","size":"big","type_of_soil":"potting mix","days_since_potting":-1,"weight":10}';
-            $outputs['uninitialized_typed_props'] = '{"id":1,"role":{},"tags":[]}';
+            $outputs['uninitialized_typed_props'] = '{"virtual_role":{},"id":1,"role":{},"tags":[]}';
             $outputs['custom_datetimeinterface'] = '{"custom":"2021-09-07"}';
             $outputs['data_integer'] = '{"data":10000}';
             $outputs['uid'] = '"66b3177c-e03b-4a22-9dee-ddd7d37a04d5"';
@@ -160,12 +160,12 @@ class JsonSerializationTest extends BaseSerializationTest
         self::assertEquals('{}', $this->serialize($object));
     }
 
-    public function getFirstClassMapCollectionsValues()
+    public static function getFirstClassMapCollectionsValues()
     {
         return [
-            [['a' => '1', 'b' => '2', 'c' => '3'], $this->getContent('inline_map')],
-            [[], $this->getContent('inline_empty_map')],
-            [['a' => 'b', 'c' => 'd', 'e' => '5'], $this->getContent('inline_deserialization_map')],
+            [['a' => '1', 'b' => '2', 'c' => '3'], self::getContent('inline_map')],
+            [[], self::getContent('inline_empty_map')],
+            [['a' => 'b', 'c' => 'd', 'e' => '5'], self::getContent('inline_deserialization_map')],
         ];
     }
 
@@ -182,7 +182,7 @@ class JsonSerializationTest extends BaseSerializationTest
         self::assertSame($expected, $this->serialize($collection));
         self::assertEquals(
             $collection,
-            $this->deserialize($expected, get_class($collection))
+            $this->deserialize($expected, get_class($collection)),
         );
     }
 
@@ -204,7 +204,7 @@ class JsonSerializationTest extends BaseSerializationTest
             'json',
             static function (SerializationVisitorInterface $visitor, AuthorList $data, array $type, Context $context) {
                 return $visitor->visitArray(iterator_to_array($data), $type);
-            }
+            },
         );
 
         $list = new AuthorList();
@@ -223,7 +223,7 @@ class JsonSerializationTest extends BaseSerializationTest
             'json',
             static function (SerializationVisitorInterface $visitor, AuthorList $data, array $type, Context $context) {
                 return $visitor->visitArray(iterator_to_array($data), $type);
-            }
+            },
         );
 
         $list = new AuthorList();
@@ -235,7 +235,7 @@ class JsonSerializationTest extends BaseSerializationTest
 
     public function testDeserializingObjectWithObjectPropertyWithNoArrayToObject()
     {
-        $content = $this->getContent('object_with_object_property_no_array_to_author');
+        $content = self::getContent('object_with_object_property_no_array_to_author');
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('Invalid data "baz" (string), expected "JMS\Serializer\Tests\Fixtures\Author".');
@@ -245,14 +245,14 @@ class JsonSerializationTest extends BaseSerializationTest
 
     public function testDeserializingObjectWithObjectProperty()
     {
-        $content = $this->getContent('object_with_object_property');
+        $content = self::getContent('object_with_object_property');
         $object = $this->deserialize($content, 'JMS\Serializer\Tests\Fixtures\ObjectWithObjectProperty');
         self::assertEquals('bar', $object->getFoo());
         self::assertInstanceOf('JMS\Serializer\Tests\Fixtures\Author', $object->getAuthor());
         self::assertEquals('baz', $object->getAuthor()->getName());
     }
 
-    public function getPrimitiveTypes()
+    public static function getPrimitiveTypes()
     {
         return [
             [
@@ -359,7 +359,7 @@ class JsonSerializationTest extends BaseSerializationTest
         self::assertEquals('{"0":{"full_name":"Jim"},"1":{"full_name":"Mark"}}', $this->serializer->serialize($data, $this->getFormat(), SerializationContext::create()->setInitialType('array<string,JMS\Serializer\Tests\Fixtures\Author>')));
     }
 
-    public function getTypeHintedArrays()
+    public static function getTypeHintedArrays()
     {
         return [
 
@@ -405,7 +405,7 @@ class JsonSerializationTest extends BaseSerializationTest
         self::assertEquals($expected, $this->serialize($array, $context));
     }
 
-    public function getTypeHintedArraysAndStdClass()
+    public static function getTypeHintedArraysAndStdClass()
     {
         $c1 = new \stdClass();
         $c2 = new \stdClass();
@@ -441,7 +441,7 @@ class JsonSerializationTest extends BaseSerializationTest
      *
      * @dataProvider getTypeHintedArraysAndStdClass
      */
-    public function testTypeHintedArrayAndStdClassSerialization(array $array, $expected, $context = null)
+    public function testTypeHintedArrayAncdtdClassSerialization(array $array, $expected, $context = null)
     {
         self::assertEquals($expected, $this->serialize($array, $context));
     }

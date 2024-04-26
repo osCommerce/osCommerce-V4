@@ -23,6 +23,7 @@ use Google\Service\CloudKMS\Policy;
 use Google\Service\CloudKMS\SetIamPolicyRequest;
 use Google\Service\CloudKMS\TestIamPermissionsRequest;
 use Google\Service\CloudKMS\TestIamPermissionsResponse;
+use Google\Service\CloudKMS\VerifyConnectivityResponse;
 
 /**
  * The "ekmConnections" collection of methods.
@@ -46,6 +47,7 @@ class ProjectsLocationsEkmConnections extends \Google\Service\Resource
    * @opt_param string ekmConnectionId Required. It must be unique within a
    * location and match the regular expression `[a-zA-Z0-9_-]{1,63}`.
    * @return EkmConnection
+   * @throws \Google\Service\Exception
    */
   public function create($parent, EkmConnection $postBody, $optParams = [])
   {
@@ -59,6 +61,7 @@ class ProjectsLocationsEkmConnections extends \Google\Service\Resource
    * @param string $name Required. The name of the EkmConnection to get.
    * @param array $optParams Optional parameters.
    * @return EkmConnection
+   * @throws \Google\Service\Exception
    */
   public function get($name, $optParams = [])
   {
@@ -89,6 +92,7 @@ class ProjectsLocationsEkmConnections extends \Google\Service\Resource
    * documentation](https://cloud.google.com/iam/help/conditions/resource-
    * policies).
    * @return Policy
+   * @throws \Google\Service\Exception
    */
   public function getIamPolicy($resource, $optParams = [])
   {
@@ -118,6 +122,7 @@ class ProjectsLocationsEkmConnections extends \Google\Service\Resource
    * @opt_param string pageToken Optional. Optional pagination token, returned
    * earlier via ListEkmConnectionsResponse.next_page_token.
    * @return ListEkmConnectionsResponse
+   * @throws \Google\Service\Exception
    */
   public function listProjectsLocationsEkmConnections($parent, $optParams = [])
   {
@@ -136,6 +141,7 @@ class ProjectsLocationsEkmConnections extends \Google\Service\Resource
    * @opt_param string updateMask Required. List of fields to be updated in this
    * request.
    * @return EkmConnection
+   * @throws \Google\Service\Exception
    */
   public function patch($name, EkmConnection $postBody, $optParams = [])
   {
@@ -155,6 +161,7 @@ class ProjectsLocationsEkmConnections extends \Google\Service\Resource
    * @param SetIamPolicyRequest $postBody
    * @param array $optParams Optional parameters.
    * @return Policy
+   * @throws \Google\Service\Exception
    */
   public function setIamPolicy($resource, SetIamPolicyRequest $postBody, $optParams = [])
   {
@@ -177,12 +184,32 @@ class ProjectsLocationsEkmConnections extends \Google\Service\Resource
    * @param TestIamPermissionsRequest $postBody
    * @param array $optParams Optional parameters.
    * @return TestIamPermissionsResponse
+   * @throws \Google\Service\Exception
    */
   public function testIamPermissions($resource, TestIamPermissionsRequest $postBody, $optParams = [])
   {
     $params = ['resource' => $resource, 'postBody' => $postBody];
     $params = array_merge($params, $optParams);
     return $this->call('testIamPermissions', [$params], TestIamPermissionsResponse::class);
+  }
+  /**
+   * Verifies that Cloud KMS can successfully connect to the external key manager
+   * specified by an EkmConnection. If there is an error connecting to the EKM,
+   * this method returns a FAILED_PRECONDITION status containing structured
+   * information as described at
+   * https://cloud.google.com/kms/docs/reference/ekm_errors.
+   * (ekmConnections.verifyConnectivity)
+   *
+   * @param string $name Required. The name of the EkmConnection to verify.
+   * @param array $optParams Optional parameters.
+   * @return VerifyConnectivityResponse
+   * @throws \Google\Service\Exception
+   */
+  public function verifyConnectivity($name, $optParams = [])
+  {
+    $params = ['name' => $name];
+    $params = array_merge($params, $optParams);
+    return $this->call('verifyConnectivity', [$params], VerifyConnectivityResponse::class);
   }
 }
 

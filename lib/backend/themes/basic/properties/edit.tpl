@@ -27,7 +27,7 @@
         <div class="properties_top">
 
           <div class="row">
-            <div class="col-md-4 form-container">
+            <div class="col-md-3 form-container">
               <h4>{$smarty.const.BOX_LOCALIZATION_LANGUAGES}</h4>
 
                   <div class="row">
@@ -72,7 +72,7 @@
 
 
             </div>
-            <div class="col-md-4 form-container border-left padding-b-2">
+            <div class="col-md-5 form-container border-left padding-b-2">
 
               <h4>{$smarty.const.DISPLAY_MODE}</h4>
 
@@ -80,13 +80,13 @@
                 <div class="col-md-4 text-right">
                   <label>{$smarty.const.TEXT_PRODUCT_INFO}</label>
                 </div>
-                <div class="col-md-2">
+                <div class="col-md-2 p-0">
                   <input type="checkbox" name="display_product" value="1" class="check_on_off" {if {$pInfo->display_product|default:null > 0}} checked="checked" {/if} />
                 </div>
                 <div class="col-md-4 text-right">
                   <label>{$smarty.const.TEXT_LISTING}</label>
                 </div>
-                <div class="col-md-2"><input type="checkbox" name="display_listing" value="1" class="check_on_off" {if {$pInfo->display_listing|default:null > 0}} checked="checked" {/if} />
+                <div class="col-md-2 p-0"><input type="checkbox" name="display_listing" value="1" class="check_on_off" {if {$pInfo->display_listing|default:null > 0}} checked="checked" {/if} />
                 </div>
               </div>
 
@@ -94,10 +94,10 @@
                 <div class="col-md-4 text-right">
                   <label>{$smarty.const.TEXT_FILTER}</label>
                 </div>
-                <div class="col-md-2">
+                <div class="col-md-2 p-0">
                   <input type="checkbox" name="display_filter" value="1" class="check_on_off" {if {$pInfo->display_filter|default:null > 0}} checked="checked" {/if} />
                 </div>
-                <div class="col-md-2"></div>
+                <div class="col-md-2 p-0"></div>
                 <div class="col-md-4 text-right">
                   {Html::dropDownList('display_filter_as',$pInfo->display_filter_as|default:null, ['' => TEXT_CHECKBOX, 'radio' => TEXT_RADIO, 'pulldown' => TEXT_PULLDOWN])}
                 </div>
@@ -107,13 +107,13 @@
                 <div class="col-md-4 text-right">
                   <label>{$smarty.const.TEXT_SEARCH}</label>
                 </div>
-                <div class="col-md-2">
+                <div class="col-md-2 p-0">
                   <input type="checkbox" name="display_search" value="1" class="check_on_off" {if {$pInfo->display_search|default:null > 0}} checked="checked" {/if} />
                 </div>
                 <div class="col-md-4 text-right">
                   <label>{$smarty.const.TEXT_COMPARE}</label>
                 </div>
-                <div class="col-md-2">
+                <div class="col-md-2 p-0">
                   <input type="checkbox" name="display_compare" value="1" class="check_on_off" {if {$pInfo->display_compare|default:null > 0}} checked="checked" {/if} />
                 </div>
               </div>
@@ -122,13 +122,13 @@
                 <div class="col-md-4 text-right">
                   <label>{$smarty.const.TEXT_PRODUCTS_GROUPS}</label>
                 </div>
-                <div class="col-md-2">
+                <div class="col-md-2 p-0">
                   <input type="checkbox" name="products_groups" value="1" class="check_on_off" {if {$pInfo->products_groups|default:null > 0}} checked="checked" {/if} />
                 </div>
                 <div class="col-md-4 text-right">
                   <label>{$smarty.const.TEXT_SWATCHES}</label>
                 </div>
-                <div class="col-md-2">
+                <div class="col-md-2 p-0">
                   <input type="checkbox" name="display_as_image" value="1" class="check_on_off" {if {$pInfo->display_as_image|default:null > 0}} checked="checked" {/if} />
                 </div>
               </div>
@@ -138,13 +138,13 @@
                 <div class="col-md-4 text-right">
                   <label>{$smarty.const.TEXT_EXTRA_VALUES}</label>
                 </div>
-                <div class="col-md-2">
+                <div class="col-md-2 p-0">
                   <input type="checkbox" name="extra_values" value="1" class="check_on_off" {if {$pInfo->extra_values|default:null > 0}} checked="checked" {/if} />
                 </div>
                 <div class="col-md-4 text-right">
                   <label>{$smarty.const.TEXT_RANGE_SELECT}</label>
                 </div>
-                <div class="col-md-2">
+                <div class="col-md-2 p-0">
                   <input type="checkbox" name="range_select" value="1" class="check_on_off" {if {$pInfo->range_select|default:null > 0}} checked="checked" {/if} />
                 </div>
               </div>

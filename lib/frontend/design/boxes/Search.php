@@ -30,6 +30,11 @@ class Search extends Widget
 
     public function run()
     {
+        if ( $extB2B = \common\helpers\Acl::checkExtensionAllowed('BusinessToBusiness') ){
+            if ( $extB2B::checkNeedLogin() ){
+                return '';
+            }
+        }
 
         $link = tep_href_link(FILENAME_ADVANCED_SEARCH_RESULT, '');
 

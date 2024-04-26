@@ -170,11 +170,17 @@ function file_deploy(fileName, chooseType) {
         },
         success:function(data) {
             alertMessage('<div class="popup-content">'+data.text+'</div>');
+            if ($('.extensions-menu-title').length) {
+                $('.pop-up-close').on('click', function () {
+                    window.location.href = window.location.href;
+                });
+            }
             if ( data.status=='ok' ) {
                 $('#tblFiles').trigger('reload');
             }
         }
     }).always(destroyLoader);
+
     return false;
 }
 function file_remove(fileName) {

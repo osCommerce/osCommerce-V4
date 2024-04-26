@@ -321,6 +321,16 @@ class StockIndication
             }
             $is_virtual = $productItem['is_virtual'];
         }
+        if ($ext = \common\helpers\Acl::checkExtensionAllowed('ProductStockFlagsByPlatform', 'allowed')) {
+            if ($platform_stock_flags = $ext::getStockFlags($uprid)) {
+                if (isset($platform_stock_flags['stock_indication_id'])) {
+                    $stock_indication_id = $platform_stock_flags['stock_indication_id'];
+                }
+                if (isset($platform_stock_flags['stock_delivery_terms_id'])) {
+                    $stock_delivery_terms_id = $platform_stock_flags['stock_delivery_terms_id'];
+                }
+            }
+        }
 
         if (empty($products_date_available) )
         {
@@ -374,10 +384,14 @@ class StockIndication
 
         if ($ext = \common\helpers\Acl::checkExtensionAllowed('UserGroupsRestrictions', 'isAllowed')) {
             if ($data_array['products_id'] && !($data_array['ignore_user_groups_restrictions'] ?? false)) {
-                if (!$ext::isStockAvailable($data_array['products_id'])) {
-                    $stock_indication_id = 0;
-                    $data_array['stock_indication_id'] = 0;
-                    $data_array['stock_delivery_terms_id'] = 0;
+                if (!$ext::isStockAvailable(!empty($data_array['uprid_mask']) ? $data_array['uprid_mask'] : $data_array['products_id'])) {
+                    // Don't overwrite stock_indication_id if Pre Order
+                    $preStockIndication = \common\models\ProductsStockIndication::findOne(['stock_code' => 'pre-order']);
+                    if ($stock_indication_id != ($preStockIndication->stock_indication_id ?? false)) {
+                        $stock_indication_id = 0;
+                        $data_array['stock_indication_id'] = 0;
+                    }
+                    //$data_array['stock_delivery_terms_id'] = 0; // Don't overwrite stock_delivery_terms_id (e.g. Coming Soon)
                     $data_array['products_quantity'] = 0;
                 }
             }

@@ -35,6 +35,7 @@ class shopping_cart {
     public $max_width;
     public $max_length;
     public $max_height;
+    public $max_weight;
 
     public $contents = [];
     public $total;
@@ -530,6 +531,10 @@ class shopping_cart {
                 CustomersBasket::saveProduct([ $products_id => $val ], $customer_id, $this);
             }
         }
+
+        foreach (\common\helpers\Hooks::getList('shopping-cart/save-contents') as $filename) {
+            include($filename);
+        }
     }
 
     function saveGiveAways(){
@@ -937,6 +942,9 @@ class shopping_cart {
             CustomersBasket::saveProduct([ $products_id => $this->contents[$products_id] ], $customer_id, $this);
         }
 
+        foreach (\common\helpers\Hooks::getList('shopping-cart/update-quantity') as $filename) {
+            include($filename);
+        }
         // will be done in add_cart, second call cause error message. $this->auto_giveaway();
         // will be done in add_cart $this->check_giveaway();
     }
@@ -1024,6 +1032,9 @@ class shopping_cart {
                     // remove from database
                     if (!Yii::$app->user->isGuest) {
                         CustomersBasket::deleteProduct(Yii::$app->user->getId(), $key);
+                    }
+                    foreach (\common\helpers\Hooks::getList('shopping-cart/cleanup/delete-product') as $filename) {
+                        include($filename);
                     }
                 }
             }
@@ -1298,6 +1309,7 @@ class shopping_cart {
         $this->max_width = 0;
         $this->max_length = 0;
         $this->max_height = 0;
+        $this->max_weight = 0;
         $this->volume = 0;
         $products_price = $products_tax = 0;
         if (!is_array($this->contents))
@@ -1454,6 +1466,7 @@ class shopping_cart {
                 $this->max_width = max($product['width_cm'], $this->max_width);
                 $this->max_length = max($product['length_cm'], $this->max_width);
                 $this->max_height = max($product['height_cm'], $this->max_width);
+                $this->max_weight = max($products_weight, $this->max_weight);
             }
 
 
@@ -1888,6 +1901,11 @@ class shopping_cart {
                     }
                     unset($owd);
                 }
+
+                foreach (\common\helpers\Hooks::getList('shopping-cart/get-products/product') as $filename) {
+                    include($filename);
+                }
+
                 $cProduct->attachDetails($products_array[$products_id]);
             }
         }
@@ -1992,19 +2010,19 @@ class shopping_cart {
                     $products = array_replace($products, $ext::getInventorySettings($products_id, InventoryHelper::normalizeInventoryId($products_id)));
                 }
                 // {{ stock info
-                /* $stock_info = \common\classes\StockIndication::product_info(array(
+                $stock_info = \common\classes\StockIndication::product_info(array(
                   'products_id' => InventoryHelper::normalize_id($products_id),
                   'stock_indication_id' => $products['stock_indication_id'],
                   'cart_qty' => $this->contents[$products_id]['qty'],
                   'cart_class' => true,
                   'products_quantity' => \common\helpers\Product::get_products_stock(InventoryHelper::normalize_id($products_id)),
-                  )); */
+                  ));
                 // }} stock info
                 $products_array[$products_id . '(GA)'] = array('id' => $products_id,
                     'name' => $products['products_name'],
                     'model' => $products['products_model'],
                     'image' => $products['products_image'],
-                    //'stock_info' => $stock_info,
+                    'stock_info' => $stock_info,
                     'gift_wrap_allowed' => false,
                     'gift_wrap_price' => 0,
                     'gift_wrapped' => false,
@@ -2214,6 +2232,7 @@ class shopping_cart {
             'max_width' => $this->max_width,
             'max_length' => $this->max_length,
             'max_height' => $this->max_height,
+            'max_weight' => $this->max_weight,
         ];
     }
 
@@ -3015,6 +3034,7 @@ class shopping_cart {
             $this->setOverwrite($uprid, 'tax_class_id', $tax);
             $this->setOverwrite($uprid, 'tax_description', \common\helpers\Tax::get_tax_description($tax, $order->tax_address['entry_country_id'], $order->tax_address['entry_zone_id']));
         } else {
+            $uprid = $products_id;
             $this->setOverwrite($uprid, 'tax_selected', 0);
             $this->setOverwrite($uprid, 'tax', 0);
             $this->setOverwrite($uprid, 'tax_class_id', 0);

@@ -19,14 +19,12 @@ namespace Google\Service\Dataform;
 
 class Repository extends \Google\Model
 {
+  /**
+   * @var string
+   */
+  public $displayName;
   protected $gitRemoteSettingsType = GitRemoteSettings::class;
   protected $gitRemoteSettingsDataType = '';
-  /**
-   * @var string[]
-   */
-  public $initialCommitFileContents;
-  protected $initialCommitMetadataType = CommitMetadata::class;
-  protected $initialCommitMetadataDataType = '';
   /**
    * @var string[]
    */
@@ -39,9 +37,31 @@ class Repository extends \Google\Model
    * @var string
    */
   public $npmrcEnvironmentVariablesSecretVersion;
+  /**
+   * @var string
+   */
+  public $serviceAccount;
+  /**
+   * @var bool
+   */
+  public $setAuthenticatedUserAdmin;
   protected $workspaceCompilationOverridesType = WorkspaceCompilationOverrides::class;
   protected $workspaceCompilationOverridesDataType = '';
 
+  /**
+   * @param string
+   */
+  public function setDisplayName($displayName)
+  {
+    $this->displayName = $displayName;
+  }
+  /**
+   * @return string
+   */
+  public function getDisplayName()
+  {
+    return $this->displayName;
+  }
   /**
    * @param GitRemoteSettings
    */
@@ -55,34 +75,6 @@ class Repository extends \Google\Model
   public function getGitRemoteSettings()
   {
     return $this->gitRemoteSettings;
-  }
-  /**
-   * @param string[]
-   */
-  public function setInitialCommitFileContents($initialCommitFileContents)
-  {
-    $this->initialCommitFileContents = $initialCommitFileContents;
-  }
-  /**
-   * @return string[]
-   */
-  public function getInitialCommitFileContents()
-  {
-    return $this->initialCommitFileContents;
-  }
-  /**
-   * @param CommitMetadata
-   */
-  public function setInitialCommitMetadata(CommitMetadata $initialCommitMetadata)
-  {
-    $this->initialCommitMetadata = $initialCommitMetadata;
-  }
-  /**
-   * @return CommitMetadata
-   */
-  public function getInitialCommitMetadata()
-  {
-    return $this->initialCommitMetadata;
   }
   /**
    * @param string[]
@@ -125,6 +117,34 @@ class Repository extends \Google\Model
   public function getNpmrcEnvironmentVariablesSecretVersion()
   {
     return $this->npmrcEnvironmentVariablesSecretVersion;
+  }
+  /**
+   * @param string
+   */
+  public function setServiceAccount($serviceAccount)
+  {
+    $this->serviceAccount = $serviceAccount;
+  }
+  /**
+   * @return string
+   */
+  public function getServiceAccount()
+  {
+    return $this->serviceAccount;
+  }
+  /**
+   * @param bool
+   */
+  public function setSetAuthenticatedUserAdmin($setAuthenticatedUserAdmin)
+  {
+    $this->setAuthenticatedUserAdmin = $setAuthenticatedUserAdmin;
+  }
+  /**
+   * @return bool
+   */
+  public function getSetAuthenticatedUserAdmin()
+  {
+    return $this->setAuthenticatedUserAdmin;
   }
   /**
    * @param WorkspaceCompilationOverrides

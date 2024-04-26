@@ -29,6 +29,12 @@ class ResearchScamNearestNeighborsNeighbor extends \Google\Model
    */
   public $docid;
   /**
+   * @var ResearchScamGenericFeatureVector
+   */
+  public $gfv;
+  protected $gfvType = ResearchScamGenericFeatureVector::class;
+  protected $gfvDataType = '';
+  /**
    * @var string
    */
   public $metadata;
@@ -68,6 +74,20 @@ class ResearchScamNearestNeighborsNeighbor extends \Google\Model
   public function getDocid()
   {
     return $this->docid;
+  }
+  /**
+   * @param ResearchScamGenericFeatureVector
+   */
+  public function setGfv(ResearchScamGenericFeatureVector $gfv)
+  {
+    $this->gfv = $gfv;
+  }
+  /**
+   * @return ResearchScamGenericFeatureVector
+   */
+  public function getGfv()
+  {
+    return $this->gfv;
   }
   /**
    * @param string

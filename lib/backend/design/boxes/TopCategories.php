@@ -34,6 +34,7 @@ class TopCategories extends Widget
     return $this->render('categories.tpl', [
       'id' => $this->id, 'params' => $this->params, 'settings' => $this->settings,
       'visibility' => $this->visibility,
+      'selectCategory' => true,
     ]);
   }
 }

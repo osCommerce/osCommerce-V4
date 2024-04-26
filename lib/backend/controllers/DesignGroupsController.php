@@ -30,6 +30,7 @@ use common\models\DesignBoxesTmp;
 use common\models\Themes;
 use common\models\ThemesSettings;
 use common\models\ThemesStyles;
+use common\models\ThemesStylesGroups;
 use common\models\ThemesStylesMain;
 use common\models\ThemesStylesCache;
 use Yii;
@@ -583,6 +584,11 @@ class DesignGroupsController extends Sceleton {
         $groupLists = [
             ['title' => TEXT_HEADER, 'category' => 'header', 'multiSelect' => false],
             ['title' => TEXT_FOOTER, 'category' => 'footer', 'multiSelect' => true],
+            ['title' => 'Header menu', 'category' => 'header-menu', 'multiSelect' => false],
+            ['title' => 'Headings', 'category' => 'headings', 'multiSelect' => false],
+            ['title' => 'Buttons', 'category' => 'buttons', 'multiSelect' => false],
+            ['title' => 'Price', 'category' => 'price', 'multiSelect' => false],
+            ['title' => 'Form', 'category' => 'form', 'multiSelect' => false],
             ['title' => TEXT_HOME, 'category' => 'main', 'multiSelect' => true],
             ['title' => TEXT_PRODUCT, 'category' => 'product', 'multiSelect' => true],
         ];
@@ -746,6 +752,7 @@ class DesignGroupsController extends Sceleton {
         ThemesSettings::updateAll(['theme_name' => $themeName], ['theme_name' => 'new_theme']);
         ThemesStyles::updateAll(['theme_name' => $themeName], ['theme_name' => 'new_theme']);
         ThemesStylesMain::updateAll(['theme_name' => $themeName], ['theme_name' => 'new_theme']);
+        ThemesStylesGroups::updateAll(['theme_name' => $themeName], ['theme_name' => 'new_theme']);
         ThemesStylesCache::updateAll(['theme_name' => $themeName], ['theme_name' => 'new_theme']);
 
         $bottomCss = '';
@@ -780,14 +787,19 @@ class DesignGroupsController extends Sceleton {
     {
         $themeName = Yii::$app->request->post('theme_name');
         $groupIds = Yii::$app->request->post('group_id', 0);
-        $category = Yii::$app->request->post('category', 0);
+        $category = $categoryBlockName = Yii::$app->request->post('category', 0);
         $path = DIR_FS_CATALOG . implode(DIRECTORY_SEPARATOR, ['lib', 'backend', 'design', 'groups']);
-        $groupData = [];
         $oddData = [];
         $newData = [];
 
-        $boxes = DesignBoxesTmp::find()->where(['theme_name' => $themeName, 'block_name' => $category])->asArray()->all();
+        $boxes = DesignBoxesTmp::find()
+            ->where(['theme_name' => $themeName])
+            ->andWhere(['or', ['block_name' => $category], ['widget_params' => $category] ])
+            ->asArray()->all();
         foreach ($boxes as $box) {
+            if ($box['widget_params'] == $category) {
+                $categoryBlockName = 'block-' . $box['id'];
+            }
             $oddData[$category][] = Theme::blocksTree($box['id']);
             Theme::deleteBlock($box['id']);
         }
@@ -824,7 +836,7 @@ class DesignGroupsController extends Sceleton {
                         }
                         DesignBoxesTmp::deleteAll(['theme_name' => $themeName, 'block_name' => $blockName]);
                     } else {
-                        $newData[$category][] = $data;
+                        $newData[$categoryBlockName][] = $data;
                     }
                 }
                 $addedPagesJson = $zip->getFromName('addedPages.json');
@@ -846,7 +858,7 @@ class DesignGroupsController extends Sceleton {
 
             $params = [];
             $params['theme_name'] = $themeName;
-            $params['block_name'] = $category;
+            $params['block_name'] = $categoryBlockName;
             $params['sort_order'] = $sortOrder;
             $sortOrder = $sortOrder+10;
 
@@ -881,15 +893,12 @@ class DesignGroupsController extends Sceleton {
         $themeName = Yii::$app->request->post('theme_name');
         $groupIds = Yii::$app->request->post('group_id', 0);
         $category = Yii::$app->request->post('category', 0);
-        $colors = Yii::$app->request->post('colors', []);
         $path = DIR_FS_CATALOG . implode(DIRECTORY_SEPARATOR, ['lib', 'backend', 'design', 'groups']);
         $groupId = $groupIds[0];
-
-        $newColors = [];
-        if ($category == 'color' && count($colors)) {
-            foreach ($colors as $color) {
-                $newColors[$color['old']] = $color['new'];
-            }
+        if ($category == 'color') {
+            $category = ['color', 'color-var', 'color-opacity'];
+        } elseif ($category == 'font') {
+            $category = ['font', 'font-var'];
         }
 
         $group = DesignBoxesGroups::findOne($groupId);
@@ -909,17 +918,20 @@ class DesignGroupsController extends Sceleton {
         $json = $zip->getFromName('data.json');
         $styles = json_decode($json, true);
         $newStyles = [];
+        $newGroups = [];
 
         $oldStyles = ThemesStylesMain::find()->where(['theme_name' => $themeName, 'type' => $category])->asArray()->all();
+        $oldGroups = ThemesStylesGroups::find()->where(['theme_name' => $themeName])->asArray()->all();
+
         ThemesStylesMain::deleteAll(['theme_name' => $themeName, 'type' => $category]);
-        foreach ($styles as $style) {
+        foreach ($styles['main'] as $style) {
             $themesStyles = new ThemesStylesMain();
             $themesStyles->theme_name = $themeName;
             $themesStyles->name = $style['name'];
-            $themesStyles->value = $newColors[$style['value']] ?? $style['value'];
+            $themesStyles->value = $style['value'];
             $themesStyles->type = $style['type'];
             $themesStyles->sort_order = $style['sort_order'];
-            $themesStyles->main_style = $style['main_style'];
+            $themesStyles->group_id = $style['group_id'];
             $themesStyles->save();
             $newStyles[] = array_merge($style, ['theme_name' => $themeName]);
 
@@ -956,6 +968,17 @@ class DesignGroupsController extends Sceleton {
                 }
             }
         }
+        ThemesStylesGroups::deleteAll(['theme_name' => $themeName]);
+        foreach ($styles['groups'] as $group) {
+            $themesStyles = new ThemesStylesGroups();
+            $themesStyles->theme_name = $themeName;
+            $themesStyles->group_id = $group['group_id'];
+            $themesStyles->group_name = $group['group_name'];
+            $themesStyles->sort_order = $group['sort_order'];
+            $themesStyles->tab = $group['tab'];
+            $themesStyles->save();
+            $newGroups[] = array_merge($group, ['theme_name' => $themeName]);
+        }
         $zip->close();
 
         DesignBoxesCache::deleteAll(['theme_name' => $themeName]);
@@ -968,7 +991,47 @@ class DesignGroupsController extends Sceleton {
         Steps::setStyles([
             'old' => $oldStyles,
             'new' => $newStyles,
+            'old_groups' => $oldGroups,
+            'new_groups' => $newGroups,
             'type' => $category,
+            'theme_name' => $themeName,
+        ]);
+
+        return json_encode(['text' => TEXT_APPLIED]);
+    }
+
+    public function actionSetCss()
+    {
+        $themeName = Yii::$app->request->post('theme_name');
+        $groupIds = Yii::$app->request->post('group_id', 0);
+        $category = Yii::$app->request->post('category', 0);
+        $path = DIR_FS_CATALOG . implode(DIRECTORY_SEPARATOR, ['lib', 'backend', 'design', 'groups']);
+        $groupId = $groupIds[0];
+
+        $group = DesignBoxesGroups::findOne($groupId);
+        if (!$group) {
+            return json_encode(['error' => GROUP_NOT_FOUND . ': ' . $groupId]);
+        }
+        $file = $group->file;
+
+        if (!is_file($path . DIRECTORY_SEPARATOR . $file)) {
+            return json_encode(['error' => GROUP_FILE_NOT_FOUND . ': ' . $file]);
+        }
+
+        $zip = new \ZipArchive();
+        if ($zip->open($path . DIRECTORY_SEPARATOR . $file, \ZipArchive::CREATE) !== TRUE) {
+            return json_encode(['error' => 'ZipArchive error']);
+        }
+        $json = $zip->getFromName('data.json');
+        $styles = json_decode($json, true);
+
+        $oldStyles = Style::getCssElements($themeName, $category);
+
+        Style::setCssElements($themeName, $styles);
+
+        Steps::setCss([
+            'old' => $oldStyles,
+            'new' => $styles,
             'theme_name' => $themeName,
         ]);
 
@@ -1058,6 +1121,7 @@ class DesignGroupsController extends Sceleton {
         $groups = [
             'header' => ['title' => TEXT_HEADER, 'multiSelect' => false],
             'footer' => ['title' => TEXT_FOOTER, 'multiSelect' => true],
+            'header-menu' => ['title' => 'Header menu', 'multiSelect' => false],
             'main' => ['title' => TEXT_HOME, 'multiSelect' => true],
             'product' => ['title' => TEXT_PRODUCT, 'multiSelect' => true],
         ];

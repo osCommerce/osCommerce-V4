@@ -41,6 +41,10 @@ class ForwardingRule extends \Google\Collection
    */
   public $allowGlobalAccess;
   /**
+   * @var bool
+   */
+  public $allowPscGlobalAccess;
+  /**
    * @var string
    */
   public $backendService;
@@ -88,6 +92,10 @@ class ForwardingRule extends \Google\Collection
    * @var string
    */
   public $loadBalancingScheme;
+  /**
+   * @var MetadataFilter[]
+   */
+  public $metadataFilters;
   protected $metadataFiltersType = MetadataFilter::class;
   protected $metadataFiltersDataType = 'array';
   /**
@@ -130,6 +138,10 @@ class ForwardingRule extends \Google\Collection
    * @var string
    */
   public $selfLink;
+  /**
+   * @var ForwardingRuleServiceDirectoryRegistration[]
+   */
+  public $serviceDirectoryRegistrations;
   protected $serviceDirectoryRegistrationsType = ForwardingRuleServiceDirectoryRegistration::class;
   protected $serviceDirectoryRegistrationsDataType = 'array';
   /**
@@ -208,6 +220,20 @@ class ForwardingRule extends \Google\Collection
   public function getAllowGlobalAccess()
   {
     return $this->allowGlobalAccess;
+  }
+  /**
+   * @param bool
+   */
+  public function setAllowPscGlobalAccess($allowPscGlobalAccess)
+  {
+    $this->allowPscGlobalAccess = $allowPscGlobalAccess;
+  }
+  /**
+   * @return bool
+   */
+  public function getAllowPscGlobalAccess()
+  {
+    return $this->allowPscGlobalAccess;
   }
   /**
    * @param string

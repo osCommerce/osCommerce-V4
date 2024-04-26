@@ -4,7 +4,7 @@
             <div class="name" style="width: 100%">
                 <span class="qty">{\common\helpers\Product::getVirtualItemQuantity($product['id'], $product['qty'])}</span><span class="multiply"> x </span><span class="price-total" style="float: right; font-weight: bold">{$currencies->format($currencies->calculate_price_in_order($order->info, $product.final_price, $product.tax, $product.qty), true, $order->info['currency'], $order->info['currency_value'])}</span><!-- comment --><span class="name">{$product['name']}</span>{*$product.model*}
                 <div class="options"><br>
-                  {if is_array($product.attributes) && $product.attributes|@sizeof > 0}
+                  {if is_array($product.attributes) && $product.attributes|count > 0}
                     {foreach $product.attributes as $attribut}
                       <div><small>&nbsp;<i> - {str_replace(array('&amp;nbsp;', '&lt;b&gt;', '&lt;/b&gt;', '&lt;br&gt;'), array('&nbsp;', '<b>', '</b>', '<br>'), htmlspecialchars($attribut.option))}: {$attribut.value}</i><br></small></div>
                     {/foreach}

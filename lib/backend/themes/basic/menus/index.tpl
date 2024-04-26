@@ -199,6 +199,10 @@
             <ul>
               <li data-type-id="999999999" data-type="categories">
                 <div class="item-handle"><div class="item-handle-move"></div><div class="searchable">{$smarty.const.TEXT_ALL_CATEGORIES}</div><div class="remove"></div>
+                  <div class="link-setting-c">
+                    <label for="">{$smarty.const.SORTING_FROM_CATALOGUE}: </label>
+                    <input type="checkbox" name="sorting_categories" checked/>
+                  </div>
                 </div>
                 <div class="link-settings">
 
@@ -784,6 +788,12 @@
                       <label for="">{$smarty.const.TEXT_SHOW_SUBCATEGORIES}: </label> <input type="checkbox" name="sub_categories" class="check_on_off" {if isset($item.sub_categories) && $item.sub_categories == '1'}checked{/if}/>
                     </div>
                   {/if}
+                  {if $item.link_id == 999999999}
+                    <div class="link-setting-c">
+                      <label for="">{$smarty.const.SORTING_FROM_CATALOGUE}: </label>
+                      <input type="checkbox" name="sorting_categories" {if $item.settings.sorting == 'catalog'} checked{/if}/>
+                    </div>
+                  {/if}
 
                 </div>
                 <div class="link-settings">
@@ -1231,7 +1241,9 @@
 		offText: "{$smarty.const.SW_OFF}",
         handleWidth: '20px',
         labelWidth: '24px'
-      })
+      });
+
+      $('input[name="sorting_categories"]', obj).tlSwitch();
     };
     bSwitch($('.drop-list'));
 
@@ -1264,10 +1276,6 @@
           }
           var id_i = [];
           var rnd = Math.floor(Math.random() * 1000000);
-          item.find('.nav-tabs a').each(function(i){
-            id_i[i] = $(this).attr('href').replace("#", rnd + '_');
-            $(this).attr('href', '#' + id_i[i]);
-          });
           
           if (!id_i.length){
             id_i.push(rnd + '_{$languages_id}');
@@ -1292,6 +1300,12 @@
         }
         apply(e.item);
 
+        const $sorting = $(e.item).closest('li[data-type-id="999999999"]')
+                .find('> .item-handle input[name="sorting_categories"]')
+                .prop('checked', true);
+        if ($sorting.prop('checked', true)) {
+          $sorting.trigger('click.bootstrapSwitch')
+        }
 
         $(window).trigger('change_menu');
 
@@ -1463,6 +1477,7 @@
           custom: custom,
           {/if}
           custom_page: custom_page,
+          sorting_categories: $('> .item-handle input[name="sorting_categories"]:checked', _this).length ? '1' : '',
           parent: {
             id: _this.parent().parent().data('id'),
             type: _this.parent().parent().data('type'),

@@ -30,7 +30,9 @@ class Hooks
         foreach ($queryRaw as $row) {
             if (\common\helpers\Extensions::isAllowed($row['extension_name'])) { // mostly for disabled
                 if (file_exists($row['extension_file'])) {
-                    \common\helpers\Dbg::ifDefined($row['extension_name'])::logf('Hook will be called (ext=%s, page=%s, area=%s)', $row['extension_name'], $pageName, $pageArea);
+                    if (defined('DBG_HOOKS')) {
+                        \common\helpers\Dbg::ifDefined($row['extension_name'])::logf('Hook will be called (ext=%s, page=%s, area=%s)', $row['extension_name'], $pageName, $pageArea);
+                    }
                     $response[] = $row['extension_file'];
                 } else {
                     \common\helpers\Php::throwOrLog("File for hook $pageName area $pageArea is not found: " . $row['extension_file']);
@@ -158,9 +160,14 @@ class Hooks
     }
     public static function checkHookExists($pageName, $pageArea = '', $suffixMessage = '')
     {
-        if (self::canCheckHook()) {
+        if (self::canCheckHook() && !self::isExtensionsHook($pageName, $pageArea)) {
             \common\helpers\Assert::assert(self::isHookExists($pageName, $pageArea), "There is no hook '$pageName', '$pageArea'" . $suffixMessage);
         }
+    }
+
+    private static function isExtensionsHook($pageName, $pageArea)
+    {
+        return strncmp('ext/', $pageName, strlen('ext/')) === 0;
     }
 
     public static function canCheckHook()

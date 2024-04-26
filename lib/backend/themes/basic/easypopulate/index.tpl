@@ -965,9 +965,9 @@
 
                     $('.progress_state').html(js_messages['file_upload']);
                     e.preventDefault();
-                    data.submit().error(function (jqXHR, textStatus, errorThrown) {
+                    data.submit().fail(function (jqXHR, textStatus, errorThrown) {
                         //console.log(arguments);
-                    }).success(function (result, textStatus, jqXHR) {
+                    }).done(function (result, textStatus, jqXHR) {
                         var status_message = js_messages['file_uploaded'];
                         var messageTImeout = 5000;
                         if ( result.data_file && result.data_file.length>0 && result.data_file[0].error ) {

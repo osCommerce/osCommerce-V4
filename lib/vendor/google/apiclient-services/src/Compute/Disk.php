@@ -25,6 +25,18 @@ class Disk extends \Google\Collection
    */
   public $architecture;
   /**
+   * @var DiskAsyncReplication
+   */
+  public $asyncPrimaryDisk;
+  protected $asyncPrimaryDiskType = DiskAsyncReplication::class;
+  protected $asyncPrimaryDiskDataType = '';
+  /**
+   * @var DiskAsyncReplicationList[]
+   */
+  public $asyncSecondaryDisks;
+  protected $asyncSecondaryDisksType = DiskAsyncReplicationList::class;
+  protected $asyncSecondaryDisksDataType = 'map';
+  /**
    * @var string
    */
   public $creationTimestamp;
@@ -32,8 +44,20 @@ class Disk extends \Google\Collection
    * @var string
    */
   public $description;
+  /**
+   * @var CustomerEncryptionKey
+   */
+  public $diskEncryptionKey;
   protected $diskEncryptionKeyType = CustomerEncryptionKey::class;
   protected $diskEncryptionKeyDataType = '';
+  /**
+   * @var bool
+   */
+  public $enableConfidentialCompute;
+  /**
+   * @var GuestOsFeature[]
+   */
+  public $guestOsFeatures;
   protected $guestOsFeaturesType = GuestOsFeature::class;
   protected $guestOsFeaturesDataType = 'array';
   /**
@@ -80,6 +104,10 @@ class Disk extends \Google\Collection
    * @var string
    */
   public $options;
+  /**
+   * @var DiskParams
+   */
+  public $params;
   protected $paramsType = DiskParams::class;
   protected $paramsDataType = '';
   /**
@@ -93,6 +121,10 @@ class Disk extends \Google\Collection
   /**
    * @var string
    */
+  public $provisionedThroughput;
+  /**
+   * @var string
+   */
   public $region;
   /**
    * @var string[]
@@ -102,6 +134,16 @@ class Disk extends \Google\Collection
    * @var string[]
    */
   public $resourcePolicies;
+  /**
+   * @var DiskResourceStatus
+   */
+  public $resourceStatus;
+  protected $resourceStatusType = DiskResourceStatus::class;
+  protected $resourceStatusDataType = '';
+  /**
+   * @var bool
+   */
+  public $satisfiesPzi;
   /**
    * @var bool
    */
@@ -117,6 +159,14 @@ class Disk extends \Google\Collection
   /**
    * @var string
    */
+  public $sourceConsistencyGroupPolicy;
+  /**
+   * @var string
+   */
+  public $sourceConsistencyGroupPolicyId;
+  /**
+   * @var string
+   */
   public $sourceDisk;
   /**
    * @var string
@@ -126,6 +176,10 @@ class Disk extends \Google\Collection
    * @var string
    */
   public $sourceImage;
+  /**
+   * @var CustomerEncryptionKey
+   */
+  public $sourceImageEncryptionKey;
   protected $sourceImageEncryptionKeyType = CustomerEncryptionKey::class;
   protected $sourceImageEncryptionKeyDataType = '';
   /**
@@ -136,6 +190,10 @@ class Disk extends \Google\Collection
    * @var string
    */
   public $sourceSnapshot;
+  /**
+   * @var CustomerEncryptionKey
+   */
+  public $sourceSnapshotEncryptionKey;
   protected $sourceSnapshotEncryptionKeyType = CustomerEncryptionKey::class;
   protected $sourceSnapshotEncryptionKeyDataType = '';
   /**
@@ -178,6 +236,34 @@ class Disk extends \Google\Collection
     return $this->architecture;
   }
   /**
+   * @param DiskAsyncReplication
+   */
+  public function setAsyncPrimaryDisk(DiskAsyncReplication $asyncPrimaryDisk)
+  {
+    $this->asyncPrimaryDisk = $asyncPrimaryDisk;
+  }
+  /**
+   * @return DiskAsyncReplication
+   */
+  public function getAsyncPrimaryDisk()
+  {
+    return $this->asyncPrimaryDisk;
+  }
+  /**
+   * @param DiskAsyncReplicationList[]
+   */
+  public function setAsyncSecondaryDisks($asyncSecondaryDisks)
+  {
+    $this->asyncSecondaryDisks = $asyncSecondaryDisks;
+  }
+  /**
+   * @return DiskAsyncReplicationList[]
+   */
+  public function getAsyncSecondaryDisks()
+  {
+    return $this->asyncSecondaryDisks;
+  }
+  /**
    * @param string
    */
   public function setCreationTimestamp($creationTimestamp)
@@ -218,6 +304,20 @@ class Disk extends \Google\Collection
   public function getDiskEncryptionKey()
   {
     return $this->diskEncryptionKey;
+  }
+  /**
+   * @param bool
+   */
+  public function setEnableConfidentialCompute($enableConfidentialCompute)
+  {
+    $this->enableConfidentialCompute = $enableConfidentialCompute;
+  }
+  /**
+   * @return bool
+   */
+  public function getEnableConfidentialCompute()
+  {
+    return $this->enableConfidentialCompute;
   }
   /**
    * @param GuestOsFeature[]
@@ -432,6 +532,20 @@ class Disk extends \Google\Collection
   /**
    * @param string
    */
+  public function setProvisionedThroughput($provisionedThroughput)
+  {
+    $this->provisionedThroughput = $provisionedThroughput;
+  }
+  /**
+   * @return string
+   */
+  public function getProvisionedThroughput()
+  {
+    return $this->provisionedThroughput;
+  }
+  /**
+   * @param string
+   */
   public function setRegion($region)
   {
     $this->region = $region;
@@ -470,6 +584,34 @@ class Disk extends \Google\Collection
   public function getResourcePolicies()
   {
     return $this->resourcePolicies;
+  }
+  /**
+   * @param DiskResourceStatus
+   */
+  public function setResourceStatus(DiskResourceStatus $resourceStatus)
+  {
+    $this->resourceStatus = $resourceStatus;
+  }
+  /**
+   * @return DiskResourceStatus
+   */
+  public function getResourceStatus()
+  {
+    return $this->resourceStatus;
+  }
+  /**
+   * @param bool
+   */
+  public function setSatisfiesPzi($satisfiesPzi)
+  {
+    $this->satisfiesPzi = $satisfiesPzi;
+  }
+  /**
+   * @return bool
+   */
+  public function getSatisfiesPzi()
+  {
+    return $this->satisfiesPzi;
   }
   /**
    * @param bool
@@ -512,6 +654,34 @@ class Disk extends \Google\Collection
   public function getSizeGb()
   {
     return $this->sizeGb;
+  }
+  /**
+   * @param string
+   */
+  public function setSourceConsistencyGroupPolicy($sourceConsistencyGroupPolicy)
+  {
+    $this->sourceConsistencyGroupPolicy = $sourceConsistencyGroupPolicy;
+  }
+  /**
+   * @return string
+   */
+  public function getSourceConsistencyGroupPolicy()
+  {
+    return $this->sourceConsistencyGroupPolicy;
+  }
+  /**
+   * @param string
+   */
+  public function setSourceConsistencyGroupPolicyId($sourceConsistencyGroupPolicyId)
+  {
+    $this->sourceConsistencyGroupPolicyId = $sourceConsistencyGroupPolicyId;
+  }
+  /**
+   * @return string
+   */
+  public function getSourceConsistencyGroupPolicyId()
+  {
+    return $this->sourceConsistencyGroupPolicyId;
   }
   /**
    * @param string

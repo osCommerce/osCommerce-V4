@@ -52,6 +52,12 @@
                                     </div>
                                 {/foreach}
                             </div>
+                            {if !empty($methods.extraParams)}
+                                <div class="panel-extra">
+                                    {$methods.extraParams}
+                                </div>
+                            {/if}
+
                     </div>
             </div>
             

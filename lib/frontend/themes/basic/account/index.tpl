@@ -73,7 +73,7 @@
         </div>
       </li>
       <li>
-        {if \common\helpers\Acl::checkExtensionAllowed('Subscribers', 'allowed') && defined('ENABLE_CUSTOMERS_NEWSLETTER') && ENABLE_CUSTOMERS_NEWSLETTER == 'true' }
+        {if \common\helpers\Extensions::callIfAllowed('Subscribers', 'optionIsCustomerNewsletterEnabled') }
           <h4 class="icon-mail">{$smarty.const.EMAIL_NOTIFICATIONS_TITLE}</h4>
           {Html::beginForm(['account/switch-newsletter'], 'post', [])}
           <div class="info">
@@ -104,7 +104,7 @@
     </ul>
   </div>
 
-  {if \common\helpers\Acl::checkExtensionAllowed('TradeForm') && \common\helpers\Php8::getConst('ENABLE_TRADE_FORM') == 'True'}
+  {if \common\helpers\Extensions::isAllowed('TradeForm')}
     <div class="trade-form-area">{$smarty.const.WOULD_LIKE_TRADE} <a href="{tep_href_link('trade-form')}" class="btn-1">{$smarty.const.TRADE_FORM}</a></div>
   {/if}
 

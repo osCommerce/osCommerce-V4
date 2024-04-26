@@ -22,18 +22,32 @@
     </div>
 {/if}
 {*{if $set == 'extensions'}*}
+{if !empty($manualUrl)}
+    <div>
+        <a href="{$manualUrl}" id="manual" target="_blank">{$smarty.const.TEXT_MANUAL}</a>
+    </div>
+{/if}
     <div>
         <b>Ver:</b> <small>{$version}</small>
     </div>
-
-    {if (\common\helpers\Acl::checkExtensionInstalled($info->module->code))}
-        {if (tep_not_null($info->adminMenu[0]['title']))}
-            <div><b>{$smarty.const.TEXT_MENU}:</b></div>
-            <div class="mb-2">{$info->tree}</div>
-            {if (\common\helpers\Acl::rule(['BOX_HEADING_ADMINISTRATOR', 'BOX_ADMINISTRATOR_BOXES'])) && $countDisabledMenuItems > 0}
-                <div style="margin-top: 20px;"><a target="_blank" class="btn btn-secondary btn-edit btn-block" href="{Yii::$app->urlManager->createUrl(['adminfiles'])}"> {$smarty.const.TEXT_CHANGE_ACL}</a></div>
-            {/if}
-        {/if}
+    {if $menu = \common\helpers\MenuHelper::getExtensionHtmlMenu($info->module->code, true, 'extension-menu-item mt-1')}
+        <div class="extensions-menu-title"><b>{$smarty.const.TEXT_MENU}:</b></div>
+        {$menu}
     {/if}
 
+{if \common\helpers\System::isDevelopment() && $info->module->getType() == 'extension'}
+    <div style="margin-top: 20px;">
+{*        {use class="\yii\helpers\Inflector"}*}
+{*        {$translateLink = "extensions/"|cat:Inflector::camel2id($info->module->code)}*}
+        <a class="btn btn-secondary btn-block btn-tr-refresh" href="{Yii::$app->urlManager->createUrl(['extensions', 'module' => $info->module->code, 'action' => 'actionRefreshTranslation'])}"><i class="icon-refresh">&nbsp;&nbsp;</i>Refresh Translations</a><br>
+        <script>
+            $(document).ready(function() {
+                $('.btn-tr-refresh').popUp({
+                    box: "<div class='popup-box-wrap'><div class='around-pop-up'></div><div class='popup-box popupCredithistory'><div class='popup-heading'>Refresh Translations</div><div class='pop-up-close'></div><div class='pop-up-content'><div class='preloader'></div></div></div></div>"
+                });
+            });
+        </script>
+{*        <a target="_blank" class="btn btn-secondary btn-block" href="{Yii::$app->urlManager->createUrl(['texts', 'by' => 'translation_entity', 'search' => $translateLink])}"><i class="icon-edit">&nbsp;&nbsp;</i>Edit Translations</a>*}
+    </div>
+{/if}
 {*{/if}*}

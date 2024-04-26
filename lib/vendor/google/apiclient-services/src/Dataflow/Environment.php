@@ -28,6 +28,10 @@ class Environment extends \Google\Collection
    * @var string
    */
   public $dataset;
+  /**
+   * @var DebugOptions
+   */
+  public $debugOptions;
   protected $debugOptionsType = DebugOptions::class;
   protected $debugOptionsDataType = '';
   /**
@@ -65,7 +69,15 @@ class Environment extends \Google\Collection
   /**
    * @var string
    */
+  public $streamingMode;
+  /**
+   * @var string
+   */
   public $tempStoragePrefix;
+  /**
+   * @var bool
+   */
+  public $useStreamingEngineResourceBasedBilling;
   /**
    * @var array[]
    */
@@ -74,6 +86,10 @@ class Environment extends \Google\Collection
    * @var array[]
    */
   public $version;
+  /**
+   * @var WorkerPool[]
+   */
+  public $workerPools;
   protected $workerPoolsType = WorkerPool::class;
   protected $workerPoolsDataType = 'array';
   /**
@@ -242,6 +258,20 @@ class Environment extends \Google\Collection
   /**
    * @param string
    */
+  public function setStreamingMode($streamingMode)
+  {
+    $this->streamingMode = $streamingMode;
+  }
+  /**
+   * @return string
+   */
+  public function getStreamingMode()
+  {
+    return $this->streamingMode;
+  }
+  /**
+   * @param string
+   */
   public function setTempStoragePrefix($tempStoragePrefix)
   {
     $this->tempStoragePrefix = $tempStoragePrefix;
@@ -252,6 +282,20 @@ class Environment extends \Google\Collection
   public function getTempStoragePrefix()
   {
     return $this->tempStoragePrefix;
+  }
+  /**
+   * @param bool
+   */
+  public function setUseStreamingEngineResourceBasedBilling($useStreamingEngineResourceBasedBilling)
+  {
+    $this->useStreamingEngineResourceBasedBilling = $useStreamingEngineResourceBasedBilling;
+  }
+  /**
+   * @return bool
+   */
+  public function getUseStreamingEngineResourceBasedBilling()
+  {
+    return $this->useStreamingEngineResourceBasedBilling;
   }
   /**
    * @param array[]

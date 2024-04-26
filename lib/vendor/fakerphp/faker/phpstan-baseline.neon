@@ -16,11 +16,6 @@ parameters:
 			path: src/Faker/Calculator/Luhn.php
 
 		-
-			message: "#^Method Faker\\\\Calculator\\\\Luhn\\:\\:computeCheckDigit\\(\\) should return string but returns int\\.$#"
-			count: 1
-			path: src/Faker/Calculator/Luhn.php
-
-		-
 			message: "#^Result of && is always false\\.$#"
 			count: 1
 			path: src/Faker/Container/ContainerBuilder.php
@@ -611,7 +606,7 @@ parameters:
 			path: src/Faker/ORM/Spot/Populator.php
 
 		-
-			message: "#^Instanceof between array and Traversable will always evaluate to false\\.$#"
+			message: "#^Class UnitEnum not found\\.$#"
 			count: 2
 			path: src/Faker/Provider/Base.php
 
@@ -640,11 +635,6 @@ parameters:
 
 		-
 			message: "#^Parameter \\$validator of method Faker\\\\Provider\\\\Base\\:\\:valid\\(\\) has invalid type Faker\\\\Provider\\\\Closure\\.$#"
-			count: 1
-			path: src/Faker/Provider/Base.php
-
-		-
-			message: "#^Result of && is always false\\.$#"
 			count: 1
 			path: src/Faker/Provider/Base.php
 

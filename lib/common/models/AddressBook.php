@@ -75,7 +75,7 @@ class AddressBook extends ActiveRecord {
     public function getCountry(){
         $languages_id = \Yii::$app->settings->get('languages_id');
         return $this->hasOne(Countries::className(), ['countries_id' => 'entry_country_id'])
-                ->where([Countries::tableName().'.language_id' => (int)$languages_id]);
+                ->andOnCondition([Countries::tableName().'.language_id' => (int)$languages_id]);
     }
 
     public function editAddressBookAfterEdit(array $addressBook): void

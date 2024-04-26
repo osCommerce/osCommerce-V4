@@ -38,7 +38,6 @@ class ModulesController extends Sceleton
     public $validated_extensions = array('php');
     protected $selected_platform_id;
     private $_page_title = '';
-    private static $countDisabledMenuItem = 0;
 
     public function __construct($id, $module)
     {
@@ -815,6 +814,7 @@ class ModulesController extends Sceleton
 
         if (class_exists($class) && is_subclass_of($class,"common\\classes\\modules\\{$this->module_class}") ) {
             $module = new $class;
+            $manualUrl = $class::getManualUrl();
             $this->fetchArrays($module, $file, $installed_modules, $modules_files);
             if($mInfo = $this->createInfo($module, $set)){
                 $sort_order_key_name = $this->module_const_prefix . strtoupper($class).'_SORT_ORDER';
@@ -875,11 +875,6 @@ class ModulesController extends Sceleton
                     $keys = substr($keys, 0, strrpos($keys, '<br>'));
                     $editLink = Yii::$app->urlManager->createUrl(['modules/edit','platform_id'=>$this->selected_platform_id,'set'=>$set, 'module' => $mInfo->code]);
                     $translateLink = Yii::$app->urlManager->createUrl(['modules/translation','platform_id'=>$this->selected_platform_id,'set'=>$set, 'module' => $mInfo->code]);
-                    if($module->isExtension())
-                    {
-                        $result->tree = self::buildExtensionMenuTree($module::getAdminMenu());
-                        $result->adminMenu = $module::getAdminMenu();
-                    }
 
                 }
                 return $this->renderPartial('view', [
@@ -892,160 +887,19 @@ class ModulesController extends Sceleton
                     'editLink' => $editLink ?? null,
                     'translateLink' => $translateLink ?? null,
                     'description' => $module::getDescription(),
-                    'countDisabledMenuItems' => self::$countDisabledMenuItem,
                     'selected_platform_id' => $this->selected_platform_id,
-                    'version' => $module::getVersionRev()
+                    'version' => $module::getVersionRev(),
+                    'manualUrl' => $manualUrl,
                 ]);
             }
         }
     }
 
-    /**
-     * @param $adminMenu array this is a result of {@see $module::getAdminMenu()}
-     * @param $level integer hierarchy level depth. Default value is 0
-     * @return string Extension menu in html format or empty string
-     */
-    private static function buildExtensionMenuTree($adminMenu, $level = 0, $ignoreRoot = false)
-    {
-        if(!is_array($adminMenu)){ // If empty $adminMenu then return nothing
-            return '';
-        }
-        $res = "";
-        foreach ($adminMenu as $item)
-        {
-            if(isset($item['parent']) && !$ignoreRoot)
-            {
-                $rootLevel = 0;
-                foreach (array_reverse(  // Reversing the root values because the buildRootMenu() method searches "from bottom to top"
-                             array_diff(   // remove empty value from array
-                                 explode('|', self::buildRootMenu($item['parent'])), array('')
-                             )) as $root)
-                {
-                    $res .= '<div>'.str_repeat('&nbsp;&nbsp;&nbsp;&nbsp;', $rootLevel).$root.'</div>'; // Adding a visual shift
-                    $rootLevel++;
-                }
-                $level = $rootLevel; // End work with root menu items. Transferring the shift level to the extension menu items
-            }
-            $title = (defined($item['title'])) ? constant($item['title']) : $item['title'];  // Replacing the title with a translation
-            if(!isset($item['path']) or empty($item['path']) or is_array($item['child']??null)) {
-                $res .= '<div>' . str_repeat('&nbsp;&nbsp;&nbsp;&nbsp;', $level) . '<button class="btn btn-disabled" style="margin-top: 5px;" href="#" disabled="disabled">' . $title . '</button></div>';
-            }elseif(!self::isMenuItemEnabled($item['title']))
-            {
-                self::$countDisabledMenuItem++;
-                $res .= '<div>'.str_repeat('&nbsp;&nbsp;&nbsp;&nbsp;', $level).'<button class="btn btn-disabled" style="margin-top: 5px;" href="#" disabled="disabled">'.$title.'</button></div>';
-            }elseif(!self::isMenuItemAllowed($item['title']))
-            {
-                $res .= '<div>'.str_repeat('&nbsp;&nbsp;&nbsp;&nbsp;', $level).'<button class="btn btn-primary" style="margin-top: 5px;" href="#">'.$title.'</button></div>';
-            }else{
-                $res .= '<div>'.str_repeat('&nbsp;&nbsp;&nbsp;&nbsp;', $level).'<a class="btn btn-primary" style="margin-top: 5px;" href="'.Yii::$app->urlManager->createUrl([$item['path']]).'">'.$title.'</a></div>';
-            }
-            if(isset($item['child']))
-            {
-                $res .= self::buildExtensionMenuTree($item['child'],$level+1, true);
-            }
 
-        }
-        return $res;
-    }
-
-    /**
-     * This method builds the missing top menu levels if {@see $module::getAdminMenu()} method returns a menu with an incomplete hierarchy
-     * @param $id_or_title string | integer
-     * @param $level integer
-     * @return string|void
-     */
-
-    private static function buildRootMenu($id_or_title, $level = 0)
-    {
-        $root = "";
-        if(is_string($id_or_title))
-        {
-            $item = \common\helpers\MenuHelper::getAdminMenuItemByTitle($id_or_title);
-        }elseif (is_int($id_or_title))
-        {
-            $item = \common\models\AdminBoxes::findOne(['box_id' => $id_or_title]);
-        }
-        if($item)
-        {
-            $title = (defined($item->title)) ? constant($item->title) : $item->title; // Replacing the title with a translation
-            $root .= '<button class="btn btn-disabled" style="margin-top: 5px;" href="#" disabled="disabled">'.$title.'</button>|';
-            if($item->parent_id > 0)
-            {
-                $root .= self::buildRootMenu($item->parent_id, $level+1);
-            }
-            return $root;
-        }
-    }
-
-    /**
-     * @param $item string  Menu item. Example: BOX_HEADING_CATALOG
-     * @return bool
-     */
-    private static function isMenuItemEnabled($item)
-    {
-        $chain = array_reverse(@explode(',', self::getMenuItemChain($item)));
-        return \common\helpers\Acl::rule($chain);
-    }
-
-    /**
-     * This method searches for menu items and checks the ACL
-     *
-     * @param $id_or_title string | integer
-     * @return boolean
-     *
-     */
-    private static function isMenuItemAllowed($id_or_title)
-    {
-        $item = false;
-        if(is_string($id_or_title))
-        {
-            $item = \common\helpers\MenuHelper::getAdminMenuItemByTitle($id_or_title);
-        }elseif (is_int($id_or_title))
-        {
-            $item = \common\models\AdminBoxes::findOne(['box_id' => $id_or_title]);
-        }
-        if($item)
-        {
-            if(empty($item->acl_check))
-            {
-                return true;
-            }else{
-                $acl = explode(',', $item->acl_check);
-                return \common\helpers\Acl::checkExtensionAllowed($acl[0]);
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Collect ACL chain from menu item
-     * @param $menuItem string Menu item. Example: BOX_HEADING_CATALOG
-     * @return string|void
-     */
-    public static function getMenuItemChain($menuItem)
-    {
-        $root = "";
-        if(is_string($menuItem))
-        {
-            $item = \common\helpers\MenuHelper::getAdminMenuItemByTitle($menuItem);
-        }elseif (is_int($menuItem))
-        {
-            $item = \common\models\AdminBoxes::findOne(['box_id' => $menuItem]);
-        }
-        if($item)
-        {
-            $root .= $item->title;
-            if($item->parent_id > 0)
-            {
-                $root .= ','.self::getMenuItemChain($item->parent_id);
-            }
-            return $root;
-        }
-    }
 
     private function buildKeyHtml($class, $key, $set_function, $value, $languages_id)
     {
-        $method = trim(substr($set_function, 0, strpos($set_function, '(')));
+        $method = trim(substr($set_function ?? '', 0, strpos($set_function??'', '(')));
         if ($set_function && function_exists($method) ) {
             //$_args = preg_replace("/".$method."[\s\(]*/i", "", $set_function). "'" . $value['value'] . "', '" . $key . "'";
             $_args = [$value, $key];
@@ -1203,11 +1057,11 @@ class ModulesController extends Sceleton
                         $added = true;
 //                      $restriction .= '<div class="after modules-line"><div class="modules-label"><b>' . $value['title'] . '</b><div class="modules-description">' . $value['description'] . '</div></div>';
                         $restriction .= '<div class=""><div class=""><b>' . $value['title'] . '</b><div class="modules-description">' . $value['description'] . '</div></div>';
-                        $restriction .= $this->buildKeyHtml($class, $key, $value['set_function'], $value['value'], $language_id);
+                        $restriction .= $this->buildKeyHtml($class, $key, $value['set_function'], $value['value'], $languages_id);
                         $restriction .= '</div><br>';
                     }
                     if ($added ?? false) {
-                        $keys = substr($keys, 0, strrpos($keys, '<br>'));
+                        //$keys = substr($keys, 0, strrpos($keys, '<br>'));
                     }
                 }
             }

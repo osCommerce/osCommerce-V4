@@ -71,7 +71,7 @@
                 if (form.querySelector('.terms-conditions').checked){
                     return true;
                 }
-                alertMessage('{$smarty.const.TEXT_PLEASE_TERMS}');
+                alertMessage('{$smarty.const.TEXT_PLEASE_TERMS|escape:"javascript"}');
                 return false;
             {/if}
         {/if}

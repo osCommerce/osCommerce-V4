@@ -12,6 +12,7 @@ trait TlErrorHandlerTrait
                     if ($code == E_WARNING && (
                             preg_match('/^(Attempt to read property|Undefined property|Undefined variable|Undefined array key)/', $message) ||
                             preg_match('/^Trying to access array offset on value of type (null|bool|int)/', $message) ||
+                            preg_match('/^Trying to access array offset on null/', $message) ||
                             preg_match('/^Constant [\w_]* already defined/', $message)
                         )) {
                         \Yii::warning("$message at $file:$line", 'PHP8Warning');

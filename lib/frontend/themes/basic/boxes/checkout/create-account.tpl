@@ -53,7 +53,7 @@
 
 
 
-        {if \common\helpers\Acl::checkExtensionAllowed('Subscribers', 'allowed') && defined('ENABLE_CUSTOMERS_NEWSLETTER') && ENABLE_CUSTOMERS_NEWSLETTER == 'true' }
+        {if \common\helpers\Extensions::callIfAllowed('Subscribers', 'optionIsCustomerNewsletterEnabled') }
             <div class="col-full newsletter-switcher">
                 <label class="slim">
                     {Html::activeCheckbox($model, 'newsletter', ['class' => 'candlestick newsletter', 'label' => {$smarty.const.RECEIVE_REGULAR_OFFERS}, 'uncheck' => 0 ])}

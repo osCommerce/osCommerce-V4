@@ -24,18 +24,34 @@ class HttpRouteRuleMatch extends \Google\Collection
    * @var string
    */
   public $fullPathMatch;
+  /**
+   * @var HttpHeaderMatch[]
+   */
+  public $headerMatches;
   protected $headerMatchesType = HttpHeaderMatch::class;
   protected $headerMatchesDataType = 'array';
   /**
    * @var bool
    */
   public $ignoreCase;
+  /**
+   * @var MetadataFilter[]
+   */
+  public $metadataFilters;
   protected $metadataFiltersType = MetadataFilter::class;
   protected $metadataFiltersDataType = 'array';
   /**
    * @var string
    */
+  public $pathTemplateMatch;
+  /**
+   * @var string
+   */
   public $prefixMatch;
+  /**
+   * @var HttpQueryParameterMatch[]
+   */
+  public $queryParameterMatches;
   protected $queryParameterMatchesType = HttpQueryParameterMatch::class;
   protected $queryParameterMatchesDataType = 'array';
   /**
@@ -98,6 +114,20 @@ class HttpRouteRuleMatch extends \Google\Collection
   public function getMetadataFilters()
   {
     return $this->metadataFilters;
+  }
+  /**
+   * @param string
+   */
+  public function setPathTemplateMatch($pathTemplateMatch)
+  {
+    $this->pathTemplateMatch = $pathTemplateMatch;
+  }
+  /**
+   * @return string
+   */
+  public function getPathTemplateMatch()
+  {
+    return $this->pathTemplateMatch;
   }
   /**
    * @param string

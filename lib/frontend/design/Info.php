@@ -44,14 +44,14 @@ class Info
     $params = Yii::$app->request->get();
 
     $referer = Yii::$app->request->headers['referer'] ?? ''; // php 8.1: strpos(): Passing null to parameter #1 ($haystack) of type string is deprecated
-    if ( ( strpos($referer, '/admin/design') && \common\helpers\Acl::checkRuleByDeviceHash(['BOX_HEADING_DESIGN_CONTROLS', 'BOX_HEADING_THEMES']) ) ||
+    if ( ( strpos($referer, DIR_WS_HTTP_ADMIN_CATALOG . 'design') && \common\helpers\Acl::checkRuleByDeviceHash(['BOX_HEADING_DESIGN_CONTROLS', 'BOX_HEADING_THEMES']) ) ||
         ((
-         ( strpos($referer, '/admin/categories/productedit') && \common\helpers\Acl::checkRuleByDeviceHash(['BOX_HEADING_CATALOG', 'BOX_CATALOG_CATEGORIES_PRODUCTS']) ) ||
-         ( strpos($referer, '/admin/platforms' ) && \common\helpers\Acl::checkRuleByDeviceHash(['BOX_HEADING_FRONENDS']) ) ||
-         ( strpos($referer, '/admin/google_analytics' ) && \common\helpers\Acl::checkRuleByDeviceHash(['BOX_HEADING_SEO', 'BOX_HEADING_GOOGLE_ANALYTICS']) ) ||
-         ( strpos($referer, '/admin/customers' ) && \common\helpers\Acl::checkRuleByDeviceHash(['BOX_HEADING_CUSTOMERS', 'BOX_CUSTOMERS_CUSTOMERS']) ) ||
-         ( strpos($referer, '/admin/editor' ) && \common\helpers\Acl::checkRuleByDeviceHash(['BOX_HEADING_CUSTOMERS', 'BOX_CUSTOMERS_CUSTOMERS']) ) ||
-         ( strpos($referer, '/admin/orders' ) && \common\helpers\Acl::checkRuleByDeviceHash(['BOX_HEADING_CUSTOMERS', 'BOX_CUSTOMERS_ORDERS']) )
+         ( strpos($referer, DIR_WS_HTTP_ADMIN_CATALOG . 'categories/productedit') && \common\helpers\Acl::checkRuleByDeviceHash(['BOX_HEADING_CATALOG', 'BOX_CATALOG_CATEGORIES_PRODUCTS']) ) ||
+         ( strpos($referer, DIR_WS_HTTP_ADMIN_CATALOG . 'platforms' ) && \common\helpers\Acl::checkRuleByDeviceHash(['BOX_HEADING_FRONENDS']) ) ||
+         ( strpos($referer, DIR_WS_HTTP_ADMIN_CATALOG . 'google_analytics' ) && \common\helpers\Acl::checkRuleByDeviceHash(['BOX_HEADING_SEO', 'BOX_HEADING_GOOGLE_ANALYTICS']) ) ||
+         ( strpos($referer, DIR_WS_HTTP_ADMIN_CATALOG . 'customers' ) && \common\helpers\Acl::checkRuleByDeviceHash(['BOX_HEADING_CUSTOMERS', 'BOX_CUSTOMERS_CUSTOMERS']) ) ||
+         ( strpos($referer, DIR_WS_HTTP_ADMIN_CATALOG . 'editor' ) && \common\helpers\Acl::checkRuleByDeviceHash(['BOX_HEADING_CUSTOMERS', 'BOX_CUSTOMERS_CUSTOMERS']) ) ||
+         ( strpos($referer, DIR_WS_HTTP_ADMIN_CATALOG . 'orders' ) && \common\helpers\Acl::checkRuleByDeviceHash(['BOX_HEADING_CUSTOMERS', 'BOX_CUSTOMERS_ORDERS']) )
          //( \common\helpers\Acl::checkRuleByDeviceHash(['BOX_HEADING_CUSTOMERS', 'BOX_CUSTOMERS_ORDERS']) )// for payment frames
         ) && ((Yii::$app->controller->id ?? null) . '/' . (Yii::$app->controller->action->id ?? null) != 'index/index')) // don't confuse admin with logged in view
           /*|| $params['is_admin'] can't check access level this way*/
@@ -73,7 +73,7 @@ class Info
   
   public static function isAdminOrders()
   {
-    if (strpos(Yii::$app->request->headers['referer'], '/admin/orders' )){
+    if (strpos(Yii::$app->request->headers['referer'], DIR_WS_HTTP_ADMIN_CATALOG . 'orders' )){
       return true;
     } else {
       return false;
@@ -153,8 +153,18 @@ class Info
               $settings['itemElements'] = \frontend\design\boxes\ProductListing::getItemElements($listingName);
           }
 
+        /** @var \common\extensions\ProductPropertiesFilters\classes\StockFilter $stockFilter */
+        $stockFilter = ($ext = \common\helpers\Extensions::isAllowed('ProductPropertiesFilters'))? $ext::createStockFilter($products_ids) : null;
         foreach ($products as $products_arr) {
           $products_arr['id'] = $products_arr['products_id'];
+          if (!empty($stockFilter) && $stockFilter->shouldBeHidden($products_arr['id'])) {
+              $ret[] = [
+                  'products_id' => $products_arr['products_id'],
+                  'exclude_from_container' => true,
+              ];
+              continue;
+          }
+
           if (!empty($products_arr['products_tax_class_id']) && !isset($products_arr['tax_rate'])) {
               $products_arr['tax_rate'] = \common\helpers\Tax::get_tax_rate($products_arr['products_tax_class_id']);
           }
@@ -175,7 +185,7 @@ class Info
               $products_arr = array_merge($pInstance->getSpecialPriceDetails(['qty'=>1]), $products_arr);
               $products_arr['price_old'] = $currencies->display_price($product_price, \common\helpers\Tax::get_tax_rate($products_arr['products_tax_class_id']));
               $products_arr['price_special'] = $currencies->display_price($special_price, \common\helpers\Tax::get_tax_rate($products_arr['products_tax_class_id']));
-              if (abs($special_price) < 0.01 && defined('PRODUCT_PRICE_FREE') && PRODUCT_PRICE_FREE == 'true') {
+              if (\common\helpers\Extensions::callIfAllowed('ModulesZeroPrice', 'optionPriceFree') && (abs($special_price) < 0.01)) {
                 $products_arr['price_special'] = TEXT_FREE;
               }
               // clear true final price
@@ -381,6 +391,34 @@ class Info
                 if ($details['full_bundle_price_clear'] > $details['actual_bundle_price_clear']) {
                   $products_arr['price_old'] = $details['full_bundle_price'];
                   $products_arr['price_special'] = $details['actual_bundle_price'];
+// {{
+                    $products_arr['special_promote_type'] = 0;
+                    if (defined('SALES_DEFAULT_PROMO_TYPE') && SALES_DEFAULT_PROMO_TYPE != 'None') {
+                        switch (SALES_DEFAULT_PROMO_TYPE) {
+                            case 'Percent':
+                                $products_arr['special_promote_type'] = 1;
+                                break;
+                            case 'Fixed':
+                                $products_arr['special_promote_type'] = 2;
+                                break;
+                        }
+                    }
+                    if ($products_arr['special_promote_type'] == 1) { //percent
+                        if ($details['full_bundle_price_clear'] > 0) {
+                            $special_promo_value = round(($details['full_bundle_price_clear'] - $details['actual_bundle_price_clear']) / $details['full_bundle_price_clear'] * 100);
+                        } else {
+                            $special_promo_value = 100;
+                        }
+                        $special_promo_str = $special_promo_value . '%';
+                    } elseif ($products_arr['special_promote_type'] == 2) { //fixed
+                        $special_promo_value = $currencies->format_clear($details['full_bundle_price_clear'] - $details['actual_bundle_price_clear'], false);
+                        $special_promo_str = $currencies->format($details['full_bundle_price_clear'] - $details['actual_bundle_price_clear'], false);
+                    }
+                    $products_arr += [
+                        'special_promo_str' => $special_promo_str ?? null,
+                        'special_promo_value' => $special_promo_value ?? null,
+                    ];
+// }}
                 } else {
                   $products_arr['price'] = $details['actual_bundle_price'];
                 }
@@ -400,8 +438,7 @@ class Info
             }
 
             $products_arr['order_quantity_data'] = \common\helpers\Product::get_product_order_quantity($products_arr['products_id'], $products_arr);
-
-            if (isset($products_arr['calculated_price']) && abs($products_arr['calculated_price']) < 0.01 && defined('PRODUCT_PRICE_FREE') && PRODUCT_PRICE_FREE == 'true') {
+            if (\common\helpers\Extensions::callIfAllowed('ModulesZeroPrice', 'optionPriceFree') && isset($products_arr['calculated_price']) && abs($products_arr['calculated_price']) < 0.01) {
                 $products_arr['price'] = TEXT_FREE;
             }
 

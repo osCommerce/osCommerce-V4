@@ -50,14 +50,29 @@ class ProductsQuery extends ActiveQuery{
 
     public function addFrontendDescription($products_name_field = 'products_name')
     {
-        $languages_id = \Yii::$app->settings->get('languages_id');
-        $platform_id_pri = (int) \Yii::$app->get('platform')->config()->getPlatformToDescription();
-        $platform_id_def = intval(\common\classes\platform::defaultId());
-        return $this->wDescription('pd1', $languages_id, $platform_id_pri)
-                    ->wDescription('pd2', $languages_id, $platform_id_def)
-                    ->addSelect([$products_name_field => new \yii\db\Expression('if(length(pd1.products_name), pd1.products_name, pd2.products_name)')] );
+        $languageId = (int) \Yii::$app->settings->get('languages_id');
+        return $this->addIfDescription(
+            $products_name_field,
+            $languageId,
+            (int) \Yii::$app->get('platform')->config()->getPlatformToDescription(),
+            'pd1',
+            $languageId,
+        );
     }
 
+    public function addIfDescription($products_name_field, $languageId, $platformId, $alias = 'pd1', $languageIdDef = null, $platformIdDef = null, $aliasDef = 'pd2')
+    {
+        if (is_null($languageIdDef)) {
+            $languageIdDef = (int) \common\helpers\Language::get_default_language_id();
+        }
+        if (is_null($platformIdDef)) {
+            $platformIdDef = (int) \common\classes\platform::defaultId();
+        }
+
+        return $this->wDescription($alias, $languageId, $platformId)
+            ->wDescription($aliasDef, $languageIdDef, $platformIdDef)
+            ->addSelect([$products_name_field => new \yii\db\Expression("if(length({$alias}.products_name), {$alias}.products_name, {$aliasDef}.products_name)")] );
+    }
 
     public function active()
     {

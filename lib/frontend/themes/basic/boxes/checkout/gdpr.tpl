@@ -168,12 +168,12 @@
         var count = 0;
         $('form', box).on('submit', function(e){
             if (!document.register.querySelector('.terms-conditions').checked){
-                alertMessage('{$smarty.const.TEXT_PLEASE_TERMS}');
+                alertMessage('{$smarty.const.TEXT_PLEASE_TERMS|escape:"javascript"}');
                 return false;
             }            
 {if in_array(ACCOUNT_DOB, ['required_register', 'visible_register']) && ACCOUNT_GDPR == 'true'}
             if (ageStatement === 'default') {
-                alertMessage('{$smarty.const.TEXT_PLEASE_AGE}');
+                alertMessage('{$smarty.const.TEXT_PLEASE_AGE|escape:"javascript"}');
                 return false;
             }
 {/if}            

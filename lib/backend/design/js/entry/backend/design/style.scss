@@ -123,9 +123,9 @@ div.widget-settings {
         font-family: 'trueloaded';
         color: $font-color-4;
     }
-    .widget-item[data-name="Image"] {
+    /*.widget-item[data-name="Image"] {
         display: none !important;
-    }
+    }*/
     .ui-sortable {
         padding-left: 0;
     }
@@ -880,32 +880,96 @@ div.widget-settings {
         cursor: default;
     }
     .main-styles {
-        text-align: center;
         vertical-align: middle;
+    }
+    .widget-header .sort-handle {
+        margin-right: 20px;
+    }
+    .widget-header .btn-edit {
+        font-weight: normal;
+        margin-left: 20px;
+        cursor: pointer;
+    }
+    .widget-header .edit-group-name {
+        flex-grow: 1;
+        display: flex;
+        align-items: center;
+    }
+    .widget-header .edit-group-name input {
+        max-width: 200px;
+    }
+    .widget-header .btn-save {
+        cursor: pointer;
+        margin-left: 20px;
+        font-size: 18px;
+    }
+    .widget-header .btn-save:before {
+        content: '\f00c';
+        font-family: FontAwesome;
+    }
+    .widget-header .btn-remove {
+        font-weight: normal;
+        margin-left: 20px;
+        cursor: pointer;
+    }
+    .widget-header .btn-remove:before {
+        content: '\f014';
+        font-family: FontAwesome;
+        color: var(--color-danger);
+    }
+    .style-type {
+        width: 110px;
     }
 }
 
 .add-code {
     height: 800px;
     overflow: auto;
-}
-.add-code .item {
-    margin-bottom: 5px;
-    font-size: 13px;
-    cursor: pointer;
+    .item {
+        margin-bottom: 5px;
+        font-size: 13px;
+        cursor: pointer;
 
-    .style-color {
-        width: 16px;
-        height: 16px;
-        border: 1px solid var(--border-color-midle);
-        display: inline-block;
-        vertical-align: middle;
-        position: relative;
-        top: -1px;
+        .style-color {
+            width: 16px;
+            height: 16px;
+            border: 1px solid var(--border-color-midle);
+            display: inline-block;
+            vertical-align: middle;
+            position: relative;
+            top: -1px;
+        }
+
+        .name {
+            font-family: Monospace;
+            color: #000;
+        }
     }
-    .name {
-        font-family: Monospace;
-        color: #000;
+    h4 {
+        cursor: pointer;
+    }
+    .search-style {
+        margin-bottom: 20px;
+    }
+    .group-name {
+        position: relative;
+        padding: 5px 10px;
+        margin-top: 10px;
+        border-top: 1px solid var(--border-color-tiny);
+        border-bottom: 1px solid var(--border-color-tiny);
+        background: var(--background-color-4);
+        &:before {
+            content: '-';
+            position: absolute;
+            right: 10px;
+            top: 4px;
+        }
+        &.closed:before {
+            content: '+';
+        }
+    }
+    .group-styles {
+        padding-left: 10px;
     }
 }
 
@@ -930,7 +994,12 @@ div.widget-settings {
         font-family: FontAwesome;
     }
     .select-style-selected {
-        padding: 3px 0 3px 10px;
+        padding: 3px 0 3px 5px;
+        white-space: nowrap;
+        cursor: default;
+        .value {
+            cursor: default;
+        }
     }
     .style-color {
         width: 16px;
@@ -940,6 +1009,7 @@ div.widget-settings {
         vertical-align: middle;
         position: relative;
         top: -1px;
+        margin-right: 5px;
     }
     .select-style-content {
         position: absolute;
@@ -949,35 +1019,64 @@ div.widget-settings {
         border: 1px solid var(--border-color-midle);
         display: none;
         min-width: 100%;
-        max-height: 300px;
-        overflow: auto;
         z-index: 100;
+    }
+    h4.group-name {
+        margin: 7px 0 0;
+        padding: 3px 0 3px 10px;
+        background: var(--background-color-1);
+    }
+    .main-styles-list {
+        min-width: 100%;
         max-height: 300px;
         overflow: auto;
     }
-    .select-style-content .main-styles-list > div {
+    .select-style-content .main-styles-list .group-styles > div {
         padding: 2px 10px;
         cursor: pointer;
+        white-space: nowrap;
     }
-    &:hover .select-style-content {
+    .select-style-around {
+        z-index: 99;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        display: none;
+    }
+    &.opened .select-style-content,
+    &.opened .select-style-around {
         display: block;
     }
-    .select-style-content .main-styles-list > div:hover {
+    .select-style-content .main-styles-list .group-styles > div:hover {
         background: var(--background-color-3);
     }
-    .select-style-content .main-styles-list > div.selected {
+    .select-style-content .main-styles-list .group-styles > div.selected {
         background: var(--background-color-2);
     }
     .name {
         font-weight: 600;
+        white-space: nowrap;
     }
     .add-color{
         text-align: center;
         font-weight: 600;
         padding: 5px !important;
     }
+    .search-style {
+        position: relative;
+    }
+    .search-style:before {
+        position: absolute;
+        left: 7px;
+        top: 4px;
+        content: '\f002';
+        font-family: FontAwesome;
+    }
     .search-style input {
         width: 100%;
+        padding-left: 30px !important;
     }
 }
 .setting-row .select-style {

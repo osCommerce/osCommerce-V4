@@ -86,7 +86,7 @@
 
     function checkTerms2(form) {
         if (!form.querySelector('.terms-conditions').checked) {
-            alert('{$smarty.const.TEXT_PLEASE_TERMS}');
+            alert('{$smarty.const.TEXT_PLEASE_TERMS|escape:"javascript"}');
             return false;
         }
 {if in_array(ACCOUNT_DOB, ['required_register', 'visible_register']) && ACCOUNT_GDPR == 'true'}

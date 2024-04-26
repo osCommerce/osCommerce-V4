@@ -3,12 +3,18 @@
 namespace PHPStan\PhpDocParser\Ast\ToString;
 
 use Generator;
+use PHPStan\PhpDocParser\Ast\ConstExpr\ConstExprIntegerNode;
 use PHPStan\PhpDocParser\Ast\ConstExpr\ConstExprStringNode;
 use PHPStan\PhpDocParser\Ast\Node;
 use PHPStan\PhpDocParser\Ast\PhpDoc\AssertTagMethodValueNode;
 use PHPStan\PhpDocParser\Ast\PhpDoc\AssertTagPropertyValueNode;
 use PHPStan\PhpDocParser\Ast\PhpDoc\AssertTagValueNode;
 use PHPStan\PhpDocParser\Ast\PhpDoc\DeprecatedTagValueNode;
+use PHPStan\PhpDocParser\Ast\PhpDoc\Doctrine\DoctrineAnnotation;
+use PHPStan\PhpDocParser\Ast\PhpDoc\Doctrine\DoctrineArgument;
+use PHPStan\PhpDocParser\Ast\PhpDoc\Doctrine\DoctrineArray;
+use PHPStan\PhpDocParser\Ast\PhpDoc\Doctrine\DoctrineArrayItem;
+use PHPStan\PhpDocParser\Ast\PhpDoc\Doctrine\DoctrineTagValueNode;
 use PHPStan\PhpDocParser\Ast\PhpDoc\ExtendsTagValueNode;
 use PHPStan\PhpDocParser\Ast\PhpDoc\GenericTagValueNode;
 use PHPStan\PhpDocParser\Ast\PhpDoc\ImplementsTagValueNode;
@@ -22,6 +28,8 @@ use PHPStan\PhpDocParser\Ast\PhpDoc\PhpDocNode;
 use PHPStan\PhpDocParser\Ast\PhpDoc\PhpDocTagNode;
 use PHPStan\PhpDocParser\Ast\PhpDoc\PhpDocTextNode;
 use PHPStan\PhpDocParser\Ast\PhpDoc\PropertyTagValueNode;
+use PHPStan\PhpDocParser\Ast\PhpDoc\RequireExtendsTagValueNode;
+use PHPStan\PhpDocParser\Ast\PhpDoc\RequireImplementsTagValueNode;
 use PHPStan\PhpDocParser\Ast\PhpDoc\ReturnTagValueNode;
 use PHPStan\PhpDocParser\Ast\PhpDoc\SelfOutTagValueNode;
 use PHPStan\PhpDocParser\Ast\PhpDoc\TemplateTagValueNode;
@@ -35,6 +43,7 @@ use PHPStan\PhpDocParser\Ast\Type\GenericTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\IdentifierTypeNode;
 use PHPStan\PhpDocParser\Lexer\Lexer;
 use PHPStan\PhpDocParser\Parser\ParserException;
+use PHPStan\PhpDocParser\Printer\Printer;
 use PHPUnit\Framework\TestCase;
 
 class PhpDocToStringTest extends TestCase
@@ -49,14 +58,37 @@ class PhpDocToStringTest extends TestCase
 	}
 
 	/**
+	 * @dataProvider provideFullPhpDocCases
+	 */
+	public function testFullPhpDocPrinter(string $expected, Node $node): void
+	{
+		$printer = new Printer();
+		$this->assertSame($expected, $printer->print($node));
+	}
+
+	/**
 	 * @dataProvider provideOtherCases
 	 * @dataProvider provideMethodCases
 	 * @dataProvider provideClassCases
 	 * @dataProvider provideAssertionCases
+	 * @dataProvider provideDoctrineCases
 	 */
 	public function testTagValueNodeToString(string $expected, Node $node): void
 	{
 		$this->assertSame($expected, (string) $node);
+	}
+
+	/**
+	 * @dataProvider provideOtherCases
+	 * @dataProvider provideMethodCases
+	 * @dataProvider provideClassCases
+	 * @dataProvider provideAssertionCases
+	 * @dataProvider provideDoctrineCases
+	 */
+	public function testTagValueNodePrinter(string $expected, Node $node): void
+	{
+		$printer = new Printer();
+		$this->assertSame($expected, $printer->print($node));
 	}
 
 	public static function provideFullPhpDocCases(): Generator
@@ -181,6 +213,15 @@ class PhpDocToStringTest extends TestCase
 		yield from [
 			['PHPUnit\\TestCase', new MixinTagValueNode(new IdentifierTypeNode('PHPUnit\\TestCase'), '')],
 			['Foo\\Bar Baz', new MixinTagValueNode(new IdentifierTypeNode('Foo\\Bar'), 'Baz')],
+		];
+
+		yield from [
+			['PHPUnit\\TestCase', new RequireExtendsTagValueNode(new IdentifierTypeNode('PHPUnit\\TestCase'), '')],
+			['Foo\\Bar Baz', new RequireExtendsTagValueNode(new IdentifierTypeNode('Foo\\Bar'), 'Baz')],
+		];
+		yield from [
+			['PHPUnit\\TestCase', new RequireImplementsTagValueNode(new IdentifierTypeNode('PHPUnit\\TestCase'), '')],
+			['Foo\\Bar Baz', new RequireImplementsTagValueNode(new IdentifierTypeNode('Foo\\Bar'), 'Baz')],
 		];
 
 		yield from [
@@ -326,6 +367,80 @@ class PhpDocToStringTest extends TestCase
 		yield from [
 			['string $foo', new ParamOutTagValueNode($string, '$foo', '')],
 			['string $foo Description.', new ParamOutTagValueNode($string, '$foo', 'Description.')],
+		];
+	}
+
+	/**
+	 * @return iterable<array{string, Node}>
+	 */
+	public static function provideDoctrineCases(): iterable
+	{
+		yield [
+			'@ORM\Entity()',
+			new PhpDocTagNode('@ORM\Entity', new DoctrineTagValueNode(
+				new DoctrineAnnotation('@ORM\Entity', []),
+				''
+			)),
+		];
+
+		yield [
+			'@ORM\Entity() test',
+			new PhpDocTagNode('@ORM\Entity', new DoctrineTagValueNode(
+				new DoctrineAnnotation('@ORM\Entity', []),
+				'test'
+			)),
+		];
+
+		yield [
+			'@ORM\Entity(1, b=2)',
+			new DoctrineTagValueNode(
+				new DoctrineAnnotation('@ORM\Entity', [
+					new DoctrineArgument(null, new ConstExprIntegerNode('1')),
+					new DoctrineArgument(new IdentifierTypeNode('b'), new ConstExprIntegerNode('2')),
+				]),
+				''
+			),
+		];
+
+		yield [
+			'{}',
+			new DoctrineArray([]),
+		];
+
+		yield [
+			'{1, a=2}',
+			new DoctrineArray([
+				new DoctrineArrayItem(null, new ConstExprIntegerNode('1')),
+				new DoctrineArrayItem(new ConstExprStringNode('a'), new ConstExprIntegerNode('2')),
+			]),
+		];
+
+		yield [
+			'1',
+			new DoctrineArrayItem(null, new ConstExprIntegerNode('1')),
+		];
+
+		yield [
+			'a=2',
+			new DoctrineArrayItem(new ConstExprStringNode('a'), new ConstExprIntegerNode('2')),
+		];
+
+		yield [
+			'@ORM\Entity(1, b=2)',
+			new DoctrineAnnotation('@ORM\Entity', [
+				new DoctrineArgument(null, new ConstExprIntegerNode('1')),
+				new DoctrineArgument(new IdentifierTypeNode('b'), new ConstExprIntegerNode('2')),
+			]),
+		];
+
+		yield [
+			'1',
+			new DoctrineArgument(null, new ConstExprIntegerNode('1')),
+		];
+
+		yield [
+			'b=2',
+			new DoctrineArgument(new IdentifierTypeNode('b'), new ConstExprIntegerNode('2')),
 		];
 	}
 

@@ -60,16 +60,22 @@ class OrderProducts extends Widget
             if (isset($this->params['order']) AND ($this->params['order'] instanceof \common\classes\Order)) {
                 $item['orders_products_id'] = (int)$this->params['order']->searchOrderProduct($item);
             }
-            \common\helpers\Php8::nullArrProps($item, ['tpl_price', 'tpl_attributes', 'qty', 'model', 'name']);
+            \common\helpers\Php8::nullArrProps($item, ['link', 'tpl_price', 'tpl_attributes', 'qty', 'model', 'name']);
             $rows .= '
           <tr class="product-row" style="' . ($attributesText['.product-row'] ?? '') . '">
             ' . ( ($attributesArray['.image']['display'] ?? '') != 'none' ? '
             <td class="image" style="' . ($attributesText['.image'] ?? '') . (($item['parent_product']??false) ? ($attributesText['.subitem'] ?? '') : '') . '">
+                ' . ($item['link'] ? '<a href="' . $item['link'] . '">' : '') . '
               <img src="' . \common\classes\Images::getImageUrl($item['id'], 'Thumbnail', -1, 0, false, (defined('USE_WEBP_IN_EMAILS') && USE_WEBP_IN_EMAILS=='True')) . '" alt="" style="' . ($attributesText['img'] ?? '') . '">
+                ' . ($item['link'] ? '</a>' : '') . '
             </td>
             ' : '') . '
             ' . (($attributesArray['.name']['display'] ?? '') != 'none' ? '
-            <td class="name" style="' . ($attributesText['.name'] ?? '') . '">' . $item['name'] . $item['tpl_attributes'] . " ". ($showAssets? $showAssets::renderOrderProductAsset($item['orders_products_id'], true):'') . '</td>
+            <td class="name" style="' . ($attributesText['.name'] ?? '') . '">' .
+                    ($item['link'] ? '<a href="' . $item['link'] . '" style="' . ($attributesText['.name-link'] ?? '') . '">' : '').
+                        '<span style="display:block; padding-bottom:5px;">' . $item['name'] . '</span>' .
+                    ($item['link'] ? '</a>' : '') .
+                    $item['tpl_attributes'] . " ". ($showAssets? $showAssets::renderOrderProductAsset($item['orders_products_id'], true):'') . '</td>
             ' : '') . '
             ' . (($attributesArray['.model']['display'] ?? '') != 'none' ? '
             <td class="model" style="' . ($attributesText['.model'] ?? '') . '">' . $item['model'] . '</td>

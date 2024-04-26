@@ -572,13 +572,6 @@ class PDFBox extends \TCPDF {
                         $width = $settings[0]['width'] * $ds;
                     }
                 }
-                if (isset($settings[0]['height'])) {
-                    if ($settings[0]['height_measure'] == '%') {
-                        $heightBox = $pdf_params['height'] * ($settings[0]['height'] / 100);
-                    } else {
-                        $heightBox = $settings[0]['height'] * $ds;
-                    }
-                }
                 if (isset($settings[0]['top'])) {
                     if ($settings[0]['top_measure'] == '%') {
                         $topBox = $pdf_params['top'] * ($settings[0]['top'] / 100);
@@ -592,6 +585,13 @@ class PDFBox extends \TCPDF {
                     } else {
                         $leftBox = $settings[0]['left'] * $ds;
                     }
+                }
+            }
+            if (isset($settings[0]['height'])) {
+                if ($settings[0]['height_measure'] == '%') {
+                    $heightBox = $pdf_params['height'] * ($settings[0]['height'] / 100);
+                } else {
+                    $heightBox = $settings[0]['height'] * $ds;
                 }
             }
 

@@ -20,9 +20,53 @@ namespace Google\Service\Contentwarehouse;
 class GeostoreInternalSegmentProto extends \Google\Collection
 {
   protected $collection_key = 'travelAllowance';
+  /**
+   * @var GeostoreInternalSegmentProtoLaneConnectionReference[]
+   */
+  public $disallowedConnections;
+  protected $disallowedConnectionsType = GeostoreInternalSegmentProtoLaneConnectionReference::class;
+  protected $disallowedConnectionsDataType = 'array';
+  /**
+   * @var GeostoreInternalSegmentProtoLaneConnectionReference[]
+   */
+  public $disallowedPrimaryConnection;
+  protected $disallowedPrimaryConnectionType = GeostoreInternalSegmentProtoLaneConnectionReference::class;
+  protected $disallowedPrimaryConnectionDataType = 'array';
+  /**
+   * @var GeostoreRestrictionProto[]
+   */
+  public $travelAllowance;
   protected $travelAllowanceType = GeostoreRestrictionProto::class;
   protected $travelAllowanceDataType = 'array';
 
+  /**
+   * @param GeostoreInternalSegmentProtoLaneConnectionReference[]
+   */
+  public function setDisallowedConnections($disallowedConnections)
+  {
+    $this->disallowedConnections = $disallowedConnections;
+  }
+  /**
+   * @return GeostoreInternalSegmentProtoLaneConnectionReference[]
+   */
+  public function getDisallowedConnections()
+  {
+    return $this->disallowedConnections;
+  }
+  /**
+   * @param GeostoreInternalSegmentProtoLaneConnectionReference[]
+   */
+  public function setDisallowedPrimaryConnection($disallowedPrimaryConnection)
+  {
+    $this->disallowedPrimaryConnection = $disallowedPrimaryConnection;
+  }
+  /**
+   * @return GeostoreInternalSegmentProtoLaneConnectionReference[]
+   */
+  public function getDisallowedPrimaryConnection()
+  {
+    return $this->disallowedPrimaryConnection;
+  }
   /**
    * @param GeostoreRestrictionProto[]
    */

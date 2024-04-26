@@ -227,6 +227,14 @@ class Product {
           }
         }
 
+        $force_skip = false;
+        foreach (\common\helpers\Hooks::getList('product/check-product') as $filename) {
+            include($filename);
+        }
+        if ($force_skip) {
+            return false;
+        }
+
         if ($view){
             $state = self::getState(true);
         } else {
@@ -321,7 +329,7 @@ class Product {
             $category = $linked_categories[0];
             if (count($linked_categories) > 1 && strpos(Yii::$app->id,'frontend')!==false) {
                 if (Yii::$app->has('request') && Yii::$app->request instanceof \yii\web\Request) {
-                    $ref_path = \parse_url(trim(Yii::$app->request->getReferrer()), PHP_URL_PATH);
+                    $ref_path = \parse_url(trim(Yii::$app->request->getReferrer()??''), PHP_URL_PATH);
                     foreach ($linked_categories as $check_category) {
                         $_link = Yii::$app->getUrlManager()->createAbsoluteUrl(['catalog/index', 'cPath' => $check_category['categories_id']]);
                         if (\parse_url($_link, PHP_URL_PATH) == $ref_path) {
@@ -657,6 +665,7 @@ class Product {
         if (($product_values['manufacturers_id']??null) > 0) {
             $manufacturer_query = tep_db_query("select stock_limit from " . TABLE_MANUFACTURERS . " where manufacturers_id = '" . (int) $product_values['manufacturers_id'] . "'");
             $manufacturer_values = tep_db_fetch_array($manufacturer_query);
+            \common\helpers\Php8::nullArrProps($manufacturer_values, ['stock_limit']);
             if ($manufacturer_values['stock_limit'] > -1) {
                 $stockLevelLimit = $manufacturer_values['stock_limit'];
             }
@@ -1188,7 +1197,7 @@ class Product {
         $productModel->suppliers_stock_quantity = 0;
         $productModel->ordered_stock_quantity = 0;
         $productModel->products_ordered = 0;
-        $productModel->is_bundle = 0;
+        // $productModel->is_bundle = 0; // allow to duplicate bundles
         $productModel->products_popularity = 0;
         $productModel->popularity_simple = 0;
         $productModel->popularity_bestseller = 0;
@@ -1290,6 +1299,9 @@ class Product {
         }
 /// images (after attributes and inventory
         \common\helpers\Image::copyProductImages($products_id, $dup_products_id);
+        if ($ext = \common\helpers\Acl::checkExtensionAllowed('PlainProductsDescription', 'allowed')) {
+            $ext::reindex($dup_products_id);
+        }
         return $dup_products_id;
     }
 
@@ -3668,6 +3680,19 @@ class Product {
             $special_ex_clear = ($details['full_bundle_price_clear'] > $details['actual_bundle_price_clear']?$details['actual_bundle_price_clear_ex']:false);
             $old_ex_clear = ($details['full_bundle_price_clear'] > $details['actual_bundle_price_clear']?$details['full_bundle_price_clear_ex']:false);
 
+            if ($details['full_bundle_price_clear'] > $details['actual_bundle_price_clear']) {
+                $product['special_promote_type'] = 0;
+                if (defined('SALES_DEFAULT_PROMO_TYPE') && SALES_DEFAULT_PROMO_TYPE != 'None') {
+                    switch (SALES_DEFAULT_PROMO_TYPE) {
+                        case 'Percent':
+                            $product['special_promote_type'] = 1;
+                            break;
+                        case 'Fixed':
+                            $product['special_promote_type'] = 2;
+                            break;
+                    }
+                }
+            }
             $clear = [
               'special' => $special_clear,
               'old' => $old_clear,
@@ -3821,7 +3846,7 @@ class Product {
             }
         }
 
-        if (!empty($product['special_promote_type']) && !empty($clear['discount'] && isset($product['special_expiration_date']) && $product['special_expiration_date'] != '') ) {
+        if (!empty($product['special_promote_type']) && !empty($clear['discount']) /* && isset($product['special_expiration_date']) && $product['special_expiration_date'] != '' */) {
           if ($product['special_promote_type']==1) { //percent
             if ($old_clear>0) {
               $special_promo_value = round(($old_clear - $special_clear)/$old_clear*100);
@@ -4025,4 +4050,42 @@ class Product {
         }
         return $res;
     }
+
+    public static function getProductPriceAndTax($uprid, $groupId = null, $qty = 1)
+    {
+        $prid = \common\helpers\Inventory::get_prid($uprid);
+        if (is_null($groupId)) {
+            $groupId = \Yii::$app->storage->has('customer_groups_id') ? (int)\Yii::$app->storage->get('customer_groups_id') : 0;
+        }
+
+        $priceInstance = \common\models\Product\Price::getInstance(\common\helpers\Inventory::normalize_id($uprid));
+        $params = ['qty' => $qty];
+        if (\common\helpers\Acl::checkExtensionAllowed('ProductBundles') && \common\helpers\Product::get_products_info($prid, 'is_bundle')) {
+            $params['products_id'] = $uprid;
+            $keep_customer_groups_id = (int)\Yii::$app->storage->get('customer_groups_id');
+            $customer_groups_id = $groupId;
+            \Yii::$app->storage->set('customer_groups_id', $customer_groups_id);
+            \Yii::$app->params['reset_static_product_prices_cache'] = true;
+            $details = \common\helpers\Bundles::getDetails($params, [], true);
+            $price = $details['actual_bundle_price_unit'];
+            $customer_groups_id = $keep_customer_groups_id;
+            \Yii::$app->storage->set('customer_groups_id', $customer_groups_id);
+        } else {
+            $params['group_id'] = $groupId;
+            $price = $priceInstance->getInventorySpecialPrice($params);
+            if ($price === false) {
+                $price = $priceInstance->getInventoryPrice($params);
+            }
+        }
+        $taxRate = \common\helpers\Tax::getProductTaxRate($prid, null, $groupId);
+        $currencies = \Yii::$container->get('currencies');
+        $finalPrice = $currencies->calculate_price($price, $taxRate, 1, '', true);
+        return [
+            'price_exc_tax' => $price,
+            'tax_rate' => $taxRate,
+            'tax_value' => $finalPrice - $price,
+            'price_inc_tax' => $finalPrice,
+        ];
+    }
+
 }

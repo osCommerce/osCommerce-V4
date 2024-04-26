@@ -26,4 +26,7 @@
         {include file=$filename}
     {/foreach}
     {/if}
+    {if is_array($addedPages['credit_note'])}
+        {Html::a(TEXT_CREDITNOTE, \Yii::$app->urlManager->createUrl(['orders/credit-notes', 'orders_id' => $order->info['orders_id']]), ['class' => "btn btn-no-margin", 'target'=>"_blank"])}
+    {/if}
 </div>

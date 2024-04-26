@@ -58,6 +58,16 @@
                   </div>
 
                   <div class="setting-row">
+                    <label for="">Width</label>
+                    <input type="text" name="setting[{$language.id}][width]" value="{$settings[$language.id].width}" class="form-control" style="width: 243px" />
+                  </div>
+
+                  <div class="setting-row">
+                    <label for="">Height</label>
+                    <input type="text" name="setting[{$language.id}][height]" value="{$settings[$language.id].height}" class="form-control" style="width: 243px" />
+                  </div>
+
+                  <div class="setting-row">
                     <label for=""><input type="checkbox" name="setting[{$language.id}][target_blank]" {if $settings[$language.id].target_blank} checked {/if} /> Open link in new tab</label>
 
                   </div>

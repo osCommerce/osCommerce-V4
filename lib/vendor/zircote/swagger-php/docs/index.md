@@ -25,12 +25,12 @@ Add `swagger-php` annotations or attributes to your source code.
 <codeblock id="minimal">
   <template v-slot:an>
 
-<<< @/snippets/minimal_api_annotations.php
+<<< @/snippets/minimal_api_an.php
 
-</template>
+  </template>
   <template v-slot:at>
 
-<<< @/snippets/minimal_api_attributes.php
+<<< @/snippets/minimal_api_at.php
 
   </template>
 </codeblock>
@@ -49,7 +49,7 @@ Use an OpenAPI tool like [Swagger UI ](https://swagger.io/tools/swagger-ui/) to 
 
 - [User Guide](guide/index.md)
 - [Reference](reference/index.md)
-- [OpenApi Documentation](https://oai.github.io/Documentation/)
+- [OpenApi Documentation](https://learn.openapis.org/)
 - [OpenApi Specification](https://spec.openapis.org/oas/v3.1.0.html)
 - [Learn by example](https://github.com/zircote/swagger-php/tree/master/Examples)
 - [Related projects](related-projects.md)

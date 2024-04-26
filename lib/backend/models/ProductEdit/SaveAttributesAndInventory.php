@@ -359,6 +359,10 @@ class SaveAttributesAndInventory
                         $ext::saveInventory($db_uprid, $post_uprid);
                     }
 
+                    if ($ext = \common\helpers\Acl::checkExtensionAllowed('ProductStockFlagsByPlatform', 'allowed')) {
+                        $ext::saveInventory($db_uprid, $post_uprid);
+                    }
+
                     if ($ext = \common\helpers\Acl::checkExtensionAllowed('AttributesDetails', 'allowed')) {
                         $ext::saveProduct($inventory_id, $post_uprid);
                     }
@@ -394,8 +398,14 @@ class SaveAttributesAndInventory
                 }
                 \common\models\Inventory::deleteAll(['AND', ['prid' => (int)$products_id], ['NOT IN', 'inventory_id', $all_inventory_ids_array]]);
                 \common\models\InventoryPrices::deleteAll(['AND', ['prid' => (int)$products_id], ['NOT IN', 'inventory_id', $all_inventory_ids_array]]);
+                if ($groupsInventory = \common\helpers\Acl::checkExtensionTableExist('UserGroupsRestrictions', 'GroupsInventory', 'allowed')) {
+                    $groupsInventory::deleteAll(['AND', ['prid' => (int)$products_id], ['NOT IN', 'products_id', $all_inventory_uprids_array]]);
+                }
                 $all_inventory_uprids_array[] = trim((int)$products_id);
                 \common\models\WarehousesProducts::deleteAll(['AND', ['prid' => (int)$products_id], ['NOT IN', 'products_id', $all_inventory_uprids_array]]);
+                if ($platformProductsStockFlags = \common\helpers\Acl::checkExtensionTableExist('ProductStockFlagsByPlatform', 'PlatformProductsStockFlags', 'allowed')) {
+                    $platformProductsStockFlags::deleteAll(['AND', ['prid' => (int)$products_id], ['NOT IN', 'products_id', $all_inventory_uprids_array]]);
+                }
 
             }elseif (\common\helpers\Extensions::isAllowed('Inventory') && $without_inventory) {
                 \common\models\Inventory::deleteAll( ['prid' => (int) $products_id] );

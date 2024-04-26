@@ -23,6 +23,7 @@ use common\models\Modules;
 use common\models\Themes;
 use common\models\ThemesSettings;
 use common\models\ThemesStyles;
+use common\models\ThemesStylesGroups;
 use common\models\ThemesStylesMain;
 use yii\helpers\FileHelper;
 use common\classes\Images;
@@ -463,7 +464,7 @@ class Theme
                     $item['setting_value'] = str_replace($path, $img, $item['setting_value']);
                 }
             }
-            $item['setting_value'] = str_replace($theme_name, '<theme_name>', $item['setting_value']);
+            $item['setting_value'] = str_replace('/' . $theme_name . '/', '/<theme_name>/', $item['setting_value']);
             $theme['settings'][] = [
                 'setting_group' => $item['setting_group'],
                 'setting_name' => $item['setting_name'],
@@ -495,6 +496,7 @@ class Theme
         }
 
         $theme['main_styles'] = ThemesStylesMain::find()->where(['theme_name' => $theme_name])->asArray()->all();
+        $theme['main_styles_groups'] = ThemesStylesGroups::find()->where(['theme_name' => $theme_name])->asArray()->all();
 
         return json_encode($theme);
     }
@@ -598,6 +600,8 @@ class Theme
             return null;
         }
 
+        $mainStyles = \backend\design\Style::mainStyles($themeName);
+
         foreach ($css as $className => $properties) {
             if ($className == 'current') {
                 $className = self::widgetNameToCssClass($widgetName);
@@ -610,12 +614,21 @@ class Theme
             }
 
             foreach ($properties as $property) {
+                if (($property['value_main_style']??null) &&
+                    !isset($mainStyles[$property['value']]) &&
+                    !isset($mainStyles[preg_replace('/\-[0-9]+$/', '-1', $property['value'])])
+                ) {
+                    $value = $property['value_main_style'];
+                } else {
+                    $value = $property['value'];
+                }
+
                 $property['value'] = self::importFiles($property, 'css', $themeName);
                 $themesStyles = new ThemesStyles();
                 $themesStyles->theme_name = (string)$themeName;
                 $themesStyles->selector = (string)$property['selector'];
                 $themesStyles->attribute = (string)$property['attribute'];
-                $themesStyles->value = (string)$property['value'];
+                $themesStyles->value = (string)$value;
                 $themesStyles->visibility = (string)self::getIdStyleMediaSizes($property['visibility'], $themeName);
                 $themesStyles->media = (string)$property['media'];
                 $themesStyles->accessibility = (string)$className;
@@ -626,7 +639,7 @@ class Theme
         }
     }
 
-    public static function getStyleMediaSizes($sizeId, $themeName)
+    public static function getStyleMediaSizes($sizeId, $themeName, $styleId = 0)
     {
         static $size = [];
         if (!($size[$themeName] ?? null)) {
@@ -638,10 +651,14 @@ class Theme
         }
 
         $sizeVal = false;
+        $parts = explode(',', $sizeId);
 
-        $themesSetting = \common\models\ThemesSettings::findOne(['id' => $sizeId, 'theme_name' => $themeName]);
+        $themesSetting = \common\models\ThemesSettings::findOne(['id' => $parts[0], 'theme_name' => $themeName]);
         if ($themesSetting) {
             $sizeVal = $themesSetting->setting_value;
+            if ($parts[1] ?? false) {
+                $sizeVal = $sizeVal . ',' . $parts[1];
+            }
         }
 
         if ($sizeVal) {
@@ -668,15 +685,16 @@ class Theme
         }
 
         $sizeId = false;
+        $parts = explode(',', $styleMediaSize);
 
         $themesSetting = ThemesSettings::findOne([
             'theme_name' => $themeName,
             'setting_group' => 'extend',
             'setting_name' => 'media_query',
-            'setting_value' => $styleMediaSize,
+            'setting_value' => $parts[0],
         ]);
         if ($themesSetting) {
-            $sizeId = $themesSetting->id;
+            $sizeId = $themesSetting->id . (($parts[1] ?? false) ? ',' . $parts[1] : '');
         }
 
         if (!$sizeId) {
@@ -724,11 +742,16 @@ class Theme
             return [];
         }
 
+        $mainStyles = \backend\design\Style::mainStyles($themeName);
+
         foreach ($themesStyles as $key => $style) {
             if ((int)$style['visibility'] > 10) {
-                $themesStyles[$key]['visibility'] = self::getStyleMediaSizes($style['visibility'], $style['theme_name']);
+                $themesStyles[$key]['visibility'] = self::getStyleMediaSizes($style['visibility'], $style['theme_name'], 1429180);
             }
             $themesStyles[$key]['value'] = self::addFiles($style, 'css', $themeName);
+            if ($mainStyles[$themesStyles[$key]['value']] ?? false) {
+                $themesStyles[$key]['value_main_style'] = $mainStyles[$themesStyles[$key]['value']];
+            }
         }
 
         $response[$themeName][$class] = $themesStyles;
@@ -805,6 +828,8 @@ class Theme
 
         self::extensionWidgets($arr['widget_name']);
 
+        $mainStyles = \backend\design\Style::mainStyles($query['theme_name']);
+
         $query2 = tep_db_query("
 select dbs.setting_name, dbs.setting_value, dbs.visibility, dbs.microtime, l.code
 from " . TABLE_DESIGN_BOXES_SETTINGS_TMP . " dbs left join " . TABLE_LANGUAGES . " l on dbs.language_id = l.languages_id
@@ -827,14 +852,19 @@ where dbs.box_id = '" . (int)$id . "'
             }
             $item2['visibility'] = Style::vStr($vArr, true);
 
-            $item2['setting_value'] = str_replace($query['theme_name'], '<theme_name>', $item2['setting_value']);
-            $arr['settings'][] = array(
+            $item2['setting_value'] = str_replace('/' . $query['theme_name'] . '/', '/<theme_name>/', $item2['setting_value']);
+
+            $settings = [
                 'microtime' => $item2['microtime'],
                 'setting_name' => $item2['setting_name'],
                 'setting_value' => $item2['setting_value'],
                 'language_id' => ($item2['code'] ? $item2['code'] : 0),
                 'visibility' => $item2['visibility']
-            );
+            ];
+            if ($mainStyles[$item2['setting_value']] ?? false) {
+                $settings['setting_value_main_style'] = $mainStyles[$item2['setting_value']];
+            }
+            $arr['settings'][] = $settings;
 
             if (!$images && $item2['setting_name'] == 'style_class') {
                 $css = array_merge($css, self::getWidgetClassCss($item2['setting_value'], $query['theme_name']));
@@ -1021,8 +1051,21 @@ where dbs.box_id = '" . (int)$id . "'
                 $mainStyle->value = $style['value'];
                 $mainStyle->type = $style['type'];
                 $mainStyle->sort_order = $style['sort_order'];
-                $mainStyle->main_style = $style['main_style'] ?? 0;
-                $mainStyle->save();
+                $mainStyle->group_id = $style['group_id'] ?? 0;
+                $mainStyle->save(false);
+            }
+        }
+
+        if (isset($arr['main_styles_groups']) && is_array($arr['main_styles_groups'])) {
+            ThemesStylesGroups::deleteAll(['theme_name' => $theme_name]);
+            foreach ($arr['main_styles_groups'] as $style) {
+                $styleGroup = new ThemesStylesGroups();
+                $styleGroup->theme_name = $theme_name;
+                $styleGroup->group_id = $style['group_id'];
+                $styleGroup->group_name = $style['group_name'];
+                $styleGroup->sort_order = $style['sort_order'];
+                $styleGroup->tab = $style['tab'];
+                $styleGroup->save(false);
             }
         }
 
@@ -1067,6 +1110,10 @@ where dbs.box_id = '" . (int)$id . "'
             $bannerSettings = self::applyBanners($arr['banner'], $theme_name);
         }
 
+        $mainStyles = \backend\design\Style::mainStyles($theme_name);
+
+        $checkDuplicates = [];
+
         if (is_array($arr['settings'] ?? null) && count($arr['settings']))
             foreach ($arr['settings'] as $item){
 
@@ -1102,18 +1149,29 @@ where dbs.box_id = '" . (int)$id . "'
                 } else {
                     $visibility = $item['visibility'] ?? '';
                 }
-                if ($key) {
+                if ($key && !isset($checkDuplicates[$item['setting_name']][$language_id][$visibility])) {
+                    if (str_contains($item['setting_value'], '$$') && str_contains($item['setting_value'], '<theme_name>')) {
+                        $item['setting_value'] = trim($item['setting_value'], '$$');
+                    }
                     if (substr($item['setting_value'], 0, 2) == '$$'){
                         $item['setting_value'] = 'themes/' . $theme_name . '/img/' . substr_replace( $item['setting_value'], '', 0, 2);
                     }
                     $item['setting_value'] = self::importFiles($item, 'box', $theme_name);
                     $item['setting_value'] = str_replace('<theme_name>/', $theme_name . '/', $item['setting_value']);
+                    if (($item['setting_value_main_style']??null) &&
+                        !isset($mainStyles[$item['setting_value']]) &&
+                        !isset($mainStyles[preg_replace('/\-[0-9]+$/', '-1', $item['setting_value'])])
+                    ) {
+                        $setting_value = $item['setting_value_main_style'];
+                    } else {
+                        $setting_value = $item['setting_value'];
+                    }
                     $sql_data_array = array(
                         'box_id' => $box_id,
                         'microtime' => $microtime,
                         'theme_name' => $theme_name,
                         'setting_name' => $item['setting_name'],
-                        'setting_value' => $item['setting_value'],
+                        'setting_value' => $setting_value,
                         'language_id' => $language_id,
                         'visibility' => $visibility,
                     );
@@ -1123,6 +1181,7 @@ where dbs.box_id = '" . (int)$id . "'
                         $sql_data_array = array_merge($sql_data_array, ['id' => $set_id]);
                         tep_db_perform(TABLE_DESIGN_BOXES_SETTINGS, $sql_data_array);
                     }
+                    $checkDuplicates[$item['setting_name']][$language_id][$visibility] = 1;
                 }
             }
 
@@ -1425,8 +1484,20 @@ where dbs.box_id = '" . (int)$id . "'
             foreach ($mainStyles as $style) {
                 $newStyle = new ThemesStylesMain();
                 $newStyle->attributes = $style->attributes;
+                $newStyle->group_id = $style->group_id;
                 $newStyle->theme_name = $theme_name;
                 $newStyle->save();
+            }
+        }
+
+        $stylesGroups = ThemesStylesGroups::find()->where(['theme_name' => $parent_theme])->all();
+        if (is_array($mainStyles)) {
+            foreach ($stylesGroups as $group) {
+                $stylesGroup = new ThemesStylesGroups();
+                $stylesGroup->attributes = $group->attributes;
+                $stylesGroup->tab = $group->tab;
+                $stylesGroup->theme_name = $theme_name;
+                $stylesGroup->save();
             }
         }
 
@@ -1476,6 +1547,7 @@ where dbs.box_id = '" . (int)$id . "'
         tep_db_query("delete from " . TABLE_THEMES_STEPS . " where theme_name = '" . tep_db_input($theme_name) . "'");
         tep_db_query("delete from " . TABLE_THEMES_STYLES_CACHE . " where theme_name = '" . tep_db_input($theme_name) . "'");
         ThemesStylesMain::deleteAll(['theme_name' => $theme_name]);
+        ThemesStylesGroups::deleteAll(['theme_name' => $theme_name]);
 
         $themeBackups = DIR_FS_CATALOG . 'lib'
             . DIRECTORY_SEPARATOR . 'backend'
@@ -1861,8 +1933,8 @@ where dbs.box_id = '" . (int)$id . "'
         if (in_array($settingName, ['background_image', 'background-image', 'logo', 'image', 'file', 'poster'])) {
 
             $fileFrom = DIR_FS_CATALOG . implode(DIRECTORY_SEPARATOR, ['themes', $themeName, 'tmp', $settingValue]);
+            $settingValue = preg_replace ('/^theme\//', 'themes/' . $themeName . '/', $settingValue);
             if (is_file($fileFrom)) {
-                $settingValue = preg_replace ('/^theme\//', 'themes/' . $themeName . '/', $settingValue);
 
                 $foldersArr = explode(DIRECTORY_SEPARATOR, $settingValue);
                 array_pop($foldersArr);

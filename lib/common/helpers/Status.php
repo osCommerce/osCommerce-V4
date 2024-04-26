@@ -148,4 +148,22 @@ class Status {
 
     }
 
+    public static function isCanceledGroup($orderStatusId)
+    {
+        $languageId = (int)\Yii::$app->settings->get('languages_id');
+        if ($languageId <= 0) {
+            $languageId = \common\helpers\Language::get_default_language_id();
+        }
+
+        $orderStatus = \common\models\OrdersStatus::find()->alias('os')
+            ->joinWith('ordersStatusGroups og', false)
+            ->where(['os.orders_status_id' => $orderStatusId, 'os.language_id' => $languageId])
+            ->select('os.orders_status_id, os.orders_status_name, og.orders_status_groups_id, og.orders_status_groups_name, og.order_group_evaluation_state_id')
+            ->asArray()
+            ->one();
+
+        return !empty($orderStatus) && ($orderStatus['orders_status_groups_id'] == 5 || $orderStatus['order_group_evaluation_state_id'] == Order::OES_CANCELLED);
+    }
+
+
 }

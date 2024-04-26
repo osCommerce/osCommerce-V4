@@ -444,14 +444,16 @@ class PriceFormula {
         self::logAutoUpdate('Batch update started for ' . (int)$LIMIT_RECORDS . ' products' );
         $productQuery = \common\models\Products::find()->alias('p')
             ->select('products_id')
-            ->where("auto_price_modified IS NULL OR auto_price_modified < COALESCE(last_xml_import, '1000-01-01 00:00:00') OR auto_price_modified < COALESCE(products_last_modified, '1000-01-01 00:00:00')")
-            ->limit($LIMIT_RECORDS);
+            ->where("auto_price_modified IS NULL OR auto_price_modified < COALESCE(last_xml_import, '1000-01-01 00:00:00') OR auto_price_modified < COALESCE(products_last_modified, '1000-01-01 00:00:00')");
+        if ($LIMIT_RECORDS > 0) {
+            $productQuery->limit($LIMIT_RECORDS);
+        }
         $startTime = microtime(true);
         $count = $updated = 0;
         foreach(self::addAutoUpdateWhere($productQuery)->column() as $pid) {
             $updated += self::applyDb($pid, false) ? 1 : 0;
             $count++;
-            if ((microtime(true) - $startTime) > $LIMIT_TIME) {
+            if ($LIMIT_TIME > 0 && (microtime(true) - $startTime) > $LIMIT_TIME) {
                 self::logAutoUpdate('Batch update is interrupted due time limit');
                 break;
             }

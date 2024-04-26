@@ -24,6 +24,8 @@
 
           <p><label><input type="checkbox" name="setting[0][show_captcha]"{if $settings[0].show_captcha} checked{/if}/> {$smarty.const.TEXT_SHOW_CAPTCHA}</label> <a href ="google-settings#recaptcha" target="_blank">{$smarty.const.BOX_GOOGLE_SETTINGS}</a></p>
 
+          <p><label><input type="checkbox" name="setting[0][show_honeypot]"{if $settings[0].show_honeypot} checked{/if}/> Use Honeypot Trap</label></p>
+
         </div>
         <div class="tab-pane" id="style">
           {include 'include/style.tpl'}

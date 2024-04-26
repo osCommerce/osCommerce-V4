@@ -49,6 +49,8 @@ class ArtifactRegistry extends \Google\Service
   public $projects_locations_repositories_aptArtifacts;
   public $projects_locations_repositories_dockerImages;
   public $projects_locations_repositories_files;
+  public $projects_locations_repositories_goModules;
+  public $projects_locations_repositories_googetArtifacts;
   public $projects_locations_repositories_kfpArtifacts;
   public $projects_locations_repositories_mavenArtifacts;
   public $projects_locations_repositories_npmPackages;
@@ -422,6 +424,56 @@ class ArtifactRegistry extends \Google\Service
           ]
         ]
     );
+    $this->projects_locations_repositories_goModules = new ArtifactRegistry\Resource\ProjectsLocationsRepositoriesGoModules(
+        $this,
+        $this->serviceName,
+        'goModules',
+        [
+          'methods' => [
+            'upload' => [
+              'path' => 'v1/{+parent}/goModules:create',
+              'httpMethod' => 'POST',
+              'parameters' => [
+                'parent' => [
+                  'location' => 'path',
+                  'type' => 'string',
+                  'required' => true,
+                ],
+              ],
+            ],
+          ]
+        ]
+    );
+    $this->projects_locations_repositories_googetArtifacts = new ArtifactRegistry\Resource\ProjectsLocationsRepositoriesGoogetArtifacts(
+        $this,
+        $this->serviceName,
+        'googetArtifacts',
+        [
+          'methods' => [
+            'import' => [
+              'path' => 'v1/{+parent}/googetArtifacts:import',
+              'httpMethod' => 'POST',
+              'parameters' => [
+                'parent' => [
+                  'location' => 'path',
+                  'type' => 'string',
+                  'required' => true,
+                ],
+              ],
+            ],'upload' => [
+              'path' => 'v1/{+parent}/googetArtifacts:create',
+              'httpMethod' => 'POST',
+              'parameters' => [
+                'parent' => [
+                  'location' => 'path',
+                  'type' => 'string',
+                  'required' => true,
+                ],
+              ],
+            ],
+          ]
+        ]
+    );
     $this->projects_locations_repositories_kfpArtifacts = new ArtifactRegistry\Resource\ProjectsLocationsRepositoriesKfpArtifacts(
         $this,
         $this->serviceName,
@@ -652,7 +704,17 @@ class ArtifactRegistry extends \Google\Service
         'versions',
         [
           'methods' => [
-            'delete' => [
+            'batchDelete' => [
+              'path' => 'v1/{+parent}/versions:batchDelete',
+              'httpMethod' => 'POST',
+              'parameters' => [
+                'parent' => [
+                  'location' => 'path',
+                  'type' => 'string',
+                  'required' => true,
+                ],
+              ],
+            ],'delete' => [
               'path' => 'v1/{+name}',
               'httpMethod' => 'DELETE',
               'parameters' => [

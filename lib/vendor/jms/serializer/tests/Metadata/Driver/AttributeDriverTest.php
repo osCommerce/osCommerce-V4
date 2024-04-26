@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace JMS\Serializer\Tests\Metadata\Driver;
 
 use JMS\Serializer\Metadata\Driver\AttributeDriver;
+use JMS\Serializer\Metadata\Driver\NullDriver;
 use JMS\Serializer\Naming\IdenticalPropertyNamingStrategy;
+use Metadata\Driver\DriverChain;
 use Metadata\Driver\DriverInterface;
 
-class AttributeDriverTest extends BaseAnnotationOrAttributeDriverTest
+class AttributeDriverTest extends BaseAnnotationOrAttributeDriverTestCase
 {
     protected function setUp(): void
     {
@@ -21,6 +23,11 @@ class AttributeDriverTest extends BaseAnnotationOrAttributeDriverTest
 
     protected function getDriver(?string $subDir = null, bool $addUnderscoreDir = true): DriverInterface
     {
-        return new AttributeDriver(new IdenticalPropertyNamingStrategy(), null, $this->getExpressionEvaluator());
+        $namingStrategy = new IdenticalPropertyNamingStrategy();
+
+        return new DriverChain([
+            new AttributeDriver($namingStrategy, null, $this->getExpressionEvaluator()),
+            new NullDriver($namingStrategy),
+        ]);
     }
 }

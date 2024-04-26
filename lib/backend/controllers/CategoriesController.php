@@ -495,7 +495,7 @@ class CategoriesController extends Sceleton {
         $this->view->filters->brand_id = (int)Yii::$app->request->get('brand_id', 0);
 
         $this->view->categoriesOpenedTree = \common\helpers\Categories::getCategoryParentsIds($this->view->filters->category_id);
-        $this->view->categoriesClosedTree = array_diff(array_map('intval', explode('|', \Yii::$app->session->get('closed_data'))), $this->view->categoriesOpenedTree);
+        $this->view->categoriesClosedTree = array_diff(array_map('intval', explode('|', \Yii::$app->session->get('closed_data', ''))), $this->view->categoriesOpenedTree);
 
         if (is_dir(DIR_FS_CATALOG_IMAGES)) {
             if (!is_writeable(DIR_FS_CATALOG_IMAGES)) {
@@ -557,12 +557,16 @@ class CategoriesController extends Sceleton {
         $_session->remove('products_query_raw');
 
         $list_bread_crumb = '';
-        $search = '';
+        $searchFilter = '';
         if (isset($_GET['search']['value']) && tep_not_null($_GET['search']['value'])) {
             $keywords = tep_db_input(tep_db_prepare_input($_GET['search']['value']));
             $search_condition = " where cd.categories_name like '%" . $keywords . "%' ";
-            $searchFields = ['pd.products_name', 'pd.products_seo_page_name', 'cd.categories_seo_page_name', 'p.products_model'];
-            $search = " and ( " . implode(" like '%" . tep_db_input($keywords) . "%' or ", $searchFields) . " like '%" . tep_db_input($keywords) . "%')";
+            if (!empty($output['listing_type']) && $output['listing_type']=='brand'){
+                $searchFields = ['pd.products_name', 'pd.products_seo_page_name', 'p.products_model'];
+            }else{
+                $searchFields = ['pd.products_name', 'pd.products_seo_page_name', 'p.products_model'];
+            }
+            $searchFilter = "( " . implode(" like '%" . tep_db_input($keywords) . "%' or ", $searchFields) . " like '%" . tep_db_input($keywords) . "%')";
         } else {
             $search_condition = " where 1 ";
         }
@@ -686,13 +690,13 @@ class CategoriesController extends Sceleton {
                 case 'any':
                     /** @var \common\extensions\PlainProductsDescription\PlainProductsDescription  $ext  */
                     $ext = \common\helpers\Acl::checkExtensionAllowed('PlainProductsDescription', 'allowed');
-                    if ($ext && $ext::isEnabled()) {
+                    if ($ext && $ext::isEnabled() && (!method_exists($ext, 'optionUseInBackend') || $ext::optionUseInBackend())) {
                         $searchBuilder = new \common\components\SearchBuilder('simple');
                         $searchBuilder->setSearchInDesc(SEARCH_IN_DESCRIPTION == 'True');
                         $searchBuilder->setSearchInternal(true);
                         $searchBuilder->searchInProperty = false;
                         $searchBuilder->searchInAttributes = false;
-                        $searchBuilder->parseKeywords($search);
+                        $searchBuilder->parseKeywords(\common\helpers\Product::cleanupSearch($search));
                         $productsQuery = \common\models\Products::find()->distinct()->alias('p');
                         $searchBuilder->addProductsRestriction($productsQuery);
                         $productsQuery->select('p.products_id')->orderBy('p.products_id');
@@ -1003,7 +1007,7 @@ class CategoriesController extends Sceleton {
             if (!$onlyCategories) {
                 //products
                 $orderByProduct = "p2c.sort_order, pd.products_name";
-                $products_query_raw = "select p.products_id, p.is_listing_product, p.sub_product_children_count, p.parent_products_id, p.products_groups_id, p.products_model, ".ProductNameDecorator::instance()->listingQueryExpression('pd','pdd')." as products_name, p.products_status, p.manual_control_status, p.products_image, p.products_quantity from " . TABLE_PRODUCTS . " p LEFT JOIN " . TABLE_PRODUCTS_DESCRIPTION . " as pd on p.products_id = pd.products_id LEFT JOIN " . TABLE_PRODUCTS_DESCRIPTION . " as pdd on p.products_id = pdd.products_id LEFT JOIN " . TABLE_PRODUCTS_TO_CATEGORIES . " as p2c on p.products_id = p2c.products_id LEFT JOIN " . TABLE_MANUFACTURERS . " as m on p.manufacturers_id=m.manufacturers_id " . ($use_iventory ? "LEFT JOIN " . TABLE_INVENTORY . " i on i.prid = p.products_id LEFT JOIN " . TABLE_SUPPLIERS_PRODUCTS . " as suppp on i.products_id = suppp.uprid" : "") . " where pd.language_id = '" . (int) $languages_id . "' and pdd.language_id = '" . \common\helpers\Language::get_default_language_id() . "' and pd.platform_id = '".intval(\common\classes\platform::defaultId())."' and pdd.platform_id = '".intval(\common\classes\platform::defaultId())."' and pd.department_id=0 and pdd.department_id=0 " . $filter_prod . " {$platform_filter_products} group by p.products_id order by " . $orderByProduct;
+                $products_query_raw = "select p.products_id, p.is_listing_product, p.sub_product_children_count, p.parent_products_id, p.products_groups_id, p.products_model, ".ProductNameDecorator::instance()->listingQueryExpression('pd','pdd')." as products_name, p.products_status, p.manual_control_status, p.products_image, p.products_quantity from " . TABLE_PRODUCTS . " p LEFT JOIN " . TABLE_PRODUCTS_DESCRIPTION . " as pd on p.products_id = pd.products_id LEFT JOIN " . TABLE_PRODUCTS_DESCRIPTION . " as pdd on p.products_id = pdd.products_id LEFT JOIN " . TABLE_PRODUCTS_TO_CATEGORIES . " as p2c on p.products_id = p2c.products_id LEFT JOIN " . TABLE_MANUFACTURERS . " as m on p.manufacturers_id=m.manufacturers_id " . ($use_iventory ? "LEFT JOIN " . TABLE_INVENTORY . " i on i.prid = p.products_id LEFT JOIN " . TABLE_SUPPLIERS_PRODUCTS . " as suppp on i.products_id = suppp.uprid" : "") . " where pd.language_id = '" . (int) $languages_id . "' and pdd.language_id = '" . \common\helpers\Language::get_default_language_id() . "' and pd.platform_id = '".intval(\common\classes\platform::defaultId())."' and pdd.platform_id = '".intval(\common\classes\platform::defaultId())."' and pd.department_id=0 and pdd.department_id=0 " . (empty($searchFilter)?'': "and $searchFilter ") . $filter_prod . " {$platform_filter_products} group by p.products_id order by " . $orderByProduct;
 
                 $products_query = tep_db_query($products_query_raw);
                 $products_query_numrows = tep_db_num_rows($products_query);
@@ -1153,6 +1157,9 @@ class CategoriesController extends Sceleton {
                     ->wDescription('pd')
                     ->wDescription('pdd', \common\helpers\Language::get_default_language_id())
                     ->innerJoinWith(['categoriesList p2c' => function ($query) use ($current_category_id) {$query->andOnCondition(['p2c.categories_id' => (int) $current_category_id ]);}]);
+            if (!empty($searchFilter)) {
+                $products_in_category->andWhere($searchFilter);
+            }
             $products_in_category->andWhere('1 '.$platform_filter_products);
             $productsQty = $products_query_numrows = $products_in_category->count();
 
@@ -1246,7 +1253,7 @@ class CategoriesController extends Sceleton {
         } else {
             // BRAND listing
             $list_bread_crumb = '';
-            $ff = $search;
+            $ff = empty($searchFilter)? '' : (' and ' . $searchFilter .' ');
             $order = 'p.sort_order, pd.products_name';
 
             $products_query_raw = "select *, ".ProductNameDecorator::instance()->listingQueryExpression('pd','')." as products_name, p.products_groups_id from " . TABLE_PRODUCTS . " p " . (intval($output['brand_id']) == -1 ? " left join " . TABLE_MANUFACTURERS . " m ON m.manufacturers_id=p.manufacturers_id " : '') . " left join " . TABLE_PRODUCTS_DESCRIPTION . " pd on (p.products_id = pd.products_id and pd.language_id='" . intval($languages_id) . "') where pd.platform_id = '".intval(\common\classes\platform::defaultId())."' " . (intval($output['brand_id']) > 0 ? " and manufacturers_id = '" . intval($output['brand_id']) . "' " : (intval($output['brand_id']) == -1 ? ' and m.manufacturers_id IS NULL' : '')) . $ff . " {$platform_filter_products} group by p.products_id ORDER BY " . $order;
@@ -1409,6 +1416,10 @@ class CategoriesController extends Sceleton {
         echo '<div class="prod_box_img">' . $image . '</div>';
         echo '<div class="or_box_head prod_head_box">' . $pInfo->description->products_name . '</div>';
         echo '<div class="row_or_wrapp">';
+        echo '<div class="row_or">
+                    <div>' . TEXT_MODEL_SKU . '</div>
+                    <div>' . \common\helpers\Output::output_string($pInfo->products_model) . '</div>
+             </div>';
         echo '<div class="row_or">
                     <div>' . TEXT_DATE_ADDED . '</div>
                     <div>' . \common\helpers\Date::date_short($pInfo->products_date_added) . '</div>
@@ -1719,7 +1730,18 @@ class CategoriesController extends Sceleton {
         }
         $categoryTree = \common\helpers\Categories::get_category_tree();
 
-        return $this->render('confirmproductmove.tpl', ['pInfo' => $pInfo, 'categoryTree' => $categoryTree]);
+        $categories = \common\models\Products2Categories::find()
+            ->where(['products_id' => $products['products_id']])->asArray()->all();
+        $cIDs = [];
+        foreach ($categories as $item) {
+            $cIDs[] = $item['categories_id'];
+        }
+
+        return $this->render('confirmproductmove.tpl', [
+            'pInfo' => $pInfo,
+            'categoryTree' => $categoryTree,
+            'cIDs' => $cIDs,
+        ]);
     }
 
     public function actionProductMove() {
@@ -1883,28 +1905,44 @@ class CategoriesController extends Sceleton {
 
         $pInfo->categories_id = Yii::$app->request->post('categories_id');
 
-        return $this->render('confirmproductcopy.tpl', ['pInfo' => $pInfo]);
+        $categories = \common\models\Products2Categories::find()
+            ->where(['products_id' => $products['products_id']])->asArray()->all();
+        $cIDs = [];
+        foreach ($categories as $item) {
+            $cIDs[] = $item['categories_id'];
+        }
+
+        return $this->render('confirmproductcopy.tpl', ['pInfo' => $pInfo, 'cIDs' => $cIDs]);
     }
 
     public function actionProductCopy() {
         $messageStack = \Yii::$container->get('message_stack');
         if (\common\helpers\Acl::rule(['TABLE_HEADING_PRODUCTS', 'IMAGE_COPY_TO'])) {
+            if ($_POST['copy_as'] == 'duplicate' && !isset($_POST['categories_id'])) {
+                // duplicate to top category if new category was not selected
+                $_POST['categories_id'] = ['0'];
+            }
             if (isset($_POST['products_id']) && isset($_POST['categories_id'])) {
                 $products_id = tep_db_prepare_input($_POST['products_id']);
-                $categories_id = tep_db_prepare_input($_POST['categories_id']);
+                $cIDs = tep_db_prepare_input($_POST['categories_id']);
 
-                if ($_POST['copy_as'] == 'link') {
-                    $check_query = tep_db_query("select count(*) as total from " . TABLE_PRODUCTS_TO_CATEGORIES . " where products_id = '" . (int) $products_id . "' and categories_id = '" . (int) $categories_id . "'");
-                    $check = tep_db_fetch_array($check_query);
-                    if ($check['total'] < '1') {
-                        tep_db_query("insert into " . TABLE_PRODUCTS_TO_CATEGORIES . " (products_id, categories_id) values ('" . (int) $products_id . "', '" . (int) $categories_id . "')");
-                    } else {
-                        $messageStack->add(ERROR_CANNOT_LINK_TO_SAME_CATEGORY);
+                if ($cIDs && !is_array($cIDs)) {
+                    $cIDs = [$cIDs];
+                }
+                foreach ($cIDs as $categories_id) {
+                    if ($_POST['copy_as'] == 'link') {
+                        $check_query = tep_db_query("select count(*) as total from " . TABLE_PRODUCTS_TO_CATEGORIES . " where products_id = '" . (int)$products_id . "' and categories_id = '" . (int)$categories_id . "'");
+                        $check = tep_db_fetch_array($check_query);
+                        if ($check['total'] < '1') {
+                            tep_db_query("insert into " . TABLE_PRODUCTS_TO_CATEGORIES . " (products_id, categories_id) values ('" . (int)$products_id . "', '" . (int)$categories_id . "')");
+                        } else {
+                            $messageStack->add(ERROR_CANNOT_LINK_TO_SAME_CATEGORY);
+                        }
+                    } elseif ($_POST['copy_as'] == 'duplicate') {
+                        $copyCategories = (int)\Yii::$app->request->post('copy_categories', 0);
+                        $copyAttributes = (bool)\Yii::$app->request->post('copy_attributes', false);
+                        \common\helpers\Product::duplicate($products_id, $categories_id, $copyAttributes, $copyCategories);
                     }
-                } elseif ($_POST['copy_as'] == 'duplicate') {
-                    $copyCategories = (int)\Yii::$app->request->post('copy_categories', 0);
-                    $copyAttributes = (bool)\Yii::$app->request->post('copy_attributes', false);
-                    \common\helpers\Product::duplicate($products_id, $categories_id, $copyAttributes, $copyCategories);
                 }
 
                 if (defined('USE_CACHE') && USE_CACHE == 'true') {
@@ -2239,7 +2277,7 @@ class CategoriesController extends Sceleton {
 
         $this->selectedMenu = array('catalog', 'categories');
 
-        $str_full = strlen($pInfo->products_model);
+        $str_full = strlen($pInfo->products_model ?? '');
         if ($str_full > 20) {
             $st_full_name = mb_substr($pInfo->products_model, 0, 20);
             $st_full_name .= '...';
@@ -5459,8 +5497,17 @@ class CategoriesController extends Sceleton {
 
             if (empty($sql_data_array['categories_seo_page_name'])) {
                 $sql_data_array['categories_seo_page_name'] = Seo::makeSlug(tep_db_prepare_input($_POST['categories_name'][$languages_id]));
+                $curSeo = $sql_data_array['categories_seo_page_name'];
+                
+                if (\common\models\CategoriesDescription::find()->where(['categories_seo_page_name' => $curSeo])->andWhere(['not', ['categories_id' => (int)$categories_id]])->exists()) {
+                    $seoMaxCount = (int) \common\models\CategoriesDescription::find()
+                        ->where("categories_seo_page_name LIKE '$curSeo-%'")
+                        ->andWhere(['not', ['categories_id' => (int)$categories_id]])
+                        ->max('CAST(SUBSTR(categories_seo_page_name, ' . (strlen($curSeo) + 2) . ') AS UNSIGNED)');
+                    $sql_data_array['categories_seo_page_name'] .= '-' . ++$seoMaxCount;
+                }
             }
-
+            
             $check_category = tep_db_query("select * from " . TABLE_CATEGORIES_DESCRIPTION . " where categories_id = '" . $categories_id . "' and language_id = '" . $languages[$i]['id'] . "' and affiliate_id = 0");
             if ($action == 'insert_category' || !tep_db_num_rows($check_category)) {
                 $insert_sql_data = [
@@ -6140,64 +6187,75 @@ class CategoriesController extends Sceleton {
                 $items =  Yii::$app->request->post('batch',[]);
                 if ( is_array($items) && count($items)>0 ) {
                     $current_category_id = Yii::$app->request->post('current_category_id');//где мы
-                    $categories_id = Yii::$app->request->post('categories_id');//куда
+                    $cIDs = Yii::$app->request->post('categories_id');//куда
                     $copy_to = Yii::$app->request->post('copy_to');
                     $copy_attributes = Yii::$app->request->post('copy_attributes');
-                    foreach ($items as $item) {
-                        list($what, $id) = explode('_',$item,2);
-                        if ( $what=='p' ) {
-                            switch ($copy_to) {
-                                case 'move':
 
-                                    $p2c = \common\models\Products2Categories::findOne(['products_id' => (int) $id, 'categories_id' => (int) $categories_id ]);
-                                    if ($current_category_id>0 && !$p2c && $current_category_id!=(int)$categories_id) {
-                                        tep_db_query("update " . TABLE_PRODUCTS_TO_CATEGORIES . " set categories_id = '" . (int) $categories_id . "' where products_id = '" . (int) $id . "' and categories_id = '" . (int) $current_category_id . "'");
-                                    } else {
-                                      // extra link from search
-                                      try {
-                                        $p2c = new \common\models\Products2Categories();
-                                        $p2c->categories_id = (int) $categories_id;
-                                        $p2c->products_id = (int) $id;
-                                        $p2c->sort_order = 0;
-                                        $p2c->save();
-                                      } catch (\Exception $e) {
-                                       \Yii::warning($e->getMessage());
-                                      }
+                    if ($cIDs && !is_array($cIDs)) {
+                        $cIDs = [$cIDs];
+                    }
+                    foreach ($cIDs as $categories_id) {
+                        foreach ($items as $item) {
+                            list($what, $id) = explode('_',$item,2);
+                            if ( $what=='p' ) {
+                                switch ($copy_to) {
+                                    case 'move':
 
-                                    }
+                                            $in_p2c = \common\models\Products2Categories::find()->where(['products_id' => (int)$id])->select(['categories_id'])->column();
+                                            $p2c = \common\models\Products2Categories::findOne(['products_id' => (int)$id, 'categories_id' => (int)$categories_id]);
+                                            if ($current_category_id > 0 && !$p2c && $current_category_id != (int)$categories_id) {
+                                                tep_db_query("update " . TABLE_PRODUCTS_TO_CATEGORIES . " set categories_id = '" . (int)$categories_id . "' where products_id = '" . (int)$id . "' and categories_id = '" . (int)$current_category_id . "'");
+                                            } else {
+                                                // extra link from search
+                                                if (count($in_p2c)==1){
+                                                    tep_db_query("update " . TABLE_PRODUCTS_TO_CATEGORIES . " set categories_id = '" . (int)$categories_id . "' where products_id = '" . (int)$id . "' and categories_id = '" . (int)$in_p2c[0] . "'");
+                                                }else{
+                                                    try {
+                                                        $p2c = new \common\models\Products2Categories();
+                                                        $p2c->categories_id = (int)$categories_id;
+                                                        $p2c->products_id = (int)$id;
+                                                        $p2c->sort_order = 0;
+                                                        $p2c->save();
+                                                    } catch (\Exception $e) {
+                                                        \Yii::warning($e->getMessage());
+                                                    }
+                                                }
 
-                                    break;
-                                case 'link':
-                                    $check_query = tep_db_query("select count(*) as total from " . TABLE_PRODUCTS_TO_CATEGORIES . " where products_id = '" . (int) $id . "' and categories_id = '" . (int) $categories_id . "'");
-                                    $check = tep_db_fetch_array($check_query);
-                                    if ($check['total'] < '1') {
-                                        tep_db_query("insert into " . TABLE_PRODUCTS_TO_CATEGORIES . " (products_id, categories_id) values ('" . (int) $id . "', '" . (int) $categories_id . "')");
-                                    }
-                                    break;
-                                case 'dublicate':
-                                    \common\helpers\Product::duplicate($id, $categories_id, $copy_attributes);
-                                    break;
-                            }
-                        } elseif ( $what=='c' ) {
+                                        }
 
-                          if ($id != $categories_id) {
-                            $cat = \common\models\Categories::findOne((int)$id);
-                            if ($categories_id>0) {
-                              $catTo = \common\models\Categories::findOne((int)$categories_id);
-                            }
-                            if ($cat && ($categories_id==0 || $catTo)) {
-                              $cat->parent_id = $categories_id;
-                              try {
-                                if ($categories_id>0) {
-                                  $cat->appendTo($catTo);
+                                        break;
+                                    case 'link':
+                                        $check_query = tep_db_query("select count(*) as total from " . TABLE_PRODUCTS_TO_CATEGORIES . " where products_id = '" . (int) $id . "' and categories_id = '" . (int) $categories_id . "'");
+                                        $check = tep_db_fetch_array($check_query);
+                                        if ($check['total'] < '1') {
+                                            tep_db_query("insert into " . TABLE_PRODUCTS_TO_CATEGORIES . " (products_id, categories_id) values ('" . (int) $id . "', '" . (int) $categories_id . "')");
+                                        }
+                                        break;
+                                    case 'dublicate':
+                                        \common\helpers\Product::duplicate($id, $categories_id, $copy_attributes);
+                                        break;
                                 }
-                                $cat->save();
-                                $catUpdated = true;
-                              } catch (\Exception $ex) {
-                                \Yii::warning("$id => $categories_id " . $ex->getMessage());
-                              }
+                            } elseif ( $what=='c' ) {
+
+                                if ($id != $categories_id) {
+                                    $cat = \common\models\Categories::findOne((int)$id);
+                                    if ($categories_id>0) {
+                                        $catTo = \common\models\Categories::findOne((int)$categories_id);
+                                    }
+                                    if ($cat && ($categories_id==0 || $catTo)) {
+                                        $cat->parent_id = $categories_id;
+                                        try {
+                                            if ($categories_id>0) {
+                                                $cat->appendTo($catTo);
+                                            }
+                                            $cat->save();
+                                            $catUpdated = true;
+                                        } catch (\Exception $ex) {
+                                            \Yii::warning("$id => $categories_id " . $ex->getMessage());
+                                        }
+                                    }
+                                }
                             }
-                          }
                         }
                     }
                     if ($catUpdated) {
@@ -6216,41 +6274,46 @@ class CategoriesController extends Sceleton {
             case 'product':
                 $copy_to = Yii::$app->request->post('copy_to');
                 $products_id = Yii::$app->request->post('products_id');
-                $categories_id = Yii::$app->request->post('categories_id');
-                switch ($copy_to) {
-                    case 'move':
-                        $current_category_id = Yii::$app->request->post('current_category_id');
-                        if (!\common\models\Products2Categories::findOne(['products_id' => (int) $products_id, 'categories_id' => (int) $categories_id ])) {
-                            if ('0'===$current_category_id /*Top*/ || $current_category_id>0) {
-                                tep_db_query("update " . TABLE_PRODUCTS_TO_CATEGORIES . " set categories_id = '" . (int) $categories_id . "' where products_id = '" . (int) $products_id . "' and categories_id = '" . (int) $current_category_id . "'");
-                            } else {
-                              // extra link from search
-                              try {
-                                $p2c = new \common\models\Products2Categories();
-                                $p2c->categories_id = (int) $categories_id;
-                                $p2c->products_id = (int) $products_id;
-                                $p2c->sort_order = 0;
-                                $p2c->save();
-                              } catch (\Exception $e) {
-                               \Yii::warning($e->getMessage());
-                              }
+                $cIDs = Yii::$app->request->post('categories_id');
+                if ($cIDs && !is_array($cIDs)) {
+                    $cIDs = [$cIDs];
+                }
+                foreach ($cIDs as $categories_id) {
+                    switch ($copy_to) {
+                        case 'move':
+                            $current_category_id = Yii::$app->request->post('current_category_id');
+                            if (!\common\models\Products2Categories::findOne(['products_id' => (int) $products_id, 'categories_id' => (int) $categories_id ])) {
+                                if ('0'===$current_category_id /*Top*/ || $current_category_id>0) {
+                                    tep_db_query("update " . TABLE_PRODUCTS_TO_CATEGORIES . " set categories_id = '" . (int) $categories_id . "' where products_id = '" . (int) $products_id . "' and categories_id = '" . (int) $current_category_id . "'");
+                                } else {
+                                    // extra link from search
+                                    try {
+                                        $p2c = new \common\models\Products2Categories();
+                                        $p2c->categories_id = (int) $categories_id;
+                                        $p2c->products_id = (int) $products_id;
+                                        $p2c->sort_order = 0;
+                                        $p2c->save();
+                                    } catch (\Exception $e) {
+                                        \Yii::warning($e->getMessage());
+                                    }
 
+                                }
                             }
-                        }
 
 
-                        break;
-                    case 'link':
-                        $check_query = tep_db_query("select count(*) as total from " . TABLE_PRODUCTS_TO_CATEGORIES . " where products_id = '" . (int) $products_id . "' and categories_id = '" . (int) $categories_id . "'");
-                        $check = tep_db_fetch_array($check_query);
-                        if ($check['total'] < '1') {
-                            tep_db_query("insert into " . TABLE_PRODUCTS_TO_CATEGORIES . " (products_id, categories_id) values ('" . (int) $products_id . "', '" . (int) $categories_id . "')");
-                        }
-                        break;
-                    case 'dublicate':
-                        $copy_attributes = Yii::$app->request->post('copy_attributes');
-                        \common\helpers\Product::duplicate($products_id, $categories_id, $copy_attributes);
-                        break;
+                            break;
+                        case 'link':
+                            $check_query = tep_db_query("select count(*) as total from " . TABLE_PRODUCTS_TO_CATEGORIES . " where products_id = '" . (int) $products_id . "' and categories_id = '" . (int) $categories_id . "'");
+                            $check = tep_db_fetch_array($check_query);
+                            if ($check['total'] < '1') {
+                                tep_db_query("insert into " . TABLE_PRODUCTS_TO_CATEGORIES . " (products_id, categories_id) values ('" . (int) $products_id . "', '" . (int) $categories_id . "')");
+                            }
+                            break;
+                        case 'dublicate':
+                            $copy_attributes = Yii::$app->request->post('copy_attributes');
+                            \common\helpers\Product::duplicate($products_id, $categories_id, $copy_attributes);
+                            break;
+                    }
                 }
                 if (USE_CACHE == 'true') {
                     \common\helpers\System::reset_cache_block('categories');
@@ -6258,32 +6321,37 @@ class CategoriesController extends Sceleton {
                 }
                 break;
             case 'category':
-                $categories_id = Yii::$app->request->post('categories_id');
+                $cIDs = Yii::$app->request->post('categories_id');
                 $parent_id = Yii::$app->request->post('parent_id');
-                if ($categories_id != $parent_id) {
-                //    tep_db_query("update " . TABLE_CATEGORIES . " set parent_id = '" . (int) $parent_id . "' where categories_id = '" . (int) $categories_id . "'");
-                  $cat = \common\models\Categories::findOne((int)$categories_id);
-                  if ($parent_id>0) {
-                    $catTo = \common\models\Categories::findOne((int)$parent_id);
-                  }
-                  if ($cat && ($parent_id==0 || $catTo)) {
-                    $cat->parent_id = $parent_id;
-                    try {
-                      if ($parent_id>0) {
-                        $cat->appendTo($catTo);
-                      }
-                      $cat->save();
-                    } catch (\Exception $ex) {
-                      \Yii::warning("$categories_id => $parent_id " . $ex->getMessage());
+                if ($cIDs && !is_array($cIDs)) {
+                    $cIDs = [$cIDs];
+                }
+                foreach ($cIDs as $categories_id) {
+                    if ($categories_id != $parent_id) {
+                        //    tep_db_query("update " . TABLE_CATEGORIES . " set parent_id = '" . (int) $parent_id . "' where categories_id = '" . (int) $categories_id . "'");
+                        $cat = \common\models\Categories::findOne((int)$categories_id);
+                        if ($parent_id>0) {
+                            $catTo = \common\models\Categories::findOne((int)$parent_id);
+                        }
+                        if ($cat && ($parent_id==0 || $catTo)) {
+                            $cat->parent_id = $parent_id;
+                            try {
+                                if ($parent_id>0) {
+                                    $cat->appendTo($catTo);
+                                }
+                                $cat->save();
+                            } catch (\Exception $ex) {
+                                \Yii::warning("$categories_id => $parent_id " . $ex->getMessage());
+                            }
+                        }
                     }
-                  }
                 }
                 if ($parent_id==0) {
                   \common\helpers\Categories::update_categories(0);
                 }
                 $this->view->categoriesTree = $this->getCategoryTree();
 
-                if ($categories_id>0) {
+                if ($cIDs[0]>0) {
                   $this->view->categoriesOpenedTree = \common\helpers\Categories::getCategoryParentsIds($categories_id);
                 } else {
                   $this->view->categoriesOpenedTree = [];

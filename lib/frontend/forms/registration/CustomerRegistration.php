@@ -125,6 +125,7 @@ class CustomerRegistration extends Model {
         foreach ($this->attributes as $attribute_name => $attribute_value) {
             if (is_string($attribute_value) && !in_array($attribute_name, ['password', 'confirmation','captcha_widget'])) {
                 $this->$attribute_name = \yii\helpers\HtmlPurifier::process($attribute_value);
+                $this->$attribute_name = str_replace('&amp;', '&', $this->$attribute_name);
             }
         }
         if ($this->captha_enabled == 'recaptha'){
@@ -503,7 +504,7 @@ class CustomerRegistration extends Model {
                         $this->addError($attribute, ENTRY_COUNTRY_ERROR);
                     } else {
                         $this->country = (int) STORE_COUNTRY;
-                        $this->zone_id = (int) STORE_ZONE;
+                        //$this->zone_id = (int) STORE_ZONE;
                     }
                 }
                 break;
@@ -546,7 +547,7 @@ class CustomerRegistration extends Model {
             $this->country = (int) STORE_COUNTRY;
         }
         if (is_null($this->zone_id)) {
-            $this->zone_id = (int) STORE_ZONE;
+            //$this->zone_id = (int) STORE_ZONE;
         }
     }
 
@@ -673,7 +674,7 @@ class CustomerRegistration extends Model {
                     $fields[] = 'dob';
                     $fields[] = 'gdpr';
                 }
-                if (\common\helpers\Acl::checkExtensionAllowed('Subscribers', 'allowed') && defined('ENABLE_CUSTOMERS_NEWSLETTER') && ENABLE_CUSTOMERS_NEWSLETTER == 'true') {
+                if (\common\helpers\Extensions::callIfAllowed('Subscribers', 'optionIsCustomerNewsletterEnabled')) {
                     $fields[] = 'newsletter';
                     $fields[] = 'regular_offers';
                 }
@@ -761,7 +762,7 @@ class CustomerRegistration extends Model {
                     $fields[] = 'confirmation';
                     //}
                 }
-                if (\common\helpers\Acl::checkExtensionAllowed('Subscribers', 'allowed') && defined('ENABLE_CUSTOMERS_NEWSLETTER') && ENABLE_CUSTOMERS_NEWSLETTER == 'true') {
+                if (\common\helpers\Extensions::callIfAllowed('Subscribers', 'optionIsCustomerNewsletterEnabled')) {
                     $fields[] = 'newsletter';
                     $fields[] = 'regular_offers';
                 }

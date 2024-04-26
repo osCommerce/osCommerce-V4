@@ -15,11 +15,16 @@
                     <div class="status-left" style="float: none;">
                         <span>{$smarty.const.ENTRY_ACTIVE}</span>
                         {Html::activeCheckBox($customerForm, 'status', ['class' => 'check_bot_switch_on_off'])}
-                        {if \common\helpers\Acl::checkExtensionAllowed('ReportChangesHistory')}
+
                         <div class="btn-right">
-                            <a href="{Yii::$app->urlManager->createUrl(['logger/popup', 'type' => 'Customer', 'id' => $cInfo->customers_id])}" class="btn-link-create popup">{$smarty.const.TEXT_HISTORY}</a>
+                            {foreach \common\helpers\Hooks::getList('customers/customeredit', 'btn-bar-right') as $file}
+                                {include file=$file}
+                            {/foreach}
+
+                            {if \common\helpers\Acl::checkExtensionAllowed('ReportChangesHistory')}
+                                <a href="{Yii::$app->urlManager->createUrl(['logger/popup', 'type' => 'Customer', 'id' => $cInfo->customers_id])}" class="btn-link-create popup">{$smarty.const.TEXT_HISTORY}</a>
+                            {/if}
                         </div>
-                        {/if}
                     </div>
                 </div>
             </div>
@@ -69,7 +74,7 @@
                     </div>
                 </div>
                 {/if}
-
+ 
             </div>
             {/if}
             <div class="create-or-wrap after create-cus-wrap">

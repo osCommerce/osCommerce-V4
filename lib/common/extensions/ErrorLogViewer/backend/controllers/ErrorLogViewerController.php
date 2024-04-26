@@ -23,6 +23,7 @@ class ErrorLogViewerController extends \common\classes\modules\SceletonExtension
     public function __construct($id, $module = null, $config = [])
     {
         parent::__construct($id, $module, $config);
+        $this->navigation[] = array('link' => Yii::$app->urlManager->createUrl('error-log-viewer/index'), 'title' => EXT_ELV_HEADING_TITLE);
         if((new ErrorLogViewer())->DeleteOldZip() !== true)
         {
             \Yii::$app->session->setFlash('ELV', sprintf(EXT_ELV_ERR_DELETE_OLD_ZIP, (new ErrorLogViewer())->DeleteOldZip()));
@@ -34,7 +35,6 @@ class ErrorLogViewerController extends \common\classes\modules\SceletonExtension
         $languages_id = Yii::$app->settings->get('languages_id');
         $this->topButtons[] = '<button onclick="deleteAllLog()" class="btn btn-primary"><i class="icon-trash"></i>' . EXT_ELV_TEXT_CLEAR_ALL . '</button>';
         $this->topButtons[] = '<a href="'.Yii::$app->urlManager->createUrl('error-log-viewer/download').'" class="btn btn-primary"><i class="icon-download"></i>' . EXT_ELV_TEXT_DOWNLOAD_ALL_LOGS . '</a>';
-        $this->navigation[] = array('link' => Yii::$app->urlManager->createUrl('error-log-viewer/index'), 'title' => EXT_ELV_HEADING_TITLE);
 
         $this->view->headingTitle = EXT_ELV_HEADING_TITLE;
 
@@ -259,7 +259,7 @@ class ErrorLogViewerController extends \common\classes\modules\SceletonExtension
                 );
             }
 
-            $response = array('data' => array_reverse($list));
+            $response = array('data' => array_reverse($list??[]));
         }catch (\Exception $e)
         {
             \Yii::$app->session->setFlash('ELV', sprintf('File %s not supported', $file));

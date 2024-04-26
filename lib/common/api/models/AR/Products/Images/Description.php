@@ -277,7 +277,7 @@ class Description extends EPMap
 //        }
 
         if ( $this->getDirtyAttributes(['hash_file_name','orig_file_name', 'use_origin_image_name']) ) {
-            $this->file_name = basename($this->orig_file_name);
+            $this->file_name = basename($this->orig_file_name ?? '');
         }
 
         if ( $insert && empty($this->file_name) ) {

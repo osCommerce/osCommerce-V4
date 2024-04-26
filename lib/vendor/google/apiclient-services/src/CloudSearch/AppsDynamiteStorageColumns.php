@@ -22,10 +22,6 @@ class AppsDynamiteStorageColumns extends \Google\Collection
   protected $collection_key = 'columnItems';
   protected $columnItemsType = AppsDynamiteStorageColumnsColumn::class;
   protected $columnItemsDataType = 'array';
-  /**
-   * @var string
-   */
-  public $wrapStyle;
 
   /**
    * @param AppsDynamiteStorageColumnsColumn[]
@@ -40,20 +36,6 @@ class AppsDynamiteStorageColumns extends \Google\Collection
   public function getColumnItems()
   {
     return $this->columnItems;
-  }
-  /**
-   * @param string
-   */
-  public function setWrapStyle($wrapStyle)
-  {
-    $this->wrapStyle = $wrapStyle;
-  }
-  /**
-   * @return string
-   */
-  public function getWrapStyle()
-  {
-    return $this->wrapStyle;
   }
 }
 

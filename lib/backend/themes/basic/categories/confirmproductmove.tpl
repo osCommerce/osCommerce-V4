@@ -1,24 +1,87 @@
-<div class="or_box_head">{$smarty.const.TEXT_INFO_HEADING_MOVE_PRODUCT}</div>
 <form name="products" action="" method="post" id="products_move" onSubmit="return moveProduct();">
-    <div class="col_title">{sprintf($smarty.const.TEXT_MOVE_PRODUCTS_INTRO, $pInfo->products_name)}</div>
-    <div class="col_desc">{$smarty.const.TEXT_INFO_CURRENT_CATEGORIES}</div>
-    <div class="col_desc">{\common\helpers\Categories::output_generated_category_path($pInfo->products_id, 'product')}</div>
-    <div class="col_desc">{sprintf($smarty.const.TEXT_MOVE, $pInfo->products_name)}</div>
-    <div class="choose-visibility">
-        <select name="move_to_category_id" class="col-md-12 select2 select2-offscreen">
-            {foreach $categoryTree as $category}
-                <option value="{$category.id}">{$category.text}</option>
-            {/foreach}
-        </select>
-        {*tep_draw_pull_down_menu('move_to_category_id', \common\helpers\Categories::get_category_tree(), $pInfo->categories_id)*}</div>
-    <div class="btn-toolbar btn-toolbar-order">
-        <button class="btn btn-move btn-no-margin">{$smarty.const.IMAGE_MOVE}</button><button class="btn btn-cancel" onClick="return resetStatement()">{$smarty.const.IMAGE_CANCEL}</button>
+
+    <div class="popup-heading">
+        Move "{$pInfo->products_name}"
+    </div>
+    <div class="popup-content">
+
+        <div class="row mb-3">
+            <div class="col-4">
+                <b>{$smarty.const.TEXT_INFO_CURRENT_CATEGORIES}</b>
+            </div>
+            <div class="col-8" style="font-style: italic">
+                {\common\helpers\Categories::output_generated_category_path($pInfo->products_id, 'product')}
+            </div>
+        </div>
+
+
+        <div class="mb-1"><b>{$smarty.const.TEXT_MOVE_PRODUCTS_INTRO}</b></div>
+        <div class="mb-3" style="height: 360px">
+            <select name="move_to_category_id" class="form-control categories-select">
+                {foreach \common\helpers\Categories::get_category_tree(0, '', '', '', false, true) as $item}
+                    <option value="{$item.id}"{if in_array($item.id, $cIDs)} disabled{/if}>{$item.text}</option>
+                {/foreach}
+            </select>
+        </div>
+
+    </div>
+    <div class="popup-buttons">
+        <button class="btn btn-cancel" onClick="return resetStatement()">{$smarty.const.IMAGE_CANCEL}</button>
+        <button class="btn btn-move btn-confirm">{$smarty.const.IMAGE_MOVE}</button>
         <input type="hidden" name="products_id" value="{$pInfo->products_id}">
         <input type="hidden" name="categories_id" value="{$pInfo->categories_id}">
     </div>
+
 </form>
 <script type="text/javascript">
-$(function(){
-   $('.select2').select2();
-});
+    (function($){
+        $('.categories-select').multipleSelect({
+            filter: true,
+            place:'{$smarty.const.TEXT_SEARCH_ITEMS}',
+            isOpen: true,
+            keepOpen: true,
+            maxHeight: 300,
+            selectAll: false,
+            data: [
+                {foreach \common\helpers\Categories::get_category_tree(0, '', '', '', false, true) as $item}
+                {
+                    text: wrapCategory('{$item.text}'),
+                    value: '{$item.id}',
+                    {if in_array($item.id, $cIDs)}
+                    disabled: true
+                    {/if}
+                },
+                {/foreach}
+            ],
+            onFilter: function (t) {
+                if (t) {
+                    $('.categories-select').addClass('searching')
+                } else {
+                    $('.categories-select').removeClass('searching')
+                }
+            }
+        });
+
+        function wrapCategory(str) {
+            let lastIndex = str.lastIndexOf("&nbsp;&nbsp;&gt;&nbsp;&nbsp;");
+
+            if (lastIndex !== -1) {
+                lastIndex = lastIndex + 28;
+                const startCategory = str.substring(0, lastIndex);
+                const endCategory = str.substring(lastIndex);
+
+                return `<span class="in-category">${ startCategory}</span>${ endCategory}`.replaceAll('&nbsp;', '<span class="nbsp">&nbsp;</span>');
+            }
+
+            return str;
+        }
+
+        $('.copy-as').on('click', function() {
+            if ($(this).val() == 'duplicate') {
+                $('#copy_dup_selected').show();
+            } else {
+                $('#copy_dup_selected').hide();
+            }
+        });
+    })(jQuery);
 </script>

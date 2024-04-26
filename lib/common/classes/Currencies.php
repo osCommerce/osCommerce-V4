@@ -407,6 +407,8 @@ class Currencies {
             return round(\common\helpers\Tax::$method($products_price, $products_tax), $this->currencies[$currency]['decimal_places']) * $quantity;
         } elseif (defined('PRODUCTS_PRICE_EXC_ROUND') && PRODUCTS_PRICE_EXC_ROUND == 'true') {
             return round(\common\helpers\Tax::$method($products_price * $quantity, $products_tax), $this->currencies[$currency]['decimal_places']);
+        } elseif (defined('DISPLAY_PRICE_WITH_TAX') && PRODUCTS_PRICE_EXC_ROUND == 'false') { // 2check US/b2b tax-style fix (no inc VAT price on frontend)
+            return \common\helpers\Tax::$method($products_price * $quantity, $products_tax);
         } else {
             return round(\common\helpers\Tax::$method($products_price, $products_tax) * $quantity, $this->currencies[$currency]['decimal_places']);
         }

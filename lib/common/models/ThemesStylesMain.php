@@ -12,7 +12,7 @@ use Yii;
  * @property string $value
  * @property string $type
  * @property int $sort_order
- * @property int $main_style
+ * @property int $group_id
  */
 class ThemesStylesMain extends \yii\db\ActiveRecord
 {
@@ -31,7 +31,7 @@ class ThemesStylesMain extends \yii\db\ActiveRecord
     {
         return [
             [['theme_name', 'name'], 'required'],
-            [['sort_order', 'main_style'], 'integer'],
+            [['sort_order'], 'integer'],
             [['theme_name', 'name', 'value', 'type'], 'string', 'max' => 255],
             [['theme_name', 'name'], 'unique', 'targetAttribute' => ['theme_name', 'name']],
         ];

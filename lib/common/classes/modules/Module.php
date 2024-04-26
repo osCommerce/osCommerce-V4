@@ -1021,4 +1021,9 @@ abstract class Module{
         return $ret;
     }
 
+    public static function getManualUrl()
+    {
+        return sprintf('https://www.oscommerce.com/application/manual?app=%s&type=%s', self::getModuleCode(), self::getType());
+    }
+
 }

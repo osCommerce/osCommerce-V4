@@ -96,6 +96,7 @@ class Banner_managerController extends Sceleton
         $group_id = Yii::$app->request->get('group_id', 0);
         $row_id = Yii::$app->request->get('row_id', 0);
         $search_title = Yii::$app->request->get('search_title', '');
+        $search_group = Yii::$app->request->get('search_group', '');
         $search_file = Yii::$app->request->get('search_file', '');
         $search_text = Yii::$app->request->get('search_text', '');
         $search_status = Yii::$app->request->get('search_status', '');
@@ -176,6 +177,7 @@ class Banner_managerController extends Sceleton
             'search_file' => $search_file,
             'search_text' => $search_text,
             'search_status' => $search_status,
+            'search_group' => $search_group,
         ));
     }
 
@@ -260,6 +262,7 @@ class Banner_managerController extends Sceleton
         $search_text = $output['search_text'] ?? null;
         $search_status = $output['search_status'] ?? null;
         $empty_groups = $output['empty_groups'] ?? null;
+        $search_group = $output['search_group'] ?? null;
 
         if ($group_id || $search_title || $search_file || $search_text || $search) {
             if ($group_id == '-1' || $group_id == -1) $group_id = 0;
@@ -417,6 +420,9 @@ class Banner_managerController extends Sceleton
 
             $responseListTmp = [];
             foreach ($bannersGroups as $bannersGroup) {
+                if ($search_group && !str_contains(strtolower($bannersGroup['banners_group']), strtolower($search_group))) {
+                    continue;
+                }
                 $tmp = [];
                 $tmp['group'] = $bannersGroup['banners_group'];
                 $tmp['id'] = $bannersGroup['id'];

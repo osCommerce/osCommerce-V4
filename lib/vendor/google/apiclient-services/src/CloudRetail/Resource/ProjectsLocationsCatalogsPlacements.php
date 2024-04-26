@@ -48,6 +48,7 @@ class ProjectsLocationsCatalogsPlacements extends \Google\Service\Resource
    * @param GoogleCloudRetailV2PredictRequest $postBody
    * @param array $optParams Optional parameters.
    * @return GoogleCloudRetailV2PredictResponse
+   * @throws \Google\Service\Exception
    */
   public function predict($placement, GoogleCloudRetailV2PredictRequest $postBody, $optParams = [])
   {
@@ -65,10 +66,11 @@ class ProjectsLocationsCatalogsPlacements extends \Google\Service\Resource
    * ervingConfigs/default_serving_config` or the name of the legacy placement
    * resource, such as `projects/locations/global/catalogs/default_catalog/placeme
    * nts/default_search`. This field is used to identify the serving config name
-   * and the set of models that will be used to make the search.
+   * and the set of models that are used to make the search.
    * @param GoogleCloudRetailV2SearchRequest $postBody
    * @param array $optParams Optional parameters.
    * @return GoogleCloudRetailV2SearchResponse
+   * @throws \Google\Service\Exception
    */
   public function search($placement, GoogleCloudRetailV2SearchRequest $postBody, $optParams = [])
   {

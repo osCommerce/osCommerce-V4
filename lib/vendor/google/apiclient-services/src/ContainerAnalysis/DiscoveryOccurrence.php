@@ -20,14 +20,26 @@ namespace Google\Service\ContainerAnalysis;
 class DiscoveryOccurrence extends \Google\Collection
 {
   protected $collection_key = 'analysisError';
+  /**
+   * @var AnalysisCompleted
+   */
+  public $analysisCompleted;
   protected $analysisCompletedType = AnalysisCompleted::class;
   protected $analysisCompletedDataType = '';
+  /**
+   * @var Status[]
+   */
+  public $analysisError;
   protected $analysisErrorType = Status::class;
   protected $analysisErrorDataType = 'array';
   /**
    * @var string
    */
   public $analysisStatus;
+  /**
+   * @var Status
+   */
+  public $analysisStatusError;
   protected $analysisStatusErrorType = Status::class;
   protected $analysisStatusErrorDataType = '';
   /**
@@ -46,6 +58,12 @@ class DiscoveryOccurrence extends \Google\Collection
    * @var string
    */
   public $lastScanTime;
+  /**
+   * @var SBOMStatus
+   */
+  public $sbomStatus;
+  protected $sbomStatusType = SBOMStatus::class;
+  protected $sbomStatusDataType = '';
 
   /**
    * @param AnalysisCompleted
@@ -158,6 +176,20 @@ class DiscoveryOccurrence extends \Google\Collection
   public function getLastScanTime()
   {
     return $this->lastScanTime;
+  }
+  /**
+   * @param SBOMStatus
+   */
+  public function setSbomStatus(SBOMStatus $sbomStatus)
+  {
+    $this->sbomStatus = $sbomStatus;
+  }
+  /**
+   * @return SBOMStatus
+   */
+  public function getSbomStatus()
+  {
+    return $this->sbomStatus;
   }
 }
 

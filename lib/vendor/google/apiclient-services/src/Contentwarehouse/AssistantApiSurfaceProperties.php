@@ -19,8 +19,16 @@ namespace Google\Service\Contentwarehouse;
 
 class AssistantApiSurfaceProperties extends \Google\Model
 {
+  /**
+   * @var AssistantApiSurfacePropertiesExecutionCapabilities
+   */
+  public $executionCapabilities;
   protected $executionCapabilitiesType = AssistantApiSurfacePropertiesExecutionCapabilities::class;
   protected $executionCapabilitiesDataType = '';
+  /**
+   * @var bool
+   */
+  public $prefersGlanceableUi;
   /**
    * @var string
    */
@@ -43,6 +51,20 @@ class AssistantApiSurfaceProperties extends \Google\Model
   public function getExecutionCapabilities()
   {
     return $this->executionCapabilities;
+  }
+  /**
+   * @param bool
+   */
+  public function setPrefersGlanceableUi($prefersGlanceableUi)
+  {
+    $this->prefersGlanceableUi = $prefersGlanceableUi;
+  }
+  /**
+   * @return bool
+   */
+  public function getPrefersGlanceableUi()
+  {
+    return $this->prefersGlanceableUi;
   }
   /**
    * @param string

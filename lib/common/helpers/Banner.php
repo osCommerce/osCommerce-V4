@@ -207,19 +207,17 @@ class Banner {
         foreach ($groupData as $banner) {
             $groupSizes = BannersGroupsSizes::findOne([
                 'group_id' => $id,
-                'image_width' => $banner['image_width'],
+                'image_width' => $banner['image_width'] ?? '',
             ]);
-            if ($groupSizes) {
+            if ($groupSizes || !$banner['image_width']) {
                 continue;
             }
             $groupSizes = new BannersGroupsSizes();
-            $groupSizes->attributes = [
-                'group_id' => $id,
-                'width_from' => $banner['width_from'],
-                'width_to' => $banner['width_to'],
-                'image_width' => $banner['image_width'],
-                'image_height' => $banner['image_height'],
-            ];
+            $groupSizes->group_id = $id;
+            $groupSizes->width_from = $banner['width_from'] ?? 0;
+            $groupSizes->width_to = $banner['width_to'] ?? 0;
+            $groupSizes->image_width = $banner['image_width'] ?? 0;
+            $groupSizes->image_height = $banner['image_height'] ?? 0;
             $groupSizes->save(false);
         }
 

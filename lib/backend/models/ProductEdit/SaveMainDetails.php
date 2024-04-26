@@ -72,9 +72,6 @@ class SaveMainDetails
 
         $sql_data_array['source'] = Yii::$app->request->post('source');
 
-        $sql_data_array['subscription'] = (int) Yii::$app->request->post('subscription');
-        $sql_data_array['subscription_code'] = Yii::$app->request->post('subscription_code');
-
         // save product behavior buttons
         $sql_data_array['request_quote'] = Yii::$app->request->post('request_quote', 0);
         $sql_data_array['request_quote_out_stock'] = Yii::$app->request->post('request_quote_out_stock', 0);

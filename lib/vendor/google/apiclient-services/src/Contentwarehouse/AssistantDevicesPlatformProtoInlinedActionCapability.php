@@ -19,22 +19,44 @@ namespace Google\Service\Contentwarehouse;
 
 class AssistantDevicesPlatformProtoInlinedActionCapability extends \Google\Model
 {
+  /**
+   * @var AssistantDevicesPlatformProtoAlarmCapability
+   */
+  public $alarm;
   protected $alarmType = AssistantDevicesPlatformProtoAlarmCapability::class;
   protected $alarmDataType = '';
+  /**
+   * @var AssistantDevicesPlatformProtoResponseLimits
+   */
+  public $responseLimits;
   protected $responseLimitsType = AssistantDevicesPlatformProtoResponseLimits::class;
   protected $responseLimitsDataType = '';
   /**
    * @var bool
    */
   public $supportSdkExecute;
+  /**
+   * @var AssistantDevicesPlatformProtoSupportedDeviceOps
+   */
+  public $supportedDeviceOps;
   protected $supportedDeviceOpsType = AssistantDevicesPlatformProtoSupportedDeviceOps::class;
   protected $supportedDeviceOpsDataType = '';
   /**
    * @var bool
    */
   public $supportsMultiResponse;
+  /**
+   * @var AssistantDevicesPlatformProtoTimerCapability
+   */
+  public $timer;
   protected $timerType = AssistantDevicesPlatformProtoTimerCapability::class;
   protected $timerDataType = '';
+  /**
+   * @var AssistantDevicesPlatformProtoTtsOutputCapability
+   */
+  public $ttsOutput;
+  protected $ttsOutputType = AssistantDevicesPlatformProtoTtsOutputCapability::class;
+  protected $ttsOutputDataType = '';
 
   /**
    * @param AssistantDevicesPlatformProtoAlarmCapability
@@ -119,6 +141,20 @@ class AssistantDevicesPlatformProtoInlinedActionCapability extends \Google\Model
   public function getTimer()
   {
     return $this->timer;
+  }
+  /**
+   * @param AssistantDevicesPlatformProtoTtsOutputCapability
+   */
+  public function setTtsOutput(AssistantDevicesPlatformProtoTtsOutputCapability $ttsOutput)
+  {
+    $this->ttsOutput = $ttsOutput;
+  }
+  /**
+   * @return AssistantDevicesPlatformProtoTtsOutputCapability
+   */
+  public function getTtsOutput()
+  {
+    return $this->ttsOutput;
   }
 }
 

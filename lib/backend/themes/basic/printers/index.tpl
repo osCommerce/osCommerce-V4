@@ -10,9 +10,9 @@
 
 {if $isMultiPlatforms}
     <div class="tabbable tabbable-custom" style="margin-bottom: 0;">
-        <ul class="nav nav-tabs">
+        <ul class="nav nav-tabs printers-list-tabs">
             {foreach $platforms as $platform}
-              <li class="platform-tab {if $platform['id']== $first_platform_id} active {/if}" data-platform_id="{$platform['id']}"><a onclick="loadServices('printers/list?platform_id={$platform['id']}')" data-toggle="tab"><span>{$platform['text']}</span></a></li>
+              <li class="platform-tab {if $platform['id']== $first_platform_id} active {/if}" data-platform_id="{$platform['id']}"><a onclick="loadServices('printers/list?platform_id={$platform['id']}', this)" data-toggle="tab"><span>{$platform['text']}</span></a></li>
             {/foreach}
         </ul>
     </div>
@@ -81,10 +81,13 @@ function resetStatement() {
     return false;
 }
 
-function loadServices(url){
+function loadServices(url, e){
     var table = $('.table').DataTable();
      
     table.ajax.url( url ).load();
+
+    $('.printers-list-tabs > li').removeClass('active')
+    $(e).closest('li').addClass('active')
 }
 
 

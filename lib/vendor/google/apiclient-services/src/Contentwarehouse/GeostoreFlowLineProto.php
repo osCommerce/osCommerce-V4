@@ -19,9 +19,33 @@ namespace Google\Service\Contentwarehouse;
 
 class GeostoreFlowLineProto extends \Google\Model
 {
+  /**
+   * @var GeostoreCurvatureProto
+   */
+  public $curvature;
+  protected $curvatureType = GeostoreCurvatureProto::class;
+  protected $curvatureDataType = '';
+  /**
+   * @var GeostoreTrackProto
+   */
+  public $track;
   protected $trackType = GeostoreTrackProto::class;
   protected $trackDataType = '';
 
+  /**
+   * @param GeostoreCurvatureProto
+   */
+  public function setCurvature(GeostoreCurvatureProto $curvature)
+  {
+    $this->curvature = $curvature;
+  }
+  /**
+   * @return GeostoreCurvatureProto
+   */
+  public function getCurvature()
+  {
+    return $this->curvature;
+  }
   /**
    * @param GeostoreTrackProto
    */

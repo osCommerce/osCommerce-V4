@@ -65,6 +65,7 @@ class ProjectsRegionsClusters extends \Google\Service\Resource
    * contain only letters (a-z, A-Z), numbers (0-9), underscores (_), and hyphens
    * (-). The maximum length is 40 characters.
    * @return Operation
+   * @throws \Google\Service\Exception
    */
   public function create($projectId, $region, Cluster $postBody, $optParams = [])
   {
@@ -87,6 +88,14 @@ class ProjectsRegionsClusters extends \Google\Service\Resource
    * @opt_param string clusterUuid Optional. Specifying the cluster_uuid means the
    * RPC should fail (with error NOT_FOUND) if cluster with specified UUID does
    * not exist.
+   * @opt_param string gracefulTerminationTimeout Optional. The graceful
+   * termination timeout for the deletion of the cluster. Indicate the time the
+   * request will wait to complete the running jobs on the cluster before its
+   * forceful deletion. Default value is 0 indicating that the user has not
+   * enabled the graceful termination. Value can be between 60 second and 6 Hours,
+   * in case the graceful termination is enabled. (There is no separate flag to
+   * check the enabling or disabling of graceful termination, it can be checked by
+   * the values in the field).
    * @opt_param string requestId Optional. A unique ID used to identify the
    * request. If the server receives two DeleteClusterRequest (https://cloud.googl
    * e.com/dataproc/docs/reference/rpc/google.cloud.dataproc.v1#google.cloud.datap
@@ -97,6 +106,7 @@ class ProjectsRegionsClusters extends \Google\Service\Resource
    * contain only letters (a-z, A-Z), numbers (0-9), underscores (_), and hyphens
    * (-). The maximum length is 40 characters.
    * @return Operation
+   * @throws \Google\Service\Exception
    */
   public function delete($projectId, $region, $clusterName, $optParams = [])
   {
@@ -120,6 +130,7 @@ class ProjectsRegionsClusters extends \Google\Service\Resource
    * @param DiagnoseClusterRequest $postBody
    * @param array $optParams Optional parameters.
    * @return Operation
+   * @throws \Google\Service\Exception
    */
   public function diagnose($projectId, $region, $clusterName, DiagnoseClusterRequest $postBody, $optParams = [])
   {
@@ -137,6 +148,7 @@ class ProjectsRegionsClusters extends \Google\Service\Resource
    * @param string $clusterName Required. The cluster name.
    * @param array $optParams Optional parameters.
    * @return Cluster
+   * @throws \Google\Service\Exception
    */
   public function get($projectId, $region, $clusterName, $optParams = [])
   {
@@ -155,6 +167,7 @@ class ProjectsRegionsClusters extends \Google\Service\Resource
    * @param GetIamPolicyRequest $postBody
    * @param array $optParams Optional parameters.
    * @return Policy
+   * @throws \Google\Service\Exception
    */
   public function getIamPolicy($resource, GetIamPolicyRequest $postBody, $optParams = [])
   {
@@ -175,6 +188,7 @@ class ProjectsRegionsClusters extends \Google\Service\Resource
    * @param InjectCredentialsRequest $postBody
    * @param array $optParams Optional parameters.
    * @return Operation
+   * @throws \Google\Service\Exception
    */
   public function injectCredentials($project, $region, $cluster, InjectCredentialsRequest $postBody, $optParams = [])
   {
@@ -206,6 +220,7 @@ class ProjectsRegionsClusters extends \Google\Service\Resource
    * @opt_param int pageSize Optional. The standard List page size.
    * @opt_param string pageToken Optional. The standard List page token.
    * @return ListClustersResponse
+   * @throws \Google\Service\Exception
    */
   public function listProjectsRegionsClusters($projectId, $region, $optParams = [])
   {
@@ -261,6 +276,7 @@ class ProjectsRegionsClusters extends \Google\Service\Resource
    * config.autoscaling_config.policy_uri Use, stop using, or change autoscaling
    * policies
    * @return Operation
+   * @throws \Google\Service\Exception
    */
   public function patch($projectId, $region, $clusterName, Cluster $postBody, $optParams = [])
   {
@@ -279,6 +295,7 @@ class ProjectsRegionsClusters extends \Google\Service\Resource
    * @param RepairClusterRequest $postBody
    * @param array $optParams Optional parameters.
    * @return Operation
+   * @throws \Google\Service\Exception
    */
   public function repair($projectId, $region, $clusterName, RepairClusterRequest $postBody, $optParams = [])
   {
@@ -298,6 +315,7 @@ class ProjectsRegionsClusters extends \Google\Service\Resource
    * @param SetIamPolicyRequest $postBody
    * @param array $optParams Optional parameters.
    * @return Policy
+   * @throws \Google\Service\Exception
    */
   public function setIamPolicy($resource, SetIamPolicyRequest $postBody, $optParams = [])
   {
@@ -316,6 +334,7 @@ class ProjectsRegionsClusters extends \Google\Service\Resource
    * @param StartClusterRequest $postBody
    * @param array $optParams Optional parameters.
    * @return Operation
+   * @throws \Google\Service\Exception
    */
   public function start($projectId, $region, $clusterName, StartClusterRequest $postBody, $optParams = [])
   {
@@ -334,6 +353,7 @@ class ProjectsRegionsClusters extends \Google\Service\Resource
    * @param StopClusterRequest $postBody
    * @param array $optParams Optional parameters.
    * @return Operation
+   * @throws \Google\Service\Exception
    */
   public function stop($projectId, $region, $clusterName, StopClusterRequest $postBody, $optParams = [])
   {
@@ -355,6 +375,7 @@ class ProjectsRegionsClusters extends \Google\Service\Resource
    * @param TestIamPermissionsRequest $postBody
    * @param array $optParams Optional parameters.
    * @return TestIamPermissionsResponse
+   * @throws \Google\Service\Exception
    */
   public function testIamPermissions($resource, TestIamPermissionsRequest $postBody, $optParams = [])
   {

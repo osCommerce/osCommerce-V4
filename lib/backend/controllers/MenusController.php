@@ -313,6 +313,12 @@ class MenusController extends Sceleton {
                   }
             }
 
+            if ($row['settings'] ?? false) {
+                $row['settings'] = json_decode($row['settings'], true);
+            } else {
+                $row['settings'] = [];
+            }
+
             $sql1 = tep_db_fetch_array(tep_db_query("SELECT count(*) as total from " . TABLE_CATEGORIES . " where categories_id='" . $row['link_id'] . "'"));
             $sql2 = tep_db_fetch_array(tep_db_query("SELECT count(*) as total from " . TABLE_INFORMATION . " where information_id='" . $row['link_id'] . "'"));
             if ($row['link_type'] != 'categories' || $sql1['total'] > 0 || $row['link_id'] == '999999999') {
@@ -489,7 +495,12 @@ class MenusController extends Sceleton {
               $custom_page = tep_db_prepare_input($item['custom_page']);
 
               $custom_categories = tep_db_prepare_input($item['custom_categories']);
-              
+
+              $settings = [];
+              if ($item['sorting_categories']) {
+                  $settings['sorting'] = 'catalog';
+              }
+
               if (isset($item['parent']['id'])) {
                 $parent_id = tep_db_prepare_input($item['parent']['id']);
               } elseif (isset($item['parent']['type_id'])) {
@@ -517,6 +528,7 @@ class MenusController extends Sceleton {
                 'custom_categories' => $custom_categories,
                 'sort_order' => $order,
                 'theme_page_id' => (int)$custom_page,
+                'settings' => count($settings) ? json_encode($settings) : 'null',
               );
 
                 if (\common\helpers\Acl::checkExtensionAllowed('UserGroups', 'allowed')) {

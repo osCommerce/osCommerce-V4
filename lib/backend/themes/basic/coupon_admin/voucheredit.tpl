@@ -81,6 +81,22 @@
 
             <div class="row">
                 <div class="col-md-6 label-field">
+                    {$smarty.const.COUPON_AMOUNT_MAXIMUM}
+                    <div class="info-hint"><div class="info-hint-box"><div class="info-hint-mustache"></div>{$smarty.const.COUPON_AMOUNT_MAXIMUM_HELP}</div></div>
+                </div>
+                <div class="col-md-5">
+                    <input type="text" name="coupon_amount_maximum" value="{$coupon['coupon_amount_maximum']}" class="form-control">
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="row m-b-2">
+        <div class="col-md-4">
+
+            <div class="row">
+                <div class="col-md-6 label-field">
                     {$smarty.const.TEXT_SPEND_PARTLY}
                     <div class="info-hint"><div class="info-hint-box"><div class="info-hint-mustache"></div>{$smarty.const.TEXT_SPEND_PARTLY_INTRO}</div></div>
                 </div>

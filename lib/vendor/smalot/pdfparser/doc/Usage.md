@@ -76,8 +76,8 @@ $config->setDataTmFontInfoHasToBeIncluded(true);
 // use config and parse file
 $parser = new Smalot\PdfParser\Parser([], $config);
 $pdf = $parser->parseFile('document.pdf');
-
-$data = $pdf->getPages()[0]->getDataTm();
+$firstpage = $pdf->getPages()[0];
+$data = $firstpage->getDataTm();
 
 Array
 (
@@ -121,9 +121,8 @@ Text width should be calculated on text from dataTm to make sure all character w
 In next example we are using data from above.
 
 ```php
-$fonts = $pdf->getFonts();
 $font_id = $data[0][2]; //R7
-$font = $fonts[$font_id];
+$font = $firstpage->getFont($font_id);
 $text = $data[0][1];
 $width = $font->calculateTextWidth($text, $missing);
 ```
@@ -140,8 +139,48 @@ Array
     [Producer] => Adobe Acrobat
     [CreatedOn] => 2022-01-28T16:36:11+00:00
     [Pages] => 35
+    ...
 )
 ```
+
+If the PDF contains Extensible Metadata Platform (XMP) XML metadata, their values, including the XMP namespace, will be appended to the data returned by `getDetails()`. You can read more about what values and namespaces are commonly used in the [XMP Specifications](https://github.com/adobe/XMP-Toolkit-SDK/tree/main/docs).
+
+```php
+Array
+(
+    ...
+    [Pages] => 35
+    [dc:creator] => My Name
+    [pdf:producer] => Adobe Acrobat
+    [dc:title] => My Document Title
+    ...
+)
+```
+
+Some XMP metadata values may have multiple values, or even named children with their own values. In these cases, the value will be an array. The XMP metadata will follow the structure of the XML so it is possible to have multiple levels of nested values.
+
+```php
+Array
+(
+    ...
+    [dc:title] => My Document Title
+    [xmptpg:maxpagesize] => Array
+    (
+        [stdim:w] => 21.500000
+        [stdim:h] => 6.222222
+        [stdim:unit] => Inches
+    )
+    [xmptpg:platenames] => Array
+    (
+        [0] => Cyan
+        [1] => Magenta
+        [2] => Yellow
+        [3] => Black
+    )
+    ...
+)
+```
+
 
 ## Read Base64 encoded PDFs
 
@@ -166,8 +205,39 @@ Characters without width are added to `$missing` array in second parameter.
 ```php
 $parser = new \Smalot\PdfParser\Parser();
 $pdf = $parser->parseFile('document.pdf');
+$fonts = $pdf->getFonts();
 // get first font (we assume here there is at least one)
-$font = reset($pdf->getFonts());
+$font = reset($fonts);
 // get width
 $width = $font->calculateTextWidth('Some text', $missing);
 ```
+
+## Get pages width and height
+
+Ref: [#472](https://github.com/smalot/pdfparser/issues/427#issuecomment-973416786)
+
+```php
+$parser = new \Smalot\PdfParser\Parser();
+$pdf = $parser->parseFile('document.pdf');
+$pages = $pdf->getPages();
+// this variable will contain the height and width of each page of the given PDF
+$mediaBox = [];
+foreach ($pages as $page) {
+    $details = $page->getDetails();
+    $mediaBox[] = [
+        'width' => $details['MediaBox'][2],
+        'height' => $details['MediaBox'][3]
+    ];
+}
+```
+
+## PDF encryption
+
+This library cannot currently read encrypted PDF files, i.e. those with
+a read password.  Attempting to do so produces this error:
+```
+Exception: Secured pdf file are currently not supported.
+```
+
+See `setIgnoreEncryption` option in [CustomConfig.md](CustomConfig.md)
+for how to override the check in specific cases.

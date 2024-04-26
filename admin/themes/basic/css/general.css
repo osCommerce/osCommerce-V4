@@ -822,3 +822,29 @@ div.dataTables_processing>div:last-child {
 div.dataTables_processing>div:last-child>div {
     background: var(--tiny-color);
 }
+.datepicker-dropdown {
+    z-index: 2000!important;
+}
+
+.breadcrumb-and-buttons {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.breadcrumb-buttons .btn {
+    margin: 0 0 5px 10px;
+}
+.breadcrumb-buttons {
+    display: flex;
+    justify-content: right;
+    align-items: center;
+    flex-wrap: wrap;
+    padding-right: 15px;
+    margin: -10px 0;
+}
+.pop-up-content .breadcrumb-buttons .btn {
+    margin: 5px 0 0 10px;
+}
+.pop-up-content .breadcrumb-buttons {
+    margin: 0;
+}

@@ -621,7 +621,7 @@ class PlatformsController extends Sceleton {
 
         $platform = \common\models\Platforms::findOne($item_id);
         $logo = \common\helpers\Image::prepareSavingImage(
-            $platform->logo,
+            $platform->logo ?? null,
             $logo,
             $logoUpload,
             'platforms',

@@ -12,7 +12,7 @@
     <div class="row_or">
         <b>{$smarty.const.EXT_ELV_TEXT_CATEGORY}:</b> <span style="color: dimgrey"><i><b>{$log->category}</b></i></span><br>
     </div>
-    <div class="row_or">
+    <div class="row_or" style="word-break: break-word; word-wrap: break-word; overflow-wrap: break-word;">
         <b>{$smarty.const.EXT_ELV_TEXT_ERROR_DESCRIPTION}:</b><br>
         <small><span style="color: dimgrey">{mb_strimwidth(htmlspecialchars($log->text), 0, 500, "...")}</span></small>
     </div>

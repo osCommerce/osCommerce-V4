@@ -781,6 +781,9 @@ class CustomersController extends Sceleton {
 
         $customersQuery->select(['c.customers_id', 'c.platform_id', 'c.departments_id', 'c.customers_default_address_id']);
 
+        foreach (\common\helpers\Hooks::getList('customers/customerlist') as $filename) {
+            include($filename);
+        }
         //echo $customersQuery->createCommand()->getRawSql()."\n\n";
         $customers_query_numrows = $customersQuery->count();
 
@@ -840,6 +843,7 @@ class CustomersController extends Sceleton {
 
             // order stat
 
+            $exclude_order_statuses_array = \common\helpers\Order::extractStatuses(DASHBOARD_EXCLUDE_ORDER_STATUSES);
             $info_query = tep_db_query(
                 "select o.customers_id, count(*) as total_orders, max(o.date_purchased) as last_purchased, ".
                 "  sum(ot.value) as total_sum, ot.class ".
@@ -847,6 +851,7 @@ class CustomersController extends Sceleton {
                 "  left join " . TABLE_ORDERS_TOTAL . " ot on (o.orders_id = ot.orders_id) ".
                 "where " . (USE_MARKET_PRICES == 'True' ? "o.currency = '" . \Yii::$app->settings->get('currency') . "'" : '1') . " ".
                 "  and ot.class='ot_total' and o.customers_id IN ('".implode("','",array_keys($_pageCustomerIdToIdx))."') ".
+                "  and o.orders_status not in ('" . implode("','", $exclude_order_statuses_array) . "') ".
                 "group by o.customers_id"
             );
             if ( tep_db_num_rows($info_query)>0 ){
@@ -956,7 +961,9 @@ class CustomersController extends Sceleton {
             die("Wrong customer data.");
         }
 
-        $orders_query = tep_db_query("select count(*) as total_orders, max(o.date_purchased) as last_purchased, sum(ot.value) as total_sum, ot.class from " . TABLE_ORDERS . " o left join " . TABLE_ORDERS_TOTAL . " ot on (o.orders_id = ot.orders_id) where " . (USE_MARKET_PRICES == 'True' ? "o.currency = '" . \Yii::$app->settings->get('currency') . "'" : '1') . " and ot.class='ot_total' and o.customers_id = " . $customers['customers_id']);
+        $exclude_order_statuses_array = \common\helpers\Order::extractStatuses(DASHBOARD_EXCLUDE_ORDER_STATUSES);
+        $orders_query = tep_db_query("select count(*) as total_orders, max(o.date_purchased) as last_purchased, sum(ot.value) as total_sum, ot.class from " . TABLE_ORDERS . " o left join " . TABLE_ORDERS_TOTAL . " ot on (o.orders_id = ot.orders_id) where " . (USE_MARKET_PRICES == 'True' ? "o.currency = '" . \Yii::$app->settings->get('currency') . "'" : '1') . " and ot.class='ot_total' and o.customers_id = " . (int) $customers['customers_id']
+            . "  AND o.orders_status not in ('" . implode("','", $exclude_order_statuses_array) . "') ");
         $orders = tep_db_fetch_array($orders_query);
         if (!is_array($orders))
             $orders = [];
@@ -1369,7 +1376,7 @@ class CustomersController extends Sceleton {
             $this->view->showOtherGroups = true;
             $this->view->groupExtraSelected = $ext::getOtherGroupsSelected($cInfo->customers_id);
           } else {
-            $this->view->groupStatusArray = \common\models\Groups::find()->asArray()->select('groups_name')->indexBy('groups_id')->column();
+            $this->view->groupStatusArray = \common\models\Groups::find()->asArray()->select('groups_name')->orderBy('sort_order, groups_name')->indexBy('groups_id')->column();
         }
         }
 
@@ -1836,7 +1843,7 @@ class CustomersController extends Sceleton {
         $customerId = Yii::$app->user->getId();
         $file = Yii::$app->request->get('file');
 
-
+        $redirect = true;
         if (!$customerId) {
             $customerId = Yii::$app->request->get('customer_id');
         }
@@ -1844,6 +1851,7 @@ class CustomersController extends Sceleton {
             $path = DIR_FS_DOWNLOAD;
         } else {
             $path = DIR_FS_DOWNLOAD . 'customers' . DIRECTORY_SEPARATOR . $customerId . DIRECTORY_SEPARATOR;
+            $redirect = false;
         }
 
         $messageStack = \Yii::$container->get('message_stack');
@@ -1867,7 +1875,7 @@ class CustomersController extends Sceleton {
             header("Content-disposition: attachment; filename=" . $file);
         }
 
-        if (DOWNLOAD_BY_REDIRECT == 'true') {
+        if ($redirect && DOWNLOAD_BY_REDIRECT == 'true') {
             // This will work only on Unix/Linux hosts
             \common\helpers\Download::unlink_temp_dir(DIR_FS_DOWNLOAD_PUBLIC);
             $tempdir = \common\helpers\Download::random_name();

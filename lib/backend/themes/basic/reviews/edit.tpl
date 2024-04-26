@@ -55,6 +55,9 @@
                         {Html::radio('reviews_rating', $rInfo->reviews_rating == '5', ['class' => 'star', 'value' => '5', 'title' => "Rate this 5 star out of 5"])}
                     </div>
                 </div>
+{if $ext = \common\helpers\Acl::checkExtensionAllowed('UploadProductReviewImages', 'allowed')}
+    <div class="imageReviewBox">{$ext::showGalleryProductReviewImages($rInfo->reviews_id)}</div>
+{/if}
             </div>
         </div>        
     </div>
@@ -93,6 +96,9 @@ $(document).ready(function(){
     $('input.star').rating(); 
 });
 </script>
+{if $ext = \common\helpers\Acl::checkExtensionAllowed('UploadProductReviewImages', 'allowed')}
+    {$ext::jsAdminGalleryProductReviewImages()}
+{/if}
 
 </div>
 <!-- /Page Content -->

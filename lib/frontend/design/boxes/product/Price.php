@@ -83,9 +83,7 @@ class Price extends Widget
         if(!$return_price){
             return '';
         }
-
-        if ((abs($product['products_price']) < 0.01 && defined('PRODUCT_PRICE_FREE') && PRODUCT_PRICE_FREE == 'true')) {
-
+        if (\common\helpers\Extensions::callIfAllowed('ModulesZeroPrice', 'optionPriceFree') && (abs($product['products_price']) < 0.01)) {
             if (isset($product['special_expiration_date']) && !empty($product['special_expiration_date'])) {
                 $priceValidUntil = date("Y-m-d", strtotime($product['special_expiration_date']));
             } else {
@@ -259,11 +257,14 @@ class Price extends Widget
             ]], ['Product', 'offers', 'price']);
         }
 
-        if ($special != '' && abs($special_value) < 0.01 && defined('PRODUCT_PRICE_FREE') && PRODUCT_PRICE_FREE == 'true') {
-            $special = TEXT_FREE;
-        }
-        if ($special_ex != '' && abs($special_value) < 0.01 && defined('PRODUCT_PRICE_FREE') && PRODUCT_PRICE_FREE == 'true') {
-            $special_ex = TEXT_FREE;
+        if (\common\helpers\Extensions::callIfAllowed('ModulesZeroPrice', 'optionPriceFree')) {
+            if (!empty($special) && abs($special_value) < 0.01) {
+                $special = TEXT_FREE;
+            }
+
+            if (!empty($special_ex) && abs($special_value) < 0.01) {
+                $special_ex = TEXT_FREE;
+            }
         }
 
         if (!empty($stock_info['eol']) && (empty($stock_info['flags']['can_add_to_cart']) || empty($stock_info['flags']['add_to_cart']))){

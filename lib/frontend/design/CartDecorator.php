@@ -75,10 +75,10 @@ class CartDecorator
                 $this->products[$i]['id_platform'] = intval($this->products[$i]['id_platform']);
             }
 // {{ Products Bundle Sets
-            if (!empty($this->products[$i]['parent']) && !\common\helpers\Product::check_product($this->products[$i]['id'],1,true)){
-                unset($this->products[$i]);
-                continue;
-            }
+            //if (!empty($this->products[$i]['parent']) && !\common\helpers\Product::check_product($this->products[$i]['id'],1,true)){
+            //    unset($this->products[$i]);
+            //    continue;
+            //}
             if ($ext = \common\helpers\Acl::checkExtensionAllowed('ProductBundles', 'allowed')) {
                 list($bundles, $bundles_info) = $ext::inProducts($this->products[$i]);
                 if (count($bundles) > 0) {
@@ -95,6 +95,10 @@ class CartDecorator
             $this->products[$i]['hidden_fields'] .= tep_draw_hidden_field('ga[]', $this->products[$i]['ga']);
 
             if (is_array(ArrayHelper::getValue($this->products, [$i,'sub_products'])) && count(ArrayHelper::getValue($this->products, [$i,'sub_products'])) > 0) { // if has sub-products
+// {{         // keep original parent and child prices
+              $this->products[$i]['original_price_inc'] = $currencies->calculate_price($this->products[$i]['final_price'], \common\helpers\Tax::get_tax_rate($this->products[$i]['tax_class_id']), $this->products[$i]['quantity']);
+              $this->products[$i]['original_price_exc'] = $currencies->calculate_price($this->products[$i]['final_price'], 0, $this->products[$i]['quantity']);
+// }}
               // show full configurator price
               //$wTax = Yii::$app->storage->has('taxable') ? (bool)Yii::$app->storage->get('taxable') : true;
               $wTax = \common\helpers\Tax::displayTaxable();
@@ -105,12 +109,16 @@ class CartDecorator
                 $this->products[$i]['standard_price'] = $currencies->display_price($this->_cart->configurator_price($this->products[$i]['id'], null, $wTax, 'standard_price'), 0, $this->products[$i]['quantity']);
               }
             } elseif (ArrayHelper::getValue($this->products, [$i,'parent']) != '') { // if is sub-product
+// {{         // keep original parent and child prices
+              $this->products[$i]['original_price_inc'] = $currencies->calculate_price($this->products[$i]['final_price'], \common\helpers\Tax::get_tax_rate($this->products[$i]['tax_class_id']), $this->products[$i]['quantity']);
+              $this->products[$i]['original_price_exc'] = $currencies->calculate_price($this->products[$i]['final_price'], 0, $this->products[$i]['quantity']);
+// }}
               // don't show pice
               $this->products[$i]['final_price'] = '';
               $this->products[$i]['final_price_inc'] = 0;
               $this->products[$i]['final_price_exc'] = 0;
             } else {
-                if ((abs($this->products[$i]['final_price']) < 0.01 && defined('PRODUCT_PRICE_FREE') && PRODUCT_PRICE_FREE == 'true')) {
+                if (\common\helpers\Extensions::callIfAllowed('ModulesZeroPrice', 'optionPriceFree') && (abs($this->products[$i]['final_price']) < 0.01)) {
                     $this->products[$i]['final_price'] = TEXT_FREE;
                     $this->products[$i]['final_price_inc'] = 0;
                     $this->products[$i]['final_price_exc'] = 0;
@@ -123,7 +131,7 @@ class CartDecorator
                 $this->products[$i]['standard_price'] = $currencies->display_price(ArrayHelper::getValue($this->products, [$i,'standard_price']), \common\helpers\Tax::get_tax_rate($this->products[$i]['tax_class_id']), $this->products[$i]['quantity']);
               }
             }
-            if ($this->products[$i]['model'] == 'VIRTUAL_GIFT_CARD'){
+            if ($this->products[$i]['model'] == \common\helpers\Gifts::getVirtualGiftCardModel()) {
                 $this->products[$i]['link'] = tep_href_link('catalog/gift-card', 'products_id='. $this->products[$i]['id'] . '&platform_id=' . $this->products[$i]['platform_id']);
             } else {
                 $this->products[$i]['link'] = tep_href_link('catalog/product', 'products_id='. $this->products[$i]['id_link'] . '&platform_id=' . $this->products[$i]['id_platform']);

@@ -3657,7 +3657,10 @@ div.create_item a{color:#fff;}
 .prodImgC, .prodNameC, .cubic{display:inline-block;vertical-align:middle;}
 .prodNameC{padding:0 0 0 10px;}
 .product_listing_category_location {margin-left: 68px; color: #008ae8;}
-#list_bread_crumb{ float:left; margin: 20px 0 0 20px; font-style: italic; font-size: 15px }
+#list_bread_crumb{ float:left; margin: 20px 0 0 20px; font-style: italic; font-size: 15px;
+  z-index: 1;
+  position: relative;
+}
 .dataTable_header_float_content{float: left;margin: -1px 0px;font-size: 15px;}
 .category_path_list{list-style: none;margin: 0;padding-left: 10px;}
 .category_path {font-size: 0.7em; font-style: italic;}

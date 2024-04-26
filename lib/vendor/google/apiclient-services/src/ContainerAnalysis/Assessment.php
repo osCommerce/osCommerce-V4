@@ -28,14 +28,26 @@ class Assessment extends \Google\Collection
    * @var string[]
    */
   public $impacts;
+  /**
+   * @var Justification
+   */
+  public $justification;
   protected $justificationType = Justification::class;
   protected $justificationDataType = '';
   /**
    * @var string
    */
   public $longDescription;
+  /**
+   * @var RelatedUrl[]
+   */
+  public $relatedUris;
   protected $relatedUrisType = RelatedUrl::class;
   protected $relatedUrisDataType = 'array';
+  /**
+   * @var Remediation[]
+   */
+  public $remediations;
   protected $remediationsType = Remediation::class;
   protected $remediationsDataType = 'array';
   /**
@@ -46,6 +58,10 @@ class Assessment extends \Google\Collection
    * @var string
    */
   public $state;
+  /**
+   * @var string
+   */
+  public $vulnerabilityId;
 
   /**
    * @param string
@@ -158,6 +174,20 @@ class Assessment extends \Google\Collection
   public function getState()
   {
     return $this->state;
+  }
+  /**
+   * @param string
+   */
+  public function setVulnerabilityId($vulnerabilityId)
+  {
+    $this->vulnerabilityId = $vulnerabilityId;
+  }
+  /**
+   * @return string
+   */
+  public function getVulnerabilityId()
+  {
+    return $this->vulnerabilityId;
   }
 }
 

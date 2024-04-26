@@ -246,7 +246,11 @@ namespace common\classes;
       tep_db_query("delete from " . TABLE_CUSTOMERS_INFO . " where customers_info_id = '" . (int)$customer_id . "'");
       tep_db_query("delete from " . TABLE_CUSTOMERS_BASKET . " where customers_id = '" . (int)$customer_id . "'");
       tep_db_query("delete from " . TABLE_CUSTOMERS_BASKET_ATTRIBUTES . " where customers_id = '" . (int)$customer_id . "'");
-      tep_db_query("delete from " . TABLE_WHOS_ONLINE . " where customer_id = '" . (int)$customer_id . "'");      
+
+      foreach (\common\helpers\Hooks::getList('opc/remove-temp-customer') as $filename) {
+        include($filename);
+      }
+
       if ($reasign_id > 0) {
           tep_db_query("update " . TABLE_ORDERS . " set customers_id = '" . (int) $reasign_id . "' where customers_id = '" . (int)$customer_id . "';");
       }

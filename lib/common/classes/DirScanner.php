@@ -18,20 +18,22 @@ class DirScanner {
     private $checksumList;
     
     public function __construct($Dir) {
+        $Dir = str_replace(DIRECTORY_SEPARATOR, '/', $Dir); // for win
         $this->targetDir = $Dir;
     }
     
     private function start($dir) {
 
-        $fullArray = glob($dir . DIRECTORY_SEPARATOR . '*');
+        $fullArray = glob($dir . '/*');
         foreach ($fullArray as $item) {
+            $item = str_replace(DIRECTORY_SEPARATOR, '/', $item); // for win
             if (is_dir($item)) {
-                $path = str_replace([$this->targetDir . '/', DIRECTORY_SEPARATOR], ['', '|'], $item);
+                $path = str_replace([$this->targetDir . '/', '/'], ['', '|'], $item);
                 $this->checksumList[$path] = '';
                 $this->start($item);
             } elseif (is_file($item)) {
                 $crc = crc32(file_get_contents($item));
-                $path = str_replace([$this->targetDir . '/', DIRECTORY_SEPARATOR], ['', '|'], $item);
+                $path = str_replace([$this->targetDir . '/', '/'], ['', '|'], $item);
                 $this->checksumList[$path] = $crc;
             }
         }

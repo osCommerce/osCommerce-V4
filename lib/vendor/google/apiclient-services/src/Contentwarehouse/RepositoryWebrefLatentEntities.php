@@ -19,13 +19,13 @@ namespace Google\Service\Contentwarehouse;
 
 class RepositoryWebrefLatentEntities extends \Google\Collection
 {
-  protected $collection_key = 'latentMid';
+  protected $collection_key = 'latentEntity';
+  /**
+   * @var RepositoryWebrefLatentEntity[]
+   */
+  public $latentEntity;
   protected $latentEntityType = RepositoryWebrefLatentEntity::class;
   protected $latentEntityDataType = 'array';
-  /**
-   * @var string[]
-   */
-  public $latentMid;
 
   /**
    * @param RepositoryWebrefLatentEntity[]
@@ -40,20 +40,6 @@ class RepositoryWebrefLatentEntities extends \Google\Collection
   public function getLatentEntity()
   {
     return $this->latentEntity;
-  }
-  /**
-   * @param string[]
-   */
-  public function setLatentMid($latentMid)
-  {
-    $this->latentMid = $latentMid;
-  }
-  /**
-   * @return string[]
-   */
-  public function getLatentMid()
-  {
-    return $this->latentMid;
   }
 }
 

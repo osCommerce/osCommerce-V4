@@ -45,6 +45,10 @@
                             <div class="report-details-options">
                             </div>
                             <div class="wl-td">
+                                <label>{$smarty.const.TEXT_CURRENCIES}</label>
+                                {Html::dropDownList('currency', $selected_currency, $app->controller->view->filter->currencies, ['class'=>'form-control'])}
+                            </div>
+                            <div class="wl-td">
                                 {Html::checkbox('with_products', $with_products)}<label>{$smarty.const.TEXT_PROD_DET}</label>
                             </div>
                         </div>
@@ -209,6 +213,14 @@
         }, "json");
     }
 
+    function updateCurrency() {
+        if ($('select[name=currency]').val() > 0) {
+            currency_id = $('select[name=currency]').val();
+        } else {
+            currency_id = {intval($currencies->currencies[$currencies->dp_currency]['id'])};
+        }
+    }
+
     var oTable;
     var chartsArray = {};
     var $settings = {
@@ -264,6 +276,7 @@
         },
         class_range:[],
         updateData:function(){
+            updateCurrency();
             $('body').append("<div class='popup-box-wrap'><div class='around-pop-up'><div class='preloader'></div></div>");
             $.get('sales_statistics', 
              $('form[name=sales]').serialize(),
@@ -979,9 +992,11 @@
         
     });
 
-    google.charts.load('current', { 'packages':['annotationchart'] });
-    google.charts.setOnLoadCallback(drawCharts);    
-    
+    setTimeout(function(){
+        google.charts.load('current', { 'packages':['annotationchart'] });
+        google.charts.setOnLoadCallback(drawCharts);
+    }, 1250);
+
     function drawCharts(){
         $settings.charts.drawCollection();
         $settings.renderTable();    
@@ -992,6 +1007,7 @@
     });*/
     
     $(document).ready(function(){
+        updateCurrency();
         $("form select[data-role=multiselect]").multipleSelect({
                 multiple: true,
                 filter: true

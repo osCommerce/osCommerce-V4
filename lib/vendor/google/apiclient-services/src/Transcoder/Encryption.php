@@ -19,20 +19,40 @@ namespace Google\Service\Transcoder;
 
 class Encryption extends \Google\Model
 {
+  /**
+   * @var Aes128Encryption
+   */
+  public $aes128;
   protected $aes128Type = Aes128Encryption::class;
   protected $aes128DataType = '';
   /**
-   * @var string
+   * @var DrmSystems
    */
-  public $iv;
+  public $drmSystems;
+  protected $drmSystemsType = DrmSystems::class;
+  protected $drmSystemsDataType = '';
   /**
    * @var string
    */
-  public $key;
+  public $id;
+  /**
+   * @var MpegCommonEncryption
+   */
+  public $mpegCenc;
   protected $mpegCencType = MpegCommonEncryption::class;
   protected $mpegCencDataType = '';
+  /**
+   * @var SampleAesEncryption
+   */
+  public $sampleAes;
   protected $sampleAesType = SampleAesEncryption::class;
   protected $sampleAesDataType = '';
+  /**
+   * @var SecretManagerSource
+   */
+  public $secretManagerKeySource;
+  protected $secretManagerKeySourceType = SecretManagerSource::class;
+  protected $secretManagerKeySourceDataType = '';
 
   /**
    * @param Aes128Encryption
@@ -49,32 +69,32 @@ class Encryption extends \Google\Model
     return $this->aes128;
   }
   /**
+   * @param DrmSystems
+   */
+  public function setDrmSystems(DrmSystems $drmSystems)
+  {
+    $this->drmSystems = $drmSystems;
+  }
+  /**
+   * @return DrmSystems
+   */
+  public function getDrmSystems()
+  {
+    return $this->drmSystems;
+  }
+  /**
    * @param string
    */
-  public function setIv($iv)
+  public function setId($id)
   {
-    $this->iv = $iv;
+    $this->id = $id;
   }
   /**
    * @return string
    */
-  public function getIv()
+  public function getId()
   {
-    return $this->iv;
-  }
-  /**
-   * @param string
-   */
-  public function setKey($key)
-  {
-    $this->key = $key;
-  }
-  /**
-   * @return string
-   */
-  public function getKey()
-  {
-    return $this->key;
+    return $this->id;
   }
   /**
    * @param MpegCommonEncryption
@@ -103,6 +123,20 @@ class Encryption extends \Google\Model
   public function getSampleAes()
   {
     return $this->sampleAes;
+  }
+  /**
+   * @param SecretManagerSource
+   */
+  public function setSecretManagerKeySource(SecretManagerSource $secretManagerKeySource)
+  {
+    $this->secretManagerKeySource = $secretManagerKeySource;
+  }
+  /**
+   * @return SecretManagerSource
+   */
+  public function getSecretManagerKeySource()
+  {
+    return $this->secretManagerKeySource;
   }
 }
 

@@ -24,6 +24,10 @@ class Access extends \Google\Collection
    * @var string
    */
   public $callerIp;
+  /**
+   * @var Geolocation
+   */
+  public $callerIpGeo;
   protected $callerIpGeoType = Geolocation::class;
   protected $callerIpGeoDataType = '';
   /**
@@ -38,6 +42,10 @@ class Access extends \Google\Collection
    * @var string
    */
   public $principalSubject;
+  /**
+   * @var ServiceAccountDelegationInfo[]
+   */
+  public $serviceAccountDelegationInfo;
   protected $serviceAccountDelegationInfoType = ServiceAccountDelegationInfo::class;
   protected $serviceAccountDelegationInfoDataType = 'array';
   /**
@@ -48,6 +56,10 @@ class Access extends \Google\Collection
    * @var string
    */
   public $serviceName;
+  /**
+   * @var string
+   */
+  public $userAgent;
   /**
    * @var string
    */
@@ -168,6 +180,20 @@ class Access extends \Google\Collection
   public function getServiceName()
   {
     return $this->serviceName;
+  }
+  /**
+   * @param string
+   */
+  public function setUserAgent($userAgent)
+  {
+    $this->userAgent = $userAgent;
+  }
+  /**
+   * @return string
+   */
+  public function getUserAgent()
+  {
+    return $this->userAgent;
   }
   /**
    * @param string

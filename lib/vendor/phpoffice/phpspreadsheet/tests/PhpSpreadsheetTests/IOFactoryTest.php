@@ -24,7 +24,7 @@ class IOFactoryTest extends TestCase
         self::assertSame($expected, get_class($actual));
     }
 
-    public function providerCreateWriter(): array
+    public static function providerCreateWriter(): array
     {
         return [
             ['Xls', Writer\Xls::class],
@@ -58,7 +58,7 @@ class IOFactoryTest extends TestCase
         self::assertSame($expected, get_class($actual));
     }
 
-    public function providerCreateReader(): array
+    public static function providerCreateReader(): array
     {
         return [
             ['Xls', Reader\Xls::class],
@@ -92,11 +92,12 @@ class IOFactoryTest extends TestCase
         self::assertInstanceOf(Spreadsheet::class, $actual);
     }
 
-    public function providerIdentify(): array
+    public static function providerIdentify(): array
     {
         return [
             ['samples/templates/26template.xlsx', 'Xlsx', Reader\Xlsx::class],
             ['samples/templates/GnumericTest.gnumeric', 'Gnumeric', Reader\Gnumeric::class],
+            ['tests/data/Reader/Gnumeric/PageSetup.gnumeric.unzipped.xml', 'Gnumeric', Reader\Gnumeric::class],
             ['samples/templates/old.gnumeric', 'Gnumeric', Reader\Gnumeric::class],
             ['samples/templates/30template.xls', 'Xls', Reader\Xls::class],
             ['samples/templates/OOCalcTest.ods', 'Ods', Reader\Ods::class],
@@ -106,6 +107,33 @@ class IOFactoryTest extends TestCase
             //['samples/templates/Excel2003XMLTest.xml', 'Xml', Reader\Xml::class],
             ['samples/templates/46readHtml.html', 'Html', Reader\Html::class],
         ];
+    }
+
+    public function testIdentifyInvalid(): void
+    {
+        $file = __DIR__ . '/../data/Reader/NotASpreadsheetFile.doc';
+
+        $this->expectException(ReaderException::class);
+        $this->expectExceptionMessage('Unable to identify a reader for this file');
+        IOFactory::identify($file);
+    }
+
+    public function testCreateInvalid(): void
+    {
+        $file = __DIR__ . '/../data/Reader/NotASpreadsheetFile.doc';
+
+        $this->expectException(ReaderException::class);
+        $this->expectExceptionMessage('Unable to identify a reader for this file');
+        IOFactory::createReaderForFile($file);
+    }
+
+    public function testLoadInvalid(): void
+    {
+        $file = __DIR__ . '/../data/Reader/NotASpreadsheetFile.doc';
+
+        $this->expectException(ReaderException::class);
+        $this->expectExceptionMessage('Unable to identify a reader for this file');
+        IOFactory::load($file);
     }
 
     public function testFormatAsExpected(): void

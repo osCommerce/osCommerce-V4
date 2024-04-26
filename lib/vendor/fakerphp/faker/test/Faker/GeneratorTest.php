@@ -135,7 +135,7 @@ final class GeneratorTest extends TestCase
     public function testFormatterCallsGenerator(): void
     {
         $builder = new ContainerBuilder();
-        $builder->add(Blood::class, BloodExtension::class);
+        $builder->add(BloodExtension::class, Blood::class);
         $faker = new Generator($builder->build());
 
         $output = $faker->format('bloodType');
@@ -145,7 +145,7 @@ final class GeneratorTest extends TestCase
     public function testFormatterCallsExtension(): void
     {
         $builder = new ContainerBuilder();
-        $builder->add(Blood::class);
+        $builder->add(Blood::class, Blood::class);
         $faker = new Generator($builder->build());
 
         $output = $faker->format('Faker\Core\Blood->bloodType');
@@ -245,6 +245,9 @@ final class GeneratorTest extends TestCase
         self::assertNotSame($uniqueGenerator, $generator->unique(true));
     }
 
+    /**
+     * @requires PHP < 8.3
+     */
     public function testUniqueReturnsUniqueGeneratorThatGeneratesUniqueValues(): void
     {
         $words = [

@@ -58,6 +58,9 @@ class TopCategories extends Widget
             }
         }
 
+        $parent = intval($this->settings[0]['parent_category_id'] ? $this->settings[0]['parent_category_id'] : 0);
+        $categories->andWhere(['{{%categories}}.parent_id' => $parent]);
+
         $cats = $categories->asArray()->all();
 
 

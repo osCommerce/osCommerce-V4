@@ -15,13 +15,6 @@ use ReflectionClass;
 
 class TypedPropertiesDriverTest extends TestCase
 {
-    protected function setUp(): void
-    {
-        if (PHP_VERSION_ID < 70400) {
-            $this->markTestSkipped(sprintf('%s requires PHP 7.4', TypedPropertiesDriver::class));
-        }
-    }
-
     public function testInferPropertiesFromTypes()
     {
         $m = $this->resolve(User::class);
@@ -32,6 +25,7 @@ class TypedPropertiesDriverTest extends TestCase
             'vehicle' => 'JMS\Serializer\Tests\Fixtures\TypedProperties\Vehicle',
             'created' => 'DateTime',
             'tags' => 'iterable',
+            'virtualRole' => 'JMS\Serializer\Tests\Fixtures\TypedProperties\Role',
         ];
 
         foreach ($expectedPropertyTypes as $property => $type) {

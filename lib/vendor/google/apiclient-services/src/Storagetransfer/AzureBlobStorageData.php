@@ -19,12 +19,20 @@ namespace Google\Service\Storagetransfer;
 
 class AzureBlobStorageData extends \Google\Model
 {
+  /**
+   * @var AzureCredentials
+   */
+  public $azureCredentials;
   protected $azureCredentialsType = AzureCredentials::class;
   protected $azureCredentialsDataType = '';
   /**
    * @var string
    */
   public $container;
+  /**
+   * @var string
+   */
+  public $credentialsSecret;
   /**
    * @var string
    */
@@ -61,6 +69,20 @@ class AzureBlobStorageData extends \Google\Model
   public function getContainer()
   {
     return $this->container;
+  }
+  /**
+   * @param string
+   */
+  public function setCredentialsSecret($credentialsSecret)
+  {
+    $this->credentialsSecret = $credentialsSecret;
+  }
+  /**
+   * @return string
+   */
+  public function getCredentialsSecret()
+  {
+    return $this->credentialsSecret;
   }
   /**
    * @param string

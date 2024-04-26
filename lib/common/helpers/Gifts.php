@@ -144,7 +144,7 @@ class Gifts {
         $replace = array(
             $currencies->display_gift_card_price($virtual_gift_card['products_price'], \common\helpers\Tax::get_tax_rate($virtual_gift_card['products_tax_class_id']), $virtual_gift_card['currency_code']),
             nl2br($virtual_gift_card['virtual_gift_card_message']),
-            $virtual_gift_card['virtual_gift_card_senders_name'],
+            $virtual_gift_card['virtual_gift_card_senders_name'] ?: $from_name,
             $virtual_gift_card['virtual_gift_card_code']);
         foreach ($replace as $key => $val) {
             $replace[$key] = str_replace('$', '/$/', $val);
@@ -152,7 +152,7 @@ class Gifts {
         $email_text = str_replace('/$/', '$', preg_replace($search, $replace, $contents));
 
         $email_params['CARD'] = $email_text;
-        $email_params['SENDERS_NAME'] = $virtual_gift_card['virtual_gift_card_senders_name'];
+        $email_params['SENDERS_NAME'] = $virtual_gift_card['virtual_gift_card_senders_name'] ?: $from_name;
 
         list($email_subject, $email_content) = \common\helpers\Mail::get_parsed_email_template('Gift Card', $email_params, -1, $virtual_gift_card['platform_id'], -1);
 
@@ -165,10 +165,10 @@ class Gifts {
             $virtual_gift_card['virtual_gift_card_recipients_email'],
             $email_subject,
             $email_content,
-            $from_name,
-            $from_email,
+            STORE_OWNER,
+            STORE_OWNER_EMAIL_ADDRESS,
             [],
-            '',
+            'Reply-To: "' . $from_name . '" <' . $from_email . '>',
             '',
             ['add_br' => 'no']
         );
@@ -484,6 +484,9 @@ class Gifts {
 
     }
 
+    public static function getVirtualGiftCardModel() {
+        return (defined('VIRTUAL_GIFT_CARD_MODEL') && trim(VIRTUAL_GIFT_CARD_MODEL) != '' ? VIRTUAL_GIFT_CARD_MODEL : 'VIRTUAL_GIFT_CARD');
+    }
 
 }
 

@@ -51,6 +51,16 @@ class Extensions
         return false;
     }
 
+    public static function isAllowedAndMethodExist(string $code, string $func)
+    {
+        if (($ext = self::isAllowed($code)) && method_exists($ext, $func)) {
+            return $ext;
+        }
+        return false;
+    }
+
+
+
     /**
      * Calls $func if extension $code is allowed
      * @param string $code - extension classname
@@ -61,7 +71,7 @@ class Extensions
     public static function callIfAllowed(string $code, string $func, array $args = [])
     {
         if (($ext = self::isAllowed($code)) && method_exists($ext, $func)) {
-            return call_user_func([$ext, $func], $args);
+            return call_user_func_array([$ext, $func], $args);
         }
         return false;
     }

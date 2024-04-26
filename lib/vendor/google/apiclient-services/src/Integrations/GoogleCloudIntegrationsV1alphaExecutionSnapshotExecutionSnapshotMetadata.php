@@ -17,8 +17,17 @@
 
 namespace Google\Service\Integrations;
 
-class GoogleCloudIntegrationsV1alphaExecutionSnapshotExecutionSnapshotMetadata extends \Google\Model
+class GoogleCloudIntegrationsV1alphaExecutionSnapshotExecutionSnapshotMetadata extends \Google\Collection
 {
+  protected $collection_key = 'ancestorTaskNumbers';
+  /**
+   * @var string[]
+   */
+  public $ancestorIterationNumbers;
+  /**
+   * @var string[]
+   */
+  public $ancestorTaskNumbers;
   /**
    * @var int
    */
@@ -34,8 +43,40 @@ class GoogleCloudIntegrationsV1alphaExecutionSnapshotExecutionSnapshotMetadata e
   /**
    * @var string
    */
+  public $taskLabel;
+  /**
+   * @var string
+   */
   public $taskNumber;
 
+  /**
+   * @param string[]
+   */
+  public function setAncestorIterationNumbers($ancestorIterationNumbers)
+  {
+    $this->ancestorIterationNumbers = $ancestorIterationNumbers;
+  }
+  /**
+   * @return string[]
+   */
+  public function getAncestorIterationNumbers()
+  {
+    return $this->ancestorIterationNumbers;
+  }
+  /**
+   * @param string[]
+   */
+  public function setAncestorTaskNumbers($ancestorTaskNumbers)
+  {
+    $this->ancestorTaskNumbers = $ancestorTaskNumbers;
+  }
+  /**
+   * @return string[]
+   */
+  public function getAncestorTaskNumbers()
+  {
+    return $this->ancestorTaskNumbers;
+  }
   /**
    * @param int
    */
@@ -77,6 +118,20 @@ class GoogleCloudIntegrationsV1alphaExecutionSnapshotExecutionSnapshotMetadata e
   public function getTaskAttempt()
   {
     return $this->taskAttempt;
+  }
+  /**
+   * @param string
+   */
+  public function setTaskLabel($taskLabel)
+  {
+    $this->taskLabel = $taskLabel;
+  }
+  /**
+   * @return string
+   */
+  public function getTaskLabel()
+  {
+    return $this->taskLabel;
   }
   /**
    * @param string

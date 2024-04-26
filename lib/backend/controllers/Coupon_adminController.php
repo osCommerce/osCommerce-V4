@@ -104,8 +104,12 @@ class Coupon_adminController extends Sceleton {
         'title' => COUPON_AMOUNT,
         'not_important' => 0
       ),
+      array(
+        'title' => TEXT_REDEMPTIONS,
+        'not_important' => 0
+      ),
     );
-    $this->view->sortColumns = '1,2,3,4,5,6';
+    $this->view->sortColumns = '1,2,3,4,5,6,7';
 
     $this->view->filters = new \stdClass();
     $this->view->filters->row = (int) Yii::$app->request->get('row', 0);
@@ -164,7 +168,7 @@ class Coupon_adminController extends Sceleton {
       $by = '';
     }
 
-    $listQuery = \common\models\Coupons::find()->joinWith(['description'])->select(\common\models\Coupons::tableName() . '.*');
+    $listQuery = \common\models\Coupons::find()->alias('c')->joinWith(['description'])->select('c.coupon_id, c.coupon_code, c.coupon_amount, c.coupon_currency, c.coupon_type, c.coupon_start_date, c.coupon_expire_date, c.coupon_active, c.date_created, c.date_modified');
     $inactive = false;
 
     foreach (self::$filterFields as $v => $f) {
@@ -277,6 +281,10 @@ class Coupon_adminController extends Sceleton {
         case 6:
           $listQuery->addOrderBy(" coupon_amount " . $dir);
           break;
+        case 7:
+          $listQuery->leftJoin(['crt' => \common\models\CouponRedeemTrack::tableName()], 'c.coupon_id = crt.coupon_id')->addGroupBy('c.coupon_id');
+          $listQuery->addOrderBy(new \yii\db\Expression('count(crt.order_id) ' . $dir));
+          break;
         default:
           $listQuery->addOrderBy(" date_created desc ");
           break;
@@ -342,7 +350,7 @@ class Coupon_adminController extends Sceleton {
       } elseif($coupon['coupon_amount']>0) {
         $coupon_amount = $currencies->format($coupon['coupon_amount'], false, $coupon['coupon_currency']);
       }
-      if ($coupon['free_shipping']){
+      if ($coupon['free_shipping']??null){
           if ( !empty($coupon_amount) ){
               $coupon_amount .= ' + '.TEXT_FREE_SHIPPING;
           }else{
@@ -350,6 +358,8 @@ class Coupon_adminController extends Sceleton {
           }
       }
       $row[] = $coupon_amount;
+
+      $row[] = \common\models\CouponRedeemTrack::find()->where(['coupon_id' => $coupon['coupon_id']])->count();
 
       $responseList[] = $row;
     }
@@ -513,6 +523,7 @@ class Coupon_adminController extends Sceleton {
         'tax_class_id' => 0,
         'coupon_start_date' => date('Y-m-d'),
         'coupon_expire_date' => date('Y-m-d', strtotime('+ 1 month')),
+        'coupon_amount_maximum' => 0.0,
       ];
     }
     $coupon_currency = tep_draw_pull_down_menu('coupon_currency', \common\helpers\Currencies::get_currencies(1), $coupon['coupon_currency'], 'class="form-control"');
@@ -685,6 +696,7 @@ class Coupon_adminController extends Sceleton {
       'coupon_expire_date' => $coupon_finishdate,
       'date_created' => 'now()',
       'date_modified' => 'now()',
+      'coupon_amount_maximum' => tep_db_prepare_input(\Yii::$app->request->post('coupon_amount_maximum')),
       'restrict_to_manufacturers' => implode(',', tep_db_prepare_input(\Yii::$app->request->post('restrict_to_manufacturers') ?? [])),
       'coupon_groups' => implode(',', tep_db_prepare_input(\Yii::$app->request->post('coupon_groups') ?? [])),
       'restrict_to_countries' => implode(",", tep_db_prepare_input(\Yii::$app->request->post('restrict_to_countries') ?? [])),
@@ -1148,6 +1160,7 @@ class Coupon_adminController extends Sceleton {
   }
 
   public function actionReportUsageInfo() {
+    $currencies = Yii::$container->get('currencies');
     \common\helpers\Translation::init('admin/coupon_admin');
     $this->layout = false;
 
@@ -1172,6 +1185,14 @@ class Coupon_adminController extends Sceleton {
     echo '<div class="or_box_head">' . '[' . ArrayHelper::getValue($redeem_info, 'coupon_id') . ']' . COUPON_NAME . ' ' . ArrayHelper::getValue($redeem_info, 'coupon_name') . '</div>';
     echo '<div class="row_or_wrapp">';
     echo '<div class="row_or">' . '<b>' . TEXT_REDEMPTIONS . '</b>' . '</div>';
+// {{
+      $amount_redemptions_query = tep_db_query(
+        "select o.currency, count(o.orders_id) as cnt, sum(ot.value) as amount from " . TABLE_COUPON_REDEEM_TRACK . " crt left join " . TABLE_ORDERS . " o ON o.orders_id = crt.order_id left join " . TABLE_ORDERS_TOTAL . " ot ON o.orders_id = ot.orders_id and ot.class = 'ot_total' where coupon_id = '" . (int)$redeem_info['coupon_id'] . "' group by o.currency"
+      );
+      while ($amount_redemptions = tep_db_fetch_array($amount_redemptions_query)) {
+        echo '<div class="row_or"><div>' . $amount_redemptions['currency'] . ' ('.$amount_redemptions['cnt'].'):</div><div>'.$currencies->format($amount_redemptions['amount'], false, $amount_redemptions['currency']).'</div></div>';
+      }
+// }}
     echo '<div class="row_or"><div>' . TEXT_REDEMPTIONS_TOTAL . '</div><div>' . $redemptions_total . '</div></div>';
     echo '<div class="row_or"><div>' . TEXT_REDEMPTIONS_CUSTOMER . '=</div><div>' . $redemptions_customer . '</div></div>';
     echo '</div>';

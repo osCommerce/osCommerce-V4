@@ -96,7 +96,7 @@ class CurrenciesController extends Sceleton  {
         $this->navigation[] = array('link' => Yii::$app->urlManager->createUrl('currencies/index'), 'title' => HEADING_TITLE);
 
         $this->view->headingTitle = HEADING_TITLE;
-        $this->topButtons[] = '<a href="currencies/update" class="btn btn-primary">' . TEXT_UPDATE_CURRENCIES . '</a>';
+//        $this->topButtons[] = '<a href="currencies/update" class="btn btn-primary">' . TEXT_UPDATE_CURRENCIES . '</a>';
         $this->topButtons[] = '<a href="#" class="btn btn-primary" onclick="return currencyEdit(0)">' . TEXT_INFO_HEADING_NEW_CURRENCY . '</a>';
 
         $this->view->currenciesTable = array(

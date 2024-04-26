@@ -62,16 +62,18 @@ class Products extends Widget
                                 <td style=" border-top: 1px solid #ccc">' . \common\helpers\Product::getVirtualItemQuantity($product['id'], $product['qty']) . '</td>
                                 <td style=" border-top: 1px solid #ccc">' . $product['name'];
                         if (isset($product['tpl_attributes']) && !empty($product['tpl_attributes'])) {
-                            $html .= '<div><small><i>' . str_replace(array('&amp;nbsp;', '&lt;b&gt;', '&lt;/b&gt;', '&lt;br&gt;', "\n\t"), array('&nbsp;', '<b>', '</b>', '<br>', '<br>'), htmlspecialchars($product['tpl_attributes'])) . '</i></small></div>';
+                            $html .= '<br><span style="font-size: 0.9em"><i>' . str_replace(array('&amp;nbsp;', '&lt;b&gt;', '&lt;/b&gt;', '&lt;br&gt;', "\n\t"), array('&nbsp;', '<b>', '</b>', '<br>', '<br>'), htmlspecialchars($product['tpl_attributes'])) . '</i></span>';
                         } else
                         if (is_array($product['attributes'] ?? null)) {
                             foreach ($product['attributes'] as $attribut) {
-                                $html .= '
-                  <div><small>&nbsp;<i> - ' . str_replace(array('&amp;nbsp;', '&lt;b&gt;', '&lt;/b&gt;', '&lt;br&gt;'), array('&nbsp;', '<b>', '</b>', '<br>'), htmlspecialchars($attribut['option'])) . ': ' . $attribut['value'] . '</i></small></div>';
+                                $html .= '<br><span style="font-size: 0.9em">&nbsp;<i> - ' . str_replace(array('&amp;nbsp;', '&lt;b&gt;', '&lt;/b&gt;', '&lt;br&gt;'), array('&nbsp;', '<b>', '</b>', '<br>'), htmlspecialchars($attribut['option'])) . ': ' . $attribut['value'] . '</i></span>';
                             }
                         }
                         if ($ext = \common\helpers\Acl::checkExtensionAllowed('ProductAssets', 'allowed')) {
                             $html .= $ext::renderOrderProductAsset($product['orders_products_id'], true);
+                        }
+                        foreach (\common\helpers\Hooks::getList('box/invoice/products', 'product-name') as $filename) {
+                            include($filename);
                         }
                         $html .= '
                             </td>

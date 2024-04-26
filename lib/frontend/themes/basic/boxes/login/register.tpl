@@ -165,7 +165,7 @@
                         </div>
                     </div>
                 {/if}
-                {if \common\helpers\Acl::checkExtensionAllowed('Subscribers', 'allowed') && defined('ENABLE_CUSTOMERS_NEWSLETTER') && ENABLE_CUSTOMERS_NEWSLETTER == 'true' }
+                {if \common\helpers\Extensions::callIfAllowed('Subscribers', 'optionIsCustomerNewsletterEnabled') }
                     <div class="col-left">
                         <label class="slim">
                             {Html::activeCheckbox($registerModel, 'newsletter', ['class' => 'candlestick newsletter', 'value' => '', 'label' => {$smarty.const.RECEIVE_REGULAR_OFFERS}, 'value' => $registerModel->newsletter ])}
@@ -437,7 +437,7 @@ function sendValidationRequest()
         var count = 0;
         $('form', box).on('submit', function(e){
             if (!document.register.querySelector('.terms-conditions').checked){
-                alertMessage('{$smarty.const.TEXT_PLEASE_TERMS}');
+                alertMessage('{$smarty.const.TEXT_PLEASE_TERMS|escape:"javascript"}');
                 return false;
             }            
 {if in_array(ACCOUNT_DOB, ['required_register', 'visible_register']) && ACCOUNT_GDPR == 'true'}
@@ -447,7 +447,7 @@ function sendValidationRequest()
             }
 {/if}
 
-{if \common\helpers\Acl::checkExtensionAllowed('Subscribers', 'allowed') && defined('ENABLE_CUSTOMERS_NEWSLETTER') && ENABLE_CUSTOMERS_NEWSLETTER == 'true'}
+{if \common\helpers\Extensions::callIfAllowed('Subscribers', 'optionIsCustomerNewsletterEnabled')}
             if (offersStatement === 'default') {
                 alertMessage('{$smarty.const.TEXT_PLEASE_OFFERS}');
                 return false;

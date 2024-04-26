@@ -13,6 +13,9 @@ use function mkdir;
 use function sprintf;
 use function unlink;
 
+/**
+ * @requires OS ^(?!win)
+ */
 class FuzzyTest extends TestCase
 {
 
@@ -78,8 +81,12 @@ class FuzzyTest extends TestCase
 		$inputsDirectory = sprintf('%s/fuzzy/%s', __DIR__ . '/../../../temp', $startSymbol);
 
 		if (is_dir($inputsDirectory)) {
-			foreach (glob(sprintf('%s/*.tst', $inputsDirectory)) as $file) {
-				unlink($file);
+			$glob = glob(sprintf('%s/*.tst', $inputsDirectory));
+
+			if ($glob !== false) {
+				foreach ($glob as $file) {
+					unlink($file);
+				}
 			}
 
 		} else {
@@ -100,7 +107,13 @@ class FuzzyTest extends TestCase
 
 		$process->mustRun();
 
-		foreach (glob(sprintf('%s/*.tst', $inputsDirectory)) as $file) {
+		$glob = glob(sprintf('%s/*.tst', $inputsDirectory));
+
+		if ($glob === false) {
+			return;
+		}
+
+		foreach ($glob as $file) {
 			$input = file_get_contents($file);
 			yield [$input];
 		}

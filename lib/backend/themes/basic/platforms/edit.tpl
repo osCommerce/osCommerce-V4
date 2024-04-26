@@ -224,7 +224,7 @@
                             </div>
                         </div>
                         <div class="wl-td">
-                            <label>{$smarty.const.ENTRY_COUNTRY}<span class="fieldRequired">*</span></label>{Html::dropDownList('entry_country_id[]', $addresses->entry_country_id|default:null, \common\helpers\Country::new_get_countries('', false), ['class' => 'form-control default_address_no_check', 'id' => "selectCountry", 'required' => true])}
+                            <label>{$smarty.const.ENTRY_COUNTRY}<span class="fieldRequired">*</span></label>{Html::dropDownList('entry_country_id[]', $addresses->entry_country_id|default:null, \common\helpers\Country::new_get_countries('', true), ['class' => 'form-control default_address_no_check', 'id' => "selectCountry", 'required' => true])}
                         </div>
                     </div>
 

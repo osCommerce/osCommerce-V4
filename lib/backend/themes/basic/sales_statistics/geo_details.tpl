@@ -47,6 +47,9 @@
                 owner.autocomplete({
                     source: function(request, response) {
                         ajaxData['term'] = request.term;
+                        if (ajaxData['action'] == 'state' && $("#selectCountry").val() instanceof Array) {
+                            ajaxData['country'] = $("#selectCountry").val().join(',');
+                        }
                         $.ajax({
                             url: "sales_statistics/get-geo",
                             dataType: "json",

@@ -137,9 +137,13 @@ class JsonLd
         if (!self::hasValue(['Product'])) {
             return false;
         }
+        if (self::$schema['Product']['@type'] == 'Product' && !self::$schema['Product']['offers']) {
+            self::$schema['Product']['@type'] = 'Service';
+        }
         if (self::$schema['Product']['@type'] == 'Service') {
             unset(self::$schema['Product']['sku']);
             unset(self::$schema['Product']['gtin13']);
+            unset(self::$schema['Product']['asin']);
 
             if (self::hasValue(['Organization'])) {
                 self::$schema['Product']['provider'] = self::$schema['Organization'];

@@ -17,58 +17,139 @@
 
 namespace Google\Service\Contentwarehouse;
 
-class KnowledgeAnswersValueType extends \Google\Model
+class KnowledgeAnswersValueType extends \Google\Collection
 {
+  protected $collection_key = 'viewSpecificNumberTypes';
+  /**
+   * @var KnowledgeAnswersAnyType
+   */
+  public $anyType;
   protected $anyTypeType = KnowledgeAnswersAnyType::class;
   protected $anyTypeDataType = '';
+  /**
+   * @var KnowledgeAnswersAttributeType
+   */
+  public $attributeType;
   protected $attributeTypeType = KnowledgeAnswersAttributeType::class;
   protected $attributeTypeDataType = '';
+  /**
+   * @var KnowledgeAnswersBooleanType
+   */
+  public $booleanType;
   protected $booleanTypeType = KnowledgeAnswersBooleanType::class;
   protected $booleanTypeDataType = '';
+  /**
+   * @var KnowledgeAnswersCollectionType
+   */
+  public $collectionType;
   protected $collectionTypeType = KnowledgeAnswersCollectionType::class;
   protected $collectionTypeDataType = '';
+  /**
+   * @var KnowledgeAnswersCompoundType
+   */
+  public $compoundType;
   protected $compoundTypeType = KnowledgeAnswersCompoundType::class;
   protected $compoundTypeDataType = '';
+  /**
+   * @var KnowledgeAnswersDateType
+   */
+  public $dateType;
   protected $dateTypeType = KnowledgeAnswersDateType::class;
   protected $dateTypeDataType = '';
+  /**
+   * @var KnowledgeAnswersDependencyType
+   */
+  public $dependencyType;
   protected $dependencyTypeType = KnowledgeAnswersDependencyType::class;
   protected $dependencyTypeDataType = '';
+  /**
+   * @var KnowledgeAnswersDurationType
+   */
+  public $durationType;
   protected $durationTypeType = KnowledgeAnswersDurationType::class;
   protected $durationTypeDataType = '';
+  /**
+   * @var KnowledgeAnswersEntityType
+   */
+  public $entityType;
   protected $entityTypeType = KnowledgeAnswersEntityType::class;
   protected $entityTypeDataType = '';
   /**
    * @var string
    */
   public $inputCompositionConfig;
+  /**
+   * @var KnowledgeAnswersMeasurementType
+   */
+  public $measurementType;
   protected $measurementTypeType = KnowledgeAnswersMeasurementType::class;
   protected $measurementTypeDataType = '';
+  /**
+   * @var KnowledgeAnswersNormalizedStringType
+   */
+  public $normalizedStringType;
   protected $normalizedStringTypeType = KnowledgeAnswersNormalizedStringType::class;
   protected $normalizedStringTypeDataType = '';
+  /**
+   * @var KnowledgeAnswersNumberType
+   */
+  public $numberType;
   protected $numberTypeType = KnowledgeAnswersNumberType::class;
   protected $numberTypeDataType = '';
+  /**
+   * @var KnowledgeAnswersOpaqueType
+   */
+  public $opaqueType;
   protected $opaqueTypeType = KnowledgeAnswersOpaqueType::class;
   protected $opaqueTypeDataType = '';
+  /**
+   * @var KnowledgeAnswersPlexityRequirement
+   */
+  public $plexityRequirement;
   protected $plexityRequirementType = KnowledgeAnswersPlexityRequirement::class;
   protected $plexityRequirementDataType = '';
   /**
-   * @var string
+   * @var KnowledgeAnswersPolarQuestionType
    */
-  public $pluralityType;
+  public $polarQuestionType;
   protected $polarQuestionTypeType = KnowledgeAnswersPolarQuestionType::class;
   protected $polarQuestionTypeDataType = '';
+  /**
+   * @var KnowledgeAnswersSemanticType
+   */
+  public $semanticType;
   protected $semanticTypeType = KnowledgeAnswersSemanticType::class;
   protected $semanticTypeDataType = '';
+  /**
+   * @var KnowledgeAnswersStateOfAffairsType
+   */
+  public $stateOfAffairsType;
   protected $stateOfAffairsTypeType = KnowledgeAnswersStateOfAffairsType::class;
   protected $stateOfAffairsTypeDataType = '';
+  /**
+   * @var KnowledgeAnswersStringType
+   */
+  public $stringType;
   protected $stringTypeType = KnowledgeAnswersStringType::class;
   protected $stringTypeDataType = '';
+  /**
+   * @var KnowledgeAnswersTimeZoneType
+   */
+  public $timezoneType;
   protected $timezoneTypeType = KnowledgeAnswersTimeZoneType::class;
   protected $timezoneTypeDataType = '';
+  /**
+   * @var KnowledgeAnswersTrackingNumberType
+   */
+  public $trackingNumberType;
   protected $trackingNumberTypeType = KnowledgeAnswersTrackingNumberType::class;
   protected $trackingNumberTypeDataType = '';
-  protected $withTraitType = KnowledgeAnswersTypeTrait::class;
-  protected $withTraitDataType = '';
+  /**
+   * @var KnowledgeAnswersNumberType[]
+   */
+  public $viewSpecificNumberTypes;
+  protected $viewSpecificNumberTypesType = KnowledgeAnswersNumberType::class;
+  protected $viewSpecificNumberTypesDataType = 'array';
 
   /**
    * @param KnowledgeAnswersAnyType
@@ -281,20 +362,6 @@ class KnowledgeAnswersValueType extends \Google\Model
     return $this->plexityRequirement;
   }
   /**
-   * @param string
-   */
-  public function setPluralityType($pluralityType)
-  {
-    $this->pluralityType = $pluralityType;
-  }
-  /**
-   * @return string
-   */
-  public function getPluralityType()
-  {
-    return $this->pluralityType;
-  }
-  /**
    * @param KnowledgeAnswersPolarQuestionType
    */
   public function setPolarQuestionType(KnowledgeAnswersPolarQuestionType $polarQuestionType)
@@ -379,18 +446,18 @@ class KnowledgeAnswersValueType extends \Google\Model
     return $this->trackingNumberType;
   }
   /**
-   * @param KnowledgeAnswersTypeTrait
+   * @param KnowledgeAnswersNumberType[]
    */
-  public function setWithTrait(KnowledgeAnswersTypeTrait $withTrait)
+  public function setViewSpecificNumberTypes($viewSpecificNumberTypes)
   {
-    $this->withTrait = $withTrait;
+    $this->viewSpecificNumberTypes = $viewSpecificNumberTypes;
   }
   /**
-   * @return KnowledgeAnswersTypeTrait
+   * @return KnowledgeAnswersNumberType[]
    */
-  public function getWithTrait()
+  public function getViewSpecificNumberTypes()
   {
-    return $this->withTrait;
+    return $this->viewSpecificNumberTypes;
   }
 }
 

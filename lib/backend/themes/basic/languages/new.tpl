@@ -1,5 +1,10 @@
 {use class="yii\helpers\Url"}
 {use class="yii\helpers\Html"}
+<style>
+    .select2-container--open {
+        z-index: 100000;
+    }
+</style>
 <div class="language_new">
   
             <div class="widget box">

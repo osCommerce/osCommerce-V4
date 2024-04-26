@@ -183,7 +183,7 @@ class ProductsCatalog extends Widget {
             $selected_data = json_decode($req_selected_data, true);
             $products_id = 0;
             if (!is_array($selected_data)) {
-                $selected_data = json_decode($selected_data, true);
+                $selected_data = json_decode($selected_data ?? '', true);
             }
             if (is_array($selected_data)) {
                 $products_id = (int) $selected_data[0];

@@ -44,14 +44,14 @@ class ArrayTest extends TestCase
         $this->expectExceptionMessage(sprintf(
             'The input data of type "%s" did not convert to an array, but got a result of type "%s".',
             gettype($input),
-            gettype($input)
+            gettype($input),
         ));
         $result = $this->serializer->toArray($input);
 
         self::assertEquals([$input], $result);
     }
 
-    public function scalarValues()
+    public static function scalarValues()
     {
         return [
             [42],

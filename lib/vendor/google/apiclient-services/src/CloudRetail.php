@@ -85,15 +85,15 @@ class CloudRetail extends \Google\Service
                   'type' => 'string',
                   'required' => true,
                 ],
-                'banner' => [
-                  'location' => 'query',
-                  'type' => 'string',
-                ],
                 'dataset' => [
                   'location' => 'query',
                   'type' => 'string',
                 ],
                 'deviceType' => [
+                  'location' => 'query',
+                  'type' => 'string',
+                ],
+                'entity' => [
                   'location' => 'query',
                   'type' => 'string',
                 ],
@@ -391,6 +391,16 @@ class CloudRetail extends \Google\Service
                 'updateMask' => [
                   'location' => 'query',
                   'type' => 'string',
+                ],
+              ],
+            ],'purge' => [
+              'path' => 'v2/{+parent}/products:purge',
+              'httpMethod' => 'POST',
+              'parameters' => [
+                'parent' => [
+                  'location' => 'path',
+                  'type' => 'string',
+                  'required' => true,
                 ],
               ],
             ],'removeFulfillmentPlaces' => [

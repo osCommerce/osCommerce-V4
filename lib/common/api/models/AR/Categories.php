@@ -325,7 +325,7 @@ class Categories extends EPMap
             $ext::setAutoStatusCategory($this->categories_id, $this->auto_status, true);
             unset($this->auto_status);
         }
-        if ( $insert && !is_array($this->childCollections['assigned_customer_groups']) ) {
+        if ( $insert && !is_array($this->childCollections['assigned_customer_groups']??null) ) {
             /** @var \common\extensions\UserGroupsRestrictions\UserGroupsRestrictions $ext */
             if ($ext = \common\helpers\Acl::checkExtensionAllowed('UserGroupsRestrictions', 'allowed')) {
                 if ($groupService = $ext::getGroupsService()) {

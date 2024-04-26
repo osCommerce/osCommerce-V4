@@ -20,6 +20,16 @@ namespace Google\Service\VMMigrationService;
 class CutoverJob extends \Google\Collection
 {
   protected $collection_key = 'steps';
+  /**
+   * @var ComputeEngineDisksTargetDetails
+   */
+  public $computeEngineDisksTargetDetails;
+  protected $computeEngineDisksTargetDetailsType = ComputeEngineDisksTargetDetails::class;
+  protected $computeEngineDisksTargetDetailsDataType = '';
+  /**
+   * @var ComputeEngineTargetDetails
+   */
+  public $computeEngineTargetDetails;
   protected $computeEngineTargetDetailsType = ComputeEngineTargetDetails::class;
   protected $computeEngineTargetDetailsDataType = '';
   /**
@@ -30,6 +40,10 @@ class CutoverJob extends \Google\Collection
    * @var string
    */
   public $endTime;
+  /**
+   * @var Status
+   */
+  public $error;
   protected $errorType = Status::class;
   protected $errorDataType = '';
   /**
@@ -52,9 +66,27 @@ class CutoverJob extends \Google\Collection
    * @var string
    */
   public $stateTime;
+  /**
+   * @var CutoverStep[]
+   */
+  public $steps;
   protected $stepsType = CutoverStep::class;
   protected $stepsDataType = 'array';
 
+  /**
+   * @param ComputeEngineDisksTargetDetails
+   */
+  public function setComputeEngineDisksTargetDetails(ComputeEngineDisksTargetDetails $computeEngineDisksTargetDetails)
+  {
+    $this->computeEngineDisksTargetDetails = $computeEngineDisksTargetDetails;
+  }
+  /**
+   * @return ComputeEngineDisksTargetDetails
+   */
+  public function getComputeEngineDisksTargetDetails()
+  {
+    return $this->computeEngineDisksTargetDetails;
+  }
   /**
    * @param ComputeEngineTargetDetails
    */

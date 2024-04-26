@@ -20,7 +20,12 @@ class Widget extends \yii\base\Widget {
         $response = parent::render($view, $params);
         if (!empty($response) && \Yii::$app->id == 'app-backend') {
             if (defined('SHOW_EXTENSION_INFO') && SHOW_EXTENSION_INFO == 'True') {
-                $module = \common\helpers\Output::mb_basename(trim(str_replace('Render', '', get_class($this)),'/\\'));
+
+                if (isset($params['_extension_render']) && !isset($params['_exclude_information_icon'])) {
+                    $module = $params['_extension_render'];
+                } else {
+                    $module = \common\helpers\Output::mb_basename(trim(str_replace('Render', '', get_class($this)), '/\\'));
+                }
                 if (\common\helpers\Acl::checkExtension($module)) {
                     $response = \common\helpers\Modules::getInfoLinkForExtension($module) . $response;
                 }

@@ -20,14 +20,36 @@ namespace Google\Service\Document;
 class GoogleCloudDocumentaiV1beta1DocumentPageToken extends \Google\Collection
 {
   protected $collection_key = 'detectedLanguages';
+  /**
+   * @var GoogleCloudDocumentaiV1beta1DocumentPageTokenDetectedBreak
+   */
+  public $detectedBreak;
   protected $detectedBreakType = GoogleCloudDocumentaiV1beta1DocumentPageTokenDetectedBreak::class;
   protected $detectedBreakDataType = '';
+  /**
+   * @var GoogleCloudDocumentaiV1beta1DocumentPageDetectedLanguage[]
+   */
+  public $detectedLanguages;
   protected $detectedLanguagesType = GoogleCloudDocumentaiV1beta1DocumentPageDetectedLanguage::class;
   protected $detectedLanguagesDataType = 'array';
+  /**
+   * @var GoogleCloudDocumentaiV1beta1DocumentPageLayout
+   */
+  public $layout;
   protected $layoutType = GoogleCloudDocumentaiV1beta1DocumentPageLayout::class;
   protected $layoutDataType = '';
+  /**
+   * @var GoogleCloudDocumentaiV1beta1DocumentProvenance
+   */
+  public $provenance;
   protected $provenanceType = GoogleCloudDocumentaiV1beta1DocumentProvenance::class;
   protected $provenanceDataType = '';
+  /**
+   * @var GoogleCloudDocumentaiV1beta1DocumentPageTokenStyleInfo
+   */
+  public $styleInfo;
+  protected $styleInfoType = GoogleCloudDocumentaiV1beta1DocumentPageTokenStyleInfo::class;
+  protected $styleInfoDataType = '';
 
   /**
    * @param GoogleCloudDocumentaiV1beta1DocumentPageTokenDetectedBreak
@@ -84,6 +106,20 @@ class GoogleCloudDocumentaiV1beta1DocumentPageToken extends \Google\Collection
   public function getProvenance()
   {
     return $this->provenance;
+  }
+  /**
+   * @param GoogleCloudDocumentaiV1beta1DocumentPageTokenStyleInfo
+   */
+  public function setStyleInfo(GoogleCloudDocumentaiV1beta1DocumentPageTokenStyleInfo $styleInfo)
+  {
+    $this->styleInfo = $styleInfo;
+  }
+  /**
+   * @return GoogleCloudDocumentaiV1beta1DocumentPageTokenStyleInfo
+   */
+  public function getStyleInfo()
+  {
+    return $this->styleInfo;
   }
 }
 

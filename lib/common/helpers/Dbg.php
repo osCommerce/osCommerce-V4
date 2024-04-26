@@ -41,6 +41,7 @@ class Dbg
     public static function ifDefined($debugConst)
     {
         if (!empty($debugConst) && defined('DBG_'.$debugConst) && constant('DBG_'.$debugConst) === true) {
+            self::$lastDbgConst = $debugConst;
             return self::class;
         }
         return DbgNull::class;
@@ -76,7 +77,7 @@ class Dbg
         if (class_exists('\Yii')) {
             $tmp = \Yii::$app->log->traceLevel;
             \Yii::$app->log->traceLevel = 0;
-            \Yii::info($msg, 'dbg/log');
+            \Yii::info(self::getPrefix() . $msg, empty(self::$logEntity)? 'dbg/log' : end(self::$logEntity));
             \Yii::$app->log->traceLevel = $tmp;
         }
     }
@@ -105,10 +106,15 @@ class Dbg
         return $var;
     }
 
+    public static function logError($e, $prefix = null, $stack = false)
+    {
+        self::outError($e, 'log', $prefix, $stack);
+    }
+
     public static function echo($msg)
     {
         if (!class_exists('\common\helpers\System') || \common\helpers\System::isDevelopment() || \common\helpers\System::isConsole()) {
-            echo "<pre>" . $msg . '</pre>';
+            echo "<pre>" . self::getPrefix() . $msg . '</pre>';
         }
         self::log($msg);
     }
@@ -118,6 +124,20 @@ class Dbg
         if (method_exists(self::class, $dest)) {
             self::$dest($msg);
         }
+    }
+
+    public static function outError($e, $dest = 'echo', $prefix = null, $stack = false)
+    {
+        $msg = empty($prefix) ? 'Error: ' : $prefix . ': ';
+        if ($e instanceof \Throwable) {
+            $msg .= $e->getMessage();
+            if ($stack) {
+                $msg .= "\n" . $e->getTraceAsString();
+            }
+        } else {
+            $msg .= $e;
+        }
+        self::out($msg, $dest);
     }
 
     public static function echoVar($var, $msg = 'var')
@@ -140,6 +160,11 @@ class Dbg
         }
         self::echoVar($var, $msg);
         return $var;
+    }
+
+    public static function echoError($e, $prefix = null, $stack = false)
+    {
+        self::outError($e, 'echo', $prefix, $stack);
     }
 
     private static function getFileName($fn, $ext)
@@ -299,6 +324,64 @@ class Dbg
             }
         }
 
+    }
+
+    public static function getPrefixState()
+    {
+        return ['prefix' => count(self::$logPrefix), 'enity' => count(self::$logEntity)];
+    }
+
+    private static $lastDbgConst = null;
+    private static $logPrefix = [];
+    private static $logEntity = [];
+
+    private static function addEntity($entity)
+    {
+        if (is_bool($entity)) {
+            if ($entity && !empty(self::$lastDbgConst)) {
+                self::$logEntity[] = "dbg/" . self::$lastDbgConst;
+            }
+        } elseif (is_string($entity) && !empty($entity)) {
+            self::$logEntity[] = "dbg/$entity";
+        }
+    }
+    public static function addPrefix(string $prefix, $entity = null)
+    {
+        $state = self::getPrefixState();
+        if (!empty($entity)) {
+            self::$logEntity[] = "dbg/$entity";
+        }
+        if (!empty($prefix)) {
+            self::$logPrefix[] = $prefix;
+        }
+        return $state;
+    }
+
+    public static function delPrefix($state = null, $msg = 'Finished')
+    {
+        if (!empty($msg)) {
+            self::log($msg);
+        }
+        if (is_null($state)) {
+            array_pop(self::$logPrefix);
+        } else {
+            self::$logPrefix = array_slice(self::$logPrefix, 0, $state['prefix'] ?? count(self::$logPrefix));
+            self::$logEntity = array_slice(self::$logEntity, 0, $state['enity'] ?? count(self::$logEntity));
+        }
+    }
+
+    public static function logPrefix(string $prefix, $entity = true)
+    {
+        $state = self::getPrefixState();
+        self::addEntity($entity);
+        self::log($prefix);
+        self::addPrefix($prefix);
+        return $state;
+    }
+
+    public static function getPrefix()
+    {
+        return empty(self::$logPrefix)? '' : (implode('::', self::$logPrefix) . ' ');
     }
 
 }

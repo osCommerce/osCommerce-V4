@@ -23,5 +23,8 @@
 {/if}
 {if \common\helpers\Acl::rule(['TEXT_CATEGORIES', 'IMAGE_MOVE'])}<button class="btn btn-no-margin btn-move" onclick="confirmMoveCategory({$cInfo->categories_id})">{IMAGE_MOVE}</button>{/if}{if \common\helpers\Acl::rule(['TEXT_CATEGORIES', 'IMAGE_DELETE'])}<button class="btn btn-delete" onclick="confirmDeleteCategory({$cInfo->categories_id})">{IMAGE_DELETE}</button>{/if}
 {if \common\helpers\Acl::rule(['TABLE_HEADING_PRODUCTS', 'IMAGE_MOVE']) && $cInfo->hasGrouppedProducts}<button class="btn btn-process-order btn-sort" onclick="confirmSortGroupped({$cInfo->categories_id}, {intval($cInfo->childs_count)})">{TEXT_REINDEX_GROUPPED}</button>{/if}
+    {foreach \common\helpers\Hooks::getList('categories/index', 'right-buttons-bottom') as $filename}
+        {include file=$filename}
+    {/foreach}
 </div>
 {if $cInfo->eventInfo}{$cInfo->eventInfo}{/if}

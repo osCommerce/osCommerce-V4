@@ -39,13 +39,16 @@ class Session {
         }
     }
     
-    public static function deleteCustomerSessions($customer_id)
+    public static function deleteCustomerSessions($customer_id, $excludeSID = '')
     {
         $whosRows = \common\models\WhosOnline::find()
                 ->where(['customer_id' => $customer_id])
                 ->asArray()
                 ->all();
         foreach ($whosRows as $whos) {
+            if ($excludeSID == $whos['session_id']) {
+                continue;
+            }
             if (STORE_SESSIONS == 'mysql') {
                 $sessionRow = \common\models\Sessions::find()->where(['sesskey' => $whos['session_id']])->one();
                 if ($sessionRow instanceof \common\models\Sessions) {

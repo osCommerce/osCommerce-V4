@@ -26,6 +26,9 @@ class Breadcrumbs extends Widget {
         if (isset(\Yii::$app->controller->topButtons)) {
 						$this->topButtons = \Yii::$app->controller->topButtons;
         }
+        foreach (\common\helpers\Hooks::getList('components/breadcrumbs/before-render') as $filename) {
+            include($filename);
+        }
         return $this->render('Breadcrumbs', [
           'context' => $this,
         ]);

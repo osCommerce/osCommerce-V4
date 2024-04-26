@@ -78,6 +78,11 @@ class AccountLink extends Widget
                     return '';
                 }
             }
+            if (isset($this->settings[0]['link']) && $this->settings[0]['link'] == 'Personal Catalog') {
+                if (!\common\helpers\Acl::checkExtensionAllowed('PersonalCatalog', 'allowed')) {
+                    return '';
+                }
+            }
             if (isset($this->settings[0]['hide_link']) && $this->settings[0]['hide_link'] == 'review') {
                 $reviews = tep_db_fetch_array(tep_db_query("select count(*) as total from " . TABLE_REVIEWS . " where customers_id = '" . (int)Yii::$app->user->getId() . "'"));
                 if ($reviews['total'] == 0) {

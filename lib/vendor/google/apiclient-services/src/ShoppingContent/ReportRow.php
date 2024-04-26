@@ -19,20 +19,58 @@ namespace Google\Service\ShoppingContent;
 
 class ReportRow extends \Google\Model
 {
+  /**
+   * @var BestSellers
+   */
+  public $bestSellers;
   protected $bestSellersType = BestSellers::class;
   protected $bestSellersDataType = '';
+  /**
+   * @var Brand
+   */
+  public $brand;
   protected $brandType = Brand::class;
   protected $brandDataType = '';
+  /**
+   * @var CompetitiveVisibility
+   */
+  public $competitiveVisibility;
+  protected $competitiveVisibilityType = CompetitiveVisibility::class;
+  protected $competitiveVisibilityDataType = '';
+  /**
+   * @var Metrics
+   */
+  public $metrics;
   protected $metricsType = Metrics::class;
   protected $metricsDataType = '';
+  /**
+   * @var PriceCompetitiveness
+   */
+  public $priceCompetitiveness;
   protected $priceCompetitivenessType = PriceCompetitiveness::class;
   protected $priceCompetitivenessDataType = '';
+  /**
+   * @var PriceInsights
+   */
+  public $priceInsights;
   protected $priceInsightsType = PriceInsights::class;
   protected $priceInsightsDataType = '';
+  /**
+   * @var ProductCluster
+   */
+  public $productCluster;
   protected $productClusterType = ProductCluster::class;
   protected $productClusterDataType = '';
+  /**
+   * @var ProductView
+   */
+  public $productView;
   protected $productViewType = ProductView::class;
   protected $productViewDataType = '';
+  /**
+   * @var Segments
+   */
+  public $segments;
   protected $segmentsType = Segments::class;
   protected $segmentsDataType = '';
 
@@ -63,6 +101,20 @@ class ReportRow extends \Google\Model
   public function getBrand()
   {
     return $this->brand;
+  }
+  /**
+   * @param CompetitiveVisibility
+   */
+  public function setCompetitiveVisibility(CompetitiveVisibility $competitiveVisibility)
+  {
+    $this->competitiveVisibility = $competitiveVisibility;
+  }
+  /**
+   * @return CompetitiveVisibility
+   */
+  public function getCompetitiveVisibility()
+  {
+    return $this->competitiveVisibility;
   }
   /**
    * @param Metrics

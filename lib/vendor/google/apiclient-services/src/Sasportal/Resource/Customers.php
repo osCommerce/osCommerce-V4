@@ -17,10 +17,15 @@
 
 namespace Google\Service\Sasportal\Resource;
 
+use Google\Service\Sasportal\SasPortalCheckHasProvisionedDeploymentResponse;
 use Google\Service\Sasportal\SasPortalCustomer;
 use Google\Service\Sasportal\SasPortalListCustomersResponse;
+use Google\Service\Sasportal\SasPortalListLegacyOrganizationsResponse;
+use Google\Service\Sasportal\SasPortalMigrateOrganizationRequest;
+use Google\Service\Sasportal\SasPortalOperation;
 use Google\Service\Sasportal\SasPortalProvisionDeploymentRequest;
 use Google\Service\Sasportal\SasPortalProvisionDeploymentResponse;
+use Google\Service\Sasportal\SasPortalSetupSasAnalyticsRequest;
 
 /**
  * The "customers" collection of methods.
@@ -32,6 +37,19 @@ use Google\Service\Sasportal\SasPortalProvisionDeploymentResponse;
  */
 class Customers extends \Google\Service\Resource
 {
+  /**
+   * Checks whether a SAS deployment for the authentication context exists.
+   * (customers.checkHasProvisionedDeployment)
+   *
+   * @param array $optParams Optional parameters.
+   * @return SasPortalCheckHasProvisionedDeploymentResponse
+   */
+  public function checkHasProvisionedDeployment($optParams = [])
+  {
+    $params = [];
+    $params = array_merge($params, $optParams);
+    return $this->call('checkHasProvisionedDeployment', [$params], SasPortalCheckHasProvisionedDeploymentResponse::class);
+  }
   /**
    * Returns a requested customer. (customers.get)
    *
@@ -63,6 +81,34 @@ class Customers extends \Google\Service\Resource
     return $this->call('list', [$params], SasPortalListCustomersResponse::class);
   }
   /**
+   * Checks whether account is legacy. (customers.listLegacyOrganizations)
+   *
+   * @param array $optParams Optional parameters.
+   * @return SasPortalListLegacyOrganizationsResponse
+   */
+  public function listLegacyOrganizations($optParams = [])
+  {
+    $params = [];
+    $params = array_merge($params, $optParams);
+    return $this->call('listLegacyOrganizations', [$params], SasPortalListLegacyOrganizationsResponse::class);
+  }
+  /**
+   * Migrates a SAS organization to the cloud. This will create GCP projects for
+   * each deployment and associate them. The SAS Organization is linked to the gcp
+   * project that called the command. go/sas-legacy-customer-migration
+   * (customers.migrateOrganization)
+   *
+   * @param SasPortalMigrateOrganizationRequest $postBody
+   * @param array $optParams Optional parameters.
+   * @return SasPortalOperation
+   */
+  public function migrateOrganization(SasPortalMigrateOrganizationRequest $postBody, $optParams = [])
+  {
+    $params = ['postBody' => $postBody];
+    $params = array_merge($params, $optParams);
+    return $this->call('migrateOrganization', [$params], SasPortalOperation::class);
+  }
+  /**
    * Updates an existing customer. (customers.patch)
    *
    * @param string $name Output only. Resource name of the customer.
@@ -92,6 +138,22 @@ class Customers extends \Google\Service\Resource
     $params = ['postBody' => $postBody];
     $params = array_merge($params, $optParams);
     return $this->call('provisionDeployment', [$params], SasPortalProvisionDeploymentResponse::class);
+  }
+  /**
+   * Setups the a GCP Project to receive SAS Analytics messages via GCP Pub/Sub
+   * with a subscription to BigQuery. All the Pub/Sub topics and BigQuery tables
+   * are created automatically as part of this service.
+   * (customers.setupSasAnalytics)
+   *
+   * @param SasPortalSetupSasAnalyticsRequest $postBody
+   * @param array $optParams Optional parameters.
+   * @return SasPortalOperation
+   */
+  public function setupSasAnalytics(SasPortalSetupSasAnalyticsRequest $postBody, $optParams = [])
+  {
+    $params = ['postBody' => $postBody];
+    $params = array_merge($params, $optParams);
+    return $this->call('setupSasAnalytics', [$params], SasPortalOperation::class);
   }
 }
 

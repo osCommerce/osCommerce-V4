@@ -72,12 +72,12 @@ class ot_shipping extends ModuleTotal {
                     break;
             }
 
-            if ((($pass == true) && ( ($order->info['total'] - $order->info['shipping_cost']) >= MODULE_ORDER_TOTAL_SHIPPING_FREE_SHIPPING_OVER))) {
+            if ((($pass == true) && ( $order->info['subtotal_inc_tax'] >= MODULE_ORDER_TOTAL_SHIPPING_FREE_SHIPPING_OVER))) {
 
                 $order->info['shipping_method'] = $this->title;
                 $order->info['total'] -= $order->info['shipping_cost'];
-                $order->info['total_inc_tax'] -= $order->info['shipping_cost'];
-                $order->info['total_exc_tax'] -= $order->info['shipping_cost'];
+                $order->info['total_inc_tax'] -= $order->info['shipping_cost_inc_tax'];
+                $order->info['total_exc_tax'] -= $order->info['shipping_cost_exc_tax'];
                 $order->info['shipping_cost'] = 0;
                 $order->info['shipping_cost_exc_tax'] = 0;
                 $order->info['shipping_cost_inc_tax'] = 0;

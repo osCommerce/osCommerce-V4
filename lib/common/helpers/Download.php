@@ -25,10 +25,11 @@ class Download {
      */
     public static function random_name() {
         $letters = 'abcdefghijklmnopqrstuvwxyz';
+        $len = strlen($letters);
         $dirname = '.';
-        $length = floor(tep_rand(16, 20));
+        $length = (int)floor(mt_rand(16, 20));
         for ($i = 1; $i <= $length; $i++) {
-            $q = floor(tep_rand(1, 26));
+            $q = (int)floor(mt_rand(0, $len-1));
             $dirname .= $letters[$q];
         }
         return $dirname;

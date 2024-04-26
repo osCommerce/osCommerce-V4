@@ -150,6 +150,10 @@ abstract class OrderShadowAbstract implements OrderInterface {
         }
         $products = $_products;
 
+        foreach (\common\helpers\Hooks::getList('order/prepare-products/before-loop') as $filename) {
+            include($filename);
+        }
+
         for ($i = 0, $n = sizeof($products); $i < $n; $i++) {
             $tax_values = $this->getTaxValues($products[$i]['tax_class_id']);
             $this->products[$index] = array('qty' => $products[$i]['quantity'],
@@ -267,6 +271,9 @@ abstract class OrderShadowAbstract implements OrderInterface {
             }
 
             $index++;
+        }
+        foreach (\common\helpers\Hooks::getList('order/prepare-products/after-loop') as $filename) {
+            include($filename);
         }
         $this->compactLinkedProducts();
     }
@@ -640,7 +647,7 @@ abstract class OrderShadowAbstract implements OrderInterface {
     function getTaxValues($tax_class_id) {
 
       if (defined('TAX_ADDRESS_OPTION') && (int)TAX_ADDRESS_OPTION == 1) { // by shipping address
-        if ($this->manager->isShippingNeeded()) {
+        if ($this->manager->isShippingNeeded() || $this->withDelivery) {
           $check_delivery = $this->manager->getDeliveryAddress();
         } else {
           $check_delivery = $this->manager->getBillingAddress();

@@ -2,7 +2,7 @@
 check: lint cs tests phpstan
 
 .PHONY: tests
-tests: build-abnfgen
+tests:
 	php vendor/bin/phpunit
 
 .PHONY: lint
@@ -13,18 +13,24 @@ lint:
 		--exclude tests/PHPStan/Rules/Methods/data \
 		--exclude tests/PHPStan/Rules/Functions/data
 
+.PHONY: cs-install
+cs-install:
+	git clone https://github.com/phpstan/build-cs.git || true
+	git -C build-cs fetch origin && git -C build-cs reset --hard origin/main
+	composer install --working-dir build-cs
+
 .PHONY: cs
 cs:
-	composer install --working-dir build-cs && php build-cs/vendor/bin/phpcs
+	php build-cs/vendor/bin/phpcs src tests
 
 .PHONY: cs-fix
 cs-fix:
-	php build-cs/vendor/bin/phpcbf
+	php build-cs/vendor/bin/phpcbf src tests
 
 .PHONY: phpstan
 phpstan:
 	php vendor/bin/phpstan
 
-.PHONY: build-abnfgen
-build-abnfgen:
-	./build-abnfgen.sh
+.PHONY: phpstan-generate-baseline
+phpstan-generate-baseline:
+	php vendor/bin/phpstan --generate-baseline

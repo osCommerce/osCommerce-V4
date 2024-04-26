@@ -25,7 +25,13 @@ class Contact extends \frontend\forms\registration\CustomerRegistration {
     public $captha_enabled = false;    
     public $captcha_response;    
     public $captcha_widget;
-    
+    public $honeypot_field;
+    public $field1;
+    public $field2;
+    public $field3;
+
+    protected $contact_config = [];
+
     private $shortName = 'Contact';
     
     public function __construct($config = array()) {
@@ -37,10 +43,18 @@ class Contact extends \frontend\forms\registration\CustomerRegistration {
                 $this->captha_enabled = $this->captcha->isEnabled();
             }
         }
-        
+        if ( isset($config['contact_config']) && is_array($config['contact_config']) ) {
+            $this->contact_config = $config['contact_config'];
+        }
+
         if ($this->captha_enabled && !$this->customer_id){
             $this->captcha_widget = \frontend\design\boxes\ReCaptchaWidget::widget();
-        }        
+        }
+
+        if (!isset($_SESSION['honeypot_field'])) {
+            $_SESSION['honeypot_field'] = rand(1, 3);
+        }
+        $this->honeypot_field = $_SESSION['honeypot_field'];
     }
     
     public function formName(){
@@ -63,6 +77,7 @@ class Contact extends \frontend\forms\registration\CustomerRegistration {
             [['email_address', 'content', 'name'], 'string', 'skipOnEmpty' => false],
             [['dob', 'gdrp'], 'requiredOnRegister', 'skipOnEmpty' => false],            
             ['terms', 'requiredTrems', 'skipOnEmpty' => false],
+            [['field1','field2','field3'], 'validateHoneypot', 'skipOnEmpty' => false],
             ['captcha_response', 'validateCaptcha', 'skipOnEmpty' => false]
         ];        
         return $_rules;
@@ -78,6 +93,22 @@ class Contact extends \frontend\forms\registration\CustomerRegistration {
         if ($this->captha_enabled){
             if (!$this->captcha->checkVerification($this->captcha_response)){
                 $this->addError($attribute, UNSUCCESSFULL_ROBOT_VERIFICATION);
+            }
+        }
+    }
+
+    public function validateHoneypot($attribute, $params) {
+        if ( isset($this->contact_config['show_honeypot']) && $this->contact_config['show_honeypot'] ) {
+            if ($attribute == 'field' . $this->honeypot_field) {
+                // honeypot_field should be == email
+                if ($this->$attribute != $this->email_address) {
+                    $this->addError($attribute, sprintf(UNSUCCESSFULL_HONEYPOT_VERIFICATION, STORE_OWNER_EMAIL_ADDRESS));
+                }
+            } else {
+                // not honeypot_field should be empty
+                if ($this->$attribute != '') {
+                    $this->addError($attribute, sprintf(UNSUCCESSFULL_HONEYPOT_VERIFICATION, STORE_OWNER_EMAIL_ADDRESS));
+                }
             }
         }
     }
@@ -103,6 +134,11 @@ class Contact extends \frontend\forms\registration\CustomerRegistration {
 
         $fields[] = 'name';
         $fields[] = 'content';
+        if ( isset($this->contact_config['show_honeypot']) && $this->contact_config['show_honeypot'] ) {
+            $fields[] = 'field1';
+            $fields[] = 'field2';
+            $fields[] = 'field3';
+        }
         if ($this->captha_enabled){
             $fields[] = 'captcha_response';
         }
@@ -155,6 +191,7 @@ class Contact extends \frontend\forms\registration\CustomerRegistration {
                 array(), 'Reply-To: "' . $this->name . '" <' . $this->email_address . '>'
             );
         }
+        unset($_SESSION['honeypot_field']);
         return true;
     }
     

@@ -30,10 +30,12 @@ class GoogleCommerce extends \yii\base\Widget
         $provider = (new GoogleTools)->getModulesProvider();
         $this->installed_modules = $provider->getInstalledModules($this->order->info['platform_id']);
 
-        $_tax = $_total = $_shipping = $_coupon = 0;
+        $_tax = $_total = $_shipping = $_coupon = $_subtotal = 0;
         foreach ($this->order->totals as $totals) {
             if ($totals['class'] == 'ot_total') {
                 $_total = number_format($totals['value_inc_tax'], 2, ".", "");
+            } else if ($totals['class'] == 'ot_subtotal') {
+                $_subtotal = number_format($totals['value_exc_vat'], 2, ".", "");
             } else if ($totals['class'] == 'ot_tax') {
                 $_tax = number_format($totals['value'], 2, ".", "");
             } else if ($totals['class'] == 'ot_shipping') {
@@ -57,12 +59,12 @@ class GoogleCommerce extends \yii\base\Widget
             $this->ga['userId'] = [$this->order->customer['id']];
 
             $this->gtag = [
-                'transaction_id' => $this->order->info['order_id'],
-                'affiliation' => \common\classes\platform::name($this->order->info['platform_id']),
-                'value' => $_total,
-                'shipping'  => $_shipping,
-                'tax' => $_tax,
-                'coupon' => ($_coupon ? $_coupon : ''),
+                'transaction_id' => (string)$this->order->info['order_id'],
+                // Set value to the sum of (price * quantity) for all items in items. Don't include shipping or tax
+                'value' => (float)$_subtotal,
+                'shipping'  => (float)$_shipping,
+                'tax' => (float)$_tax,
+                'currency' => (!empty($this->order->info['currency']) ? $this->order->info['currency'] : constant('DEFAULT_CURRENCY')),
                 'items' => [],
             ];
         }
@@ -97,13 +99,13 @@ class GoogleCommerce extends \yii\base\Widget
                         }
                     }
                     $this->gtag['items'][] = [
-                        'item_id' => \common\helpers\Inventory::get_prid($item['id']),
+                        'item_id' => (string)\common\helpers\Inventory::get_prid($item['id']),
                         'item_name' => str_replace('"', '\"', $item['name']),
-                        'price' => number_format($item['final_price'], 2, ".", ""),
+                        'price' => (float)number_format($item['final_price'], 2, ".", ""),
                         'item_brand' => ($brand ? $brand : ''),
                         'item_category' => $category_name,
                         'item_variant' => $attributes,
-                        'quantity' => $item['qty'],
+                        'quantity' => (int)$item['qty'],
                     ];
                 }
             }

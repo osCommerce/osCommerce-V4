@@ -699,9 +699,12 @@ getOrder = function(options){
                 postData[e.name] = e.value;
             })
 
+            const $preloader = $('<div class="hided-box-fixed"><div class="preloader"></div></div>');
+            $('body').append($preloader);
             $.post($urlCheckout,
                 postData
             , function(data, status){
+                    $preloader.remove();
                 if (data.hasOwnProperty('message')){
                     order.showMessage(data.message, true);
                     order.processCallback(callback, data);

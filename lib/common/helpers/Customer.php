@@ -249,7 +249,6 @@ class Customer {
         tep_db_query("TRUNCATE TABLE customers_emails");
         tep_db_query("TRUNCATE TABLE " . TABLE_COUPON_GV_CUSTOMER);
         tep_db_query("TRUNCATE TABLE coupon_refer_queue");
-        tep_db_query("TRUNCATE TABLE " . TABLE_WHOS_ONLINE);
 
         $var_tables = [
             'regular_offers',
@@ -344,7 +343,6 @@ class Customer {
         tep_db_query("DELETE FROM " . TABLE_CUSTOMERS . " WHERE customers_id=" . (int)$customer_id);
         tep_db_query("DELETE FROM " . TABLE_CUSTOMERS_INFO . " WHERE customers_info_id=" . (int)$customer_id);
         tep_db_query("DELETE FROM " . TABLE_ADDRESS_BOOK . " WHERE customers_id=" . (int)$customer_id);
-        tep_db_query("DELETE FROM " . TABLE_WHOS_ONLINE . " WHERE customer_id = '" . (int) $customer_id . "'");
         tep_db_query("DELETE FROM " . TABLE_CUSTOMERS_CREDIT_HISTORY . " WHERE customers_id=" . (int)$customer_id);
         tep_db_query("DELETE FROM customers_emails WHERE customers_id=" . (int)$customer_id);
         tep_db_query("DELETE FROM " . TABLE_CUSTOMERS_ERRORS . " WHERE customers_id=" . (int)$customer_id);
@@ -362,11 +360,6 @@ class Customer {
         /** @var \common\extensions\CustomerModules\CustomerModules $CustomerModules */
         if ($CustomerModules = \common\helpers\Acl::checkExtensionAllowed('CustomerModules', 'allowed')) {
             $CustomerModules::deleteCustomer($customer_id);
-        }
-
-        /** @var \common\extensions\Subscribers\Subscribers $subscr  */
-        if ($subscr = \common\helpers\Acl::checkExtensionAllowed('Subscribers', 'allowed')) {
-            $subscr::onDeleteCustomer($customer_id);
         }
 
         if (\common\helpers\Acl::checkExtensionAllowed('Messages', 'allowed')) {

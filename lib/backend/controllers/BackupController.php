@@ -190,7 +190,7 @@ class BackupController extends Sceleton {
         $comments_location = DIR_FS_BACKUP . 'comments' . DIRECTORY_SEPARATOR;
         if (is_file($comments_location . $fileName . '.txt')) {
             $fileName = file_get_contents($comments_location . $fileName . '.txt');
-            $fileName = str_replace("\n", "<br>", $fileName);
+            $fileName = str_replace("\n", "<br>", \common\helpers\Output::strip_tags($fileName));
         }
         
         return $fileName;
@@ -238,15 +238,17 @@ class BackupController extends Sceleton {
         $backupHtml .= '<br>' . '<textarea name="comments"></textarea>';
         
         $connection = Yii::$app->getDb();
-        $tables = $connection->createCommand('SHOW OPEN TABLES FROM `' . DB_DATABASE . '`;')->queryAll();
-        usort($tables, function($a, $b) { return strcmp($a["Table"], $b["Table"]); });
-      
+        $tables = $connection->createCommand('SHOW TABLES FROM `' . DB_DATABASE . '`;')->queryColumn();
+        sort($tables, SORT_STRING);
+
         $backupHtml .= '<br><br>' . tep_draw_checkbox_field('all_tables', 'yes', true, '', 'onchange="selectTables(this);"') . ' ' . ' All tables';
         
         $backupHtml  .= '<div class="export_table_list" style="display: none;">';
         $backupHtml .=  '<table><thead><tr><th></th><th>' . TEXT_SELECTED_TABLES . '</th></tr></thead>';
+        $backupHtml .=  '<tbody>';
+        $backupHtml .=  '<tr><td><input type="checkbox" onclick="$(\'input.db_table\').prop(\'checked\',this.checked?\'checked\':null)"></td><td><u><nobr>'.TEXT_CHECK_ALL.'</nobr> / <nobr>'.TEXT_UNCHECK_ALL.'</nobr></u></td></tr>';
         foreach ($tables as $table) {
-            $backupHtml .= '<tr><td>' . tep_draw_checkbox_field('tables[]', $table['Table'], false) . '</td><td>'.$table['Table'].'</td></tr>';
+            $backupHtml .= '<tr><td>' . tep_draw_checkbox_field('tables[]', $table, false, '', 'class="db_table"') . '</td><td>'.$table.'</td></tr>';
         }
         $backupHtml .= '</tbody></table></div>';
      
@@ -387,27 +389,21 @@ class BackupController extends Sceleton {
 	}
 	
     public function actionDownload(){
-        $messageStack = \Yii::$container->get('message_stack');;
-        $extension = substr($_GET['file'], -3);
+        $this->layout = false;
+        $messageStack = \Yii::$container->get('message_stack');
+
+        $backup_file = basename(Yii::$app->request->get('file', ''));
+        $extension = substr($backup_file, -3);
 
         if ( ($extension == 'zip') || ($extension == '.gz') || ($extension == 'sql') ) {
-          if ($fp = fopen(DIR_FS_BACKUP . $_GET['file'], 'rb')) {
-            $buffer = fread($fp, filesize(DIR_FS_BACKUP . $_GET['file']));
-            fclose($fp);
-
-            header('Cache-Control: none');
-            header('Pragma: none');
-            header('Content-type: application/x-octet-stream');
-            header('Content-disposition: attachment; filename=' . $_GET['file']);
-
-            echo $buffer;
-
-            exit;
+          if (is_file(DIR_FS_BACKUP . $backup_file)) {
+            Yii::$app->response->sendFile(DIR_FS_BACKUP . $backup_file, $backup_file, [
+                'mimeType' => 'application/x-octet-stream',
+            ]);
           }
         } else {
           $messageStack->add(ERROR_DOWNLOAD_LINK_NOT_ACCEPTABLE);
         }
-		exit();
 	}
 	
 	public function actionRestore() {

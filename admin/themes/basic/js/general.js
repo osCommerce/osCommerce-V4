@@ -1128,7 +1128,7 @@ $(document).ready(function(){
     /* }} textInputNullable */
 
 
-    $('body').on('click', '[data-bs-target]', function() {
+    $('body').on('click', '[data-bs-target]:not([data-bs-toggle="collapse"])', function() {
         let tabHash = $(this).attr('data-bs-target');
         if (tabHash && tabHash.substr(0,1) != '#') {
             return true;
@@ -1162,7 +1162,9 @@ $(document).ready(function(){
             const triggerTabList = document.querySelectorAll('[data-bs-target="#' + hash + '"]');
             if (triggerTabList.length){
                 const tab = new bootstrap.Tab(triggerTabList[0]);
-                tab.show();
+                try {
+                    tab.show();
+                } catch (e) {}
                 setTimeout(() => $(triggerTabList).trigger('shown.bs.tab'), 100)
             }
         })
@@ -1178,6 +1180,7 @@ $(document).ready(function(){
                 $target.removeClass('sort-active');
             }else {
                 $target.sortable({
+                    items: "> .sort_line",
                     update: function (event, ui) {
                         $.ajax({
                             type: "POST",
@@ -1619,7 +1622,7 @@ var App = function() {
          * Sidebar-Toggle-Button
          */
         (function(){
-            const widthBreakPoint = 1400
+            const widthBreakPoint = 992
             visibilitySideBar();
             $('.toggle-sidebar').on('click', function () {
                 $(this).toggleClass('open');
@@ -1659,6 +1662,7 @@ var App = function() {
                     $('#container').removeClass('sidebar-closed');
                     $('.toggle-sidebar').addClass('open');
                 }
+                localStorage.setItem('sidebar-mobile', 'hide');
             }
             let oldWidth = $(window).width();
             $(window).on('resize', function () {
@@ -2772,8 +2776,12 @@ var Plugins = function() {
                     }
                     $('tr td .uniform').click(function() {
                         if(typeof getTableSelectedCount === 'function' && getTableSelectedCount() > 0){
+                            $('.batchCol').show();
+                            $('.scroll_col').hide();
                             $('.order-box-list .btn-wr').removeClass('disable-btn');
                         }else{
+                            $('.batchCol').hide();
+                            $('.scroll_col').show();
                             $('.order-box-list .btn-wr').addClass('disable-btn');
                         }
                         if (typeof afterClickBatchSelection==='function') {
@@ -2814,7 +2822,7 @@ var Plugins = function() {
             });
 
 //			$.fn.dataTable.defaults.aLengthMenu = [[5, 10, 25, 50, -1], [5, 10, 25, 50]];
-            $.fn.dataTable.defaults.aLengthMenu = [[5, 10, 25, 50, 100, 500, 1000, -1], [5, 10, 25, 50, 100, 500, 1000, "All"]];
+            $.fn.dataTable.defaults.aLengthMenu = [[5, 10, 25, 50, 100, 200, 500, 1000, -1], [5, 10, 25, 50, 100, 200, 500, 1000, "All"]];
 
             // Initialize default datatables
             $('.datatable').each(function () {

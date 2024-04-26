@@ -148,7 +148,13 @@
                 </div>
                 <div>
                 </div>
-            </div>                
+            </div>
+            <div class="order-stats" style="padding: 10px 10px 5px; display: none;">
+                <div>
+                    {$smarty.const.TEXT_ORDER_STATS_PRODUCTS} <b><span class="products"></span></b>
+                    {$smarty.const.TEXT_ORDER_STATS_TOTAL} <b><span class="total"></span></b>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -477,11 +483,15 @@ $(document).ready(function() {
       }
     );
 
-    $('body').on('click', 'th.checkbox-column .uniform', function() { 
+    $('body').on('click', 'th.checkbox-column .uniform', function() {
         if($(this).is(':checked')){
             $('tr.checkbox-column .uniform').prop('checked', true).uniform('update');
+            $('.batchCol').show();
+            $('.scroll_col').hide();
             $('.order-box-list .btn-wr').removeClass('disable-btn');
         }else{
+            $('.batchCol').hide();
+            $('.scroll_col').show();
             $('.order-box-list .btn-wr').addClass('disable-btn');
         }
     });
@@ -1032,7 +1042,20 @@ $(document).ready(function(){
             }else{ 
                 $(this).siblings('label').removeClass('active_options');
             }
-        });  
+        });
+
+        $('.table').on('draw.dt', function (e, d) {
+            if (typeof(d.json.stats.show) != 'undefined') {
+                $('.order-stats .products').html(d.json.stats.products);
+                $('.order-stats .total').html(d.json.stats.total_format);
+                $('.order-stats').show();
+            } else {
+                $('.order-stats').hide();
+            }
+            if (d.json.stats) {
+                console.log(d.json.stats);
+            }
+        } );
 });
 
 </script>
@@ -1044,6 +1067,29 @@ $(document).ready(function(){
         <div class="widget box">
             <div class="widget-content fields_style" id="order_management_data">
                 <div class="scroll_col"></div>
+
+                <div class="batchCol" style="display: none">
+                    <div class="or_box_head">{$smarty.const.TEXT_BATCH_ACTIONS}</div>
+                    <div class="after btn-wr-top1 js-batch-buttons" style="margin: 4px;">
+                        <div>
+                            <span onclick="invoiceSelectedOrders();" class="btn btn-no-margin">{$smarty.const.TEXT_BATCH_INVOICE}</span>
+                            <span onclick="packingslipSelectedOrders()" class="btn">{$smarty.const.TEXT_BATCH_PACKING_SLIP}</span>
+                            <span onclick="exportSelectedOrders();" class="btn">{$smarty.const.TEXT_BATCH_EXPORT}</span>
+                            {if \common\helpers\Acl::rule(['ACL_ORDER', 'IMAGE_DELETE'])}
+                                <span onclick="deleteSelectedOrders();" class="btn btn-del">{$smarty.const.TEXT_DELETE_SELECTED}</span>
+                            {/if}
+                            <span onclick="changeStatus();" class="btn btn-chng">{$smarty.const.TEXT_CHANGE_STATUS_SELECTED}</span>
+                            {if \common\helpers\Acl::checkExtensionAllowed('ShippingCarrierPick', 'allowed')}
+                                <span onclick="labelSelectedOrders();" class="btn">{$smarty.const.TEXT_BATCH_LABELS}</span>
+                            {/if}
+                            {if \common\helpers\Acl::checkExtensionAllowed('OrderMarkers', 'allowed')}
+                                <span onclick="flagSelectedOrders();" class="btn">{$smarty.const.TEXT_FLAG}</span>
+                                <span onclick="markerSelectedOrders();" class="btn">{$smarty.const.TEXT_MARKER}</span>
+                            {/if}
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>

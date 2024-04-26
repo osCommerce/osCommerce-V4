@@ -22,29 +22,7 @@ use yii\web\Controller;
 class LoginController extends Controller {
 
     function __construct($id, $module = null) {
-        if ( defined('STRICT_ACCESS_STATUS') && STRICT_ACCESS_STATUS=='True' ) {
-            $allowed = false;
-            $clientIp = \common\helpers\System::get_ip_address();
-            $ipWhiteList = preg_split('/[,;\s]/', (defined('STRICT_ACCESS_ALLOWED_IP') ? STRICT_ACCESS_ALLOWED_IP : ''), -1, PREG_SPLIT_NO_EMPTY);
-            $ipWhiteList = array_map('trim', $ipWhiteList);
-            foreach ($ipWhiteList as $white_ip){
-                if ( strpos($white_ip,'/')!==false ){
-                    if (\yii\helpers\IpHelper::inRange($clientIp, $white_ip)){
-                        $allowed = true;
-                    }
-                } else {
-                    if ($clientIp == $white_ip) {
-                        $allowed = true;
-                    }
-                }
-            }
-
-            if (!$allowed) {
-                header('HTTP/1.0 403 Forbidden');
-                echo (defined('TEXT_PAGE_ACCESS_FORBIDDEN') ? TEXT_PAGE_ACCESS_FORBIDDEN : 'Access Denied') . ' ' . $clientIp;
-                die();
-            }
-        }
+        \common\helpers\Admin::checkBackendStrictAccessAllowed();
         \Yii::$app->view->title = TEXT_SIGN_IN . ' | '. \common\classes\platform::name(\common\classes\platform::defaultId()) . ' | ' . \Yii::$app->name;
         return parent::__construct($id, $module);
     }
@@ -88,7 +66,13 @@ class LoginController extends Controller {
             }
         }*/
 
-        $loginModel = new \backend\forms\Login();
+        $config = [];
+        $action = '';
+        if (\Yii::$app->request->get('action') == 'restore') {
+            $action = 'restore';
+            $config['captha_enabled'] = true;
+        }
+        $loginModel = new \backend\forms\Login($config);
 // }}
         if (\Yii::$app->request->get('action', '') == 'process') {
             $errorMessage = TEXT_LOGIN_ERROR;
@@ -476,13 +460,6 @@ class LoginController extends Controller {
             $passwordResetFileds = explode(", ", RESET_PASSWORD_FIELDS);
         }
 
-        $action = '';
-        if (\Yii::$app->request->get('action') == 'restore') {
-            $action = 'restore';
-            if (empty($loginModel->captha_enabled)) {
-                $loginModel->captha_enabled = 'captha';
-            }
-        }
         return $this->render('index', ['passwordResetFileds' => $passwordResetFileds, 'loginModel' => $loginModel, 'action' => $action]);
     }
 

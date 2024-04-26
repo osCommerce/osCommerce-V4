@@ -346,7 +346,7 @@ class Products extends \yii\db\ActiveRecord
     public static function findByVarCheck($productOrId)
     {
         $res = self::findByVar($productOrId);
-        \common\helpers\Assert::instanceOf($productOrId, self::class);
+        \common\helpers\Assert::instanceOf($res, self::class);
         return $res;
     }
 

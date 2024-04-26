@@ -5,7 +5,7 @@ namespace PhpOffice\PhpSpreadsheetTests\Calculation\Functions\Database;
 use PhpOffice\PhpSpreadsheet\Calculation\Database\DGet;
 use PhpOffice\PhpSpreadsheet\Calculation\Information\ExcelError;
 
-class DGetTest extends AllSetupTeardown
+class DGetTest extends SetupTeardownDatabases
 {
     /**
      * @dataProvider providerDGet
@@ -37,12 +37,12 @@ class DGetTest extends AllSetupTeardown
         self::assertEqualsWithDelta($expectedResult, $result, 1.0e-12);
     }
 
-    public function providerDGet(): array
+    public static function providerDGet(): array
     {
         return [
             [
                 ExcelError::NAN(),
-                $this->database1(),
+                self::database1(),
                 'Yield',
                 [
                     ['Tree'],
@@ -52,7 +52,7 @@ class DGetTest extends AllSetupTeardown
             ],
             [
                 10,
-                $this->database1(),
+                self::database1(),
                 'Yield',
                 [
                     ['Tree', 'Height', 'Height'],
@@ -62,7 +62,7 @@ class DGetTest extends AllSetupTeardown
             ],
             [
                 188000,
-                $this->database2(),
+                self::database2(),
                 'Sales',
                 [
                     ['Sales Rep.', 'Quarter'],
@@ -71,7 +71,7 @@ class DGetTest extends AllSetupTeardown
             ],
             [
                 ExcelError::NAN(),
-                $this->database2(),
+                self::database2(),
                 'Sales',
                 [
                     ['Area', 'Quarter'],
@@ -80,9 +80,9 @@ class DGetTest extends AllSetupTeardown
             ],
             'omitted field name' => [
                 ExcelError::VALUE(),
-                $this->database1(),
+                self::database1(),
                 null,
-                $this->database1(),
+                self::database1(),
             ],
         ];
     }

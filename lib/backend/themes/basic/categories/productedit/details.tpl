@@ -7,9 +7,6 @@
         <input type="checkbox" value="1" name="products_status"
                class="check_bot_switch_on_off"{if $pInfo->products_status == 1} checked="checked"{/if} />
     </div>
-    {if \common\helpers\Acl::checkExtensionAllowed('AutomaticallyStatus', 'allowed')}
-        {\common\extensions\AutomaticallyStatus\AutomaticallyStatus::viewProductEdit($pInfo)}
-    {/if}
 {if $isBundle != true}
     <div class="status-left">
         <span>{$smarty.const.TEXT_MANUAL_STOCK_UNLIMITED}:</span>
@@ -266,7 +263,7 @@
                     {/if}
                 </div>
 
-                <div class="stock-data">
+                <div class="stock-data stock-flags">
                     <div class="stock-availability">
                         <label>{$smarty.const.TEXT_STOCK_INDICATION}</label>
                         {tep_draw_pull_down_menu('stock_indication_id', \common\classes\StockIndication::get_variants(), $pInfo->stock_indication_id, 'class="form-control form-control-small stock-indication-id" id="product_stock_indication_id"')}
@@ -287,6 +284,10 @@
                     </div>
 
                 </div>
+
+                {foreach \common\helpers\Hooks::getList('categories/productedit', 'details-before-actions') as $filename}
+                    {include file=$filename}
+                {/foreach}
 
                 <div class="actions">
                     <h4>Actions</h4>

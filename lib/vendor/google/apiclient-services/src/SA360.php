@@ -39,6 +39,7 @@ class SA360 extends \Google\Service
   const DOUBLECLICKSEARCH =
       "https://www.googleapis.com/auth/doubleclicksearch";
 
+  public $customers;
   public $customers_customColumns;
   public $customers_searchAds360;
   public $searchAds360Fields;
@@ -59,6 +60,20 @@ class SA360 extends \Google\Service
     $this->version = 'v0';
     $this->serviceName = 'searchads360';
 
+    $this->customers = new SA360\Resource\Customers(
+        $this,
+        $this->serviceName,
+        'customers',
+        [
+          'methods' => [
+            'listAccessibleCustomers' => [
+              'path' => 'v0/customers:listAccessibleCustomers',
+              'httpMethod' => 'GET',
+              'parameters' => [],
+            ],
+          ]
+        ]
+    );
     $this->customers_customColumns = new SA360\Resource\CustomersCustomColumns(
         $this,
         $this->serviceName,
@@ -97,16 +112,6 @@ class SA360 extends \Google\Service
           'methods' => [
             'search' => [
               'path' => 'v0/customers/{+customerId}/searchAds360:search',
-              'httpMethod' => 'POST',
-              'parameters' => [
-                'customerId' => [
-                  'location' => 'path',
-                  'type' => 'string',
-                  'required' => true,
-                ],
-              ],
-            ],'searchStream' => [
-              'path' => 'v0/customers/{+customerId}/searchAds360:searchStream',
               'httpMethod' => 'POST',
               'parameters' => [
                 'customerId' => [

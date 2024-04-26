@@ -64,6 +64,7 @@ class AddressForm extends Model {
         foreach ($this->attributes as $attribute_name => $attribute_value) {
             if (is_string($attribute_value)) {
                 $this->$attribute_name = \yii\helpers\HtmlPurifier::process($attribute_value);
+                $this->$attribute_name = str_replace('&amp;', '&', $this->$attribute_name);
             }
         }
         return parent::beforeValidate();
@@ -193,7 +194,7 @@ class AddressForm extends Model {
             $this->country = (int) STORE_COUNTRY;
         }
         if (is_null($this->zone_id)){
-            $this->zone_id = (int) STORE_ZONE;
+            //$this->zone_id = (int) STORE_ZONE;
         }
     }
     

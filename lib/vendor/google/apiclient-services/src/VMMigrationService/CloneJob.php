@@ -20,6 +20,16 @@ namespace Google\Service\VMMigrationService;
 class CloneJob extends \Google\Collection
 {
   protected $collection_key = 'steps';
+  /**
+   * @var ComputeEngineDisksTargetDetails
+   */
+  public $computeEngineDisksTargetDetails;
+  protected $computeEngineDisksTargetDetailsType = ComputeEngineDisksTargetDetails::class;
+  protected $computeEngineDisksTargetDetailsDataType = '';
+  /**
+   * @var ComputeEngineTargetDetails
+   */
+  public $computeEngineTargetDetails;
   protected $computeEngineTargetDetailsType = ComputeEngineTargetDetails::class;
   protected $computeEngineTargetDetailsDataType = '';
   /**
@@ -30,6 +40,10 @@ class CloneJob extends \Google\Collection
    * @var string
    */
   public $endTime;
+  /**
+   * @var Status
+   */
+  public $error;
   protected $errorType = Status::class;
   protected $errorDataType = '';
   /**
@@ -44,9 +58,27 @@ class CloneJob extends \Google\Collection
    * @var string
    */
   public $stateTime;
+  /**
+   * @var CloneStep[]
+   */
+  public $steps;
   protected $stepsType = CloneStep::class;
   protected $stepsDataType = 'array';
 
+  /**
+   * @param ComputeEngineDisksTargetDetails
+   */
+  public function setComputeEngineDisksTargetDetails(ComputeEngineDisksTargetDetails $computeEngineDisksTargetDetails)
+  {
+    $this->computeEngineDisksTargetDetails = $computeEngineDisksTargetDetails;
+  }
+  /**
+   * @return ComputeEngineDisksTargetDetails
+   */
+  public function getComputeEngineDisksTargetDetails()
+  {
+    return $this->computeEngineDisksTargetDetails;
+  }
   /**
    * @param ComputeEngineTargetDetails
    */

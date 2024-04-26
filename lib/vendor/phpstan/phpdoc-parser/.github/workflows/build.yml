@@ -6,7 +6,7 @@ on:
   pull_request:
   push:
     branches:
-      - "1.9.x"
+      - "1.23.x"
 
 jobs:
   lint:
@@ -25,7 +25,7 @@ jobs:
 
     steps:
       - name: "Checkout"
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: "Install PHP"
         uses: "shivammathur/setup-php@v2"
@@ -46,25 +46,35 @@ jobs:
       - name: "Lint"
         run: "make lint"
 
-  coding-standards:
+  coding-standard:
     name: "Coding Standard"
 
     runs-on: "ubuntu-latest"
 
     steps:
       - name: "Checkout"
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+
+      - name: "Checkout build-cs"
+        uses: actions/checkout@v4
+        with:
+          repository: "phpstan/build-cs"
+          path: "build-cs"
 
       - name: "Install PHP"
         uses: "shivammathur/setup-php@v2"
         with:
           coverage: "none"
-          php-version: "8.0"
+          php-version: "8.2"
 
       - name: "Validate Composer"
         run: "composer validate"
 
       - name: "Install dependencies"
+        run: "composer install --no-interaction --no-progress"
+
+      - name: "Install build-cs dependencies"
+        working-directory: "build-cs"
         run: "composer install --no-interaction --no-progress"
 
       - name: "Lint"
@@ -75,11 +85,12 @@ jobs:
 
   tests:
     name: "Tests"
-    runs-on: "ubuntu-latest"
+    runs-on: ${{ matrix.operating-system }}
 
     strategy:
       fail-fast: false
       matrix:
+        operating-system: [ubuntu-latest, windows-latest]
         php-version:
           - "7.2"
           - "7.3"
@@ -93,7 +104,7 @@ jobs:
 
     steps:
       - name: "Checkout"
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: "Install PHP"
         uses: "shivammathur/setup-php@v2"
@@ -133,7 +144,7 @@ jobs:
 
     steps:
       - name: "Checkout"
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: "Install PHP"
         uses: "shivammathur/setup-php@v2"

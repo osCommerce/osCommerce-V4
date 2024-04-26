@@ -17,16 +17,29 @@
 
 namespace Google\Service\VMMigrationService;
 
-class AwsSourceVmDetails extends \Google\Model
+class AwsSourceVmDetails extends \Google\Collection
 {
+  protected $collection_key = 'disks';
   /**
    * @var string
    */
   public $committedStorageBytes;
   /**
+   * @var AwsDiskDetails[]
+   */
+  public $disks;
+  protected $disksType = AwsDiskDetails::class;
+  protected $disksDataType = 'array';
+  /**
    * @var string
    */
   public $firmware;
+  /**
+   * @var VmCapabilities
+   */
+  public $vmCapabilitiesInfo;
+  protected $vmCapabilitiesInfoType = VmCapabilities::class;
+  protected $vmCapabilitiesInfoDataType = '';
 
   /**
    * @param string
@@ -43,6 +56,20 @@ class AwsSourceVmDetails extends \Google\Model
     return $this->committedStorageBytes;
   }
   /**
+   * @param AwsDiskDetails[]
+   */
+  public function setDisks($disks)
+  {
+    $this->disks = $disks;
+  }
+  /**
+   * @return AwsDiskDetails[]
+   */
+  public function getDisks()
+  {
+    return $this->disks;
+  }
+  /**
    * @param string
    */
   public function setFirmware($firmware)
@@ -55,6 +82,20 @@ class AwsSourceVmDetails extends \Google\Model
   public function getFirmware()
   {
     return $this->firmware;
+  }
+  /**
+   * @param VmCapabilities
+   */
+  public function setVmCapabilitiesInfo(VmCapabilities $vmCapabilitiesInfo)
+  {
+    $this->vmCapabilitiesInfo = $vmCapabilitiesInfo;
+  }
+  /**
+   * @return VmCapabilities
+   */
+  public function getVmCapabilitiesInfo()
+  {
+    return $this->vmCapabilitiesInfo;
   }
 }
 

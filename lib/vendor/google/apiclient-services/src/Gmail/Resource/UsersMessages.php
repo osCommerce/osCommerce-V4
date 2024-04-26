@@ -41,6 +41,7 @@ class UsersMessages extends \Google\Service\Resource
    * used to indicate the authenticated user.
    * @param BatchDeleteMessagesRequest $postBody
    * @param array $optParams Optional parameters.
+   * @throws \Google\Service\Exception
    */
   public function batchDelete($userId, BatchDeleteMessagesRequest $postBody, $optParams = [])
   {
@@ -55,6 +56,7 @@ class UsersMessages extends \Google\Service\Resource
    * used to indicate the authenticated user.
    * @param BatchModifyMessagesRequest $postBody
    * @param array $optParams Optional parameters.
+   * @throws \Google\Service\Exception
    */
   public function batchModify($userId, BatchModifyMessagesRequest $postBody, $optParams = [])
   {
@@ -70,6 +72,7 @@ class UsersMessages extends \Google\Service\Resource
    * used to indicate the authenticated user.
    * @param string $id The ID of the message to delete.
    * @param array $optParams Optional parameters.
+   * @throws \Google\Service\Exception
    */
   public function delete($userId, $id, $optParams = [])
   {
@@ -91,6 +94,7 @@ class UsersMessages extends \Google\Service\Resource
    * @opt_param string metadataHeaders When given and format is `METADATA`, only
    * include headers specified.
    * @return Message
+   * @throws \Google\Service\Exception
    */
   public function get($userId, $id, $optParams = [])
   {
@@ -103,8 +107,7 @@ class UsersMessages extends \Google\Service\Resource
    * scanning and classification similar to receiving via SMTP. This method
    * doesn't perform SPF checks, so it might not work for some spam messages, such
    * as those attempting to perform domain spoofing. This method does not send a
-   * message. Note: This function doesn't trigger forwarding rules or filters set
-   * up by the user. (messages.import)
+   * message. (messages.import)
    *
    * @param string $userId The user's email address. The special value `me` can be
    * used to indicate the authenticated user.
@@ -121,6 +124,7 @@ class UsersMessages extends \Google\Service\Resource
    * @opt_param bool processForCalendar Process calendar invites in the email and
    * add any extracted meetings to the Google Calendar for this user.
    * @return Message
+   * @throws \Google\Service\Exception
    */
   public function import($userId, Message $postBody, $optParams = [])
   {
@@ -144,6 +148,7 @@ class UsersMessages extends \Google\Service\Resource
    * @opt_param string internalDateSource Source for Gmail's internal date of the
    * message.
    * @return Message
+   * @throws \Google\Service\Exception
    */
   public function insert($userId, Message $postBody, $optParams = [])
   {
@@ -174,6 +179,7 @@ class UsersMessages extends \Google\Service\Resource
    * `"from:someuser@example.com rfc822msgid: is:unread"`. Parameter cannot be
    * used when accessing the api using the gmail.metadata scope.
    * @return ListMessagesResponse
+   * @throws \Google\Service\Exception
    */
   public function listUsersMessages($userId, $optParams = [])
   {
@@ -190,6 +196,7 @@ class UsersMessages extends \Google\Service\Resource
    * @param ModifyMessageRequest $postBody
    * @param array $optParams Optional parameters.
    * @return Message
+   * @throws \Google\Service\Exception
    */
   public function modify($userId, $id, ModifyMessageRequest $postBody, $optParams = [])
   {
@@ -208,6 +215,7 @@ class UsersMessages extends \Google\Service\Resource
    * @param Message $postBody
    * @param array $optParams Optional parameters.
    * @return Message
+   * @throws \Google\Service\Exception
    */
   public function send($userId, Message $postBody, $optParams = [])
   {
@@ -223,6 +231,7 @@ class UsersMessages extends \Google\Service\Resource
    * @param string $id The ID of the message to Trash.
    * @param array $optParams Optional parameters.
    * @return Message
+   * @throws \Google\Service\Exception
    */
   public function trash($userId, $id, $optParams = [])
   {
@@ -238,6 +247,7 @@ class UsersMessages extends \Google\Service\Resource
    * @param string $id The ID of the message to remove from Trash.
    * @param array $optParams Optional parameters.
    * @return Message
+   * @throws \Google\Service\Exception
    */
   public function untrash($userId, $id, $optParams = [])
   {

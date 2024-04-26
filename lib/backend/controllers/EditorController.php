@@ -684,10 +684,9 @@ class EditorController extends Sceleton {
                                         $logger->setBeforeObject($beforeObject);
                                         unset($beforeObject);
                                     }
-
-                                    if (isset($_POST['comments'])){
-                                        $this->manager->set('comments', tep_db_prepare_input($_POST['comments']));
-                                    }
+                                    
+                                    $this->manager->collectPostData();
+                                    
                                     if (isset($_POST['status'])){
                                         $this->manager->getCart()->setOrderStatus((int)$_POST['status']);
                                     }
@@ -1164,6 +1163,10 @@ class EditorController extends Sceleton {
 
             $response['order_totals'] = $this->manager->render('OrderTotals', ['manager' => $this->manager]);
             $response['order_state'] = $this->getOrderStateArray();
+        }
+
+        foreach (\common\helpers\Hooks::getList('editor/checkout/after') as $filename) {
+            include($filename);
         }
 
         echo json_encode($response);

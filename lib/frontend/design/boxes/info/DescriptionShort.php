@@ -26,14 +26,6 @@ class DescriptionShort extends Widget
   public $params;
   public $settings;
 
-    private $informationRepository;
-
-    public function __construct(InformationReadRepository $informationRepository, $config = [])
-    {
-        parent::__construct($config);
-        $this->informationRepository = $informationRepository;
-    }
-
     public function run()
   {
 

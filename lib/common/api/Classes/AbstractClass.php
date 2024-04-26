@@ -76,10 +76,13 @@ abstract class AbstractClass
      */
     public function get($propertyName = null)
     {
+        $response = null;
         if (is_null($propertyName)) {
             $response = [];
             foreach ($this->getPublicProperties() as $property) {
-                $response[$property] = $this->$property;
+                if ($this->hasProperty($property)) {
+                    $response[$property] = $this->$property;
+                }
             }
         } elseif ($this->hasProperty($propertyName)) {
             $response = $this->$propertyName;

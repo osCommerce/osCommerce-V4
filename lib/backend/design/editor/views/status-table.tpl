@@ -38,7 +38,7 @@
             </td>
             <td><span class="or-st-color">
                 <i style="background: {$orders_history['group']['orders_status_groups_color']};"></i>
-                {$orders_history['group']['orders_status_groups_name']}&nbsp;/&nbsp;</span>{$orders_history['status']['orders_status_name']}</td>
+                {$orders_history['group']['orders_status_groups_name']}&nbsp;/&nbsp;</span><span data-status="{htmlspecialchars($orders_history['status']['orders_status_id'])}">{$orders_history['status']['orders_status_name']}</span></td>
             <td>{nl2br(tep_db_output($orders_history['comments']))}&nbsp;</td>
             {if $smsEnabled}
             <td>{nl2br(tep_db_output($orders_history['smscomments']))}&nbsp;</td>

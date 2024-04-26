@@ -14,7 +14,6 @@ namespace app\components;
 
 use common\classes\language;
 use common\components\InformationPage;
-use frontend\services\CatalogPagesService;
 use yii\web\UrlRule;
 use Yii;
 use yii\helpers\ArrayHelper;
@@ -34,9 +33,9 @@ class TlUrlRule extends UrlRule
         $settings = Yii::$app->getUrlManager()->getSettings();
         if ( $settings['search_engine_friendly_urls'] && $settings['search_engine_unhide'] ) {
             $_languages_id = \Yii::$app->settings->get('languages_id');
-            if (isset($params['language'])){
+            if (isset($params['language'])) {
                 global $lng;
-                if (isset($lng->catalog_languages[$params['language']])){
+                if (isset($lng->catalog_languages[$params['language']])) {
                     $_languages_id = $lng->catalog_languages[$params['language']]['id'];
                 }
             }
@@ -52,26 +51,26 @@ class TlUrlRule extends UrlRule
                 }
             }
             if ($route === 'catalog/product' && tep_not_null($params['products_id'] ?? null) && !strstr($params['products_id'], '{') && !strstr($params['products_id'], '}')) {
-                $products_seo_page_name = \common\helpers\Product::getSeoName((int)$params['products_id'], (int)$_languages_id, (isset($params['platform_id'])?$params['platform_id']:\common\classes\platform::currentId()));
+                $products_seo_page_name = \common\helpers\Product::getSeoName((int)$params['products_id'], (int)$_languages_id, (isset($params['platform_id']) ? $params['platform_id'] : \common\classes\platform::currentId()));
                 if (tep_not_null($products_seo_page_name)) {
                     $params_array = array();
                     foreach ($params as $key => $value) {
-                      if (in_array($key, ['products_id', 'platform_id'])) continue;
-                      if (is_array($value)) {
-                        for ($i=0,$n=sizeof($value); $i<$n; $i++) {
-                          $params_array[] = $key . urlencode('[]') . '='. urlencode($value[$i]);
+                        if (in_array($key, ['products_id', 'platform_id'])) continue;
+                        if (is_array($value)) {
+                            for ($i = 0, $n = sizeof($value); $i < $n; $i++) {
+                                $params_array[] = $key . urlencode('[]') . '=' . urlencode($value[$i]);
+                            }
+                        } else {
+                            $params_array[] = $key . '=' . urlencode($value);
                         }
-                      } else {
-                        $params_array[] = $key . '=' . urlencode($value);
-                      }
                     }
                     return $products_seo_page_name . (count($params_array) > 0 ? '?' . implode('&', $params_array) : '');
                 }
             }
 // {{
             $properties_array = $brands_array = $categories_array = array();
-            if ( ($route === 'catalog' || $route === 'catalog/index' || $route === 'catalog/all-products' ||
-                  $route === 'catalog/products-new' || $route === 'catalog/sales') && is_array($params) ) {
+            if (($route === 'catalog' || $route === 'catalog/index' || $route === 'catalog/all-products' ||
+                    $route === 'catalog/products-new' || $route === 'catalog/sales') && is_array($params)) {
                 foreach ($params as $key => $value) {
                     if (defined('SEO_URL_SALES_ONLY_FILTER_KEY') && SEO_URL_SALES_ONLY_FILTER_KEY != '' && $key == 'salesOnly') {
                         // Sales Only Filter
@@ -122,7 +121,7 @@ class TlUrlRule extends UrlRule
                                     } else {
                                         if (!in_array($val_id, $values_array)) $values_array[] = $val_id;
                                     }
-                                } elseif (in_array($val_id, ['Y','N'])) {
+                                } elseif (in_array($val_id, ['Y', 'N'])) {
                                     if (!in_array($val_id, $values_array)) $values_array[] = $val_id;
                                 }
                             }
@@ -137,13 +136,13 @@ class TlUrlRule extends UrlRule
             }
 // }}
             if ($route === 'catalog' || $route === 'catalog/index') {
-                $params_cPath = ArrayHelper::getValue($params,'cPath');
+                $params_cPath = ArrayHelper::getValue($params, 'cPath');
                 if (tep_not_null($params_cPath)) {
                     $cPath_array = \common\helpers\Categories::parse_category_path($params_cPath);
 // {{
                     if ($settings['seo_url_full_categories_path']) {
                         $category['categories_seo_page_name'] = '';
-                        $categories_array = array($cPath_array[(sizeof($cPath_array)-1)]);
+                        $categories_array = array($cPath_array[(sizeof($cPath_array) - 1)]);
                         \common\helpers\Categories::get_parent_categories($categories_array, $categories_array[0]);
                         $categories_array = array_reverse($categories_array);
                         foreach ($categories_array as $cat_id) {
@@ -153,18 +152,18 @@ class TlUrlRule extends UrlRule
                         $category['categories_seo_page_name'] = trim($category['categories_seo_page_name'], '/');
                     } else
 // }}
-                    $category['categories_seo_page_name'] = \common\helpers\Categories::getSeoPageName($cPath_array[(sizeof($cPath_array)-1)], $_languages_id);
+                        $category['categories_seo_page_name'] = \common\helpers\Categories::getSeoPageName($cPath_array[(sizeof($cPath_array) - 1)], $_languages_id);
                     if (tep_not_null($category['categories_seo_page_name'])) {
                         $params_array = array();
                         foreach ($params as $key => $value) {
-                          if ($key == 'cPath') continue;
-                          if (is_array($value)) {
-                            for ($i=0,$n=sizeof($value); $i<$n; $i++) {
-                              $params_array[] = $key . urlencode('[]') . '='. urlencode($value[$i]);
+                            if ($key == 'cPath') continue;
+                            if (is_array($value)) {
+                                for ($i = 0, $n = sizeof($value); $i < $n; $i++) {
+                                    $params_array[] = $key . urlencode('[]') . '=' . urlencode($value[$i]);
+                                }
+                            } else {
+                                $params_array[] = $key . '=' . urlencode($value);
                             }
-                          } else {
-                            $params_array[] = $key . '=' . urlencode($value);
-                          }
                         }
                         return $category['categories_seo_page_name'] . (count($properties_array) > 0 ? '/' . implode('/', $properties_array) : '') . (count($params_array) > 0 ? '?' . implode('&', $params_array) : '');
                     }
@@ -173,35 +172,35 @@ class TlUrlRule extends UrlRule
                     if (tep_not_null($manufacturer['manufacturers_seo_name'])) {
                         $params_array = array();
                         foreach ($params as $key => $value) {
-                          if ($key == 'manufacturers_id') continue;
-                          if (is_array($value)) {
-                            for ($i=0,$n=sizeof($value); $i<$n; $i++) {
-                              $params_array[] = $key . urlencode('[]') . '='. urlencode($value[$i]);
+                            if ($key == 'manufacturers_id') continue;
+                            if (is_array($value)) {
+                                for ($i = 0, $n = sizeof($value); $i < $n; $i++) {
+                                    $params_array[] = $key . urlencode('[]') . '=' . urlencode($value[$i]);
+                                }
+                            } else {
+                                $params_array[] = $key . '=' . urlencode($value);
                             }
-                          } else {
-                            $params_array[] = $key . '=' . urlencode($value);
-                          }
                         }
                         return $manufacturer['manufacturers_seo_name'] . (count($properties_array) > 0 ? '/' . implode('/', $properties_array) : '') . (count($params_array) > 0 ? '?' . implode('&', $params_array) : '');
                     }
                 }
             }
-            if ( ($route === 'info' || $route === 'info/index') && ArrayHelper::getValue($params, 'info_id') > 0) {
+            if (($route === 'info' || $route === 'info/index') && ArrayHelper::getValue($params, 'info_id') > 0) {
                 $information = \common\components\InformationPage::getFrontendData((int)$params['info_id'], (int)$_languages_id);
-                if ( is_array($information) && !empty($information['seo_page_name']) ){
+                if (is_array($information) && !empty($information['seo_page_name'])) {
                     $params_array = array();
                     foreach ($params as $key => $value) {
-                      if ($key == 'info_id' || $key == 'information_id') continue;
-                      if (is_array($value)) {
-                        for ($i=0,$n=sizeof($value); $i<$n; $i++) {
-                          $params_array[] = $key . urlencode('[]') . '='. urlencode($value[$i]);
+                        if ($key == 'info_id' || $key == 'information_id') continue;
+                        if (is_array($value)) {
+                            for ($i = 0, $n = sizeof($value); $i < $n; $i++) {
+                                $params_array[] = $key . urlencode('[]') . '=' . urlencode($value[$i]);
+                            }
+                        } else {
+                            $params_array[] = $key . '=' . urlencode($value);
                         }
-                      } else {
-                        $params_array[] = $key . '=' . urlencode($value);
-                      }
                     }
                     return $information['seo_page_name'] . (count($params_array) > 0 ? '?' . implode('&', $params_array) : '');
-                }else{
+                } else {
                     unset($params['information_id']);
                 }
             }
@@ -209,13 +208,13 @@ class TlUrlRule extends UrlRule
                 if (count($properties_array) > 0) {
                     $params_array = array();
                     foreach ($params as $key => $value) {
-                      if (is_array($value)) {
-                        for ($i=0,$n=sizeof($value); $i<$n; $i++) {
-                          $params_array[] = $key . urlencode('[]') . '='. urlencode($value[$i]);
+                        if (is_array($value)) {
+                            for ($i = 0, $n = sizeof($value); $i < $n; $i++) {
+                                $params_array[] = $key . urlencode('[]') . '=' . urlencode($value[$i]);
+                            }
+                        } else {
+                            $params_array[] = $key . '=' . urlencode($value);
                         }
-                      } else {
-                        $params_array[] = $key . '=' . urlencode($value);
-                      }
                     }
                     if ($route === 'catalog/products-new') {
                         return 'catalog/products-new/' . implode('/', $properties_array) . (count($params_array) > 0 ? '?' . implode('&', $params_array) : '');
@@ -229,42 +228,42 @@ class TlUrlRule extends UrlRule
 
             if ($ext = \common\helpers\Acl::checkExtensionAllowed('DeliveryLocation', 'allowed')) {
                 $url = $ext::createUrl($route, $params, $_languages_id);
-                if ( $url ) return $url;
+                if ($url) return $url;
             }
 
             if ($route == 'info/custom') {
                 $params_array = array();
                 if (is_array($params)) {
                     foreach ($params as $key => $value) {
-                      if ( $key=='action' ) continue;
-                      if (is_array($value)) {
-                        for ($i=0,$n=sizeof($value); $i<$n; $i++) {
-                          $params_array[] = $key . urlencode('[]') . '='. urlencode($value[$i]??'');
+                        if ($key == 'action') continue;
+                        if (is_array($value)) {
+                            for ($i = 0, $n = sizeof($value); $i < $n; $i++) {
+                                $params_array[] = $key . urlencode('[]') . '=' . urlencode($value[$i] ?? '');
+                            }
+                        } else {
+                            $params_array[] = $key . '=' . urlencode($value);
                         }
-                      } else {
-                        $params_array[] = $key . '=' . urlencode($value);
-                      }
                     }
                 }
                 $platform_config = \Yii::$app->get('platform')->getConfig(PLATFORM_ID);
-                return preg_replace("/".preg_quote($platform_config->getCatalogBaseUrl(true), "/")."/", "", Yii::$app->request->getPathInfo()). (count($params_array) > 0 ? '?' . implode('&', $params_array) : '');;
+                return preg_replace("/" . preg_quote($platform_config->getCatalogBaseUrl(true), "/") . "/", "", Yii::$app->request->getPathInfo()) . (count($params_array) > 0 ? '?' . implode('&', $params_array) : '');;
             }
 
             if ($ext = \common\helpers\Acl::checkExtensionAllowed('Blog', 'allowed')) {
                 $url = $ext::createUrl($route, $params);
-                if ( $url ) return $url;
-            }elseif (\frontend\design\Info::hasBlog() && ($route == 'blog/index' || $route=='blog')) {
-                if ( is_array($params) && isset($params['url_path']) ) {
-                    $blogUri = 'blog/'.$params['url_path'];
+                if ($url) return $url;
+            } elseif (\frontend\design\Info::hasBlog() && ($route == 'blog/index' || $route == 'blog')) {
+                if (is_array($params) && isset($params['url_path'])) {
+                    $blogUri = 'blog/' . $params['url_path'];
                     unset($params['url_path']);
-                    if ( count($params)>0 ) {
-                        $blogUri .= (count($params) > 0 ? '?' .  http_build_query($params) : '');
+                    if (count($params) > 0) {
+                        $blogUri .= (count($params) > 0 ? '?' . http_build_query($params) : '');
                     }
                     return $blogUri;
-                }else{
+                } else {
                     $blogUri = 'blog/';
-                    if ( is_array($params) && count($params)>0 ) {
-                        $blogUri .= (count($params) > 0 ? '?' .  http_build_query($params) : '');
+                    if (is_array($params) && count($params) > 0) {
+                        $blogUri .= (count($params) > 0 ? '?' . http_build_query($params) : '');
                     }
                     return $blogUri;
                 }
@@ -272,14 +271,9 @@ class TlUrlRule extends UrlRule
             }
 
             /* CATALOG-PAGES START /**/
-            try {
-                /** @var CatalogPagesService $catalogPagesService */
-                $catalogPagesService = \Yii::createObject(CatalogPagesService::class);
-                if ($catalogPagesService->isRoute($route)) {
-                    return $catalogPagesService->createUrl($route, $params, $_languages_id, (int)\common\classes\platform::currentId());
-                }
-            } catch (\Exception $e) {
-                \Yii::error('Catalog Pages error parse url.' . $e->getMessage());
+            /** @var \common\extensions\CatalogPages\CatalogPages $cp */
+            if ($cp = \common\helpers\Extensions::isAllowed('CatalogPages')) {
+                return $cp::getRoute($route, $params);
             }
             /* CATALOG-PAGES END /**/
 
@@ -359,7 +353,7 @@ class TlUrlRule extends UrlRule
           $current_category_id = 0;
         }    
   
-        $seo_path = trim($request->getPathInfo());
+        $seo_path = ltrim(trim($request->getPathInfo()),'/');
         if ( $seo_path=='403' || strpos($seo_path, '.')===0 ){
             return ['index/error-forbidden', []];
         }
@@ -486,7 +480,7 @@ class TlUrlRule extends UrlRule
                 $seo_path_array = explode('/', $seo_path);
                 foreach ($seo_path_array as $seo_path_part) {
                     $category = tep_db_fetch_array(tep_db_query("select c.categories_id from " . TABLE_CATEGORIES . " c left join " . TABLE_CATEGORIES_DESCRIPTION . " cd on c.categories_id = cd.categories_id and cd.language_id = '" . (int)$languages_id . "' where if(length(cd.categories_seo_page_name) > 0, cd.categories_seo_page_name, c.categories_seo_page_name) = '" . tep_db_input($seo_path_part) . "' ORDER BY c.categories_status DESC limit 1"));
-                    if ($category['categories_id'] > 0) {
+                    if (($category['categories_id']??null) > 0) {
                         $cPath_array[] = $category['categories_id'];
                     }
                 }
@@ -532,18 +526,7 @@ class TlUrlRule extends UrlRule
                 $information_id = $_GET['info_id'] = $information['information_id'];
                 return ['info/index', ['info_id' => $information['information_id']]];
             }
-            /* CATALOG-PAGES START /**/
-            try {
-                /** @var CatalogPagesService $catalogPagesService */
-                $catalogPagesService = \Yii::createObject(CatalogPagesService::class);
-                $catalogPage = $catalogPagesService->parseRequest($request, (int)$languages_id, (int)\common\classes\platform::currentId());
-                if ($catalogPage !== false && is_array($catalogPage)) {
-                    return $catalogPage;
-                }
-            } catch (\Exception $e) {
-                \Yii::error('Catalog Pages error parse url.' . $e->getMessage());
-            }
-            /* CATALOG-PAGES END /**/
+
 //{{ old seo urls
             $href = null;
 /*          // Moved to SeoRedirectsNamed

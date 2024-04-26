@@ -268,6 +268,26 @@ class JobFile extends Job
                     $fileProvider = current(array_keys($possibleProviders));
                     $this->job_state = self::STATE_CONFIGURED;
                     $this->job_provider = $fileProvider;
+                    if (!empty($this->job_id) && $this->direction == 'import' && $this->getDirectory()->cron_enabled) {
+                        $q = tep_db_query("select job_configure, run_frequency, job_provider FROM " . TABLE_EP_JOB . " "
+                            . " WHERE "
+                            //in 'processed' :(  . " directory_id='" . $this->directory_id . "' and "
+                            . " direction='" . $this->direction . "' and job_state='processed' and "
+                            . " file_name='" . tep_db_input($this->file_name) . "' and run_frequency>0"
+                            . " ORDER BY job_id desc LIMIT 1");
+                        if ($_details = tep_db_fetch_array($q)) {
+                            //from saveConfigureState + run_frequency.
+                            $this->run_frequency = $_details['run_frequency'];
+                            $this->job_configure = json_decode($_details['job_configure'], true);
+                            tep_db_query(
+                                "UPDATE " . TABLE_EP_JOB . " " .
+                                "SET job_state='" . tep_db_input($this->job_state) . "', job_provider='" . tep_db_input($this->job_provider) . "', " .
+                                " job_configure='" . tep_db_input(json_encode($this->job_configure)) . "' " .
+                                ", run_frequency='" . (int)$this->run_frequency . "' " .
+                                "WHERE job_id='" . $this->job_id . "' "
+                            );
+                        }
+                    }
                     $this->saveConfigureState();
                 } else {
                     /// search file in history, For CSV auto import

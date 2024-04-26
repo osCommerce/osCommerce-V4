@@ -20,9 +20,47 @@ namespace Google\Service\CloudDataplex;
 class GoogleCloudDataplexV1DataQualitySpec extends \Google\Collection
 {
   protected $collection_key = 'rules';
+  protected $postScanActionsType = GoogleCloudDataplexV1DataQualitySpecPostScanActions::class;
+  protected $postScanActionsDataType = '';
+  /**
+   * @var string
+   */
+  public $rowFilter;
   protected $rulesType = GoogleCloudDataplexV1DataQualityRule::class;
   protected $rulesDataType = 'array';
+  /**
+   * @var float
+   */
+  public $samplingPercent;
 
+  /**
+   * @param GoogleCloudDataplexV1DataQualitySpecPostScanActions
+   */
+  public function setPostScanActions(GoogleCloudDataplexV1DataQualitySpecPostScanActions $postScanActions)
+  {
+    $this->postScanActions = $postScanActions;
+  }
+  /**
+   * @return GoogleCloudDataplexV1DataQualitySpecPostScanActions
+   */
+  public function getPostScanActions()
+  {
+    return $this->postScanActions;
+  }
+  /**
+   * @param string
+   */
+  public function setRowFilter($rowFilter)
+  {
+    $this->rowFilter = $rowFilter;
+  }
+  /**
+   * @return string
+   */
+  public function getRowFilter()
+  {
+    return $this->rowFilter;
+  }
   /**
    * @param GoogleCloudDataplexV1DataQualityRule[]
    */
@@ -36,6 +74,20 @@ class GoogleCloudDataplexV1DataQualitySpec extends \Google\Collection
   public function getRules()
   {
     return $this->rules;
+  }
+  /**
+   * @param float
+   */
+  public function setSamplingPercent($samplingPercent)
+  {
+    $this->samplingPercent = $samplingPercent;
+  }
+  /**
+   * @return float
+   */
+  public function getSamplingPercent()
+  {
+    return $this->samplingPercent;
   }
 }
 

@@ -135,22 +135,6 @@ class Information extends \yii\db\ActiveRecord
     /**
      * @return \yii\db\ActiveQuery
      */
-    public function getCatalogPagesToInformations()
-    {
-        return $this->hasMany(CatalogPagesToInformation::class, ['information_id' => 'information_id']);
-    }
-
-    /**
-     * @return \yii\db\ActiveQuery
-     */
-    public function getCatalogPages()
-    {
-        return $this->hasMany(CatalogPages::class, ['catalog_pages_id' => 'catalog_pages_id'])->viaTable('catalog_pages_to_information', ['information_id' => 'information_id']);
-    }
-
-    /**
-     * @return \yii\db\ActiveQuery
-     */
     public function getPlatform()
     {
         return $this->hasOne(Platforms::class, ['platform_id' => 'platform_id']);

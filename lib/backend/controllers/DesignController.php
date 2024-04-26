@@ -22,6 +22,7 @@ use common\models\DesignBoxesGroups;
 use common\models\DesignBoxesSettingsTmp;
 use common\models\DesignBoxesTmp;
 use common\models\Platforms;
+use common\models\ThemesStylesGroups;
 use common\models\ThemesStylesMain;
 use frontend\design\Info;
 use Yii;
@@ -342,6 +343,8 @@ class DesignController extends Sceleton {
         }
 
         $mainStyles = ThemesStylesMain::find()->where(['theme_name' => $params['theme_name']])->orderBy('sort_order')->asArray()->all();
+        $groupStyles = ThemesStylesGroups::find()->where(['theme_name' => $params['theme_name']])->orderBy('sort_order')->asArray()->all();
+        $mainSubStyles = Style::mainStyles($params['theme_name']);
 
         return $this->render('css.tpl', [
             'menu' => 'css',
@@ -351,6 +354,8 @@ class DesignController extends Sceleton {
             'widgets_list' => Style::getCssWidgetsList($params['theme_name']),
             'designer_mode' => $this->designerMode,
             'mainStyles' => $mainStyles,
+            'mainSubStyles' => $mainSubStyles,
+            'groupStyles' => $groupStyles,
         ]);
     }
 
@@ -1278,9 +1283,11 @@ class DesignController extends Sceleton {
     public function actionStyleMainSave()
     {
         $styles = Yii::$app->request->post('styles');
+        $groups = Yii::$app->request->post('groups');
         $theme_name = Yii::$app->request->post('theme_name');
 
         $oldStyles = ThemesStylesMain::find()->where(['theme_name' => $theme_name])->asArray()->all();
+        $oldGroups = ThemesStylesGroups::find()->where(['theme_name' => $theme_name])->asArray()->all();
 
         ThemesStylesMain::deleteAll(['theme_name' => $theme_name]);
         if (is_array($styles)) {
@@ -1292,9 +1299,27 @@ class DesignController extends Sceleton {
                 $themesStylesMain->value = $style['value'];
                 $themesStylesMain->type = $style['type'];
                 $themesStylesMain->sort_order = $sortOrder;
-                $themesStylesMain->main_style = $style['main_style'] ?? 0;
+                $themesStylesMain->group_id = $style['group_id'] ?? '';
                 $themesStylesMain->save();
                 $styles[$key]['sort_order'] = $sortOrder;
+                $sortOrder++;
+            }
+        }
+
+        ThemesStylesGroups::deleteAll(['theme_name' => $theme_name]);
+        if (is_array($groups)) {
+            $sortOrder = 0;
+            foreach ($groups as $key => $group) {
+                if (!$group || !is_array($group)) {
+                    continue;
+                }
+                $themesStylesGroups = new ThemesStylesGroups();
+                $themesStylesGroups->theme_name = $theme_name;
+                $themesStylesGroups->group_id = (int)$group['group_id'];
+                $themesStylesGroups->group_name = $group['group_name'];
+                $themesStylesGroups->sort_order = $sortOrder;
+                $themesStylesGroups->tab = $group['tab'];
+                $themesStylesGroups->save();
                 $sortOrder++;
             }
         }
@@ -1302,7 +1327,9 @@ class DesignController extends Sceleton {
         $data = [
             'theme_name' => $theme_name,
             'old_styles' => $oldStyles,
+            'old_groups' => $oldGroups,
             'new_styles' => $styles,
+            'new_groups' => $groups,
         ];
         Steps::styleSave($data);
 
@@ -1427,7 +1454,7 @@ class DesignController extends Sceleton {
         $name = Yii::$app->request->post('name');
         $value = Yii::$app->request->post('value');
         $type = Yii::$app->request->post('type');
-        $main_style = Yii::$app->request->post('main_style');
+        $group_id = Yii::$app->request->post('group_id');
 
         if (!$name) {
             return json_encode(['error' => 'Name is empty']);
@@ -1453,7 +1480,7 @@ class DesignController extends Sceleton {
         $style->name = $name;
         $style->value = $value;
         $style->type = $type;
-        $style->main_style = $main_style;
+        $style->group_id = $group_id;
         $style->save();
 
         $newStyles = array_merge($oldStyles, [
@@ -2234,10 +2261,11 @@ class DesignController extends Sceleton {
     /*$this->topButtons[] = '<span data-href="' . Yii::$app->urlManager->createUrl(['design/theme-save', 'theme_name' => $get['theme_name']]) . '" class="btn btn-confirm btn-save-boxes btn-elements">'.IMAGE_SAVE.'</span> <span class="redo-buttons"></span>';*/
 
 
-      $this->topButtons[] = '<span class="mode-title">' . $this->designerModeTitle . '</span>';
     $this->selectedMenu = array('design_controls', 'design/themes');
     $this->navigation[] = array('link' => Yii::$app->urlManager->createUrl('design/elements'), 'title' => BOX_HEADING_MAIN_STYLES . ' "' . Theme::getThemeTitle($get['theme_name']) . '"');
     $this->view->headingTitle = BOX_HEADING_MAIN_STYLES . ' "' . Theme::getThemeTitle($get['theme_name']) . '"';
+      $this->topButtons[] = '<span class="btn btn-confirm btn-save-boxes">' . IMAGE_SAVE . '</span>';
+      $this->topButtons[] = '<span class="mode-title">' . $this->designerModeTitle . '</span>';
 
     $path = \Yii::getAlias('@webroot');
     $path .= DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR;
@@ -2346,17 +2374,67 @@ class DesignController extends Sceleton {
       $mainStyles = ThemesStylesMain::find()->where(['theme_name' => $get['theme_name']])
           ->orderBy('sort_order')->asArray()->all();
 
-      foreach ($mainStyles as $key => $style) {
-          $count = DesignBoxesSettingsTmp::find()->where([
-              'theme_name' => $get['theme_name'],
-              'setting_value' => '$' . $style['name']
-          ])->count();
-          $count = $count + ThemesStyles::find()->where([
-              'theme_name' => $get['theme_name'],
-              'value' => '$' . $style['name']
-          ])->count();
-          $mainStyles[$key]['count'] = $count;
+      $stylesGroups = ThemesStylesGroups::find()->where(['theme_name' => $get['theme_name']])
+          ->orderBy('sort_order')->asArray()->all();
+
+      $stylesGroupTabs = ThemesStylesGroups::find()
+          ->select('tab')->distinct()
+          ->where(['theme_name' => $get['theme_name']])
+          ->orderBy('sort_order')->asArray()->all();
+
+      $counts1 = DesignBoxesSettingsTmp::find()
+          ->select(['value' => 'setting_value', 'COUNT(*) as count'])
+          ->groupBy(['setting_value'])
+          ->where(['theme_name' => $get['theme_name']])
+          ->andWhere(['LIKE', 'setting_value', '$%', false])
+          ->asArray()->all();
+      $counts2 = ThemesStyles::find()
+          ->select(['value', 'COUNT(*) as count'])
+          ->groupBy(['value'])
+          ->where(['theme_name' => $get['theme_name']])
+          ->andWhere(['LIKE', 'value', '$%', false])
+          ->asArray()->all();
+
+      $counts = [];
+      foreach (array_merge($counts1, $counts2) as $count) {
+          $counts[$count['value']] = ($counts[$count['value']] ?? 0) + $count['count'];
       }
+
+      foreach ($mainStyles as $key => $style) {
+          $mainStyles[$key]['count'] = $counts['$' . $style['name']] ?? 0;
+          $mainStyles[$key]['oldName'] = $style['name'];
+      }
+
+
+      $stylesTree = [];
+      foreach ($stylesGroupTabs as $tab) {
+
+          $groups = [];
+          foreach ($stylesGroups as $group) {
+              if ($group['tab'] != $tab['tab']) {
+                  continue;
+              }
+              $styles = [];
+
+              foreach ($mainStyles as $key => $style) {
+                  if ($style['group_id'] == $group['group_id']) {
+                      $styles[] = $style;
+                  }
+              }
+
+              $groups[] = [
+                  'group_id' => $group['group_id'],
+                  'group_name' => $group['group_name'],
+                  'styles' => $styles
+              ];
+          }
+          $stylesTree[] = [
+              'tab' => $tab['tab'],
+              'groups' => $groups
+          ];
+      }
+
+
 
     return $this->render($tpl, [
         'theme_name' => $get['theme_name'],
@@ -2367,6 +2445,9 @@ class DesignController extends Sceleton {
         'fontAdded' => $fontAdded,
         'designer_mode' => $this->designerMode,
         'mainStyles' => $mainStyles,
+        'stylesGroups' => $stylesGroups,
+        'stylesGroupTabs' => $stylesGroupTabs,
+        'stylesTree' => $stylesTree,
         'menu' => 'styles',
     ]);
   }
@@ -3110,33 +3191,47 @@ class DesignController extends Sceleton {
             return 'Error';
         }
 
-        $styles = ThemesStylesMain::find()->where(['theme_name' => $themeName, 'type' => $type])->asArray()->all();
+        if (in_array($type, ['color', 'font'])) {
+            if ($type == 'color') {
+                $typeArr = ['color', 'color-var', 'color-opacity'];
+            } elseif ($type == 'font') {
+                $typeArr = ['font', 'font-var'];
+            }
 
-        if ($type == 'font' && is_array($styles)) {
-            foreach ($styles as $key => $style) {
-                $fontSetting = ThemesSettings::find()->where([
-                    'theme_name' => $themeName,
-                    'setting_group' => 'extend',
-                    'setting_name' => 'font_added'
-                ])->andWhere(['like', 'setting_value', $style['value']])->asArray()->one();
-                $styles[$key]['font_settings'] = preg_replace('/themes[\/\\\]' . $themeName . '/', 'themes/<theme_name>', $fontSetting['setting_value']);
+            $styles = ThemesStylesMain::find()->where(['theme_name' => $themeName, 'type' => $typeArr])->asArray()->all();
+            $groups = ThemesStylesGroups::find()->where(['theme_name' => $themeName])->asArray()->all();
 
-                $files = [];
-                preg_match_all("/url\([\'\"]{0,1}(themes[\/\\\]' . $themeName . '[^'^\"^)]+)\?[^'^\"^)]+[\'\"]{0,1}\)/", $fontSetting['setting_value'], $files);
-                if (isset($files[1]) && is_array($files[1])) {
-                    foreach ($files[1] as $file) {
-                        if (is_file(DIR_FS_CATALOG . $file)) {
-                            $filePath = explode('/', $file);
-                            $filePath = explode('\\', end($filePath));
-                            $fileName = end($filePath);
-                            $zip->addFile(DIR_FS_CATALOG . $file, $fileName);
+            if (in_array($type, ['font', 'font-var']) && is_array($styles)) {
+                foreach ($styles as $key => $style) {
+                    $fontSetting = ThemesSettings::find()->where([
+                        'theme_name' => $themeName,
+                        'setting_group' => 'extend',
+                        'setting_name' => 'font_added'
+                    ])->andWhere(['like', 'setting_value', $style['value']])->asArray()->one();
+                    $styles[$key]['font_settings'] = preg_replace('/themes[\/\\\]' . $themeName . '/', 'themes/<theme_name>', $fontSetting['setting_value']);
+
+                    $files = [];
+                    preg_match_all("/url\([\'\"]{0,1}(themes[\/\\\]' . $themeName . '[^'^\"^)]+)\?[^'^\"^)]+[\'\"]{0,1}\)/", $fontSetting['setting_value'], $files);
+                    if (isset($files[1]) && is_array($files[1])) {
+                        foreach ($files[1] as $file) {
+                            if (is_file(DIR_FS_CATALOG . $file)) {
+                                $filePath = explode('/', $file);
+                                $filePath = explode('\\', end($filePath));
+                                $fileName = end($filePath);
+                                $zip->addFile(DIR_FS_CATALOG . $file, $fileName);
+                            }
                         }
                     }
                 }
             }
+
+            $allStyles['main'] = $styles;
+            $allStyles['groups'] = $groups;
+        } else {
+            $allStyles = Style::getCssElements($themeName, $type);
         }
 
-        $json = json_encode($styles);
+        $json = json_encode($allStyles);
         $zip->addFromString('data.json', $json);
 
         $info = [

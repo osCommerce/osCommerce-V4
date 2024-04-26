@@ -19,7 +19,7 @@
 //  @ini_set('session.cookie_secure', 1);  
 
   if (STORE_SESSIONS == 'mysql') {
-    if (!$SESS_LIFE = get_cfg_var('session.gc_maxlifetime')) {
+    if (!$SESS_LIFE = ini_get('session.gc_maxlifetime')) {
       $SESS_LIFE = 1440;
     }
 

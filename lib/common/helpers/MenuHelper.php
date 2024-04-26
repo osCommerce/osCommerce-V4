@@ -22,6 +22,7 @@ use common\models\MenuItems;
 class MenuHelper {
 
     public const MENU_CACHE_LIFETIME = 5;
+    private static $countDisabledMenuItem = 0;
 
     public static function getUrlByLinkId($link_id, $link_type) {
         switch ($link_type) {
@@ -91,12 +92,20 @@ class MenuHelper {
         static $brands;
         if ( is_array($brands) ) return $brands;
 
+        /*
         $manufacturers_query = tep_db_query("select manufacturers_id, manufacturers_name, manufacturers_image from " . TABLE_MANUFACTURERS ." order by manufacturers_name asc");
 
         $brands = [];
         while ($item = tep_db_fetch_array($manufacturers_query)) {
             $brands[$item['manufacturers_id']] = $item;
+        }*/
+        
+        $manufacturersQuery = \common\models\Manufacturers::find()->alias('m')->select('m.manufacturers_id, manufacturers_name, manufacturers_image')->orderBy('manufacturers_name');
+
+        foreach (\common\helpers\Hooks::getList('menu-helper/get-brands-list') as $filename) {
+            include($filename);
         }
+        $brands = $manufacturersQuery->indexBy('manufacturers_id')->asArray()->all();
 
         return $brands;
     }
@@ -327,6 +336,21 @@ class MenuHelper {
         }
     }
 
+    private static function array_to_xml( $data, &$xml_data ) {
+        foreach( $data as $key => $value ) {
+            if( is_array($value) ) {
+                if( is_numeric($key) ){
+                    $key = 'item'; //dealing with <0/>..<n/> issues
+                }
+                $subnode = $xml_data->addChild($key);
+                self::array_to_xml($value, $subnode);
+            } else {
+                $xml_data->addChild("$key",htmlspecialchars("$value"));
+            }
+        }
+    }
+
+
     public static function resetAdminMenu()
     {
         $path = \Yii::getAlias('@webroot');
@@ -336,6 +360,29 @@ class MenuHelper {
         $ob= simplexml_load_string($xmlfile);
         if (isset($ob)) {
             $exItems = \common\helpers\MenuHelper::getExtensionsTreeItems();
+            // add first level menus like MarketPlaces
+            foreach ($exItems as $key => $value) {
+                if (empty($value['parent'])) {
+                    $alreadyExist = false;
+                    foreach ($ob->item as $item) {
+                        if ((string)$item->title == $value['title']) {
+                            $alreadyExist = true;
+                            if (isset($value['child'])) {
+                                if (empty($item->child)) {
+                                    $item->addChild('child');
+                                }
+                                $newChild = $item->child;
+                                self::array_to_xml($value['child'], $newChild);
+                            }
+                        }
+                    }
+                    if (!$alreadyExist) {
+                        $child = $ob->addChild('item');
+                        self::array_to_xml($value, $child);
+                    }
+                    unset($exItems[$key]);
+                }
+            }
             $obPrepared = \common\helpers\MenuHelper::prepareAdminTree($ob, $exItems);
             tep_db_query("TRUNCATE TABLE admin_boxes;");
             \common\helpers\MenuHelper::importAdminTree($obPrepared);
@@ -364,22 +411,22 @@ class MenuHelper {
         $array['parent_id'] = $array['parent_id'] ?? 0;
 
         // if already exists
-        if ($params['removeIfExists'] ?? true) {
+        if ($array['removeIfExists'] ?? true) {
             self::removeAdminMenuItem($array);
         } 
         if (empty(self::getAdminMenuItemByTitle($array))) {
 
             // resort
-            $addAfterTitle = $params['addAfterMenuTitle'] ?? null;
+            $addAfterTitle = $array['addAfterMenuTitle'] ?? null;
             if ($addAfterTitle == '__last__') {
                 $menu = self::getAdminMenuItemLast($array['parent_id']);
             } elseif (!empty($addAfterTitle)) {
                 $menu = self::getAdminMenuItemByTitle($addAfterTitle);
             }
-            if (!empty($menu)) {
-                $array['parent_id'] = $menu->parent_id;
+            if (!empty($menu) && $menu->parent_id == $array['parent_id']) {
                 $array['sort_order'] = $menu->sort_order + 1;
             }
+            $array['sort_order'] = $array['sort_order'] ?? 100;
             self::resortAdminMenu($array['parent_id'], $array['sort_order']);
 
             // create
@@ -701,5 +748,157 @@ class MenuHelper {
         }
 
         MenuItems::deleteAll($conditions);
+    }
+
+    public static function getExtensionHtmlMenu($code, $showAclLink = false, $itemClass = 'extension-menu-item')
+    {
+        $res = '';
+        $extension = \common\helpers\Extensions::isAllowed($code);
+        if (!empty($extension) && !empty($adminMenu = $extension::getAdminMenu())) {
+            $extension::initTranslation('install');
+            $menuItems = self::buildHierarchyHtmlArray($adminMenu);
+            $res = '<div class="mb-2">'.self::menuItemsToHtml($menuItems, $itemClass).'</div>';
+            if ($showAclLink && (\common\helpers\Acl::rule(['BOX_HEADING_ADMINISTRATOR', 'BOX_ADMINISTRATOR_BOXES'])) && self::$countDisabledMenuItem > 0) {
+                $res .= '<div class="extension-acl-link"><a target="_blank" class="btn btn-secondary btn-edit btn-block" href="'.\Yii::$app->urlManager->createUrl(['adminfiles']).'">'.TEXT_CHANGE_ACL.'</a></div>';
+            }
+        }
+        return $res;
+    }
+
+    public static function menuItemsToHtml($menuItems, $itemClass = 'extension-menu-item')
+    {
+        $htmlItems = "";
+        foreach (array_unique($menuItems, SORT_REGULAR) as $menuItem) {
+            if (is_array($menuItem)) {
+                $htmlItems .= self::menuItemsToHtml($menuItem, $itemClass);
+            } else {
+                $htmlItems .= "<div class = \"{$itemClass}\">{$menuItem}</div>";
+            }
+        }
+        return $htmlItems;
+    }
+
+
+    /**
+     * @param $adminMenu array this is a result of {@see $module::getAdminMenu()}
+     * @param $level integer hierarchy level depth. Default value is 0
+     * @return array Extension menu in html format or empty string
+     */
+    private static function buildHierarchyHtmlArray($adminMenu, $level = 0, $ignoreRoot = false)
+    {
+
+        \common\helpers\Translation::init('admin/main');
+        $indent = '&nbsp;&nbsp;&nbsp;&nbsp;';
+        if(!is_array($adminMenu)){ // If empty $adminMenu then return nothing
+            return [];
+        }
+        $res = [];
+        foreach ($adminMenu as $item) {
+            if(isset($item['parent']) && !$ignoreRoot) {
+                $rootLevel = 0;
+                foreach (array_reverse(self::buildRootMenu($item['parent'])??[]) as $root) {
+                    $res[] = str_repeat($indent, $rootLevel).$root; // Adding a visual shift
+                    $rootLevel++;
+                }
+                $level = $rootLevel; // End work with root menu items. Transferring the shift level to the extension menu items
+            }
+//            $title = (defined($item['title'])) ? constant($item['title']) : $item['title'];  // Replacing the title with a translation
+            $title = \common\helpers\Translation::getValue($item['title'], 'admin/main', $item['title']);  // Replacing the title with a translation
+            if( !isset($item['path']) ||
+                empty($item['path']) ||
+                is_array($item['child']??null) ||
+                !self::isMenuItemEnabled($item['title']) ||
+                !self::isMenuItemAllowed($item['title'])
+            ) {
+                $res[] = str_repeat($indent, $level) . '<button class="btn btn-disabled" style="background: dimgrey; border-color: dimgrey" href="#" disabled="disabled">' . $title . '</button>';
+                if( !self::isMenuItemEnabled($item['title'])) {
+                    self::$countDisabledMenuItem++;
+                }
+            }else{
+                $res[] = str_repeat($indent, $level).'<a class="btn btn-primary" href="'.\Yii::$app->urlManager->createUrl([$item['path']]).'">'.$title.'</a>';
+            }
+            if(isset($item['child'])) {
+                $res[] = self::buildHierarchyHtmlArray($item['child'],$level+1, true);
+            }
+
+        }
+        return $res;
+    }
+
+    /**
+     * This method builds the missing top menu levels if {@see $module::getAdminMenu()} method returns a menu with an incomplete hierarchy
+     * @param $id_or_title string | integer
+     * @param $level integer
+     * @return array|null
+     */
+
+    private static function buildRootMenu($id_or_title, $level = 0)
+    {
+        $root = [];
+        $item = self::getMenuItemRecord($id_or_title);
+        if(is_object($item)) {
+            $title = (defined($item->title)) ? constant($item->title) : $item->title; // Replacing the title with a translation
+            $root[] = '<button class="btn btn-disabled" style="background: dimgrey; border-color: dimgrey" href="#" disabled="disabled">'.$title.'</button>';
+            if($item->parent_id > 0)
+            {
+                $root = array_merge($root, self::buildRootMenu($item->parent_id, $level+1));
+            }
+            return $root;
+        }
+    }
+
+    /**
+     * @param $item string  Menu item. Example: BOX_HEADING_CATALOG
+     * @return bool
+     */
+    private static function isMenuItemEnabled($item)
+    {
+        $chain = self::getMenuItemChain($item);
+        if (!empty($chain)) {
+            return \common\helpers\Acl::rule($chain);
+        }
+        return false;
+    }
+
+    /**
+     * This method searches for menu items and checks the ACL
+     *
+     * @param $id_or_title string | integer
+     * @return boolean
+     *
+     */
+    private static function isMenuItemAllowed($id_or_title)
+    {
+        $item = self::getMenuItemRecord($id_or_title);
+        if(is_object($item)) {
+            $acl = explode(',', $item->acl_check);
+            $check = \common\helpers\Extensions::callIfAllowed($acl[0], $acl[1]);
+//            return empty($item->acl_check) ? true : \common\helpers\Extensions::callIfAllowed($acl[0], $acl[1]);
+            return empty($item->acl_check) ? true : $check;
+        }
+        return false;
+    }
+
+    /**
+     * Collect ACL chain from menu item
+     * @param $menuItem string Menu item. Example: BOX_HEADING_CATALOG
+     * @return array|void
+     */
+    private static function getMenuItemChain($menuItem)
+    {
+        $item = self::getMenuItemRecord($menuItem);
+        if(is_object($item)) {
+            return self::getAdminMenuChain($item->box_id);
+        }
+    }
+
+    private static function getMenuItemRecord($menuTitleOrId)
+    {
+        if(is_string($menuTitleOrId)) {
+            $item = self::getAdminMenuItemByTitle($menuTitleOrId);
+        }elseif (is_int($menuTitleOrId)) {
+            $item = \common\models\AdminBoxes::findOne(['box_id' => $menuTitleOrId]);
+        }
+        return $item??null;
     }
 }

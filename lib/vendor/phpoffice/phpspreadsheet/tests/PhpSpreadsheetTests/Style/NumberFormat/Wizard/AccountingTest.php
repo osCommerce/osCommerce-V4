@@ -14,7 +14,7 @@ class AccountingTest extends TestCase
     /**
      * @dataProvider providerAccounting
      */
-    public function testCurrency(
+    public function testAccounting(
         string $expectedResult,
         string $currencyCode,
         int $decimals,
@@ -26,14 +26,14 @@ class AccountingTest extends TestCase
         self::assertSame($expectedResult, (string) $wizard);
     }
 
-    public function providerAccounting(): array
+    public static function providerAccounting(): array
     {
         return [
-            ['_-$* 0_-', '$', 0, Number::WITHOUT_THOUSANDS_SEPARATOR, Currency::LEADING_SYMBOL, Currency::SYMBOL_WITH_SPACING],
-            ['_-$* #,##0_-', '$', 0, Number::WITH_THOUSANDS_SEPARATOR, Currency::LEADING_SYMBOL, Currency::SYMBOL_WITH_SPACING],
+            ["_-$*\u{a0}0_-", '$', 0, Number::WITHOUT_THOUSANDS_SEPARATOR, Currency::LEADING_SYMBOL, Currency::SYMBOL_WITH_SPACING],
+            ["_-$*\u{a0}#,##0_-", '$', 0, Number::WITH_THOUSANDS_SEPARATOR, Currency::LEADING_SYMBOL, Currency::SYMBOL_WITH_SPACING],
             ['_-$*#,##0_-', '$', 0, Number::WITH_THOUSANDS_SEPARATOR, Currency::LEADING_SYMBOL, Currency::SYMBOL_WITHOUT_SPACING],
-            ['_-0.00 €*_-', '€', 2, Number::WITHOUT_THOUSANDS_SEPARATOR, Currency::TRAILING_SYMBOL, Currency::SYMBOL_WITH_SPACING],
-            ['_-#,##0.00 €*_-', '€', 2, Number::WITH_THOUSANDS_SEPARATOR, Currency::TRAILING_SYMBOL, Currency::SYMBOL_WITH_SPACING],
+            ["_-0.00\u{a0}€*_-", '€', 2, Number::WITHOUT_THOUSANDS_SEPARATOR, Currency::TRAILING_SYMBOL, Currency::SYMBOL_WITH_SPACING],
+            ["_-#,##0.00\u{a0}€*_-", '€', 2, Number::WITH_THOUSANDS_SEPARATOR, Currency::TRAILING_SYMBOL, Currency::SYMBOL_WITH_SPACING],
             ['_-0.00€*_-', '€', 2, Number::WITHOUT_THOUSANDS_SEPARATOR, Currency::TRAILING_SYMBOL, Currency::SYMBOL_WITHOUT_SPACING],
         ];
     }
@@ -55,7 +55,7 @@ class AccountingTest extends TestCase
         self::assertSame($expectedResult, (string) $wizard);
     }
 
-    public function providerAccountingLocale(): array
+    public static function providerAccountingLocale(): array
     {
         return [
             ["[\$€-fy-NL]\u{a0}#,##0.00;([\$€-fy-NL]\u{a0}#,##0.00)", '€', 'fy-NL'],
@@ -87,7 +87,7 @@ class AccountingTest extends TestCase
         self::assertSame($expectedResult, (string) $wizard);
     }
 
-    public function providerAccountingLocaleNoDecimals(): array
+    public static function providerAccountingLocaleNoDecimals(): array
     {
         return [
             ["[\$€-fy-NL]\u{a0}#,##0;([\$€-fy-NL]\u{a0}#,##0)", '€', 'fy-NL'],

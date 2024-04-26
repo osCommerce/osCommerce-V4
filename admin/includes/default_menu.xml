@@ -392,15 +392,6 @@
                 <title>BOX_TRANSLATION_EMAIL_TEMPLATES</title>
                 <filename></filename>
             </item>
-            <item>
-                <sort_order>6</sort_order>
-                <acl_check></acl_check>
-                <config_check></config_check>
-                <box_type>0</box_type>
-                <path>catalog-pages/index</path>
-                <title>BOX_HEADING_CATALOG_PAGES</title>
-                <filename></filename>
-            </item>
         </child>
     </item>
     <item>
@@ -1053,15 +1044,6 @@
                         <box_type>0</box_type>
                         <path>server_info</path>
                         <title>BOX_TOOLS_SERVER_INFO</title>
-                        <filename></filename>
-                    </item>
-                    <item>
-                        <sort_order>2</sort_order>
-                        <acl_check></acl_check>
-                        <config_check></config_check>
-                        <box_type>0</box_type>
-                        <path>whos-online</path>
-                        <title>BOX_HEADING_WHOS_ONLINE</title>
                         <filename></filename>
                     </item>
                     <item>

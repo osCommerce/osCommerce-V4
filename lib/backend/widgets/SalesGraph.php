@@ -23,6 +23,15 @@ class SalesGraph extends Widget {
         $params = ['currcode_left' => $currencies->currencies[DEFAULT_CURRENCY]['symbol_left'], 'currcode_right' => $currencies->currencies[DEFAULT_CURRENCY]['symbol_right']];
         $exclude_order_statuses_array = \common\helpers\Order::extractStatuses(DASHBOARD_EXCLUDE_ORDER_STATUSES);
 
+        $filter_by_platform = array();
+        if (false === \common\helpers\Acl::rule(['SUPERUSER'])) {
+            global $login_id;
+            $platforms = \common\models\AdminPlatforms::find()->where(['admin_id' => $login_id])->asArray()->all();
+            foreach ($platforms as $platform) {
+                $filter_by_platform[] = $platform['platform_id'];
+            }
+        }
+
         $orders_data_array = array('blue' => array(), 'green' => array(), 'red' => array(), 'blue2' => array(), 'green2' => array(), 'red2' => array());
         $date_from = date('Y-m-d H:i:s', mktime(0, 0, 0, date('m') + 1, 1, date('Y') - 1));
         $orders_query = tep_db_query(
@@ -34,6 +43,7 @@ class SalesGraph extends Widget {
             " left join " . TABLE_ORDERS_TOTAL . " ot on (o.orders_id = ot.orders_id and ot.class = 'ot_total') ".
             " left join " . TABLE_ORDERS_TOTAL . " ost on (o.orders_id = ost.orders_id and ost.class = 'ot_subtotal') ".
             "where o.orders_status not in ('" . implode("','", $exclude_order_statuses_array) . "') ".
+            (count($filter_by_platform) > 0 ? " and o.platform_id in ('" . implode("','", $filter_by_platform) . "') " : '').
             "group by year(o.date_purchased), month(o.date_purchased) ".
             "order by year(o.date_purchased), month(o.date_purchased)"
         );

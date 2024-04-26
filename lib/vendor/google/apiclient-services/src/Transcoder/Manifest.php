@@ -21,6 +21,12 @@ class Manifest extends \Google\Collection
 {
   protected $collection_key = 'muxStreams';
   /**
+   * @var DashConfig
+   */
+  public $dash;
+  protected $dashType = DashConfig::class;
+  protected $dashDataType = '';
+  /**
    * @var string
    */
   public $fileName;
@@ -33,6 +39,20 @@ class Manifest extends \Google\Collection
    */
   public $type;
 
+  /**
+   * @param DashConfig
+   */
+  public function setDash(DashConfig $dash)
+  {
+    $this->dash = $dash;
+  }
+  /**
+   * @return DashConfig
+   */
+  public function getDash()
+  {
+    return $this->dash;
+  }
   /**
    * @param string
    */

@@ -67,7 +67,7 @@ class Heading extends Widget
 
             // categories
             case $full_action=='catalog/index' && $current_category_id > 0:
-                $category_query = tep_db_query("select categories_h1_tag, categories_h2_tag, categories_h2_tag, categories_name from " . TABLE_CATEGORIES_DESCRIPTION . " where categories_id = '" . (int)$current_category_id . "'  and language_id = '" . (int)$languages_id . "'");
+                $category_query = tep_db_query("select categories_h1_tag, categories_h2_tag, categories_h3_tag, categories_name from " . TABLE_CATEGORIES_DESCRIPTION . " where categories_id = '" . (int)$current_category_id . "'  and language_id = '" . (int)$languages_id . "'");
                 $category = tep_db_fetch_array($category_query);
 
                 if ($category['categories_h1_tag']) {
@@ -415,29 +415,6 @@ class Heading extends Widget
                 $h3 = explode("\n", (defined('HEAD_H3_TAG_WEDDING_REGISTRY') && tep_not_null(HEAD_H3_TAG_WEDDING_REGISTRY) ? HEAD_H3_TAG_WEDDING_REGISTRY : ''));
                 break;
 
-            //CATALOG PAGES
-            case ( strpos($full_action,'catalog-pages/')===0 ):
-                $h1 = defined('HEAD_H1_TAG_CATALOG_PAGES') && tep_not_null(HEAD_H1_TAG_CATALOG_PAGES) ? HEAD_H1_TAG_CATALOG_PAGES : '';
-                $h2 = explode("\n", (defined('HEAD_H2_TAG_CATALOG_PAGES') && tep_not_null(HEAD_H2_TAG_CATALOG_PAGES) ? HEAD_H2_TAG_CATALOG_PAGES : ''));
-                $h3 = explode("\n", (defined('HEAD_H3_TAG_CATALOG_PAGES') && tep_not_null(HEAD_H3_TAG_CATALOG_PAGES) ? HEAD_H3_TAG_CATALOG_PAGES : ''));
-                $platformId = platform::activeId()?platform::activeId():platform::currentId();
-                $slug = tep_db_prepare_input($params['page']);
-                $catalogPage = Yii::$app->db->createCommand("
-                        SELECT cd.h1_tag,cd.h2_tag,cd.h3_tag
-                        FROM catalog_pages_description cd
-                        INNER JOIN catalog_pages cp ON cd.catalog_pages_id = cp.catalog_pages_id AND cp.platform_id = $platformId
-                        WHERE (cd.languages_id = $languages_id) AND (cd.slug = '$slug')")
-                    ->queryOne();
-                if(!empty($catalogPage['h1_tag'])){
-                    $h1 = $catalogPage['h1_tag'];
-                }
-                if(!empty($catalogPage['h2_tag'])){
-                    $h2 = explode("\n",$catalogPage['h2_tag']);
-                }
-                if(!empty($catalogPage['h3_tag'])){
-                    $h3 = explode("\n",$catalogPage['h3_tag']);
-                }
-                break;
             // all other pages not defined above
             case preg_match('/^delivery-location\//', $full_action):
                 if ($ext = \common\helpers\Acl::checkExtensionAllowed('DeliveryLocation', 'allowed')) {
@@ -460,6 +437,9 @@ class Heading extends Widget
 
         }
 
+        foreach (\common\helpers\Hooks::getList('box/heading', '') as $filename) {
+            include($filename);
+        }
 
         if ($this->settings[0]['heading_type'] == 'h1') {
             if ($h1) {
@@ -491,18 +471,20 @@ class Heading extends Widget
             if ($this->settings[0]['heading_type'] == 'h2') {
 
                 foreach ($h2 as $key => $heading) {
+                    if (empty($heading)) continue;
                     if (!($sowed['h2'][$key]??null)){
                         $sowed['h2'][$key] = true;
-                        return '<h2 class="heading-2">' . $h2[$key] . '</h2>';
+                        return '<h2 class="heading-2">' . $heading . '</h2>';
                     }
                 }
 
             } elseif ($this->settings[0]['heading_type'] == 'h3') {
 
                 foreach ($h3 as $key => $heading) {
+                    if (empty($heading)) continue;
                     if (!$sowed['h3'][$key]){
                         $sowed['h3'][$key] = true;
-                        return '<h3 class="heading-3">' . $h3[$key] . '</h3>';
+                        return '<h3 class="heading-3">' . $heading . '</h3>';
                     }
                 }
 

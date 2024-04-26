@@ -20,6 +20,7 @@ namespace Google\Service\CloudHealthcare\Resource;
 use Google\Service\CloudHealthcare\ExportMessagesRequest;
 use Google\Service\CloudHealthcare\HealthcareEmpty;
 use Google\Service\CloudHealthcare\Hl7V2Store;
+use Google\Service\CloudHealthcare\Hl7V2StoreMetrics;
 use Google\Service\CloudHealthcare\ImportMessagesRequest;
 use Google\Service\CloudHealthcare\ListHl7V2StoresResponse;
 use Google\Service\CloudHealthcare\Operation;
@@ -49,6 +50,7 @@ class ProjectsLocationsDatasetsHl7V2Stores extends \Google\Service\Resource
    * created. The string must match the following regex:
    * `[\p{L}\p{N}_\-\.]{1,256}`.
    * @return Hl7V2Store
+   * @throws \Google\Service\Exception
    */
   public function create($parent, Hl7V2Store $postBody, $optParams = [])
   {
@@ -63,6 +65,7 @@ class ProjectsLocationsDatasetsHl7V2Stores extends \Google\Service\Resource
    * @param string $name The resource name of the HL7v2 store to delete.
    * @param array $optParams Optional parameters.
    * @return HealthcareEmpty
+   * @throws \Google\Service\Exception
    */
   public function delete($name, $optParams = [])
   {
@@ -86,6 +89,7 @@ class ProjectsLocationsDatasetsHl7V2Stores extends \Google\Service\Resource
    * @param ExportMessagesRequest $postBody
    * @param array $optParams Optional parameters.
    * @return Operation
+   * @throws \Google\Service\Exception
    */
   public function export($name, ExportMessagesRequest $postBody, $optParams = [])
   {
@@ -99,12 +103,30 @@ class ProjectsLocationsDatasetsHl7V2Stores extends \Google\Service\Resource
    * @param string $name The resource name of the HL7v2 store to get.
    * @param array $optParams Optional parameters.
    * @return Hl7V2Store
+   * @throws \Google\Service\Exception
    */
   public function get($name, $optParams = [])
   {
     $params = ['name' => $name];
     $params = array_merge($params, $optParams);
     return $this->call('get', [$params], Hl7V2Store::class);
+  }
+  /**
+   * Gets metrics associated with the HL7v2 store.
+   * (hl7V2Stores.getHL7v2StoreMetrics)
+   *
+   * @param string $name The resource name of the HL7v2 store to get metrics for,
+   * in the format `projects/{project_id}/locations/{location_id}/datasets/{datase
+   * t_id}/hl7V2Stores/{hl7v2_store_id}`.
+   * @param array $optParams Optional parameters.
+   * @return Hl7V2StoreMetrics
+   * @throws \Google\Service\Exception
+   */
+  public function getHL7v2StoreMetrics($name, $optParams = [])
+  {
+    $params = ['name' => $name];
+    $params = array_merge($params, $optParams);
+    return $this->call('getHL7v2StoreMetrics', [$params], Hl7V2StoreMetrics::class);
   }
   /**
    * Gets the access control policy for a resource. Returns an empty policy if the
@@ -129,6 +151,7 @@ class ProjectsLocationsDatasetsHl7V2Stores extends \Google\Service\Resource
    * documentation](https://cloud.google.com/iam/help/conditions/resource-
    * policies).
    * @return Policy
+   * @throws \Google\Service\Exception
    */
   public function getIamPolicy($resource, $optParams = [])
   {
@@ -168,6 +191,7 @@ class ProjectsLocationsDatasetsHl7V2Stores extends \Google\Service\Resource
    * @param ImportMessagesRequest $postBody
    * @param array $optParams Optional parameters.
    * @return Operation
+   * @throws \Google\Service\Exception
    */
   public function import($name, ImportMessagesRequest $postBody, $optParams = [])
   {
@@ -210,6 +234,7 @@ class ProjectsLocationsDatasetsHl7V2Stores extends \Google\Service\Resource
    * @opt_param string pageToken The next_page_token value returned from the
    * previous List request, if any.
    * @return ListHl7V2StoresResponse
+   * @throws \Google\Service\Exception
    */
   public function listProjectsLocationsDatasetsHl7V2Stores($parent, $optParams = [])
   {
@@ -230,6 +255,7 @@ class ProjectsLocationsDatasetsHl7V2Stores extends \Google\Service\Resource
    * `FieldMask` definition, see https://developers.google.com/protocol-
    * buffers/docs/reference/google.protobuf#fieldmask
    * @return Hl7V2Store
+   * @throws \Google\Service\Exception
    */
   public function patch($name, Hl7V2Store $postBody, $optParams = [])
   {
@@ -249,6 +275,7 @@ class ProjectsLocationsDatasetsHl7V2Stores extends \Google\Service\Resource
    * @param SetIamPolicyRequest $postBody
    * @param array $optParams Optional parameters.
    * @return Policy
+   * @throws \Google\Service\Exception
    */
   public function setIamPolicy($resource, SetIamPolicyRequest $postBody, $optParams = [])
   {
@@ -271,6 +298,7 @@ class ProjectsLocationsDatasetsHl7V2Stores extends \Google\Service\Resource
    * @param TestIamPermissionsRequest $postBody
    * @param array $optParams Optional parameters.
    * @return TestIamPermissionsResponse
+   * @throws \Google\Service\Exception
    */
   public function testIamPermissions($resource, TestIamPermissionsRequest $postBody, $optParams = [])
   {

@@ -299,7 +299,7 @@ class Order extends extended\OrderAbstract implements extended\TransactionsInter
     public function notifyGiftCards(){
         if (is_array($this->products)){
             foreach ($this->products as $product){
-                if ($product['model'] == 'VIRTUAL_GIFT_CARD'){
+                if ($product['model'] == \common\helpers\Gifts::getVirtualGiftCardModel()){
                     if (isset($product['attributes'][0]['value_id']) && $product['attributes'][0]['value_id']){
                         \common\helpers\Gifts::activate($product['attributes'][0]['value_id'], $this);
                     }

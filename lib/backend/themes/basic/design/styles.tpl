@@ -33,7 +33,7 @@
                                 </div>
                             </td>
                             <td>to</td>
-                            <td style="width: 30%" class="style-to">{SelectStyle::widget(['type' => 'color', 'name' => 'name', 'theme_name' => $theme_name])}</td>
+                            <td style="width: 30%" class="style-to">{SelectStyle::widget(['type' => ['color', 'color-var', 'color-opacity'], 'name' => 'name', 'theme_name' => $theme_name])}</td>
                             <td><span class="btn">Change</span></td>
                         </tr>
                     {/foreach}

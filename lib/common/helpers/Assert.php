@@ -129,6 +129,21 @@ class Assert {
         }
     }
 
+    public static function classExists($className, string $message = null)
+    {
+        if (!class_exists($className)) {
+            $def = sprintf("Class %s does not exist", self::ident($className));
+            static::errorMsg($message, $def);
+        }
+    }
+    public static function classImplements($class, $interface, string $message = null)
+    {
+        if (!\common\helpers\Php::isClassImplementsInterface($class, $interface)) {
+            $def = sprintf("%s does not implements %s", self::ident($class), self::ident($interface));
+            static::errorMsg($message, $def);
+        }
+    }
+
     public static function isArray($arr, string $message = null)
     {
         if (!is_array($arr)) {
@@ -146,6 +161,15 @@ class Assert {
         }
     }
 
+    public static function keysExists($arr, $keys, string $message = null)
+    {
+        static::isArray($arr, $message);
+        static::isArray($keys, $message);
+        foreach ($keys as $key) {
+            static::keyExists($arr, $key);
+        }
+    }
+
     public static function match($pattern, $value, string $message = null)
     {
         if (!preg_match($pattern, $value)) {
@@ -158,4 +182,14 @@ class Assert {
     {
         static::errorMsg($message, 'Not implemented yet');
     }
+
+    public static function isExtensionAllowed(string $extCode, string $message = null)
+    {
+        if (!\common\helpers\Extensions::isAllowed($extCode)) {
+            $def = sprintf("Extension %s is not allowed", self::ident($extCode));
+            static::errorMsg($message, $def);
+        }
+    }
+
+
 }

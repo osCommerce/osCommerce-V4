@@ -51,13 +51,19 @@ class OrderTrackingNumber extends TrackingNumbers
         $this->tracking_url = $parsed['url'];
         if ( !empty($parsed['carrier']) ) {
             $this->carrier = $parsed['carrier'];
-            $this->tracking_carriers_id = \common\helpers\OrderTrackingNumber::getCarrierId($this->carrier);
+            /** @var \common\extensions\TrackingCarriers\TrackingCarriers $ext */
+            if ($trackingCarriersId = \common\helpers\Extensions::callIfAllowed('TrackingCarriers', 'getTrackingCarriersId', [$this->carrier])) {
+                $this->tracking_carriers_id = $trackingCarriersId;
+            } else{
+                $this->tracking_carriers_id = 0;
+            }
         }
         if ( empty($this->tracking_url) ){
-            if ($this->tracking_carriers_id && $carrier = TrackingCarriers::findOne(['tracking_carriers_id'=>$this->tracking_carriers_id])){
-                $this->carrier = $carrier->tracking_carriers_name;
-                $this->tracking_url = $carrier->tracking_carriers_url.$this->number;
-            }else {
+            /** @var \common\extensions\TrackingCarriers\TrackingCarriers $ext */
+            if ( $record = \common\helpers\Extensions::callIfAllowed('TrackingCarriers', 'getTrackingCarriersRecord', [$this->tracking_carriers_id]) ) {
+                $this->carrier = $record->tracking_carriers_name;
+                $this->tracking_url = $record->tracking_carriers_url.$this->number;
+            } else {
                 $this->carrier = '';
                 $this->tracking_url = TRACKING_NUMBER_URL.str_replace(' ','', $this->number);
             }

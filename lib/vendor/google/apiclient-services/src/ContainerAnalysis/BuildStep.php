@@ -33,6 +33,10 @@ class BuildStep extends \Google\Collection
    */
   public $args;
   /**
+   * @var bool
+   */
+  public $automapSubstitutions;
+  /**
    * @var string
    */
   public $dir;
@@ -56,6 +60,10 @@ class BuildStep extends \Google\Collection
    * @var string
    */
   public $name;
+  /**
+   * @var TimeSpan
+   */
+  public $pullTiming;
   protected $pullTimingType = TimeSpan::class;
   protected $pullTimingDataType = '';
   /**
@@ -74,8 +82,16 @@ class BuildStep extends \Google\Collection
    * @var string
    */
   public $timeout;
+  /**
+   * @var TimeSpan
+   */
+  public $timing;
   protected $timingType = TimeSpan::class;
   protected $timingDataType = '';
+  /**
+   * @var Volume[]
+   */
+  public $volumes;
   protected $volumesType = Volume::class;
   protected $volumesDataType = 'array';
   /**
@@ -124,6 +140,20 @@ class BuildStep extends \Google\Collection
   public function getArgs()
   {
     return $this->args;
+  }
+  /**
+   * @param bool
+   */
+  public function setAutomapSubstitutions($automapSubstitutions)
+  {
+    $this->automapSubstitutions = $automapSubstitutions;
+  }
+  /**
+   * @return bool
+   */
+  public function getAutomapSubstitutions()
+  {
+    return $this->automapSubstitutions;
   }
   /**
    * @param string

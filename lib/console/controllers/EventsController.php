@@ -283,8 +283,8 @@ class EventsController extends Sceleton {
         echo 'Done!';
     }
 
-    public function actionAutoCalcProductPriceBySupplier()
+    public function actionAutoCalcProductPriceBySupplier($batchSize = 1000, $timeLimit = 3000)
     {
-        \common\helpers\PriceFormula::batchProductAutoCalcPriceBySupplier();
+        \common\helpers\PriceFormula::batchProductAutoCalcPriceBySupplier((int)$batchSize, (int)$timeLimit);
     }
 }

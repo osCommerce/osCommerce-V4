@@ -250,7 +250,12 @@ abstract class AbstractCheckoutController extends \frontend\controllers\Sceleton
                 $valid = $this->manager->validateAddressForms(Yii::$app->request->post(), $type, $shipAsBill);
                 $data = [];
                 if ($valid) {
-                    $this->manager->checkoutOrder();
+                    if ($type == 'shipping') {
+                        $this->manager->changeCustomerTaxAddress(1);
+                    } else {
+                        $this->manager->changeCustomerTaxAddress(0);
+                    }
+                    $this->manager->checkoutOrderWithAddresses();
                     $data = $this->manager->render('ShippingByChoice', ['manager' => $this->manager], 'json');
                 } else {
                     if ($messageStack->size('one_page_checkout')) {

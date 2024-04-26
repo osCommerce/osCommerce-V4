@@ -1,4 +1,5 @@
 {use class="yii\helpers\Html"}
+{\backend\assets\NestableAsset::register($this)|void}
 <style type="text/css">
     #access_management_data ol {
         list-style: none;

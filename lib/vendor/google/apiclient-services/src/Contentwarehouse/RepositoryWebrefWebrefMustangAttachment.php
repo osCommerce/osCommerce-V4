@@ -19,7 +19,7 @@ namespace Google\Service\Contentwarehouse;
 
 class RepositoryWebrefWebrefMustangAttachment extends \Google\Collection
 {
-  protected $collection_key = 'undermergedMembers';
+  protected $collection_key = 'unboundIntentScoreE2';
   /**
    * @var int[]
    */
@@ -36,8 +36,16 @@ class RepositoryWebrefWebrefMustangAttachment extends \Google\Collection
    * @var string[]
    */
   public $encodedMid;
+  /**
+   * @var RepositoryWebrefWebrefAttachmentMetadata[]
+   */
+  public $entityMetadata;
   protected $entityMetadataType = RepositoryWebrefWebrefAttachmentMetadata::class;
   protected $entityMetadataDataType = 'array';
+  /**
+   * @var KnowledgeAnswersIntentQueryIndexingIQLAttachment
+   */
+  public $iqlAttachment;
   protected $iqlAttachmentType = KnowledgeAnswersIntentQueryIndexingIQLAttachment::class;
   protected $iqlAttachmentDataType = '';
   /**
@@ -64,8 +72,6 @@ class RepositoryWebrefWebrefMustangAttachment extends \Google\Collection
    * @var int[]
    */
   public $unboundIntentScoreE2;
-  protected $undermergedMembersType = RepositoryWebrefWebrefMustangAttachmentUndermergedMembers::class;
-  protected $undermergedMembersDataType = 'array';
 
   /**
    * @param int[]
@@ -234,20 +240,6 @@ class RepositoryWebrefWebrefMustangAttachment extends \Google\Collection
   public function getUnboundIntentScoreE2()
   {
     return $this->unboundIntentScoreE2;
-  }
-  /**
-   * @param RepositoryWebrefWebrefMustangAttachmentUndermergedMembers[]
-   */
-  public function setUndermergedMembers($undermergedMembers)
-  {
-    $this->undermergedMembers = $undermergedMembers;
-  }
-  /**
-   * @return RepositoryWebrefWebrefMustangAttachmentUndermergedMembers[]
-   */
-  public function getUndermergedMembers()
-  {
-    return $this->undermergedMembers;
   }
 }
 

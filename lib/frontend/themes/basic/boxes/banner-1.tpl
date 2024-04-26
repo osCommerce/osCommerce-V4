@@ -13,7 +13,7 @@
                             class="banner-box banner-box-{$banner.banners_id}"
                             data-id="{$banner.banners_id}"
                             id="banner-box-{$banner.banners_id}"
-                            {if $banner.nofollow == 1} rel="nofollow"{/if}>
+                            {if $banner.nofollow == 1} rel="nofollow"{/if} aria-label="banner">
                             {$banner.image}
                         </a>
                     {else}

@@ -28,9 +28,19 @@ class AcceleratorConfig extends \Google\Model
    */
   public $acceleratorType;
   /**
+   * @var GPUDriverInstallationConfig
+   */
+  public $gpuDriverInstallationConfig;
+  protected $gpuDriverInstallationConfigType = GPUDriverInstallationConfig::class;
+  protected $gpuDriverInstallationConfigDataType = '';
+  /**
    * @var string
    */
   public $gpuPartitionSize;
+  /**
+   * @var GPUSharingConfig
+   */
+  public $gpuSharingConfig;
   protected $gpuSharingConfigType = GPUSharingConfig::class;
   protected $gpuSharingConfigDataType = '';
 
@@ -61,6 +71,20 @@ class AcceleratorConfig extends \Google\Model
   public function getAcceleratorType()
   {
     return $this->acceleratorType;
+  }
+  /**
+   * @param GPUDriverInstallationConfig
+   */
+  public function setGpuDriverInstallationConfig(GPUDriverInstallationConfig $gpuDriverInstallationConfig)
+  {
+    $this->gpuDriverInstallationConfig = $gpuDriverInstallationConfig;
+  }
+  /**
+   * @return GPUDriverInstallationConfig
+   */
+  public function getGpuDriverInstallationConfig()
+  {
+    return $this->gpuDriverInstallationConfig;
   }
   /**
    * @param string

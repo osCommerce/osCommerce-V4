@@ -43,12 +43,14 @@ class VitalsErrorsReports extends \Google\Service\Resource
    * versions (specified as the numeric API level) only. Example: `apiLevel = 28
    * OR apiLevel = 29`. * `versionCode`: Matches error reports that occurred in
    * the requested app version codes only. Example: `versionCode = 123 OR
-   * versionCode = 456`. * `deviceModel`: Matches error reports that occurred in
-   * the requested devices. Example: `deviceModel = "walleye" OR deviceModel =
-   * "marlin"`. * `deviceType`: Matches error reports that occurred in the
-   * requested device types. Example: `deviceType = "PHONE"`. * `errorIssueType`:
-   * Matches error reports of the requested types only. Valid candidates:
-   * `JAVA_CRASH`, `NATIVE_CRASH`, `ANR`. Example: `errorIssueType = JAVA_CRASH OR
+   * versionCode = 456`. * `deviceModel`: Matches error issues that occurred in
+   * the requested devices. Example: `deviceModel = "google/walleye" OR
+   * deviceModel = "google/marlin"`. * `deviceBrand`: Matches error issues that
+   * occurred in the requested device brands. Example: `deviceBrand = "Google". *
+   * `deviceType`: Matches error reports that occurred in the requested device
+   * types. Example: `deviceType = "PHONE"`. * `errorIssueType`: Matches error
+   * reports of the requested types only. Valid candidates: `JAVA_CRASH`,
+   * `NATIVE_CRASH`, `ANR`. Example: `errorIssueType = JAVA_CRASH OR
    * errorIssueType = NATIVE_CRASH`. * `errorIssueId`: Matches error reports
    * belonging to the requested error issue ids only. Example: `errorIssueId =
    * 1234 OR errorIssueId = 4567`. * `appProcessState`: Matches error reports on
@@ -119,13 +121,13 @@ class VitalsErrorsReports extends \Google\Service\Resource
    * to 9999, or 0 if specifying a datetime without a year.
    * @opt_param int pageSize The maximum number of reports to return. The service
    * may return fewer than this value. If unspecified, at most 50 reports will be
-   * returned. The maximum value is 1000; values above 1000 will be coerced to
-   * 1000.
+   * returned. The maximum value is 100; values above 100 will be coerced to 100.
    * @opt_param string pageToken A page token, received from a previous
    * `SearchErrorReports` call. Provide this to retrieve the subsequent page. When
    * paginating, all other parameters provided to `SearchErrorReports` must match
    * the call that provided the page token.
    * @return GooglePlayDeveloperReportingV1beta1SearchErrorReportsResponse
+   * @throws \Google\Service\Exception
    */
   public function search($parent, $optParams = [])
   {

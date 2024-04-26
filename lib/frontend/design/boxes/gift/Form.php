@@ -35,7 +35,7 @@ class Form extends Widget
         $currency = \Yii::$app->settings->get('currency');
         $messageStack = \Yii::$container->get('message_stack');
         $giftAmount = [];
-        $check_product = tep_db_fetch_array(tep_db_query("select products_id from " . TABLE_PRODUCTS . " where products_model = 'VIRTUAL_GIFT_CARD'"));
+        $check_product = tep_db_fetch_array(tep_db_query("select products_id from " . TABLE_PRODUCTS . " where products_model = '" . tep_db_input(\common\helpers\Gifts::getVirtualGiftCardModel()) . "'"));
         $products_id = $check_product['products_id'];
         if ($products_id > 0) {
             if (USE_MARKET_PRICES == 'True') {

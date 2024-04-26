@@ -290,6 +290,16 @@ class CloudKMS extends \Google\Service
                   'required' => true,
                 ],
               ],
+            ],'verifyConnectivity' => [
+              'path' => 'v1/{+name}:verifyConnectivity',
+              'httpMethod' => 'GET',
+              'parameters' => [
+                'name' => [
+                  'location' => 'path',
+                  'type' => 'string',
+                  'required' => true,
+                ],
+              ],
             ],
           ]
         ]
@@ -672,6 +682,26 @@ class CloudKMS extends \Google\Service
                 'updateMask' => [
                   'location' => 'query',
                   'type' => 'string',
+                ],
+              ],
+            ],'rawDecrypt' => [
+              'path' => 'v1/{+name}:rawDecrypt',
+              'httpMethod' => 'POST',
+              'parameters' => [
+                'name' => [
+                  'location' => 'path',
+                  'type' => 'string',
+                  'required' => true,
+                ],
+              ],
+            ],'rawEncrypt' => [
+              'path' => 'v1/{+name}:rawEncrypt',
+              'httpMethod' => 'POST',
+              'parameters' => [
+                'name' => [
+                  'location' => 'path',
+                  'type' => 'string',
+                  'required' => true,
                 ],
               ],
             ],'restore' => [

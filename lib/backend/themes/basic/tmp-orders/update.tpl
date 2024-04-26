@@ -60,7 +60,7 @@
 <script type="text/javascript" src="{$smarty.const.DIR_WS_ADMIN}/plugins/fancybox/jquery.fancybox.pack.js"></script>
 
 <!--===Process Order ===-->
-<div class="row w-or-prev-next">
+<div class="w-or-prev-next">
     {if $app->controller->view->order_prev > 0}
     <a href="{$app->urlManager->createUrl(['tmp-orders/process-order', 'orders_id' => $app->controller->view->order_prev])}" class="btn-next-prev-or btn-prev-or" title="{$smarty.const.TEXT_GO_PREV_ORDER} (#{$app->controller->view->order_prev})"></a>
     {else}

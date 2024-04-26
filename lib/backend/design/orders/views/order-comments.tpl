@@ -15,7 +15,7 @@
                         {foreach $comments as $comment}
                             <tr>
                                 <td>{\common\helpers\Date::formatDateTime($comment->date_added)}</td>
-                                <td>{$comment->comments}</td>
+                                <td>{nl2br($comment->comments)}</td>
                                 <td>{if $comment->admin}{$comment->admin->admin_firstname} {$comment->admin->admin_lastname}{/if}</td>
                             </tr>
                         {foreachelse}

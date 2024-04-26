@@ -134,7 +134,7 @@
         <label for="">{$smarty.const.TEXT_FONT_FAMILY}</label>
 
 
-        {SelectStyle::widget(['type' => 'font', 'name' => $name|cat:'[font-family]', 'theme_name' => $theme_name, 'value' => $value['font-family']])}
+        {SelectStyle::widget(['type' => ['font', 'font-var'], 'name' => $name|cat:'[font-family]', 'theme_name' => $theme_name, 'value' => $value['font-family']])}
 
         {*<select name="{$name}[font-family]" id="" class="form-control">
           <option value=""{if $value['font-family'] == ''} selected{/if}></option>
@@ -160,7 +160,7 @@
       {if $styleHide.font.color !== 1}
       <div class="setting-row">
         <label for="">{$smarty.const.TEXT_COLOR_}</label>
-        {SelectStyle::widget(['type' => 'color', 'name' => $name|cat:'[color]', 'theme_name' => $theme_name, 'value' => $value['color']])}
+        {SelectStyle::widget(['type' => ['color', 'color-var', 'color-opacity'], 'name' => $name|cat:'[color]', 'theme_name' => $theme_name, 'value' => $value['color']])}
 
       </div>
       {/if}
@@ -276,7 +276,7 @@
             <option value="vmax"{if $value.text_shadow_size_measure == 'vmax'} selected{/if}>vmax</option>
           </select>
 
-          {SelectStyle::widget(['type' => 'color', 'name' => $name|cat:'[text_shadow_color]', 'theme_name' => $theme_name, 'value' => $value['text_shadow_color']])}
+          {SelectStyle::widget(['type' => ['color', 'color-var', 'color-opacity'], 'name' => $name|cat:'[text_shadow_color]', 'theme_name' => $theme_name, 'value' => $value['text_shadow_color']])}
 
         </div>
       </div>
@@ -380,7 +380,7 @@
       {if $styleHide.background.background_color !== 1}
       <div class="setting-row">
         <label for="">{$smarty.const.TEXT_BACKGROUND_COLOR}</label>
-        {SelectStyle::widget(['type' => 'color', 'name' => $name|cat:'[background-color]', 'theme_name' => $theme_name, 'value' => $value['background-color']])}
+        {SelectStyle::widget(['type' => ['color', 'color-var', 'color-opacity'], 'name' => $name|cat:'[background-color]', 'theme_name' => $theme_name, 'value' => $value['background-color']])}
       </div>
       {/if}
 
@@ -596,7 +596,7 @@
         <label for="">{$smarty.const.TEXT_BORDER_TOP}</label>
         <input type="number" name="{$name}[border-top-width]" value="{$value['border-top-width']}" class="form-control" /><span class="px">px</span>
 
-        {SelectStyle::widget(['type' => 'color', 'name' => $name|cat:'[border-top-color]', 'theme_name' => $theme_name, 'value' => $value['border-top-color']])}
+        {SelectStyle::widget(['type' => ['color', 'color-var', 'color-opacity'], 'name' => $name|cat:'[border-top-color]', 'theme_name' => $theme_name, 'value' => $value['border-top-color']])}
       </div>
       {/if}
 
@@ -605,7 +605,7 @@
         <label for="">{$smarty.const.TEXT_BORDER_LEFT}</label>
         <input type="number" name="{$name}[border-left-width]" value="{$value['border-left-width']}" class="form-control" /><span class="px">px</span>
 
-        {SelectStyle::widget(['type' => 'color', 'name' => $name|cat:'[border-left-color]', 'theme_name' => $theme_name, 'value' => $value['border-left-color']])}
+        {SelectStyle::widget(['type' => ['color', 'color-var', 'color-opacity'], 'name' => $name|cat:'[border-left-color]', 'theme_name' => $theme_name, 'value' => $value['border-left-color']])}
       </div>
       {/if}
 
@@ -613,7 +613,7 @@
       <div class="setting-row setting-row-border">
         <label for="">{$smarty.const.TEXT_BORDER_RIGHT}</label>
         <input type="number" name="{$name}[border-right-width]" value="{$value['border-right-width']}" class="form-control" /><span class="px">px</span>
-        {SelectStyle::widget(['type' => 'color', 'name' => $name|cat:'[border-right-color]', 'theme_name' => $theme_name, 'value' => $value['border-right-color']])}
+        {SelectStyle::widget(['type' => ['color', 'color-var', 'color-opacity'], 'name' => $name|cat:'[border-right-color]', 'theme_name' => $theme_name, 'value' => $value['border-right-color']])}
 
       </div>
       {/if}
@@ -623,7 +623,7 @@
         <label for="">{$smarty.const.TEXT_BORDER_BOTTOM}</label>
         <input type="number" name="{$name}[border-bottom-width]" value="{$value['border-bottom-width']}" class="form-control" /><span class="px">px</span>
 
-        {SelectStyle::widget(['type' => 'color', 'name' => $name|cat:'[border-bottom-color]', 'theme_name' => $theme_name, 'value' => $value['border-bottom-color']])}
+        {SelectStyle::widget(['type' => ['color', 'color-var', 'color-opacity'], 'name' => $name|cat:'[border-bottom-color]', 'theme_name' => $theme_name, 'value' => $value['border-bottom-color']])}
       </div>
       {/if}
 
@@ -735,7 +735,7 @@
             <option value="vmax"{if $value.box_shadow_spread_measure == 'vmax'} selected{/if}>vmax</option>
           </select>
 
-          {SelectStyle::widget(['type' => 'color', 'name' => $name|cat:'[box_shadow_color]', 'theme_name' => $theme_name, 'value' => $value['box_shadow_color']])}
+          {SelectStyle::widget(['type' => ['color', 'color-var', 'color-opacity'], 'name' => $name|cat:'[box_shadow_color]', 'theme_name' => $theme_name, 'value' => $value['box_shadow_color']])}
 
           <select name="{$name}[box_shadow_set]" id="" class="form-control" style="width: 100px;">
             <option value=""{if $value.box_shadow_set == ''} selected{/if}>outset</option>

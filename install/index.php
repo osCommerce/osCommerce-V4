@@ -20,9 +20,9 @@ $rootPath = './../';
 
 ini_set("display_errors", 0);
 
-defined('VERSION_EXT') or define('VERSION_EXT', 'v.4.13 build 60075');
+defined('VERSION_EXT') or define('VERSION_EXT', 'v.4.14 build 63493');
 defined('VERSION_PHP_RQ') or define('VERSION_PHP_RQ', '7.4.0');
-defined('VERSION_PHP_REC') or define('VERSION_PHP_REC', '7.4.33');
+defined('VERSION_PHP_REC') or define('VERSION_PHP_REC', '8.2.18');
 defined('REQ_PHP_MEMORY') or define('REQ_PHP_MEMORY', '256M');
 defined('REQ_PHP_MEMORY_REC') or define('REQ_PHP_MEMORY_REC', '512M');
 

@@ -72,7 +72,7 @@ class Bundles {
           " and sp.sets_id = '" . (int)$params['products_id'] . "' and p.products_status_bundle = '1' " /* . \common\helpers\Product::get_sql_product_restrictions(array('p', 'pd', 's', 'sp', 'pp')) */ . " " . ((isset($_SESSION['affiliate_ref']) && $_SESSION['affiliate_ref'] > 0) ? " and p2a.affiliate_id is not null ":'') . " and pd.platform_id = '".intval(\common\classes\platform::defaultId())."' and if(pgp.products_group_price is null, 1, pgp.products_group_price != -1 ) ".
               $sqlWhere . " " .
           "group by p.products_id ".
-          "order by sp.sort_order"
+          "order by sp.sort_order, products_name"
         );
         if (tep_db_num_rows($bundle_sets_query) > 0)
         {
@@ -158,10 +158,19 @@ class Bundles {
                       "order by products_quantity desc ".
                       "limit 1"
                     ));
-                    if (!$check_inventory['inventory_id']) continue;
+                    if (!$check_inventory['inventory_id'] && strstr($mask, '{')) continue;
                     if ($check_inventory['non_existent']) continue;
+                    if ($ext = \common\helpers\Acl::checkExtensionAllowed('UserGroupsRestrictions', 'isAllowed')) {
+                        if ($ext::isRestricted($mask)) {
+                            continue;
+                        }
+                    }
                     $priceInstance = \common\models\Product\Price::getInstance($mask);
                     $products_price = $priceInstance->getInventoryPrice($params);
+
+                    if (!$check_inventory['products_id'] && !strstr($mask, '{')) {
+                        $check_inventory['products_id'] = $mask;
+                    }
                     $check_inventory['products_quantity'] = \common\helpers\Product::getAvailable($check_inventory['products_id'], 0);
 
                     //$check_inventory['inventory_price'] = InventoryHelper::get_inventory_price_by_uprid($mask, $params['qty'] * $bundle_sets['num_product'], $check_inventory['inventory_price']);
@@ -204,8 +213,9 @@ class Bundles {
                     $products_options_array[sizeof($products_options_array)-1]['price_diff'] = $price_diff;
 
                     $stock_indicator = \common\classes\StockIndication::product_info(array(
+                      'uprid_mask' => $mask,
                       'products_id' => $check_inventory['products_id'],
-                      'products_quantity' => ($check_inventory['inventory_id'] ? $check_inventory['products_quantity'] : '0'),
+                      'products_quantity' => ($check_inventory['products_id'] ? $check_inventory['products_quantity'] : '0'),
                       'stock_indication_id' => (isset($check_inventory['stock_indication_id'])?$check_inventory['stock_indication_id']:null),
                       'stock_delivery_terms_id' => (isset($check_inventory['stock_delivery_terms_id'])?$check_inventory['stock_delivery_terms_id']:null),
                     ));

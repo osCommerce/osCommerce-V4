@@ -2,7 +2,7 @@
 {use class="common\helpers\Html"}
 {use class="yii\helpers\Url"}
 {use class="\backend\design\editor\Formatter"}
-<tr class="dataTableRow {$rowClass}{if $product['parent_product']} child-product{/if}" data-opid="{$product['orders_products_id']}" data-sortKey="{$product['orders_products_id']}">
+<tr class="dataTableRow {$rowClass}{if $product['parent_product']} child-product{/if}" data-opid="{$product['orders_products_id']}">
     <td class="dataTableContent table-image-td order-product-image" valign="top" align="center">
         <div class="table-image-cell">{Html::a($image, $image_url, ['class' => 'fancybox'])}</div>
     </td>

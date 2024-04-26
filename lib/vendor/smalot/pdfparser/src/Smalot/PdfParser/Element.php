@@ -51,11 +51,11 @@ class Element
     /**
      * @var Document
      */
-    protected $document = null;
+    protected $document;
 
-    protected $value = null;
+    protected $value;
 
-    public function __construct($value, ?Document $document = null)
+    public function __construct($value, Document $document = null)
     {
         $this->value = $value;
         $this->document = $document;
@@ -96,7 +96,7 @@ class Element
         return (string) $this->value;
     }
 
-    public static function parse(string $content, ?Document $document = null, int &$position = 0)
+    public static function parse(string $content, Document $document = null, int &$position = 0)
     {
         $args = \func_get_args();
         $only_values = isset($args[3]) ? $args[3] : false;
@@ -107,10 +107,16 @@ class Element
             $old_position = $position;
 
             if (!$only_values) {
-                if (!preg_match('/^\s*(?P<name>\/[A-Z0-9\._]+)(?P<value>.*)/si', substr($content, $position), $match)) {
+                if (!preg_match('/\G\s*(?P<name>\/[A-Z#0-9\._]+)(?P<value>.*)/si', $content, $match, 0, $position)) {
                     break;
                 } else {
-                    $name = ltrim($match['name'], '/');
+                    $name = preg_replace_callback(
+                        '/#([0-9a-f]{2})/i',
+                        function ($m) {
+                            return \chr(base_convert($m[1], 16, 10));
+                        },
+                        ltrim($match['name'], '/')
+                    );
                     $value = $match['value'];
                     $position = strpos($content, $value, $position + \strlen($match['name']));
                 }

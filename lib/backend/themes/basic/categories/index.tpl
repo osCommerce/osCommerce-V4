@@ -1,5 +1,6 @@
 {\backend\assets\Categories::register($this)|void}
 {\backend\design\SelectProducts::widget([ 'onlyIncludeJs' => true ])}
+{\backend\assets\MultiSelectAsset::register($this)|void}
 <!--=== Page Header ===-->
 {$directOutput=false}
 {include file="./cat_main_box.tpl"}
@@ -252,8 +253,8 @@
                               </div>
                               <div class="brand_box">
                                 <ul>
-                                    <li class="li_block li-block-top"><span class="brand_li"><span id="0" onclick="changeBrand(this)">{$smarty.const.TEXT_ALL}</span></span></li>
-                                    <li class="li_block li-block-top"><span class="brand_li"><span id="-1" onclick="changeBrand(this)">{$smarty.const.TEXT_ALL_WITHOUT_BRAND}</span></span></li>
+                                    <li class="li_block li-block-top"><span class="brand_li"><span class="brand_text" id="0" onclick="changeBrand(this)">{$smarty.const.TEXT_ALL}</span></span></li>
+                                    <li class="li_block li-block-top"><span class="brand_li"><span class="brand_text" id="-1" onclick="changeBrand(this)">{$smarty.const.TEXT_ALL_WITHOUT_BRAND}</span></span></li>
                                      {foreach $app->controller->view->brandsList as $brandItem}
                                          <li id="brands-{$brandItem.id}" class="li_block{if $brandItem.id == $app->controller->view->filters->brand_id} selected{/if}">
 
@@ -474,11 +475,13 @@ $.post("categories/confirmproductdelete", { 'products_id' : products_id }, funct
 
 function confirmMoveProduct(products_id) {
     var categories_id = $('#global_id').val();
-    $("#catalog_management").hide();
+    //$("#catalog_management").hide();
     $.post("{Yii::$app->urlManager->createUrl('categories/confirm-product-move')}", { 'products_id' : products_id, 'categories_id' : categories_id }, function(data, status){
         if (status == "success") {
-            $('#catalog_management_data .scroll_col').html(data);
-            $("#catalog_management").show();
+            const $popup = alertMessage(data, 'copy-product-popup')
+            $('.btn-confirm', $popup).on('click', () => setTimeout(() => $popup.remove(), 100))
+            //$('#catalog_management_data .scroll_col').html(data);
+            //$("#catalog_management").show();
         } else {
             alert("Request error.");
         }
@@ -503,8 +506,10 @@ function confirmCopyProduct(products_id) {
     $("#catalog_management").hide();
     $.post("{Yii::$app->urlManager->createUrl('categories/confirm-product-copy')}", { 'products_id' : products_id, 'categories_id' : categories_id }, function(data, status){
         if (status == "success") {
-            $('#catalog_management_data .scroll_col').html(data);
-            $("#catalog_management").show();
+            const $popup = alertMessage(data, 'copy-product-popup')
+            $('.btn-confirm', $popup).on('click', () => setTimeout(() => $popup.remove(), 100))
+            //$('#catalog_management_data .scroll_col').html(data);
+            //$("#catalog_management").show();
         } else {
             alert("Request error.");
         }
@@ -512,8 +517,19 @@ function confirmCopyProduct(products_id) {
     return false;
 }
 
+function confirmCopyProductBatch() {
+
+    var selected = [];
+    $('#categoriesTable .js-cat-batch').not('.js-cat-batch-master').each(function () {
+        if ( !this.checked ) return;
+        selected.push($(this).val());
+    });
+
+    console.log(selected);
+}
+
 function copyProduct() {
-    $.post("{Yii::$app->urlManager->createUrl('categories/product-copy')}", $('#products_copy').serialize(), function(data, status){
+    $.post("{Yii::$app->urlManager->createUrl('categories/product-copy')}", $('#products_copy').serializeArray(), function(data, status){
         if (status == "success") {
             resetStatement();
         } else {
@@ -807,6 +823,7 @@ function applyFilter() {
       if ( http_method ) return true;
     }
 {/if}
+    $('#global_id').val(0);
     resetStatement();
     return false;    
 }                                    
@@ -897,8 +914,10 @@ function confirmMoveCategory(categories_id) {
     $("#catalog_management").hide();
     $.post("{Yii::$app->urlManager->createUrl('categories/confirm-category-move')}", { 'categories_id' : categories_id }, function(data, status){
         if (status == "success") {
-            $('#catalog_management_data .scroll_col').html(data);
-            $("#catalog_management").show();
+            const $popup = alertMessage(data, 'copy-product-popup')
+            $('.btn-confirm', $popup).on('click', () => setTimeout(() => $popup.remove(), 100))
+            //$('#catalog_management_data .scroll_col').html(data);
+            //$("#catalog_management").show();
         } else {
             alert("Request error.");
         }
@@ -1072,7 +1091,7 @@ function switchCatalogState(state){
     return false;
 }
 
-function batchMove() {
+function batchMove(metod) {
     var count_items = getSelectedCatalogCount();
     if (count_items > 0) {
         var selected_categories = [];
@@ -1089,80 +1108,163 @@ function batchMove() {
                 selected_products.push(name);
             }
         });
-        
-        var message = '<div class="">';
-        
-        message += '{sprintf($smarty.const.TEXT_MOVE, '')} <div class="choose-visibility"><select name="move_to_category_id" class="col-md-12 select2 select2-offscreen">{foreach \common\helpers\Categories::get_category_tree() as $category}<option value="{$category.id}">{$category.text|escape:'javascript'}</option>{/foreach}</select></div>{*tep_draw_pull_down_menu('move_to_category_id', \common\helpers\Categories::get_category_tree(), 0)*}';
-        
+
+        var message = `
+                <div class="popup-heading">{$smarty.const.TEXT_MOVE_OR_COPY_BACH|escape}</div>
+                <div class="popup-content">`;
+
+        message += `
+            ${ metod == 'link' ? '{$smarty.const.IMAGE_COPY_TO}' : '{sprintf($smarty.const.TEXT_MOVE, '')}'}
+            <div class="choose-visibility">
+                <select name="move_to_category_id[]"${ !metod || metod === 'move' ? '' : ' multiple="multiple" '} class="multiple-select-cat form-control">
+                    {foreach \common\helpers\Categories::get_category_tree() as $category}
+                        <option value="{$category.id}">{$category.text|escape:'javascript'}</option>
+                    {/foreach}
+                </select>
+            </div>`;
+
         if (selected_categories.length > 0) {
             message += '<h3>Selected categories:</h3>';
+            message += '<ul>';
             for (var i = 0, len = selected_categories.length; i < len; i++) {
-                message += '<b>' + selected_categories[i] + '</b><br>';
+                message += '<li class="mb-1">' + selected_categories[i] + '</li>';
             }
+            message += '</ul>';
         }
         if (selected_products.length > 0) {
-            message += '<h3>Selected products:</h3>';
+            message += '<h3>Selected products:</h3><ul class="mb-3">';
             for (var i = 0, len = selected_products.length; i < len; i++) {
-                message += '<b>' + selected_products[i] + '</b><br>';
+                message += '<li class="mb-1">' + selected_products[i] + '</li>';
             }
-            message += '<br><label class="control-label">{$smarty.const.TEXT_CHOISE_METHOD} </label><div class=""><label class="radio"><input type="radio" class="uniform" name="copy_to" value="move" checked>{$smarty.const.TEXT_INFO_HEADING_MOVE_PRODUCT}</label><label class="radio"><input type="radio" class="uniform" name="copy_to" value="link">{$smarty.const.TEXT_COPY_AS_LINK}</label><label class="radio"><input type="radio" class="uniform" name="copy_to" value="dublicate">{$smarty.const.TEXT_COPY_AS_DUPLICATE}</label></div><label class="control-label">{$smarty.const.TEXT_COPY_ATTRIBUTES} ({$smarty.const.TEXT_COPY_ATTRIBUTES_ONLY})</label><div class=""><label class="radio"><input type="radio" class="uniform" name="copy_attributes" value="yes" checked>{$smarty.const.TEXT_YES}</label><label class="radio"><input type="radio" class="uniform" name="copy_attributes" value="no">{$smarty.const.TEXT_NO}</label></div>';
+            message += `</ul>
+            <label class="control-label">{$smarty.const.TEXT_CHOISE_METHOD} </label>
+            <div class="">
+                <label class="form-check form-check-inline">
+                    <input type="radio" class="form-check-input" name="copy_to" value="move"
+                        ${ !metod || metod === 'move' ? ' checked' : '' }>
+                    <span class="form-check-label">{$smarty.const.TEXT_INFO_HEADING_MOVE_PRODUCT}</span>
+                </label>
+                <label class="form-check form-check-inline">
+                    <input type="radio" class="form-check-input" name="copy_to" value="link"
+                        ${ metod === 'link' ? ' checked' : '' }>
+                    <span class="form-check-label">{$smarty.const.TEXT_COPY_AS_LINK}</span>
+                </label>
+                <label class="form-check form-check-inline">
+                    <input type="radio" class="form-check-input" name="copy_to" value="dublicate"
+                        ${ metod === 'dublicate' ? ' checked' : '' }>
+                    <span class="form-check-label">{$smarty.const.TEXT_COPY_AS_DUPLICATE}</span>
+                </label>
+            </div>
+            <label class="control-label">{$smarty.const.TEXT_COPY_ATTRIBUTES} ({$smarty.const.TEXT_COPY_ATTRIBUTES_ONLY})</label>
+            <div class="">
+                <label class="form-check form-check-inline">
+                    <input type="radio" class="form-check-input" name="copy_attributes" value="yes" checked>
+                    <span class="form-check-label">{$smarty.const.TEXT_YES}</span>
+                </label>
+                <label class="form-check form-check-inline">
+                    <input type="radio" class="form-check-input" name="copy_attributes" value="no">
+                    <span class="form-check-label">{$smarty.const.TEXT_NO}</span>
+                </label>
+            </div>`;
         }
         message += '</div>';
-        message += '<script>$(".select2").select2();<\/script>';
+
+        message += `<div class="popup-buttons">
+                        <span class="btn btn-cancel">{$smarty.const.IMAGE_CANCEL|escape:'javascript'}</span>
+                        <span class="btn btn-primary">{$smarty.const.TEXT_YES|escape:'javascript'}</span>
+                    </div>`;
+
+        const $html = $(message);
 
         var post_data = getSelectedCatalogItems();
-        
-        bootbox.dialog({
-                message: message,
 
-                title: "{$smarty.const.TEXT_MOVE_OR_COPY_BACH|escape}",
-                buttons: {
-                        success: {
-                                label: "{$smarty.const.TEXT_YES|escape:'javascript'}",
-                                className: "btn btn-primary",
-                                callback: function() {
-                                    var copy_to = $('input[name="copy_to"]:checked').val();
-                                    var copy_attributes = $('input[name="copy_attributes"]:checked').val();
-                                    var current_category_id = $('#global_id').val();
-                                    var categories_id = $('select[name="move_to_category_id"]').val();
-                                    post_data.push({
-                                        name: 'type', value: 'mixed'
-                                    });
-                                    post_data.push({
-                                        name: 'categories_id', value: categories_id
-                                    });
-                                    post_data.push({
-                                        name: 'copy_to', value: copy_to
-                                    });
-                                    post_data.push({
-                                        name: 'copy_attributes', value: copy_attributes
-                                    });
-                                    post_data.push({
-                                        name: 'current_category_id', value: current_category_id
-                                    });
+        const $popUp = alertMessage($html, 'copy-product-popup')
 
-                                    $.post("{Yii::$app->urlManager->createUrl('categories/copy-move')}", post_data, function(data, status){
-                                        if (status == "success") {
-                                            initCategoryTree(data);
-                                            $("#categorysearch").val('');
-                                            resetStatement();
-                                        } else {
-                                            alert("Request error.");
-                                        }
-                                    },"html");
-                                }
-                        },
-                        cancel: {
-                                label: "{$smarty.const.IMAGE_CANCEL|escape:'javascript'}",
-                                className: "btn-cancel",
-                                callback: function() {
-                                        //console.log("Primary button");
-                                }
-                        }
+        $(".btn-primary", $html).on('click', function () {
+            const copy_to = $('input[name="copy_to"]:checked').val();
+            const copy_attributes = $('input[name="copy_attributes"]:checked').val();
+            const current_category_id = $('#global_id').val();
+            const move_to_category_id = $('select[name="move_to_category_id[]"]').val();
+            if (Array.isArray(move_to_category_id)) {
+                move_to_category_id.forEach(function (item) {
+                    post_data.push({
+                        name: 'categories_id[]', value: item
+                    });
+                });
+            } else {
+                post_data.push({
+                    name: 'categories_id[]', value: move_to_category_id
+                });
+            }
+            post_data.push({
+                name: 'type', value: 'mixed'
+            });
+            post_data.push({
+                name: 'copy_to', value: copy_to
+            });
+            post_data.push({
+                name: 'copy_attributes', value: copy_attributes
+            });
+            post_data.push({
+                name: 'current_category_id', value: current_category_id
+            });
+
+            $.post("{Yii::$app->urlManager->createUrl('categories/copy-move')}", post_data, function(data, status){
+                if (status == "success") {
+                    initCategoryTree(data);
+                    $("#categorysearch").val('');
+                    resetStatement();
+                } else {
+                    alert("Request error.");
                 }
+            },"html");
+
+            $popUp.remove()
         });
-        
-        
+
+        $(".multiple-select-cat", $html).multipleSelect({
+            filter: true,
+            place:'{$smarty.const.TEXT_SEARCH_ITEMS}',
+            //isOpen: true,
+            //keepOpen: true,
+            maxHeight: 300,
+            selectAll: false,
+            data: [
+                {foreach \common\helpers\Categories::get_category_tree(0, '', '', '', false, true) as $item}
+                {
+                    text: wrapCategory2('{addslashes($item.text)}'),
+                    value: '{$item.id}',
+                    {*if in_array($item.id, $cIDs)}
+                    selected: true,
+                    disabled: true
+                    {/if*}
+                },
+                {/foreach}
+            ],
+            onFilter: function (t) {
+                if (t) {
+                    $('.multiple-select-cat').addClass('searching')
+                } else {
+                    $('.multiple-select-cat').removeClass('searching')
+                }
+            }
+        });
+
+        function wrapCategory2(str) {
+            let lastIndex = str.lastIndexOf("&nbsp;&nbsp;&gt;&nbsp;&nbsp;");
+
+            if (lastIndex !== -1) {
+                lastIndex = lastIndex + 28;
+                const startCategory = str.substring(0, lastIndex);
+                const endCategory = str.substring(lastIndex);
+
+                return `<span class="in-category">${ startCategory}</span>${ endCategory}`.replaceAll('&nbsp;', '<span class="nbsp">&nbsp;</span>');
+            }
+
+            return str;
+        }
+
+
     }
 }
 
@@ -1409,7 +1511,32 @@ $(document).ready(function() {
                         var title = $(obj[0]).children('div.tl-wrap-li-left-cat').children('div.dd3-content').children('span.cat_li').children('span.cat_text').text();
                         var categories_id = $(obj[0]).attr('data-id');
                             bootbox.dialog({
-                                message: '<div class=""><label class="control-label">{$smarty.const.TEXT_CHOISE_METHOD} </label><div class=""><label class="radio"><input type="radio" class="uniform" name="copy_to" value="move" checked>{$smarty.const.TEXT_INFO_HEADING_MOVE_PRODUCT}</label><label class="radio"><input type="radio" class="uniform" name="copy_to" value="link">{$smarty.const.TEXT_COPY_AS_LINK}</label><label class="radio"><input type="radio" class="uniform" name="copy_to" value="dublicate">{$smarty.const.TEXT_COPY_AS_DUPLICATE}</label></div><label class="control-label">{$smarty.const.TEXT_COPY_ATTRIBUTES} ({$smarty.const.TEXT_COPY_ATTRIBUTES_ONLY})</label><div class=""><label class="radio"><input type="radio" class="uniform" name="copy_attributes" value="yes" checked>{$smarty.const.TEXT_YES}</label><label class="radio"><input type="radio" class="uniform" name="copy_attributes" value="no">{$smarty.const.TEXT_NO}</label></div></div>',
+                                message: `
+    <div class="">
+        <label class="control-label mb-1">{$smarty.const.TEXT_CHOISE_METHOD} </label>
+        <div class="mb-2">
+            <label class="form-check form-check-inline">
+                <input type="radio" class="form-check-input" name="copy_to" value="move" checked>
+                {$smarty.const.TEXT_INFO_HEADING_MOVE_PRODUCT}
+            </label>
+            <label class="form-check form-check-inline">
+                <input type="radio" class="form-check-input" name="copy_to" value="link">
+                {$smarty.const.TEXT_COPY_AS_LINK}
+            </label>
+            <label class="form-check form-check-inline">
+                <input type="radio" class="form-check-input" name="copy_to" value="dublicate">
+                {$smarty.const.TEXT_COPY_AS_DUPLICATE}
+            </label>
+        </div>
+        <label class="control-label mb-1">{$smarty.const.TEXT_COPY_ATTRIBUTES} ({$smarty.const.TEXT_COPY_ATTRIBUTES_ONLY})</label>
+        <div class="">
+            <label class="form-check form-check-inline">
+                <input type="radio" class="form-check-input" name="copy_attributes" value="yes" checked>{$smarty.const.TEXT_YES}</label>
+            <label class="form-check form-check-inline">
+                <input type="radio" class="form-check-input" name="copy_attributes" value="no">{$smarty.const.TEXT_NO}
+            </label>
+        </div>
+    </div>`,
 
                                 title: "{$smarty.const.TEXT_MOVE_OR_COPY_PRODUCT_TO} " + title,
                                 buttons: {
@@ -1482,7 +1609,20 @@ $(document).ready(function() {
                         var title = $(obj[0]).children('span').text();
                         var categories_id = $(obj[0]).children('span').attr('id');
                         bootbox.dialog({
-                            message: '<div class=""><label class="control-label">{$smarty.const.TEXT_CHOISE_METHOD} </label><div class=""><label class="radio"><input type="radio" class="uniform" name="copy_to" value="move" checked>{$smarty.const.TEXT_INFO_HEADING_MOVE_PRODUCT}</label><label class="radio"><input type="radio" class="uniform" name="copy_to" value="link">{$smarty.const.TEXT_COPY_AS_LINK}</label><label class="radio"><input type="radio" class="uniform" name="copy_to" value="dublicate">{$smarty.const.TEXT_COPY_AS_DUPLICATE}</label></div><label class="control-label">{$smarty.const.TEXT_COPY_ATTRIBUTES} ({$smarty.const.TEXT_COPY_ATTRIBUTES_ONLY})</label><div class=""><label class="radio"><input type="radio" class="uniform" name="copy_attributes" value="yes" checked>{$smarty.const.TEXT_YES}</label><label class="radio"><input type="radio" class="uniform" name="copy_attributes" value="no">{$smarty.const.TEXT_NO}</label></div></div>',
+                            message: `
+    <div class="">
+        <label class="control-label mb-1">{$smarty.const.TEXT_CHOISE_METHOD} </label>
+        <div class="mb-2">
+            <label class="form-check form-check-inline"><input type="radio" class="form-check-input" name="copy_to" value="move" checked>{$smarty.const.TEXT_INFO_HEADING_MOVE_PRODUCT}</label>
+            <label class="form-check form-check-inline"><input type="radio" class="form-check-input" name="copy_to" value="link">{$smarty.const.TEXT_COPY_AS_LINK}</label>
+            <label class="form-check form-check-inline"><input type="radio" class="form-check-input" name="copy_to" value="dublicate">{$smarty.const.TEXT_COPY_AS_DUPLICATE}</label>
+        </div>
+        <label class="control-label mb-1">{$smarty.const.TEXT_COPY_ATTRIBUTES} ({$smarty.const.TEXT_COPY_ATTRIBUTES_ONLY})</label>
+        <div class="">
+            <label class="form-check form-check-inline"><input type="radio" class="form-check-input" name="copy_attributes" value="yes" checked>{$smarty.const.TEXT_YES}</label>
+            <label class="form-check form-check-inline"><input type="radio" class="form-check-input" name="copy_attributes" value="no">{$smarty.const.TEXT_NO}</label>
+        </div>
+    </div>`,
 
                             title: "{$smarty.const.TEXT_MOVE_OR_COPY_PRODUCT_TO} " + title,
                             buttons: {
@@ -1800,6 +1940,7 @@ $(document).ready(function() {
                                 <a href="javascript:void(0)" onclick="switchCatalogState(1);" class="btn btn-on-sel">{$smarty.const.TEXT_ON_SELECTED}</a>
                                 <a href="javascript:void(0)" onclick="switchCatalogState(0);" class="btn btn-off-sel">{$smarty.const.TEXT_OFF_SELECTED}</a>
                                 <a href="javascript:void(0)" onclick="batchMove();" class="btn btn-move">{$smarty.const.IMAGE_MOVE}</a>
+                                <a href="javascript:void(0)" onclick="batchMove('link');" class="btn btn-copy">{$smarty.const.IMAGE_COPY_TO}</a>
                             </div>
                         </div>
                     </div>

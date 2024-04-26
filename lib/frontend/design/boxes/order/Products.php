@@ -49,6 +49,7 @@ class Products extends Widget
         $order_product = [];
         $currencies = Yii::$container->get('currencies');
         $order = $this->params['order'];
+        if (is_array($order->products))
         for ($i = 0, $n = sizeof($order->products); $i < $n; $i++) {
             $order_info['products_image'] = Images::getImageUrl($order->products[$i]['id'], 'Small');
             $order_info['order_product_qty'] = \common\helpers\Product::getVirtualItemQuantity($order->products[$i]['id'], $order->products[$i]['qty']);

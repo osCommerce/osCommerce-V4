@@ -74,10 +74,12 @@ class Report {
                     [
                         'ot_paid' => ['label' => \common\helpers\Translation::getTranslationValue("MODULE_ORDER_TOTAL_PAID_TITLE", 'ordertotal'), 'selected' => $this->isSelectedChart('ot_paid'), 'color' => '#24b71e'],
                         'ot_due' => ['label' => \common\helpers\Translation::getTranslationValue("MODULE_ORDER_TOTAL_DUE_TITLE", 'ordertotal'), 'selected' => $this->isSelectedChart('ot_due'), 'color' => '#ed3d05'],
+                        'ot_refund' => ['label' => \common\helpers\Translation::getTranslationValue("MODULE_ORDER_TOTAL_REFUND_TITLE", 'ordertotal'), 'selected' => $this->isSelectedChart('ot_refund'), 'color' => '#1aa69b'],
                     ],
                     [
                         'ot_gift_wrap' => ['label' => \common\helpers\Translation::getTranslationValue("MODULE_ORDER_TOTAL_GIFT_WRAP_TITLE", 'ordertotal'), 'selected' => $this->isSelectedChart('ot_gift_wrap'), 'color' => '#fe9f00'],
                         'ot_coupon' => ['label' => \common\helpers\Translation::getTranslationValue("MODULE_ORDER_TOTAL_COUPON_TITLE", 'ordertotal'), 'selected' => $this->isSelectedChart('ot_coupon'), 'color' => '#065d60'],
+                        'ot_gv' => ['label' => \common\helpers\Translation::getTranslationValue("MODULE_ORDER_TOTAL_GV_TITLE", 'ordertotal'), 'selected' => $this->isSelectedChart('ot_gv'), 'color' => '#ed3d05'],
                         'ot_loworderfee' => ['label' => \common\helpers\Translation::getTranslationValue("MODULE_ORDER_TOTAL_LOWORDERFEE_TITLE", 'ordertotal'), 'selected' => $this->isSelectedChart('ot_loworderfee'), 'color' => '#1ab8f9'],
                     ],
                     [
@@ -300,6 +302,25 @@ class Report {
             return $this->data['customer_groups'];
         }
         return [];
+    }
+
+    public function getCurrencies() {
+        $variants = [0 => TEXT_ALL];
+        $currencies = Yii::$container->get('currencies');
+        if (is_array($currencies->currencies)) {
+            foreach($currencies->currencies as $currency){
+                $variants[$currency['id']] = $currency['title'] . ' [' . $currency['code'] . ']';
+            }
+        }
+        return $variants;
+    }
+
+    public function getSelectedCurrency()
+    {
+        if (isset($this->data['currency'])) {
+            return $this->data['currency'];
+        }
+        return 0;
     }
 
     public function isDisabledStatus() {

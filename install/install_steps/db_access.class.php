@@ -168,9 +168,9 @@ class db_access extends install_generic {
         }
 
         $content  = '<?php' . "\n";
-        $content  .= "define('HTTP_SERVER', 'http://" . $hostname . "');" . "\n";
+        $content  .= "define('HTTP_SERVER', 'https://" . $hostname . "');" . "\n";
         $content  .= "define('HTTPS_SERVER', 'https://" . $hostname . "');" . "\n";
-        $content  .= "define('HTTP_CATALOG_SERVER', 'http://" . $hostname . "');" . "\n";
+        $content  .= "define('HTTP_CATALOG_SERVER', 'https://" . $hostname . "');" . "\n";
         $content  .= "define('HTTPS_CATALOG_SERVER', 'https://" . $hostname . "');" . "\n";
         $content  .= "define('ENABLE_SSL', true);" . "\n";
         $content  .= "define('ENABLE_SSL_CATALOG', true);" . "\n";
@@ -225,11 +225,16 @@ class db_access extends install_generic {
         $db_query = mysqli_query($link, "SELECT table_name FROM information_schema.tables WHERE table_schema = '".$this->dbname."'");
         $countries = [];
         while ($result = mysqli_fetch_array($db_query, MYSQLI_ASSOC)) {
+            $tableName = isset($result['table_name']) ? $result['table_name'] : $result['TABLE_NAME']; // mysql8
             if (!isset($turnOffForeignKeys)) {
                 mysqli_query($link, "SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;");
                 $turnOffForeignKeys = true;
             }
-            mysqli_query($link, "DROP TABLE IF EXISTS `" . $result['table_name'] . "`;");
+            $sql = "DROP TABLE IF EXISTS `$tableName`;";
+            $res = mysqli_query($link, $sql);
+            if (!$res) {
+                $this->log('install_error', sprintf("Can't drop table %s: %s", $tableName, mysqli_error($link)), $sql);
+            }
         }
 
         $sqls = $this->parse_sql_file($restore_from);

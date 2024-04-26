@@ -53,7 +53,7 @@ class FontFileNameTest extends TestCase
         self::assertSame($expected, basename($result));
     }
 
-    public function providerDefault(): array
+    public static function providerDefault(): array
     {
         return [
             ['arial.ttf', ['name' => 'Arial']],
@@ -95,7 +95,7 @@ class FontFileNameTest extends TestCase
         self::assertSame($expected, ucfirst(basename($result))); // allow for Windows case-insensitivity
     }
 
-    public function providerMac(): array
+    public static function providerMac(): array
     {
         return [
             ['Arial.ttf', ['name' => 'Arial']],
@@ -141,7 +141,7 @@ class FontFileNameTest extends TestCase
         self::assertSame($expected, basename($result));
     }
 
-    public function providerOverride(): array
+    public static function providerOverride(): array
     {
         return [
             ['extrafont.ttf', ['name' => 'Arial']],
@@ -149,6 +149,37 @@ class FontFileNameTest extends TestCase
             ['extrafonti.ttf', ['name' => 'Arial', 'italic' => true]],
             ['extrafontbi.ttf', ['name' => 'Arial', 'bold' => true, 'italic' => true]],
             ['cour.ttf', ['name' => 'Courier New']],
+        ];
+    }
+
+    /**
+     * @dataProvider providerOverrideAbsolute
+     */
+    public function testOverrideFilenamesAbsolute(string $expected, array $fontArray): void
+    {
+        $realPath = realpath(self::MAC_DIRECTORY) . DIRECTORY_SEPARATOR;
+        Font::setTrueTypeFontPath(self::DEFAULT_DIRECTORY);
+        Font::setExtraFontArray([
+            'Arial' => [
+                'x' => $realPath . 'Arial.ttf',
+                'xb' => $realPath . 'Arial Bold.ttf',
+                'xi' => $realPath . 'Arial Italic.ttf',
+                'xbi' => $realPath . 'Arial Bold Italic.ttf',
+            ],
+        ]);
+        $font = (new StyleFont())->applyFromArray($fontArray);
+        $result = Font::getTrueTypeFontFileFromFont($font);
+        self::assertSame($expected, basename($result));
+    }
+
+    public static function providerOverrideAbsolute(): array
+    {
+        return [
+            'absolute path normal' => ['Arial.ttf', ['name' => 'Arial']],
+            'absolute path bold' => ['Arial Bold.ttf', ['name' => 'Arial', 'bold' => true]],
+            'absolute path italic' => ['Arial Italic.ttf', ['name' => 'Arial', 'italic' => true]],
+            'absolute path bold italic' => ['Arial Bold Italic.ttf', ['name' => 'Arial', 'bold' => true, 'italic' => true]],
+            'non-absolute path uses TrueTypeFontPath' => ['cour.ttf', ['name' => 'Courier New']],
         ];
     }
 }

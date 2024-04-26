@@ -3,10 +3,13 @@
 namespace PHPStan\PhpDocParser\Parser;
 
 use Exception;
+use PHPStan\PhpDocParser\Ast\Attribute;
 use PHPStan\PhpDocParser\Ast\ConstExpr\ConstExprFloatNode;
 use PHPStan\PhpDocParser\Ast\ConstExpr\ConstExprIntegerNode;
-use PHPStan\PhpDocParser\Ast\ConstExpr\ConstExprStringNode;
 use PHPStan\PhpDocParser\Ast\ConstExpr\ConstFetchNode;
+use PHPStan\PhpDocParser\Ast\ConstExpr\QuoteAwareConstExprStringNode;
+use PHPStan\PhpDocParser\Ast\Node;
+use PHPStan\PhpDocParser\Ast\NodeTraverser;
 use PHPStan\PhpDocParser\Ast\Type\ArrayShapeItemNode;
 use PHPStan\PhpDocParser\Ast\Type\ArrayShapeNode;
 use PHPStan\PhpDocParser\Ast\Type\ArrayTypeNode;
@@ -26,8 +29,10 @@ use PHPStan\PhpDocParser\Ast\Type\ThisTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\TypeNode;
 use PHPStan\PhpDocParser\Ast\Type\UnionTypeNode;
 use PHPStan\PhpDocParser\Lexer\Lexer;
+use PHPStan\PhpDocParser\Printer\Printer;
 use PHPUnit\Framework\TestCase;
 use function get_class;
+use function strpos;
 use const PHP_EOL;
 
 class TypeParserTest extends TestCase
@@ -43,7 +48,7 @@ class TypeParserTest extends TestCase
 	{
 		parent::setUp();
 		$this->lexer = new Lexer();
-		$this->typeParser = new TypeParser(new ConstExprParser());
+		$this->typeParser = new TypeParser(new ConstExprParser(true, true), true);
 	}
 
 
@@ -64,10 +69,72 @@ class TypeParserTest extends TestCase
 		$this->assertSame((string) $expectedResult, (string) $typeNode);
 		$this->assertInstanceOf(get_class($expectedResult), $typeNode);
 		$this->assertEquals($expectedResult, $typeNode);
-		$this->assertSame($nextTokenType, $tokens->currentTokenType());
+		$this->assertSame($nextTokenType, $tokens->currentTokenType(), Lexer::TOKEN_LABELS[$nextTokenType]);
+
+		if (strpos((string) $expectedResult, '$ref') !== false) {
+			// weird case with $ref inside double-quoted string - not really possible in PHP
+			return;
+		}
+
+		$this->assertPrintedNodeViaToString($typeNode);
+		$this->assertPrintedNodeViaPrinter($typeNode);
 	}
 
 
+	private function assertPrintedNodeViaToString(TypeNode $typeNode): void
+	{
+		$this->assertPrintedNode($typeNode, (string) $typeNode);
+	}
+
+
+	private function assertPrintedNodeViaPrinter(TypeNode $typeNode): void
+	{
+		$printer = new Printer();
+		$this->assertPrintedNode($typeNode, $printer->print($typeNode));
+	}
+
+
+	private function assertPrintedNode(TypeNode $typeNode, string $typeNodeString): void
+	{
+		$typeNodeTokens = new TokenIterator($this->lexer->tokenize($typeNodeString));
+		$parsedAgainTypeNode = $this->typeParser->parse($typeNodeTokens);
+		$this->assertSame((string) $typeNode, (string) $parsedAgainTypeNode);
+		$this->assertInstanceOf(get_class($typeNode), $parsedAgainTypeNode);
+		$this->assertEquals($typeNode, $parsedAgainTypeNode);
+	}
+
+
+	/**
+	 * @dataProvider provideParseData
+	 * @param TypeNode|Exception $expectedResult
+	 */
+	public function testVerifyAttributes(string $input, $expectedResult): void
+	{
+		if ($expectedResult instanceof Exception) {
+			$this->expectException(get_class($expectedResult));
+			$this->expectExceptionMessage($expectedResult->getMessage());
+		}
+
+		$usedAttributes = ['lines' => true, 'indexes' => true];
+		$typeParser = new TypeParser(new ConstExprParser(true, true, $usedAttributes), true, $usedAttributes);
+		$tokens = new TokenIterator($this->lexer->tokenize($input));
+
+		$visitor = new NodeCollectingVisitor();
+		$traverser = new NodeTraverser([$visitor]);
+		$traverser->traverse([$typeParser->parse($tokens)]);
+
+		foreach ($visitor->nodes as $node) {
+			$this->assertNotNull($node->getAttribute(Attribute::START_LINE), (string) $node);
+			$this->assertNotNull($node->getAttribute(Attribute::END_LINE), (string) $node);
+			$this->assertNotNull($node->getAttribute(Attribute::START_INDEX), (string) $node);
+			$this->assertNotNull($node->getAttribute(Attribute::END_INDEX), (string) $node);
+		}
+	}
+
+
+	/**
+	 * @return array<mixed>
+	 */
 	public function provideParseData(): array
 	{
 		return [
@@ -481,7 +548,7 @@ class TypeParserTest extends TestCase
 				'array{"a": int}',
 				new ArrayShapeNode([
 					new ArrayShapeItemNode(
-						new ConstExprStringNode('a'),
+						new QuoteAwareConstExprStringNode('a', QuoteAwareConstExprStringNode::DOUBLE_QUOTED),
 						false,
 						new IdentifierTypeNode('int')
 					),
@@ -491,7 +558,7 @@ class TypeParserTest extends TestCase
 				'array{\'a\': int}',
 				new ArrayShapeNode([
 					new ArrayShapeItemNode(
-						new ConstExprStringNode('a'),
+						new QuoteAwareConstExprStringNode('a', QuoteAwareConstExprStringNode::SINGLE_QUOTED),
 						false,
 						new IdentifierTypeNode('int')
 					),
@@ -501,7 +568,7 @@ class TypeParserTest extends TestCase
 				'array{\'$ref\': int}',
 				new ArrayShapeNode([
 					new ArrayShapeItemNode(
-						new ConstExprStringNode('$ref'),
+						new QuoteAwareConstExprStringNode('$ref', QuoteAwareConstExprStringNode::SINGLE_QUOTED),
 						false,
 						new IdentifierTypeNode('int')
 					),
@@ -511,7 +578,7 @@ class TypeParserTest extends TestCase
 				'array{"$ref": int}',
 				new ArrayShapeNode([
 					new ArrayShapeItemNode(
-						new ConstExprStringNode('$ref'),
+						new QuoteAwareConstExprStringNode('$ref', QuoteAwareConstExprStringNode::DOUBLE_QUOTED),
 						false,
 						new IdentifierTypeNode('int')
 					),
@@ -724,6 +791,22 @@ class TypeParserTest extends TestCase
 							GenericTypeNode::VARIANCE_INVARIANT,
 						]
 					)
+				),
+			],
+			[
+				'callable(): Foo<Bar>[]',
+				new CallableTypeNode(
+					new IdentifierTypeNode('callable'),
+					[],
+					new ArrayTypeNode(new GenericTypeNode(
+						new IdentifierTypeNode('Foo'),
+						[
+							new IdentifierTypeNode('Bar'),
+						],
+						[
+							GenericTypeNode::VARIANCE_INVARIANT,
+						]
+					))
 				),
 			],
 			[
@@ -979,8 +1062,8 @@ class TypeParserTest extends TestCase
 			[
 				"'foo'|'bar'",
 				new UnionTypeNode([
-					new ConstTypeNode(new ConstExprStringNode('foo')),
-					new ConstTypeNode(new ConstExprStringNode('bar')),
+					new ConstTypeNode(new QuoteAwareConstExprStringNode('foo', QuoteAwareConstExprStringNode::SINGLE_QUOTED)),
+					new ConstTypeNode(new QuoteAwareConstExprStringNode('bar', QuoteAwareConstExprStringNode::SINGLE_QUOTED)),
 				]),
 			],
 			[
@@ -992,12 +1075,44 @@ class TypeParserTest extends TestCase
 				new ConstTypeNode(new ConstExprIntegerNode('123')),
 			],
 			[
+				'123_456',
+				new ConstTypeNode(new ConstExprIntegerNode('123456')),
+			],
+			[
+				'_123',
+				new IdentifierTypeNode('_123'),
+			],
+			[
+				'123_',
+				new ConstTypeNode(new ConstExprIntegerNode('123')),
+				Lexer::TOKEN_IDENTIFIER,
+			],
+			[
 				'123.2',
 				new ConstTypeNode(new ConstExprFloatNode('123.2')),
 			],
 			[
+				'123_456.789_012',
+				new ConstTypeNode(new ConstExprFloatNode('123456.789012')),
+			],
+			[
+				'+0x10_20|+8e+2 | -0b11',
+				new UnionTypeNode([
+					new ConstTypeNode(new ConstExprIntegerNode('+0x1020')),
+					new ConstTypeNode(new ConstExprFloatNode('+8e+2')),
+					new ConstTypeNode(new ConstExprIntegerNode('-0b11')),
+				]),
+			],
+			[
+				'18_446_744_073_709_551_616|8.2023437675747321e-18_446_744_073_709_551_617',
+				new UnionTypeNode([
+					new ConstTypeNode(new ConstExprIntegerNode('18446744073709551616')),
+					new ConstTypeNode(new ConstExprFloatNode('8.2023437675747321e-18446744073709551617')),
+				]),
+			],
+			[
 				'"bar"',
-				new ConstTypeNode(new ConstExprStringNode('bar')),
+				new ConstTypeNode(new QuoteAwareConstExprStringNode('bar', QuoteAwareConstExprStringNode::DOUBLE_QUOTED)),
 			],
 			[
 				'Foo::FOO_*',
@@ -1035,7 +1150,7 @@ class TypeParserTest extends TestCase
 			[
 				'( "foo" | Foo::FOO_* )',
 				new UnionTypeNode([
-					new ConstTypeNode(new ConstExprStringNode('foo')),
+					new ConstTypeNode(new QuoteAwareConstExprStringNode('foo', QuoteAwareConstExprStringNode::DOUBLE_QUOTED)),
 					new ConstTypeNode(new ConstFetchNode('Foo', 'FOO_*')),
 				]),
 			],
@@ -1701,7 +1816,7 @@ class TypeParserTest extends TestCase
 				'object{"a": int}',
 				new ObjectShapeNode([
 					new ObjectShapeItemNode(
-						new ConstExprStringNode('a'),
+						new QuoteAwareConstExprStringNode('a', QuoteAwareConstExprStringNode::DOUBLE_QUOTED),
 						false,
 						new IdentifierTypeNode('int')
 					),
@@ -1711,7 +1826,7 @@ class TypeParserTest extends TestCase
 				'object{\'a\': int}',
 				new ObjectShapeNode([
 					new ObjectShapeItemNode(
-						new ConstExprStringNode('a'),
+						new QuoteAwareConstExprStringNode('a', QuoteAwareConstExprStringNode::SINGLE_QUOTED),
 						false,
 						new IdentifierTypeNode('int')
 					),
@@ -1721,7 +1836,7 @@ class TypeParserTest extends TestCase
 				'object{\'$ref\': int}',
 				new ObjectShapeNode([
 					new ObjectShapeItemNode(
-						new ConstExprStringNode('$ref'),
+						new QuoteAwareConstExprStringNode('$ref', QuoteAwareConstExprStringNode::SINGLE_QUOTED),
 						false,
 						new IdentifierTypeNode('int')
 					),
@@ -1731,7 +1846,7 @@ class TypeParserTest extends TestCase
 				'object{"$ref": int}',
 				new ObjectShapeNode([
 					new ObjectShapeItemNode(
-						new ConstExprStringNode('$ref'),
+						new QuoteAwareConstExprStringNode('$ref', QuoteAwareConstExprStringNode::DOUBLE_QUOTED),
 						false,
 						new IdentifierTypeNode('int')
 					),
@@ -1875,7 +1990,636 @@ class TypeParserTest extends TestCase
 					),
 				]),
 			],
+			[
+				'Closure(Foo): (Closure(Foo): Bar)',
+				new CallableTypeNode(
+					new IdentifierTypeNode('Closure'),
+					[
+						new CallableTypeParameterNode(new IdentifierTypeNode('Foo'), false, false, '', false),
+					],
+					new CallableTypeNode(
+						new IdentifierTypeNode('Closure'),
+						[
+							new CallableTypeParameterNode(new IdentifierTypeNode('Foo'), false, false, '', false),
+						],
+						new IdentifierTypeNode('Bar')
+					)
+				),
+			],
+			[
+				'callable(): ?int',
+				new CallableTypeNode(new IdentifierTypeNode('callable'), [], new NullableTypeNode(new IdentifierTypeNode('int'))),
+			],
+			[
+				'callable(): object{foo: int}',
+				new CallableTypeNode(new IdentifierTypeNode('callable'), [], new ObjectShapeNode([
+					new ObjectShapeItemNode(new IdentifierTypeNode('foo'), false, new IdentifierTypeNode('int')),
+				])),
+			],
+			[
+				'callable(): object{foo: int}[]',
+				new CallableTypeNode(
+					new IdentifierTypeNode('callable'),
+					[],
+					new ArrayTypeNode(
+						new ObjectShapeNode([
+							new ObjectShapeItemNode(new IdentifierTypeNode('foo'), false, new IdentifierTypeNode('int')),
+						])
+					)
+				),
+			],
+			[
+				'callable(): int[][][]',
+				new CallableTypeNode(new IdentifierTypeNode('callable'), [], new ArrayTypeNode(new ArrayTypeNode(new ArrayTypeNode(new IdentifierTypeNode('int'))))),
+			],
+			[
+				'callable(): (int[][][])',
+				new CallableTypeNode(new IdentifierTypeNode('callable'), [], new ArrayTypeNode(new ArrayTypeNode(new ArrayTypeNode(new IdentifierTypeNode('int'))))),
+			],
+			[
+				'(callable(): int[])[][]',
+				new ArrayTypeNode(
+					new ArrayTypeNode(
+						new CallableTypeNode(new IdentifierTypeNode('callable'), [], new ArrayTypeNode(new IdentifierTypeNode('int')))
+					)
+				),
+			],
+			[
+				'callable(): $this',
+				new CallableTypeNode(new IdentifierTypeNode('callable'), [], new ThisTypeNode()),
+			],
+			[
+				'callable(): $this[]',
+				new CallableTypeNode(new IdentifierTypeNode('callable'), [], new ArrayTypeNode(new ThisTypeNode())),
+			],
+			[
+				'2.5|3',
+				new UnionTypeNode([
+					new ConstTypeNode(new ConstExprFloatNode('2.5')),
+					new ConstTypeNode(new ConstExprIntegerNode('3')),
+				]),
+			],
+			[
+				'callable(): 3.5',
+				new CallableTypeNode(new IdentifierTypeNode('callable'), [], new ConstTypeNode(new ConstExprFloatNode('3.5'))),
+			],
+			[
+				'callable(): 3.5[]',
+				new CallableTypeNode(new IdentifierTypeNode('callable'), [], new ArrayTypeNode(
+					new ConstTypeNode(new ConstExprFloatNode('3.5'))
+				)),
+			],
+			[
+				'callable(): Foo',
+				new CallableTypeNode(new IdentifierTypeNode('callable'), [], new IdentifierTypeNode('Foo')),
+			],
+			[
+				'callable(): (Foo)[]',
+				new CallableTypeNode(new IdentifierTypeNode('callable'), [], new ArrayTypeNode(new IdentifierTypeNode('Foo'))),
+			],
+			[
+				'callable(): Foo::BAR',
+				new CallableTypeNode(new IdentifierTypeNode('callable'), [], new ConstTypeNode(new ConstFetchNode('Foo', 'BAR'))),
+			],
+			[
+				'callable(): Foo::*',
+				new CallableTypeNode(new IdentifierTypeNode('callable'), [], new ConstTypeNode(new ConstFetchNode('Foo', '*'))),
+			],
+			[
+				'?Foo[]',
+				new NullableTypeNode(new ArrayTypeNode(new IdentifierTypeNode('Foo'))),
+			],
+			[
+				'callable(): ?Foo',
+				new CallableTypeNode(new IdentifierTypeNode('callable'), [], new NullableTypeNode(new IdentifierTypeNode('Foo'))),
+			],
+			[
+				'callable(): ?Foo[]',
+				new CallableTypeNode(new IdentifierTypeNode('callable'), [], new NullableTypeNode(new ArrayTypeNode(new IdentifierTypeNode('Foo')))),
+			],
+			[
+				'?(Foo|Bar)',
+				new NullableTypeNode(new UnionTypeNode([
+					new IdentifierTypeNode('Foo'),
+					new IdentifierTypeNode('Bar'),
+				])),
+			],
+			[
+				'Foo | (Bar & Baz)',
+				new UnionTypeNode([
+					new IdentifierTypeNode('Foo'),
+					new IntersectionTypeNode([
+						new IdentifierTypeNode('Bar'),
+						new IdentifierTypeNode('Baz'),
+					]),
+				]),
+			],
+			[
+				'(?Foo) | Bar',
+				new UnionTypeNode([
+					new NullableTypeNode(new IdentifierTypeNode('Foo')),
+					new IdentifierTypeNode('Bar'),
+				]),
+			],
+			[
+				'?(Foo|Bar)',
+				new NullableTypeNode(new UnionTypeNode([
+					new IdentifierTypeNode('Foo'),
+					new IdentifierTypeNode('Bar'),
+				])),
+			],
+			[
+				'?(Foo&Bar)',
+				new NullableTypeNode(new IntersectionTypeNode([
+					new IdentifierTypeNode('Foo'),
+					new IdentifierTypeNode('Bar'),
+				])),
+			],
+			[
+				'?Foo[]',
+				new NullableTypeNode(new ArrayTypeNode(new IdentifierTypeNode('Foo'))),
+			],
+			[
+				'(?Foo)[]',
+				new ArrayTypeNode(new NullableTypeNode(new IdentifierTypeNode('Foo'))),
+			],
+			[
+				'Foo | Bar | (Baz | Lorem)',
+				new UnionTypeNode([
+					new IdentifierTypeNode('Foo'),
+					new IdentifierTypeNode('Bar'),
+					new UnionTypeNode([
+						new IdentifierTypeNode('Baz'),
+						new IdentifierTypeNode('Lorem'),
+					]),
+				]),
+			],
+			[
+				'Closure(Container):($serviceId is class-string<TService> ? TService : mixed)',
+				new CallableTypeNode(new IdentifierTypeNode('Closure'), [
+					new CallableTypeParameterNode(new IdentifierTypeNode('Container'), false, false, '', false),
+				], new ConditionalTypeForParameterNode(
+					'$serviceId',
+					new GenericTypeNode(new IdentifierTypeNode('class-string'), [new IdentifierTypeNode('TService')], ['invariant']),
+					new IdentifierTypeNode('TService'),
+					new IdentifierTypeNode('mixed'),
+					false
+				)),
+			],
+			[
+				'MongoCollection <p>Returns a collection object representing the new collection.</p>',
+				new IdentifierTypeNode('MongoCollection'),
+				Lexer::TOKEN_OPEN_ANGLE_BRACKET,
+			],
 		];
+	}
+
+	/**
+	 * @return array<mixed>
+	 */
+	public function dataLinesAndIndexes(): iterable
+	{
+		yield [
+			'int | object{foo: int}[]',
+			[
+				[
+					static function (TypeNode $typeNode): TypeNode {
+						return $typeNode;
+					},
+					'int | object{foo: int}[]',
+					1,
+					1,
+					0,
+					12,
+				],
+				[
+					static function (UnionTypeNode $typeNode): TypeNode {
+						return $typeNode->types[0];
+					},
+					'int',
+					1,
+					1,
+					0,
+					0,
+				],
+				[
+					static function (UnionTypeNode $typeNode): TypeNode {
+						return $typeNode->types[1];
+					},
+					'object{foo: int}[]',
+					1,
+					1,
+					4,
+					12,
+				],
+			],
+		];
+
+		yield [
+			'int | object{foo: int}[]    ',
+			[
+				[
+					static function (TypeNode $typeNode): TypeNode {
+						return $typeNode;
+					},
+					'int | object{foo: int}[]',
+					1,
+					1,
+					0,
+					12,
+				],
+				[
+					static function (UnionTypeNode $typeNode): TypeNode {
+						return $typeNode->types[0];
+					},
+					'int',
+					1,
+					1,
+					0,
+					0,
+				],
+				[
+					static function (UnionTypeNode $typeNode): TypeNode {
+						return $typeNode->types[1];
+					},
+					'object{foo: int}[]',
+					1,
+					1,
+					4,
+					12,
+				],
+			],
+		];
+
+		yield [
+			'array{
+				a: int,
+				b: string
+			 }',
+			[
+				[
+					static function (TypeNode $typeNode): TypeNode {
+						return $typeNode;
+					},
+					'array{
+				a: int,
+				b: string
+			 }',
+					1,
+					4,
+					0,
+					14,
+				],
+			],
+		];
+
+		yield [
+			'callable(Foo, Bar): void',
+			[
+				[
+					static function (TypeNode $typeNode): TypeNode {
+						return $typeNode;
+					},
+					'callable(Foo, Bar): void',
+					1,
+					1,
+					0,
+					9,
+				],
+				[
+					static function (CallableTypeNode $typeNode): TypeNode {
+						return $typeNode->identifier;
+					},
+					'callable',
+					1,
+					1,
+					0,
+					0,
+				],
+				[
+					static function (CallableTypeNode $typeNode): Node {
+						return $typeNode->parameters[0];
+					},
+					'Foo',
+					1,
+					1,
+					2,
+					2,
+				],
+				[
+					static function (CallableTypeNode $typeNode): TypeNode {
+						return $typeNode->returnType;
+					},
+					'void',
+					1,
+					1,
+					9,
+					9,
+				],
+			],
+		];
+
+		yield [
+			'$this',
+			[
+				[
+					static function (TypeNode $typeNode): TypeNode {
+						return $typeNode;
+					},
+					'$this',
+					1,
+					1,
+					0,
+					0,
+				],
+			],
+		];
+
+		yield [
+			'array{foo: int}',
+			[
+				[
+					static function (TypeNode $typeNode): TypeNode {
+						return $typeNode;
+					},
+					'array{foo: int}',
+					1,
+					1,
+					0,
+					6,
+				],
+				[
+					static function (ArrayShapeNode $typeNode): TypeNode {
+						return $typeNode->items[0];
+					},
+					'foo: int',
+					1,
+					1,
+					2,
+					5,
+				],
+			],
+		];
+
+		yield [
+			'array{}',
+			[
+				[
+					static function (TypeNode $typeNode): TypeNode {
+						return $typeNode;
+					},
+					'array{}',
+					1,
+					1,
+					0,
+					2,
+				],
+			],
+		];
+
+		yield [
+			'object{foo: int}',
+			[
+				[
+					static function (TypeNode $typeNode): TypeNode {
+						return $typeNode;
+					},
+					'object{foo: int}',
+					1,
+					1,
+					0,
+					6,
+				],
+				[
+					static function (ObjectShapeNode $typeNode): TypeNode {
+						return $typeNode->items[0];
+					},
+					'foo: int',
+					1,
+					1,
+					2,
+					5,
+				],
+			],
+		];
+
+		yield [
+			'object{}',
+			[
+				[
+					static function (TypeNode $typeNode): TypeNode {
+						return $typeNode;
+					},
+					'object{}',
+					1,
+					1,
+					0,
+					2,
+				],
+			],
+		];
+
+		yield [
+			'object{}[]',
+			[
+				[
+					static function (TypeNode $typeNode): TypeNode {
+						return $typeNode;
+					},
+					'object{}[]',
+					1,
+					1,
+					0,
+					4,
+				],
+			],
+		];
+
+		yield [
+			'int[][][]',
+			[
+				[
+					static function (TypeNode $typeNode): TypeNode {
+						return $typeNode;
+					},
+					'int[][][]',
+					1,
+					1,
+					0,
+					6,
+				],
+				[
+					static function (ArrayTypeNode $typeNode): TypeNode {
+						return $typeNode->type;
+					},
+					'int[][]',
+					1,
+					1,
+					0,
+					4,
+				],
+				[
+					static function (ArrayTypeNode $typeNode): TypeNode {
+						if (!$typeNode->type instanceof ArrayTypeNode) {
+							throw new Exception();
+						}
+
+						return $typeNode->type->type;
+					},
+					'int[]',
+					1,
+					1,
+					0,
+					2,
+				],
+				[
+					static function (ArrayTypeNode $typeNode): TypeNode {
+						if (!$typeNode->type instanceof ArrayTypeNode) {
+							throw new Exception();
+						}
+						if (!$typeNode->type->type instanceof ArrayTypeNode) {
+							throw new Exception();
+						}
+
+						return $typeNode->type->type->type;
+					},
+					'int',
+					1,
+					1,
+					0,
+					0,
+				],
+			],
+		];
+
+		yield [
+			'int[foo][bar][baz]',
+			[
+				[
+					static function (TypeNode $typeNode): TypeNode {
+						return $typeNode;
+					},
+					'int[foo][bar][baz]',
+					1,
+					1,
+					0,
+					9,
+				],
+				[
+					static function (OffsetAccessTypeNode $typeNode): TypeNode {
+						return $typeNode->type;
+					},
+					'int[foo][bar]',
+					1,
+					1,
+					0,
+					6,
+				],
+				[
+					static function (OffsetAccessTypeNode $typeNode): TypeNode {
+						return $typeNode->offset;
+					},
+					'baz',
+					1,
+					1,
+					8,
+					8,
+				],
+				[
+					static function (OffsetAccessTypeNode $typeNode): TypeNode {
+						if (!$typeNode->type instanceof OffsetAccessTypeNode) {
+							throw new Exception();
+						}
+
+						return $typeNode->type->type;
+					},
+					'int[foo]',
+					1,
+					1,
+					0,
+					3,
+				],
+				[
+					static function (OffsetAccessTypeNode $typeNode): TypeNode {
+						if (!$typeNode->type instanceof OffsetAccessTypeNode) {
+							throw new Exception();
+						}
+
+						return $typeNode->type->offset;
+					},
+					'bar',
+					1,
+					1,
+					5,
+					5,
+				],
+				[
+					static function (OffsetAccessTypeNode $typeNode): TypeNode {
+						if (!$typeNode->type instanceof OffsetAccessTypeNode) {
+							throw new Exception();
+						}
+						if (!$typeNode->type->type instanceof OffsetAccessTypeNode) {
+							throw new Exception();
+						}
+
+						return $typeNode->type->type->type;
+					},
+					'int',
+					1,
+					1,
+					0,
+					0,
+				],
+				[
+					static function (OffsetAccessTypeNode $typeNode): TypeNode {
+						if (!$typeNode->type instanceof OffsetAccessTypeNode) {
+							throw new Exception();
+						}
+						if (!$typeNode->type->type instanceof OffsetAccessTypeNode) {
+							throw new Exception();
+						}
+
+						return $typeNode->type->type->offset;
+					},
+					'foo',
+					1,
+					1,
+					2,
+					2,
+				],
+			],
+		];
+	}
+
+	/**
+	 * @dataProvider dataLinesAndIndexes
+	 * @param list<array{callable(Node): Node, string, int, int, int, int}> $assertions
+	 */
+	public function testLinesAndIndexes(string $input, array $assertions): void
+	{
+		$tokensArray = $this->lexer->tokenize($input);
+		$tokens = new TokenIterator($tokensArray);
+		$usedAttributes = [
+			'lines' => true,
+			'indexes' => true,
+		];
+		$typeParser = new TypeParser(new ConstExprParser(true, true), true, $usedAttributes);
+		$typeNode = $typeParser->parse($tokens);
+
+		foreach ($assertions as [$callable, $expectedContent, $startLine, $endLine, $startIndex, $endIndex]) {
+			$typeToAssert = $callable($typeNode);
+
+			$this->assertSame($startLine, $typeToAssert->getAttribute(Attribute::START_LINE));
+			$this->assertSame($endLine, $typeToAssert->getAttribute(Attribute::END_LINE));
+			$this->assertSame($startIndex, $typeToAssert->getAttribute(Attribute::START_INDEX));
+			$this->assertSame($endIndex, $typeToAssert->getAttribute(Attribute::END_INDEX));
+
+			$content = '';
+			for ($i = $startIndex; $i <= $endIndex; $i++) {
+				$content .= $tokensArray[$i][Lexer::VALUE_OFFSET];
+			}
+			$this->assertSame($expectedContent, $content);
+		}
 	}
 
 }

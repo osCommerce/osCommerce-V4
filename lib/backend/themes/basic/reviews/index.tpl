@@ -274,6 +274,29 @@ function saveItem() {
     return false;
 }
 
+function confirmItemCopy( item_id) {
+    $.post("{Yii::$app->urlManager->createUrl('reviews/confirmitemcopy')}", {  'item_id': item_id }, function (data, status) {
+        if (status == "success") {
+            $('#reviews_management_data .scroll_col').html(data);
+        } else {
+            alert("Request error.");
+        }
+    }, "html");
+    return false;
+}
+
+function itemCopy() {
+    $.post("{Yii::$app->urlManager->createUrl('reviews/itemcopy')}", $('#copy_item_form').serialize(), function (data, status) {
+        if (status == "success") {
+            $('#reviews_management_data .scroll_col').html("");
+            resetStatement();
+        } else {
+            alert("Request error.");
+        }
+    }, "html");
+    return false;
+}
+
 function deleteItemConfirm( item_id) {
     $.post("{Yii::$app->urlManager->createUrl('reviews/confirmitemdelete')}", {  'item_id': item_id }, function (data, status) {
         if (status == "success") {

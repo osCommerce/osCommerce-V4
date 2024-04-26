@@ -113,19 +113,19 @@ final class ecommerce extends AbstractGoogle {
                 $return .= '<pre>' . <<<EOD
 gtag('event', 'purchase', {
   "transaction_id": "228517",
-  "affiliation": "Trueloaded",
   "value": 7.05,
   "tax": 0.76,
   "shipping": 2.50,
+  "currency": "GBP",
   "items": [
     {
       "item_id": "11715",
       "item_name": "Test product",
-      "price": "3.79"
+      "price": 3.79
       "item_brand": "Brand name",
       "item_category": "Category name",
       "item_variant": "Black",
-      "quantity": "1",
+      "quantity": 1,
     }
   ]
 });

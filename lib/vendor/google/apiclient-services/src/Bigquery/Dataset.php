@@ -54,6 +54,8 @@ class Dataset extends \Google\Collection
    * @var string
    */
   public $etag;
+  protected $externalDatasetReferenceType = ExternalDatasetReference::class;
+  protected $externalDatasetReferenceDataType = '';
   /**
    * @var string
    */
@@ -78,6 +80,8 @@ class Dataset extends \Google\Collection
    * @var string
    */
   public $lastModifiedTime;
+  protected $linkedDatasetSourceType = LinkedDatasetSource::class;
+  protected $linkedDatasetSourceDataType = '';
   /**
    * @var string
    */
@@ -100,6 +104,10 @@ class Dataset extends \Google\Collection
   public $storageBillingModel;
   protected $tagsType = DatasetTags::class;
   protected $tagsDataType = 'array';
+  /**
+   * @var string
+   */
+  public $type;
 
   /**
    * @param DatasetAccess[]
@@ -242,6 +250,20 @@ class Dataset extends \Google\Collection
     return $this->etag;
   }
   /**
+   * @param ExternalDatasetReference
+   */
+  public function setExternalDatasetReference(ExternalDatasetReference $externalDatasetReference)
+  {
+    $this->externalDatasetReference = $externalDatasetReference;
+  }
+  /**
+   * @return ExternalDatasetReference
+   */
+  public function getExternalDatasetReference()
+  {
+    return $this->externalDatasetReference;
+  }
+  /**
    * @param string
    */
   public function setFriendlyName($friendlyName)
@@ -326,6 +348,20 @@ class Dataset extends \Google\Collection
     return $this->lastModifiedTime;
   }
   /**
+   * @param LinkedDatasetSource
+   */
+  public function setLinkedDatasetSource(LinkedDatasetSource $linkedDatasetSource)
+  {
+    $this->linkedDatasetSource = $linkedDatasetSource;
+  }
+  /**
+   * @return LinkedDatasetSource
+   */
+  public function getLinkedDatasetSource()
+  {
+    return $this->linkedDatasetSource;
+  }
+  /**
    * @param string
    */
   public function setLocation($location)
@@ -408,6 +444,20 @@ class Dataset extends \Google\Collection
   public function getTags()
   {
     return $this->tags;
+  }
+  /**
+   * @param string
+   */
+  public function setType($type)
+  {
+    $this->type = $type;
+  }
+  /**
+   * @return string
+   */
+  public function getType()
+  {
+    return $this->type;
   }
 }
 

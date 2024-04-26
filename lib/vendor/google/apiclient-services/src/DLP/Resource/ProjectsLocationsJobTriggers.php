@@ -46,6 +46,7 @@ class ProjectsLocationsJobTriggers extends \Google\Service\Resource
    * @param GooglePrivacyDlpV2ActivateJobTriggerRequest $postBody
    * @param array $optParams Optional parameters.
    * @return GooglePrivacyDlpV2DlpJob
+   * @throws \Google\Service\Exception
    */
   public function activate($name, GooglePrivacyDlpV2ActivateJobTriggerRequest $postBody, $optParams = [])
   {
@@ -71,6 +72,7 @@ class ProjectsLocationsJobTriggers extends \Google\Service\Resource
    * @param GooglePrivacyDlpV2CreateJobTriggerRequest $postBody
    * @param array $optParams Optional parameters.
    * @return GooglePrivacyDlpV2JobTrigger
+   * @throws \Google\Service\Exception
    */
   public function create($parent, GooglePrivacyDlpV2CreateJobTriggerRequest $postBody, $optParams = [])
   {
@@ -86,6 +88,7 @@ class ProjectsLocationsJobTriggers extends \Google\Service\Resource
    * triggeredJob, for example `projects/dlp-test-project/jobTriggers/53234423`.
    * @param array $optParams Optional parameters.
    * @return GoogleProtobufEmpty
+   * @throws \Google\Service\Exception
    */
   public function delete($name, $optParams = [])
   {
@@ -101,6 +104,7 @@ class ProjectsLocationsJobTriggers extends \Google\Service\Resource
    * triggeredJob, for example `projects/dlp-test-project/jobTriggers/53234423`.
    * @param array $optParams Optional parameters.
    * @return GooglePrivacyDlpV2JobTrigger
+   * @throws \Google\Service\Exception
    */
   public function get($name, $optParams = [])
   {
@@ -119,6 +123,7 @@ class ProjectsLocationsJobTriggers extends \Google\Service\Resource
    * @param GooglePrivacyDlpV2HybridInspectJobTriggerRequest $postBody
    * @param array $optParams Optional parameters.
    * @return GooglePrivacyDlpV2HybridInspectResponse
+   * @throws \Google\Service\Exception
    */
   public function hybridInspect($name, GooglePrivacyDlpV2HybridInspectJobTriggerRequest $postBody, $optParams = [])
   {
@@ -158,8 +163,8 @@ class ProjectsLocationsJobTriggers extends \Google\Service\Resource
    * 500 characters.
    * @opt_param string locationId Deprecated. This field has no effect.
    * @opt_param string orderBy Comma separated list of triggeredJob fields to
-   * order by, followed by `asc` or `desc` postfix. This list is case-insensitive,
-   * default sorting order is ascending, redundant space characters are
+   * order by, followed by `asc` or `desc` postfix. This list is case insensitive.
+   * The default sorting order is ascending. Redundant space characters are
    * insignificant. Example: `name asc,update_time, create_time desc` Supported
    * fields are: - `create_time`: corresponds to the time the JobTrigger was
    * created. - `update_time`: corresponds to the time the JobTrigger was last
@@ -167,13 +172,15 @@ class ProjectsLocationsJobTriggers extends \Google\Service\Resource
    * - `name`: corresponds to the JobTrigger's name. - `display_name`: corresponds
    * to the JobTrigger's display name. - `status`: corresponds to JobTrigger's
    * status.
-   * @opt_param int pageSize Size of the page, can be limited by a server.
-   * @opt_param string pageToken Page token to continue retrieval. Comes from
+   * @opt_param int pageSize Size of the page. This value can be limited by a
+   * server.
+   * @opt_param string pageToken Page token to continue retrieval. Comes from the
    * previous call to ListJobTriggers. `order_by` field must not change for
    * subsequent calls.
    * @opt_param string type The type of jobs. Will use `DlpJobType.INSPECT` if not
    * set.
    * @return GooglePrivacyDlpV2ListJobTriggersResponse
+   * @throws \Google\Service\Exception
    */
   public function listProjectsLocationsJobTriggers($parent, $optParams = [])
   {
@@ -190,6 +197,7 @@ class ProjectsLocationsJobTriggers extends \Google\Service\Resource
    * @param GooglePrivacyDlpV2UpdateJobTriggerRequest $postBody
    * @param array $optParams Optional parameters.
    * @return GooglePrivacyDlpV2JobTrigger
+   * @throws \Google\Service\Exception
    */
   public function patch($name, GooglePrivacyDlpV2UpdateJobTriggerRequest $postBody, $optParams = [])
   {

@@ -16,10 +16,6 @@ use PHPUnit\Framework\TestCase;
 
 class ReferenceHelperTest extends TestCase
 {
-    protected function setUp(): void
-    {
-    }
-
     public function testColumnSort(): void
     {
         $columnBase = $columnExpectedResult = [
@@ -117,7 +113,7 @@ class ReferenceHelperTest extends TestCase
         self::assertSame($expectedResult, $result);
     }
 
-    public function providerFormulaUpdates(): array
+    public static function providerFormulaUpdates(): array
     {
         return require 'tests/data/ReferenceHelperFormulaUpdates.php';
     }
@@ -134,7 +130,7 @@ class ReferenceHelperTest extends TestCase
         self::assertSame($expectedResult, $result);
     }
 
-    public function providerMultipleWorksheetFormulaUpdates(): array
+    public static function providerMultipleWorksheetFormulaUpdates(): array
     {
         return require 'tests/data/ReferenceHelperFormulaUpdatesMultipleSheet.php';
     }

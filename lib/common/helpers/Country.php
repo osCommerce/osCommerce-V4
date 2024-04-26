@@ -26,6 +26,7 @@ class Country {
         }
         $countries_query = tep_db_query("select countries_id, countries_name from " . TABLE_COUNTRIES . " where language_id = '" . (int) $languages_id . "'" . $filter . " order by countries_name");
         while ($countries = tep_db_fetch_array($countries_query)) {
+            if (!$showDisabled && !self::checkPlatformCountry($countries['countries_id'], null, 'ship') && !self::checkPlatformCountry($countries['countries_id'], null, 'bill')) continue;
             $countries_array[$countries['countries_id']] = $countries['countries_name'];
         }
 
@@ -59,6 +60,8 @@ class Country {
                     'countries_name' => $countries_values['countries_name'] ?? null,
                     'countries_iso_code_2' => $countries_values['countries_iso_code_2'] ?? null,
                     'countries_iso_code_3' => $countries_values['countries_iso_code_3'] ?? null,
+                    'iso_code_2' => $countries_values['countries_iso_code_2'] ?? null,
+                    'iso_code_3' => $countries_values['countries_iso_code_3'] ?? null,
                     'address_format_id' => $countries_values['address_format_id'] ?? null,
                     'dialling_prefix' => $countries_values['dialling_prefix'] ?? null,
                     'latitude' => $countries_values['lat'] ?? null,

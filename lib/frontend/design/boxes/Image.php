@@ -77,6 +77,7 @@ class Image extends Widget
             if (isset($this->settings[0]['lazy_load']) && $this->settings[0]['lazy_load']) {
                 $attributes['data-src'] = $imageUrl;
                 $imageUrl = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+                $attributes['loading'] = 'lazy';
             }
 
             $attributesLink = [];
@@ -85,6 +86,12 @@ class Image extends Widget
             }
             if (isset($settings['no_follow']) && $settings['no_follow']) {
                 $attributesLink['rel'] = 'nofollow';
+            }
+            if (isset($settings['width'])) {
+                $attributes['width'] = $settings['width'];
+            }
+            if (isset($settings['height'])) {
+                $attributes['height'] = $settings['height'];
             }
 
             $html =  \yii\helpers\Html::img($imageUrl, $attributes);

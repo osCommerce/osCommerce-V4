@@ -162,7 +162,7 @@ a.sb-line:hover,.summary-box-active{background: #f5f5f5; -webkit-box-shadow: 1px
 .fraud_customer .order-customer-address, .fraud_customer .order-customer-address a{ color: tomato }
 .fraud_billing .order-billing-address{ color: tomato }
 .fraud_delivery .order-delivery-address{ color: tomato }
-.fraudOrder td a{ color: tomato }
+.fraudOrder td a, table.dataTable tbody tr.fraudOrder.selected td a { color: tomato }
 .btn-fraud:not(.dropdown-toggle):before, .btn-fraud:not(.dropdown-toggle):hover { color: tomato }
 .fraud-dropdown .entity-reset { display: none }
 .fraud_triggered .fraud-dropdown .entity-reset { display: block }
@@ -1483,6 +1483,18 @@ a.jcarousel-control-prev.inactive, a.jcarousel-control-next.inactive{display: no
   background: rgba(255, 255, 255, 0.7);
   z-index: 10000;
 }
+.hided-box-fixed {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+    justify-content: center;
+  background: rgba(255, 255, 255, 0.7);
+  z-index: 10000;
+}
 .hided-box .preloader {
   flex-grow: 1;
 }
@@ -1669,6 +1681,9 @@ div.popup-preloader {
 }
 .btn-left {
   float: left;
+}
+.btn-left .btn {
+    margin-right: 10px;
 }
 .btn-right {
   float: right;
@@ -3053,8 +3068,8 @@ table .fa-flag{
   margin-right:8px;
   cursor:pointer;
 }
-.table tbody.sort-active tr.dataTableRow > td:first-child:before{ font-family: "FontAwesome"; content: "\f256"; color: #0a72a4; position: absolute; left: 19px;  }
-.table tbody.sort-active tr {cursor: grab;}
+.table.sort-active tr[data-opid]:not(.child-product) > td:first-child:before{ font-family: "FontAwesome"; content: "\f256"; color: #0a72a4; position: absolute; left: 19px;  }
+.table.sort-active tbody {cursor: grab;}
 .global-currency:before{content: '\f0d6'; font-family: FontAwesome;}
 .global-currency.global-currency-usd:before{content: '\f155'!important;}
 .global-currency.global-currency-gbp:before {content: '\f154'!important;}

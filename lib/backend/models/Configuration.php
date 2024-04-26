@@ -518,6 +518,11 @@ $(function(){
         $utc = new \DateTime('now', new \DateTimeZone('UTC'));
 
         $optionDataAttributes = [];
+        $suggest = [];
+        $_suggest_country_info = \common\helpers\Country::get_country_info_by_id(\Yii::$app->get('platform')->getConfig(\common\classes\platform::defaultId())->const_value('STORE_COUNTRY'));
+        $suggest_country_iso = $_suggest_country_info['countries_iso_code_2'];
+        unset($_suggest_country_info);
+
         foreach( $tzGroups as $tzGroupLabel=>$tzGroupId ) {
             $offsets = [];
             $timeZonesVariants[$tzGroupLabel] = [];
@@ -547,12 +552,40 @@ $(function(){
                         $optionDataAttributes[$timeZoneIdent]['data-country_name'] = $iso2country[$tzInfo['country_code']];
                     }
                 }
-
-                $timeZoneSelectLabel = $timeZoneIdent;
-                $timeZonesVariants[$tzGroupLabel][$timeZoneIdent] = 'UTC'.$format.($abbr !== 'UTC' ? " ({$abbr})" : '').($timeZoneSelectLabel !== 'UTC' ? ' – '.$timeZoneSelectLabel: '');
+                $timeZoneSelectLabel = 'UTC'.$format.($abbr !== 'UTC' ? " ({$abbr})" : '').($timeZoneIdent !== 'UTC' ? ' – '.$timeZoneIdent: '');
+                $timeZonesVariants[$tzGroupLabel][$timeZoneIdent] = $timeZoneSelectLabel;
+                if ( is_array($tzInfo) && !empty($tzInfo['country_code']) && $suggest_country_iso==$tzInfo['country_code'] ) {
+                    $suggest[$timeZoneIdent] = $timeZoneSelectLabel;
+                }
             }
             array_multisort($offsets, array_keys($timeZonesVariants[$tzGroupLabel]), $timeZonesVariants[$tzGroupLabel]);
         }
+        if (!empty($suggest)){
+            $timeZonesVariants = array_merge(['Store time zones'=>$suggest], $timeZonesVariants);
+        }
+        // https://www.wikiwand.com/en/List_of_tz_database_time_zones
+        $obsolete_map = [
+            "America/Coral_Harbour" => 'America/Panama',
+            "America/Godthab" => 'America/Nuuk',
+            "America/Montreal" => 'America/Toronto',
+            "America/Nipigon" => 'America/Toronto',
+            "America/Pangnirtung" => 'America/Iqaluit',
+            "America/Rainy_River" => 'America/Winnipeg',
+            "America/Santa_Isabel" => 'America/Tijuana',
+            "America/Thunder_Bay" => 'America/Toronto',
+            "America/Yellowknife" => 'America/Edmonton',
+            "Asia/Chongqing" => 'Asia/Shanghai',
+            "Asia/Harbin" => 'Asia/Shanghai',
+            "Asia/Kashgar" => 'Asia/Urumqi',
+            "Asia/Calcutta" => 'Asia/Kolkata',
+            "Asia/Rangoon" => 'Asia/Yangon',
+            "Australia/Currie" => 'Australia/Hobart',
+            "Europe/Kiev" => 'Europe/Kyiv',
+            "Europe/Uzhgorod" => 'Europe/Kyiv',
+            "Europe/Zaporozhye" => 'Europe/Kyiv',
+            "Pacific/Enderbury" => 'Pacific/Kanton',
+            "Pacific/Johnston" => 'Pacific/Honolulu',
+        ];
         $js  = '<script src="plugins/moment.min.js"></script>';
         //$js .= '<script src="plugins/moment-timezone/builds/moment-timezone.min.js"></script>';
         $js .= '<script src="plugins/moment-timezone.min.js"></script>';
@@ -560,20 +593,7 @@ $(function(){
         ob_start();
         ?>
 <script type="text/javascript">
-    $('.js-complete').select2({
-        matcher: function(term, text, el) {
-            if ( el && el.length>0 ) {
-                var $option = $(el[0]);
-                if ( $option.attr('data-country_code') ) {
-                    text+=' '+$option.attr('data-country_code');
-                }
-                if ( $option.attr('data-country_name') ) {
-                    text+=' '+$option.attr('data-country_name');
-                }
-            }
-            return (''+text).toUpperCase().indexOf((''+term).toUpperCase()) >= 0;
-        }
-    });
+    $('.js-complete').select2({ });
     $('.js-btn-tz-map').on('click',function () {
         bootbox.dialog({
             title: <?php echo json_encode(defined('TEXT_HEAD_TIME_ZONE_POPUP')?TEXT_HEAD_TIME_ZONE_POPUP:'Select time zone'); ?>,
@@ -588,12 +608,17 @@ $(function(){
                     label: <?php echo json_encode(defined('IMAGE_SELECT')?IMAGE_SELECT:'Select');?>,
                     className: 'btn-success',
                     callback: function() {
+                        var obsolete_map = <?php echo json_encode($obsolete_map); ?>;
                         var selectedTZ = $("#tzMap").data("timezonePicker").getValue();
                         if ( selectedTZ && selectedTZ.length>0 ) {
                             for( var i=0; i<selectedTZ.length;i++ ){
-                                if ( $("#selTimeZones option").filter('[value="'+selectedTZ[i].timezone+'"]').length==0 ) continue;
-                                $("#selTimeZones").val(selectedTZ[i].timezone).trigger('change');
-                                if ( $("#selTimeZones").val()==selectedTZ[i].timezone ) break;
+                                var timezone_code = selectedTZ[i].timezone;
+                                if (typeof obsolete_map[timezone_code] !== 'undefined') {
+                                    timezone_code = obsolete_map[timezone_code];
+                                }
+                                if ( $("#selTimeZones option").filter('[value="'+timezone_code+'"]').length==0 ) continue;
+                                $("#selTimeZones").val(timezone_code).trigger('change');
+                                if ( $("#selTimeZones").val()==timezone_code ) break;
                             }
                         }
                     }

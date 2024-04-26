@@ -1,0 +1,28 @@
+name: static-analysis
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  static-analysis:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        name: Checkout repository
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+
+      - uses: ramsey/composer-install@v2
+        with:
+          dependency-versions: 'highest'
+
+      - name: Static Code Analysis
+        run: composer analyse

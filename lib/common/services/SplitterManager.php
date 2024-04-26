@@ -659,5 +659,18 @@ class SplitterManager {
         $splintersQuery->status(self::STATUS_RETURNED);
         return $splintersQuery->one();
     }
-
+    
+    public function getCreditNoteRows() {
+        $splintersQuery = \common\models\OrdersSplinters::find()->where(['>', 'orders_id', 0]);
+        //$splintersQuery->status(self::STATUS_RETURNING);
+        $splintersQuery->status(self::STATUS_RETURNED);
+        return $splintersQuery->asArray()->all();
+    }
+    
+    public function getCreditNoteRowForOrder($orderId){
+        $splintersQuery = \common\models\OrdersSplinters::find()->where(['orders_id' => $orderId]);
+        $splintersQuery->status(self::STATUS_RETURNED);
+        return $splintersQuery->one();
+    }
+    
 }

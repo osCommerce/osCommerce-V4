@@ -63,7 +63,7 @@ class AvailableInWarehouses extends Widget
     if (strpos($prid, '{') !== false) {
         $warehousesStockQuery->andWhere(['products_id' => tep_db_input($prid)]);
     } else {
-        $warehousesStockQuery->andWhere(['products_id' => (int) $prid]);
+        $warehousesStockQuery->andWhere(['products_id' => strval((int) $prid)]);
     }
     $warehousesStock = $warehousesStockQuery->asArray()->all();
 

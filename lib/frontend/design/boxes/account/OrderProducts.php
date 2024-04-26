@@ -65,7 +65,7 @@ class OrderProducts extends Widget
             }
             $order_info['final_price'] = $currencies->format($currencies->calculate_price_in_order($order->info, $order->products[$i]['final_price'], (DISPLAY_PRICE_WITH_TAX == 'true' ? $order->products[$i]['tax'] : 0), $order->products[$i]['qty']), true, $order->info['currency'], $order->info['currency_value']);
 
-            if (isset($order->products[$i]['model']) && $order->products[$i]['model'] == 'VIRTUAL_GIFT_CARD' && isset($order_info_attr[0]['order_pr_value'])) {
+            if (isset($order->products[$i]['model']) && $order->products[$i]['model'] == \common\helpers\Gifts::getVirtualGiftCardModel() && isset($order_info_attr[0]['order_pr_value'])) {
                 $giftCard = \common\models\VirtualGiftCardInfo::find()->where([
                     'virtual_gift_card_code' => $order_info_attr[0]['order_pr_value'],
                     'customers_id' => $customer->customers_id

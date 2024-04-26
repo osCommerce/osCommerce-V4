@@ -33,6 +33,10 @@ class DlpScanSummary extends \Google\Model
    * @var string
    */
   public $scanOutcome;
+  /**
+   * @var string
+   */
+  public $scanTrigger;
 
   /**
    * @param DlpAction
@@ -89,6 +93,20 @@ class DlpScanSummary extends \Google\Model
   public function getScanOutcome()
   {
     return $this->scanOutcome;
+  }
+  /**
+   * @param string
+   */
+  public function setScanTrigger($scanTrigger)
+  {
+    $this->scanTrigger = $scanTrigger;
+  }
+  /**
+   * @return string
+   */
+  public function getScanTrigger()
+  {
+    return $this->scanTrigger;
   }
 }
 

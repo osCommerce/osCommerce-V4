@@ -21,7 +21,7 @@
       <p>{$smarty.const.TEXT_MAIN}</p>
     </div>
     
-    {if \common\helpers\Acl::checkExtensionAllowed('Subscribers', 'allowed') && defined('ENABLE_CUSTOMERS_NEWSLETTER') && ENABLE_CUSTOMERS_NEWSLETTER == 'true' }
+    {if \common\helpers\Extensions::callIfAllowed('Subscribers', 'optionIsCustomerNewsletterEnabled') }
     <div class="col-full">
         <label for="newsletter">{$smarty.const.RECEIVE_REGULAR_OFFERS}</label>
         <input type="checkbox" name="newsletter" value="1" id="newsletter" class="check-on-off" onchange="return gdprRegularOffers(this);" {if $customers_newsletter} checked="checked"{/if}/>

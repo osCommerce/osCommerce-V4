@@ -19,10 +19,28 @@ namespace Google\Service\ContainerAnalysis;
 
 class BuildOccurrence extends \Google\Model
 {
+  /**
+   * @var InTotoSlsaProvenanceV1
+   */
+  public $inTotoSlsaProvenanceV1;
+  protected $inTotoSlsaProvenanceV1Type = InTotoSlsaProvenanceV1::class;
+  protected $inTotoSlsaProvenanceV1DataType = '';
+  /**
+   * @var InTotoProvenance
+   */
+  public $intotoProvenance;
   protected $intotoProvenanceType = InTotoProvenance::class;
   protected $intotoProvenanceDataType = '';
+  /**
+   * @var InTotoStatement
+   */
+  public $intotoStatement;
   protected $intotoStatementType = InTotoStatement::class;
   protected $intotoStatementDataType = '';
+  /**
+   * @var BuildProvenance
+   */
+  public $provenance;
   protected $provenanceType = BuildProvenance::class;
   protected $provenanceDataType = '';
   /**
@@ -30,6 +48,20 @@ class BuildOccurrence extends \Google\Model
    */
   public $provenanceBytes;
 
+  /**
+   * @param InTotoSlsaProvenanceV1
+   */
+  public function setInTotoSlsaProvenanceV1(InTotoSlsaProvenanceV1 $inTotoSlsaProvenanceV1)
+  {
+    $this->inTotoSlsaProvenanceV1 = $inTotoSlsaProvenanceV1;
+  }
+  /**
+   * @return InTotoSlsaProvenanceV1
+   */
+  public function getInTotoSlsaProvenanceV1()
+  {
+    return $this->inTotoSlsaProvenanceV1;
+  }
   /**
    * @param InTotoProvenance
    */

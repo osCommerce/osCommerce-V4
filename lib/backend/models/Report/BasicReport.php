@@ -71,7 +71,11 @@ class BasicReport {
                         )
                     . ")");
                 }
-                $_summ .= ", sum({$$_module} * o.currency_value) as {$_module}";
+                if (($this->request['currency']??null) > 0) {
+                    $_summ .= ", sum({$$_module} * o.currency_value) as {$_module}";
+                } else {
+                    $_summ .= ", sum({$$_module} * if(o.currency_value_default > 0, o.currency_value_default, 1)) as {$_module}";
+                }
                 if ($_module == 'ot_tax') {
                     $_join .= " left join (SELECT o.orders_id, sum(value_inc_tax) AS value_inc_tax FROM " . TABLE_ORDERS_TOTAL . " ot inner join " . TABLE_ORDERS . " o on o.orders_id = ot.orders_id and {$where} where  ot.class='ot_tax' group by o.orders_id) {$_module} ON ({$_module}.orders_id = o.orders_id) ";// if multiple
                 } elseif ($_module == 'ot_coupon') {
@@ -82,6 +86,15 @@ class BasicReport {
             }
         }
         //echo '<pre>';print_r($this);die;
+
+        if (($this->request['currency']??null) > 0) {
+            $currencies = Yii::$container->get('currencies');
+            $currency_code = $currencies->currency_codes[$this->request['currency']];
+            if ($currency_code && $this->request['currency'] == $currencies->currencies[$currency_code]['id']) {
+                $where .= " and o.currency = '" . tep_db_input($currency_code) . "'";
+            }
+        }
+
         if (isset($this->request['status'])) {
             if (is_array($this->request['status']) && count($this->request['status'])) {
                 $where .= " and o.orders_status in (" . implode(",", $this->request['status']) . ")";
@@ -133,7 +146,7 @@ class BasicReport {
         }
 
         if (isset($this->request['state'])){
-            $where .= " and (o.delivery_state like '%{$this->request['state']}%') ";
+            $where .= " and (o.delivery_state like '" . tep_db_input($this->request['state']) . "') ";
         }
 
         if (isset($this->request['sps'])){

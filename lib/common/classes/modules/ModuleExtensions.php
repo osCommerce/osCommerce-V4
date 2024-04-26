@@ -350,7 +350,7 @@ class ModuleExtensions extends Module {
             if (is_array($keys)) {
                 array_walk($keys, function(&$value, $key) {
                     foreach(['title', 'description'] as $keyItem) {
-                        if (preg_match('/##([\w_\-]*)##/', $value[$keyItem], $match)) {
+                        if (isset($value[$keyItem]) && preg_match('/##([\w_\-]*)##/', $value[$keyItem], $match)) {
                             $value[$keyItem] = static::getTranslationValue($match[1]);
                         }
                     }
@@ -364,8 +364,8 @@ class ModuleExtensions extends Module {
     {
         $keys = self::getSetupConfigureKeys();
         if (is_array($keys) && !empty($keys)) {
-            $includeArea = is_array($includeArea) ? $includeArea : explode(',', $includeArea);
-            $excludeArea = is_array($excludeArea) ? $excludeArea : explode(',', $excludeArea);
+            $includeArea = is_array($includeArea) ? $includeArea : explode(',', $includeArea ?? '');
+            $excludeArea = is_array($excludeArea) ? $excludeArea : explode(',', $excludeArea ?? '');
             return array_filter($keys, function($value) use ($includeEmptyArea, $includeArea, $excludeArea ) {
                 if (empty($value['area'])) {
                     return $includeEmptyArea;
@@ -512,7 +512,7 @@ class ModuleExtensions extends Module {
             foreach($translationArray as $entity => $keysArray) {
                 if (static::isProcessTranslationPair($entity, $keysArray, 'install')) {
                     $withoutMagicKeys = array_filter($keysArray, function($key) { return is_string($key) && substr($key, 0, 2) != '__'; }, ARRAY_FILTER_USE_KEY);
-                    $migrate->addTranslation($entity, $withoutMagicKeys);
+                    $migrate->addTranslation($entity, $withoutMagicKeys, true);
                 }
             }
         }
@@ -669,12 +669,14 @@ class ModuleExtensions extends Module {
 
     public static function render($view, $params = [])
     {
+        $params['_extension_render'] = static::getModuleCode();
         $html = RenderExtensions::widget(['template' => self::getViewFile($view), 'params' => $params]);
         return \Yii::$app->controller->renderContent($html);
     }
 
     public static function renderAjax($view, $params = [])
     {
+        $params['_extension_render'] = static::getModuleCode();
         return RenderExtensions::widget(['template' => self::getViewFile($view), 'params' => $params]);
     }
 

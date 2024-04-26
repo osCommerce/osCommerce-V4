@@ -189,7 +189,6 @@ ul ul .item-handle {
   float: right;
   cursor: pointer;
   font-size: 12px;
-  text-transform: uppercase;
   font-weight: normal;
   margin: -2px 20px 0 0;
 }
@@ -274,6 +273,9 @@ ul ul .item-handle {
 
 .menu-right-list {
   overflow: hidden;
+}
+.menu-right-list .searchable {
+  display: inline-block;
 }
 
 .menu-selects {

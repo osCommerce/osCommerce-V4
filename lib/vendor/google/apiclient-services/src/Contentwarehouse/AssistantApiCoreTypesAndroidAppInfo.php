@@ -24,6 +24,12 @@ class AssistantApiCoreTypesAndroidAppInfo extends \Google\Model
    */
   public $accountType;
   /**
+   * @var AssistantApiCoreTypesAndroidAppInfoActivityInfo
+   */
+  public $activityInfo;
+  protected $activityInfoType = AssistantApiCoreTypesAndroidAppInfoActivityInfo::class;
+  protected $activityInfoDataType = '';
+  /**
    * @var string
    */
   public $androidIntent;
@@ -93,6 +99,20 @@ class AssistantApiCoreTypesAndroidAppInfo extends \Google\Model
   public function getAccountType()
   {
     return $this->accountType;
+  }
+  /**
+   * @param AssistantApiCoreTypesAndroidAppInfoActivityInfo
+   */
+  public function setActivityInfo(AssistantApiCoreTypesAndroidAppInfoActivityInfo $activityInfo)
+  {
+    $this->activityInfo = $activityInfo;
+  }
+  /**
+   * @return AssistantApiCoreTypesAndroidAppInfoActivityInfo
+   */
+  public function getActivityInfo()
+  {
+    return $this->activityInfo;
   }
   /**
    * @param string

@@ -166,8 +166,12 @@ class Socials {
                     $model->lastname = $lastname;
                 }
 
-                $model->country = (int)STORE_COUNTRY;
-                $model->zone_id = (int)STORE_ZONE;
+                if (defined('SOCIALS_NEW_ACCOUNT_COUNTRY') && strtolower(SOCIALS_NEW_ACCOUNT_COUNTRY) == 'empty') {
+                    $model->country = 0;
+                } else {
+                    $model->country = (int)STORE_COUNTRY;
+                    //$model->zone_id = (int)STORE_ZONE;
+                }
                 
                 if (is_object($attributes['address'])){
                     $customer->registerCustomer($model, true, $attributes['address']);

@@ -184,4 +184,27 @@ class Html extends \yii\helpers\Html
         return $html;
     }
 
+    private static function tr(string $constName, bool $camelIfNotFoundConstant = null)
+    {
+        if (defined($constName)) {
+            $string = constant($constName);
+        } else {
+            if (is_null($camelIfNotFoundConstant)) {
+                $camelIfNotFoundConstant = \common\helpers\System::isProduction();
+            }
+            $string = $camelIfNotFoundConstant ? \yii\helpers\Inflector::camel2words($constName) : $constName;
+        }
+        return $string;
+    }
+
+    public static function tr_html(string $constName)
+    {
+        return self::encode(self::tr($constName));
+    }
+
+    public static function tr_js(string $constName)
+    {
+        return \yii\helpers\Json::encode(self::tr($constName));
+    }
+
 }

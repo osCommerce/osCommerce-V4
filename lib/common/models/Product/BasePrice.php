@@ -3,10 +3,10 @@
 /**
  * This file is part of osCommerce ecommerce platform.
  * osCommerce the ecommerce
- * 
+ *
  * @link https://www.oscommerce.com
  * @copyright Copyright (c) 2000-2022 osCommerce LTD
- * 
+ *
  * Released under the GNU General Public License
  * For the full copyright and license information, please view the LICENSE.TXT file that was distributed with this source code.
  * Price for all conditions
@@ -65,7 +65,7 @@ class BasePrice {
     protected function returnCalculated($which, $params) {
       $vals = $this->checkCalculated($which, $params);
       if (!$vals){
-        // not yet calculated 
+        // not yet calculated
         $ret = $this->$which($params);
       } else {
         $ret = $this->$which['value'];
@@ -92,7 +92,7 @@ class BasePrice {
       }
       return $ret;
     }
-  
+
     /**
      * @param string $which
      */
@@ -109,7 +109,7 @@ class BasePrice {
      * check params and params used for calculation
      * @param string $which
      * @param array $params
-     * @return bool 
+     * @return bool
      */
     private function isChanged($which, $params) {
       $ret = true;
@@ -118,11 +118,11 @@ class BasePrice {
       }
       return $ret;
     }
-   
+
     public function appendDisablingSettings(){
         $this->dSettings = new \common\components\DisabledSettings($this->uprid); // now only 1 flag on product - disable all discounts
     }
-    
+
 /**
  * filter params (generally price depends on q-ty, group id, currency id) Other params could be ignored.
  * If the params are not changed calculated early prices are OK
@@ -214,7 +214,7 @@ class BasePrice {
         }
 
         $qFields = ['products_price', 'products_price_full', 'pack_unit', 'products_price_pack_unit', 'packaging', 'products_price_packaging'];
-        if ($tmp && 
+        if ($tmp &&
             count(array_diff_key( array_flip($qFields), $tmp)) == 0 // all keys exists
             ) {
           $product = $tmp;
@@ -386,34 +386,44 @@ class BasePrice {
 
         if ($this->dSettings->applyQtyDiscount()){
             $apply_discount = false;
-            if (USE_MARKET_PRICES == 'True' || \common\helpers\Extensions::isCustomerGroupsAllowed()) {
-                $data = ProductsPrices::find()->select(['products_group_discount_price as products_price_discount', 'products_group_price',
-                                    'products_group_discount_price_pack_unit as products_price_discount_pack_unit', 'products_group_price_pack_unit',
-                                    'products_group_discount_price_packaging as products_price_discount_packaging', 'products_group_price_packaging'])
-                                ->where('products_id = :products_id and groups_id = :groups_id and currencies_id = :currencies_id', [
-                                    ':products_id' => (int) $this->uprid,
-                                    ':groups_id' => (int) $_customer_groups_id,
-                                    ':currencies_id' => (USE_MARKET_PRICES == 'True' ? $_currency_id : '0')
-                                ])->asArray()->one();
-                if (!$data || ($data['products_price_discount'] == '' && $data['products_group_price'] == -2) || $data['products_price_discount'] == -2 || (USE_MARKET_PRICES != 'True' && $_customer_groups_id == 0)) {
-                    if (USE_MARKET_PRICES == 'True') {
-                        $data = ProductsPrices::find()->select(['products_group_discount_price as products_price_discount',
-                                            'products_group_discount_price_pack_unit as products_price_discount_pack_unit',
-                                            'products_group_discount_price_packaging as products_price_discount_packaging'])
-                                        ->where('products_id =:products_id and groups_id = 0 and currencies_id = :currencies_id', [
-                                            ':products_id' => (int) $this->uprid,
-                                            ':currencies_id' => (int) $_currency_id
-                                        ])->asArray()->one();
-                    } else {
-                        $data = Products::find()->select('products_price_discount, products_price_discount_pack_unit, products_price_discount_packaging')
-                                        ->where('products_id = :products_id', [':products_id' => (int) $this->uprid])->asArray()->one();
+            $customer_id = (int)($params['customer_id'] ?? 0);
+            if (($customer_id <= 0) AND !Yii::$app->user->isGuest) {
+                $customer_id = (int)\Yii::$app->user->getId();
+            }
+            /* @var $CustomerProducts \common\extensions\CustomerProducts\CustomerProducts */
+            if (($customer_id > 0) AND ($CustomerProducts = \common\helpers\Acl::checkExtension('CustomerProducts', 'getProductsDiscountPrice'))) {
+                $data = $CustomerProducts::getProductsDiscountPrice(['qty' => $qty, 'products_id' => (int)$this->uprid, 'customer_id' => $customer_id, 'currency_id' => (USE_MARKET_PRICES == 'True' ? $_currency_id : '0')]);
+            }
+            if (empty($data)) {
+                if (USE_MARKET_PRICES == 'True' || \common\helpers\Extensions::isCustomerGroupsAllowed()) {
+                    $data = ProductsPrices::find()->select(['products_group_discount_price as products_price_discount', 'products_group_price',
+                                        'products_group_discount_price_pack_unit as products_price_discount_pack_unit', 'products_group_price_pack_unit',
+                                        'products_group_discount_price_packaging as products_price_discount_packaging', 'products_group_price_packaging'])
+                                    ->where('products_id = :products_id and groups_id = :groups_id and currencies_id = :currencies_id', [
+                                        ':products_id' => (int) $this->uprid,
+                                        ':groups_id' => (int) $_customer_groups_id,
+                                        ':currencies_id' => (USE_MARKET_PRICES == 'True' ? $_currency_id : '0')
+                                    ])->asArray()->one();
+                    if (!$data || ($data['products_price_discount'] == '' && $data['products_group_price'] == -2) || $data['products_price_discount'] == -2 || (USE_MARKET_PRICES != 'True' && $_customer_groups_id == 0)) {
+                        if (USE_MARKET_PRICES == 'True') {
+                            $data = ProductsPrices::find()->select(['products_group_discount_price as products_price_discount',
+                                                'products_group_discount_price_pack_unit as products_price_discount_pack_unit',
+                                                'products_group_discount_price_packaging as products_price_discount_packaging'])
+                                            ->where('products_id =:products_id and groups_id = 0 and currencies_id = :currencies_id', [
+                                                ':products_id' => (int) $this->uprid,
+                                                ':currencies_id' => (int) $_currency_id
+                                            ])->asArray()->one();
+                        } else {
+                            $data = Products::find()->select('products_price_discount, products_price_discount_pack_unit, products_price_discount_packaging')
+                                            ->where('products_id = :products_id', [':products_id' => (int) $this->uprid])->asArray()->one();
+                        }
+                        $data['products_price_discount'] = $data['products_price_discount'] ?? null;
+                        $apply_discount = true;
                     }
-                    $data['products_price_discount'] = $data['products_price_discount'] ?? null;
-                    $apply_discount = true;
+                } else {
+                    $data = Products::find()->select('products_price_discount, products_price_discount_pack_unit, products_price_discount_packaging')
+                                    ->where('products_id = :products_id', [':products_id' => (int) $this->uprid])->asArray()->one();
                 }
-            } else {
-                $data = Products::find()->select('products_price_discount, products_price_discount_pack_unit, products_price_discount_packaging')
-                                ->where('products_id = :products_id', [':products_id' => (int) $this->uprid])->asArray()->one();
             }
 
             switch ($type) {
@@ -457,7 +467,7 @@ class BasePrice {
                 $this->applyGroupDiscount($_customer_groups_id);
             }
         }
-        
+
         return $this->products_price['value'];
     }
 
@@ -496,7 +506,7 @@ class BasePrice {
         $isChanged = $this->isChangedQtyType($qty);
         if ((!is_null($this->special_price['value']) && !$this->isChanged('special_price', $params) && !$isChanged) || $this->checkCalculated('special_price', $params) ) {
           return $this->special_price['value'];
-          
+
         } else {
           $this->special_price['value'] = false;
           $this->special_price['vars'] = $params;
@@ -529,7 +539,7 @@ class BasePrice {
                 if (tep_db_num_rows($specials_query)) {
                   while ($special = tep_db_fetch_array($specials_query) ) { //remove limit in queries
                     //$special = tep_db_fetch_array($specials_query);
-                    
+
                     if (!is_array($special)) {
                       $this->special_price['value'] = false;
                       $this->saveCalculated('special_price');
@@ -631,8 +641,8 @@ class BasePrice {
                       'value_no_promo' => $this->special_price['value']
                       ], $this->special_price);
                     $this->attachToProduct([
-                      'promo_class' => 'sale', 
-                      'special_start_date' => $special_start_date, 
+                      'promo_class' => 'sale',
+                      'special_start_date' => $special_start_date,
                       'special_expiration_date' => $special_expiration_date,
                       'special_promote_type' => $promote_type,
                       'special_total_qty' => $special['total_qty']??0,
@@ -682,7 +692,7 @@ class BasePrice {
     public function getInventoryPrice($params) {
 
         $this->setParams($params);
-        
+
         if (!isset($this->inventory_price['value'])) {
             $this->inventory_price = [
                 'value' => false,
@@ -710,18 +720,19 @@ class BasePrice {
             $this->saveCalculated('inventory_price');
             return $this->inventory_price['value'];
         }
-      
+
         $vids = $virtual_vids = $__vids = [];
         $_uprid = InventoryHelper::normalizeInventoryPriceId($this->uprid, $vids, $virtual_vids);
         InventoryHelper::normalizeInventoryPriceId($this->origin_uprid, $__vids, $virtual_vids);
 
         if (\common\helpers\Extensions::isAllowed('Inventory') && strpos($this->uprid,'{')!==false && !InventoryHelper::disabledOnProduct($_uprid)) {
 
-            $check_inventory = tep_db_fetch_array(tep_db_query("select inventory_id, if(price_prefix = '-', -inventory_price, inventory_price) as inventory_price, inventory_full_price as inventory_full_price from " . TABLE_INVENTORY . " i where products_id = '" . tep_db_input($_uprid) . "' and non_existent = '0' " . InventoryHelper::get_sql_inventory_restrictions(array('i', 'ip')) . " limit 1"));
+            $check_inventory = tep_db_fetch_array(tep_db_query("select inventory_id, price_prefix, inventory_price, inventory_full_price from " . TABLE_INVENTORY . " i where products_id = '" . tep_db_input($_uprid) . "' and non_existent = '0' " . InventoryHelper::get_sql_inventory_restrictions(array('i', 'ip')) . " limit 1"));
             if ($check_inventory) {
                 if (!$this->calculate_full_price) {
                     $this->inventory_price['value'] = $check_inventory['inventory_price'];
                     $inventory_price = $this->getInventoryGroupPrice($params);
+                    if ($check_inventory['price_prefix'] == '-') $inventory_price = -$inventory_price;
                     if ($inventory_price != -1) {
                         $this->inventory_price['value'] = (float) $this->products_price['value'] + $inventory_price;
                     }
@@ -804,7 +815,7 @@ class BasePrice {
 
         $this->inventory_price['calculated'] = true;
         $this->saveCalculated('inventory_price');
-//echo "#### <PRE>"  . __FILE__ .':' . __LINE__ . ' ' . print_r($this, true) ."</PRE>"; 
+//echo "#### <PRE>"  . __FILE__ .':' . __LINE__ . ' ' . print_r($this, true) ."</PRE>";
         return (float) $this->inventory_price['value'];
     }
 
@@ -827,15 +838,18 @@ class BasePrice {
         if (!\common\helpers\Acl::checkExtensionAllowed('ProductBundles') && USE_MARKET_PRICES != 'True' && !\common\helpers\Extensions::isCustomerGroupsAllowed() && $params['qty'] == 1) {
             return $this->inventory_price['value'];
         }
-                
+
+        $vids = $virtual_vids = [];
+        $_uprid = InventoryHelper::normalizeInventoryPriceId($this->uprid, $vids, $virtual_vids);
+
         $discount = 0;
         if (!$this->calculate_full_price) {
             if (USE_MARKET_PRICES == 'True' || \common\helpers\Extensions::isCustomerGroupsAllowed()) {
-                $query = tep_db_query("select inventory_group_price as inventory_price from " . TABLE_INVENTORY_PRICES . " where products_id = '" . tep_db_input($this->uprid) . "' and groups_id = '" . (int) $_customer_groups_id . "' and currencies_id = '" . (USE_MARKET_PRICES == 'True' ? (int) $_currency_id : 0) . "' order by inventory_price asc limit 1");
+                $query = tep_db_query("select inventory_group_price as inventory_price from " . TABLE_INVENTORY_PRICES . " where products_id = '" . tep_db_input($_uprid) . "' and groups_id = '" . (int) $_customer_groups_id . "' and currencies_id = '" . (USE_MARKET_PRICES == 'True' ? (int) $_currency_id : 0) . "' order by inventory_price asc limit 1");
                 $data = tep_db_fetch_array($query);
                 if (!$data || ($data['inventory_price'] == -2) || (USE_MARKET_PRICES != 'True' && $_customer_groups_id == 0)) {
                     if (USE_MARKET_PRICES == 'True') {
-                        $data = tep_db_fetch_array(tep_db_query("select inventory_group_price as inventory_price from " . TABLE_INVENTORY_PRICES . " where products_id = '" . tep_db_input($this->uprid) . "' and groups_id = '0' and currencies_id = '" . (USE_MARKET_PRICES == 'True' ? (int) $_currency_id : 0) . "' order by inventory_price asc limit 1"));
+                        $data = tep_db_fetch_array(tep_db_query("select inventory_group_price as inventory_price from " . TABLE_INVENTORY_PRICES . " where products_id = '" . tep_db_input($_uprid) . "' and groups_id = '0' and currencies_id = '" . (USE_MARKET_PRICES == 'True' ? (int) $_currency_id : 0) . "' order by inventory_price asc limit 1"));
                     } else {
                         $data['inventory_price'] = $this->inventory_price['value'];
                     }
@@ -851,13 +865,13 @@ class BasePrice {
                     $this->inventory_price['value'] = $data['inventory_price'];
                 }
             }
-        } else { //do for full price        
+        } else { //do for full price
             if (USE_MARKET_PRICES == 'True' || \common\helpers\Extensions::isCustomerGroupsAllowed()) {
-                $query = tep_db_query("select inventory_full_price from " . TABLE_INVENTORY_PRICES . " where products_id like '" . tep_db_input($this->uprid) . "' and groups_id = '" . (int) $_customer_groups_id . "' and currencies_id = '" . (USE_MARKET_PRICES == 'True' ? (int) $_currency_id : 0) . "' order by inventory_full_price asc limit 1");
+                $query = tep_db_query("select inventory_full_price from " . TABLE_INVENTORY_PRICES . " where products_id like '" . tep_db_input($_uprid) . "' and groups_id = '" . (int) $_customer_groups_id . "' and currencies_id = '" . (USE_MARKET_PRICES == 'True' ? (int) $_currency_id : 0) . "' order by inventory_full_price asc limit 1");
                 $data = tep_db_fetch_array($query);
                 if (!$data || ($data['inventory_full_price'] == -2) || (USE_MARKET_PRICES != 'True' && $_customer_groups_id == 0)) {
                     if (USE_MARKET_PRICES == 'True') {
-                        $data = tep_db_fetch_array(tep_db_query("select inventory_full_price from " . TABLE_INVENTORY_PRICES . " where products_id like '" . tep_db_input($this->uprid) . "' and groups_id = '0' and currencies_id = '" . (USE_MARKET_PRICES == 'True' ? (int) $_currency_id : 0) . "' order by inventory_full_price asc limit 1"));
+                        $data = tep_db_fetch_array(tep_db_query("select inventory_full_price from " . TABLE_INVENTORY_PRICES . " where products_id like '" . tep_db_input($_uprid) . "' and groups_id = '0' and currencies_id = '" . (USE_MARKET_PRICES == 'True' ? (int) $_currency_id : 0) . "' order by inventory_full_price asc limit 1"));
                     } else {
                         $data['inventory_full_price'] = $this->inventory_price['value']; //tep_db_fetch_array(tep_db_query("select inventory_full_price from " . TABLE_INVENTORY . " where products_id like '" . tep_db_input($this->uprid) . "' order by inventory_full_price asc limit 1"));
                     }

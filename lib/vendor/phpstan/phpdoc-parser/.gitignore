@@ -1,6 +1,8 @@
+/docs
 /temp
 /tools
 /tests/tmp
+/build-cs
 /vendor
-composer.lock
+/composer.lock
 .phpunit.result.cache

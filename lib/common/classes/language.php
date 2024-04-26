@@ -236,8 +236,10 @@ class language {
         }
     }
 
-    public static function defaultId() {
-        $currentPlatformId = (int)\common\classes\platform::currentId();
+    public static function defaultId($currentPlatformId=null) {
+        if (is_null($currentPlatformId)) {
+            $currentPlatformId = (int)\common\classes\platform::currentId();
+        }
 
         static $_cache = [];
         if ( !isset($_cache[$currentPlatformId]) ) {

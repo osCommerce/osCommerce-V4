@@ -50,12 +50,14 @@ class Integrations extends \Google\Service
   public $projects_locations_integrations_executions;
   public $projects_locations_integrations_executions_suspensions;
   public $projects_locations_integrations_versions;
+  public $projects_locations_integrations_versions_testCases;
   public $projects_locations_products_authConfigs;
   public $projects_locations_products_certificates;
   public $projects_locations_products_integrations;
   public $projects_locations_products_integrations_executions;
   public $projects_locations_products_integrations_executions_suspensions;
   public $projects_locations_products_integrations_versions;
+  public $projects_locations_products_integrations_versions_testCases;
   public $projects_locations_products_integrationtemplates_versions;
   public $projects_locations_products_sfdcInstances;
   public $projects_locations_products_sfdcInstances_sfdcChannels;
@@ -417,6 +419,20 @@ class Integrations extends \Google\Service
                   'required' => true,
                 ],
               ],
+            ],'executeEvent' => [
+              'path' => 'v1alpha/{+name}:executeEvent',
+              'httpMethod' => 'POST',
+              'parameters' => [
+                'name' => [
+                  'location' => 'path',
+                  'type' => 'string',
+                  'required' => true,
+                ],
+                'triggerId' => [
+                  'location' => 'query',
+                  'type' => 'string',
+                ],
+              ],
             ],'list' => [
               'path' => 'v1alpha/{+parent}/integrations',
               'httpMethod' => 'GET',
@@ -546,6 +562,10 @@ class Integrations extends \Google\Service
                   'location' => 'query',
                   'type' => 'boolean',
                 ],
+                'snapshotMetadataWithoutParams' => [
+                  'location' => 'query',
+                  'type' => 'boolean',
+                ],
                 'truncateParams' => [
                   'location' => 'query',
                   'type' => 'boolean',
@@ -626,6 +646,10 @@ class Integrations extends \Google\Service
                   'type' => 'string',
                   'required' => true,
                 ],
+                'createSampleIntegrations' => [
+                  'location' => 'query',
+                  'type' => 'boolean',
+                ],
                 'newIntegration' => [
                   'location' => 'query',
                   'type' => 'boolean',
@@ -653,6 +677,11 @@ class Integrations extends \Google\Service
                 'fileFormat' => [
                   'location' => 'query',
                   'type' => 'string',
+                ],
+                'files' => [
+                  'location' => 'query',
+                  'type' => 'string',
+                  'repeated' => true,
                 ],
               ],
             ],'get' => [
@@ -747,6 +776,108 @@ class Integrations extends \Google\Service
                   'location' => 'path',
                   'type' => 'string',
                   'required' => true,
+                ],
+              ],
+            ],
+          ]
+        ]
+    );
+    $this->projects_locations_integrations_versions_testCases = new Integrations\Resource\ProjectsLocationsIntegrationsVersionsTestCases(
+        $this,
+        $this->serviceName,
+        'testCases',
+        [
+          'methods' => [
+            'create' => [
+              'path' => 'v1alpha/{+parent}/testCases',
+              'httpMethod' => 'POST',
+              'parameters' => [
+                'parent' => [
+                  'location' => 'path',
+                  'type' => 'string',
+                  'required' => true,
+                ],
+                'testCaseId' => [
+                  'location' => 'query',
+                  'type' => 'string',
+                ],
+              ],
+            ],'delete' => [
+              'path' => 'v1alpha/{+name}',
+              'httpMethod' => 'DELETE',
+              'parameters' => [
+                'name' => [
+                  'location' => 'path',
+                  'type' => 'string',
+                  'required' => true,
+                ],
+              ],
+            ],'executeTest' => [
+              'path' => 'v1alpha/{+testCaseName}:executeTest',
+              'httpMethod' => 'POST',
+              'parameters' => [
+                'testCaseName' => [
+                  'location' => 'path',
+                  'type' => 'string',
+                  'required' => true,
+                ],
+              ],
+            ],'get' => [
+              'path' => 'v1alpha/{+name}',
+              'httpMethod' => 'GET',
+              'parameters' => [
+                'name' => [
+                  'location' => 'path',
+                  'type' => 'string',
+                  'required' => true,
+                ],
+              ],
+            ],'listExecutions' => [
+              'path' => 'v1alpha/{+parent}:executions',
+              'httpMethod' => 'GET',
+              'parameters' => [
+                'parent' => [
+                  'location' => 'path',
+                  'type' => 'string',
+                  'required' => true,
+                ],
+                'filter' => [
+                  'location' => 'query',
+                  'type' => 'string',
+                ],
+                'orderBy' => [
+                  'location' => 'query',
+                  'type' => 'string',
+                ],
+                'pageSize' => [
+                  'location' => 'query',
+                  'type' => 'integer',
+                ],
+                'pageToken' => [
+                  'location' => 'query',
+                  'type' => 'string',
+                ],
+                'readMask' => [
+                  'location' => 'query',
+                  'type' => 'string',
+                ],
+                'truncateParams' => [
+                  'location' => 'query',
+                  'type' => 'boolean',
+                ],
+              ],
+            ],'patch' => [
+              'path' => 'v1alpha/{+name}',
+              'httpMethod' => 'PATCH',
+              'parameters' => [
+                'name' => [
+                  'location' => 'path',
+                  'type' => 'string',
+                  'required' => true,
+                ],
+                'updateMask' => [
+                  'location' => 'query',
+                  'type' => 'string',
                 ],
               ],
             ],
@@ -1112,6 +1243,10 @@ class Integrations extends \Google\Service
                   'location' => 'query',
                   'type' => 'boolean',
                 ],
+                'snapshotMetadataWithoutParams' => [
+                  'location' => 'query',
+                  'type' => 'boolean',
+                ],
                 'truncateParams' => [
                   'location' => 'query',
                   'type' => 'boolean',
@@ -1192,6 +1327,10 @@ class Integrations extends \Google\Service
                   'type' => 'string',
                   'required' => true,
                 ],
+                'createSampleIntegrations' => [
+                  'location' => 'query',
+                  'type' => 'boolean',
+                ],
                 'newIntegration' => [
                   'location' => 'query',
                   'type' => 'boolean',
@@ -1219,6 +1358,11 @@ class Integrations extends \Google\Service
                 'fileFormat' => [
                   'location' => 'query',
                   'type' => 'string',
+                ],
+                'files' => [
+                  'location' => 'query',
+                  'type' => 'string',
+                  'repeated' => true,
                 ],
               ],
             ],'get' => [
@@ -1313,6 +1457,46 @@ class Integrations extends \Google\Service
                   'location' => 'path',
                   'type' => 'string',
                   'required' => true,
+                ],
+              ],
+            ],
+          ]
+        ]
+    );
+    $this->projects_locations_products_integrations_versions_testCases = new Integrations\Resource\ProjectsLocationsProductsIntegrationsVersionsTestCases(
+        $this,
+        $this->serviceName,
+        'testCases',
+        [
+          'methods' => [
+            'list' => [
+              'path' => 'v1alpha/{+parent}/testCases',
+              'httpMethod' => 'GET',
+              'parameters' => [
+                'parent' => [
+                  'location' => 'path',
+                  'type' => 'string',
+                  'required' => true,
+                ],
+                'filter' => [
+                  'location' => 'query',
+                  'type' => 'string',
+                ],
+                'orderBy' => [
+                  'location' => 'query',
+                  'type' => 'string',
+                ],
+                'pageSize' => [
+                  'location' => 'query',
+                  'type' => 'integer',
+                ],
+                'pageToken' => [
+                  'location' => 'query',
+                  'type' => 'string',
+                ],
+                'readMask' => [
+                  'location' => 'query',
+                  'type' => 'string',
                 ],
               ],
             ],

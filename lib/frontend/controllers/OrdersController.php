@@ -53,11 +53,11 @@ class OrdersController extends Sceleton
             return false;
         }
         
-        if ($_GET['theme_name']) {
+        if ($_GET['theme_name']??null) {
             $theme = $_GET['theme_name'];
         } else {
             $theme_array = tep_db_fetch_array(tep_db_query("select theme_name from " . TABLE_THEMES . " where is_default = 1"));
-            if ($theme_array['theme_name']){
+            if ($theme_array['theme_name']??null){
                 $theme = $theme_array['theme_name'];
             } else {
                 $theme = 'theme-1';
@@ -120,12 +120,19 @@ class OrdersController extends Sceleton
 
         $this->layout = false;
 
-        $cn = \common\services\OrderManager::loadManager()->getOrderSplitter()->getCreditNoteRow();
-
-        $oID = $cn->orders_id;
+        $oID = (int)\Yii::$app->request->get('orders_id');
+        
+        if (!$oID || \Yii::$user->isGuest) return '';
+        $order = \common\models\Orders::findOne(['orders_id' => $oID]);
+        if (empty($order) || $order->customers_id != \Yii::$app->user->getIdentity()->customers_id) return '';
+        
         $manager = \common\services\OrderManager::loadManager();
         $splitter = $manager->getOrderSplitter();
         $CNs = $splitter->getInstancesFromSplinters($oID, $splitter::STATUS_RETURNED);
+        if (empty($CNs)) {
+            $CNs = $splitter->getInstancesFromSplinters($oID, $splitter::STATUS_RETURNING);
+        }
+        if (empty($CNs)) return '';
 
         $currencies = \Yii::$container->get('currencies');
 

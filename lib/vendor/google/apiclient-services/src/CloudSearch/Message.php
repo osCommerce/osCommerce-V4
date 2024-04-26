@@ -94,10 +94,18 @@ class Message extends \Google\Collection
    * @var string
    */
   public $messageOrigin;
+  protected $messageReferenceType = MessageReference::class;
+  protected $messageReferenceDataType = '';
+  protected $messageSearchInfoType = AppsDynamiteSharedMessageSearchInfo::class;
+  protected $messageSearchInfoDataType = '';
   /**
    * @var string
    */
   public $messageState;
+  /**
+   * @var int
+   */
+  public $numberOfUnicodeEmojis;
   protected $originAppSuggestionsType = AppsDynamiteSharedOriginAppSuggestion::class;
   protected $originAppSuggestionsDataType = 'array';
   protected $personalLabelsType = PersonalLabelTag::class;
@@ -476,6 +484,34 @@ class Message extends \Google\Collection
     return $this->messageOrigin;
   }
   /**
+   * @param MessageReference
+   */
+  public function setMessageReference(MessageReference $messageReference)
+  {
+    $this->messageReference = $messageReference;
+  }
+  /**
+   * @return MessageReference
+   */
+  public function getMessageReference()
+  {
+    return $this->messageReference;
+  }
+  /**
+   * @param AppsDynamiteSharedMessageSearchInfo
+   */
+  public function setMessageSearchInfo(AppsDynamiteSharedMessageSearchInfo $messageSearchInfo)
+  {
+    $this->messageSearchInfo = $messageSearchInfo;
+  }
+  /**
+   * @return AppsDynamiteSharedMessageSearchInfo
+   */
+  public function getMessageSearchInfo()
+  {
+    return $this->messageSearchInfo;
+  }
+  /**
    * @param string
    */
   public function setMessageState($messageState)
@@ -488,6 +524,20 @@ class Message extends \Google\Collection
   public function getMessageState()
   {
     return $this->messageState;
+  }
+  /**
+   * @param int
+   */
+  public function setNumberOfUnicodeEmojis($numberOfUnicodeEmojis)
+  {
+    $this->numberOfUnicodeEmojis = $numberOfUnicodeEmojis;
+  }
+  /**
+   * @return int
+   */
+  public function getNumberOfUnicodeEmojis()
+  {
+    return $this->numberOfUnicodeEmojis;
   }
   /**
    * @param AppsDynamiteSharedOriginAppSuggestion[]

@@ -494,10 +494,8 @@ class OrdersController extends Sceleton {
         $cid = Yii::$app->request->get('cid', 0);
 
         $params['show_recovery_details'] = false;
-        if (($ext = \common\helpers\Acl::checkExtensionAllowed('RecoverShoppingCart')) && defined('RCS_SHOW_AT_ORDERS') && RCS_SHOW_AT_ORDERS == 'true' && $orders_id && $cid) {
-            $params['show_recovery_details'] = true;
-
-            $ext::initTranslation('order-history');
+        
+        if ($orders_id && $cid) {
 
             $params['ua'] = \common\helpers\System::get_ga_detection($orders_id);
             $params['ua_tracking'] = \common\models\EcommerceTracking::findAll(['orders_id'=>$orders_id]);
@@ -506,27 +504,31 @@ class OrdersController extends Sceleton {
             $params['errors'] = \common\models\CustomersErrors::find()->linkingTo(\common\models\Orders::class)
                     ->where(['orders_id' => $orders_id])->orderBy('error_date desc')->all();
 
-            //contacts
-            $scart = tep_db_query("select * from " . TABLE_SCART . " s inner join " . TABLE_ORDERS . " o on o.orders_id = '" . (int) $orders_id . "' where o.basket_id = s.basket_id and s.customers_id = '" . (int) $cid . "'");
-            if (tep_db_num_rows($scart)) {
-                $_scart = tep_db_fetch_array($scart);
-                $_scart['recovered'] = $_scart['recovered'] ? TEXT_BTN_YES : TEXT_BTN_NO;
-                $_scart['contacted'] = $_scart['contacted'] ? TEXT_BTN_YES : TEXT_BTN_NO;
-                $_scart['workedout'] = $_scart['workedout'] ? TEXT_BTN_YES : TEXT_BTN_NO;
-                $params['scart'] = $_scart;
-                //gv && cc
-                $coupons = tep_db_query("select cet.coupon_id, cet.sent_firstname, cet.sent_lastname, cet.date_sent, c.coupon_code, c.coupon_amount, c.coupon_currency, c.coupon_type, c.coupon_active from " . TABLE_COUPON_EMAIL_TRACK . " cet left join " . TABLE_COUPONS . " c on c.coupon_id = cet.coupon_id inner join " . TABLE_ORDERS . " o on o.orders_id = '" . (int) $orders_id . "' where o.basket_id = cet.basket_id and cet.customer_id_sent = '" . (int) $cid . "'");
-                if (tep_db_num_rows($coupons)) {
-                    $_cops = [];
-                    $currencies = Yii::$container->get('currencies');
-                    while ($cop = tep_db_fetch_array($coupons)) {
-                        $_cops[$cop['coupon_id']] = $cop;
-                        $_cops[$cop['coupon_id']]['coupon_amount'] = $cop['coupon_code'] . ' (' . ($cop['coupon_type'] == 'F' || $cop['coupon_type'] == 'G' ? $currencies->format($cop['coupon_amount'], false, $cop['coupon_currency']) : ($cop['coupon_type'] == 'P' ? round($cop['coupon_amount'], 2) . '%' : '')) . ') ' . ($cop['coupon_type'] == 'G' && $cop['coupon_active'] == 'N' ? TEXT_USED : '') . ' - ' . $cop['sent_firstname'] . ' ' . $cop['sent_lastname'];
-                        $_cops[$cop['coupon_id']]['coupon_type'] = ($cop['coupon_type'] == 'G' ? GIFT_CERTIFICATE : DISCOUNT_COUPON);
+            if (($ext = \common\helpers\Acl::checkExtensionAllowed('RecoverShoppingCart')) && defined('RCS_SHOW_AT_ORDERS') && RCS_SHOW_AT_ORDERS == 'true' && $orders_id && $cid) {
+                $params['show_recovery_details'] = true;
+                $ext::initTranslation('order-history');
+                //contacts
+                $scart = tep_db_query("select * from " . TABLE_SCART . " s inner join " . TABLE_ORDERS . " o on o.orders_id = '" . (int) $orders_id . "' where o.basket_id = s.basket_id and s.customers_id = '" . (int) $cid . "'");
+                if (tep_db_num_rows($scart)) {
+                    $_scart = tep_db_fetch_array($scart);
+                    $_scart['recovered'] = $_scart['recovered'] ? TEXT_BTN_YES : TEXT_BTN_NO;
+                    $_scart['contacted'] = $_scart['contacted'] ? TEXT_BTN_YES : TEXT_BTN_NO;
+                    $_scart['workedout'] = $_scart['workedout'] ? TEXT_BTN_YES : TEXT_BTN_NO;
+                    $params['scart'] = $_scart;
+                    //gv && cc
+                    $coupons = tep_db_query("select cet.coupon_id, cet.sent_firstname, cet.sent_lastname, cet.date_sent, c.coupon_code, c.coupon_amount, c.coupon_currency, c.coupon_type, c.coupon_active from " . TABLE_COUPON_EMAIL_TRACK . " cet left join " . TABLE_COUPONS . " c on c.coupon_id = cet.coupon_id inner join " . TABLE_ORDERS . " o on o.orders_id = '" . (int) $orders_id . "' where o.basket_id = cet.basket_id and cet.customer_id_sent = '" . (int) $cid . "'");
+                    if (tep_db_num_rows($coupons)) {
+                        $_cops = [];
+                        $currencies = Yii::$container->get('currencies');
+                        while ($cop = tep_db_fetch_array($coupons)) {
+                            $_cops[$cop['coupon_id']] = $cop;
+                            $_cops[$cop['coupon_id']]['coupon_amount'] = $cop['coupon_code'] . ' (' . ($cop['coupon_type'] == 'F' || $cop['coupon_type'] == 'G' ? $currencies->format($cop['coupon_amount'], false, $cop['coupon_currency']) : ($cop['coupon_type'] == 'P' ? round($cop['coupon_amount'], 2) . '%' : '')) . ') ' . ($cop['coupon_type'] == 'G' && $cop['coupon_active'] == 'N' ? TEXT_USED : '') . ' - ' . $cop['sent_firstname'] . ' ' . $cop['sent_lastname'];
+                            $_cops[$cop['coupon_id']]['coupon_type'] = ($cop['coupon_type'] == 'G' ? GIFT_CERTIFICATE : DISCOUNT_COUPON);
+                        }
+                        $params['coupons'] = $_cops;
                     }
-                    $params['coupons'] = $_cops;
+                    tep_db_free_result($coupons);
                 }
-                tep_db_free_result($coupons);
             }
         }
         return $this->renderAjax('recovery', $params);
@@ -954,6 +956,17 @@ class OrdersController extends Sceleton {
             include($filename);
         }
 
+        $stats = array();
+        if (isset($output['show_stats']) && $output['show_stats']) {
+            $stats['show'] = '1';
+            $orders_query_stats = clone $orders_query_raw;
+            $allOrdersIds = $orders_query_stats->select('o.orders_id')->column();
+            $stats['products'] = (int)\common\models\Orders::find()->alias('o')->where(['o.orders_id' => $allOrdersIds])->leftJoin(TABLE_ORDERS_PRODUCTS . ' op', '(op.orders_id = o.orders_id)')->sum('op.products_quantity');
+            $stats['total'] = \common\models\Orders::find()->alias('o')->where(['o.orders_id' => $allOrdersIds])->leftJoin(TABLE_ORDERS_TOTAL . ' ot', "(o.orders_id = ot.orders_id and ot.class = 'ot_total')")->sum(new \yii\db\Expression('ifnull(ot.value_inc_tax, 0) * if(o.currency_value_default > 0, o.currency_value_default, 1)'));
+            $currencies = Yii::$container->get('currencies');
+            $stats['total_format'] = $currencies->format($stats['total'], false);
+        }
+
 //echo $orders_query_raw->createCommand()->getRawSql();
         $_session->set('filter', $orders_query_raw->where);
 
@@ -1212,7 +1225,7 @@ class OrdersController extends Sceleton {
                 $tableOrderRow['backendOrdersList\OrderPurchaseCell'] = $orderPurchase;
                 $tableOrderRow['backendOrdersList\OrderPurchase'] = $purchasedDate;
 
-                $orderStatus = '<div class="ord-status click_double" data-click-double="' . \Yii::$app->urlManager->createUrl(['orders/process-order', 'orders_id' => $orders['orders_id']]) . '"><span><i style="background: ' . $orders['orders_status_groups_color'] . ';"></i>' . $orders['orders_status_groups_name'] . ',</span> <div>' . $orders['orders_status_name'] . '</div></div>';
+                $orderStatus = '<div class="ord-status click_double" data-click-double="' . \Yii::$app->urlManager->createUrl(['orders/process-order', 'orders_id' => $orders['orders_id']]) . '"><span><i style="background: ' . $orders['orders_status_groups_color'] . ';"></i>' . $orders['orders_status_groups_name'] . ',</span> <div data-status="' . (int)$orders['orders_status'] . '">' . $orders['orders_status_name'] . '</div></div>';
                 $orderRow[] = $orderStatus;
                 $tableOrderRow['backendOrdersList\OrderStatusCell'] = $orderStatus;
 
@@ -1242,6 +1255,7 @@ class OrdersController extends Sceleton {
             'draw' => $draw,
             'recordsTotal' => $orders_query_numrows,
             'recordsFiltered' => $orders_query_numrows,
+            'stats' => $stats,
             'data' => $responseList
         );
         echo json_encode($response, JSON_PARTIAL_OUTPUT_ON_ERROR);
@@ -1383,6 +1397,9 @@ class OrdersController extends Sceleton {
             $platforms[] = 0;
             $oQuery->andWhere(['platform_id' => $platforms]);
         }
+        foreach (\common\helpers\Hooks::getList('orders/process-order/check-query') as $filename) {
+            include($filename);
+        }
 
         if (!$oQuery->exists()){
             $messageStack = \Yii::$container->get('message_stack');
@@ -1486,7 +1503,7 @@ class OrdersController extends Sceleton {
                 ->andWhere($filter)->orderBy("orders_id ASC")->limit(1)->asArray()->one();
         $order_prev = $pagin_model->where("o.orders_id < '" . (int) $order->order_id . "'")
                 ->andWhere($filter)->orderBy("orders_id DESC")->limit(1)->asArray()->one();
-        
+
         $this->view->order_next = ( isset($order_next['orders_id']) ? $order_next['orders_id'] : 0);
         $this->view->order_prev = ( isset($order_prev['orders_id']) ? $order_prev['orders_id'] : 0);
 
@@ -1519,6 +1536,14 @@ class OrdersController extends Sceleton {
             unset($addedPages['invoice'][$key]);
         }
         $addedPages['packingslip'] = $addedPages['packingslip'] ?? [];
+        if (defined('CREDIT_NOTE_AVAILABLE') && CREDIT_NOTE_AVAILABLE) {
+            $splitter = $manager->getOrderSplitter();
+            $cn1 = $splitter->getInstancesFromSplinters($oID, $splitter::STATUS_RETURNING);
+            $cn2 = $splitter->getInstancesFromSplinters($oID, $splitter::STATUS_RETURNED);
+            if (!empty($cn1) || !empty($cn2)) {
+                $addedPages['credit_note'] = [];
+            }
+        }
 
         $fraudView = false;
         if ( \common\helpers\Acl::checkExtensionAllowed('FraudAddress','allowed') ) {
@@ -3771,7 +3796,15 @@ class OrdersController extends Sceleton {
         if ($orders_label_id > 0 && !empty($new_module) && !empty($new_method)) {
             $oLabel = \common\models\OrdersLabel::findOne(['orders_label_id' => $orders_label_id, 'orders_id' => $orders_id]);
             $oLabel->label_class = $new_module_method;
-            $oLabel->save();
+            $class = "common\\modules\\label\\" . $new_module;
+            if (class_exists($class) && is_subclass_of($class, "common\\classes\\modules\\ModuleLabel")) {
+                $labelObj = new $class;
+                $extraParams = $labelObj->extractExtraParamsValues(\Yii::$app->request->get());
+                if (!empty($extraParams)) {
+                    $oLabel->extra_params = json_encode($extraParams);
+                }
+            }
+            $oLabel->save(false);
         }
         if ($action == 'save_label_products') {
             $selected_products = Yii::$app->request->get('selected_products', []);
@@ -3987,7 +4020,12 @@ class OrdersController extends Sceleton {
                 $namespaceModuleClass = "common\\modules\\label\\" . $class;
                 if (class_exists($namespaceModuleClass) && is_subclass_of($namespaceModuleClass, "common\\classes\\modules\\ModuleLabel")) {
                     $label = new $namespaceModuleClass;
-
+                    
+                    $extraParams = '';
+                    if (method_exists($label, 'getExtraParams')) {
+                        $extraParams = trim($label->getExtraParams($order, $orders_label_id > 0 ? $orders_label_id : $oLabel->orders_label_id));
+                    }
+                    
                     $methods = $label->get_methods(
                         $order->delivery['country']['iso_code_2'],
                         $new_method,
@@ -4000,7 +4038,8 @@ class OrdersController extends Sceleton {
                         'title' => $label->title,
                         'accordion' => strpos($auto_selected_label, $class.'_')===0,
                         'selected' => $auto_selected_label,
-                        'methods' => $methods
+                        'methods' => $methods,
+                        'extraParams' => $extraParams,
                     ];
                     $_selectedAccordion = $_selectedAccordion || strpos($auto_selected_label, $class.'_')===0;
                 }
@@ -4527,6 +4566,10 @@ class OrdersController extends Sceleton {
             /** @var \common\services\SplitterManager  $splitter */
             $splitter = $manager->getOrderSplitter();
             $CreditNotes = $splitter->getInstancesFromSplinters($orders_id, $splitter::STATUS_RETURNED, $cnId);
+            if (empty($CreditNotes)) {
+                $CreditNotes = $splitter->getInstancesFromSplinters($orders_id, $splitter::STATUS_RETURNING, $cnId);
+            }
+            
             if ($CreditNotes){
                 $languages_id = Yii::$app->settings->get('languages_id');
 
@@ -4584,14 +4627,21 @@ class OrdersController extends Sceleton {
             'status' => 'ok',
         ];
 
-        $order_id = Yii::$app->request->get('order_id',0);
-        $sortkey = Yii::$app->request->post('sortkey',[]);
-        if ( is_array($sortkey) && count($sortkey)>0 ) {
+        $order_id = Yii::$app->request->get('order_id', 0);
+        $sortkey = Yii::$app->request->post('sortkey', []);
+        if (is_array($sortkey) && count($sortkey) > 0) {
             $sort_order = 0;
-            foreach($sortkey as $op_id) {
-                tep_db_query("UPDATE ".TABLE_ORDERS_PRODUCTS." SET sort_order='".($sort_order++)."' WHERE orders_id='".(int)$order_id."' AND orders_products_id='".(int)$op_id."'");
+            foreach ($sortkey as $op_id) {
+                tep_db_query("UPDATE " . TABLE_ORDERS_PRODUCTS . " SET sort_order = '" . ($sort_order++) . "' WHERE orders_id = '" . (int) $order_id . "' AND orders_products_id = '" . (int) $op_id . "'");
+                $check_orders_products = tep_db_fetch_array(tep_db_query("select template_uprid, sub_products from " . TABLE_ORDERS_PRODUCTS . " where orders_id = '" . (int) $order_id . "' AND orders_products_id = '" . (int) $op_id . "'"));
+                if (tep_not_null($check_orders_products['sub_products'])) {
+                    $orders_subproducts_query = tep_db_query("select orders_products_id from " . TABLE_ORDERS_PRODUCTS . " where orders_id = '" . (int) $order_id . "' and parent_product = '" . tep_db_input($check_orders_products['template_uprid']) . "' order by orders_products_id");
+                    while ($orders_subproducts = tep_db_fetch_array($orders_subproducts_query)) {
+                        tep_db_query("UPDATE " . TABLE_ORDERS_PRODUCTS . " set sort_order = '" . ($sort_order++) . "' where orders_id = '" . (int) $order_id . "' and orders_products_id = '" . (int) $orders_subproducts['orders_products_id'] . "'");
+                    }
+                }
             }
-        }else{
+        } else {
             Yii::$app->response->data = [
                 'status' => 'error',
             ];

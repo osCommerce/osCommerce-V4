@@ -28,6 +28,10 @@ class GoogleCloudContentwarehouseV1RunPipelineMetadataExportToCdwPipelineMetadat
    * @var string[]
    */
   public $documents;
+  /**
+   * @var string
+   */
+  public $outputPath;
 
   /**
    * @param string
@@ -56,6 +60,20 @@ class GoogleCloudContentwarehouseV1RunPipelineMetadataExportToCdwPipelineMetadat
   public function getDocuments()
   {
     return $this->documents;
+  }
+  /**
+   * @param string
+   */
+  public function setOutputPath($outputPath)
+  {
+    $this->outputPath = $outputPath;
+  }
+  /**
+   * @return string
+   */
+  public function getOutputPath()
+  {
+    return $this->outputPath;
   }
 }
 

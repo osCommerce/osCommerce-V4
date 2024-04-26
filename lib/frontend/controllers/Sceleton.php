@@ -654,29 +654,6 @@ class Sceleton extends Controller {
         }
 
         break;
-// CATALOG PAGES
-            case ( strpos($full_action,'catalog-pages/')===0 ):
-                $the_title = (defined('HEAD_TITLE_TAG_CATALOG_PAGES') && tep_not_null(HEAD_TITLE_TAG_CATALOG_PAGES)?HEAD_TITLE_TAG_CATALOG_PAGES:$HEAD_TITLE_TAG_ALL);
-                $the_key_words = (defined('HEAD_KEY_TAG_CATALOG_PAGES') && tep_not_null(HEAD_KEY_TAG_CATALOG_PAGES)?HEAD_KEY_TAG_CATALOG_PAGES:$HEAD_KEY_TAG_ALL);
-                $the_desc = (defined('HEAD_DESC_TAG_CATALOG_PAGES') && tep_not_null(HEAD_DESC_TAG_CATALOG_PAGES)?HEAD_DESC_TAG_CATALOG_PAGES:$HEAD_DESC_TAG_ALL);
-                $platformId = platform::activeId()?platform::activeId():platform::currentId();
-                $slug = tep_db_prepare_input($params['page']);
-                $catalogPage = Yii::$app->db->createCommand("
-                        SELECT cd.meta_title,cd.meta_description,cd.meta_keyword
-                        FROM catalog_pages_description cd
-                        INNER JOIN catalog_pages cp ON cd.catalog_pages_id = cp.catalog_pages_id AND cp.platform_id = $platformId
-                        WHERE (cd.languages_id = $languages_id) AND (cd.slug = '" . tep_db_input($slug) . "')")
-                    ->queryOne();
-                if(!empty($catalogPage['meta_title'])){
-                    $the_title = $catalogPage['meta_title'];
-                }
-                if(!empty($catalogPage['meta_keyword'])){
-                    $the_key_words = $catalogPage['meta_keyword'];
-                }
-                if(!empty($catalogPage['meta_description'])){
-                    $the_desc = $catalogPage['meta_description'];
-                }
-                break;
 // GIFT CARD
             case ( $full_action=='catalog/gift-card' ):
                 $the_title = (defined('HEAD_TITLE_TAG_GIFT_CARD') && tep_not_null(HEAD_TITLE_TAG_GIFT_CARD)?HEAD_TITLE_TAG_GIFT_CARD:$HEAD_TITLE_TAG_ALL);
@@ -1018,7 +995,7 @@ class Sceleton extends Controller {
     }
 
     public function beforeAction($action) {
-        if (stripos(\Yii::$app->request->getUserAgent(), 'MSIE')) {
+        if (stripos((string)\Yii::$app->request->getUserAgent(), 'MSIE')) {
             $this->getView()->registerJsFile(Info::themeFile('/js/promise/es6-promise.auto.min.js'), ['position' => \yii\web\View::POS_HEAD], 'promise_polyfill');
         }
         $response =  parent::beforeAction($action);

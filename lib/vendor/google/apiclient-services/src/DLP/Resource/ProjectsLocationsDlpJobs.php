@@ -48,6 +48,7 @@ class ProjectsLocationsDlpJobs extends \Google\Service\Resource
    * @param GooglePrivacyDlpV2CancelDlpJobRequest $postBody
    * @param array $optParams Optional parameters.
    * @return GoogleProtobufEmpty
+   * @throws \Google\Service\Exception
    */
   public function cancel($name, GooglePrivacyDlpV2CancelDlpJobRequest $postBody, $optParams = [])
   {
@@ -75,6 +76,7 @@ class ProjectsLocationsDlpJobs extends \Google\Service\Resource
    * @param GooglePrivacyDlpV2CreateDlpJobRequest $postBody
    * @param array $optParams Optional parameters.
    * @return GooglePrivacyDlpV2DlpJob
+   * @throws \Google\Service\Exception
    */
   public function create($parent, GooglePrivacyDlpV2CreateDlpJobRequest $postBody, $optParams = [])
   {
@@ -92,6 +94,7 @@ class ProjectsLocationsDlpJobs extends \Google\Service\Resource
    * @param string $name Required. The name of the DlpJob resource to be deleted.
    * @param array $optParams Optional parameters.
    * @return GoogleProtobufEmpty
+   * @throws \Google\Service\Exception
    */
   public function delete($name, $optParams = [])
   {
@@ -103,11 +106,11 @@ class ProjectsLocationsDlpJobs extends \Google\Service\Resource
    * Finish a running hybrid DlpJob. Triggers the finalization steps and running
    * of any enabled actions that have not yet run. (dlpJobs.finish)
    *
-   * @param string $name Required. The name of the DlpJob resource to be
-   * cancelled.
+   * @param string $name Required. The name of the DlpJob resource to be finished.
    * @param GooglePrivacyDlpV2FinishDlpJobRequest $postBody
    * @param array $optParams Optional parameters.
    * @return GoogleProtobufEmpty
+   * @throws \Google\Service\Exception
    */
   public function finish($name, GooglePrivacyDlpV2FinishDlpJobRequest $postBody, $optParams = [])
   {
@@ -124,6 +127,7 @@ class ProjectsLocationsDlpJobs extends \Google\Service\Resource
    * @param string $name Required. The name of the DlpJob resource.
    * @param array $optParams Optional parameters.
    * @return GooglePrivacyDlpV2DlpJob
+   * @throws \Google\Service\Exception
    */
   public function get($name, $optParams = [])
   {
@@ -141,6 +145,7 @@ class ProjectsLocationsDlpJobs extends \Google\Service\Resource
    * @param GooglePrivacyDlpV2HybridInspectDlpJobRequest $postBody
    * @param array $optParams Optional parameters.
    * @return GooglePrivacyDlpV2HybridInspectResponse
+   * @throws \Google\Service\Exception
    */
   public function hybridInspect($name, GooglePrivacyDlpV2HybridInspectDlpJobRequest $postBody, $optParams = [])
   {
@@ -184,16 +189,17 @@ class ProjectsLocationsDlpJobs extends \Google\Service\Resource
    * length of this field should be no more than 500 characters.
    * @opt_param string locationId Deprecated. This field has no effect.
    * @opt_param string orderBy Comma separated list of fields to order by,
-   * followed by `asc` or `desc` postfix. This list is case-insensitive, default
-   * sorting order is ascending, redundant space characters are insignificant.
-   * Example: `name asc, end_time asc, create_time desc` Supported fields are: -
-   * `create_time`: corresponds to the time the job was created. - `end_time`:
-   * corresponds to the time the job ended. - `name`: corresponds to the job's
-   * name. - `state`: corresponds to `state`
+   * followed by `asc` or `desc` postfix. This list is case insensitive. The
+   * default sorting order is ascending. Redundant space characters are
+   * insignificant. Example: `name asc, end_time asc, create_time desc` Supported
+   * fields are: - `create_time`: corresponds to the time the job was created. -
+   * `end_time`: corresponds to the time the job ended. - `name`: corresponds to
+   * the job's name. - `state`: corresponds to `state`
    * @opt_param int pageSize The standard list page size.
    * @opt_param string pageToken The standard list page token.
    * @opt_param string type The type of job. Defaults to `DlpJobType.INSPECT`
    * @return GooglePrivacyDlpV2ListDlpJobsResponse
+   * @throws \Google\Service\Exception
    */
   public function listProjectsLocationsDlpJobs($parent, $optParams = [])
   {

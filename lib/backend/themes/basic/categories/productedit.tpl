@@ -203,6 +203,9 @@
     {if $TabAccess->tabView('TAB_PROPERTIES')}
             <li data-bs-toggle="tab" data-bs-target="#tab_1_11"><a title="{$smarty.const.TAB_PROPERTIES}"><span>{$smarty.const.TAB_PROPERTIES}</span></a></li>
     {/if}
+    {if \common\helpers\Extensions::isAllowed('ProductsGrouped')}
+        <li data-bs-toggle="tab" data-bs-target="#tab_1_17"><a title="{$smarty.const.TAB_PRODUCTS_GROUPED}" ><span>{$smarty.const.TAB_PRODUCTS_GROUPED}</span></a></li>
+    {/if}
     {if \common\helpers\Acl::checkExtensionAllowed('ObsoleteProducts', 'allowed') && $TabAccess->tabView('TAB_OBSOLETE_PRODUCTS')}
             <li data-bs-toggle="tab" data-bs-target="#tab_obsolete_products"><a><span>{$smarty.const.TAB_OBSOLETE_PRODUCTS}</span></a></li>
     {/if}
@@ -275,6 +278,9 @@
     {/if}
     {if $TabAccess->tabView('TAB_PROPERTIES')}
             <li data-bs-toggle="tab" data-bs-target="#tab_1_11"><a title="{$smarty.const.TAB_PROPERTIES}"><span>{$smarty.const.TAB_PROPERTIES}</span></a></li>
+    {/if}
+    {if \common\helpers\Extensions::isAllowed('ProductsGrouped', 'allowed')}
+        <li data-bs-toggle="tab" data-bs-target="#tab_1_17"><a title="{$smarty.const.TAB_PRODUCTS_GROUPED}"><span>{$smarty.const.TAB_PRODUCTS_GROUPED}</span></a></li>
     {/if}
 <!-- {*
     {if \common\helpers\Acl::checkExtensionAllowed('ProductBundles') && $TabAccess->tabView('TAB_BUNDLES')}
@@ -441,6 +447,11 @@
             {\common\extensions\ObsoleteProducts\ObsoleteProducts::productBlock($pInfo)}
         </div>
     {/if}
+    {if $ext = \common\helpers\Extensions::isAllowed('ProductsGrouped')}
+        <div class="tab-pane" id="tab_1_17">
+            {$ext::productBlock($pInfo)}
+        </div>
+    {/if}
     {if \common\helpers\Acl::checkExtensionAllowed('ProductDocuments') && $TabAccess->tabView('TAB_DOCUMENTS')}
             <div class="tab-pane" id="tab_1_13">
                 {\common\extensions\ProductDocuments\ProductDocuments::productBlock($pInfo)}
@@ -552,7 +563,10 @@ function saveProduct() {
             if ( result ){
                 formData.push({ 'name':'mark_parent_as_master', 'value':'1' });
             }
+            const $preloader = $('<div class="hided-box-fixed"><div class="preloader"></div></div>');
+            $('body').append($preloader);
             $.post("{Yii::$app->urlManager->createUrl('categories/product-submit')}"+window.location.hash, formData, function(data, status){
+                $preloader.remove();
                 if (status == "success") {
                     $('#save_product_form').html(data);
 
@@ -563,7 +577,10 @@ function saveProduct() {
         }
     });
     {else}
+    const $preloader = $('<div class="hided-box-fixed"><div class="preloader"></div></div>');
+    $('body').append($preloader);
     $.post("{Yii::$app->urlManager->createUrl('categories/product-submit')}"+window.location.hash, formData, function(data, status){
+        $preloader.remove();
         if (status == "success") {
             $('#save_product_form').html(data);
 
@@ -1045,7 +1062,7 @@ $(document).ready(function(){
             var $select = $(this);
             if ($select.attr('readonly') || $select.attr('disabled')) return;
 
-            var $termSelect = $select.parents('.widget-content').find('.delivery-term-section select');
+            var $termSelect = $select.parents('.stock-flags').find('.delivery-term-section select');
             $termSelect.find('option').show();
             var map = {json_encode(\common\classes\StockIndication::termToIndicationMap())};
             if (map[$select.val()]){
@@ -1072,7 +1089,7 @@ $(document).ready(function(){
             if ( $select.attr('readonly') || $select.attr('disabled') ) return;
             var $optionList = $select.find('option');
 
-            var indication_id = $select.parents('.widget-content').find('.stock-availability select').val();
+            var indication_id = $select.parents('.stock-flags').find('.stock-availability select').val();
             $optionList.show();
 
             var map = {json_encode(\common\classes\StockIndication::termToIndicationMap())};

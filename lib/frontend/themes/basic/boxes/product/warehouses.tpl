@@ -24,11 +24,11 @@
               {/if}
               {if isset($settings[0].show_qty) && $settings[0].show_qty}
                 {if isset($settings[0].show_as_levels) && $settings[0].show_as_levels}
-                  {if $settings[0].show_qty_level1 >= $ws.qty }
+                  {if $settings[0].show_qty_level1 >= $ws.quantity }
                     <div class="warehouse-qty-level-low">
                       <span>{$smarty.const.AVAILABLE_AT_WAREHOUSES_LEVEL_LOW}</span>
                     </div>
-                  {elseif $settings[0].show_qty_level2 <= $ws.qty }
+                  {elseif $settings[0].show_qty_level2 <= $ws.quantity }
                     <div class="warehouse-qty-level-avg">
                       <span>{$smarty.const.AVAILABLE_AT_WAREHOUSES_LEVEL_MEDIUM}</span>
                     </div>

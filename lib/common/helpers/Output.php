@@ -101,6 +101,11 @@ class Output {
         if (is_array($_GET) && (sizeof($_GET) > 0)) {
             foreach ($_GET as $key => $value) {
                 if ( strpos($key,'<')!==false || strpos($key,'>')!==false ) continue;
+                
+                // key XSS prevention
+                $key = \yii\helpers\Html::encode($key);
+                $key = rawurlencode(self::xss_clean(stripslashes(strip_tags($key))));
+                
                 if (((!is_array($value) && strlen($value) > 0) || (is_array($value) && sizeof($value) > 0)) && ($key != session_name()) && ($key != 'error') && (!in_array($key, $exclude_array)) && ($key != 'x') && ($key != 'y')) {
                     if (is_array($value)) {
                         for ($i = 0, $n = sizeof($value); $i < $n; $i++) {
@@ -384,6 +389,20 @@ class Output {
             return $matches[1];
         }
         return '';
+    }
+
+    public static function sanitize($value)
+    {
+        if (is_string($value)) {
+            return (PHP_VERSION_ID >= 80100) ? htmlspecialchars($value) : filter_var($value, FILTER_SANITIZE_STRING);
+        } elseif (is_array($value)) {
+            foreach ($value as &$item) {
+                $item = self::sanitize($item);
+            }
+            return $value;
+        } else {
+            return $value;
+        }
     }
 
 }

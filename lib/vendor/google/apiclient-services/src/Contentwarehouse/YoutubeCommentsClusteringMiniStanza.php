@@ -22,6 +22,10 @@ class YoutubeCommentsClusteringMiniStanza extends \Google\Collection
   protected $collection_key = 'videoTimestamps';
   public $ansibleScores;
   public $automodScores;
+  /**
+   * @var YoutubeDistillerBlarneyStoneScores
+   */
+  public $blarneyStoneScore;
   protected $blarneyStoneScoreType = YoutubeDistillerBlarneyStoneScores::class;
   protected $blarneyStoneScoreDataType = '';
   /**
@@ -40,6 +44,12 @@ class YoutubeCommentsClusteringMiniStanza extends \Google\Collection
    */
   public $commentClassificationBuckets;
   public $commentClassificationRanking;
+  /**
+   * @var YoutubeCommentsApiCommentModeratedRestriction[]
+   */
+  public $commentModeratedRestrictions;
+  protected $commentModeratedRestrictionsType = YoutubeCommentsApiCommentModeratedRestriction::class;
+  protected $commentModeratedRestrictionsDataType = 'array';
   /**
    * @var string
    */
@@ -68,12 +78,20 @@ class YoutubeCommentsClusteringMiniStanza extends \Google\Collection
    * @var string
    */
   public $detailedLanguageCode;
+  /**
+   * @var AppsPeopleActivityStreamqualityDistillerEngagements
+   */
+  public $distillerEngagements;
   protected $distillerEngagementsType = AppsPeopleActivityStreamqualityDistillerEngagements::class;
   protected $distillerEngagementsDataType = '';
   /**
    * @var string[]
    */
   public $eligibleQualifiedTeaserFilters;
+  /**
+   * @var VideoYoutubeCommentsRankingCTRMetrics
+   */
+  public $empiricalCtrs;
   protected $empiricalCtrsType = VideoYoutubeCommentsRankingCTRMetrics::class;
   protected $empiricalCtrsDataType = '';
   public $fds;
@@ -85,6 +103,7 @@ class YoutubeCommentsClusteringMiniStanza extends \Google\Collection
    * @var bool
    */
   public $hasCreatorReply;
+  public $impersonationScores;
   /**
    * @var bool
    */
@@ -121,6 +140,7 @@ class YoutubeCommentsClusteringMiniStanza extends \Google\Collection
    * @var bool[]
    */
   public $lowQualityDecisions;
+  public $lowQualityScores;
   /**
    * @var int
    */
@@ -159,23 +179,43 @@ class YoutubeCommentsClusteringMiniStanza extends \Google\Collection
    * @var string
    */
   public $rankingPostLanguage;
+  /**
+   * @var SocialCommonSegments
+   */
+  public $segments;
   protected $segmentsType = SocialCommonSegments::class;
   protected $segmentsDataType = '';
   public $sensitivityScores;
+  /**
+   * @var YoutubeCommentsSentimentSentiment
+   */
+  public $sentiment;
   protected $sentimentType = YoutubeCommentsSentimentSentiment::class;
   protected $sentimentDataType = '';
   /**
    * @var string
    */
   public $shortReplyVideoId;
+  /**
+   * @var VideoYoutubeCommentsClassificationProtoYouTubeCommentSmartReply[]
+   */
+  public $smartReplies;
   protected $smartRepliesType = VideoYoutubeCommentsClassificationProtoYouTubeCommentSmartReply::class;
   protected $smartRepliesDataType = 'map';
   /**
    * @var string
    */
   public $stanzaId;
+  /**
+   * @var SocialStanzaStanzaRestriction[]
+   */
+  public $stanzaRestrictions;
   protected $stanzaRestrictionsType = SocialStanzaStanzaRestriction::class;
   protected $stanzaRestrictionsDataType = 'array';
+  /**
+   * @var SecurityCredentialsPrincipalProto
+   */
+  public $subject;
   protected $subjectType = SecurityCredentialsPrincipalProto::class;
   protected $subjectDataType = '';
   /**
@@ -186,16 +226,32 @@ class YoutubeCommentsClusteringMiniStanza extends \Google\Collection
    * @var string
    */
   public $subscriptionTimestamp;
+  /**
+   * @var YoutubeBackstageSuperVodCommentInfo
+   */
+  public $superThanksInfo;
   protected $superThanksInfoType = YoutubeBackstageSuperVodCommentInfo::class;
   protected $superThanksInfoDataType = '';
+  /**
+   * @var YoutubeCommentsRankingYouTubeCommentTextEmbedding[]
+   */
+  public $textEmbedding;
   protected $textEmbeddingType = YoutubeCommentsRankingYouTubeCommentTextEmbedding::class;
   protected $textEmbeddingDataType = 'map';
   /**
    * @var int
    */
   public $textLength;
+  /**
+   * @var YoutubeCommentsRankingYouTubeCommentTextQualityAnnotation
+   */
+  public $textQualityScores;
   protected $textQualityScoresType = YoutubeCommentsRankingYouTubeCommentTextQualityAnnotation::class;
   protected $textQualityScoresDataType = '';
+  /**
+   * @var YoutubeCommentsRankingYouTubeCommentTextQualityAnnotation
+   */
+  public $textQualityScores2;
   protected $textQualityScores2Type = YoutubeCommentsRankingYouTubeCommentTextQualityAnnotation::class;
   protected $textQualityScores2DataType = '';
   /**
@@ -322,6 +378,20 @@ class YoutubeCommentsClusteringMiniStanza extends \Google\Collection
   public function getCommentClassificationRanking()
   {
     return $this->commentClassificationRanking;
+  }
+  /**
+   * @param YoutubeCommentsApiCommentModeratedRestriction[]
+   */
+  public function setCommentModeratedRestrictions($commentModeratedRestrictions)
+  {
+    $this->commentModeratedRestrictions = $commentModeratedRestrictions;
+  }
+  /**
+   * @return YoutubeCommentsApiCommentModeratedRestriction[]
+   */
+  public function getCommentModeratedRestrictions()
+  {
+    return $this->commentModeratedRestrictions;
   }
   /**
    * @param string
@@ -499,6 +569,14 @@ class YoutubeCommentsClusteringMiniStanza extends \Google\Collection
   {
     return $this->hasCreatorReply;
   }
+  public function setImpersonationScores($impersonationScores)
+  {
+    $this->impersonationScores = $impersonationScores;
+  }
+  public function getImpersonationScores()
+  {
+    return $this->impersonationScores;
+  }
   /**
    * @param bool
    */
@@ -624,6 +702,14 @@ class YoutubeCommentsClusteringMiniStanza extends \Google\Collection
   public function getLowQualityDecisions()
   {
     return $this->lowQualityDecisions;
+  }
+  public function setLowQualityScores($lowQualityScores)
+  {
+    $this->lowQualityScores = $lowQualityScores;
+  }
+  public function getLowQualityScores()
+  {
+    return $this->lowQualityScores;
   }
   /**
    * @param int

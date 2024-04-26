@@ -15,6 +15,9 @@ namespace common\models;
 
 use yii\db\ActiveRecord;
 
+/**
+ * @deprecated Use TrackingCarriers extensions model instead this
+ */
 class TrackingCarriers extends ActiveRecord
 {
 

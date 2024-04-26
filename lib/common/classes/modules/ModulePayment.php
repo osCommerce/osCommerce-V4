@@ -324,7 +324,11 @@ abstract class ModulePayment extends Module {
         $orderClass = $this->orderTypeBeforePayment();
         if ($orderClass != 'TmpOrder') {
             $order = $this->manager->getOrderInstance();
-            $order->info['order_status'] = $this->getDefaultOrderStatusId();
+            if ($order->info['order_status'] > 0) {
+                // Don't change the order status if it has already been set
+            } else {
+                $order->info['order_status'] = $this->getDefaultOrderStatusId();
+            }
         }
         $ret = $this->saveOrder($orderClass);
         if (!empty($ret) && $orderClass == 'TmpOrder') {
@@ -611,7 +615,7 @@ abstract class ModulePayment extends Module {
         ksort($data);
       }
       foreach ($data as $key => $value) {
-        if ($incEmpty || !empty(value)) {
+        if ($incEmpty || !empty($value)) {
           $clear_text .= $key . $value;
         }
       }

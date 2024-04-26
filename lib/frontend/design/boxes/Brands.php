@@ -36,6 +36,10 @@ class Brands extends Widget
             ->addSelect('m.manufacturers_id, manufacturers_name, manufacturers_image, manufacturers_h2_tag')
             ->addSelect(['f_letter' => new \yii\db\Expression('lower(left(manufacturers_name,1))')]);
 
+        foreach (\common\helpers\Hooks::getList('frontend/brands') as $filename) {
+            include($filename);
+        }
+
         if (($this->settings[0]['brands_with_active_products'] ?? false) || Info::themeSetting('hide_empty_brands')) {
             $manufacturersQuery->andWhere(['IN', 'm.manufacturers_id', \common\models\Products::find()
                 ->alias('p')

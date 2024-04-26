@@ -145,18 +145,6 @@ class WidgetsList
         return $widgets;
     }
 
-    private static function subscribe()
-    {
-        $widgets = [];
-         /** @var \common\extensions\Subscribers\Subscribers $subscr  */
-        if ($subscr = \common\helpers\Acl::checkExtensionAllowed('Subscribers', 'allowed')) {
-            $widgets[] = array('name' => 'subscribers\SubscribeForm', 'title' => TEXT_SUBSCRIBE_FORM, 'description' => '', 'type' => 'subscribe', 'class' => '');
-            $widgets[] = array('name' => 'subscribers\UnsubscribeForm', 'title' => TEXT_UNSUBSCRIBE_FORM, 'description' => '', 'type' => 'subscribe', 'class' => '');
-        }
-
-        return $widgets;
-    }
-
     private static function catalog()
     {
         $widgets = [];
@@ -528,13 +516,6 @@ class WidgetsList
         $widgets[] = array('name' => 'VisitorCountry', 'title' => TEXT_VISITOR_COUNTRY, 'description' => '', 'type' => 'general', 'class' => 'account');
 
         //$widgets[] = array('name' => 'Wristband', 'title' => 'wristband', 'description' => '', 'type' => 'general');
-
-        //Committed because not stylized
-        $widgets[] = array('name' => 'CatalogPages\CategoryPagesList', 'title' => TEXT_WIDGET_CATEGORY_PAGE, 'description' => TEXT_WIDGET_CATEGORY_PAGE, 'type' => 'general', 'class' => 'delivery-location-products');
-        $widgets[] = array('name' => 'CatalogPages\CategoryPagesLastList', 'title' => TEXT_WIDGET_CATEGORY_PAGE_LAST_LIST, 'description' => TEXT_WIDGET_CATEGORY_PAGE_LAST_LIST, 'type' => 'general', 'class' => 'delivery-location-products');
-        $widgets[] = array('name' => 'CatalogPages\CategoryPagesLastListByCatalog', 'title' => TEXT_WIDGET_CATEGORY_PAGE_LAST_LIST_BY_CATALOG, 'description' => TEXT_WIDGET_CATEGORY_PAGE_LAST_LIST_BY_CATALOG, 'type' => 'general', 'class' => 'delivery-location-products');
-        $widgets[] = array('name' => 'CatalogPages\CategoryPagesLastListBlock', 'title' => TEXT_WIDGET_CATEGORY_PAGE_LAST_LIST_BLOCK, 'description' => TEXT_WIDGET_CATEGORY_PAGE_LAST_LIST_BLOCK, 'type' => 'general', 'class' => 'delivery-location-products');
-        $widgets[] = array('name' => 'CatalogPages\CategoryPagesLastListByCatalogBlock', 'title' => TEXT_WIDGET_CATEGORY_PAGE_LAST_LIST_BY_CATALOG_BLOCK, 'description' => TEXT_WIDGET_CATEGORY_PAGE_LAST_LIST_BY_CATALOG_BLOCK, 'type' => 'general', 'class' => 'delivery-location-products');
 
         return $widgets;
     }

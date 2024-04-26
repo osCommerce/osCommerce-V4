@@ -99,6 +99,9 @@
                                 <div class="m-b-2">
                                     <input type="text" name="search_text" value="{$search_text}" class="form-control" placeholder="{$smarty.const.TEXT_TEXT}"/>
                                 </div>
+                                <div class="m-b-2 search-by-group">
+                                    <input type="text" name="search_group" value="{$search_group}" class="form-control" placeholder="{$smarty.const.TABLE_HEADING_GROUPS}"/>
+                                </div>
                                 <div class="select-status">
                                     {$smarty.const.ENTRY_STATUS}:
                                     <label>
@@ -248,6 +251,7 @@
             $('.btn-new-group').hide();
             $('.btn-new-banner').show();
             $('.select-status').show();
+            $('.search-by-group').hide();
             $('.show-empty-groups').hide();
         } else if (+$('input[name="platform_id"]').val()) {
             $('.table').addClass('groups');
@@ -255,6 +259,7 @@
             $('.btn-new-group').show();
             $('.btn-new-banner').hide();
             $('.select-status').hide();
+            $('.search-by-group').show();
             $('.show-empty-groups').show();
         } else {
             $('.table').addClass('platforms');
@@ -262,6 +267,7 @@
             $('.btn-new-group').hide();
             $('.btn-new-banner').hide();
             $('.select-status').hide();
+            $('.search-by-group').hide();
             $('.show-empty-groups').hide();
         }
 
@@ -593,6 +599,9 @@
         })
         $('input[name="search_status"]').on('change', function () {
             $('input[name="show_status"]').prop('checked', true).trigger('change')
+            resetStatement()
+        })
+        $('input[name="search_group"]').on('keyup change', function () {
             resetStatement()
         })
     })

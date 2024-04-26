@@ -30,7 +30,7 @@ class Acl
             $checkAdmin = tep_db_query("select access_levels_id, admin_persmissions from " . TABLE_ADMIN . " where admin_id = '" . (int)$login_id . "'");
             if ( tep_db_num_rows($checkAdmin)>0 ) {
                 $admin = tep_db_fetch_array($checkAdmin);
-                $admin['admin_persmissions'] = explode(",", $admin['admin_persmissions'] ?? '');
+                $admin['admin_persmissions'] = explode(",", (string)$admin['admin_persmissions']);
                 $lastData[(int)$login_id] = $admin;
             }
         }
@@ -45,7 +45,7 @@ class Acl
 
             $checkAccess = tep_db_query("SELECT access_levels_persmissions FROM " . TABLE_ACCESS_LEVELS . " WHERE access_levels_id = '" . (int)$access_levels_id . "'");
             $access = tep_db_fetch_array($checkAccess);
-            $lastData[(int)$access_levels_id] = explode(",", $access['access_levels_persmissions']);
+            $lastData[(int)$access_levels_id] = explode(",", (string)$access['access_levels_persmissions']);
         }
         return $lastData[(int)$access_levels_id];
     }
@@ -161,7 +161,7 @@ class Acl
         while ($access = tep_db_fetch_array( $accessQuery )) {
             $currentId = $access['access_control_list_id'];
             if (defined($access['access_control_list_key'])) {
-                eval('$currentName =  ' . $access['access_control_list_key'] . ';');
+                $currentName =  constant($access['access_control_list_key']);
             } else {
                 $currentName = $access['access_control_list_key'];
             }
@@ -541,6 +541,7 @@ class Acl
         $extensions = new \DirectoryIterator(Yii::$aliases['@common'] . '/extensions/');
         foreach($extensions as $ext){
             $class = $ext->getFilename();
+            if (!self::checkExtensionAllowed($class, 'enabled')) continue;
             if ($_w = self::checkExtension($class, 'getMetaTagKeys')){
                 $_applied_tags = $_w::getMetaTagKeys($meta_tags);
                 if (is_array($_applied_tags) && count($_applied_tags)>0){
@@ -618,7 +619,7 @@ class Acl
       if (tep_db_num_rows($checkAdmin) > 0) {
         // admin's permissions override AL permissions (>0 allow <0 forbid)
         $admin = tep_db_fetch_array($checkAdmin);
-        $ALIds = explode(",", $admin['access_levels_persmissions']);
+        $ALIds = explode(",", (string)$admin['access_levels_persmissions']);
         $adminPersmissions = (!empty($admin['admin_persmissions'])) ? explode(",", $admin['admin_persmissions']) : [];
         $a = $r = [];
         foreach ($adminPersmissions as $v) {

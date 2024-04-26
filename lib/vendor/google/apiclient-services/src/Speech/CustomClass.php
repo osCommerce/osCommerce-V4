@@ -21,16 +21,70 @@ class CustomClass extends \Google\Collection
 {
   protected $collection_key = 'items';
   /**
+   * @var string[]
+   */
+  public $annotations;
+  /**
    * @var string
    */
   public $customClassId;
+  /**
+   * @var string
+   */
+  public $deleteTime;
+  /**
+   * @var string
+   */
+  public $displayName;
+  /**
+   * @var string
+   */
+  public $etag;
+  /**
+   * @var string
+   */
+  public $expireTime;
   protected $itemsType = ClassItem::class;
   protected $itemsDataType = 'array';
   /**
    * @var string
    */
+  public $kmsKeyName;
+  /**
+   * @var string
+   */
+  public $kmsKeyVersionName;
+  /**
+   * @var string
+   */
   public $name;
+  /**
+   * @var bool
+   */
+  public $reconciling;
+  /**
+   * @var string
+   */
+  public $state;
+  /**
+   * @var string
+   */
+  public $uid;
 
+  /**
+   * @param string[]
+   */
+  public function setAnnotations($annotations)
+  {
+    $this->annotations = $annotations;
+  }
+  /**
+   * @return string[]
+   */
+  public function getAnnotations()
+  {
+    return $this->annotations;
+  }
   /**
    * @param string
    */
@@ -44,6 +98,62 @@ class CustomClass extends \Google\Collection
   public function getCustomClassId()
   {
     return $this->customClassId;
+  }
+  /**
+   * @param string
+   */
+  public function setDeleteTime($deleteTime)
+  {
+    $this->deleteTime = $deleteTime;
+  }
+  /**
+   * @return string
+   */
+  public function getDeleteTime()
+  {
+    return $this->deleteTime;
+  }
+  /**
+   * @param string
+   */
+  public function setDisplayName($displayName)
+  {
+    $this->displayName = $displayName;
+  }
+  /**
+   * @return string
+   */
+  public function getDisplayName()
+  {
+    return $this->displayName;
+  }
+  /**
+   * @param string
+   */
+  public function setEtag($etag)
+  {
+    $this->etag = $etag;
+  }
+  /**
+   * @return string
+   */
+  public function getEtag()
+  {
+    return $this->etag;
+  }
+  /**
+   * @param string
+   */
+  public function setExpireTime($expireTime)
+  {
+    $this->expireTime = $expireTime;
+  }
+  /**
+   * @return string
+   */
+  public function getExpireTime()
+  {
+    return $this->expireTime;
   }
   /**
    * @param ClassItem[]
@@ -62,6 +172,34 @@ class CustomClass extends \Google\Collection
   /**
    * @param string
    */
+  public function setKmsKeyName($kmsKeyName)
+  {
+    $this->kmsKeyName = $kmsKeyName;
+  }
+  /**
+   * @return string
+   */
+  public function getKmsKeyName()
+  {
+    return $this->kmsKeyName;
+  }
+  /**
+   * @param string
+   */
+  public function setKmsKeyVersionName($kmsKeyVersionName)
+  {
+    $this->kmsKeyVersionName = $kmsKeyVersionName;
+  }
+  /**
+   * @return string
+   */
+  public function getKmsKeyVersionName()
+  {
+    return $this->kmsKeyVersionName;
+  }
+  /**
+   * @param string
+   */
   public function setName($name)
   {
     $this->name = $name;
@@ -72,6 +210,48 @@ class CustomClass extends \Google\Collection
   public function getName()
   {
     return $this->name;
+  }
+  /**
+   * @param bool
+   */
+  public function setReconciling($reconciling)
+  {
+    $this->reconciling = $reconciling;
+  }
+  /**
+   * @return bool
+   */
+  public function getReconciling()
+  {
+    return $this->reconciling;
+  }
+  /**
+   * @param string
+   */
+  public function setState($state)
+  {
+    $this->state = $state;
+  }
+  /**
+   * @return string
+   */
+  public function getState()
+  {
+    return $this->state;
+  }
+  /**
+   * @param string
+   */
+  public function setUid($uid)
+  {
+    $this->uid = $uid;
+  }
+  /**
+   * @return string
+   */
+  public function getUid()
+  {
+    return $this->uid;
   }
 }
 

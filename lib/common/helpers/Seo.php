@@ -103,6 +103,9 @@ class Seo {
 
         if ( empty($products_seo_page_name) || static::isProductSeoPageDuplicated($products_seo_page_name, $product['products_id']) ) {
             $slugVariants = [];
+            if (empty($description['products_name'])) {
+                $description['products_name'] = \common\helpers\Product::get_products_name($product['products_id']);
+            }
             if (!empty($description['products_name'])) {
                 $slugVariants[] = static::makeSlug($description['products_name']);
                 if (!empty($product['products_model'])) {

@@ -45,6 +45,12 @@ class QualityNsrPQData extends \Google\Collection
    */
   public $deltaSubchunkAdjustment;
   /**
+   * @var QualityNsrVersionedFloatSignal[]
+   */
+  public $keto;
+  protected $ketoType = QualityNsrVersionedFloatSignal::class;
+  protected $ketoDataType = 'array';
+  /**
    * @var float
    */
   public $linkIncoming;
@@ -60,6 +66,10 @@ class QualityNsrPQData extends \Google\Collection
    * @var float
    */
   public $page2vecLq;
+  /**
+   * @var QualityNsrPQDataSubchunkData[]
+   */
+  public $subchunkData;
   protected $subchunkDataType = QualityNsrPQDataSubchunkData::class;
   protected $subchunkDataDataType = 'array';
   /**
@@ -158,6 +168,20 @@ class QualityNsrPQData extends \Google\Collection
   public function getDeltaSubchunkAdjustment()
   {
     return $this->deltaSubchunkAdjustment;
+  }
+  /**
+   * @param QualityNsrVersionedFloatSignal[]
+   */
+  public function setKeto($keto)
+  {
+    $this->keto = $keto;
+  }
+  /**
+   * @return QualityNsrVersionedFloatSignal[]
+   */
+  public function getKeto()
+  {
+    return $this->keto;
   }
   /**
    * @param float

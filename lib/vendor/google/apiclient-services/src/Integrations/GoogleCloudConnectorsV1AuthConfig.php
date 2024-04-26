@@ -25,7 +25,13 @@ class GoogleCloudConnectorsV1AuthConfig extends \Google\Collection
   /**
    * @var string
    */
+  public $authKey;
+  /**
+   * @var string
+   */
   public $authType;
+  protected $oauth2AuthCodeFlowType = GoogleCloudConnectorsV1AuthConfigOauth2AuthCodeFlow::class;
+  protected $oauth2AuthCodeFlowDataType = '';
   protected $oauth2ClientCredentialsType = GoogleCloudConnectorsV1AuthConfigOauth2ClientCredentials::class;
   protected $oauth2ClientCredentialsDataType = '';
   protected $oauth2JwtBearerType = GoogleCloudConnectorsV1AuthConfigOauth2JwtBearer::class;
@@ -52,6 +58,20 @@ class GoogleCloudConnectorsV1AuthConfig extends \Google\Collection
   /**
    * @param string
    */
+  public function setAuthKey($authKey)
+  {
+    $this->authKey = $authKey;
+  }
+  /**
+   * @return string
+   */
+  public function getAuthKey()
+  {
+    return $this->authKey;
+  }
+  /**
+   * @param string
+   */
   public function setAuthType($authType)
   {
     $this->authType = $authType;
@@ -62,6 +82,20 @@ class GoogleCloudConnectorsV1AuthConfig extends \Google\Collection
   public function getAuthType()
   {
     return $this->authType;
+  }
+  /**
+   * @param GoogleCloudConnectorsV1AuthConfigOauth2AuthCodeFlow
+   */
+  public function setOauth2AuthCodeFlow(GoogleCloudConnectorsV1AuthConfigOauth2AuthCodeFlow $oauth2AuthCodeFlow)
+  {
+    $this->oauth2AuthCodeFlow = $oauth2AuthCodeFlow;
+  }
+  /**
+   * @return GoogleCloudConnectorsV1AuthConfigOauth2AuthCodeFlow
+   */
+  public function getOauth2AuthCodeFlow()
+  {
+    return $this->oauth2AuthCodeFlow;
   }
   /**
    * @param GoogleCloudConnectorsV1AuthConfigOauth2ClientCredentials

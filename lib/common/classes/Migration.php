@@ -49,6 +49,22 @@ class Migration extends \yii\db\Migration {
         }
     }
 
+    public function isIndexExist($name, $table)
+    {
+        $checkExists = $this->db->createCommand(
+            "show indexes from " . $table ." WHERE Key_name like :indexName ",
+            ['indexName' => $name]
+        )->queryOne();
+        return is_array($checkExists);
+    }
+
+    public function addPrimaryKeyForce($name, $table, $columns)
+    {
+        $this->dropPrimaryKey($name, $table);
+        $this->addPrimaryKey($name, $table, $columns);
+    }
+
+
     /**
      * @inheritdoc
      */
@@ -294,7 +310,10 @@ class Migration extends \yii\db\Migration {
                         $languageValue = reset($value);
                     }
                     if ($replaceExisting) {
-                        \common\models\Translation::deleteAll(['language_id' => $languageId, 'translation_entity' => $entity, 'translation_key' => $key]);
+                        $existing = \common\models\Translation::findOne(['language_id' => $languageId, 'translation_entity' => $entity, 'translation_key' => $key]);
+                        if ($existing && $existing->translation_value != $languageValue) {
+                            \common\models\Translation::deleteAll(['language_id' => $languageId, 'translation_entity' => $entity, 'translation_key' => $key]);
+                        }
                     }
                     $this->db->createCommand(
                             "INSERT IGNORE INTO `translation` " .
@@ -313,7 +332,10 @@ class Migration extends \yii\db\Migration {
                 }
             } else {
                 if ($replaceExisting) {
-                    \common\models\Translation::deleteAll(['language_id' => 1, 'translation_entity' => $entity, 'translation_key' => $key]);
+                    $existing = \common\models\Translation::findOne(['language_id' => 1, 'translation_entity' => $entity, 'translation_key' => $key]);
+                    if ($existing && $existing->translation_value != $value) {
+                        \common\models\Translation::deleteAll(['translation_entity' => $entity, 'translation_key' => $key]);
+                    }
                 }
                 $this->db->createCommand(
                         "INSERT IGNORE INTO `translation` " .
@@ -794,9 +816,13 @@ class Migration extends \yii\db\Migration {
         $this->delete(TABLE_PLATFORMS_CONFIGURATION, $conditions);
     }
 
-    public function isWidgetExist($widgetNameOrArray)
+    public function isWidgetExist($widgetNameOrArray, $themeName = null)
     {
-        return !empty(\common\models\DesignBoxes::findOne(['widget_name' => $widgetNameOrArray]));
+        $rec = \common\models\DesignBoxes::find()->where(['widget_name' => $widgetNameOrArray]);
+        if (!empty($themeName)) {
+            $rec->andWhere(['OR', 'theme_name= :theme_name', 'theme_name=:theme_mobile'], ['theme_name' => $themeName, 'theme_mobile' => $themeName . '-mobile']);
+        }
+        return !empty($rec->one());
     }
 
     /**
@@ -817,20 +843,24 @@ class Migration extends \yii\db\Migration {
             $newWidgetNameOrZipFile = $newWidgetName;
         }
 
-        $oldWidgetExists = !empty($oldWidgetName) && $this->isWidgetExist($oldWidgetName);
-        $newWidgetExists = $this->isWidgetExist($newWidgetName);
-        if(!$newWidgetExists && !$oldWidgetExists)
-        {
-            if (!empty($toPlaceholders)) {
-                $errMsg = $this->addWidget($toPlaceholders, $newWidgetNameOrZipFile, null, null, $position);
-                if(!empty($errMsg)) {
-                    \Yii::warning("Widget $newWidgetName AddWidget error: $errMsg");
+        $themes = \common\models\Themes::find()->asArray()->all();
+        foreach ($themes as $themeArr) {
+            $theme = $themeArr['theme_name'];
+            $oldWidgetExists = !empty($oldWidgetName) && $this->isWidgetExist($oldWidgetName, $theme);
+            $newWidgetExists = $this->isWidgetExist($newWidgetName, $theme);
+            if(!$newWidgetExists && !$oldWidgetExists)
+            {
+                if (!empty($toPlaceholders)) {
+                    $errMsg = $this->addWidget($toPlaceholders, $newWidgetNameOrZipFile, null, $theme, $position);
+                    if(!empty($errMsg)) {
+                        \Yii::warning("AddWidget error for widget '$newWidgetName' in theme '$theme': $errMsg");
+                    }
                 }
-            }
-        } else {
-            \Yii::warning("Widget $newWidgetName not added because:" . ($newWidgetExists? ' widget already exists' : '') . ($oldWidgetExists? ' old widget already exists' : '') );
-            if ($oldWidgetExists) {
-                $this->renameWidgetAndStyles($oldWidgetName, $newWidgetName, $renameWidgetStylesArray??[]);
+            } else {
+                \Yii::warning("Widget '$newWidgetName' is not added to theme '$theme' because:" . ($newWidgetExists? ' widget already exists' : '') . ($oldWidgetExists? ' old widget already exists - trying to rename' : '') );
+                if ($oldWidgetExists) {
+                    $this->renameWidgetAndStyles($oldWidgetName, $newWidgetName, $renameWidgetStylesArray??[], $theme);
+                }
             }
         }
     }
@@ -840,7 +870,7 @@ class Migration extends \yii\db\Migration {
      * @param string $widget widget name or path to widget archive
      * @param string $ifNoWidget  $widget can be added to $placeholder only if $placeholder dont have $ifNoWidget
      * @param string $themeName
-     * @param string $position 'start', 'middle', 'end'
+     * @param string|array $position string: 'start', 'middle', 'end'; array(widget settings of previous widget): ['setting_name' => 'setting_value']
      * @return string
      */
     public function addWidget($placeholder, $widget, $ifNoWidget = '', $themeName = '', $position = 'end')
@@ -937,7 +967,45 @@ class Migration extends \yii\db\Migration {
                     }
                 }
 
-                if ($position == 'end') {
+                if (is_array($position)) {
+
+                    $parentBox = \common\models\DesignBoxesTmp::find()->where([
+                        'widget_params' => $placeholder,
+                        'theme_name' => $theme['theme_name'],
+                    ])->asArray()->one();
+                    $db = \common\models\DesignBoxesTmp::find()->alias('db')
+                        ->select(['db.sort_order'])
+                        ->leftJoin(\common\models\DesignBoxesSettingsTmp::tableName() . ' dbs', 'db.id = dbs.box_id')
+                        ->andWhere([
+                            'db.theme_name' => $theme['theme_name']
+                        ])
+                        ->andWhere(['or', [
+                            'db.block_name' => $placeholder,
+                        ], [
+                            'db.block_name' => 'block-' . ($parentBox['id'] ?? ''),
+                        ]]);
+
+                    foreach ($position as $setting_name => $setting_value) {
+                        $db->andWhere([
+                            'dbs.setting_name' => $setting_name,
+                            'dbs.setting_value' => $setting_value,
+                        ]);
+                    }
+                    $dbArr = $db->asArray()->one();
+                    $params['sort_order'] = ($dbArr['sort_order']??0) + 1;
+
+                    $boxes = \common\models\DesignBoxesTmp::find()->where([
+                        'block_name' => $blockName, 'theme_name' => $theme['theme_name']
+                    ])->orderBy('sort_order')->all();
+
+                    foreach ($boxes as $box) {
+                        if ($box->sort_order >= $params['sort_order']){
+                            $box->sort_order = $box->sort_order + 1;
+                            $box->save();
+                        }
+                    }
+
+                } elseif ($position == 'end') {
                     $max = \common\models\DesignBoxesTmp::find()->where([
                         'block_name' => $blockName, 'theme_name' => $theme['theme_name']
                     ])->max('sort_order');
@@ -1061,24 +1129,32 @@ class Migration extends \yii\db\Migration {
     /**
      * @param string $oldName existing name into design_boxes_tmp table. Looks like 'promotions\PromoList'
      * @param string $newName like 'Promotions\widgets\PromoList'
+     * @param string $themeName null - for all themes
      * @return void
      */
-    public function renameWidget(string $oldName, string $newName)
+    public function renameWidget(string $oldName, string $newName, $themeName = null)
     {
-        $count = \common\models\DesignBoxes::updateAll(['widget_name' => $newName], 'widget_name = :old_name', ['old_name' => $oldName]);
-        $this->print(sprintf("Widget renamed from %s to %s into design_boxes: %d records\n", $oldName, $newName, $count));
-        $count = \common\models\DesignBoxesTmp::updateAll(['widget_name' => $newName], 'widget_name = :old_name', ['old_name' => $oldName]);
-        $this->print(sprintf("Widget renamed from %s to %s into design_boxes_tmp: %d records\n", $oldName, $newName, $count));
+        $params = ['old_name' => $oldName];
+        $themeCond = '';
+        if (!empty($themeName)) {
+            $themeCond = ' AND (theme_name = :theme_name OR theme_name = :theme_mobile)';
+            $params['theme_name'] = $themeName;
+            $params['theme_mobile'] = $themeName . '-mobile';
+        }
+        $count = \common\models\DesignBoxes::updateAll(['widget_name' => $newName], 'widget_name = :old_name' . $themeCond, $params);
+        $this->print(sprintf("Widget renamed from %s to %s into design_boxes for %s theme(s): %d records\n", $oldName, $newName, $themeName ?? 'all', $count));
+        $count = \common\models\DesignBoxesTmp::updateAll(['widget_name' => $newName], 'widget_name = :old_name' . $themeCond, $params);
+        $this->print(sprintf("Widget renamed from %s to %s into design_boxes_tmp for %s theme(s): %d records\n", $oldName, $newName, $themeName ?? 'all', $count));
         \common\models\DesignBoxesCache::deleteAll();
     }
 
-    public function renameWidgetAndStyles(string $oldName, string $newName, array $renameWidgetStylesArray = [])
+    public function renameWidgetAndStyles(string $oldName, string $newName, array $renameWidgetStylesArray = [], $themeName = null)
     {
-        if (!$this->isWidgetExist($oldName)) return;
-        $this->renameWidget($oldName, $newName);
+        if (!$this->isWidgetExist($oldName, $themeName)) return;
+        $this->renameWidget($oldName, $newName, $themeName);
         if (is_array($renameWidgetStylesArray)) {
             foreach ($renameWidgetStylesArray as $oldStyleName => $newStyleName) {
-                $this->renameWidgetStyle($oldStyleName, $newStyleName);
+                $this->renameWidgetStyle($oldStyleName, $newStyleName, $themeName);
             }
         }
     }
@@ -1088,14 +1164,22 @@ class Migration extends \yii\db\Migration {
      * @param string $newName like '.w-promotions-widgets-promotions'
      * @return void
      */
-    public function renameWidgetStyle(string $oldName, string $newName)
+    public function renameWidgetStyle(string $oldName, string $newName, $themeName = null)
     {
+        $params = ['old_name' => $oldName];
+        $themeCond = '';
+        if (!empty($themeName)) {
+            $themeCond = ' AND (theme_name = :theme_name OR theme_name = :theme_mobile)';
+            $params['theme_name'] = $themeName;
+            $params['theme_mobile'] = $themeName . '-mobile';
+        }
+
         $count = \common\models\ThemesStyles::updateAll([
                 'selector' => new \yii\db\Expression("REPLACE(selector, '$oldName', '$newName')"),
                 'accessibility' => $newName,
             ],
-            "accessibility = :old_name",
-            ['old_name' => $oldName]
+            'accessibility = :old_name' . $themeCond,
+            $params
         );
         $this->print(sprintf("Widget style renamed from %s to %s: %d records\n", $oldName, $newName, $count));
         if ($count) {

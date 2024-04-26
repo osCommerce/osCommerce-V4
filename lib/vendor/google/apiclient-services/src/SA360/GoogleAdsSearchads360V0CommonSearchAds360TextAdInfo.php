@@ -22,7 +22,7 @@ class GoogleAdsSearchads360V0CommonSearchAds360TextAdInfo extends \Google\Model
   /**
    * @var string
    */
-  public $adTrackId;
+  public $adTrackingId;
   /**
    * @var string
    */
@@ -47,16 +47,16 @@ class GoogleAdsSearchads360V0CommonSearchAds360TextAdInfo extends \Google\Model
   /**
    * @param string
    */
-  public function setAdTrackId($adTrackId)
+  public function setAdTrackingId($adTrackingId)
   {
-    $this->adTrackId = $adTrackId;
+    $this->adTrackingId = $adTrackingId;
   }
   /**
    * @return string
    */
-  public function getAdTrackId()
+  public function getAdTrackingId()
   {
-    return $this->adTrackId;
+    return $this->adTrackingId;
   }
   /**
    * @param string

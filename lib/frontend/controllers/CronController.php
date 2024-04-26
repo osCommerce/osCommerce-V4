@@ -40,7 +40,7 @@ class CronController extends Sceleton
                 if ($extNotifyBackInStockWaitDiscount = \common\helpers\Acl::checkExtensionAllowed('NotifyBackInStockWaitDiscount', 'allowed')) {
                     $check_discount_coupon_data = $extNotifyBackInStockWaitDiscount::discount_coupon_data($product['products_notify_products_id']);
                 }
-                $notifies = tep_db_query("select * from " . TABLE_PRODUCTS_NOTIFY . " where products_notify_products_id = '" . tep_db_input($product['products_notify_products_id']) . "' and products_notify_sent is null");
+                $notifies = tep_db_query("select * from " . TABLE_PRODUCTS_NOTIFY . " where products_notify_products_id = '" . tep_db_input($product['products_notify_products_id']) . "' and suppliers_id = '" . (int) $product['suppliers_id'] . "' and products_notify_sent is null and platform_id = '" . (int) \common\classes\platform::currentId() . "'");
                 while ($notify = tep_db_fetch_array($notifies)) {
                     // {{
                     $email_params = array();
@@ -67,6 +67,29 @@ class CronController extends Sceleton
             $npd::sendEmails();
         }
 
+    }
+
+    public function actionSendGiftCardByDate() {
+        $check_virtual_gift_card_query = tep_db_query("select virtual_gift_card_basket_id from " . TABLE_VIRTUAL_GIFT_CARD_BASKET . " where send_card_date > '0000-00-00' and to_days(send_card_date) <= to_days(now())");
+        while ($check_virtual_gift_card = tep_db_fetch_array($check_virtual_gift_card_query)) {
+            if ($check_virtual_gift_card['virtual_gift_card_basket_id'] > 0) {
+                $check_order = tep_db_fetch_array(tep_db_query("select orders_id from " . TABLE_ORDERS_PRODUCTS_ATTRIBUTES . " where products_options_id = '0' and products_options_values_id = '" . (int)$check_virtual_gift_card['virtual_gift_card_basket_id'] . "'"));
+                if ($check_order['orders_id'] > 0) {
+                    $order = new \common\classes\Order($check_order['orders_id']);
+                    if ($order->info['platform_id'] == \common\classes\platform::currentId()) {
+                        $virtual_gift_card = \common\models\VirtualGiftCardBasket::findOne(['virtual_gift_card_basket_id' => $check_virtual_gift_card['virtual_gift_card_basket_id']]);
+                        if ($virtual_gift_card && $virtual_gift_card->customers_id == $order->customer['customer_id'] && strlen($virtual_gift_card->virtual_gift_card_code) && $virtual_gift_card->activated) {
+                            $virtual_gift_card->send_card_date = '0000-00-00 00:00:00';
+                            $virtual_gift_card->save(false);
+                            $product = \yii\helpers\ArrayHelper::toArray($virtual_gift_card->product);
+                            $virtual_gift_card = \yii\helpers\ArrayHelper::toArray($virtual_gift_card);
+                            $virtual_gift_card = array_merge($product, $virtual_gift_card);
+                            \common\helpers\Gifts::prepareAndSend($virtual_gift_card, $order->customer['email_address'], $order->customer['firstname'] . ' ' . $order->customer['lastname']);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     public function actionCheckGuestAccounts() {//check-guest-accounts

@@ -29,6 +29,10 @@ class ConfigManagementConfigSync extends \Google\Model
   public $enabled;
   protected $gitType = ConfigManagementGitConfig::class;
   protected $gitDataType = '';
+  /**
+   * @var string
+   */
+  public $metricsGcpServiceAccountEmail;
   protected $ociType = ConfigManagementOciConfig::class;
   protected $ociDataType = '';
   /**
@@ -81,6 +85,20 @@ class ConfigManagementConfigSync extends \Google\Model
   public function getGit()
   {
     return $this->git;
+  }
+  /**
+   * @param string
+   */
+  public function setMetricsGcpServiceAccountEmail($metricsGcpServiceAccountEmail)
+  {
+    $this->metricsGcpServiceAccountEmail = $metricsGcpServiceAccountEmail;
+  }
+  /**
+   * @return string
+   */
+  public function getMetricsGcpServiceAccountEmail()
+  {
+    return $this->metricsGcpServiceAccountEmail;
   }
   /**
    * @param ConfigManagementOciConfig

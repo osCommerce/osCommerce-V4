@@ -30,6 +30,7 @@ class SessionFlow implements BootstrapInterface {
       
     global $session_started, $request_type, $cookie_path, $cookie_domain;
 
+    \common\helpers\Admin::checkBackendStrictAccessAllowed();
 
     $app->on(Application::EVENT_BEFORE_REQUEST, function () use ($app) {
         if ( (defined('IS_IMAGE_CDN_SERVER') && IS_IMAGE_CDN_SERVER) || ( defined('IS_NESTED_IMAGE_HANDLER') )  ) {

@@ -26,9 +26,8 @@
         </div>
         <div class="col-md-3">
             <div class="metric_system">
-                {$metric = $smarty.const.WEIGHT_UNIT_DEFAULT|default:'KG' == 'KG'}
-                <span {if $metric}class="selected"{/if} data-class="dimmens_cm">{$smarty.const.TEXT_METRIC_SYSTEM}</span>
-                <span {if !$metric}class="selected"{/if} data-class="dimmens_in">{$smarty.const.TEXT_ENGLISH_SYSTEM}</span>
+                <span class="selected" data-class="dimmens_cm">{$smarty.const.TEXT_METRIC_SYSTEM}</span>
+                <span data-class="dimmens_in">{$smarty.const.TEXT_ENGLISH_SYSTEM}</span>
             </div>
         </div>
     </div>
@@ -306,6 +305,13 @@ function updateCalculatedFields(changeCm, changeIn) {
 
 }
 $(document).ready(function(){
+
+    setTimeout( function() {
+        if ('{$smarty.const.WEIGHT_UNIT_DEFAULT|default:'KG'}' == 'LB') {
+            $('.metric_system [data-class="dimmens_in"]').click();
+        }
+    }, 200 );
+
 /*
     $('.js_pack_unit_group_fullprice').on('change_state', function(event, state) {
       var $block = $(this);

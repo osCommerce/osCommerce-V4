@@ -22,12 +22,21 @@
             <div class="item">
                 <div class="date">{$item.date}</div>
 
-                <div class="review">{$item.reviews_text}</div>
+                <div class="review">
+                    <div class="review-text">{$item.reviews_text}</div>
+{if $ext = \common\helpers\Acl::checkExtensionAllowed('UploadProductReviewImages', 'allowed')}
+    {$ext::showGalleryProductReviewImages($item.reviews_id)}
+{/if}
+                </div>
                 <div class="name">{$item.customers_name} <span class="rating-{$item.reviews_rating}"></span> {if $smarty.const.DISPLAY_REVIEW_RATING_TITLE=='True' && $item.reviews_rating_description}<span class="rating-description">{$item.reviews_rating_description}</span>{/if}</div>
             </div>
         {/foreach}
     </div>
 
     {PagingBar::widget(['params' => ['listing_split' => $reviews_split, 'this_filename' => 'reviews']])}
+
+{if $ext = \common\helpers\Acl::checkExtensionAllowed('UploadProductReviewImages', 'allowed')}
+    {$ext::jsGalleryProductReviewImages()}
+{/if}
 
 {/if}

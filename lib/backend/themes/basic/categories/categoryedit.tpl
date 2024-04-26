@@ -3,20 +3,25 @@
 {use class="\common\classes\department"}
 {\backend\assets\Categories::register($this)|void}
 {include file='../assets/tabs.tpl' scope="global"}
-{if $ext = \common\helpers\Extensions::isAllowed('GoogleTranslate')}
-    {$ext::includeCategoriesJs($cInfo->categories_id)}
-{/if}
-{if $infoBreadCrumb}
-    <div class="breadcrumb-additional_info breadcrumb-for-category">{$infoBreadCrumb}
-{if $app->controller->view->usePopupMode == false}
-        {if \common\helpers\Acl::checkExtensionAllowed('ReportChangesHistory')}
-        <div class="btn-right">
-            <a href="{Yii::$app->urlManager->createUrl(['logger/popup', 'type' => 'Category', 'id' => $categories_id])}" class="btn-link-create popup">{$smarty.const.TEXT_HISTORY}</a>
+<div class="breadcrumb-and-buttons">
+    {if $infoBreadCrumb}
+        <div class="breadcrumb-additional_info breadcrumb-for-category">
+            {$infoBreadCrumb}
         </div>
+    {/if}
+    <div class="breadcrumb-buttons">
+        {if $app->controller->view->usePopupMode == false}
+            {if \common\helpers\Acl::checkExtensionAllowed('ReportChangesHistory')}
+                <a href="{Yii::$app->urlManager->createUrl(['logger/popup', 'type' => 'Category', 'id' => $categories_id])}" class="btn-link-create popup btn">{$smarty.const.TEXT_HISTORY}</a>
+            {/if}
         {/if}
-{/if}
+
+        {foreach \common\helpers\Hooks::getList('categories/categoryedit', 'breadcrumb-buttons') as $filename}
+            {include file=$filename}
+        {/foreach}
+
     </div>
-{/if}
+</div>
 {if $app->controller->view->contentAlreadyLoaded == 0}
 <div class="catEditPage popupEditCat">
 {/if}
@@ -135,9 +140,6 @@
                             </a></li>
                         {/foreach}
                     </ul>
-                    {if $ext = \common\helpers\Extensions::isAllowed('GoogleTranslate')}
-                        {$ext::getCategoryButton()}
-                    {/if}
                 {/if}
                 <div class="tab-content {if count($languages) < 2}tab-content-no-lang{/if}">
                     {foreach $cDescription  as $mKey => $mItem}
@@ -196,7 +198,7 @@
                         let options = [];
                         {foreach $languages as $lang}
                             if ({$lang['id']} !== currentLanguage) {
-                                options.push('<input type="checkbox" value="{$lang['id']}" class="selected-lang">&nbsp; {$lang['name']}');
+                                options.push('<input type="checkbox" value="{$lang['id']}" name="lng_{$lang['id']}" class="selected-lang">&nbsp; {$lang['name']}');
                             }
                         {/foreach}
                         return options.join("<br>");
@@ -216,7 +218,7 @@
                         });
 
                         if (operation === 'translate') {
-                            {if \common\helpers\Extensions::isAllowed('GoogleTranslate')}
+                            {if \common\helpers\Extensions::isAllowed('Translator')}
                                 translate({$categories_id}, currentLanguage, toProduct, toCategory, requestData, getSelectedLanguages(), overwrite)
                             {/if}
                         }else{
@@ -263,17 +265,17 @@
                         bootbox.dialog({
                             title: "{$smarty.const.TEXT_PLATFORM_LANGUAGE_MESSAGE|escape:javascript} " + $(this).prev().text(),
                             message: "" +
-                                {if $ext = \common\helpers\Extensions::isAllowed('GoogleTranslate')}
+                                {if $ext = \common\helpers\Extensions::isAllowed('Translator')}
                                     '{Html::radio('type', true, ['id' => 'op_type', 'value' => 'copy'])} + {$smarty.const.IMAGE_COPY_TO|escape:javascript}<br>'+
                                     '{Html::radio('type', false, ['id' => 'op_type', 'value' => 'translate'])} + {$ext::getLabel()}<br>'+
                                 {else}
                                     "+ {$smarty.const.IMAGE_COPY_TO|escape:javascript}<br>" +
                                 {/if}
                                 getLanguagesForChoose(currentLanguage) + '<br><br>{Html::checkbox('overwrite', false, ['class' => 'overwrite'])}' + '\xa0\xa0{$smarty.const.TEXT_OVERWRITE_NON_EMPTY_FIELDS}<br><br>' +
-                                {if $ext = \common\helpers\Extensions::isAllowed('GoogleTranslate')}
+                                {if $ext = \common\helpers\Extensions::isAllowed('Translator')}
                                     '{$ext::getProductsCount(intval($cInfo->categories_id))}' + "<br>" +
-                                    '{Html::checkbox('to_product', false, ['class' => 'to_product'])}' + '\xa0\xa0{$smarty.const.EXT_GOOGLE_TRANSLATE_TEXT_APPLY_TO_PRODUCTS}<br>' +
-                                    '{Html::checkbox('to_category', false, ['class' => 'to_category'])}' + '\xa0\xa0{$smarty.const.EXT_GOOGLE_TRANSLATE_TEXT_APPLY_TO_CATEGORIES}' +
+                                    '{Html::checkbox('to_product', false, ['class' => 'to_product'])}' + '\xa0\xa0{$smarty.const.EXT_TRANSLATOR_TEXT_APPLY_TO_PRODUCTS}<br>' +
+                                    '{Html::checkbox('to_category', false, ['class' => 'to_category'])}' + '\xa0\xa0{$smarty.const.EXT_TRANSLATOR_TEXT_APPLY_TO_CATEGORIES}' +
                                 {/if}
                             "",
                             buttons: {
@@ -281,7 +283,7 @@
                                     label: "{$smarty.const.IMAGE_CANCEL}",
                                     className: 'btn btn-cancel',
                                     callback: function (e) {
-                                        {if \common\helpers\Extensions::isAllowed('GoogleTranslate')}
+                                        {if \common\helpers\Extensions::isAllowed('Translator')}
                                             destroyProgress();
                                         {/if}
                                     }
@@ -344,11 +346,6 @@
                         </div>
                     </div>
                     <div class="row m-b-4">
-                        <div class="col-md-4">
-                            {if \common\helpers\Acl::checkExtensionAllowed('AutomaticallyStatus', 'allowed')}
-                                {\common\extensions\AutomaticallyStatus\AutomaticallyStatus::viewCategoryEdit($cInfo)}
-                            {/if}
-                        </div>
                         <div class="col-md-4">
                             <div class="row">
                                 <div class="col-md-4">

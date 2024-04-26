@@ -141,8 +141,11 @@ class ProjectsLocationsJobs extends \Google\Service\Resource
    * recommend using `projects.locations.jobs.list` with a [regional endpoint]
    * (https://cloud.google.com/dataflow/docs/concepts/regional-endpoints). To list
    * the all jobs across all regions, use `projects.jobs.aggregated`. Using
-   * `projects.jobs.list` is not recommended, as you can only get the list of jobs
-   * that are running in `us-central1`. (jobs.listProjectsLocationsJobs)
+   * `projects.jobs.list` is not recommended, because you can only get the list of
+   * jobs that are running in `us-central1`. `projects.locations.jobs.list` and
+   * `projects.jobs.list` support filtering the list of jobs by name. Filtering by
+   * name isn't supported by `projects.jobs.aggregated`.
+   * (jobs.listProjectsLocationsJobs)
    *
    * @param string $projectId The project which owns the jobs.
    * @param string $location The [regional endpoint]
@@ -151,7 +154,7 @@ class ProjectsLocationsJobs extends \Google\Service\Resource
    * @param array $optParams Optional parameters.
    *
    * @opt_param string filter The kind of filter to use.
-   * @opt_param string name Optional. The job name. Optional.
+   * @opt_param string name Optional. The job name.
    * @opt_param int pageSize If there are many jobs, limit response to at most
    * this many. The actual number of jobs returned will be the lesser of
    * max_responses and an unspecified server-defined limit.
@@ -186,10 +189,10 @@ class ProjectsLocationsJobs extends \Google\Service\Resource
   /**
    * Updates the state of an existing Cloud Dataflow job. To update the state of
    * an existing job, we recommend using `projects.locations.jobs.update` with a
-   * [regional endpoint] (https://cloud.google.com/dataflow/docs/concepts
-   * /regional-endpoints). Using `projects.jobs.update` is not recommended, as you
-   * can only update the state of jobs that are running in `us-central1`.
-   * (jobs.update)
+   * [regional endpoint]
+   * (https://cloud.google.com/dataflow/docs/concepts/regional-endpoints). Using
+   * `projects.jobs.update` is not recommended, as you can only update the state
+   * of jobs that are running in `us-central1`. (jobs.update)
    *
    * @param string $projectId The ID of the Cloud Platform project that the job
    * belongs to.
@@ -204,8 +207,8 @@ class ProjectsLocationsJobs extends \Google\Service\Resource
    * empty, only RequestedJobState will be considered for update. If the FieldMask
    * is not empty and RequestedJobState is none/empty, The fields specified in the
    * update mask will be the only ones considered for update. If both
-   * RequestedJobState and update_mask are specified, we will first handle
-   * RequestedJobState and then the update_mask fields.
+   * RequestedJobState and update_mask are specified, an error will be returned as
+   * we cannot update both state and mask.
    * @return Job
    */
   public function update($projectId, $location, $jobId, Job $postBody, $optParams = [])

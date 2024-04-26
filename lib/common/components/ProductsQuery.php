@@ -217,6 +217,10 @@ class ProductsQuery {
       }
     }
 
+        foreach (\common\helpers\Hooks::getList('products-query/init') as $filename) {
+            include($filename);
+        }
+
     /**
      * @var $ga \common\extensions\GoogleAnalyticsTools\GoogleAnalyticsTools
      */
@@ -913,7 +917,11 @@ class ProductsQuery {
               break;
             case 'gso':
             case 'mark':
-                if ($field=='mark' && $this->params['currentCategory'] && $this->getCurrentCategoryId() > 0) {
+                if ($field == 'mark' && $this->params['featuredTypeId']) {
+
+                    $this->query->addOrderBy('{{%featured}}.sort_order');
+
+                } elseif ($field=='mark' && $this->params['currentCategory'] && $this->getCurrentCategoryId() > 0) {
                     if ($this->params['limit'] < 1000) {
                         $useIndex = ' USE INDEX (categories_id)';
                     } else {
@@ -1029,6 +1037,36 @@ class ProductsQuery {
             $condition
           ]);
           $this->query->andWhere(['exists',$cntQ]);
+        }
+        if (\common\helpers\Extensions::isAllowed('Inventory') && defined('SHOW_OUT_OF_STOCK') && !SHOW_OUT_OF_STOCK) {
+            // Hide Out of Stock products by inventory
+            if (is_null($this->backorderStockIndicationIds)) {
+                $this->backorderStockIndicationIds = \common\models\ProductsStockIndication::find()
+                    ->where(['allow_out_of_stock_checkout' => 1, 'allow_out_of_stock_add_to_cart' => 1])
+                    ->select('stock_indication_id')->asArray()->column();
+            }
+            $q = 'stock_indication_id = 0 and products_quantity > 0';
+            if (!is_null($this->backorderStockIndicationIds)) {
+                $q = ['or',
+                    ['stock_indication_id' => $this->backorderStockIndicationIds],
+                    $q
+                ];
+            }
+            $regexp = '\\\\{' . intval($oId) . '\\\\}';
+            if (!empty($vIds['values'])) {
+                if (is_array($vIds['values'])) {
+                    $regexp .= '(' . implode('|', array_map('intval', $vIds['values'])) . ')';
+                } else {
+                    $regexp .= intval($vIds['values']);
+                }
+                $regexp .= '(\\\\{|$)';
+            }
+            $this->query->andWhere(['exists',
+                \common\models\Inventory::find()
+                    ->where('p.products_id = prid')
+                    ->andWhere(new \yii\db\Expression(sprintf("products_id REGEXP '%s'", $regexp)))
+                    ->andWhere($q)
+            ]);
         }
       }
 //echo $this->query->createCommand()->rawSql . ' addProperties <br>';

@@ -43,7 +43,7 @@ class VirtualGiftCardController extends Sceleton {
         $this->view->def_platform_id = $def_platformId;
         $this->view->platforms = $platforms;
 
-        $check_product = tep_db_fetch_array(tep_db_query("select products_id from " . TABLE_PRODUCTS . " where products_model = 'VIRTUAL_GIFT_CARD'"));
+        $check_product = tep_db_fetch_array(tep_db_query("select products_id from " . TABLE_PRODUCTS . " where products_model = '" . tep_db_input(\common\helpers\Gifts::getVirtualGiftCardModel()) . "'"));
         if (isset($check_product['products_id'])) {
             $products_id = $check_product['products_id'];
         } else {
@@ -54,7 +54,7 @@ class VirtualGiftCardController extends Sceleton {
                 'products_quantity' => 7777,
                 'products_weight' => 0,
                 'products_status' => 0,
-                'products_model' => 'VIRTUAL_GIFT_CARD');
+                'products_model' => \common\helpers\Gifts::getVirtualGiftCardModel());
             tep_db_perform(TABLE_PRODUCTS, $sql_data_array);
             $products_id = tep_db_insert_id();
             tep_db_query("insert into " . TABLE_PRODUCTS_TO_CATEGORIES . " (products_id, categories_id) values ('" . (int) $products_id . "', '0')");
@@ -119,7 +119,7 @@ class VirtualGiftCardController extends Sceleton {
 
         \common\helpers\Translation::init('admin/virtual-gift-card');
         
-        $check_product = tep_db_fetch_array(tep_db_query("select products_id from " . TABLE_PRODUCTS . " where products_model = 'VIRTUAL_GIFT_CARD'"));
+        $check_product = tep_db_fetch_array(tep_db_query("select products_id from " . TABLE_PRODUCTS . " where products_model = '" . tep_db_input(\common\helpers\Gifts::getVirtualGiftCardModel()) . "'"));
         $products_id = $check_product['products_id'];
         if (!($products_id > 0)) {
             $sql_data_array = array(
@@ -129,7 +129,7 @@ class VirtualGiftCardController extends Sceleton {
                 'products_quantity' => 7777,
                 'products_weight' => 0,
                 'products_status' => 0,
-                'products_model' => 'VIRTUAL_GIFT_CARD');
+                'products_model' => \common\helpers\Gifts::getVirtualGiftCardModel());
             tep_db_perform(TABLE_PRODUCTS, $sql_data_array);
             $products_id = tep_db_insert_id();
             tep_db_query("insert into " . TABLE_PRODUCTS_TO_CATEGORIES . " (products_id, categories_id) values ('" . (int) $products_id . "', '0')");

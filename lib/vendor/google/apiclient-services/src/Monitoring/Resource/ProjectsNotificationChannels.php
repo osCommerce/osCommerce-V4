@@ -53,6 +53,7 @@ class ProjectsNotificationChannels extends \Google\Service\Resource
    * @param NotificationChannel $postBody
    * @param array $optParams Optional parameters.
    * @return NotificationChannel
+   * @throws \Google\Service\Exception
    */
   public function create($name, NotificationChannel $postBody, $optParams = [])
   {
@@ -76,6 +77,7 @@ class ProjectsNotificationChannels extends \Google\Service\Resource
    * remove the channel). If false, channels that are still referenced by an
    * existing alerting policy will fail to be deleted in a delete operation.
    * @return MonitoringEmpty
+   * @throws \Google\Service\Exception
    */
   public function delete($name, $optParams = [])
   {
@@ -96,6 +98,7 @@ class ProjectsNotificationChannels extends \Google\Service\Resource
    * projects/[PROJECT_ID_OR_NUMBER]/notificationChannels/[CHANNEL_ID]
    * @param array $optParams Optional parameters.
    * @return NotificationChannel
+   * @throws \Google\Service\Exception
    */
   public function get($name, $optParams = [])
   {
@@ -131,6 +134,7 @@ class ProjectsNotificationChannels extends \Google\Service\Resource
    * @param GetNotificationChannelVerificationCodeRequest $postBody
    * @param array $optParams Optional parameters.
    * @return GetNotificationChannelVerificationCodeResponse
+   * @throws \Google\Service\Exception
    */
   public function getVerificationCode($name, GetNotificationChannelVerificationCodeRequest $postBody, $optParams = [])
   {
@@ -139,7 +143,9 @@ class ProjectsNotificationChannels extends \Google\Service\Resource
     return $this->call('getVerificationCode', [$params], GetNotificationChannelVerificationCodeResponse::class);
   }
   /**
-   * Lists the notification channels that have been created for the project.
+   * Lists the notification channels that have been created for the project. To
+   * list the types of notification channels that are supported, use the
+   * ListNotificationChannelDescriptors method.
    * (notificationChannels.listProjectsNotificationChannels)
    *
    * @param string $name Required. The project
@@ -166,6 +172,7 @@ class ProjectsNotificationChannels extends \Google\Service\Resource
    * returned as the next_page_token in a previous response to request the next
    * set of results.
    * @return ListNotificationChannelsResponse
+   * @throws \Google\Service\Exception
    */
   public function listProjectsNotificationChannels($name, $optParams = [])
   {
@@ -188,6 +195,7 @@ class ProjectsNotificationChannels extends \Google\Service\Resource
    *
    * @opt_param string updateMask The fields to update.
    * @return NotificationChannel
+   * @throws \Google\Service\Exception
    */
   public function patch($name, NotificationChannel $postBody, $optParams = [])
   {
@@ -205,6 +213,7 @@ class ProjectsNotificationChannels extends \Google\Service\Resource
    * @param SendNotificationChannelVerificationCodeRequest $postBody
    * @param array $optParams Optional parameters.
    * @return MonitoringEmpty
+   * @throws \Google\Service\Exception
    */
   public function sendVerificationCode($name, SendNotificationChannelVerificationCodeRequest $postBody, $optParams = [])
   {
@@ -221,6 +230,7 @@ class ProjectsNotificationChannels extends \Google\Service\Resource
    * @param VerifyNotificationChannelRequest $postBody
    * @param array $optParams Optional parameters.
    * @return NotificationChannel
+   * @throws \Google\Service\Exception
    */
   public function verify($name, VerifyNotificationChannelRequest $postBody, $optParams = [])
   {

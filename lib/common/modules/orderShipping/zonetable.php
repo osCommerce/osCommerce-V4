@@ -332,6 +332,11 @@ class zonetable extends ModuleShipping {
         if (!empty($this->delivery['country']['iso_code_2']) && in_array(strtoupper($this->delivery['country']['iso_code_2']), ['IE', 'GB'])) {
             $forceUkPostcode = true;
         }
+        if (!defined('MODULE_SHIPPING_ZONE_TABLE_PACKAGING')) {
+            define('MODULE_SHIPPING_ZONE_TABLE_PACKAGING', 0);
+        }
+        $packagingDelta = 1 + ( (int) MODULE_SHIPPING_ZONE_TABLE_PACKAGING / 100);
+
 
         if ($forceUkPostcode ||  preg_match('/^([A-Za-z][A-Ha-hJ-Yj-y]?[0-9][A-Za-z0-9]? ?[0-9][A-Za-z]{2}|[Gg][Ii][Rr] ?0[Aa]{2})$/',str_replace(' ','',$postcode)) ){
             $_postcode = $this->search_uk_zip($postcode, $this->delivery['country_id'], '[@@FIELD@@]');
@@ -379,10 +384,10 @@ class zonetable extends ModuleShipping {
         $shipping_value2 = false;
         if (($data['per_kg_price'] > 0) /* && ($data['mode'] == '0') */ && !tep_not_null($data['rate'])) {
           if ($data['mode']==self::TABLE_MODE_VOLUME_PRICE || $data['mode']==self::TABLE_MODE_VOLUME) {
-              $shipping_value = $this->volume;
+              $shipping_value = $this->volume * $packagingDelta;
               $price = ($shipping_value ) * $data['per_kg_price'];
           } else {
-              $shipping_value = $this->shipping_weight;
+              $shipping_value = $this->shipping_weight * $packagingDelta;
               $price = ($shipping_value ) * $data['per_kg_price'];
           }
         } else {
@@ -396,19 +401,19 @@ class zonetable extends ModuleShipping {
                     $shipping_value = $this->products_qty;
                     break;
                 case self::TABLE_MODE_WEIGHT_PRICE:
-                    $shipping_value = $this->shipping_weight;
+                    $shipping_value = $this->shipping_weight * $packagingDelta;
                     $shipping_value2 = round($this->total,2);
                     break;
                 case self::TABLE_MODE_VOLUME_PRICE:
-                    $shipping_value = $this->volume;
+                    $shipping_value = $this->volume * $packagingDelta;
                     $shipping_value2 = round($this->total,2);
                     break;
                 case self::TABLE_MODE_VOLUME:
-                    $shipping_value = $this->volume;
+                    $shipping_value = $this->volume * $packagingDelta;
                     break;
                 default:
                 case self::TABLE_MODE_WEIGHT:
-                    $shipping_value = $this->shipping_weight;
+                    $shipping_value = $this->shipping_weight * $packagingDelta;
                     break;
             }
 
@@ -634,6 +639,13 @@ class zonetable extends ModuleShipping {
                     'description' => 'Display "please call us for a quote" and allow complete order.',
                     'sort_order' => '0',
                     'set_function' => 'tep_cfg_select_option(array(\'True\', \'False\'), ',
+                ),
+            'MODULE_SHIPPING_ZONE_TABLE_PACKAGING' =>
+                array(
+                    'title' => 'Packaging (%)',
+                    'value' => '0',
+                    'description' => 'Each dimension and weight should be increased accordingly.',
+                    'sort_order' => '10',
                 ),
         );
     }

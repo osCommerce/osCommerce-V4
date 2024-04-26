@@ -19,10 +19,24 @@ namespace Google\Service\Document;
 
 class GoogleCloudDocumentaiUiv1beta3DocumentId extends \Google\Model
 {
+  /**
+   * @var GoogleCloudDocumentaiUiv1beta3DocumentIdGCSManagedDocumentId
+   */
+  public $gcsManagedDocId;
   protected $gcsManagedDocIdType = GoogleCloudDocumentaiUiv1beta3DocumentIdGCSManagedDocumentId::class;
   protected $gcsManagedDocIdDataType = '';
+  /**
+   * @var GoogleCloudDocumentaiUiv1beta3RevisionRef
+   */
+  public $revisionRef;
   protected $revisionRefType = GoogleCloudDocumentaiUiv1beta3RevisionRef::class;
   protected $revisionRefDataType = '';
+  /**
+   * @var GoogleCloudDocumentaiUiv1beta3DocumentIdUnmanagedDocumentId
+   */
+  public $unmanagedDocId;
+  protected $unmanagedDocIdType = GoogleCloudDocumentaiUiv1beta3DocumentIdUnmanagedDocumentId::class;
+  protected $unmanagedDocIdDataType = '';
 
   /**
    * @param GoogleCloudDocumentaiUiv1beta3DocumentIdGCSManagedDocumentId
@@ -51,6 +65,20 @@ class GoogleCloudDocumentaiUiv1beta3DocumentId extends \Google\Model
   public function getRevisionRef()
   {
     return $this->revisionRef;
+  }
+  /**
+   * @param GoogleCloudDocumentaiUiv1beta3DocumentIdUnmanagedDocumentId
+   */
+  public function setUnmanagedDocId(GoogleCloudDocumentaiUiv1beta3DocumentIdUnmanagedDocumentId $unmanagedDocId)
+  {
+    $this->unmanagedDocId = $unmanagedDocId;
+  }
+  /**
+   * @return GoogleCloudDocumentaiUiv1beta3DocumentIdUnmanagedDocumentId
+   */
+  public function getUnmanagedDocId()
+  {
+    return $this->unmanagedDocId;
   }
 }
 

@@ -60,6 +60,7 @@ return [
                 'tpl' => [
                     'class' => 'yii\smarty\ViewRenderer',
                     //'cachePath' => '@runtime/Smarty/cache',
+                    'extensionClass' => 'common\components\smarty\TlSmarty',
                     'options' => [
                         'error_reporting' => E_ALL & ~E_WARNING & ~E_DEPRECATED & ~E_NOTICE,
                     ],

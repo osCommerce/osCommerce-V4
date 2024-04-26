@@ -19,24 +19,34 @@ namespace Google\Service\Contentwarehouse;
 
 class AssistantContextProviderId extends \Google\Model
 {
+  /**
+   * @var AssistantContextAppProviderId
+   */
+  public $appProviderId;
   protected $appProviderIdType = AssistantContextAppProviderId::class;
   protected $appProviderIdDataType = '';
   /**
    * @var string
    */
   public $ecosystemType;
+  /**
+   * @var AssistantContextMediaProviderId
+   */
+  public $mediaProviderId;
   protected $mediaProviderIdType = AssistantContextMediaProviderId::class;
   protected $mediaProviderIdDataType = '';
   /**
    * @var string
    */
   public $mid;
-  protected $naturalProviderIdType = AssistantContextProviderIdNaturalProviderId::class;
-  protected $naturalProviderIdDataType = '';
   /**
    * @var string
    */
   public $providerCorpusId;
+  /**
+   * @var AssistantContextProviderVariant
+   */
+  public $providerVariant;
   protected $providerVariantType = AssistantContextProviderVariant::class;
   protected $providerVariantDataType = '';
 
@@ -95,20 +105,6 @@ class AssistantContextProviderId extends \Google\Model
   public function getMid()
   {
     return $this->mid;
-  }
-  /**
-   * @param AssistantContextProviderIdNaturalProviderId
-   */
-  public function setNaturalProviderId(AssistantContextProviderIdNaturalProviderId $naturalProviderId)
-  {
-    $this->naturalProviderId = $naturalProviderId;
-  }
-  /**
-   * @return AssistantContextProviderIdNaturalProviderId
-   */
-  public function getNaturalProviderId()
-  {
-    return $this->naturalProviderId;
   }
   /**
    * @param string

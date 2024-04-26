@@ -60,7 +60,7 @@ class Parser
 
     protected $rawDataParser;
 
-    public function __construct($cfg = [], ?Config $config = null)
+    public function __construct($cfg = [], Config $config = null)
     {
         $this->config = $config ?: new Config();
         $this->rawDataParser = new RawDataParser($cfg, $this->config);
@@ -77,6 +77,7 @@ class Parser
     public function parseFile(string $filename): Document
     {
         $content = file_get_contents($filename);
+
         /*
          * 2018/06/20 @doganoo as multiple times a
          * users have complained that the parseFile()
@@ -101,7 +102,7 @@ class Parser
         // Create structure from raw data.
         list($xref, $data) = $this->rawDataParser->parseData($content);
 
-        if (isset($xref['trailer']['encrypt'])) {
+        if (isset($xref['trailer']['encrypt']) && false === $this->config->getIgnoreEncryption()) {
             throw new \Exception('Secured pdf file are currently not supported.');
         }
 
@@ -214,6 +215,9 @@ class Parser
                         // It is not necessary to store this content.
 
                         return;
+                    } elseif ($header->get('Type')->equals('Metadata')) {
+                        // Attempt to parse XMP XML Metadata
+                        $document->extractXMPMetadata($content);
                     }
                     break;
 

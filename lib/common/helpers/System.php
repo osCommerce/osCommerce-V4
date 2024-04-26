@@ -396,7 +396,13 @@ class System {
     {
         return \Yii::$app->id == 'app-console';
     }
-
+    
+    public static function isPos()
+    {
+        return \Yii::$app->id == 'app-pos';
+    }
+    
+    
     public static function isProduction()
     {
         return YII_ENV == 'prod';

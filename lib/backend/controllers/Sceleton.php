@@ -51,6 +51,7 @@ class Sceleton extends Controller {
     public $selectedMenu = array();
     
     function __construct($id,$module=null) {
+        \common\helpers\Admin::checkBackendStrictAccessAllowed();
         if (($this->acl[0] ?? null) === 'BOX_HEADING_DEPARTMENTS') {
             //skip superadmin menu
         } elseif (!is_null($this->acl)) {
@@ -90,6 +91,9 @@ class Sceleton extends Controller {
     }
     
     public function beforeAction($action) {
+        foreach (\common\helpers\Hooks::getList('sceleton/before-action') as $filename) {
+            include($filename);
+        }
         $events = new \backend\components\AdminEvents();
         $events->registerNotificationEvent();
         return parent::beforeAction($action);

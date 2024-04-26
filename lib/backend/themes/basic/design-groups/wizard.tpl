@@ -147,6 +147,9 @@
                     if ($step.data('step') == 'color' || $step.data('step') == 'font') {
                         action = 'set-styles';
                     }
+                    if (['buttons', 'headings', 'price', 'form'].includes($step.data('step'))) {
+                        action = 'set-css';
+                    }
                     const colors = [];
                     if ($step.data('step') == 'color') {
                         $('input:checked + .group-item-holder input', $step).each(function () {

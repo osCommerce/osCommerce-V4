@@ -19,8 +19,22 @@ namespace Google\Service\Testing;
 
 class RoboStartingIntent extends \Google\Model
 {
+  /**
+   * @var LauncherActivityIntent
+   */
+  public $launcherActivity;
   protected $launcherActivityType = LauncherActivityIntent::class;
   protected $launcherActivityDataType = '';
+  /**
+   * @var NoActivityIntent
+   */
+  public $noActivity;
+  protected $noActivityType = NoActivityIntent::class;
+  protected $noActivityDataType = '';
+  /**
+   * @var StartActivityIntent
+   */
+  public $startActivity;
   protected $startActivityType = StartActivityIntent::class;
   protected $startActivityDataType = '';
   /**
@@ -41,6 +55,20 @@ class RoboStartingIntent extends \Google\Model
   public function getLauncherActivity()
   {
     return $this->launcherActivity;
+  }
+  /**
+   * @param NoActivityIntent
+   */
+  public function setNoActivity(NoActivityIntent $noActivity)
+  {
+    $this->noActivity = $noActivity;
+  }
+  /**
+   * @return NoActivityIntent
+   */
+  public function getNoActivity()
+  {
+    return $this->noActivity;
   }
   /**
    * @param StartActivityIntent

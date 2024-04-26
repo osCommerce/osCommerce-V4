@@ -35,14 +35,27 @@
             <div id="code" style="border: 1px solid #ccc"></div>
         </div>
         <div class="col-3 add-code">
-            <h4>Main styles</h4>
+            <div class="search-style">
+                <input type="search" class="form-control" placeholder="Search"/>
+            </div>
 
-            {foreach $mainStyles as $mainStyle}
-                <div class="item" data-name="${$mainStyle.name}">
-                    {if $mainStyle.type == 'color'}
-                        <span class="style-color" style="background: {$mainStyle.value}"></span>
-                    {/if}
-                    <span class="name">${$mainStyle.name}</span> - <span class="value">{$mainStyle.value}</span>
+            {foreach $groupStyles as $groupStyle}
+                <div class="group" data-name="{$groupStyle.group_name}">
+                    <h4 class="group-name" data-target="group-style-{$groupStyle.group_id}">
+                        {$groupStyle.group_name}
+                    </h4>
+                    <div class="group-styles" id="group-style-{$groupStyle.group_id}">
+                        {foreach $mainStyles as $mainStyle}
+                            {if $mainStyle.group_id == $groupStyle.group_id}
+                                <div class="item" data-name="${$mainStyle.name}">
+                                    {if in_array($mainStyle.type, ['color', 'color-var', 'color-opacity'])}
+                                        <span class="style-color" style="background: {$mainSubStyles['$'|cat:$mainStyle.name]}" title="{$mainSubStyles['$'|cat:$mainStyle.name]}"></span>
+                                    {/if}
+                                    <span class="name">${$mainStyle.name}</span> - <span class="value">{$mainStyle.value}</span>
+                                </div>
+                            {/if}
+                        {/foreach}
+                    </div>
                 </div>
             {/foreach}
         </div>
@@ -67,7 +80,20 @@
     <script src="{$app->request->baseUrl}/plugins/codemirror/addon/search/annotatescrollbar.js"></script>
     <script src="{$app->request->baseUrl}/plugins/codemirror/addon/search/matchesonscrollbar.js"></script>
     <script src="{$app->request->baseUrl}/plugins/codemirror/addon/search/jump-to-line.js"></script>
-
+    <style type="text/css">
+        .highlight-colors {
+            width: 15px;
+        }
+        .gutter-color {
+            width: 10px;
+            height: 10px;
+            line-height: 10px;
+            border: 1px solid var(--border-color-midle);
+            position: relative;
+            top: 4px;
+            left: 3px;
+        }
+    </style>
     <script type="text/javascript">
         var CodeMirrorEditor;
         $(function () {
@@ -75,6 +101,7 @@
             var widgetsList = $('#widgets_list');
             var addWidgetInput = $('.add-widget');
             var addWidgetBtm = $('.btn-add-widget');
+            const mainSubStyles = JSON.parse('{json_encode($mainSubStyles)}');
 
             CodeMirrorEditor = CodeMirror(document.getElementById("code"), {
                 mode: "text/css",
@@ -83,6 +110,7 @@
                     "Ctrl-S": cssSve
                 },
                 lineNumbers: true,
+                gutters: ["CodeMirror-linenumbers", "highlight-colors"]
             });
             var htm = $('#css');
             CodeMirrorEditor.setValue(htm.val());
@@ -139,9 +167,34 @@
                     'widget': widget
                 }, function ($css) {
                     CodeMirrorEditor.setValue($css);
+
+                    //console.log(CodeMirrorEditor.lineInfo(4));
+                    //CodeMirrorEditor.addLineClass(3, "gutter", "mark");
                 })
             }).trigger('change');
 
+            CodeMirrorEditor.on('change', function (e) {
+                CodeMirrorEditor.clearGutter("highlight-colors");
+                const css = CodeMirrorEditor.getValue()
+                css.split("\n").forEach(function (row, i) {
+                    const colorVar = row.match(/\$[a-z0-9\-]+/i);
+                    if (colorVar && colorVar[0] && mainSubStyles[colorVar[0]] &&
+                        colorVar[0].search(/\$font-[0-9]/) === -1 && colorVar[0].search(/\$font-icons/) === -1
+                    ) {
+                        CodeMirrorEditor.setGutterMarker(i, "highlight-colors", makeMarker(mainSubStyles[colorVar[0]]))
+                    }
+                });
+            })
+
+            function makeMarker(color) {
+                var marker = document.createElement("div");
+                marker.style.background = color;
+                marker.style.color = color;
+                marker.className = 'gutter-color';
+                marker.innerHTML = "-";
+                marker.title = color;
+                return marker;
+            }
 
             addWidgetBtm.on('click', addWidget);
             addWidgetInput.on('keydown', function (e) {
@@ -223,6 +276,50 @@
                             alertMessage('<div style="padding: 30px">Changed</div>');
                         } else {
                             alertMessage('<div style="padding: 30px">Error</div>');
+                        }
+                    })
+                });
+
+
+                const styleStorage = localStorage.getItem('style-groups');
+                if (styleStorage) {
+                    const styleGroups = JSON.parse(styleStorage);
+                    styleGroups.forEach(function (group) {
+                        $('#'+group).hide();
+                        $(`.group-name[data-target="${ group}"]`).addClass('closed')
+                    });
+                }
+                $('.group-name').on('click', function () {
+                    const id = $(this).data('target');
+                    $('#'+id).slideToggle();
+                    $(this).toggleClass('closed');
+
+                    const styleStorage = localStorage.getItem('style-groups');
+                    let styleGroups = [];
+                    if (styleStorage) {
+                        styleGroups = JSON.parse(styleStorage);
+                    }
+                    if ($(this).hasClass('closed')) {
+                        styleGroups.push(id)
+                    } else {
+                        styleGroups = styleGroups.filter(i => i != id)
+                    }
+                    localStorage.setItem('style-groups', JSON.stringify(styleGroups))
+                });
+
+                $('.search-style input').on('keyup', function () {
+                    const value = $(this).val();
+                    $('.group-styles .item').each(function () {
+                        if (value) {
+                            if ($(this).text().includes(value)) {
+                                $(this).show()
+                            } else {
+                                $(this).hide()
+                            }
+                            $('.group-styles').show()
+                        } else {
+                            $(this).show();
+                            $('.group-name.closed + .group-styles').hide()
                         }
                     })
                 })

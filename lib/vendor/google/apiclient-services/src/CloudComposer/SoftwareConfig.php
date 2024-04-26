@@ -23,6 +23,8 @@ class SoftwareConfig extends \Google\Model
    * @var string[]
    */
   public $airflowConfigOverrides;
+  protected $cloudDataLineageIntegrationType = CloudDataLineageIntegration::class;
+  protected $cloudDataLineageIntegrationDataType = '';
   /**
    * @var string[]
    */
@@ -57,6 +59,20 @@ class SoftwareConfig extends \Google\Model
   public function getAirflowConfigOverrides()
   {
     return $this->airflowConfigOverrides;
+  }
+  /**
+   * @param CloudDataLineageIntegration
+   */
+  public function setCloudDataLineageIntegration(CloudDataLineageIntegration $cloudDataLineageIntegration)
+  {
+    $this->cloudDataLineageIntegration = $cloudDataLineageIntegration;
+  }
+  /**
+   * @return CloudDataLineageIntegration
+   */
+  public function getCloudDataLineageIntegration()
+  {
+    return $this->cloudDataLineageIntegration;
   }
   /**
    * @param string[]

@@ -28,6 +28,7 @@ class ScienceCitation extends \Google\Collection
         "abstractLanguage" => "AbstractLanguage",
         "abstractSource" => "AbstractSource",
         "abstractText" => "AbstractText",
+        "abstractTypeFromSource" => "AbstractTypeFromSource",
         "alternateVersionID" => "AlternateVersionID",
         "anchors" => "Anchors",
         "arxivSection" => "ArxivSection",
@@ -39,6 +40,7 @@ class ScienceCitation extends \Google\Collection
         "borrowedFields" => "BorrowedFields",
         "chapter" => "Chapter",
         "citationSource" => "CitationSource",
+        "citationSourceCrawlTimestamp" => "CitationSourceCrawlTimestamp",
         "citationSourceUrl" => "CitationSourceUrl",
         "citationSrc" => "CitationSrc",
         "clearedReason" => "ClearedReason",
@@ -151,7 +153,15 @@ class ScienceCitation extends \Google\Collection
   /**
    * @var string
    */
+  public $abstractTypeFromSource;
+  /**
+   * @var string
+   */
   public $alternateVersionID;
+  /**
+   * @var ScienceCitationAnchor[]
+   */
+  public $anchors;
   protected $anchorsType = ScienceCitationAnchor::class;
   protected $anchorsDataType = 'array';
   /**
@@ -190,6 +200,10 @@ class ScienceCitation extends \Google\Collection
    * @var int
    */
   public $citationSource;
+  /**
+   * @var string
+   */
+  public $citationSourceCrawlTimestamp;
   /**
    * @var string
    */
@@ -298,6 +312,10 @@ class ScienceCitation extends \Google\Collection
    * @var string
    */
   public $language;
+  /**
+   * @var LegalCitation
+   */
+  public $legalCitation;
   protected $legalCitationType = LegalCitation::class;
   protected $legalCitationDataType = '';
   /**
@@ -508,26 +526,70 @@ class ScienceCitation extends \Google\Collection
    * @var bool
    */
   public $worldViewable;
+  /**
+   * @var ScienceCitationAccessURL[]
+   */
+  public $accessurl;
   protected $accessurlType = ScienceCitationAccessURL::class;
   protected $accessurlDataType = 'array';
+  /**
+   * @var ScienceCitationAlternateAbstract[]
+   */
+  public $alternateabstract;
   protected $alternateabstractType = ScienceCitationAlternateAbstract::class;
   protected $alternateabstractDataType = 'array';
+  /**
+   * @var ScienceCitationAlternateTitle[]
+   */
+  public $alternatetitle;
   protected $alternatetitleType = ScienceCitationAlternateTitle::class;
   protected $alternatetitleDataType = 'array';
+  /**
+   * @var ScienceCitationAuthor[]
+   */
+  public $author;
   protected $authorType = ScienceCitationAuthor::class;
   protected $authorDataType = 'array';
+  /**
+   * @var ScienceCitationCategory[]
+   */
+  public $category;
   protected $categoryType = ScienceCitationCategory::class;
   protected $categoryDataType = 'array';
+  /**
+   * @var ScienceCitationDownloadURL[]
+   */
+  public $downloadurl;
   protected $downloadurlType = ScienceCitationDownloadURL::class;
   protected $downloadurlDataType = 'array';
+  /**
+   * @var ScienceCitationFunding[]
+   */
+  public $funding;
   protected $fundingType = ScienceCitationFunding::class;
   protected $fundingDataType = 'array';
+  /**
+   * @var ScienceCitationReferenceDiscussion[]
+   */
+  public $referencediscussion;
   protected $referencediscussionType = ScienceCitationReferenceDiscussion::class;
   protected $referencediscussionDataType = 'array';
+  /**
+   * @var ScienceCitationSubject[]
+   */
+  public $subject;
   protected $subjectType = ScienceCitationSubject::class;
   protected $subjectDataType = 'array';
+  /**
+   * @var ScienceCitationTranslatedAuthor[]
+   */
+  public $translatedauthor;
   protected $translatedauthorType = ScienceCitationTranslatedAuthor::class;
   protected $translatedauthorDataType = 'array';
+  /**
+   * @var ScienceCitationUnionCatalog[]
+   */
+  public $unioncatalog;
   protected $unioncatalogType = ScienceCitationUnionCatalog::class;
   protected $unioncatalogDataType = 'array';
 
@@ -628,6 +690,20 @@ class ScienceCitation extends \Google\Collection
   public function getAbstractText()
   {
     return $this->abstractText;
+  }
+  /**
+   * @param string
+   */
+  public function setAbstractTypeFromSource($abstractTypeFromSource)
+  {
+    $this->abstractTypeFromSource = $abstractTypeFromSource;
+  }
+  /**
+   * @return string
+   */
+  public function getAbstractTypeFromSource()
+  {
+    return $this->abstractTypeFromSource;
   }
   /**
    * @param string
@@ -782,6 +858,20 @@ class ScienceCitation extends \Google\Collection
   public function getCitationSource()
   {
     return $this->citationSource;
+  }
+  /**
+   * @param string
+   */
+  public function setCitationSourceCrawlTimestamp($citationSourceCrawlTimestamp)
+  {
+    $this->citationSourceCrawlTimestamp = $citationSourceCrawlTimestamp;
+  }
+  /**
+   * @return string
+   */
+  public function getCitationSourceCrawlTimestamp()
+  {
+    return $this->citationSourceCrawlTimestamp;
   }
   /**
    * @param string

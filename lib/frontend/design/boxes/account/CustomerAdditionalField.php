@@ -78,7 +78,7 @@ class CustomerAdditionalField extends Widget
                 ->asArray()
                 ->one();
 
-            if (!$value['value']) {
+            if (!($value['value']??null)) {
                 $fieldType = \common\extensions\CustomerAdditionalFields\models\AdditionalFields::findOne(['additional_fields_id' => $this->settings[0]['default_fields_id']])->field_type;
                 if ($fieldType && in_array($fieldType, ['customer_gender', 'customer_firstname', 'customer_lastname', 'customer_email_address', 'customer_phone', 'customer_email'])){
 
@@ -148,6 +148,14 @@ class CustomerAdditionalField extends Widget
                 foreach ($countries as $country) {
                     if ($country['id'] == $this->value) {
                         return $country['text'];
+                    }
+                }
+
+            } elseif (in_array($field['field_type'], ['select'])) {
+
+                foreach ($valuesList as $key => $selectValue) {
+                    if ( (string)$this->value == (string)$key) {
+                        return $selectValue;
                     }
                 }
 

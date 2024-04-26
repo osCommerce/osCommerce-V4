@@ -102,16 +102,35 @@ class ot_coupon extends ModuleTotal {
 
     protected function getCouponById(int $coupon_id)
     {
-        static $_result=[];
-        if (isset($_result[$coupon_id])) 
-          return $_result[$coupon_id];
+        // no static data, as extensions has coupon data changes depend on rules
         $where = ['coupon_id' => (int) $coupon_id];
         $get_result = \common\models\Coupons::find()->active()->andWhere($where)->one();
+        $_result[$coupon_id]=$get_result;
+
+
         foreach (\common\helpers\Hooks::getList('ot-coupon/get-coupon-by-id') as $filename) {
             include($filename);
         }
-        $_result[$coupon_id]=$get_result;
+
         return $get_result;
+    }
+
+    function clearValidProducts()
+    {
+        $this->valid_products = [];
+        $this->validProducts = [];
+        $this->totalDetails = [];
+    
+    }
+
+    function getDiscountDetails()
+    {
+	    return $this->discountsDetails;
+    }
+
+    function setDiscountDetails(array $data)
+    {
+	    $this->discountsDetails=$data;
     }
 
     function process($replacing_value = -1, $visible = false) {
@@ -125,7 +144,7 @@ class ot_coupon extends ModuleTotal {
 
         $cc_array = [];
         $cart = $this->manager->getCart();
-        if (is_array($cart->cc_array)) {
+        if (is_array(($cart->cc_array??null))) {
             $cc_array = $cart->cc_array;
             //important reorder $cc_array start with percent with free shipping,  then percent,  then free shipping then fixed
             // do not change else mix coupon (something + free shipping) could get incorrect result
@@ -147,6 +166,71 @@ class ot_coupon extends ModuleTotal {
 
             $order_total = $this->get_order_total($id);
             $result = $this->calculate_credit($order_total, $id, $code);
+
+            foreach (\common\helpers\Hooks::getList('ot-coupon/process/calculate_credit/after') as $filename) {
+                include($filename);
+            }
+
+            $couponData=$this->getCouponById($id);
+            //limit by coupon_amount_maximum , TODO limit for Shipping
+            if ($couponData['coupon_type'] == 'P' && (float)$couponData['coupon_amount_maximum'] > 0 &&
+                isset($this->discountsDetails['coupons'][$id]) //exists discount data for coupon
+            ) {
+                   $checkMaxAmount=0;
+                   $checkMaxAmount=$this->discountsDetails['coupons'][$id]['inc'];
+
+
+                   if ($checkMaxAmount>(float)$couponData['coupon_amount_maximum']){
+                      $percentToReduce=(float)$couponData['coupon_amount_maximum']/$checkMaxAmount;
+                      $oldCouponData=$this->discountsDetails['coupons'][$id];
+                      $this->discountsDetails['coupons'][$id]['inc']=0;
+                      $this->discountsDetails['coupons'][$id]['exc']=0;
+                      foreach ($this->discountsDetails['coupons'][$id]['tax_groups'] as $tGroup=>$tValue){
+                          $this->discountsDetails['coupons'][$id]['tax_groups'][$tGroup]=0;
+                      }
+                      $totaltaxPerGroups=[];
+                      foreach ($this->discountsDetails['products'] as $prodId => $discountedProduct) {
+                          $oldDiscountProd=$discountedProduct;
+                          $totalTaxAm=0;
+                          $this->discountsDetails['products'][$prodId]['coupons'][$id]['inc']*=$percentToReduce;
+                          $this->discountsDetails['products'][$prodId]['coupons'][$id]['exc']=$this->discountsDetails['products'][$prodId]['coupons'][$id]['inc'];
+
+                          $this->discountsDetails['coupons'][$id]['inc']+=$this->discountsDetails['products'][$prodId]['coupons'][$id]['inc'];
+                          $this->discountsDetails['products'][$prodId]['inc']-=($oldDiscountProd['coupons'][$id]['inc']-$this->discountsDetails['products'][$prodId]['coupons'][$id]['inc']);
+
+                          if (isset($discountedProduct['coupons'][$id]['tax_groups'])) {
+                              foreach ($discountedProduct['coupons'][$id]['tax_groups'] as $tGroup => $tValue ) {
+                                    $this->discountsDetails['products'][$prodId]['coupons'][$id]['tax_groups'][$tGroup]*=$percentToReduce;
+                                    $totalTaxAm+=$this->discountsDetails['products'][$prodId]['coupons'][$id]['tax_groups'][$tGroup];
+                                    $this->discountsDetails['coupons'][$id]['tax_groups'][$tGroup] +=$this->discountsDetails['products'][$prodId]['coupons'][$id]['tax_groups'][$tGroup];
+                                    $this->discountsDetails['products'][$prodId]['tax_groups'][$tGroup]-=($oldDiscountProd['tax_groups'][$tGroup] + $this->discountsDetails['coupons'][$id]['tax_groups'][$tGroup]);
+                              }
+                          }
+                          $this->discountsDetails['products'][$prodId]['coupons'][$id]['exc']-=$totalTaxAm;
+                          $this->discountsDetails['coupons'][$id]['exc']+=$this->discountsDetails['products'][$prodId]['coupons'][$id]['exc'];
+                          $this->discountsDetails['products'][$prodId]['exc']-=($oldDiscountProd['coupons'][$id]['exc'] - $this->discountsDetails['products'][$prodId]['coupons'][$id]['exc']);
+
+                      }
+                      $this->discountsDetails['inc_total']-=($oldCouponData['inc']-$this->discountsDetails['coupons'][$id]['inc']);
+                      $this->discountsDetails['exc_total']-=($oldCouponData['exc']-$this->discountsDetails['coupons'][$id]['exc']);
+                      if (is_array($this->discountsDetails['tax_groups']))
+                      foreach ($this->discountsDetails['tax_groups'] as $groupName=>$groupDiscount) {
+                          if (isset($oldCouponData['tax_groups'][$groupName])) {
+                              $this->discountsDetails['tax_groups'][$groupName]-=($oldCouponData['tax_groups'][$groupName]-$this->discountsDetails['coupons'][$id]['tax_groups'][$groupName]);
+                          }
+                      }
+
+
+                      $this->discountsDetails['inc_total']=0;
+                      foreach ($this->discountsDetails['coupons'] as $couponId => $calculatedCoupon) {
+                          $this->discountsDetails['coupons'][$couponId]['inc']=round($calculatedCoupon['inc'],3);
+                          $this->discountsDetails['inc_total']+=round($calculatedCoupon['inc'],3);
+                      }
+
+                      $result['deduct']=$this->discountsDetails['coupons'][$id]['inc'];
+                   }
+            }
+
 
             $this->deduction = $result['deduct'];
             $result['tax'] = ($result['deduct'] > 0 ? $this->calculate_tax_deduction($id, $order_total, $this->deduction) : 0);
@@ -450,9 +534,16 @@ class ot_coupon extends ModuleTotal {
                     $this->coupon_code = $get_result['coupon_code'];
                     $this->tax_class = $get_result['tax_class_id'];
 
-                    $order_total_amount = $order->info['subtotal_exc_tax']; // for min order amount check
-                    if ($get_result['uses_per_shipping'] || $get_result['free_shipping']) {
-                        $order_total_amount += $order->info['shipping_cost_exc_tax'];
+                    if ($get_result['flag_with_tax']) {
+                        $order_total_amount = $order->info['subtotal_inc_tax']; // for min order amount check
+                        if ($get_result['uses_per_shipping'] || $get_result['free_shipping']) {
+                            $order_total_amount += $order->info['shipping_cost_inc_tax'];
+                        }
+                    } else {
+                        $order_total_amount = $order->info['subtotal_exc_tax']; // for min order amount check
+                        if ($get_result['uses_per_shipping'] || $get_result['free_shipping']) {
+                            $order_total_amount += $order->info['shipping_cost_exc_tax'];
+                        }
                     }
 
                     if ($get_result->spend_partly == 1) {
@@ -606,7 +697,6 @@ class ot_coupon extends ModuleTotal {
             if ($get_result['coupon_amount']>0) {
                 if ($this->totalDetails['restricted'] && is_array($this->validProducts)) {
                     $prods = $this->validProducts;
-
                 } else {
                     $prods = $this->products_in_order;
                     if (is_array($prods)) {
@@ -653,18 +743,31 @@ class ot_coupon extends ModuleTotal {
                         if (!isset($this->discountsDetails['products'][$p['id']])) {
                             $this->discountsDetails['products'][$p['id']]= ['inc' => 0, 'exc' => 0, 'tax_groups' => []];
                         }
+                        $this->discountsDetails['products'][$p['id']]['coupons'][$coupon_id]['inc'] = $this->discountsDetails['products'][$p['id']]['coupons'][$coupon_id]['inc'] ?? null;
+                        $this->discountsDetails['products'][$p['id']]['coupons'][$coupon_id]['exc'] = $this->discountsDetails['products'][$p['id']]['coupons'][$coupon_id]['exc'] ?? null;
                         if ($left) {
                             $this->discountsDetails['products'][$p['id']]['inc'] += ($left>$p['coupon_total_inc']? $p['coupon_total_inc']:$left);
                             $this->discountsDetails['products'][$p['id']]['exc'] += ($left>$p['coupon_total_inc']? $p['coupon_total_inc']:$left);
+
+                            $this->discountsDetails['products'][$p['id']]['coupons'][$coupon_id]['inc'] += ($left>$p['coupon_total_inc']? $p['coupon_total_inc']:$left);
+                            $this->discountsDetails['products'][$p['id']]['coupons'][$coupon_id]['exc'] += ($left>$p['coupon_total_inc']? $p['coupon_total_inc']:$left);
+
                         } else {
                             $this->discountsDetails['products'][$p['id']]['inc'] += $p['coupon_total_inc']*$_percent;
                             $this->discountsDetails['products'][$p['id']]['exc'] += $p['coupon_total_inc']*$_percent;
+
+                            $this->discountsDetails['products'][$p['id']]['coupons'][$coupon_id]['inc'] += $p['coupon_total_inc']*$_percent;
+                            $this->discountsDetails['products'][$p['id']]['coupons'][$coupon_id]['exc'] += $p['coupon_total_inc']*$_percent;
+
                         }
 
                         if (!empty($p['coupon_tax_groups']) && is_array($p['coupon_tax_groups'])) {
                             foreach ($p['coupon_tax_groups'] as $k => $v) {
                                 if (!isset($this->discountsDetails['products'][$p['id']]['tax_groups'][$k])) {
                                     $this->discountsDetails['products'][$p['id']]['tax_groups'][$k] = 0;
+                                }
+                                if (!isset($this->discountsDetails['products'][$p['id']]['coupons'][$coupon_id]['tax_groups'][$k])) {
+                                    $this->discountsDetails['products'][$p['id']]['coupons'][$coupon_id]['tax_groups'][$k] = 0;
                                 }
                                 if (!isset($this->discountsDetails['coupons'][$coupon_id]['tax_groups'][$k])) {
                                     $this->discountsDetails['coupons'][$coupon_id]['tax_groups'][$k] = 0;
@@ -677,7 +780,11 @@ class ot_coupon extends ModuleTotal {
                                         $v*$left/$p['coupon_total_inc']);
                                     $this->discountsDetails['products'][$p['id']]['tax_groups'][$k] += $_tmp;
                                     $this->discountsDetails['products'][$p['id']]['exc'] -= $_tmp;
-                                    
+
+                                    $this->discountsDetails['products'][$p['id']]['coupons'][$coupon_id]['tax_groups'][$k] += $_tmp;
+                                    $this->discountsDetails['products'][$p['id']]['coupons'][$coupon_id]['exc'] -= $_tmp;
+                                        
+
                                     $this->discountsDetails['coupons'][$coupon_id]['tax_groups'][$k] += $_tmp;
                                     $this->discountsDetails['coupons'][$coupon_id]['exc'] -= $_tmp;
                                     $this->discountsDetails['tax_groups'][$k] += $_tmp;
@@ -689,6 +796,9 @@ class ot_coupon extends ModuleTotal {
 
                                     $this->discountsDetails['products'][$p['id']]['tax_groups'][$k] += $_tmp;
                                     $this->discountsDetails['products'][$p['id']]['exc'] -= $_tmp;
+
+                                    $this->discountsDetails['products'][$p['id']]['coupons'][$coupon_id]['tax_groups'][$k] += $_tmp;
+                                    $this->discountsDetails['products'][$p['id']]['coupons'][$coupon_id]['exc'] -= $_tmp;
 
                                     $this->discountsDetails['coupons'][$coupon_id]['tax_groups'][$k] += $_tmp;
                                     $this->discountsDetails['coupons'][$coupon_id]['exc'] -= $_tmp;
@@ -829,6 +939,15 @@ class ot_coupon extends ModuleTotal {
             /** @var \common\classes\shopping_cart $cartDecorator */
             $cartDecorator = new CartDecorator($cart);
             $products_in_order = $cartDecorator->getProducts();
+            if ($this->calculateRestrictionsByChildProducts()) {
+                // Cart decorator sets configurator_price() for parents and zero for childs, so use original prices
+                foreach ($products_in_order as $i => $prod) {
+                    if (isset($products_in_order[$i]['original_price_exc']) && isset($products_in_order[$i]['original_price_inc'])) {
+                        $products_in_order[$i]['final_price_exc'] = $products_in_order[$i]['original_price_exc'];
+                        $products_in_order[$i]['final_price_inc'] = $products_in_order[$i]['original_price_inc'];
+                    }
+                }
+            }
             $this->products_in_order = $products_in_order;
             $restricted = false;
 
@@ -863,7 +982,7 @@ class ot_coupon extends ModuleTotal {
                     //unset products which don't match restrictions, calculate totals
                     foreach ($products_in_order as $_idx => $product_info) {
                         //check the product is valid
-                        if (!empty($product_info['parent'])) {
+                        if (!$this->calculateRestrictionsByChildProducts() && !empty($product_info['parent'])) {
                             $_pid = intval(\common\helpers\Inventory::get_prid($product_info['parent']));
                         } else {
                             $_pid = intval(\common\helpers\Inventory::get_prid($product_info['id']));
@@ -925,7 +1044,11 @@ class ot_coupon extends ModuleTotal {
                                 $final_price = $currencies->calculate_price($product_info['price'], 0, $product_info['quantity']);
                             }
                             $quantity = $product_info['quantity'];
-                            
+
+                            if (!empty($product_info['tax_class_id'])) {
+                                $taxation = $this->getTaxValues($product_info['tax_class_id']);
+                                $tax_desc = $taxation['tax_description'];
+                            }
 
                             if ($product_info['tax_rate'] > 0) {
                                 if (defined('PRICE_WITH_BACK_TAX') && PRICE_WITH_BACK_TAX == 'True') {
@@ -934,9 +1057,12 @@ class ot_coupon extends ModuleTotal {
                                     $orig_qty_final_price_inc = $orig_qty_final_price;
                                     $orig_qty_final_price = \common\helpers\Tax::reduce_tax_always($orig_qty_final_price, $product_info['tax_rate']);
                                 } else {
-                                    $final_inc = $currencies->calculate_price($final_price, $product_info['tax_rate'], 1);
-                                    $orig_qty_final_price_inc = $currencies->calculate_price($orig_qty_final_price, $product_info['tax_rate'], 1);
+                                    $final_inc = $currencies->calculate_price($final_price, $product_info['tax_rate'], 1, '' , true);
+                                    $orig_qty_final_price_inc = $currencies->calculate_price($orig_qty_final_price, $product_info['tax_rate'], 1, '' , true);
                                 }
+                            } elseif ($product_info['tax_class_id'] > 0 && !empty($taxation['tax'])) {
+                                $final_inc = $currencies->calculate_price($final_price, $taxation['tax'], 1, '' , true);
+                                $orig_qty_final_price_inc = $currencies->calculate_price($orig_qty_final_price, $taxation['tax'], 1, '' , true);
                             } else {
                                 $final_inc = $final_price;
                             }
@@ -1104,6 +1230,10 @@ class ot_coupon extends ModuleTotal {
         return false;
     }
 
+    function calculateRestrictionsByChildProducts() {
+        return (defined('MODULE_ORDER_TOTAL_COUPON_CALCULATE_RESTRICTIONS_BY_CHILDS') && MODULE_ORDER_TOTAL_COUPON_CALCULATE_RESTRICTIONS_BY_CHILDS == 'True');
+    }
+
     public function describe_status_key() {
         return new ModuleStatus('MODULE_ORDER_TOTAL_COUPON_STATUS', 'true', 'false');
     }
@@ -1135,6 +1265,14 @@ class ot_coupon extends ModuleTotal {
                 'value' => 'False',
                 'description' => 'Allow only 1 coupon per order.',
                 'sort_order' => '3',
+                'set_function' => 'tep_cfg_select_option(array(\'True\', \'False\'), ',
+            ),
+            'MODULE_ORDER_TOTAL_COUPON_CALCULATE_RESTRICTIONS_BY_CHILDS' =>
+            array(
+                'title' => 'Calculate Restrictions By Childs',
+                'value' => 'False',
+                'description' => 'Calculate restrictions by child products.',
+                'sort_order' => '4',
                 'set_function' => 'tep_cfg_select_option(array(\'True\', \'False\'), ',
             ),
         );

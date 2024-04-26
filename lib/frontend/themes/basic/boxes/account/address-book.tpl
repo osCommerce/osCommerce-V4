@@ -74,7 +74,7 @@
             }
         })
         $('.switch[checked]', box).bootstrapSwitch('state', true);
-		if($('.js-addressBlock').length == 4){
+		if($('.js-addressBlock').length >= {$smarty.const.MAX_ADDRESS_BOOK_ENTRIES}){
 			$('.add_item a').addClass('disabled-link');
 			$('.add_item a').on('click', function(){
 			

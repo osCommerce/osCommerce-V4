@@ -350,7 +350,9 @@ class SFTP extends SSH2
      *
      * Connects to an SFTP server
      *
-     * @param string $host
+     * $host can either be a string, representing the host, or a stream resource.
+     *
+     * @param mixed $host
      * @param int $port
      * @param int $timeout
      */
@@ -545,22 +547,7 @@ class SFTP extends SSH2
      */
     private function partial_init_sftp_connection()
     {
-        $this->window_size_server_to_client[self::CHANNEL] = $this->window_size;
-
-        $packet = Strings::packSSH2(
-            'CsN3',
-            NET_SSH2_MSG_CHANNEL_OPEN,
-            'session',
-            self::CHANNEL,
-            $this->window_size,
-            0x4000
-        );
-
-        $this->send_binary_packet($packet);
-
-        $this->channel_status[self::CHANNEL] = NET_SSH2_MSG_CHANNEL_OPEN;
-
-        $response = $this->get_channel_packet(self::CHANNEL, true);
+        $response = $this->openChannel(self::CHANNEL, true);
         if ($response === true && $this->isTimeout()) {
             return false;
         }
@@ -2140,10 +2127,10 @@ class SFTP extends SSH2
 
         if ($start >= 0) {
             $offset = $start;
-        } elseif ($mode & self::RESUME) {
+        } elseif ($mode & (self::RESUME | self::RESUME_START)) {
             // if NET_SFTP_OPEN_APPEND worked as it should _size() wouldn't need to be called
-            $size = $this->stat($remote_file)['size'];
-            $offset = $size !== false ? $size : 0;
+            $stat = $this->stat($remote_file);
+            $offset = $stat !== false && $stat['size'] ? $stat['size'] : 0;
         } else {
             $offset = 0;
             if ($this->version >= 5) {
@@ -2212,6 +2199,9 @@ class SFTP extends SSH2
             if ($local_start >= 0) {
                 fseek($fp, $local_start);
                 $size -= $local_start;
+            } elseif ($mode & self::RESUME) {
+                fseek($fp, $offset);
+                $size -= $offset;
             }
         } elseif ($dataCallback) {
             $size = 0;
@@ -2496,14 +2486,6 @@ class SFTP extends SSH2
 
             if ($clear_responses) {
                 break;
-            }
-        }
-
-        if ($length > 0 && $length <= $offset - $start) {
-            if ($local_file === false) {
-                $content = substr($content, 0, $length);
-            } else {
-                ftruncate($fp, $length + $res_offset);
             }
         }
 
@@ -2843,14 +2825,36 @@ class SFTP extends SSH2
     }
 
     /**
+     * Recursively go through rawlist() output to get the total filesize
+     *
+     * @return int
+     */
+    private static function recursiveFilesize(array $files)
+    {
+        $size = 0;
+        foreach ($files as $name => $file) {
+            if ($name == '.' || $name == '..') {
+                continue;
+            }
+            $size += is_array($file) ?
+                self::recursiveFilesize($file) :
+                $file->size;
+        }
+        return $size;
+    }
+
+    /**
      * Gets file size
      *
      * @param string $path
+     * @param bool $recursive
      * @return mixed
      */
-    public function filesize($path)
+    public function filesize($path, $recursive = false)
     {
-        return $this->get_stat_cache_prop($path, 'size');
+        return !$recursive || $this->filetype($path) != 'dir' ?
+            $this->get_stat_cache_prop($path, 'size') :
+            self::recursiveFilesize($this->rawlist($path, true));
     }
 
     /**
@@ -3291,6 +3295,7 @@ class SFTP extends SSH2
         $this->use_request_id = false;
         $this->pwd = false;
         $this->requestBuffer = [];
+        $this->partial_init = false;
     }
 
     /**
@@ -3422,7 +3427,7 @@ class SFTP extends SSH2
      *
      * Returns a string if NET_SFTP_LOGGING == self::LOG_COMPLEX, an array if NET_SFTP_LOGGING == self::LOG_SIMPLE and false if !defined('NET_SFTP_LOGGING')
      *
-     * @return array|string
+     * @return array|string|false
      */
     public function getSFTPLog()
     {

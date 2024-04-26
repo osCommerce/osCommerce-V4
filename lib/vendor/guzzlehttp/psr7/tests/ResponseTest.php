@@ -284,6 +284,15 @@ class ResponseTest extends BaseTest
             [[], 'foo', 'Header name must be a string but array provided.'],
             [false, 'foo', 'Header name must be a string but boolean provided.'],
             [new \stdClass(), 'foo', 'Header name must be a string but stdClass provided.'],
+            ["", 'foo', "Header name can not be empty."],
+            ["Content-Type\r\n\r\n", 'foo', "\"Content-Type\r\n\r\n\" is not valid header name."],
+            ["Content-Type\r\n", 'foo', "\"Content-Type\r\n\" is not valid header name."],
+            ["Content-Type\n", 'foo', "\"Content-Type\n\" is not valid header name."],
+            ["\r\nContent-Type", 'foo', "\"\r\nContent-Type\" is not valid header name."],
+            ["\nContent-Type", 'foo', "\"\nContent-Type\" is not valid header name."],
+            ["\n", 'foo', "\"\n\" is not valid header name."],
+            ["\r\n", 'foo', "\"\r\n\" is not valid header name."],
+            ["\t", 'foo', "\"\t\" is not valid header name."],
         ]);
     }
 

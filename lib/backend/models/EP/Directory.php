@@ -162,16 +162,12 @@ class Directory extends BaseObject
         if ( $this->cron_enabled ) {
             $processedRoot = $this->filesRoot(self::TYPE_PROCESSED);
             if ( is_dir($processedRoot) ) {
-                tep_db_perform(TABLE_EP_DIRECTORIES, array(
-                    'removable' => 1,
-                    'cron_enabled' => $this->cron_enabled,
-                    'parent_id' => $this->directory_id,
-                    'name' => '--',
-                    'directory_type' => self::TYPE_PROCESSED,
-                    'directory' => basename($processedRoot),
-                ));
-                $newDirectoryId = tep_db_insert_id();
-                return Directory::findById($newDirectoryId);
+                $this->synchronizeDirectories(true);
+                foreach($this->getSubdirectories() as $subDir){
+                    if ( $subDir->directory_type==self::TYPE_PROCESSED ) {
+                        return $subDir;
+                    }
+                }
             }
         }
         return false;
@@ -336,18 +332,19 @@ class Directory extends BaseObject
         if ( isset($this->directory_config['cleaning_term']) && $this->directory_config['cleaning_term']!=-1 ){
             $removeOlderThen = strtotime('-'.$this->directory_config['cleaning_term']);
             if ($this->getParent()->directory_type==self::TYPE_DATASOURCE) {
-                // fast remove - skip any temporary files
-                tep_db_query(
-                    "DELETE target FROM " . TABLE_EP_LOG_MESSAGES . " target ".
-                    " INNER JOIN ".TABLE_EP_JOB." job_table ON target.job_id=job_table.job_id ".
-                    "WHERE job_table.directory_id='" . $this->directory_id . "' ".
-                    "  AND job_table.last_cron_run<='" . date('Y-m-d H:i:s', $removeOlderThen) . "'"
+                $get_job_remove_r = tep_db_query(
+                    "SELECT job_id " .
+                    "FROM " . TABLE_EP_JOB . " " .
+                    "WHERE directory_id='" . $this->directory_id . "' " .
+                    " AND last_cron_run<='" . date('Y-m-d H:i:s', $removeOlderThen) . "' ".
+                    "ORDER BY job_id DESC ".
+                    "LIMIT 256"
                 );
-                tep_db_query(
-                    "DELETE job_table FROM " . TABLE_EP_JOB . " job_table ".
-                    "WHERE job_table.directory_id='" . $this->directory_id . "' ".
-                    "  AND job_table.last_cron_run<='" . date('Y-m-d H:i:s', $removeOlderThen) . "'"
-                );
+                if (tep_db_num_rows($get_job_remove_r) > 0) {
+                    while ($job_remove = tep_db_fetch_array($get_job_remove_r)) {
+                        Job::loadById($job_remove['job_id'])->delete();
+                    }
+                }
             } else {
                 $get_job_remove_r = tep_db_query(
                     "SELECT job_id " .
