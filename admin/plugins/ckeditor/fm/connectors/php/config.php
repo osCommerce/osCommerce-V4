@@ -25,12 +25,18 @@
  require('includes/application_top.php');
  chdir('plugins/ckeditor/fm/connectors/php');
 
+ tep_session_start();
+if (tep_session_var('login_id') <= 0) {
+    http_response_code(404);
+    die('404 Bad Request');
+}
+
 global $Config ;
 
 // SECURITY: You must explicitly enable this "connector". (Set it to "true").
 // WARNING: don't just set "$Config['Enabled'] = true ;", you must be sure that only
 //		authenticated users can access this file or use some kind of session checking.
-$Config['Enabled'] = true ;
+$Config['Enabled'] = false ;
 
 // Path to user files relative to the document root.
 $Config['UserFilesPath'] = DIR_WS_CATALOG_IMAGES;
@@ -130,7 +136,7 @@ $Config['FileTypesAbsolutePath']['File'] = $Config['UserFilesAbsolutePath'];
 $Config['QuickUploadPath']['File'] = $Config['UserFilesPath'] ;
 $Config['QuickUploadAbsolutePath']['File'] = $Config['UserFilesAbsolutePath'] ;
 
-$Config['AllowedExtensions']['Image']	= array('bmp','gif','jpeg','jpg','png','pdf','webp') ;
+$Config['AllowedExtensions']['Image']	= array('bmp','gif','jpeg','jpg','png','pdf','webp','svg') ;
 $Config['DeniedExtensions']['Image']	= array() ;
 //$Config['FileTypesPath']['Image']		= $Config['UserFilesPath'] . 'image/' ;
 //$Config['FileTypesAbsolutePath']['Image']= ($Config['UserFilesAbsolutePath'] == '') ? '' : $Config['UserFilesAbsolutePath'].'image/' ;
