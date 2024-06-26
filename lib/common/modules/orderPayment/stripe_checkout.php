@@ -783,15 +783,15 @@ EOD;
                         $orderPayment->orders_payment_status = OrderPaymentHelper::OPYS_CANCELLED;
                         $orderPayment->orders_payment_transaction_status = 'cancelled';
                         $orderPayment->save(false);
-                    }
-                }
-                if (!$this->isPartlyPaid()) {
-                    if (is_numeric(MODULE_PAYMENT_STRIPE_CHECKOUT_CANCELLED_ORDER_STATUS_ID) && (MODULE_PAYMENT_STRIPE_CHECKOUT_CANCELLED_ORDER_STATUS_ID > 0)) {
-                        $order_status = MODULE_PAYMENT_STRIPE_CHECKOUT_CANCELLED_ORDER_STATUS_ID;
-                        \common\helpers\Order::setStatus($order->order_id, (int)$order_status, [
-                            'comments' => 'Cancelled by customer',
-                            'customer_notified' => 0,
-                        ]);
+                        if (!$this->isPartlyPaid()) {
+                            if (is_numeric(MODULE_PAYMENT_STRIPE_CHECKOUT_CANCELLED_ORDER_STATUS_ID) && (MODULE_PAYMENT_STRIPE_CHECKOUT_CANCELLED_ORDER_STATUS_ID > 0)) {
+                                $order_status = MODULE_PAYMENT_STRIPE_CHECKOUT_CANCELLED_ORDER_STATUS_ID;
+                                \common\helpers\Order::setStatus($order->order_id, (int)$order_status, [
+                                    'comments' => 'Cancelled by customer',
+                                    'customer_notified' => 0,
+                                ]);
+                            }
+                        }
                     }
                 }
                 tep_redirect($this->getCheckoutUrl([], self::PAYMENT_PAGE));
