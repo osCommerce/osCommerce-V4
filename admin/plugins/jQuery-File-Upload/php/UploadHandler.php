@@ -88,7 +88,7 @@ class UploadHandler
             // is enabled, set to 0 to disable chunked reading of files:
             'readfile_chunk_size' => 10 * 1024 * 1024, // 10 MiB
             // Defines which files can be displayed inline when downloaded:
-            'inline_file_types' => '/\.(gif|jpe?g|png)$/i',
+            'inline_file_types' => '/\.(gif|jpe?g|png|webp)$/i',
             // Defines which files (based on their names) are accepted for upload:
             'accept_file_types' => '/.+$/i',
             // The php.ini settings upload_max_filesize and post_max_size
@@ -98,7 +98,7 @@ class UploadHandler
             // The maximum number of files for the upload directory:
             'max_number_of_files' => null,
             // Defines which files are handled as image files:
-            'image_file_types' => '/\.(gif|jpe?g|png)$/i',
+            'image_file_types' => '/\.(gif|jpe?g|png|webp)$/i',
             // Use exif_imagetype on all files to correct file extensions:
             'correct_image_extensions' => false,
             // Image resolution restrictions:
@@ -483,7 +483,7 @@ class UploadHandler
             $index, $content_range) {
         // Add missing file extension for known image types:
         if (strpos($name, '.') === false &&
-                preg_match('/^image\/(gif|jpe?g|png)/', $type, $matches)) {
+                preg_match('/^image\/(gif|jpe?g|png|webp)/', $type, $matches)) {
             $name .= '.'.$matches[1];
         }
         if ($this->options['correct_image_extensions'] &&
@@ -497,6 +497,9 @@ class UploadHandler
                     break;
                 case IMAGETYPE_GIF:
                     $extensions = array('gif');
+                    break;
+                case IMAGETYPE_WEBP:
+                    $extensions = array('webp');
                     break;
             }
             // Adjust incorrect image file extensions:
@@ -699,6 +702,12 @@ class UploadHandler
                 $write_func = 'imagepng';
                 $image_quality = isset($options['png_quality']) ?
                     $options['png_quality'] : 9;
+                break;
+            case 'webp':
+                $src_func = 'imagecreatefromwebp';
+                $write_func = 'imagewebp';
+                $image_quality = isset($options['webp_quality']) ? 
+                    $options['webp_quality'] : -1;
                 break;
             default:
                 return false;
@@ -1183,6 +1192,8 @@ class UploadHandler
                 return 'image/png';
             case 'gif':
                 return 'image/gif';
+            case 'webp':
+                return 'image/webp';
             default:
                 return '';
         }
